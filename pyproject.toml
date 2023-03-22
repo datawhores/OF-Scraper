@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "ofscraper"
+version = "1.31"
+description = "automatically scrape onlyfans"
+authors = ["excludedBittern8 <excludedBittern8@riseup.net>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+httpx = "^0.23.3"
+inquirerpy = "^0.3.4"
+revolution = "^0.3.0"
+tqdm = "^4.65.0"
+setuptools = "^67.6.0"
+schedule = "^1.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ofscraper = "src.scraper:main"
+
+[project.scripts]
+ofscraper = "src.scraper:main"
