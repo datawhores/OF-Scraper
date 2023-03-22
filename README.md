@@ -3,7 +3,6 @@ A command-line program to download media, like posts, and more from creators on 
 
 This is a fork of onlyfans-scraper
 
-I'm rewritting it to handle make it more flexible, and to also improve management of files.
 
 
 <h3>DISCLAIMERS:</h3>
