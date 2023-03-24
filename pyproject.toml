@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ofscraper"
-version = "1.32"
+version = "1.33"
 description = "automatically scrape onlyfans"
 authors = ["excludedBittern8 <excludedBittern8@riseup.net>"]
 readme = "README.md"
@@ -25,3 +25,6 @@ ofscraper = "src.scraper:main"
 
 [project.scripts]
 ofscraper = "src.scraper:main"
+
+[tool.poetry.urls]
+"Homepage" = "https://github.com/excludedBittern8/ofscraper"
