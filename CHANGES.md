@@ -12,3 +12,6 @@
 - Easier to select multiple models when username arg is not passed
 - safety check to prevent overwritting files. Important when forcing redownloading
 - small refactoring for other parts of the code
+- change tuples from scraping into objects
+- fuzzy search in username selection
+- simplify username selection when username args not pass

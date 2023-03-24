@@ -92,13 +92,17 @@ def areas_prompt() -> list:
             'qmark': '[?]',
             'name': name,
             'message': 'Which area(s) would you like to scrape? (Press ENTER to continue)',
+             "validate":(lambda result: len(result)> 0),
+      "invalid_message":"Input cannot be empty",
             'choices': [
-                Choice('All', enabled=True),
                 Choice('Timeline'),
                 Choice('Archived'),
                 Choice('Highlights'),
+                Choice('Stories'),
                 Choice('Messages'),
             ]
+            ,"instruction":"\nPress Ctrl -R toggles all choices\nSpace toggles a single choice\nPress enter when done",
+
         }
     ]
 
@@ -319,9 +323,10 @@ def reset_username_prompt() -> bool:
     name = 'reset username'
     questions = [
         {
-            'type': 'confirm',
+            'type': 'list',
             'name': name,
             'message': "Do you want to reset username option",
+            'choices':["Yes","No"]
         }
     ]
 
@@ -329,9 +334,20 @@ def reset_username_prompt() -> bool:
     return answer[name]
 def model_selector(models) -> bool:
     questions = [
-    {"type": "checkbox", "message": "Which models do you want to scrape:"
+    {"type": "fuzzy", "message": "Which models do you want to scrape:",
+      "keybindings":{
+                             "toggle": [{"key": "s-right"}],
+                         }
+     ,"multiselect":True
       ,"validate":(lambda result: len(result)> 0),
-      "invalid_message":"Input cannot be empty","instruction":"\nPress Ctrl -R toggles all choices\nSpace Bar toggles a single choice\nPress Enter When Done","choices":list(map(lambda x:Choice(x[0],name=f"{x[0]} {x[2]}"),sorted(models,key=lambda x:x[0])))}
+      "invalid_message":"Input cannot be empty",
+      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date']}")   ,sorted(models,key=lambda x:x['name'])))
+       ,"prompt":'Filter: ',
+       "marker":"\u25c9 ",
+       "marker_pl":"\u25cb "
+
+      },
+    
 ]
 
     return prompt(questions)[0]

@@ -8,16 +8,10 @@ r"""
 """
 
 
-def separate_by_id(urls: list, media_ids: list) -> list:
-    filtered_urls = []
-    for url in urls:
-        try:
-            if url[2] not in media_ids:
-                filtered_urls.append(url)
-        except IndexError:
-            filtered_urls.append(url)
-
-    return filtered_urls
+def separate_by_id(data: list, media_ids: list) -> list:
+    return list(filter(lambda x:x["id"] in media_ids,data))
+    
+  
 
 
 def separate_database_results_by_id(results: list, media_ids: list) -> list:

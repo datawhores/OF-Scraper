@@ -25,6 +25,7 @@ import functools
 from itertools import chain
 import re
 
+from .constants import donateEP
 from .api import init, highlights, me, messages, posts, profile, subscriptions, paid
 from .db import operations
 from .interaction import like
@@ -46,17 +47,15 @@ def process_messages(headers, model_id):
     return output
 
 # @need_revolution("Getting highlights...")
-@Revolution(desc='Getting highlights...')
+@Revolution(desc='Getting highlights and stories...')
 def process_highlights(headers, model_id):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
+    highlight_list=highlights.parse_highlights(highlights_)
+    stories_list=highlights.parse_stories(stories)
+    return highlight_list,stories_list
 
-    if highlights_ or stories:
-        highlights_ids = highlights.parse_highlights(highlights_)
-        stories += asyncio.run(
-            highlights.process_highlights_ids(headers, highlights_ids))
-        stories_urls = highlights.parse_stories(stories)
-        return stories_urls
-    return []
+
+
 
 # @need_revolution("Getting subscriptions...")
 @Revolution(desc='Getting archived media...')
@@ -94,53 +93,40 @@ def process_profile(headers, username) -> list:
     return urls
 
 
-def process_areas_all(headers, username, model_id) -> list:
-    profile_tuple = process_profile(headers, username)
-
-    pinned_posts_tuple = process_pinned_posts(headers, model_id)
-    timeline_posts_tuple = process_timeline_posts(headers, model_id)
-    archived_posts_tuple = process_archived_posts(headers, model_id)
-    highlights_tuple= process_highlights(headers, model_id)
-    messages_tuple = process_messages(headers, model_id)
-
-    combined_urls = profile_tuple + pinned_posts_tuple + timeline_posts_tuple + \
-        archived_posts_tuple + highlights_tuple + messages_tuple
-
-    return combined_urls
 
 
-def process_areas(headers, username, model_id,selected=None) -> list:
+def process_areas(headers, ele, model_id,selected=None) -> list:
     result_areas_prompt = (selected or prompts.areas_prompt()[0]).capitalize()
 
-    if result_areas_prompt=="All":
-        combined_urls = process_areas_all(headers, username, model_id)
+    pinned_posts_dicts = []
+    timeline_posts_dicts  = []
+    archived_posts_dicts  = []
+    highlights_dicts  = []
+    messages_dicts  = []
+    stories_dicts=[]
 
-    else:
-        pinned_posts_urls = []
-        timeline_posts_urls = []
-        archived_posts_urls = []
-        highlights_urls = []
-        messages_urls = []
+    # profile_dicts  = process_profile(headers, ele["name"])
+    profile_dicts=[]
 
-        profile_urls = process_profile(headers, username)
+    if 'Timeline' in result_areas_prompt and ele["active"]:
+            pinned_posts_dicts= process_pinned_posts(headers, model_id)
+            timeline_posts_dicts = process_timeline_posts(headers, model_id)
 
-        if result_areas_prompt=='Timeline':
-            pinned_posts_urls = process_pinned_posts(headers, model_id)
-            timeline_posts_urls = process_timeline_posts(headers, model_id)
+    if 'Archived' in result_areas_prompt  and ele["active"]:
+            archived_posts_dicts = process_archived_posts(headers, model_id)
+    if 'Messages' in result_areas_prompt:
+            messages_dicts = process_messages(headers, model_id)
 
-        if  result_areas_prompt=='Archived':
-            archived_posts_urls = process_archived_posts(headers, model_id)
+    if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt)   and ele["active"]:
+            highlights_tuple = process_highlights(headers, model_id)
+            if 'Highlights'  in result_areas_prompt:
+                highlights_dicts=highlights_tuple[0]
+            if 'Stories'  in result_areas_prompt:
+                stories_dicts=highlights_tuple[1]    
+    return list(chain(*[profile_dicts ,pinned_posts_dicts , timeline_posts_dicts ,
+            archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
-        if result_areas_prompt=='Highlights':
-            highlights_urls = process_highlights(headers, model_id)
 
-        if result_areas_prompt=='Messages':
-            messages_urls = process_messages(headers, model_id)
-
-        combined_urls = profile_urls + pinned_posts_urls + timeline_posts_urls + \
-            archived_posts_urls + highlights_urls + messages_urls
-
-    return combined_urls
 
 
 
@@ -184,7 +170,8 @@ def get_models(headers, subscribe_count) -> list:
 
 def process_me(headers):
     my_profile = me.scrape_user(headers)
-    name, username, subscribe_count = me.parse_user(my_profile)
+    name, username = me.parse_user(my_profile)
+    subscribe_count=me.parse_subscriber_count(headers)
     me.print_user(name, username)
     return subscribe_count
 
@@ -256,24 +243,26 @@ def process_prompts():
         elif result_profiles_prompt == 4:
             # View profiles
             profiles.print_profiles()
-    if args.username and prompts.reset_username_prompt()==True:
-        args.username=None
+    print("Done With Run")
+    global selectedusers
+    if selectedusers and prompts.reset_username_prompt()=="Yes":
+        getselected_usernames()
     loop()
 def process_paid():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
     init.print_sign_status(headers)
     all_paid_content = paid.scrape_paid()
-    usernames=getselected_usernames()
-    for username in usernames:
+    userdata=getselected_usernames()
+    for ele in userdata:
 
         try:
-            model_id = profile.get_id(headers, username)
+            model_id = profile.get_id(headers, ele["name"])
             paid_content=paid.parse_paid(all_paid_content,model_id)
-            profile.print_paid_info(paid_content,username)
+            profile.print_paid_info(paid_content,ele["name"])
             asyncio.run(paid.process_dicts(
             headers,
-            username,
+            ele["name"],
             model_id,
             paid_content,
             forced=args.dupe
@@ -286,14 +275,14 @@ def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
     init.print_sign_status(headers)
-    usernames=getselected_usernames()
-    for username in usernames:
+    userdata=getselected_usernames()
+    for ele in userdata:
         try:
-            model_id = profile.get_id(headers, username)
-            combined_urls=process_areas(headers, username, model_id,selected=args.posts)
+            model_id = profile.get_id(headers, ele["name"])
+            combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
             asyncio.run(download.process_dicts(
             headers,
-            username,
+            ele["name"],
             model_id,
             combined_urls,
             forced=args.dupe
@@ -306,25 +295,25 @@ def process_like():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
     init.print_sign_status(headers)
-    usernames=getselected_usernames()
-    for username in usernames:
-            model_id = profile.get_id(headers, username)
+    userdata=getselected_usernames()
+    for ele in list(filter(lambda x: x["active"],userdata)):
+            model_id = profile.get_id(headers, ele["name"])
             posts = like.get_posts(headers, model_id)
             unfavorited_posts = like.filter_for_unfavorited(posts)
             post_ids = like.get_post_ids(unfavorited_posts)
-            like.like(headers, model_id, username, post_ids)
+            like.like(headers, model_id, ele["name"], post_ids)
 
 def process_unlike():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
     init.print_sign_status(headers)
-    usernames=getselected_usernames()
-    for username in usernames:
-            model_id = profile.get_id(headers, username)
+    userdata=getselected_usernames()
+    for ele in list(filter(lambda x: x["active"],userdata)):
+            model_id = profile.get_id(headers, ele["name"])
             posts = like.get_posts(headers, model_id)
             favorited_posts = like.filter_for_favorited(posts)
             post_ids = like.get_post_ids(favorited_posts)
-            like.unlike(headers, model_id, username, post_ids)
+            like.unlike(headers, model_id, ele["name"], post_ids)
 
 @contextmanager
 def suppress_stdout():
@@ -375,31 +364,27 @@ def run_helper(command,*params,**kwparams):
 
 def getselected_usernames():
     #username list will be retrived once per run
-    headers = auth.make_headers(auth.read_auth())
-    if args.username and "!all" in args.username:
-        subscribe_count = process_me(headers)
-        parsed_subscriptions = get_models(headers, subscribe_count)
-        args.username=get_usernames(parsed_subscriptions)
-    
-    #manually select usernames
-    elif args.username==None:
-        result_username_or_list_prompt = prompts.username_or_list_prompt()
-        # Print a list of users:
-        if result_username_or_list_prompt == 0:
-            subscribe_count = process_me(headers)
-            parsed_subscriptions = get_models(headers, subscribe_count)
-            usernames= get_model(parsed_subscriptions)
+    global selectedusers
+    if selectedusers:
+        return selectedusers
 
-            args.username=usernames
-        elif result_username_or_list_prompt == 1:
-            args.username=list(filter(lambda x:x!="",re.split(",| ",prompts.username_prompt())))
-        #check if we should get all users
-        elif prompts.verify_all_users_username_or_list_prompt():
-            subscribe_count = process_me(headers)
-            parsed_subscriptions = get_models(headers, subscribe_count)
-            args.username=get_usernames(parsed_subscriptions)
+    
+    headers = auth.make_headers(auth.read_auth())
+    subscribe_count = process_me(headers)
+    parsed_subscriptions = get_models(headers, subscribe_count)
+    if args.username and "!all" in args.username:
+        selectedusers=parsed_subscriptions
+    
+
+    elif args.username:
+        userSelect=set(args.username)
+        selectedusers=list(filter(lambda x:x in userSelect,parsed_subscriptions))
+    #manually select usernames
+    else:
+        selectedusers= get_model(parsed_subscriptions)
     #remove dupes
-    return list(set(args.username))
+    return selectedusers
+
 
 
 
@@ -409,6 +394,12 @@ def getselected_usernames():
 
 def main():
     global args
+    if platform.system == 'Windows':
+        os.system('color')
+    # try:
+    #     webbrowser.open(donateEP)
+    # except:
+    #     pass
 
 
     parser = argparse.ArgumentParser()
@@ -436,7 +427,8 @@ def main():
    
    
     args = parser.parse_args()
-   
+    global selectedusers
+    selectedusers=None
     if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.purchased,args.posts])))==0:
         process_prompts()
         sys.exit(0)

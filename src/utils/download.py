@@ -36,7 +36,7 @@ async def process_dicts(headers, username, model_id, medialist,forced):
         operations.create_database(model_id)
         if not forced:
             media_ids = operations.get_media_ids(model_id)
-            medialist = separate_by_id(medialist, media_ids)
+            # medialist = separate_by_id(medialist, media_ids)
 
 
         file_size_limit = config.get('file_size_limit')
@@ -54,9 +54,9 @@ async def process_dicts(headers, username, model_id, medialist,forced):
             desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'    
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
                 for ele in medialist:
-                    filename=createfilename(ele[0],username,model_id,ele[1],ele[2],ele[3],ele[4],ele[6])
-                    with set_directory(str(pathlib.Path(root,username,ele[5].capitalize(),ele[3].capitalize()))):
-                        aws.append(asyncio.create_task(download(c,ele[0],filename,pathlib.Path(".").absolute() ,ele[3],model_id, file_size_limit, ele[1],ele[2],forced=False)))
+                    filename=createfilename(ele["url"],username,model_id,ele["date"],ele["id"],ele["mediatype"],ele["text"],ele["count"])
+                    with set_directory(str(pathlib.Path(root,username,ele["responsetype"].capitalize(),ele["mediatype"].capitalize()))):
+                        aws.append(asyncio.create_task(download(c,ele["url"],filename,pathlib.Path(".").absolute() ,ele["mediatype"],model_id, file_size_limit, ele["date"],ele["id"],forced=False)))
                 for coro in asyncio.as_completed(aws):
                         try:
                             media_type, num_bytes_downloaded = await coro
@@ -101,7 +101,7 @@ def convert_num_bytes(num_bytes: int) -> str:
 
 async def download(client,url,filename,path,media_type,model_id,file_size_limit,date=None,id_=None,forced=False):
     async with sem:  
-        async with client.stream('GET', url) as r:
+        async with client.stream('GET',url) as r:
             if not r.is_error:
                 rheaders=r.headers
                 total = int(rheaders['Content-Length'])

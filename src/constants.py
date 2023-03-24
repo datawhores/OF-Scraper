@@ -23,8 +23,8 @@ initEP = 'https://onlyfans.com/api2/v2/init'
 
 meEP = 'https://onlyfans.com/api2/v2/users/me'
 
-subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&type=active&sort=asc&field=expire_date&limit=10'
-
+subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&type=all&sort=asc&field=expire_date&limit=10'
+subscribeCountEP='https://onlyfans.com/api2/v2/subscriptions/count/all'
 profileEP = 'https://onlyfans.com/api2/v2/users/{}'
 
 timelineEP = 'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publish_date_desc&skip_users=all&skip_users_dups=1&pinned=0&format=infinite'
@@ -46,7 +46,7 @@ postURL = 'https://onlyfans.com/{}/{}'
 
 DC_EP = 'https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json'
 
-# donateEP = "https://www.buymeacoffee.com/excludedBittern8"
+donateEP = "https://www.buymeacoffee.com/excludedBittern"
 
 purchased_contentEP = "https://onlyfans.com/api2/v2/posts/paid?limit=10&skip_users=all&format=infinite&offset={}"
 
@@ -62,7 +62,7 @@ mainPromptChoices = {
 
 }
 usernameOrListChoices = {
-    'Print a list of my subscriptions': 0,
+    'Select from accounts on profile': 0,
     'Enter a username': 1,
     'Scrape all users that I\'m subscribed to': 2
 }
