@@ -1,10 +1,11 @@
 r"""
-               _          __                                                                      
-  ___   _ __  | | _   _  / _|  __ _  _ __   ___         ___   ___  _ __   __ _  _ __    ___  _ __ 
- / _ \ | '_ \ | || | | || |_  / _` || '_ \ / __| _____ / __| / __|| '__| / _` || '_ \  / _ \| '__|
-| (_) || | | || || |_| ||  _|| (_| || | | |\__ \|_____|\__ \| (__ | |   | (_| || |_) ||  __/| |   
- \___/ |_| |_||_| \__, ||_|   \__,_||_| |_||___/       |___/ \___||_|    \__,_|| .__/  \___||_|   
-                  |___/                                                        |_|                
+                                                             
+        _____                                               
+  _____/ ____\______ ________________    ____   ___________ 
+ /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
+(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
+ \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
+                 \/     \/           \/            \/         
 """
 
 import hashlib
@@ -12,12 +13,16 @@ import json
 import pathlib
 import time
 from urllib.parse import urlparse
+import importlib
+import requests
 
 import httpx
-
+import browser_cookie3
+from src.utils.browser import getuseragent
 from .profiles import get_current_profile
-from .prompts import auth_prompt, ask_make_auth_prompt
+from .prompts import auth_prompt, ask_make_auth_prompt,browser_prompt,user_agent_prompt,xbc_prompt
 from ..constants import configPath, authFile, DC_EP, requestAuth
+
 
 
 def read_auth():
@@ -34,6 +39,11 @@ def read_auth():
         try:
             with open(p / authFile, 'r') as f:
                 auth = json.load(f)
+                for key in list(filter(lambda x:x!="auth_uid_",auth.keys())):
+                    if auth[key]==None or  auth[key]=="":
+                        print("Auth Value not set retriving missing values")
+                        make_auth()
+                        break
             break
         except FileNotFoundError:
             print(
@@ -60,8 +70,22 @@ def edit_auth():
             make_auth(p)
 
 
-def make_auth(path, auth=None):
-    if not auth:
+def make_auth(path=None, auth=None):
+    path= path or  pathlib.Path.home() / configPath / get_current_profile()
+    #force user_agent update
+    browserSelect=browser_prompt()
+    if  browserSelect!="Skip and Enter Manually":
+        print(f"Autoextracting cookies from {browserSelect.capitalize()}")
+        temp=requests.utils.dict_from_cookiejar(getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans"))
+        for key in ["sess","auth_id","auth_uid_"]:
+            auth["auth"][key]=temp.get(key,"")
+        if not auth["auth"].get("x-bc"):
+            auth["auth"]["x-bc"]=xbc_prompt()
+        auth["auth"]["user_agent"]= user_agent_prompt(auth["auth"]["user_agent"] or getuseragent(browserSelect) or "",new=getuseragent(browserSelect) )
+
+        
+    else:
+
         auth = {
             'auth': {
                 'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
@@ -73,7 +97,7 @@ def make_auth(path, auth=None):
             }
         }
 
-    auth['auth'].update(auth_prompt(auth['auth']))
+        auth['auth'].update(auth_prompt(auth['auth']))
 
     with open(path / authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))

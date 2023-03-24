@@ -1,10 +1,11 @@
 r"""
-               _          __                                                                      
-  ___   _ __  | | _   _  / _|  __ _  _ __   ___         ___   ___  _ __   __ _  _ __    ___  _ __ 
- / _ \ | '_ \ | || | | || |_  / _` || '_ \ / __| _____ / __| / __|| '__| / _` || '_ \  / _ \| '__|
-| (_) || | | || || |_| ||  _|| (_| || | | |\__ \|_____|\__ \| (__ | |   | (_| || |_) ||  __/| |   
- \___/ |_| |_||_| \__, ||_|   \__,_||_| |_||___/       |___/ \___||_|    \__,_|| .__/  \___||_|   
-                  |___/                                                        |_|                
+                                                             
+        _____                                               
+  _____/ ____\______ ________________    ____   ___________ 
+ /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
+(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
+ \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
+                 \/     \/           \/            \/         
 """
 
 import re
@@ -193,6 +194,41 @@ def ask_make_auth_prompt() -> bool:
     answer = prompt(questions)
     return answer[name]
 
+def browser_prompt()->str:
+    questions = [
+        {
+            'type': 'list',
+            'message': "Select a browser you want to auto extract cookies from",
+            "instruction":"\nAutomatic Extraction only works with default browswer",
+            'choices':["Skip and Enter Manually","Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
+            "default":"Skip and Enter Manually"
+
+        }
+    ]
+    return prompt(questions)[0]
+def user_agent_prompt(current,new=None):
+    url="http://whatsmyuseragent.org/"
+    new =new or "Unknown Please Ignore"
+    print(f"\n\nThis is your current browser User_Agent \n{new}\n If you recently logged in, you may need to update to this value\n\n")
+    questions = [
+        {
+            'type': 'input',
+            'message':'Enter User_Agent from browser',
+            'default':current
+        }
+    ]
+    return  prompt(questions)[0].strip()
+
+def xbc_prompt():
+    questions = [
+        {
+            'type': 'input',
+            'message':'Enter x-bc request header',
+            'instruction':f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/excludedBittern8/ofscraper\n\n"
+        }
+    ]
+    return  prompt(questions)[0].strip()
+
 
 def profiles_prompt() -> int:
     name = 'profile'
@@ -332,6 +368,19 @@ def reset_username_prompt() -> bool:
 
     answer = prompt(questions)
     return answer[name]
+def continue_prompt() -> bool:
+    name = 'reset username'
+    questions = [
+        {
+            'type': 'list',
+            'name': name,
+            'message': "Do you want to continue with script",
+            'choices':["Yes","No"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[name]
 def model_selector(models) -> bool:
     questions = [
     {"type": "fuzzy", "message": "Which models do you want to scrape:",
@@ -341,7 +390,7 @@ def model_selector(models) -> bool:
      ,"multiselect":True
       ,"validate":(lambda result: len(result)> 0),
       "invalid_message":"Input cannot be empty",
-      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date']}")   ,sorted(models,key=lambda x:x['name'])))
+      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done\n\n\nName Renewal/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
        ,"prompt":'Filter: ',
        "marker":"\u25c9 ",
        "marker_pl":"\u25cb "

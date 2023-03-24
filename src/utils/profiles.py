@@ -13,7 +13,7 @@ import shutil
 from .config import read_config, update_config
 from .prompts import get_profile_prompt
 from ..constants import configPath, configFile, mainProfile
-configPath = '.config/onlyfans-scraper'
+configPath = '.config/ofscraper'
 
 
 def get_profile_path():

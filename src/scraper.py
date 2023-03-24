@@ -1,10 +1,11 @@
 r"""
-               _          __                                                                      
-  ___   _ __  | | _   _  / _|  __ _  _ __   ___         ___   ___  _ __   __ _  _ __    ___  _ __ 
- / _ \ | '_ \ | || | | || |_  / _` || '_ \ / __| _____ / __| / __|| '__| / _` || '_ \  / _ \| '__|
-| (_) || | | || || |_| ||  _|| (_| || | | |\__ \|_____|\__ \| (__ | |   | (_| || |_) ||  __/| |   
- \___/ |_| |_||_| \__, ||_|   \__,_||_| |_||___/       |___/ \___||_|    \__,_|| .__/  \___||_|   
-                  |___/                                                        |_|                
+                                                             
+        _____                                               
+  _____/ ____\______ ________________    ____   ___________ 
+ /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
+(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
+ \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
+                 \/     \/           \/            \/         
 """
 
 import argparse
@@ -244,14 +245,20 @@ def process_prompts():
             # View profiles
             profiles.print_profiles()
     print("Done With Run")
+    if prompts.continue_prompt()=="No":
+        return
     global selectedusers
     if selectedusers and prompts.reset_username_prompt()=="Yes":
         getselected_usernames()
     loop()
 def process_paid():
+
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    init.print_sign_status(headers)
+
+    if init.print_sign_status(headers)=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+        headers = auth.make_headers(auth.read_auth())
     all_paid_content = paid.scrape_paid()
     userdata=getselected_usernames()
     for ele in userdata:
@@ -274,7 +281,9 @@ def process_paid():
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    init.print_sign_status(headers)
+    if init.print_sign_status(headers)=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+        headers = auth.make_headers(auth.read_auth())
     userdata=getselected_usernames()
     for ele in userdata:
         try:
@@ -294,7 +303,9 @@ def process_post():
 def process_like():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    init.print_sign_status(headers)
+    if init.print_sign_status(headers)=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+        headers = auth.make_headers(auth.read_auth())
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
@@ -306,7 +317,9 @@ def process_like():
 def process_unlike():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    init.print_sign_status(headers)
+    if init.print_sign_status(headers)=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+        headers = auth.make_headers(auth.read_auth())
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
