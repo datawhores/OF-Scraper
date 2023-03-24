@@ -20,7 +20,8 @@ import httpx
 import browser_cookie3
 from src.utils.browser import getuseragent
 from .profiles import get_current_profile
-from .prompts import auth_prompt, ask_make_auth_prompt,browser_prompt,user_agent_prompt,xbc_prompt
+from .prompts import auth_prompt, ask_make_auth_prompt,browser_prompt,\
+user_agent_prompt,xbc_prompt,auth_full_paste
 from ..constants import configPath, authFile, DC_EP, requestAuth
 
 
@@ -74,7 +75,7 @@ def make_auth(path=None, auth=None):
     path= path or  pathlib.Path.home() / configPath / get_current_profile()
     #force user_agent update
     browserSelect=browser_prompt()
-    if  browserSelect!="Skip and Enter Manually":
+    if  browserSelect!="Skip and Enter Each Field Manually" and browserSelect!="Skip and Paste From Cookie Helper":
         print(f"Autoextracting cookies from {browserSelect.capitalize()}")
         temp=requests.utils.dict_from_cookiejar(getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans"))
         for key in ["sess","auth_id","auth_uid_"]:
@@ -83,9 +84,10 @@ def make_auth(path=None, auth=None):
             auth["auth"]["x-bc"]=xbc_prompt()
         auth["auth"]["user_agent"]= user_agent_prompt(auth["auth"]["user_agent"] or getuseragent(browserSelect) or "",new=getuseragent(browserSelect) )
 
-        
+    elif browserSelect=="Skip and Paste From Cookie Helper":
+        auth=auth_full_paste()
+   
     else:
-
         auth = {
             'auth': {
                 'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
@@ -98,6 +100,7 @@ def make_auth(path=None, auth=None):
         }
 
         auth['auth'].update(auth_prompt(auth['auth']))
+    print(auth)
 
     with open(path / authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))

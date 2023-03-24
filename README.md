@@ -38,7 +38,7 @@ pip install git+https://github.com/excludedBittern8/ofscraper
 
 If you're on macOS/Linux, then do this instead:
 ```
-pip3 install onlyfans-scraper
+pip3 install ofscraper
 ```
 or
 ```
@@ -124,15 +124,15 @@ Once you do that, the program will ask for your user agent. You should be able t
 
 After it asks for your user agent, it will ask for your `x-bc` token. You should also be able to find this in the `Request Headers` section.
 
-You're all set and you can now use `onlyfans-scraper`.
+You're all set and you can now use `ofscraper`.
 
 
 ## Usage
 
-Whenever you want to run the program, all you need to do is type `onlyfans-scraper` in your terminal:
+Whenever you want to run the program, all you need to do is type `ofscraper` in your terminal:
 
 ```
-onlyfans-scraper
+ofscraper
 ```
 
 That's it. It's that simple.
@@ -188,7 +188,7 @@ If you run into trouble try the discord, careful though we do bite. If you open 
         Status Down - This means that your auth details are bad, keep trying.
     </li>
     <li>
-        onlyfans-scraper command not found - This means that you have not added the path to your directory. You will have to look this up on your own with google.
+        ofscraper command not found - This means that you have not added the path to your directory. You will have to look this up on your own with google.
     </li>
     <li>
         404 page not found or any other 404 error. - The post or profile can't be found. The user has been suspended or deleted or the post was removed and isn't completely deleted yet. No fix for this other than unsubscribing from the user. Do not open an issue for it.
