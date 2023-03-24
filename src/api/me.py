@@ -9,7 +9,7 @@ r"""
 
 import httpx
 
-from ..constants import meEP
+from ..constants import meEP,subscribeCountEP
 from ..utils import auth, encoding
 
 
@@ -29,9 +29,20 @@ def scrape_user(headers):
 def parse_user(profile):
     name = encoding.encode_utf_16(profile['name'])
     username = profile['username']
-    subscribe_count = profile['subscribesCount']
-    return (name, username, subscribe_count)
+    return (name, username)
 
 
 def print_user(name, username):
     print(f'Welcome, {name} | {username}')
+
+def parse_subscriber_count(headers):
+    with httpx.Client(http2=True, headers=headers) as c:
+        url = subscribeCountEP
+        auth.add_cookies(c)
+        c.headers.update(auth.create_sign(url, headers))
+        r = c.get(url, timeout=None)
+        if not r.is_error:
+            data=r.json()
+            return data["subscriptions"]["all"]
+        r.raise_for_status()
+

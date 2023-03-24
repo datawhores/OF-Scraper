@@ -23,7 +23,7 @@ async def get_subscriptions(headers, subscribe_count):
     return list(chain.from_iterable(subscriptions))
 
 
-async def scrape_subscriptions(headers, offset=0) -> list:
+async def scrape_subscriptions(headers, offset=500) -> list:
     async with httpx.AsyncClient(http2=True, headers=headers) as c:
         url = subscriptionsEP.format(offset)
 
@@ -38,8 +38,8 @@ async def scrape_subscriptions(headers, offset=0) -> list:
 
 
 def parse_subscriptions(subscriptions: list) -> list:
-    data = [(profile['username'], profile['id'], dates.convert_date_to_mdyhms(
-        profile['subscribedByExpireDate'])) for profile in subscriptions]
+    data = [{"name":profile['username'],"id":profile['id'],"date":dates.convert_date_to_mdyhms(
+        profile['subscribedByExpireDate']),"active":not profile['subscribedIsExpiredNow'],"data":profile} for profile in subscriptions]
     return data
 
 

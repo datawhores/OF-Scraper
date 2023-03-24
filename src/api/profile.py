@@ -50,8 +50,11 @@ def parse_profile(profile: dict) -> tuple:
         name, username, id_, join_date,
         posts_count, photos_count, videos_count, audios_count, archived_posts_count)
     output=[]
+                    # ['id', 'date', 'text', 'post-type', 'count', 'url', 'mediatype', 'data']
+    for count,ele in enumerate(media):
+        output.append({})
 
-    [output.append((ele[0],join_date,None,"photo",profile["about"],"profile",count+1)) for count,ele in enumerate(media)]
+    
     return output, info
 
 
@@ -80,9 +83,9 @@ def print_paid_info(paid_content,username):
 f"""
 Username: {username}
 - paid content {len(paid_content)}
- -- photos {len(list(filter(lambda x:x[3]=="photo",paid_content)))}
- -- videos {len(list(filter(lambda x:x[3]=="video",paid_content)))}
- -- audios {len(list(filter(lambda x:x[3]=="audio",paid_content)))}
+ -- photos {len(list(filter(lambda x:x.get("mediatype")=="photo" or x.get("mediatype")=="gif",paid_content)))}
+ -- videos {len(list(filter(lambda x:x.get("mediatype")=="video",paid_content)))}
+ -- audios {len(list(filter(lambda x:x.get("mediatype")=="audio" ,paid_content)))}
 """
 )
         

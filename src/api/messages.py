@@ -32,15 +32,13 @@ def scrape_messages(headers, user_id, message_id=0) -> list:
 
 
 def parse_messages(messages: list, user_id):
-    messages_with_media = [(message['media'], message['createdAt'],message['text'])
-                           for message in messages if message['fromUser']['id'] == user_id and message['media']]
-        # media_to_download.append((i['source']['source'],i.get("createdAt") or item.get("createdAt"),item["id"],i["type"],item["text"],item["responseType"]))
+    messages_with_media =list(filter(lambda message:message['fromUser']['id'] == user_id and message['media'] ,messages))
 
     messages_urls = []
     for message in messages_with_media:
-        media, date,text = message
-        for count,m in enumerate(media):
-            if m['canView']:
-                messages_urls.append((m['src'], date, m['id'], m['type'],text,"messages",count+1))
+        for count,media in enumerate(list(filter(lambda x:x["canView"]==True,message["media"]))):
+                messages_urls.append({"url":media["source"]["source"],"id":media["id"],"count":count+1,"mediatype":media["type"],
+                    "text":message["text"],'responsetype':"messages","date":message["createdAt"],"data":message})
 
     return messages_urls
+    

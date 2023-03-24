@@ -88,10 +88,10 @@ def scrape_paid():
 def parse_paid(all_paid,model_id):
     media_to_download=[]
     items=list(filter(lambda x:(x.get("fromUser") or x.get("author"))["id"]==model_id,all_paid))
+      
     for item in items:
-        for count,i in enumerate(item['media']):
-                    if "source" in i:
-                        media_to_download.append((i['source']['source'],i.get("createdAt") or item.get("createdAt"),i["id"],i["type"],item["text"],item["responseType"],count+1))
+        for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
+            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"data":item})
     return media_to_download
 async def process_dicts(headers,username,model_id,medialist,forced=False):
  """Takes a list of purchased content and downloads it."""
@@ -115,9 +115,9 @@ async def process_dicts(headers,username,model_id,medialist,forced=False):
             desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'   
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar: 
                 for ele in medialist:
-                    filename=createfilename(ele[0],username,model_id,ele[1],ele[2],ele[3],ele[4],ele[6])
-                    with set_directory(pathlib.Path(root,username, 'Paid',ele[3].capitalize())):
-                        aws.append(asyncio.create_task(download_paid(c,ele[0],filename,pathlib.Path(".").absolute(),ele[3],model_id, file_size_limit,ele[2]
+                    filename=createfilename(ele["url"],username,model_id,ele["date"],ele["id"],ele["mediatype"],ele["text"],ele["count"])
+                    with set_directory(pathlib.Path(root,username, "Paid",ele["mediatype"].capitalize())):
+                        aws.append(asyncio.create_task(download_paid(c,ele["url"],filename,pathlib.Path(".").absolute(),ele["mediatype"],model_id, file_size_limit,ele["id"]
                         ,forced=forced)))
                 for coro in asyncio.as_completed(aws):
                         try:
@@ -184,9 +184,8 @@ async def download_paid(client,url,filename,path,media_type,model_id,file_size_l
                 r.raise_for_status()
 
 def createfilename(url,username,model_id=None,date=None,id_=None,media_type=None,text=None,count=None):
-    return geturlbase(url)
-def geturlbase(url):
     return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+
 def convert_num_bytes(num_bytes: int) -> str:
     if num_bytes == 0:
       return '0 B'

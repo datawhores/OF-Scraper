@@ -42,7 +42,7 @@ pip3 install onlyfans-scraper
 ```
 or
 ```
-pip3 install git+https://github.com/excludedBittern8/ofscraper
+pip3 install git+https://github.com/excludedBittern/ofscraper
 ```
 
 ## Setup
