@@ -26,7 +26,7 @@ def get_profiles() -> list:
 
     # (This block of code should be removed in the 1.0 release)
     #
-    # If user upgraded from an older version of onlyfans-scraper or if the user
+    # If user upgraded from an older version of ofscraper or if the user
     # has an auth.json or models.db file in the config_path:
     # if has_files(config_path):
     #     create_profile(config_path, mainProfile)

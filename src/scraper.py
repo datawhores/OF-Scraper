@@ -253,6 +253,7 @@ def process_prompts():
     loop()
 def process_paid():
 
+
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
 

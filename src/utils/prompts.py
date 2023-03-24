@@ -9,6 +9,7 @@ r"""
 """
 
 import re
+import json
 
 
 from InquirerPy.resolver import prompt
@@ -200,14 +201,13 @@ def browser_prompt()->str:
             'type': 'list',
             'message': "Select a browser you want to auto extract cookies from",
             "instruction":"\nAutomatic Extraction only works with default browswer",
-            'choices':["Skip and Enter Manually","Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
-            "default":"Skip and Enter Manually"
+            'choices':["Skip and Enter Each Field Manually", Separator(),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
+            "default":"Skip and Enter Each Field Manually"
 
         }
     ]
     return prompt(questions)[0]
 def user_agent_prompt(current,new=None):
-    url="http://whatsmyuseragent.org/"
     new =new or "Unknown Please Ignore"
     print(f"\n\nThis is your current browser User_Agent \n{new}\n If you recently logged in, you may need to update to this value\n\n")
     questions = [
@@ -230,6 +230,22 @@ def xbc_prompt():
     return  prompt(questions)[0].strip()
 
 
+
+
+def auth_full_paste():
+    questions = [
+        {
+            'type': 'input',
+            'message':'Paste Text from Extension',
+            "filter": lambda result: json.loads(result),
+             "instruction":"\n\nCookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper/\n\n"
+
+        }
+    ]
+    auth=prompt(questions)[0]
+    auth["auth"].update("app-token")
+    return  
+    
 def profiles_prompt() -> int:
     name = 'profile'
 
@@ -390,7 +406,7 @@ def model_selector(models) -> bool:
      ,"multiselect":True
       ,"validate":(lambda result: len(result)> 0),
       "invalid_message":"Input cannot be empty",
-      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done\n\n\nName Renewal/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
+      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done\n\n\nName Renewal_Date/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
        ,"prompt":'Filter: ',
        "marker":"\u25c9 ",
        "marker_pl":"\u25cb "
