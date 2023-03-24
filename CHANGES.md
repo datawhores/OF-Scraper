@@ -15,3 +15,5 @@
 - change tuples from scraping into objects
 - fuzzy search in username selection
 - simplify username selection when username args not pass
+- automatic cookie extractions
+- improve authentication flow

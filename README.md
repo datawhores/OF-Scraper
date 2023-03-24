@@ -54,7 +54,7 @@ These are the fields:
 ```json
 {
     "auth": {
-        "app-token": "33d57ade8c02dbc5a333db99ff9ae26a",
+        "app-token": "",
         "sess": "",
         "auth_id": "",
         "auth_uniq_": "",
