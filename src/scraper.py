@@ -433,7 +433,7 @@ def main():
     )
     parser.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     parser.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline"]
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"]
     )
     parser.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     parser.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
