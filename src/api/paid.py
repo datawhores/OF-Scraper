@@ -60,7 +60,7 @@ root= pathlib.Path((config.get('save_location') or pathlib.Path.cwd()))
 
 
 
-def scrape_paid():
+def scrape_paid(username):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list."""
     media_to_download = []
@@ -72,7 +72,7 @@ def scrape_paid():
         while hasMore:
             headers = auth.make_headers(auth.read_auth())
             auth.add_cookies(c)
-            url = purchased_contentEP.format(offset)
+            url = purchased_contentEP.format(offset,username)
             offset += 10
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)
@@ -86,11 +86,9 @@ def scrape_paid():
                     media_to_download.append(item)
     return media_to_download
 
-def parse_paid(all_paid,model_id):
+def parse_paid(paid):
     media_to_download=[]
-    items=list(filter(lambda x:(x.get("fromUser") or x.get("author"))["id"]==model_id,all_paid))
-      
-    for item in items:
+    for item in paid:
         for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
             media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"data":item})
     return media_to_download

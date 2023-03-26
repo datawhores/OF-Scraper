@@ -49,7 +49,7 @@ DC_EP = 'https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyf
 
 donateEP = "https://www.buymeacoffee.com/excludedBittern"
 
-purchased_contentEP = "https://onlyfans.com/api2/v2/posts/paid?limit=10&skip_users=all&format=infinite&offset={}"
+purchased_contentEP = "https://onlyfans.com/api2/v2/posts/paid?limit=10&skip_users=all&format=infinite&offset={}&user_id={}"
 
 mainPromptChoices = {
     'Download profile content from a user': 0,

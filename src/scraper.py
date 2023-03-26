@@ -264,19 +264,18 @@ def process_paid():
     if init.print_sign_status(headers)=="DOWN":
         auth.make_auth(auth=auth.read_auth())
         headers = auth.make_headers(auth.read_auth())
-    all_paid_content = paid.scrape_paid()
     userdata=getselected_usernames()
     for ele in userdata:
-
         try:
             model_id = profile.get_id(headers, ele["name"])
-            paid_content=paid.parse_paid(all_paid_content,model_id)
-            profile.print_paid_info(paid_content,ele["name"])
+            paid_content=paid.scrape_paid(ele["name"])
+            paid_url=paid.parse_paid(paid_content)
+            profile.print_paid_info(paid_url,ele["name"])
             asyncio.run(paid.process_dicts(
             headers,
             ele["name"],
             model_id,
-            paid_content,
+            paid_url,
             forced=args.dupe
             ))
         except Exception as e:
