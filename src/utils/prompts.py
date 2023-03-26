@@ -196,11 +196,11 @@ def ask_make_auth_prompt() -> bool:
     return answer[name]
 
 def browser_prompt()->str:
+    print("\nNote:Automatic Extraction only works with default Profile\n\n")
     questions = [
         {
             'type': 'list',
             'message': "Select a browser you want to auto extract cookies from",
-            "instruction":"\nAutomatic Extraction only works with default browswer",
             'choices':["Skip and Enter Each Field Manually", Separator(),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
             "default":"Skip and Enter Each Field Manually"
 
