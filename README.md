@@ -69,7 +69,7 @@ It's really not that bad. I'll show you in the next sections how to get these bi
 
 ### Step One: Creating the 'auth.json' File
 
-You first need to run the program in order for the `auth.json` file to be created. To run it, simply type `onlyfans-scraper` in your terminal and hit enter. Because you don't have an `auth.json` file, the program will create one for you and then ask you to enter some information. Now we need to get that information.
+You first need to run the program in order for the `auth.json` file to be created. To run it, simply type `ofscraper` in your terminal and hit enter. Because you don't have an `auth.json` file, the program will create one for you and then ask you to enter some information. Now we need to get that information.
 
 
 ### Step Two: Getting Your Auth Info
