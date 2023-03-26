@@ -99,6 +99,7 @@ async def process_dicts(headers,username,model_id,medialist,forced=False):
         if not forced:
             media_ids = operations.get_paid_media_ids(model_id)
             medialist = separate_by_id(medialist, media_ids)
+            console.print(f"Removing previously downloaded\nPaid content left {len(medialist)}")
         file_size_limit = config.get('file_size_limit')
         global sem
         sem = asyncio.Semaphore(8)
