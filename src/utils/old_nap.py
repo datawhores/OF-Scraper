@@ -1,7 +1,8 @@
 # from datetime import datetime, timedelta, date
 # from random import randint, choice
 # from time import sleep
-#
+#from rich.console import Console
+console=Console()
 #
 # #CONFIG SLEEP
 #
@@ -85,14 +86,14 @@
 #         if sleep_type() == "long":
 #             sleep_time = calculate_variance(randint(min_hours_for_long_sleep, max_hours_for_long_sleep))
 #             next_scrape_at = calculate_variance(now + timedelta(hours=sleep_time))
-#             print(f"Sleeping for {sleep_time} hours")
-#             print(f"Next scrape at {next_scrape_at}")
+#             console.print(f"Sleeping for {sleep_time} hours")
+#             console.print(f"Next scrape at {next_scrape_at}")
 #             return sleep_time * 3600
 #         else:
 #             sleep_time = calculate_variance(randint(min_seconds_for_short_sleep, max_seconds_for_short_sleep))
 #             next_scrape_at = calculate_variance(now + timedelta(seconds=sleep_time))
-#             print(f"Sleeping for {sleep_time/60} minutes")
-#             print(f"Next scrape at {next_scrape_at}")
+#             console.print(f"Sleeping for {sleep_time/60} minutes")
+#             console.print(f"Next scrape at {next_scrape_at}")
 #             return sleep_time
 
 # This is the main function that is called to put the scraper to sleep.

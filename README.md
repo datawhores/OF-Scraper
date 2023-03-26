@@ -26,6 +26,9 @@ This is a fork of onlyfans-scraper
 
 ## Installation
 
+### Recommended python3.9 or python3.10
+
+
 Windows: 
 ```
 pip install ofscraper

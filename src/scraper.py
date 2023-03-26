@@ -25,7 +25,8 @@ import queue
 import functools
 from itertools import chain
 import re
-
+from rich.console import Console
+console=Console()
 from .constants import donateEP
 from .api import init, highlights, me, messages, posts, profile, subscriptions, paid
 from .db import operations
@@ -34,6 +35,9 @@ from .utils import auth, config, download, profiles, prompts
 import webbrowser
 from revolution import Revolution
 from .utils.nap import nap_or_sleep
+from .__version__ import  __version__
+
+
 
 
 
@@ -244,7 +248,7 @@ def process_prompts():
         elif result_profiles_prompt == 4:
             # View profiles
             profiles.print_profiles()
-    print("Done With Run")
+    console.print("Done With Run")
     if prompts.continue_prompt()=="No":
         return
     global selectedusers
@@ -276,7 +280,7 @@ def process_paid():
             forced=args.dupe
             ))
         except Exception as e:
-            print("run failed with exception: ", e)
+            console.print("run failed with exception: ", e)
 
 
 def process_post():
@@ -298,7 +302,7 @@ def process_post():
             forced=args.dupe
             ))
         except Exception as e:
-            print("run failed with exception: ", e)
+            console.print("run failed with exception: ", e)
     
 
 def process_like():
@@ -353,13 +357,13 @@ def set_schedule(command,*params,**kwparams):
 def run(command,*params,**kwparams):
     # get usernames prior to potentially supressing output
     getselected_usernames()
-    print(f"starting script daemon:{args.daemon!=None} silent-mode:{args.silent}")    
+    console.print(f"starting script daemon:{args.daemon!=None} silent-mode:{args.silent}")    
     if args.silent:
         with suppress_stdout():
             run_helper(command,*params,**kwparams)
     else:
         run_helper(command,*params,**kwparams)
-    print("script finished")
+    console.print("script finished")
 
 def run_helper(command,*params,**kwparams):   
     command(*params,**kwparams)
@@ -438,7 +442,8 @@ def main():
     parser.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     parser.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
 
-   
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+
    
     args = parser.parse_args()
     global selectedusers

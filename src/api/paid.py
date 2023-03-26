@@ -12,7 +12,8 @@ import math
 import tempfile
 import shutil
 import os
-
+from rich.console import Console
+console=Console()
 from ..constants import purchased_contentEP
 from ..utils import auth
 import httpx
@@ -76,7 +77,7 @@ def scrape_paid():
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)
             if not r.is_error:
-                print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page:{count}")
+                console.print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page:{count}")
                 if "hasMore" in r.json():
                     hasMore = r.json()['hasMore']
                     count=count+1
@@ -125,7 +126,7 @@ async def process_dicts(headers,username,model_id,medialist,forced=False):
                         except Exception as e:
                             media_type = None
                             num_bytes_downloaded = 0
-                            print(e)
+                            console.print(e)
 
                         total_bytes_downloaded += num_bytes_downloaded
                         data = convert_num_bytes(total_bytes_downloaded)

@@ -10,8 +10,9 @@ r"""
 
 import re
 import json
-
-
+import sys
+from rich.console import Console
+console=Console()
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
@@ -111,7 +112,7 @@ def areas_prompt() -> list:
     while True:
         answers = prompt(questions)
         if not answers[name]:
-            print('Error: You must select at least one.')
+            console.print('Error: You must select at least one.')
         break
     return answers[name]
 
@@ -139,12 +140,6 @@ def database_prompt() -> tuple:
 
 def auth_prompt(auth) -> dict:
     questions = [
-        {
-            'type': 'input',
-            'name': 'app-token',
-            'message': 'Enter your `app-token` value:',
-            'default': auth['app-token']
-        },
         {
             'type': 'input',
             'name': 'sess',
@@ -196,20 +191,38 @@ def ask_make_auth_prompt() -> bool:
     return answer[name]
 
 def browser_prompt()->str:
-    print("\nNote:Automatic Extraction only works with default Profile\n\n")
-    questions = [
+    pythonver=float(f"{sys.version_info[0]}.{sys.version_info[1]}")
+    msg="Select how to retrive auth information"
+
+    if pythonver<3.9 or pythonver>=3.11:
+        console.print("\nNote: Browser Extractions only works with default Profile\n\n")
+        questions = [
+            {
+                'type': 'list',
+                'message':msg ,
+                'choices':["Enter Each Field Manually","Paste From Cookie Helper", Separator(line="-----------\nBrowser Extractions"),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
+                "default":"Enter Each Field Manually"
+
+            }
+        ]
+
+    else:
+        console.print("\nNote:To enable automatic extraction install ofscraper with python 3.9 or 3.10\n\n")
+        msg="Select how to retrive auth information"
+        questions = [
         {
             'type': 'list',
-            'message': "Select a browser you want to auto extract cookies from",
-            'choices':["Skip and Enter Each Field Manually", Separator(),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
-            "default":"Skip and Enter Each Field Manually"
+            'message': msg,
+            'choices':["Enter Each Field Manually","Paste From Cookie Helper"],
+            "default":"Enter Each Field Manually"
 
         }
-    ]
+    ]  
+      
     return prompt(questions)[0]
 def user_agent_prompt(current,new=None):
     new =new or "Unknown Please Ignore"
-    print(f"\n\nThis is your current browser User_Agent \n{new}\n If you recently logged in, you may need to update to this value\n\n")
+
     questions = [
         {
             'type': 'input',
@@ -242,9 +255,7 @@ def auth_full_paste():
 
         }
     ]
-    auth=prompt(questions)[0]
-    auth["auth"].update("app-token")
-    return  
+    return prompt(questions)[0]
     
 def profiles_prompt() -> int:
     name = 'profile'
@@ -311,10 +322,10 @@ def create_profiles_prompt() -> str:
         answer = prompt(questions)
 
         if not answer[name]:
-            print('You must type a name. Try again.')
+            console.print('You must type a name. Try again.')
 
         if re.search(pattern, answer[name]):
-            print('Profile name contains invalid characters. Try again.')
+            console.print('Profile name contains invalid characters. Try again.')
         break
 
     return answer[name]
@@ -336,9 +347,9 @@ def get_profile_prompt(profiles: list) -> str:
         profile = answer[name]
 
         if profile not in profiles:
-            print(profile)
-            print(profiles)
-            print('That profile does not exist.')
+            console.print(profile)
+            console.print(profiles)
+            console.print('That profile does not exist.')
         else:
             break
 

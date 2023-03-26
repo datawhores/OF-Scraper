@@ -13,9 +13,9 @@ import json
 import pathlib
 import time
 from urllib.parse import urlparse
-import importlib
 import requests
-
+from rich.console import Console
+console=Console()
 import httpx
 import browser_cookie3
 from src.utils.browser import getuseragent
@@ -42,14 +42,13 @@ def read_auth():
                 auth = json.load(f)
                 for key in list(filter(lambda x:x!="auth_uid_",auth.keys())):
                     if auth[key]==None or  auth[key]=="":
-                        print("Auth Value not set retriving missing values")
+                        console.print("Auth Value not set retriving missing values")
                         make_auth()
                         break
             break
         except FileNotFoundError:
-            print(
-                "You don't seem to have an `auth.json` file\nYou can extract some information from your browser\n\
-Alternatively you can enter all information manually\n\n")
+            console.print(
+                "You don't seem to have an `auth.json` file")
             make_auth(p)
     return auth
 
@@ -57,7 +56,7 @@ Alternatively you can enter all information manually\n\n")
 def edit_auth():
     profile = get_current_profile()
 
-    p = pathlib.Path.home() / configPath / profile
+    p = pathlib.Path.home() / configPath / profile 
     if not p.is_dir():
         p.mkdir(parents=True, exist_ok=True)
 
@@ -66,7 +65,7 @@ def edit_auth():
             auth = json.load(f)
         make_auth(p, auth)
 
-        print('Your `auth.json` file has been edited.')
+        console.print('Your `auth.json` file has been edited.')
     except FileNotFoundError:
         if ask_make_auth_prompt():
             make_auth(p)
@@ -74,22 +73,7 @@ def edit_auth():
 
 def make_auth(path=None, auth=None):
     path= path or  pathlib.Path.home() / configPath / get_current_profile()
-    #force user_agent update
-    browserSelect=browser_prompt()
-    if  browserSelect!="Skip and Enter Each Field Manually" and browserSelect!="Skip and Paste From Cookie Helper":
-        print(f"Autoextracting cookies from {browserSelect.capitalize()}")
-        temp=requests.utils.dict_from_cookiejar(getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans"))
-        for key in ["sess","auth_id","auth_uid_"]:
-            auth["auth"][key]=temp.get(key,"")
-        if not auth["auth"].get("x-bc"):
-            auth["auth"]["x-bc"]=xbc_prompt()
-        auth["auth"]["user_agent"]= user_agent_prompt(auth["auth"]["user_agent"] or getuseragent(browserSelect) or "",new=getuseragent(browserSelect) )
-
-    elif browserSelect=="Skip and Paste From Cookie Helper":
-        auth=auth_full_paste()
-   
-    else:
-        auth = {
+    defaultAuth= auth = {
             'auth': {
                 'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
                 'sess': '',
@@ -100,9 +84,46 @@ def make_auth(path=None, auth=None):
             }
         }
 
-        auth['auth'].update(auth_prompt(auth['auth']))
-    print(auth)
+    browserSelect=browser_prompt()
 
+    auth= auth or defaultAuth
+    if  browserSelect!="Enter Each Field Manually" and browserSelect!="Paste From Cookie Helper":
+        temp=requests.utils.dict_from_cookiejar(getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans"))
+        auth=auth or  defaultAuth
+        for key in ["sess","auth_id","auth_uid_"]:
+            auth["auth"][key]=temp.get(key,"")
+        console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/excludedBittern8/ofscraper and find the section named 'Getting Your Auth Info'\nCookie information has been retived automatically\nSo You only need to retrive the x-bc header and the user-agent",style="yellow")
+        if not auth["auth"].get("x-bc"):
+            auth["auth"]["x-bc"]=xbc_prompt()
+        auth["auth"]["user_agent"]= user_agent_prompt(auth["auth"].get("user_agent") or "")
+
+
+ 
+    elif browserSelect=="Paste From Cookie Helper":
+        auth=auth_full_paste()
+        auth["auth"]["app-token"]="33d57ade8c02dbc5a333db99ff9ae26a"
+        for key in ["username","support_2fa","active","email","password","hashed"]:
+            auth["auth"].pop(key)
+        auth["auth"]["x-bc"]=auth["auth"].pop("x_bc")
+        tempCookie=auth["auth"].pop("cookie")
+        for ele in tempCookie.split(";"):
+            ele=ele.strip(
+                
+            )
+            if ele.find("auth_id")!=-1:
+                auth["auth"]["auth_id"]=ele.replace("auth_id=","")
+            elif ele.find("sess")!=-1:
+                auth["auth"]["sess"]=ele.replace("sess=","")
+            elif ele.find("auth_uid")!=-1:
+                auth["auth"]["auth_uid_"]=ele.replace("auth_uid_","").replace("=","")
+           
+
+
+    else:
+        console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/excludedBittern8/ofscraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
+        auth['auth'].update(auth_prompt(auth['auth']))
+    
+    console.print(f"{auth}\nWriting to {path / authFile}",style="yellow")
     with open(path / authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))
 

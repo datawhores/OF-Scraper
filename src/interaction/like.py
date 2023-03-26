@@ -13,6 +13,8 @@ import time
 from typing import Union
 
 import httpx
+from rich.console import Console
+console=Console()
 from revolution import Revolution
 
 from ..api import posts
@@ -90,4 +92,4 @@ def _handle_err(param: Union[httpx.Response, httpx.TransportError], url: str) ->
             message = str(param)
     except:
         pass
-    print(f'{status}{message}, post at {url}')
+    console.print(f'{status}{message}, post at {url}')

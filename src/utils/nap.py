@@ -1,5 +1,7 @@
 from time import sleep
 from datetime import datetime,timedelta
+from rich.console import Console
+console=Console()
 
 last_long_sleep = datetime.now()
 last_short_sleep = datetime.now()
@@ -12,5 +14,5 @@ def calculate_sleep():
 
 def nap_or_sleep():
     s = calculate_sleep()
-    print(f"Sleeping for {s/60} minutes.")
+    console.print(f"Sleeping for {s/60} minutes.")
     return s

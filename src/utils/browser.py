@@ -2,7 +2,13 @@ import subprocess
 import platform
 import re
 from bs4 import BeautifulSoup
+from rich.console import Console
+console=Console()
+##########
+#This will probably confuse users
+############
 def getuseragent(browser):
+    console.print("Getting user agent info")
     try:
 
         if browser.lower()=="chrome":

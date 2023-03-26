@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "ofscraper"
-version = "1.35"
+version = "1.4.4"
 description = "automatically scrape onlyfans"
 authors = ["excludedBittern8 <excludedBittern8@riseup.net>"]
 readme = "README.md"
 packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9.0,<3.11.0"
+python = ">=3.7.0,<4"
 httpx = {extras = ["http2"], version = "^0.23.3"}
 inquirerpy = "^0.3.4"
 revolution = "^0.3.0"
@@ -17,6 +17,7 @@ schedule = "^1.1.0"
 browser-cookie3 = "^0.17.1"
 requests = "^2.28.2"
 bs4 = "^0.0.1"
+rich = "^13.3.2"
 
 
 [build-system]
