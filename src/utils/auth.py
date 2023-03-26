@@ -48,7 +48,8 @@ def read_auth():
             break
         except FileNotFoundError:
             print(
-                "You don't seem to have an `auth.json` file. Please fill the following out:")
+                "You don't seem to have an `auth.json` file\nYou can extract some information from your browser\n\
+Alternatively you can enter all information manually\n\n")
             make_auth(p)
     return auth
 
