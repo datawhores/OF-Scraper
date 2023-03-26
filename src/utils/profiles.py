@@ -65,7 +65,7 @@ def move_files(path, dir_name: str):
 
 
 def change_profile():
-    Console.print('Current profiles:')
+    console.print('Current profiles:')
     profile = get_profile_prompt(print_profiles())
 
     update_config(mainProfile, profile)
@@ -74,7 +74,7 @@ def change_profile():
 
 
 def delete_profile():
-    Console.print('Current profiles:')
+    console.print('Current profiles:')
     profile = get_profile_prompt(print_profiles())
 
     if profile == get_current_profile():

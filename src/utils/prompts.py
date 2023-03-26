@@ -417,7 +417,7 @@ def model_selector(models) -> bool:
      ,"multiselect":True
       ,"validate":(lambda result: len(result)> 0),
       "invalid_message":"Input cannot be empty",
-      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done\n\n\nName Renewal_Date/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
+      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done\n\nParantheses indicates number of selected users\n\nValues: Name Renewal_Date/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
        ,"prompt":'Filter: ',
        "marker":"\u25c9 ",
        "marker_pl":"\u25cb "
