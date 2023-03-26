@@ -9,7 +9,9 @@ r"""
 
 import pathlib
 import shutil
-
+from rich.console import Console
+from rich import print
+console=Console()
 from .config import read_config, update_config
 from .prompts import get_profile_prompt
 from ..constants import configPath, configFile, mainProfile
@@ -63,7 +65,7 @@ def move_files(path, dir_name: str):
 
 
 def change_profile():
-    print('Current profiles:')
+    Console.print('Current profiles:')
     profile = get_profile_prompt(print_profiles())
 
     update_config(mainProfile, profile)
@@ -72,7 +74,7 @@ def change_profile():
 
 
 def delete_profile():
-    print('Current profiles:')
+    Console.print('Current profiles:')
     profile = get_profile_prompt(print_profiles())
 
     if profile == get_current_profile():
@@ -126,4 +128,4 @@ def print_current_profile():
     get_profiles()
 
     current_profile = get_current_profile()
-    print('Using profile: \033[36m{}\033[0m'.format(current_profile))
+    print('Using profile: [cyan]{}[/cyan]'.format(current_profile))

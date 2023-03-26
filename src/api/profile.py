@@ -12,7 +12,8 @@ from datetime import datetime
 from itertools import zip_longest
 
 import httpx
-
+from rich.console import Console
+console=Console()
 from ..constants import profileEP
 from ..utils import auth, dates, encoding
 
@@ -64,7 +65,7 @@ def print_profile_info(info):
     header_fmt = 'Name: {} | Username: {} | ID: {} | Joined: {}\n'
     info_fmt = '- {} posts\n -- {} photos\n -- {} videos\n -- {} audios\n- {} archived posts'
     final_fmt = header_fmt + info_fmt
-    print(final_fmt.format(*info))
+    console.print(final_fmt.format(*info))
 
 
 def get_id(headers, username):
@@ -80,7 +81,7 @@ def get_id(headers, username):
         r.raise_for_status()
 
 def print_paid_info(paid_content,username):
-    print(
+    console.print(
 f"""
 Username: {username}
 - paid content {len(paid_content)}

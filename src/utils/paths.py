@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 from pathlib import Path
-
 import os
 import sys
-
+from rich.console import Console
+console=Console()
 @contextmanager
 def set_directory(path: Path):
     """Sets the cwd within the context
@@ -27,5 +27,5 @@ def createDir(path):
     try:
         path.mkdir(exist_ok=True,parents=True)
     except:
-        print("Error creating directory, check the directory and make sure correct permissions have been issued.")
+        console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()

@@ -10,7 +10,8 @@ r"""
 
 import json
 import pathlib
-
+from rich.console import Console
+console=Console()
 from .prompts import config_prompt
 from ..constants import configPath, configFile, mainProfile
 
@@ -37,7 +38,7 @@ def read_config():
             file_not_found_message = f"You don't seem to have a `config.json` file. One has been automatically created for you at: '{p / configFile}'"
 
             make_config(p, config)
-            print(file_not_found_message)
+            console.print(file_not_found_message)
     return config
 
 
@@ -80,7 +81,7 @@ def update_config(field: str, value):
 
 
 def auto_update_config(path, config: dict) -> dict:
-    print("Auto updating...")
+    console.print("Auto updating...")
     new_config = get_current_config_schema(config)
 
     with open(path / configFile, 'w') as f:
@@ -102,4 +103,4 @@ def edit_config():
     with open(p, 'w') as f:
         f.write(json.dumps(updated_config, indent=4))
 
-    print('`config.json` has been successfully edited.')
+    console.print('`config.json` has been successfully edited.')

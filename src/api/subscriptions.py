@@ -12,7 +12,8 @@ import asyncio
 from itertools import chain
 
 import httpx
-
+from rich.console import Console
+console=Console()
 from ..constants import subscriptionsEP
 from ..utils import auth, dates
 
@@ -46,6 +47,6 @@ def parse_subscriptions(subscriptions: list) -> list:
 
 def print_subscriptions(subscriptions: list):
     fmt = '{:>4} {:^25} {:>15} {:^35}'
-    print(fmt.format('NUM', 'USERNAME', 'ID', 'EXPIRES ON'))
+    console.print(fmt.format('NUM', 'USERNAME', 'ID', 'EXPIRES ON'))
     for c, t in enumerate(subscriptions, 1):
-        print(fmt.format(c, *t))
+        console.print(fmt.format(c, *t))

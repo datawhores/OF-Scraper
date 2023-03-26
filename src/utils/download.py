@@ -16,6 +16,8 @@ import sys
 import shutil
 
 import httpx
+from rich.console import Console
+console=Console()
 from tqdm.asyncio import tqdm
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -64,7 +66,7 @@ async def process_dicts(headers, username, model_id, medialist,forced):
                         except Exception as e:
                             media_type = None
                             num_bytes_downloaded = 0
-                            print(e)
+                            console.print(e)
 
                         total_bytes_downloaded += num_bytes_downloaded
                         data = convert_num_bytes(total_bytes_downloaded)

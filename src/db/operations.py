@@ -14,7 +14,8 @@ import pathlib
 import sqlite3
 from itertools import chain
 from hashlib import md5
-
+from rich.console import Console
+console=Console()
 from ..constants import configPath, databaseFile
 from ..utils import separate, profiles
 
@@ -94,7 +95,7 @@ def write_from_foreign_database(results: list, model_id):
             cur.executemany(model_insert_sql, filtered_results)
             conn.commit()
 
-    print(f'Migration complete. Migrated {len(filtered_results)} items.')
+    console.print(f'Migration complete. Migrated {len(filtered_results)} items.')
 
 
 def get_media_ids(model_id) -> list:

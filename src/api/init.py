@@ -9,7 +9,8 @@ r"""
 """
 
 from . import me
-
+from rich.console import Console
+console=Console()
 def print_sign_status(headers):
     try:
         resp = me.scrape_user(headers)

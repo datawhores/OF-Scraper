@@ -9,7 +9,8 @@ r"""
 """
 
 import httpx
-
+from rich.console import Console
+console=Console()
 from ..constants import meEP,subscribeCountEP
 from ..utils import auth, encoding
 
@@ -34,7 +35,7 @@ def parse_user(profile):
 
 
 def print_user(name, username):
-    print(f'Welcome, {name} | {username}')
+    console.print(f'Welcome, {name} | {username}')
 
 def parse_subscriber_count(headers):
     with httpx.Client(http2=True, headers=headers) as c:
