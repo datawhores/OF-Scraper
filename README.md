@@ -1,7 +1,15 @@
+This is a fork of onlyfans-scraper with additional features and fixes
+Some of the fixes included are
+- Ability to scrape specific usernames for paid/msg
+- Improved username search with optional fuzzy filtering (https://github.com/junegunn/fzf)
+- Support for cookie helper extension
+- Ability to set daemon schedule interval
+- Ability to print output to console when using daemon
+- Organization of files into subfolders
 
-A command-line program to download media, like posts, and more from creators on OnlyFans.
 
-This is a fork of onlyfans-scraper
+
+
 
 
 
