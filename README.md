@@ -15,14 +15,15 @@ This is a fork of onlyfans-scraper
     </li>
 
 
-<h3>
-    Description:
-    </h3>
-    A command-line program to download media (make a print to file), like and unlike posts, and more from creators on OnlyFans. In addition if you do use this program please do not use this program to re-distribute content.
-</h3>
+
+  ## Description:
+  command-line program to download media, and to process other batch operations such as liking and unliking posts.
+    
+
+![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
 
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/example.png" width="550">
+
 
 ## Installation
 
