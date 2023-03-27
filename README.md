@@ -1,4 +1,5 @@
 This is a fork of onlyfans-scraper with additional features and fixes
+
 Some of the fixes included are
 - Ability to scrape specific usernames for paid/msg
 - Improved username search with optional fuzzy filtering (https://github.com/junegunn/fzf)
