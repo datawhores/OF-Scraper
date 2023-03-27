@@ -1,19 +1,5 @@
 This is a fork of onlyfans-scraper with additional features and fixes
 
-Some of the fixes included are
-- Ability to scrape specific usernames for paid/msg
-- Improved username search with optional fuzzy filtering (https://github.com/junegunn/fzf)
-- Support for cookie helper extension
-- Ability to set daemon schedule interval
-- Ability to print output to console when using daemon
-- Organization of files into subfolders
-
-
-
-
-
-
-
 <h3>DISCLAIMERS:</h3>
 <ol>
     <li>
