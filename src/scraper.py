@@ -280,7 +280,8 @@ def process_paid():
             ele["name"],
             model_id,
             paid_url,
-            forced=args.dupe
+            forced=args.dupe,
+            outpath=args.outpath
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)
@@ -303,7 +304,8 @@ def process_post():
             ele["name"],
             model_id,
             combined_urls,
-            forced=args.dupe
+            forced=args.dupe,
+            outpath=args.outpath
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)
@@ -467,7 +469,7 @@ def main():
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
 
      #Filters for accounts
-    filters=parser.add_argument_group("filters",description="Filters for usernames")
+    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
     filters.add_argument(
         '-t', '--account-type', help = 'Filter Free or paid accounts',default=None,required=False,type = str.lower,choices=["paid","free"]
@@ -479,7 +481,12 @@ def main():
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
 
-   
+     #Paths
+    paths=parser.add_argument_group("paths",description="Change or forced paths in program")
+
+    paths.add_argument(
+        '-op', '--outpath', help = 'Force downloading media into this directory',default=None,required=False
+    )
     args = parser.parse_args()
     global selectedusers
     selectedusers=None
