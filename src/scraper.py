@@ -101,8 +101,8 @@ def process_profile(headers, username) -> list:
 
 
 def process_areas(headers, ele, model_id,selected=None) -> list:
-    result_areas_prompt = (selected or prompts.areas_prompt()[0]).capitalize()
-
+    result_areas_prompt = list(map(lambda x:x.capitalize(),(selected or prompts.areas_prompt())
+))
     pinned_posts_dicts = []
     timeline_posts_dicts  = []
     archived_posts_dicts  = []
@@ -113,20 +113,23 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
     # profile_dicts  = process_profile(headers, ele["name"])
     profile_dicts=[]
 
-    if 'Timeline' in result_areas_prompt and ele["active"]:
+    if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
             pinned_posts_dicts= process_pinned_posts(headers, model_id)
             timeline_posts_dicts = process_timeline_posts(headers, model_id)
 
-    if 'Archived' in result_areas_prompt  and ele["active"]:
+    if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
             archived_posts_dicts = process_archived_posts(headers, model_id)
-    if 'Messages' in result_areas_prompt:
+    if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
             messages_dicts = process_messages(headers, model_id)
 
-    if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt)   and ele["active"]:
+    if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
             highlights_tuple = process_highlights(headers, model_id)
-            if 'Highlights'  in result_areas_prompt:
+            if 'All' in result_areas_prompt:
                 highlights_dicts=highlights_tuple[0]
-            if 'Stories'  in result_areas_prompt:
+                stories_dicts=highlights_tuple[1]    
+            elif 'Highlights'  in result_areas_prompt:
+                highlights_dicts=highlights_tuple[0]
+            elif 'Stories'  in result_areas_prompt:
                 stories_dicts=highlights_tuple[1]    
     return list(chain(*[profile_dicts ,pinned_posts_dicts , timeline_posts_dicts ,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
@@ -456,7 +459,7 @@ def main():
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"]
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="+"
     )
     post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
