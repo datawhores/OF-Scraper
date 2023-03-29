@@ -389,19 +389,35 @@ def getselected_usernames():
     headers = auth.make_headers(auth.read_auth())
     subscribe_count = process_me(headers)
     parsed_subscriptions = get_models(headers, subscribe_count)
+    filter_subscriptions=filteruserHelper(parsed_subscriptions )
     if args.username and "!all" in args.username:
-        selectedusers=parsed_subscriptions
+        selectedusers=filter_subscriptions
     
 
     elif args.username:
         userSelect=set(args.username)
-        selectedusers=list(filter(lambda x:x in userSelect,parsed_subscriptions))
+        selectedusers=list(filter(lambda x:x in userSelect,filter_subscriptions))
     #manually select usernames
     else:
-        selectedusers= get_model(parsed_subscriptions)
+        selectedusers= get_model(filter_subscriptions)
     #remove dupes
     return selectedusers
-
+def filteruserHelper(usernames):
+    #paid/free
+    filterusername=usernames
+    if args.account_type=="paid":
+        filterusername=list(filter(lambda x:x["data"]["subscribePrice"]>0,filterusername))
+    if args.account_type=="free":
+        filterusername=list(filter(lambda x:x["data"]["subscribePrice"]==0,filterusername))
+    if args.renewal=="acive":
+        filterusername=list(filter(lambda x:x["data"]["subscribedOn"]==True,filterusername))     
+    if args.renewal=="disabled":
+        filterusername=list(filter(lambda x:x["data"]["subscribedOn"]==False,filterusername))      
+    if args.sub_status=="active":
+        filterusername=list(filter(lambda x:x["data"]["subscribedIsExpiredNow"]==False,filterusername))     
+    if args.sub_status=="expired":
+        filterusername=list(filter(lambda x:x["data"]["subscribedIsExpiredNow"]==True,filterusername))      
+    return filterusername
 
 
 
@@ -423,25 +439,42 @@ def main():
     #This needs to be global
 
 
-    #share the args
-    parser = argparse.ArgumentParser(add_help=False)                                         
-    parser.add_argument(
+    parser = argparse.ArgumentParser(add_help=False)   
+    general=parser.add_argument_group("General",description="General Args")  
+    general.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+    general.add_argument('-h', '--help', action='help')
+
+                                    
+    general.add_argument(
         '-u', '--username', help="select which username to process (name,name2)\nSet to !all for all users",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
     )
-    parser.add_argument(
+    general.add_argument(
         '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
     )
-    parser.add_argument(
+    general.add_argument(
         '-s', '--silent', help = 'mute output', action = 'store_true',default=False
     )
-    parser.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
-    parser.add_argument(
+    post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
+
+    post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
+    post.add_argument(
         '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"]
     )
-    parser.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
-    parser.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
+    post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
+    post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
 
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+     #Filters for accounts
+    filters=parser.add_argument_group("filters",description="Filters for usernames")
+    
+    filters.add_argument(
+        '-t', '--account-type', help = 'Filter Free or paid accounts',default=None,required=False,type = str.lower,choices=["paid","free"]
+    )
+    filters.add_argument(
+        '-r', '--renewal', help = 'Filter by whether renewal is on or off for account',default=None,required=False,type = str.lower,choices=["active","disabled"]
+    )
+    filters.add_argument(
+        '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
+    )
 
    
     args = parser.parse_args()
