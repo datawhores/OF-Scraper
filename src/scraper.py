@@ -269,6 +269,7 @@ def process_paid():
         headers = auth.make_headers(auth.read_auth())
     userdata=getselected_usernames()
     for ele in userdata:
+        print(f"Getting paid content for {ele['name']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
             paid_content=paid.scrape_paid(ele["name"])
@@ -293,6 +294,7 @@ def process_post():
         headers = auth.make_headers(auth.read_auth())
     userdata=getselected_usernames()
     for ele in userdata:
+        print(f"Getting Selected post type(s) for {ele['name']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
             combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
