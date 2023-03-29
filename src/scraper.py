@@ -436,8 +436,6 @@ def main():
 
 
     parser = argparse.ArgumentParser()
-    #This needs to be global
-
 
     parser = argparse.ArgumentParser(add_help=False)   
     general=parser.add_argument_group("General",description="General Args")  

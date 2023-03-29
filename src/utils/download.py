@@ -39,7 +39,9 @@ async def process_dicts(headers, username, model_id, medialist,forced):
         operations.create_database(model_id)
         if not forced:
             media_ids = operations.get_media_ids(model_id)
-            # medialist = separate_by_id(medialist, media_ids)
+            medialist = separate_by_id(medialist, media_ids)
+            console.print(f"Skipping previously downloaded\nPosts left for download {len(medialist)}")
+
 
 
         file_size_limit = config.get('file_size_limit')
