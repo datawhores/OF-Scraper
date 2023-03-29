@@ -31,7 +31,6 @@ paid_content_list_name = 'list'
 
 
 
-root= pathlib.Path((config.get('save_location') or pathlib.Path.cwd()))
 
 
 
@@ -92,7 +91,7 @@ def parse_paid(paid):
         for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
             media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"data":item})
     return media_to_download
-async def process_dicts(headers,username,model_id,medialist,forced=False):
+async def process_dicts(headers,username,model_id,medialist,forced=False,outpath=None):
  """Takes a list of purchased content and downloads it."""
  if medialist:
         operations.create_paid_database(model_id)
@@ -113,6 +112,8 @@ async def process_dicts(headers,username,model_id,medialist,forced=False):
             total_bytes_downloaded = 0
             data = 0
             desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'   
+            root= pathlib.Path((outpath or config.get('save_location') or pathlib.Path.cwd()))
+
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar: 
                 for ele in medialist:
                     filename=createfilename(ele["url"],username,model_id,ele["date"],ele["id"],ele["mediatype"],ele["text"],ele["count"])

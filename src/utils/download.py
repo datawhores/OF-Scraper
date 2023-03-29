@@ -32,9 +32,9 @@ from ..db import operations
 from .paths import set_directory
 
 config = read_config()['config']
-root= pathlib.Path((config.get('save_location') or pathlib.Path.cwd()))
 
-async def process_dicts(headers, username, model_id, medialist,forced):
+
+async def process_dicts(headers, username, model_id, medialist,forced=False,outpath=None):
     if medialist:
         operations.create_database(model_id)
         if not forced:
@@ -57,6 +57,7 @@ async def process_dicts(headers, username, model_id, medialist,forced):
             total_bytes_downloaded = 0
             data = 0
             desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'    
+            root= pathlib.Path((outpath or config.get('save_location') or pathlib.Path.cwd()))
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
                 for ele in medialist:
                     filename=createfilename(ele["url"],username,model_id,ele["date"],ele["id"],ele["mediatype"],ele["text"],ele["count"])
