@@ -275,7 +275,7 @@ def process_paid():
             paid_content=paid.scrape_paid(ele["name"])
             paid_url=paid.parse_paid(paid_content)
             profile.print_paid_info(paid_url,ele["name"])
-            asyncio.run(paid.process_dicts(
+            asyncio.run(download.process_dicts_paid(
             headers,
             ele["name"],
             model_id,
@@ -309,6 +309,7 @@ def process_post():
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)
+    
     
 
 def process_like():
