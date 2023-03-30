@@ -42,9 +42,8 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
             media_ids = operations.get_media_ids(model_id)
             medialist = separate_by_id(medialist, media_ids)
             console.print(f"Skipping previously downloaded\nPosts left for download {len(medialist)}")
-
-
-
+        else:
+            print("forcing all downloads")
         file_size_limit = config.get('file_size_limit')
         global sem
         sem = asyncio.Semaphore(8)
@@ -153,6 +152,8 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
             media_ids = operations.get_paid_media_ids(model_id)
             medialist = separate_by_id(medialist, media_ids)
             console.print(f"Skipping previously downloaded\nPaid content left for download {len(medialist)}")
+        else:
+            print("forcing all downloads")
         file_size_limit = config.get('file_size_limit')
         global sem
         sem = asyncio.Semaphore(8)
