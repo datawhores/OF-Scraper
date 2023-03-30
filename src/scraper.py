@@ -190,10 +190,10 @@ def process_prompts():
     headers = auth.make_headers(auth.read_auth())
     #download
     if result_main_prompt == 0:
+        paid=prompts.download_paid_prompt()=="Yes"
         process_post()
-
-    elif result_main_prompt == 1:
-        process_paid()
+        if paid:
+            process_paid()
 
     # like a user's posts
     elif result_main_prompt == 2:

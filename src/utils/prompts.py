@@ -429,3 +429,14 @@ def model_selector(models) -> bool:
     return prompt(questions)[0]
 
 
+def download_paid_prompt() -> bool:
+    questions = [
+        {
+            'type': 'list',
+            'message': "Would you like to also download paid content",
+            'choices':["Yes","No"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[0]
