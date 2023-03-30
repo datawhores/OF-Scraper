@@ -440,3 +440,41 @@ def download_paid_prompt() -> bool:
 
     answer = prompt(questions)
     return answer[0]
+
+def decide_filters_prompts():
+    questions = [
+        {
+            'type': 'list',
+            'message': "Modify filters for accounts list?\nExample scraping free accounts only",
+            'choices':["Yes","No"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[0]
+def modify_filters_prompt(args):
+    questions = [
+        {
+            'type': 'list',
+            'message': "Filter account by renewal of subscription status",
+            'choices':[Choice("active","Active Only"),Choice("disabled","Disabled Only"),Choice(None,"Both")]
+        },
+        {
+            'type': 'list',
+            'message': "Filter accounts based on access to content via a subscription",
+            'choices':[Choice("active","Active Only"),Choice("expired","Expired Only"),Choice(None,"Both")]
+        },
+
+     
+            {
+            'type': 'list',
+            'message': "Filter accounts by the type of subscription",
+            'choices':[Choice("paid","Paid Only"),Choice("free","Free Only"),Choice(None,"Both")]
+        }
+    ]
+    answer = prompt(questions)
+    args.renewal=answer[0]
+    args.sub_status=answer[1]
+    args.account_type=answer[2]
+    return args
+ 
