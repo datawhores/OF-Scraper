@@ -188,6 +188,9 @@ def process_prompts():
     loop = process_prompts
     result_main_prompt = prompts.main_prompt()
     headers = auth.make_headers(auth.read_auth())
+    if result_main_prompt in [0,1,2] and prompts.decide_filters_prompts()=="Yes":
+        global args
+        args=prompts.modify_filters_prompt(args)
     #download
     if result_main_prompt == 0:
         paid=prompts.download_paid_prompt()=="Yes"
