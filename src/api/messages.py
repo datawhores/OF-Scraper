@@ -9,11 +9,12 @@ r"""
 """
 
 import httpx
+from tenacity import retry,stop_after_attempt,wait_random
 
 from ..constants import messagesEP, messagesNextEP
 from ..utils import auth
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_messages(headers, user_id, message_id=0) -> list:
     ep = messagesNextEP if message_id else messagesEP
     url = ep.format(user_id, message_id)

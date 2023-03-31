@@ -11,10 +11,11 @@ r"""
 import httpx
 from rich.console import Console
 console=Console()
+from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import meEP,subscribeCountEP
 from ..utils import auth, encoding
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_user(headers):
     with httpx.Client(http2=True, headers=headers) as c:
         url = meEP
@@ -36,7 +37,7 @@ def parse_user(profile):
 
 def print_user(name, username):
     console.print(f'Welcome, {name} | {username}')
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def parse_subscriber_count(headers):
     with httpx.Client(http2=True, headers=headers) as c:
         url = subscribeCountEP

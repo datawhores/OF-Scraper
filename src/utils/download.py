@@ -23,6 +23,7 @@ try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
+from tenacity import retry,stop_after_attempt,wait_random
 
 from .auth import add_cookies
 from .config import read_config
@@ -31,6 +32,7 @@ from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory
 from ..utils import auth
+
 
 config = read_config()['config']
 
@@ -106,7 +108,7 @@ def convert_num_bytes(num_bytes: int) -> str:
         return f'{round(num_bytes / 10**9, 2)} GB'
     return f'{round(num_bytes / 10 ** 6, 2)} MB'
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)   
 async def download(client,url,filename,path,media_type,model_id,file_size_limit,date=None,id_=None,forced=False):
     async with sem:  
         async with client.stream('GET',url) as r:
@@ -208,7 +210,7 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
                         main_bar.update()
 
 
-                       
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)                    
 async def download_paid(client,url,filename,path,media_type,model_id,file_size_limit,_id,forced=False):  
     async with sem:  
         async with client.stream('GET', url) as r:
