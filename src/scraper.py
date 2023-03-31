@@ -298,7 +298,7 @@ def process_post():
         headers = auth.make_headers(auth.read_auth())
     userdata=getselected_usernames()
     for ele in userdata:
-        print(f"Getting Selected post type(s) for {ele['name']}")
+        print(f"Getting Selected post type(s) for {ele['name']}\nSubscription Active: {ele['active']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
             combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
@@ -401,7 +401,7 @@ def getselected_usernames():
     subscribe_count = process_me(headers)
     parsed_subscriptions = get_models(headers, subscribe_count)
     filter_subscriptions=filteruserHelper(parsed_subscriptions )
-    if args.username and "!all" in args.username:
+    if args.username and "ALL" in args.username:
         selectedusers=filter_subscriptions
     
 
@@ -435,7 +435,6 @@ def filteruserHelper(usernames):
 
 
 
-
 def main():
     global args
     if platform.system == 'Windows':
@@ -455,7 +454,7 @@ def main():
 
                                     
     general.add_argument(
-        '-u', '--username', help="select which username to process (name,name2)\nSet to !all for all users",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
+        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
     )
     general.add_argument(
         '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None

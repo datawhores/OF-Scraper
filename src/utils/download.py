@@ -49,7 +49,6 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
         file_size_limit = config.get('file_size_limit')
         global sem
         sem = asyncio.Semaphore(8)
-        # separated_urls = separate_by_id(urls, media_ids)
         async with httpx.AsyncClient(headers=headers, timeout=None) as c:
             add_cookies(c)
             aws=[]

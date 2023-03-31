@@ -1,5 +1,8 @@
 This is a fork of onlyfans-scraper with additional features and fixes
 
+Note the guide is still a little incomplete, so it might not be up to date with the changes I made 
+I hope to go through it and make the necessary changes soon.
+
 <h3>DISCLAIMERS:</h3>
 <ol>
     <li>
