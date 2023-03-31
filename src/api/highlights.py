@@ -12,12 +12,14 @@ import asyncio
 from itertools import chain
 
 import httpx
+from tenacity import retry,stop_after_attempt,wait_random
+
 
 from ..constants import highlightsWithStoriesEP, highlightsWithAStoryEP, storyEP
 from ..utils import auth
 
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_highlights(headers, user_id) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
         url_stories = highlightsWithStoriesEP.format(user_id)
@@ -60,6 +62,7 @@ async def process_highlights_ids(headers, ids: list) -> list:
     return list(chain.from_iterable(results))
 
 
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_story(headers, story_id: int) -> list:
     async with httpx.AsyncClient(http2=True, headers=headers) as c:
         url = storyEP.format(story_id)

@@ -14,10 +14,11 @@ from itertools import zip_longest
 import httpx
 from rich.console import Console
 console=Console()
+from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import profileEP
 from ..utils import auth, dates, encoding
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_profile(headers, username) -> dict:
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
@@ -68,6 +69,7 @@ def print_profile_info(info):
     console.print(final_fmt.format(*info))
 
 
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def get_id(headers, username):
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)

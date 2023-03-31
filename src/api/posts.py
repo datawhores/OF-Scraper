@@ -9,6 +9,7 @@ r"""
 """
 
 import httpx
+from tenacity import retry,stop_after_attempt,wait_random
 
 
 from ..constants import (
@@ -18,7 +19,7 @@ from ..constants import (
 )
 from ..utils import auth
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
         url = timelinePinnedEP.format(model_id)
@@ -31,7 +32,7 @@ def scrape_pinned_posts(headers, model_id) -> list:
             return r.json()['list']
         r.raise_for_status()
 
-
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_timeline_posts(headers, model_id, timestamp=0) -> list:
     ep = timelineNextEP if timestamp else timelineEP
     url = ep.format(model_id, timestamp)
@@ -51,6 +52,7 @@ def scrape_timeline_posts(headers, model_id, timestamp=0) -> list:
         r.raise_for_status()
 
 
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
     ep = archivedNextEP if timestamp else archivedEP
     url = ep.format(model_id, timestamp)

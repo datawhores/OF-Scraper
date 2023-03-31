@@ -18,6 +18,7 @@ browser-cookie3 = "^0.17.1"
 requests = "^2.28.2"
 bs4 = "^0.0.1"
 rich = "^13.3.2"
+tenacity = "^8.2.2"
 
 
 [build-system]
