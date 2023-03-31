@@ -1,6 +1,5 @@
-- Add user_agent support  for more browser
 - DB functions
 - Support Lists
-- Maybe add sorting and filtering via keyboard to username list
 - cookie extension native messaging
+- Add cache and async to request
 
