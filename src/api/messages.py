@@ -13,6 +13,29 @@ from tenacity import retry,stop_after_attempt,wait_random
 
 from ..constants import messagesEP, messagesNextEP
 from ..utils import auth
+from ..db.operations import read_messages_response
+
+
+def get_messages(headers,  model_id,username,path):
+    oldmessages=read_messages_response(model_id,username,path)
+    newmessages=[]
+    # find point where oldmessages is valid, since messages can be deleted
+    for i in range(len(oldmessages)-1,0,-1):
+        newmessages=scrape_messages(headers,model_id,message_id=oldmessages[i]["id"])
+        if len(newmessages)>0:
+            break  
+    #get full messages if oldmessages is empty
+    if len(oldmessages)==0:
+        newmessages=scrape_messages(headers,model_id,message_id=0)  
+    messages=oldmessages+newmessages
+    unduped=[]
+    dupeSet=set()
+    for message in messages:
+        if message["id"] in dupeSet:
+            continue
+        dupeSet.add(message["id"])
+        unduped.append(message)
+    return unduped
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_messages(headers, user_id, message_id=0) -> list:
@@ -22,7 +45,6 @@ def scrape_messages(headers, user_id, message_id=0) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
-
         r = c.get(url, timeout=None)
         if not r.is_error:
             messages = r.json()['list']

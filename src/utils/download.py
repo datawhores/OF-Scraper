@@ -39,7 +39,7 @@ config = read_config()['config']
 
 async def process_dicts(headers, username, model_id, medialist,forced=False,outpath=None):
     if medialist:
-        operations.create_database(model_id)
+    
         if not forced:
             media_ids = operations.get_media_ids(model_id)
             medialist = separate_by_id(medialist, media_ids)

@@ -44,8 +44,12 @@ from .__version__ import  __version__
 
 # @need_revolution("Getting messages...")
 @Revolution(desc='Getting messages...')
-def process_messages(headers, model_id):
-    messages_ = messages.scrape_messages(headers, model_id)
+def process_messages(headers, model_id,username,path=None):
+    messages_ =messages.get_messages(headers,  model_id,username,path) or []
+    operations.save_messages_response( model_id,username,messages_,path=None)
+    for message in messages_:
+     operations.write_messages(message,model_id,username,path)
+
     output=[]
     if messages_:
         [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_]       
@@ -73,8 +77,11 @@ def process_archived_posts(headers, model_id):
 
 # @need_revolution("Getting timeline media...")
 @Revolution(desc='Getting timeline media...')
-def process_timeline_posts(headers, model_id):
-    timeline_posts = posts.scrape_timeline_posts(headers, model_id)
+def process_timeline_posts(headers, model_id,username,path):
+    timeline_posts = posts.get_timeline_post(headers, model_id,username,path)
+    operations.save_timeline_response(model_id,username,timeline_posts,path)
+    for post in timeline_posts:
+        operations.write_post(post,model_id,username,path)
     if timeline_posts:
         timeline_posts_urls = posts.parse_posts(timeline_posts)
         return timeline_posts_urls
@@ -100,27 +107,27 @@ def process_profile(headers, username) -> list:
 
 
 
-def process_areas(headers, ele, model_id,selected=None) -> list:
+def process_areas(headers, ele, model_id,selected=None,path=None) -> list:
     result_areas_prompt = list(map(lambda x:x.capitalize(),(selected or prompts.areas_prompt())
 ))
-    pinned_posts_dicts = []
     timeline_posts_dicts  = []
+    pinned_post_dict=[]
     archived_posts_dicts  = []
     highlights_dicts  = []
     messages_dicts  = []
     stories_dicts=[]
 
+
     # profile_dicts  = process_profile(headers, ele["name"])
     profile_dicts=[]
 
     if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-            pinned_posts_dicts= process_pinned_posts(headers, model_id)
-            timeline_posts_dicts = process_timeline_posts(headers, model_id)
-
+            timeline_posts_dicts = process_timeline_posts(headers, model_id,ele['name'],path)
+            # pinned_post_dict=process_pinned_posts(headers, model_id,ele['name'],path)
     if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
             archived_posts_dicts = process_archived_posts(headers, model_id)
     if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
-            messages_dicts = process_messages(headers, model_id)
+            messages_dicts = process_messages(headers, model_id,ele['name'],path=None)
 
     if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
             highlights_tuple = process_highlights(headers, model_id)
@@ -131,7 +138,7 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
                 highlights_dicts=highlights_tuple[0]
             elif 'Stories'  in result_areas_prompt:
                 stories_dicts=highlights_tuple[1]    
-    return list(chain(*[profile_dicts ,pinned_posts_dicts , timeline_posts_dicts ,
+    return list(chain(*[profile_dicts  , timeline_posts_dicts ,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
 
@@ -275,6 +282,7 @@ def process_paid():
         print(f"Getting paid content for {ele['name']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
+            # operations.create_database(model_id,ele['name'])
             paid_content=paid.scrape_paid(ele["name"])
             paid_url=paid.parse_paid(paid_content)
             profile.print_paid_info(paid_url,ele["name"])
@@ -367,7 +375,7 @@ def set_schedule(command,*params,**kwparams):
 def run(command,*params,**kwparams):
     # get usernames prior to potentially supressing output
     getselected_usernames()
-    console.print(f"starting script daemon:{args.daemon!=None} silent-mode:{args.silent}")    
+    console.print(f"starting script daemon: {args.daemon!=None} silent-mode: {args.silent}")    
     if args.silent:
         with suppress_stdout():
             run_helper(command,*params,**kwparams)
@@ -407,7 +415,7 @@ def getselected_usernames():
 
     elif args.username:
         userSelect=set(args.username)
-        selectedusers=list(filter(lambda x:x in userSelect,filter_subscriptions))
+        selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
     #manually select usernames
     else:
         selectedusers= get_model(filter_subscriptions)

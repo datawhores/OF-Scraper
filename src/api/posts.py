@@ -18,6 +18,7 @@ from ..constants import (
     archivedEP, archivedNextEP
 )
 from ..utils import auth
+from ..db.operations import read_timeline_response
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id) -> list:
@@ -31,6 +32,8 @@ def scrape_pinned_posts(headers, model_id) -> list:
         if not r.is_error:
             return r.json()['list']
         r.raise_for_status()
+
+
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_timeline_posts(headers, model_id, timestamp=0) -> list:
@@ -50,7 +53,27 @@ def scrape_timeline_posts(headers, model_id, timestamp=0) -> list:
                 headers, model_id, posts[-1]['postedAtPrecise'])
             return posts
         r.raise_for_status()
-
+def get_timeline_post(headers,model_id,username,path):
+    oldtimeline=read_timeline_response(model_id,username,path)
+    newtimeline=[]
+    # find point where oldmessages is valid, since messages can be deleted
+    for i in range(len(oldtimeline)-1,0,-1):
+        newtimeline=scrape_timeline_posts(headers,model_id,timestamp=oldtimeline[i]["postedAtPrecise"])
+        if len(newtimeline)>0:
+            break  
+    #get full messages if oldmessages is empty
+    if len(newtimeline)==0:
+        newtimeline=scrape_timeline_posts(headers,model_id,timestamp=0)
+    posts=oldtimeline+newtimeline
+    unduped=[]
+    dupeSet=set()
+    for post in posts:
+        if post["id"] in dupeSet:
+            continue
+        dupeSet.add(post["id"])
+        unduped.append(post)
+    return unduped                                
+    
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_archived_posts(headers, model_id, timestamp=0) -> list:

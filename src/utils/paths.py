@@ -1,9 +1,16 @@
 from contextlib import contextmanager
 from pathlib import Path
+import pathlib
 import os
 import sys
 from rich.console import Console
 console=Console()
+
+from ..constants import configPath
+from ..utils import profiles
+
+
+
 @contextmanager
 def set_directory(path: Path):
     """Sets the cwd within the context
@@ -29,3 +36,18 @@ def createDir(path):
     except:
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
+def databasePathHelper(path,model_id,username):
+    profile = profiles.get_current_profile()
+    return path or pathlib.Path.home() / configPath / profile / ".data"/f"{username}_{model_id}"/"user_data.db"
+
+
+def messageResponsePathHelper(path,model_id,username):
+    profile = profiles.get_current_profile()
+    return path or pathlib.Path.home() / configPath / profile / ".data"/f"{username}_{model_id}"/"messages.json"
+
+
+def timelineResponsePathHelper(path,model_id,username):
+    profile = profiles.get_current_profile()
+    return path or pathlib.Path.home() / configPath / profile / ".data"/f"{username}_{model_id}"/"timeline.json"
+
+
