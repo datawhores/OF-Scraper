@@ -17,3 +17,6 @@
 - simplify username selection when username args not pass
 - automatic cookie extractions
 - improve authentication flow
+- add cache to response 
+- add metadata
+- username filter

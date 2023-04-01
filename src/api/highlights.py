@@ -33,7 +33,7 @@ def scrape_highlights(headers, user_id) -> list:
         r_one = c.get(url_story, timeout=None)
 
         if not r_multiple.is_error and not r_one.is_error:
-            return r_multiple.json(), r_one.json()
+            return list(filter(lambda x:isinstance(x,list),r_multiple.json().values()))[0], r_one.json()
 
         r_multiple.raise_for_status()
         r_one.raise_for_status()
@@ -46,9 +46,8 @@ def parse_highlights(highlights: list) -> list:
     #This means that whenever onlyfans changes the name of the list containing the highlights it wont matter because the name is variable.
     #To break this they would have to change the conditions or in this release the layers.
     temp=[]
-    for item in list(filter(lambda x:isinstance(x,list),highlights.values())):
-        for highlight in list(filter(lambda x:x.get("id") and isinstance(x['id'],int),item)):
-            temp.append(highlight)
+    for item in list(filter(lambda x:x.get("id") and isinstance(x['id'],int),highlights)):
+            temp.append(item)
     output=[]
     for count,item in enumerate(temp):
         output.append({"id":item["id"],"date":item["createdAt"],"text":item["title"],"responsetype":"highlight","count":count+1,"url":item["cover"],"mediatype":"photo","data":item})

@@ -16,8 +16,8 @@ from ..utils import auth
 from ..db.operations import read_messages_response
 
 
-def get_messages(headers,  model_id,username,path):
-    oldmessages=read_messages_response(model_id,username,path)
+def get_messages(headers,  model_id,username):
+    oldmessages=read_messages_response(model_id,username)
     newmessages=[]
     # find point where oldmessages is valid, since messages can be deleted
     for i in range(len(oldmessages)-1,0,-1):

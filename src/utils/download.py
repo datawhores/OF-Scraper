@@ -39,13 +39,12 @@ config = read_config()['config']
 
 async def process_dicts(headers, username, model_id, medialist,forced=False,outpath=None):
     if medialist:
-    
-        if not forced:
-            media_ids = operations.get_media_ids(model_id)
-            medialist = separate_by_id(medialist, media_ids)
-            console.print(f"Skipping previously downloaded\nPosts left for download {len(medialist)}")
-        else:
-            print("forcing all downloads")
+        # if not forced:
+        #     media_ids = operations.get_media_ids(model_id,username)
+        #     medialist = separate_by_id(medialist, media_ids)
+        #     console.print(f"Skipping previously downloaded\nPosts left for download {len(medialist)}")
+        # else:
+        #     print("forcing all downloads")
         file_size_limit = config.get('file_size_limit')
         global sem
         sem = asyncio.Semaphore(8)
@@ -62,10 +61,11 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
             print(f"Downloading to {pathlib.Path(root,username)}")
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
                 for ele in medialist:
+
                     urldictHelper(ele)
-                    filename=createfilename(ele["url"],username,model_id,ele["date"],ele["id"],ele["mediatype"],ele["text"],ele["count"])
+                    filename=createfilename(ele,username,model_id)
                     with set_directory(str(pathlib.Path(root,username,ele["responsetype"].capitalize(),ele["mediatype"].capitalize()))):
-                        aws.append(asyncio.create_task(download(c,ele["url"],filename,pathlib.Path(".").absolute() ,ele["mediatype"],model_id, file_size_limit, ele["date"],ele["id"],forced=False)))
+                        aws.append(asyncio.create_task(download(c,ele,filename,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,forced=False)))
                 for coro in asyncio.as_completed(aws):
                         try:
                             media_type, num_bytes_downloaded = await coro
@@ -73,6 +73,7 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
                             media_type = None
                             num_bytes_downloaded = 0
                             console.print(e)
+                        operations.write_media(media,model_id,username)
 
                         total_bytes_downloaded += num_bytes_downloaded
                         data = convert_num_bytes(total_bytes_downloaded)
@@ -107,8 +108,12 @@ def convert_num_bytes(num_bytes: int) -> str:
         return f'{round(num_bytes / 10**9, 2)} GB'
     return f'{round(num_bytes / 10 ** 6, 2)} MB'
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)   
-async def download(client,url,filename,path,media_type,model_id,file_size_limit,date=None,id_=None,forced=False):
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)  
+async def download(client,ele,filename,path,model_id,username,file_size_limit,date=None,id_=None,forced=False):
+    url=ele['url']
+    media_type=ele['mediatype']
+    date=ele['date']
+    id_=ele['id']
     async with sem:  
         async with client.stream('GET',url) as r:
             if not r.is_error:
@@ -138,7 +143,8 @@ async def download(client,url,filename,path,media_type,model_id,file_size_limit,
 
                         if id_:
                             data = (id_, filename)
-                            operations.write_from_data(data, model_id)
+                            operations.write_media(ele,model_id,username)
+
                         return media_type,total
                     else:
                         return 'skipped', 1
@@ -173,7 +179,7 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar: 
                 for ele in medialist:
                     urldictHelper(ele)
-                    filename=createfilename(ele["url"],username,model_id,ele["date"],ele["id"],ele["mediatype"],ele["text"],ele["count"])
+                    filename=createfilename(ele,username,model_id)
                     with set_directory(pathlib.Path(root,username, "Paid",ele["mediatype"].capitalize())):
                         aws.append(asyncio.create_task(download_paid(c,ele["url"],filename,pathlib.Path(".").absolute(),ele["mediatype"],model_id, file_size_limit,ele["id"]
                         ,forced=forced)))
@@ -233,7 +239,7 @@ async def download_paid(client,url,filename,path,media_type,model_id,file_size_l
                     if pathlib.Path(temp).exists() and(total-pathlib.Path(temp).stat().st_size<=1000):
                         shutil.move(temp,path_to_file)
                         if _id:
-                            operations.paid_write_from_data(_id,model_id)
+                            operations.paid_write_from_data(_id,model_id,path)
                         return media_type,total
                     else:
                         return 'skipped', 1
@@ -263,7 +269,13 @@ def get_error_message(content):
         return error_content.get('message', 'No error message available')
     except AttributeError:
         return error_content
-def createfilename(url,username,model_id=None,date=None,id_=None,media_type=None,text=None,count=None):
+def createfilename(ele,username,model_id=None):
+    url=ele["url"]
+    date=ele['date']
+    id=ele['id']
+    media_type=ele['mediatype']
+    text=ele['text']
+    count=ele['count']
     return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
 
 def urldictHelper(data):
