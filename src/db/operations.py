@@ -20,14 +20,14 @@ console=Console()
 from ..constants import configPath
 from ..utils import separate, profiles
 from ..db import queries
-from ..utils.paths import createDir,databasePathHelper,messageResponsePathHelper,timelineResponsePathHelper
-
-	# paid INTEGER, 
-	# archived BOOLEAN, 
+from ..utils.paths import createDir,databasePathHelper,messageResponsePathHelper,timelineResponsePathHelper,\
+archiveResponsePathHelper,pinnedResponsePathHelper
 
 
-def write_messages(data: dict, model_id,username,path=None):
-    datebase_path =databasePathHelper(path,model_id,username)
+
+
+def write_messages_table(data: dict, model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
@@ -36,14 +36,14 @@ def write_messages(data: dict, model_id,username,path=None):
                 cur.execute(queries.messagesInsert,insertData)
                 conn.commit()
 
-def save_messages_response(model_id,username,messages,path=None):
-    messagepath =messageResponsePathHelper(path,model_id,username)
+def save_messages_response(model_id,username,messages):
+    messagepath =messageResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:
         p.write(json.dumps({"posts":messages}))
 
-def read_messages_response(model_id,username,path=None):
-    messagepath =messageResponsePathHelper(path,model_id,username)
+def read_messages_response(model_id,username):
+    messagepath =messageResponsePathHelper(model_id,username)
     if pathlib.Path(messagepath).exists():
         with open(messagepath,"r") as p:
             messages=json.loads(p.read() or '{"posts": []}')["posts"]
@@ -52,28 +52,57 @@ def read_messages_response(model_id,username,path=None):
     return []
             
   
- 
+ # This is specifically for writing to db
 
-def write_post(data: dict, model_id,username,path=None):
-    datebase_path =databasePathHelper(path,model_id,username)
+def write_post_table(data: dict, model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
             if len(cur.execute(queries.postDupeCheck,(data['id'],)).fetchall())==0:
-                insertData=(data["id"],data["text"],data.get('price') or 0,data['isOpen'],0,data["postedAt"])
+                insertData=(data["id"],data["text"],data.get('price') or 0,data.get("isOpen") or data.get("isOpened") or len(list(filter(lambda x:x['canView']==False,data['media'])))==0 ,data["isArchived"],data["postedAt"])
                 cur.execute(queries.postInsert,insertData)
                 conn.commit()
 
 
 
-def save_timeline_response(model_id,username,posts,path=None):
-    messagepath =timelineResponsePathHelper(path,model_id,username)
+def save_timeline_response(model_id,username,posts):
+    messagepath =timelineResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
         p.write(json.dumps({"posts":posts}))
 
-def read_timeline_response(model_id,username,path=None):
-    messagepath =timelineResponsePathHelper(path,model_id,username)
+def read_timeline_response(model_id,username):
+    messagepath =timelineResponsePathHelper(model_id,username)
+    if pathlib.Path(messagepath).exists():
+        with open(messagepath,"r") as p:
+            messages=json.loads(p.read() or '{"posts": []}')["posts"]
+        if len(messages)>0:
+            return messages
+    return []
+            
+def save_archive_response(model_id,username,posts):
+    messagepath =archiveResponsePathHelper(model_id,username)
+    createDir(messagepath.parent)
+    with open(messagepath,"w") as p:	
+        p.write(json.dumps({"posts":posts}))
+
+def read_archive_response(model_id,username):
+    messagepath =archiveResponsePathHelper(model_id,username)
+    if pathlib.Path(messagepath).exists():
+        with open(messagepath,"r") as p:
+            messages=json.loads(p.read() or '{"posts": []}')["posts"]
+        if len(messages)>0:
+            return messages
+    return []
+def save_pinned_response(model_id,username,posts):
+    messagepath =pinnedResponsePathHelper(model_id,username)
+    createDir(messagepath.parent)
+    with open(messagepath,"w") as p:	
+        p.write(json.dumps({"posts":posts}))           
+
+def read_pinned_response(model_id,username):
+    messagepath =pinnedResponsePathHelper(model_id,username)
     if pathlib.Path(messagepath).exists():
         with open(messagepath,"r") as p:
             messages=json.loads(p.read() or '{"posts": []}')["posts"]
@@ -84,32 +113,34 @@ def read_timeline_response(model_id,username,path=None):
 
 
 
-
-
-
-
-
-
-def write_from_data(data: tuple, model_id):
-    profile = profiles.get_current_profile()
-
-    database_path = pathlib.Path.home() / configPath / profile / databaseFile
-
-    with contextlib.closing(sqlite3.connect(database_path,check_same_thread=False)) as conn:
+def write_stories_table(data: dict, model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            model_insert_sql = f"""
-            INSERT INTO '{model_id}'(
-                media_id, filename
-            )
-            VALUES (?, ?);"""
-            cur.execute(model_insert_sql, data)
+            if len(cur.execute(queries.storiesDupeCheck,(data['id'],)).fetchall())==0:
+                insertData=(data["id"],data.get("text") or data.get("title") or "",0,1 ,0,data["createdAt"])
+                cur.execute(queries.storiesInsert,insertData)
+                conn.commit()
+
+def get_media_ids(model_id,username) -> list:
+    datebase_path =databasePathHelper(model_id,username)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.allIDCheck)
             conn.commit()
-def insert_combined_urls(combined_urls,model_id,usernames,path=None):
-    for dict in combined_urls:
-        if dict.get("responsetype")=="messages":
-            write_messages(dict,model_id,usernames,path=None)
-        elif dict.get("responsetype")=="post":
-            write_post(dict,model_id,usernames,path=None)
+            return cur.fetchall()
+def write_media(data,model_id,username) -> list:
+    datebase_path =databasePathHelper(model_id,username)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            insertData=(data["id"],data.get("text") or data.get("title") or "",0,1 ,0,data["createdAt"])
+            cur.execute(queries.insertMedia,insertData)
+            conn.commit()
+            return cur.fetchall()
+   
+
+
 
 def read_foreign_database(path) -> list:
     database_files = glob.glob(path.strip('\'\"') + '/*.db')
@@ -154,25 +185,13 @@ def write_from_foreign_database(results: list, model_id):
     console.print(f'Migration complete. Migrated {len(filtered_results)} items.')
 
 
-def get_media_ids(model_id) -> list:
-    profile = profiles.get_current_profile()
 
-    database_path = pathlib.Path.home() / configPath / profile / databaseFile
-
-    with contextlib.closing(sqlite3.connect(database_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            media_ids_sql = f"""SELECT media_id FROM '{model_id}'"""
-            cur.execute(media_ids_sql)
-            media_ids = cur.fetchall()
-
-    # A list of single elements and not iterables:
-    return list(chain.from_iterable(media_ids))
 
 def create_paid_database(model_id, path=None):
     profile = profiles.get_current_profile()
     path = path or pathlib.Path.home() / configPath / profile /"paid"/f"{model_id}.db"
     pathlib.Path(path).parent.mkdir(exist_ok=True,parents=True)
-    with contextlib.closing(sqlite3.connect(path,check_same_thread=False)) as conn:
+    with contextlib.closing(sqlite3.connect(check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
             try:
                 model_sql = f"""
@@ -181,7 +200,7 @@ def create_paid_database(model_id, path=None):
             except sqlite3.OperationalError:
                 pass
 
-def get_paid_media_ids(model_id,path=None) -> list:
+def get_paid_media_ids(model_id) -> list:
     profile = profiles.get_current_profile()
 
     database_path = path or pathlib.Path.home() / configPath / profile /"paid"/f"{model_id}.db"
@@ -196,7 +215,7 @@ def get_paid_media_ids(model_id,path=None) -> list:
     # A list of single elements and not iterables:
     return list(chain.from_iterable(media_ids))
 
-def paid_write_from_data(_id: tuple, model_id,path=None):
+def paid_write_from_data(_id: tuple, model_id):
     profile = profiles.get_current_profile()
 
     database_path = path or pathlib.Path.home() / configPath / profile /"paid"/f"{model_id}.db"

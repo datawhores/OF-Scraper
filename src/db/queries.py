@@ -121,3 +121,18 @@ postDupeCheck=\
 """
 SELECT * FROM posts where post_id=(?)
 """
+
+
+storiesInsert=\
+f"""INSERT INTO 'stories'(
+post_id, text,price,paid,archived,
+created_at)
+            VALUES (?, ?,?,?,?,?);"""
+
+storiesDupeCheck=\
+"""
+SELECT * FROM stories where post_id=(?)
+"""
+
+
+

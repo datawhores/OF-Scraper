@@ -44,11 +44,11 @@ from .__version__ import  __version__
 
 # @need_revolution("Getting messages...")
 @Revolution(desc='Getting messages...')
-def process_messages(headers, model_id,username,path=None):
-    messages_ =messages.get_messages(headers,  model_id,username,path) or []
-    operations.save_messages_response( model_id,username,messages_,path=None)
+def process_messages(headers, model_id,username):
+    messages_ =messages.get_messages(headers,  model_id,username) or []
+    operations.save_messages_response( model_id,username,messages_)
     for message in messages_:
-     operations.write_messages(message,model_id,username,path)
+     operations.write_messages_table(message,model_id,username)
 
     output=[]
     if messages_:
@@ -57,8 +57,13 @@ def process_messages(headers, model_id,username,path=None):
 
 # @need_revolution("Getting highlights...")
 @Revolution(desc='Getting highlights and stories...')
-def process_highlights(headers, model_id):
+def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
+    for post in highlights_:
+        operations.write_stories_table(post,model_id,username)
+    for post in stories:
+        operations.write_stories_table(post,model_id,username)    
+
     highlight_list=highlights.parse_highlights(highlights_)
     stories_list=highlights.parse_stories(stories)
     return highlight_list,stories_list
@@ -68,34 +73,34 @@ def process_highlights(headers, model_id):
 
 # @need_revolution("Getting subscriptions...")
 @Revolution(desc='Getting archived media...')
-def process_archived_posts(headers, model_id):
-    archived_posts = posts.scrape_archived_posts(headers, model_id)
-    if archived_posts:
-        archived_posts_urls = posts.parse_posts(archived_posts)
-        return archived_posts_urls
-    return []
+def process_archived_posts(headers, model_id,username):
+    archived_posts = posts.get_archive_post(headers, model_id,username)
+    operations.save_archive_response(model_id,username,archived_posts)
+    for post in archived_posts:
+        operations.write_post_table(post,model_id,username)
+    archived_posts_urls = posts.parse_posts(archived_posts)
+    return archived_posts_urls
 
 # @need_revolution("Getting timeline media...")
 @Revolution(desc='Getting timeline media...')
-def process_timeline_posts(headers, model_id,username,path):
-    timeline_posts = posts.get_timeline_post(headers, model_id,username,path)
-    operations.save_timeline_response(model_id,username,timeline_posts,path)
+def process_timeline_posts(headers, model_id,username):
+    timeline_posts = posts.get_timeline_post(headers, model_id,username)
+    operations.save_timeline_response(model_id,username,timeline_posts)
     for post in timeline_posts:
-        operations.write_post(post,model_id,username,path)
-    if timeline_posts:
-        timeline_posts_urls = posts.parse_posts(timeline_posts)
-        return timeline_posts_urls
-    return []
+        operations.write_post_table(post,model_id,username)
+    timeline_posts_urls = posts.parse_posts(timeline_posts)
+    return timeline_posts_urls
 
 
 # @need_revolution("Getting pinned media...")
 @Revolution(desc='Getting pinned media...')
-def process_pinned_posts(headers, model_id):
-    pinned_posts = posts.scrape_pinned_posts(headers, model_id)
-    if pinned_posts:
-        pinned_posts_urls = posts.parse_posts(pinned_posts)
-        return pinned_posts_urls
-    return []
+def process_pinned_posts(headers, model_id,username):
+    pinned_posts = posts.get_pinned_post(headers, model_id,username)
+    operations.save_pinned_response(model_id,username, pinned_posts)
+    for post in  pinned_posts:
+        operations.write_post_table(post,model_id,username)
+    timeline_posts_urls = posts.parse_posts( pinned_posts)
+    return timeline_posts_urls
 
 
 def process_profile(headers, username) -> list:
@@ -107,7 +112,7 @@ def process_profile(headers, username) -> list:
 
 
 
-def process_areas(headers, ele, model_id,selected=None,path=None) -> list:
+def process_areas(headers, ele, model_id,selected=None) -> list:
     result_areas_prompt = list(map(lambda x:x.capitalize(),(selected or prompts.areas_prompt())
 ))
     timeline_posts_dicts  = []
@@ -120,17 +125,18 @@ def process_areas(headers, ele, model_id,selected=None,path=None) -> list:
 
     # profile_dicts  = process_profile(headers, ele["name"])
     profile_dicts=[]
+    username=ele['name']
 
     if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-            timeline_posts_dicts = process_timeline_posts(headers, model_id,ele['name'],path)
-            # pinned_post_dict=process_pinned_posts(headers, model_id,ele['name'],path)
+            timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
+            pinned_post_dict=process_pinned_posts(headers, model_id,username)
     if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-            archived_posts_dicts = process_archived_posts(headers, model_id)
+            archived_posts_dicts = process_archived_posts(headers, model_id,username)
     if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
-            messages_dicts = process_messages(headers, model_id,ele['name'],path=None)
+            messages_dicts = process_messages(headers, model_id,username)
 
     if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
-            highlights_tuple = process_highlights(headers, model_id)
+            highlights_tuple = process_highlights(headers, model_id,username)
             if 'All' in result_areas_prompt:
                 highlights_dicts=highlights_tuple[0]
                 stories_dicts=highlights_tuple[1]    
@@ -138,7 +144,7 @@ def process_areas(headers, ele, model_id,selected=None,path=None) -> list:
                 highlights_dicts=highlights_tuple[0]
             elif 'Stories'  in result_areas_prompt:
                 stories_dicts=highlights_tuple[1]    
-    return list(chain(*[profile_dicts  , timeline_posts_dicts ,
+    return list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
 
@@ -292,7 +298,7 @@ def process_paid():
             model_id,
             paid_url,
             forced=args.dupe,
-            outpath=args.outpath
+            outpath=args.outpath,
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)

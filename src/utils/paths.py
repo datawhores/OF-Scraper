@@ -9,7 +9,7 @@ console=Console()
 from ..constants import configPath
 from ..utils import profiles
 
-
+homeDir=pathlib.Path.home()
 
 @contextmanager
 def set_directory(path: Path):
@@ -36,18 +36,25 @@ def createDir(path):
     except:
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
-def databasePathHelper(path,model_id,username):
+def databasePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return path or pathlib.Path.home() / configPath / profile / ".data"/f"{username}_{model_id}"/"user_data.db"
+    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"user_data.db"
 
 
-def messageResponsePathHelper(path,model_id,username):
+def messageResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return path or pathlib.Path.home() / configPath / profile / ".data"/f"{username}_{model_id}"/"messages.json"
+    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"messages.json"
 
 
-def timelineResponsePathHelper(path,model_id,username):
+def timelineResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return path or pathlib.Path.home() / configPath / profile / ".data"/f"{username}_{model_id}"/"timeline.json"
+    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"timeline.json"
 
+
+def archiveResponsePathHelper(model_id,username):
+    profile = profiles.get_current_profile()
+    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"archive.json"
+def pinnedResponsePathHelper(model_id,username):
+    profile = profiles.get_current_profile()
+    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"pinned.json"
 
