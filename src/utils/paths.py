@@ -15,8 +15,8 @@ homeDir=pathlib.Path.home()
 def set_directory(path: Path):
     """Sets the cwd within the context
 
-    Args:
-        path (Path): The path to the cwd
+        Args:``
+            path (``Path): The path to the cwd
 
     Yields:
         None

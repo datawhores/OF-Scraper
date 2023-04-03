@@ -46,7 +46,7 @@ from .__version__ import  __version__
 @Revolution(desc='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =messages.get_messages(headers,  model_id,username) or []
-    operations.save_messages_response( model_id,username,messages_)
+    # operations.save_messages_response( model_id,username,messages_)
     for message in messages_:
      operations.write_messages_table(message,model_id,username)
 
@@ -75,7 +75,7 @@ def process_highlights(headers, model_id,username):
 @Revolution(desc='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
     archived_posts = posts.get_archive_post(headers, model_id,username)
-    operations.save_archive_response(model_id,username,archived_posts)
+    # operations.save_archive_response(model_id,username,archived_posts)
     for post in archived_posts:
         operations.write_post_table(post,model_id,username)
     archived_posts_urls = posts.parse_posts(archived_posts)
@@ -84,8 +84,8 @@ def process_archived_posts(headers, model_id,username):
 # @need_revolution("Getting timeline media...")
 @Revolution(desc='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
-    timeline_posts = posts.get_timeline_post(headers, model_id,username)
-    operations.save_timeline_response(model_id,username,timeline_posts)
+    timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
+    # operations.save_timeline_response(model_id,username,timeline_posts)
     for post in timeline_posts:
         operations.write_post_table(post,model_id,username)
     timeline_posts_urls = posts.parse_posts(timeline_posts)
@@ -96,7 +96,7 @@ def process_timeline_posts(headers, model_id,username):
 @Revolution(desc='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = posts.get_pinned_post(headers, model_id,username)
-    operations.save_pinned_response(model_id,username, pinned_posts)
+    # operations.save_pinned_response(model_id,username, pinned_posts)
     for post in  pinned_posts:
         operations.write_post_table(post,model_id,username)
     timeline_posts_urls = posts.parse_posts( pinned_posts)
@@ -122,7 +122,7 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
     messages_dicts  = []
     stories_dicts=[]
 
-
+    #need to add this again
     # profile_dicts  = process_profile(headers, ele["name"])
     profile_dicts=[]
     username=ele['name']
@@ -188,7 +188,7 @@ def get_models(headers, subscribe_count) -> list:
             list_subscriptions)
     return parsed_subscriptions
 
-
+#check if auth is valid
 def process_me(headers):
     my_profile = me.scrape_user(headers)
     name, username = me.parse_user(my_profile)
@@ -280,9 +280,7 @@ def process_paid():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
 
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+    init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in userdata:
         print(f"Getting paid content for {ele['name']}")
@@ -307,9 +305,7 @@ def process_paid():
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+    init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in userdata:
         print(f"Getting Selected post type(s) for {ele['name']}\nSubscription Active: {ele['active']}")
@@ -332,9 +328,7 @@ def process_post():
 def process_like():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
@@ -512,7 +506,11 @@ def main():
         sys.exit(0)
     
 
-   #process user selected option
+   #check auth
+   
+    if init.print_sign_status(auth.make_headers(auth.read_auth()))=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+
 
     if args.posts: 
         run(process_post)        

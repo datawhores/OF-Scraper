@@ -7,11 +7,12 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-
+import asyncio
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 
-
+global sem
+sem = asyncio.Semaphore(8)
 from ..constants import (
     timelineEP, timelineNextEP,
     timelinePinnedEP,
@@ -36,59 +37,51 @@ def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
         r.raise_for_status()
 
 def get_pinned_post(headers,model_id,username):
-    oldtimeline=read_pinned_response(model_id,username)
-    newtimeline=[]
-    # find point where oldmessages is valid, since messages can be deleted
-    for i in range(len(oldtimeline)-1,0,-1):
-        newtimeline=scrape_pinned_posts(headers,model_id,timestamp=oldtimeline[i]["postedAtPrecise"])
-        if len(newtimeline)>0:
-            break  
-    #get full messages if oldmessages is empty
-    if len(newtimeline)==0:
-        newtimeline=scrape_pinned_posts(headers,model_id,timestamp=0)
-    posts=oldtimeline+newtimeline
-    unduped=[]
-    dupeSet=set()
-    for post in posts:
-        if post["id"] in dupeSet:
-            continue
-        dupeSet.add(post["id"])
-        unduped.append(post)
-    return unduped    
-
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
-def scrape_timeline_posts(headers, model_id, timestamp=0) -> list:
+    return scrape_pinned_posts(headers,model_id)
+   
+@retry(stop=stop_after_attempt(1),wait=wait_random(min=5, max=20),reraise=True)   
+async def scrape_timeline_posts(headers, model_id, timestamp=0,recursive=False) -> list:
     ep = timelineNextEP if timestamp else timelineEP
     url = ep.format(model_id, timestamp)
-
-    with httpx.Client(http2=True, headers=headers) as c:
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            posts = r.json()['list']
-            if not posts:
+    async with sem:
+        with httpx.Client(http2=True, headers=headers) as c:
+            auth.add_cookies(c)
+            c.headers.update(auth.create_sign(url, headers))
+            r = c.get(url, timeout=None)
+            if not r.is_error:
+                posts = r.json()['list']
+                if not posts:
+                    return []
+                elif len(posts)==0:
+                    return []
+                elif not recursive:
+                    return posts
+            # recursive search for posts
+                posts += await scrape_timeline_posts(
+                    headers, model_id, posts[-1]['postedAtPrecise'],recursive=True)
                 return posts
-            posts += scrape_timeline_posts(
-                headers, model_id, posts[-1]['postedAtPrecise'])
-            return posts
-        r.raise_for_status()
-def get_timeline_post(headers,model_id,username):
+            r.raise_for_status()
+#max result is 50, try to get 40 in each async task for leeway
+# Also need to grab new posts
+async def get_timeline_post(headers,model_id,username):
     oldtimeline=read_timeline_response(model_id,username)
-    newtimeline=[]
-    # find point where oldmessages is valid, since messages can be deleted
-    for i in range(len(oldtimeline)-1,0,-1):
-        newtimeline=scrape_timeline_posts(headers,model_id,timestamp=oldtimeline[i]["postedAtPrecise"])
-        if len(newtimeline)>0:
-            break  
-    #get full messages if oldmessages is empty
-    if len(newtimeline)==0:
-        newtimeline=scrape_timeline_posts(headers,model_id,timestamp=0)
-    posts=oldtimeline+newtimeline
+    postedAtArray=sorted(list(map(lambda x:x["postedAtPrecise"],oldtimeline)))
+    tasks=[]
+    if len(postedAtArray)>0:
+        split=min(40,len(postedAtArray))
+        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), split)]
+        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0])),splitArrays)))
+        tasks.append(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][-1],recursive=True))
+    else:
+        tasks.append(scrape_timeline_posts(headers,model_id,recursive=True))
+
+    responseArray=[]
+    for coro in asyncio.as_completed(tasks):
+        result=await coro
+        responseArray.extend(result)
     unduped=[]
     dupeSet=set()
-    for post in posts:
+    for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
         if post["id"] in dupeSet:
             continue
         dupeSet.add(post["id"])
@@ -97,26 +90,8 @@ def get_timeline_post(headers,model_id,username):
 
 
 def get_archive_post(headers,model_id,username):
-    oldtimeline=read_archive_response(model_id,username)
-    newtimeline=[]
-    # find point where oldmessages is valid, since messages can be deleted
-    for i in range(len(oldtimeline)-1,0,-1):
-        newtimeline=scrape_archived_posts(headers,model_id,timestamp=oldtimeline[i]["postedAtPrecise"])
-        if len(newtimeline)>0:
-            break  
-    #get full messages if oldmessages is empty
-    if len(newtimeline)==0:
-        newtimeline=scrape_archived_posts(headers,model_id,timestamp=0)
-    posts=oldtimeline+newtimeline
-    unduped=[]
-    dupeSet=set()
-    for post in posts:
-        if post["id"] in dupeSet:
-            continue
-        dupeSet.add(post["id"])
-        unduped.append(post)
-    return unduped                                
-    
+    return scrape_archived_posts(headers,model_id)
+   
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
