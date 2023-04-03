@@ -2,4 +2,10 @@
 - Support Lists
 - cookie extension native messaging
 - Add cache and async to request
+- Add DC import script 
+- Add Profile DB 
+- Add dupe check for media IDs
+- Add naming function
+- is instance list for posts
+
 

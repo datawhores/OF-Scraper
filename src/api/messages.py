@@ -20,10 +20,10 @@ def get_messages(headers,  model_id,username):
     oldmessages=read_messages_response(model_id,username)
     newmessages=[]
     # find point where oldmessages is valid, since messages can be deleted
-    for i in range(len(oldmessages)-1,0,-1):
-        newmessages=scrape_messages(headers,model_id,message_id=oldmessages[i]["id"])
-        if len(newmessages)>0:
-            break  
+    # for i in range(len(oldmessages)-1,0,-1):
+    #     newmessages=scrape_messages(headers,model_id,message_id=oldmessages[i]["id"])
+    #     if len(newmessages)>0:
+    #         break  
     #get full messages if oldmessages is empty
     if len(oldmessages)==0:
         newmessages=scrape_messages(headers,model_id,message_id=0)  
