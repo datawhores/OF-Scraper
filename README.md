@@ -3,6 +3,11 @@ This is a fork of onlyfans-scraper with additional features and fixes
 Note the guide is still a little incomplete, so it might not be up to date with the changes I made 
 I hope to go through it and make the necessary changes soon.
 
+new db branch has some changes that will be coming to the main branch soon
+https://github.com/excludedBittern8/ofscraper/tree/db
+
+Will be added a feature to speed up repeated scraping of models
+
 <h3>DISCLAIMERS:</h3>
 <ol>
     <li>
