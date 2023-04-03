@@ -15,7 +15,7 @@ from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import meEP,subscribeCountEP
 from ..utils import auth, encoding
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(5),wait=wait_random(min=2, max=6),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/5")) 
 def scrape_user(headers):
     with httpx.Client(http2=True, headers=headers) as c:
         url = meEP

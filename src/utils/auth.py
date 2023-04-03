@@ -73,7 +73,7 @@ def edit_auth():
 
 def make_auth(path=None, auth=None):
     path= path or  pathlib.Path.home() / configPath / get_current_profile()
-    defaultAuth= auth = {
+    defaultAuth=  {
             'auth': {
                 'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
                 'sess': '',
