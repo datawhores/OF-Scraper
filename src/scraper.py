@@ -267,9 +267,7 @@ def process_paid():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
 
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+    init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in userdata:
         print(f"Getting paid content for {ele['name']}")
@@ -293,9 +291,7 @@ def process_paid():
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+    init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in userdata:
         print(f"Getting Selected post type(s) for {ele['name']}\nSubscription Active: {ele['active']}")
@@ -318,9 +314,7 @@ def process_post():
 def process_like():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+    init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
@@ -332,9 +326,7 @@ def process_like():
 def process_unlike():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-    if init.print_sign_status(headers)=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
-        headers = auth.make_headers(auth.read_auth())
+    init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
@@ -387,7 +379,18 @@ def run_helper(command,*params,**kwparams):
             job_func()
             jobqueue.task_done()
                 
-      
+def checkAuth():
+    status=None
+    while status!="UP":
+        headers = auth.make_headers(auth.read_auth())
+        status=init.print_sign_status(headers)
+        if status=="DOWN":
+            auth.make_auth(auth=auth.read_auth())
+            continue
+        break
+        
+    
+
        
 
 def getselected_usernames():
@@ -432,9 +435,8 @@ def filteruserHelper(usernames):
 
 
 
-
-
-
+#force auth 
+checkAuth()
 def main():
     global args
     if platform.system == 'Windows':
@@ -497,8 +499,10 @@ def main():
         process_prompts()
         sys.exit(0)
     
-
+    #force off
+    
    #process user selected option
+
 
     if args.posts: 
         run(process_post)        
