@@ -27,11 +27,12 @@ from tenacity import retry,stop_after_attempt,wait_random
 
 from .auth import add_cookies
 from .config import read_config
-from .dates import convert_date_to_timestamp
 from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory
 from ..utils import auth
+import constants
+import utils.profiles as profiles
 
 
 config = read_config()['config']
@@ -126,7 +127,7 @@ async def download(client,ele,filename,path,model_id,username,file_size_limit,da
                         return 'skipped', 1       
                 content_type = rheaders.get("content-type").split('/')[-1]
                 path_to_file = pathlib.Path(path,f"{filename}.{content_type}")
-                with set_directory(pathlib.Path(pathlib.Path(__file__).parents[2],".tempmedia")):
+                with set_directory(constants.configPath,profiles.get_current_profile(),".tempmedia"):
                     temp=f"{filename}.{content_type}"
                     pathlib.Path(temp).unlink(missing_ok=True)
                     with open(temp, 'wb') as f:
@@ -177,7 +178,7 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar: 
                 for ele in medialist:
                     filename=createfilename(ele,username,model_id)
-                    with set_directory(pathlib.Path(root,username, "Paid",ele["mediatype"].capitalize())):
+                    with set_directory(pathlib.Path(root,username, ele["responsetype"],ele["mediatype"].capitalize())):
                         aws.append(asyncio.create_task(download_paid(c,ele,filename,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,forced=False)))
                 for coro in asyncio.as_completed(aws):
                         try:
@@ -230,7 +231,7 @@ async def download_paid(client,ele,filename,path,model_id,username,file_size_lim
                     return 'skipped', 1
                 content_type = rheaders.get("content-type").split('/')[-1]
                 path_to_file = pathlib.Path(path,f"{filename}.{content_type}")
-                with set_directory(pathlib.Path(pathlib.Path(__file__).parents[2],".tempmedia")):
+                with set_directory(constants.configPath,profiles.get_current_profile(),".tempmedia"):
                     temp=f"{filename}.{content_type}"
                     pathlib.Path(temp).unlink(missing_ok=True)
                     with open(temp, 'wb') as f:
