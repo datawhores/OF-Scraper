@@ -13,6 +13,7 @@ import glob
 import pathlib
 import sqlite3
 import json
+import math
 from itertools import chain
 from hashlib import md5
 from rich.console import Console
@@ -23,6 +24,13 @@ from ..db import queries
 from ..utils.paths import createDir,databasePathHelper,messageResponsePathHelper,timelineResponsePathHelper,\
 archiveResponsePathHelper,pinnedResponsePathHelper
 
+def create_message_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.messagesCreate)
+            conn.commit()
 
 
 
@@ -52,7 +60,6 @@ def read_messages_response(model_id,username):
     return []
             
   
- # This is specifically for writing to db
 
 def write_post_table(data: dict, model_id,username):
     datebase_path =databasePathHelper(model_id,username)
@@ -60,11 +67,17 @@ def write_post_table(data: dict, model_id,username):
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
             if len(cur.execute(queries.postDupeCheck,(data['id'],)).fetchall())==0:
-                insertData=(data["id"],data["text"],data.get('price') or 0,data.get("isOpen") or data.get("isOpened") or len(list(filter(lambda x:x['canView']==False,data['media'])))==0 ,data["isArchived"],data["postedAt"])
+                insertData=(data["id"],data["text"],data.get('price') or 0,data.get("isOpen") or data.get("isOpened") or len(list(filter(lambda x:x['canView']==False,data['media'])))==0 ,data.get("isArchived") or 0,data.get("postedAt" or data.get("createdAt")))
                 cur.execute(queries.postInsert,insertData)
                 conn.commit()
 
-
+def create_post_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.postCreate)
+            conn.commit()
 
 def save_timeline_response(model_id,username,posts):
     messagepath =timelineResponsePathHelper(model_id,username)
@@ -123,6 +136,14 @@ def write_stories_table(data: dict, model_id,username):
                 cur.execute(queries.storiesInsert,insertData)
                 conn.commit()
 
+def create_media_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.mediaCreate)
+            conn.commit()
+
 def get_media_ids(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
@@ -130,17 +151,36 @@ def get_media_ids(model_id,username) -> list:
             cur.execute(queries.allIDCheck)
             conn.commit()
             return cur.fetchall()
-def write_media(data,model_id,username) -> list:
+def write_media(data,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            insertData=(data["id"],data.get("text") or data.get("title") or "",0,1 ,0,data["createdAt"])
-            cur.execute(queries.insertMedia,insertData)
+            insertData=[data["id"],data["data"]["id"],data['url'],str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
+            math.ceil(pathlib.Path(filename).stat().st_size),data['responsetype'].capitalize(),data['mediatype'].capitalize() ,
+            1 if data["data"].get("preview")!=None else 0,None, 1,data["date"]]
+            if len(cur.execute(queries.mediaDupeCheck,(data['id'],)).fetchall())==0:
+                cur.execute(queries.mediaInsert,insertData)
+            else:
+                insertData.append(data["id"])
+                cur.execute(queries.mediaUpdate,insertData)
             conn.commit()
-            return cur.fetchall()
    
 
 
+def create_products_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.productCreate)
+            conn.commit()
+def create_others_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.otherCreate)
+            conn.commit()
 
 def read_foreign_database(path) -> list:
     database_files = glob.glob(path.strip('\'\"') + '/*.db')
@@ -187,45 +227,3 @@ def write_from_foreign_database(results: list, model_id):
 
 
 
-def create_paid_database(model_id, path=None):
-    profile = profiles.get_current_profile()
-    path = path or pathlib.Path.home() / configPath / profile /"paid"/f"{model_id}.db"
-    pathlib.Path(path).parent.mkdir(exist_ok=True,parents=True)
-    with contextlib.closing(sqlite3.connect(check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            try:
-                model_sql = f"""
-                CREATE TABLE IF NOT EXISTS hashes (id integer PRIMARY KEY, hash int);"""
-                cur.execute(model_sql)
-            except sqlite3.OperationalError:
-                pass
-
-def get_paid_media_ids(model_id) -> list:
-    profile = profiles.get_current_profile()
-
-    database_path = path or pathlib.Path.home() / configPath / profile /"paid"/f"{model_id}.db"
-
-
-    with contextlib.closing(sqlite3.connect(database_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            media_ids_sql = f"""SELECT hash FROM 'hashes'"""
-            cur.execute(media_ids_sql)
-            media_ids = cur.fetchall()
-
-    # A list of single elements and not iterables:
-    return list(chain.from_iterable(media_ids))
-
-def paid_write_from_data(_id: tuple, model_id):
-    profile = profiles.get_current_profile()
-
-    database_path = path or pathlib.Path.home() / configPath / profile /"paid"/f"{model_id}.db"
-
-    with contextlib.closing(sqlite3.connect(database_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            model_insert_sql = f"""
-            INSERT INTO 'hashes' (
-                hash
-            )
-            VALUES (?);"""
-            cur.execute(model_insert_sql, (_id,))
-            conn.commit()

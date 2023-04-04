@@ -7,5 +7,6 @@
 - Add dupe check for media IDs
 - Add naming function
 - is instance list for posts
+- jwt token? in download url
 
 
