@@ -40,15 +40,19 @@ def get_pinned_post(headers,model_id,username):
     return scrape_pinned_posts(headers,model_id)
    
 @retry(stop=stop_after_attempt(1),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_timeline_posts(headers, model_id, timestamp=0,recursive=False) -> list:
-    timestamp=str(timestamp)
-    ep = timelineNextEP if timestamp else timelineEP
-    url = ep.format(model_id, timestamp)
+async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=False) -> list:
+    if timestamp:
+        timestamp=str(timestamp)
+        ep = timelineNextEP
+        url = ep.format(model_id, timestamp)
+    else:
+        ep=timelineEP
+        url=ep.format(model_id)
     async with sem:
         with httpx.Client(http2=True, headers=headers) as c:
             auth.add_cookies(c)
             c.headers.update(auth.create_sign(url, headers))
-            r = c.get(url, timeout=None)
+            r = c.get(url , timeout=None)
             if not r.is_error:
                 posts = r.json()['list']
                 if not posts:

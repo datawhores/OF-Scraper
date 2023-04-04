@@ -132,6 +132,6 @@ dmypy.json
 .vscode/
 
 #other
-.tempmedia/*
+.tempmedia
 launch.json
 .vscode/launch.json

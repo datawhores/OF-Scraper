@@ -31,8 +31,9 @@ from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory
 from ..utils import auth
-import constants
-import utils.profiles as profiles
+from ..constants import configPath
+from ..utils.profiles import get_current_profile
+
 
 
 config = read_config()['config']
@@ -43,7 +44,7 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
         if not forced:
             media_ids = set(operations.get_media_ids(model_id,username))
             medialist = separate_by_id(medialist, media_ids)
-            console.print(f"Skipping previously downloaded\nPosts left for download {len(medialist)}")
+            console.print(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
         else:
             print("forcing all downloads")
         file_size_limit = config.get('file_size_limit')
@@ -83,13 +84,13 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
                                 desc.format(
                                     p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
 
-                        elif media_type == 'video':
+                        elif media_type == 'videos':
                             video_count += 1
                             main_bar.set_description(
                                 desc.format(
                                     p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
 
-                        elif media_type == 'audio':
+                        elif media_type == 'audios':
                             audio_count += 1
                             main_bar.set_description(
                                 desc.format(
@@ -127,7 +128,7 @@ async def download(client,ele,filename,path,model_id,username,file_size_limit,da
                         return 'skipped', 1       
                 content_type = rheaders.get("content-type").split('/')[-1]
                 path_to_file = pathlib.Path(path,f"{filename}.{content_type}")
-                with set_directory(constants.configPath,profiles.get_current_profile(),".tempmedia"):
+                with set_directory(pathlib.Path(pathlib.Path.home(),configPath,get_current_profile(),".tempmedia")):
                     temp=f"{filename}.{content_type}"
                     pathlib.Path(temp).unlink(missing_ok=True)
                     with open(temp, 'wb') as f:
@@ -156,7 +157,7 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
         if not forced:
             media_ids = set(operations.get_media_ids(model_id,username))
             medialist = separate_by_id(medialist, media_ids)
-            console.print(f"Skipping previously downloaded\nPaid content left for download {len(medialist)}")
+            console.print(f"Skipping previously downloaded\nPaid media content left for download {len(medialist)}")
         else:
             print("forcing all downloads")
         file_size_limit = config.get('file_size_limit')
@@ -178,7 +179,7 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
             with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar: 
                 for ele in medialist:
                     filename=createfilename(ele,username,model_id)
-                    with set_directory(pathlib.Path(root,username, ele["responsetype"],ele["mediatype"].capitalize())):
+                    with set_directory(pathlib.Path(root,username, ele["responsetype"].capitalize(),ele["mediatype"].capitalize())):
                         aws.append(asyncio.create_task(download_paid(c,ele,filename,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,forced=False)))
                 for coro in asyncio.as_completed(aws):
                         try:
@@ -231,7 +232,7 @@ async def download_paid(client,ele,filename,path,model_id,username,file_size_lim
                     return 'skipped', 1
                 content_type = rheaders.get("content-type").split('/')[-1]
                 path_to_file = pathlib.Path(path,f"{filename}.{content_type}")
-                with set_directory(constants.configPath,profiles.get_current_profile(),".tempmedia"):
+                with set_directory(pathlib.Path(pathlib.Path.home(),configPath,get_current_profile(),".tempmedia")):
                     temp=f"{filename}.{content_type}"
                     pathlib.Path(temp).unlink(missing_ok=True)
                     with open(temp, 'wb') as f:
