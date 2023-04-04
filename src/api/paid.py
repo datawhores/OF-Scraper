@@ -76,7 +76,7 @@ def scrape_paid(username):
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)
             if not r.is_error:
-                console.print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page:{count}")
+                console.print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page: {count}")
                 if "hasMore" in r.json():
                     hasMore = r.json()['hasMore']
                     count=count+1
@@ -89,7 +89,7 @@ def parse_paid(paid):
     media_to_download=[]
     for item in paid:
         for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
-            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"data":item})
+            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"responsetype":item["responseType"],"data":item})
     return media_to_download
 
 

@@ -52,7 +52,8 @@ def process_messages(headers, model_id,username):
 
     output=[]
     if messages_:
-        [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_]       
+        [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_] 
+        list(map(lambda x:mediaJsonHelper(x),output))      
     return output
 
 # @need_revolution("Getting highlights...")
@@ -64,8 +65,8 @@ def process_highlights(headers, model_id,username):
     for post in stories:
         operations.write_stories_table(post,model_id,username)    
 
-    highlight_list=highlights.parse_highlights(highlights_)
-    stories_list=highlights.parse_stories(stories)
+    highlight_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_highlights(highlights_)))
+    stories_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_stories(stories)))
     return highlight_list,stories_list
 
 
@@ -75,28 +76,30 @@ def process_highlights(headers, model_id,username):
 @Revolution(desc='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
     archived_posts = posts.get_archive_post(headers, model_id,username)
-    # operations.save_archive_response(model_id,username,archived_posts)
+    operations.save_archive_response(model_id,username,archived_posts)
     for post in archived_posts:
+        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
-    archived_posts_urls = posts.parse_posts(archived_posts)
-    return archived_posts_urls
+    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(archived_posts)))
+
 
 # @need_revolution("Getting timeline media...")
 @Revolution(desc='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
-    # operations.save_timeline_response(model_id,username,timeline_posts)
+    operations.save_timeline_response(model_id,username,timeline_posts)
     for post in timeline_posts:
+        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
-    timeline_posts_urls = posts.parse_posts(timeline_posts)
-    return timeline_posts_urls
+    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts)))
+
 
 
 # @need_revolution("Getting pinned media...")
 @Revolution(desc='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = posts.get_pinned_post(headers, model_id,username)
-    # operations.save_pinned_response(model_id,username, pinned_posts)
+    operations.save_pinned_response(model_id,username, pinned_posts)
     for post in  pinned_posts:
         operations.write_post_table(post,model_id,username)
     timeline_posts_urls = posts.parse_posts( pinned_posts)
@@ -286,9 +289,8 @@ def process_paid():
         print(f"Getting paid content for {ele['name']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
-            # operations.create_database(model_id,ele['name'])
-            paid_content=paid.scrape_paid(ele["name"])
-            paid_url=paid.parse_paid(paid_content)
+            create_tables(model_id,ele['name'])
+            paid_url=process_paid_post(model_id,ele['name'])
             profile.print_paid_info(paid_url,ele["name"])
             asyncio.run(download.process_dicts_paid(
             headers,
@@ -301,7 +303,26 @@ def process_paid():
         except Exception as e:
             console.print("run failed with exception: ", e)
 
-
+def process_paid_post(model_id,username):
+    paid_content=paid.scrape_paid(username)
+    for post in paid_content:
+        responseJsonHelper(post)
+        operations.write_post_table(post,model_id,username)
+    return list(map(lambda x:mediaJsonHelper(x),paid.parse_paid(paid_content)))
+def responseJsonHelper(data):
+    if data.get("responseType")=="post":
+        data["responseType"]="posts"
+    elif data.get("responseType")=="message":
+        data["responseType"]="messages"
+    return data
+def mediaJsonHelper(data):
+    if data.get("mediatype")=="photo" or data.get("mediatype")=="gif" :
+        data["mediatype"]="images"
+    elif data.get("mediatype")=="audio":
+        data["mediatype"]="audios"
+    elif data.get("mediatype")=="video":
+        data["mediatype"]="videos"
+    return data         
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
@@ -311,6 +332,7 @@ def process_post():
         print(f"Getting Selected post type(s) for {ele['name']}\nSubscription Active: {ele['active']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
+            create_tables(model_id,ele['name'])
             combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
             asyncio.run(download.process_dicts(
             headers,
@@ -439,6 +461,12 @@ def filteruserHelper(usernames):
     return filterusername
 
 
+def create_tables(model_id,username):
+    operations.create_post_table(model_id,username)
+    operations.create_message_table(model_id,username)
+    operations.create_media_table(model_id,username)
+    operations.create_products_table(model_id,username)
+    operations.create_others_table(model_id,username)
 
 
 

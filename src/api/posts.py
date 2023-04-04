@@ -41,6 +41,7 @@ def get_pinned_post(headers,model_id,username):
    
 @retry(stop=stop_after_attempt(1),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_timeline_posts(headers, model_id, timestamp=0,recursive=False) -> list:
+    timestamp=str(timestamp)
     ep = timelineNextEP if timestamp else timelineEP
     url = ep.format(model_id, timestamp)
     async with sem:
@@ -65,12 +66,13 @@ async def scrape_timeline_posts(headers, model_id, timestamp=0,recursive=False) 
 # Also need to grab new posts
 async def get_timeline_post(headers,model_id,username):
     oldtimeline=read_timeline_response(model_id,username)
-    postedAtArray=sorted(list(map(lambda x:x["postedAtPrecise"],oldtimeline)))
+    postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
     tasks=[]
     if len(postedAtArray)>0:
         split=min(40,len(postedAtArray))
         splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), split)]
-        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0])),splitArrays)))
+        #-100 because we want it to be inclusive
+        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0]-100)),splitArrays)))
         tasks.append(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][-1],recursive=True))
     else:
         tasks.append(scrape_timeline_posts(headers,model_id,recursive=True))

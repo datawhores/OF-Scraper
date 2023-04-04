@@ -134,5 +134,29 @@ storiesDupeCheck=\
 SELECT * FROM stories where post_id=(?)
 """
 
+allIDCheck=\
+"""
+SELECT media_id FROM medias
+"""
 
+mediaInsert=\
+f"""INSERT INTO 'medias'(
+media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at)
+            VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);"""
 
+# postInsert=\
+# f"""INSERT INTO 'posts'(
+# post_id, text,price,paid,archived,
+# created_at)
+#             VALUES (?, ?,?,?,?,?);"""
+
+mediaDupeCheck=\
+"""
+SELECT * FROM medias where media_id=(?)
+"""
+
+mediaUpdate=\
+f"""Update 'medias'
+SET
+media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?
+WHERE media_id=(?);"""
