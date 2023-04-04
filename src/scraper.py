@@ -290,6 +290,7 @@ def process_paid():
         try:
             model_id = profile.get_id(headers, ele["name"])
             create_tables(model_id,ele['name'])
+            operations.write_profile_table(model_id,ele['name'])
             paid_url=process_paid_post(model_id,ele['name'])
             profile.print_paid_info(paid_url,ele["name"])
             asyncio.run(download.process_dicts_paid(
@@ -333,6 +334,7 @@ def process_post():
         try:
             model_id = profile.get_id(headers, ele["name"])
             create_tables(model_id,ele['name'])
+            operations.write_profile_table(model_id,ele['name'])
             combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
             asyncio.run(download.process_dicts(
             headers,
@@ -467,6 +469,7 @@ def create_tables(model_id,username):
     operations.create_media_table(model_id,username)
     operations.create_products_table(model_id,username)
     operations.create_others_table(model_id,username)
+    operations.create_profile_table(model_id,username)
 
 
 

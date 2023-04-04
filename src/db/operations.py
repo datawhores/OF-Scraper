@@ -150,7 +150,7 @@ def get_media_ids(model_id,username) -> list:
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.allIDCheck)
             conn.commit()
-            return cur.fetchall()
+            return list(map(lambda x:x[0],cur.fetchall()))
 def write_media(data,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
@@ -165,7 +165,6 @@ def write_media(data,filename,model_id,username) -> list:
                 cur.execute(queries.mediaUpdate,insertData)
             conn.commit()
    
-
 
 def create_products_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
@@ -182,6 +181,26 @@ def create_others_table(model_id,username):
             cur.execute(queries.otherCreate)
             conn.commit()
 
+def create_profile_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.profilesCreate)
+            conn.commit()
+
+def write_profile_table(model_id,username) -> list:
+    datebase_path =databasePathHelper(model_id,username)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            insertData=[model_id,username]
+            if len(cur.execute(queries.profileDupeCheck,(model_id,)).fetchall())==0:
+                cur.execute(queries.profileInsert,insertData)
+            else:
+                insertData.append(model_id)
+                cur.execute(queries.profileUpdate,insertData)
+            conn.commit()
+   
 def read_foreign_database(path) -> list:
     database_files = glob.glob(path.strip('\'\"') + '/*.db')
 
@@ -195,6 +214,8 @@ def read_foreign_database(path) -> list:
                     database_results.append(result)
 
     return database_results
+
+
 
 
 def write_from_foreign_database(results: list, model_id):

@@ -144,13 +144,11 @@ f"""INSERT INTO 'medias'(
 media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at)
             VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);"""
 
-# postInsert=\
-# f"""INSERT INTO 'posts'(
-# post_id, text,price,paid,archived,
-# created_at)
-#             VALUES (?, ?,?,?,?,?);"""
-
 mediaDupeCheck=\
+"""
+SELECT * FROM medias where media_id=(?)
+"""
+
 """
 SELECT * FROM medias where media_id=(?)
 """
@@ -160,3 +158,19 @@ f"""Update 'medias'
 SET
 media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?
 WHERE media_id=(?);"""
+
+profileDupeCheck=\
+"""
+SELECT * FROM profiles where user_id=(?)
+"""
+
+profileInsert=\
+f"""INSERT INTO 'profiles'(
+user_id,username)
+            VALUES (?, ?);"""
+
+profileUpdate=\
+f"""Update 'profiles'
+SET
+user_id=?,username=?
+WHERE user_id=(?);"""
