@@ -8,7 +8,7 @@ r"""
                  \/     \/           \/            \/         
 """
 preferences = 'pref_config.py'
-configPath = '.config/ofscraper'
+configPath = '  `   /ofscraper'
 configFile = 'config.json'
 authFile = 'auth.json'
 databaseFile = 'models.db'
