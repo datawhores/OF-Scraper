@@ -42,8 +42,7 @@ from .__version__ import  __version__
 
 
 
-# @need_revolution("Getting messages...")
-# @Revolution(desc='Getting messages...')
+@Revolution(desc='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
     operations.save_messages_response( model_id,username,messages_)
@@ -128,8 +127,7 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
     stories_dicts=[]
 
     #need to add this again
-    # profile_dicts  = process_profile(headers, ele["name"])
-    profile_dicts=[]
+    profile_dicts  = process_profile(headers, ele["name"])
     username=ele['name']
 
     if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
@@ -472,7 +470,7 @@ def create_tables(model_id,username):
     operations.create_products_table(model_id,username)
     operations.create_others_table(model_id,username)
     operations.create_profile_table(model_id,username)
-
+    operations.create_stories_table(model_id,username)
 
 
 

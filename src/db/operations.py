@@ -124,7 +124,13 @@ def read_pinned_response(model_id,username):
     return []
             
 
-
+def create_stories_table(model_id,username):
+    datebase_path =databasePathHelper(model_id,username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.storiesCreate)
+            conn.commit()
 
 def write_stories_table(data: dict, model_id,username):
     datebase_path =databasePathHelper(model_id,username)
