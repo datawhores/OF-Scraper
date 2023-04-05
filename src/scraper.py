@@ -45,11 +45,10 @@ from .__version__ import  __version__
 # @need_revolution("Getting messages...")
 @Revolution(desc='Getting messages...')
 def process_messages(headers, model_id,username):
-    messages_ =messages.get_messages(headers,  model_id,username) or []
-    # operations.save_messages_response( model_id,username,messages_)
+    messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
+    operations.save_messages_response( model_id,username,messages_)
     for message in messages_:
      operations.write_messages_table(message,model_id,username)
-
     output=[]
     if messages_:
         [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_] 
@@ -75,7 +74,7 @@ def process_highlights(headers, model_id,username):
 # @need_revolution("Getting subscriptions...")
 @Revolution(desc='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
-    archived_posts = posts.get_archive_post(headers, model_id,username)
+    archived_posts = posts.get_archive_post(headers, model_id)
     operations.save_archive_response(model_id,username,archived_posts)
     for post in archived_posts:
         responseJsonHelper(post)
@@ -101,9 +100,12 @@ def process_pinned_posts(headers, model_id,username):
     pinned_posts = posts.get_pinned_post(headers, model_id,username)
     operations.save_pinned_response(model_id,username, pinned_posts)
     for post in  pinned_posts:
+        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
     timeline_posts_urls = posts.parse_posts( pinned_posts)
-    return timeline_posts_urls
+    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts_urls)))
+
+
 
 
 def process_profile(headers, username) -> list:
