@@ -43,7 +43,7 @@ from .__version__ import  __version__
 
 
 # @need_revolution("Getting messages...")
-@Revolution(desc='Getting messages...')
+# @Revolution(desc='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
     operations.save_messages_response( model_id,username,messages_)

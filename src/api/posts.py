@@ -77,12 +77,18 @@ async def get_timeline_post(headers,model_id,username):
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
     global tasks
     tasks=[]
-    if len(postedAtArray)>0:
-        split=min(40,len(postedAtArray))
-        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), split)]
-        #-100 because we want it to be inclusive
-        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0]-100)),splitArrays[:-1])))
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][-1],recursive=True)))
+    
+    split=40
+    interval=30
+    if len(postedAtArray)>split:
+        #add differing splits and interval for inclusivity and potential breakpoints
+        split=40
+        interval=30
+        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
+        
+        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id)))
+        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0]-100)),splitArrays[1:-1])))
+        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][0],recursive=True)))
     else:
         tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,recursive=True)))
 

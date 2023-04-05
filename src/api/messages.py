@@ -12,6 +12,7 @@ import time
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
+import arrow
 global sem
 sem = asyncio.Semaphore(8)
 from ..constants import messagesEP, messagesNextEP
@@ -21,17 +22,23 @@ from ..db.operations import read_messages_response
 
 async def get_messages(headers,  model_id,username):
     oldmessages=read_messages_response(model_id,username)
-    postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:int(x["createdAt"]),reverse=True)))
+    postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x["createdAt"]).float_timestamp,reverse=True)))
     global tasks
     tasks=[]
-    if len(postedAtArray)>0:
-        split=min(40,len(postedAtArray))
-        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), split)]
-        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_messages(headers,model_id,message_id=x[0])),splitArrays[:-1])))
-        tasks.append(asyncio.create_task(scrape_messages(headers,model_id,message_id=splitArrays[-1][-1],recursive=True)))
+    
+    #split and interval can't match because of breakpoints
+    split=40
+    interval=30
+    if len(postedAtArray)>split:
+        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
+        tasks.append(asyncio.create_task(scrape_messages(headers,model_id)))
+        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_messages(headers,model_id,message_id=x[0])),splitArrays[1:-1])))
+        tasks.append(asyncio.create_task(scrape_messages(headers,model_id,message_id=splitArrays[-1][0],recursive=True)))
     else:
         tasks.append(asyncio.create_task(scrape_messages(headers,model_id,recursive=True)))
-
+   
+  
+    
     
     responseArray=[]
     page_count=0 
@@ -57,7 +64,7 @@ async def get_messages(headers,  model_id,username):
     return unduped
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_messages(headers, user_id, message_id=0,recursive=False) -> list:
+async def scrape_messages(headers, user_id, message_id=None,recursive=False) -> list:
     ep = messagesNextEP if message_id else messagesEP
     url = ep.format(user_id, message_id)
     async with sem:
@@ -74,7 +81,7 @@ async def scrape_messages(headers, user_id, message_id=0,recursive=False) -> lis
                 elif not recursive:
                     return messages
                 global tasks
-                tasks.append(asyncio.create_task(scrape_messages(headers, user_id, messages[-1]['id'])))
+                tasks.append(asyncio.create_task(scrape_messages(headers, user_id, recursive=True,message_id=messages[-1]['id'])))
                 return messages
             r.raise_for_status()
 
