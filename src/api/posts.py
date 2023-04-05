@@ -81,7 +81,7 @@ async def get_timeline_post(headers,model_id,username):
         split=min(40,len(postedAtArray))
         splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), split)]
         #-100 because we want it to be inclusive
-        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,tasks,timestamp=x[0]-100)),splitArrays)))
+        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0]-100)),splitArrays[:-1])))
         tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][-1],recursive=True)))
     else:
         tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,recursive=True)))
@@ -110,7 +110,6 @@ async def get_timeline_post(headers,model_id,username):
         dupeSet.add(post["id"])
         unduped.append(post)
     return unduped                                
-
 
 def get_archive_post(headers,model_id,username):
     return scrape_archived_posts(headers,model_id)

@@ -59,10 +59,10 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
             skipped = 0
             total_bytes_downloaded = 0
             data = 0
-            desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'    
+            desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {sumcount}/{mediacount}||{data})'    
             root= pathlib.Path((outpath or config.get('save_location') or pathlib.Path.cwd()))
             print(f"Downloading to {pathlib.Path(root,username)}")
-            with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
+            with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count,data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
                 for ele in medialist:
                     filename=createfilename(ele,username,model_id)
                     with set_directory(str(pathlib.Path(root,username,ele["responsetype"].capitalize(),ele["mediatype"].capitalize()))):
@@ -82,25 +82,25 @@ async def process_dicts(headers, username, model_id, medialist,forced=False,outp
                             photo_count += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         elif media_type == 'videos':
                             video_count += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         elif media_type == 'audios':
                             audio_count += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         elif media_type == 'skipped':
                             skipped += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         main_bar.update()
 
@@ -176,7 +176,7 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
             desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'   
             root= pathlib.Path((outpath or config.get('save_location') or pathlib.Path.cwd()))
             print(f"Downloading to {pathlib.Path(root,username)}")
-            with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data), total=len(aws), colour='cyan', leave=True) as main_bar: 
+            with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), total=len(aws), colour='cyan', leave=True) as main_bar: 
                 for ele in medialist:
                     filename=createfilename(ele,username,model_id)
                     with set_directory(pathlib.Path(root,username, ele["responsetype"].capitalize(),ele["mediatype"].capitalize())):
@@ -196,24 +196,24 @@ async def process_dicts_paid(headers,username,model_id,medialist,forced=False,ou
                             photo_count += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         elif media_type == 'audios':
                             audio_count += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)                        
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)                        
                         elif media_type == 'videos':
                             video_count += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         elif media_type == 'skipped':
                             skipped += 1
                             main_bar.set_description(
                                 desc.format(
-                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data), refresh=False)
+                                    p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count), refresh=False)
 
                         main_bar.update()
 
