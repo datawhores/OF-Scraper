@@ -445,7 +445,7 @@ def decide_filters_prompts():
     questions = [
         {
             'type': 'list',
-            'message': "Modify filters for your accounts list?\nSome examples are scraping free accounts only or paid accounts without renewal",
+            'message': "Modify filters for your accounts list?\nSome usage examples are scraping free accounts only or paid accounts without renewal",
             'choices':["Yes","No"]
         }
     ]
