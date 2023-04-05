@@ -19,6 +19,7 @@ requests = "^2.28.2"
 bs4 = "^0.0.1"
 rich = "^13.3.2"
 tenacity = "^8.2.2"
+arrow = "^1.2.3"
 
 
 [build-system]
