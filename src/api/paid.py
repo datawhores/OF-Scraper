@@ -30,24 +30,6 @@ paid_content_list_name = 'list'
 
 
 
-# def add_to_db(urlbase):
-#     code=md5(urlbase.encode())
-
-#     """Returns True if hash was not in the database and file can continue."""
-    
-#     db.commit()
-#     cursor.execute(f"SELECT * FROM hashes WHERE hash='{code.hexdigest()}'")
-#     results = cursor.fetchall()
-#     if len(results) > 0:
-#         return False
-#     cursor.execute("""INSERT INTO hashes(hash,file_name) VALUES(?,?)""",(code.hexdigest(),urlbase))
-#     db.commit()
-#     return True
-
-
-
-
-
 
 
 def scrape_paid(username):

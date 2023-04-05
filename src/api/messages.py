@@ -7,30 +7,49 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-
+import asyncio
+import time
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
-
+from tqdm.asyncio import tqdm
+global sem
+sem = asyncio.Semaphore(8)
 from ..constants import messagesEP, messagesNextEP
 from ..utils import auth
 from ..db.operations import read_messages_response
 
 
-def get_messages(headers,  model_id,username):
+async def get_messages(headers,  model_id,username):
     oldmessages=read_messages_response(model_id,username)
-    newmessages=[]
-    # find point where oldmessages is valid, since messages can be deleted
-    # for i in range(len(oldmessages)-1,0,-1):
-    #     newmessages=scrape_messages(headers,model_id,message_id=oldmessages[i]["id"])
-    #     if len(newmessages)>0:
-    #         break  
-    #get full messages if oldmessages is empty
-    if len(oldmessages)==0:
-        newmessages=scrape_messages(headers,model_id,message_id=0)  
-    messages=oldmessages+newmessages
+    postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:int(x["createdAt"]),reverse=True)))
+    global tasks
+    tasks=[]
+    if len(postedAtArray)>0:
+        split=min(40,len(postedAtArray))
+        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), split)]
+        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_messages(headers,model_id,message_id=x[0])),splitArrays[:-1])))
+        tasks.append(asyncio.create_task(scrape_messages(headers,model_id,message_id=splitArrays[-1][-1],recursive=True)))
+    else:
+        tasks.append(asyncio.create_task(scrape_messages(headers,model_id,recursive=True)))
+
+    
+    responseArray=[]
+    page_count=0 
+    desc = 'Pages Progress: {page_count}'   
+
+    with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2) as main_bar:
+        while len(tasks)!=0:
+                    for coro in asyncio.as_completed(tasks):
+                        result=await coro
+                        page_count=page_count+1
+                        main_bar.set_description(desc.format(page_count=page_count), refresh=False)
+                        main_bar.update()
+                        responseArray.extend(result)
+                    time.sleep(2)
+                    tasks=list(filter(lambda x:x.done()==False,tasks))
     unduped=[]
     dupeSet=set()
-    for message in messages:
+    for message in responseArray:
         if message["id"] in dupeSet:
             continue
         dupeSet.add(message["id"])
@@ -38,21 +57,26 @@ def get_messages(headers,  model_id,username):
     return unduped
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
-def scrape_messages(headers, user_id, message_id=0) -> list:
+async def scrape_messages(headers, user_id, message_id=0,recursive=False) -> list:
     ep = messagesNextEP if message_id else messagesEP
     url = ep.format(user_id, message_id)
-
-    with httpx.Client(http2=True, headers=headers) as c:
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            messages = r.json()['list']
-            if not messages:
+    async with sem:
+        async with httpx.AsyncClient(http2=True, headers=headers) as c:
+            auth.add_cookies(c)
+            c.headers.update(auth.create_sign(url, headers))
+            r = await c.get(url, timeout=None)
+            if not r.is_error:
+                messages = r.json()['list']
+                if not messages:
+                    return []
+                elif len(messages)==0:
+                    return messages
+                elif not recursive:
+                    return messages
+                global tasks
+                tasks.append(asyncio.create_task(scrape_messages(headers, user_id, messages[-1]['id'])))
                 return messages
-            messages += scrape_messages(headers, user_id, messages[-1]['id'])
-            return messages
-        r.raise_for_status()
+            r.raise_for_status()
 
 
 def parse_messages(messages: list, user_id):

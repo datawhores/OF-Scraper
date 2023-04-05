@@ -61,7 +61,7 @@ async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=Fals
                 if not posts:
                     return []
                 elif len(posts)==0:
-                    return []
+                    return posts
                 elif not recursive:
                     return posts
                 # recursive search for posts
@@ -111,7 +111,7 @@ async def get_timeline_post(headers,model_id,username):
         unduped.append(post)
     return unduped                                
 
-def get_archive_post(headers,model_id,username):
+def get_archive_post(headers,model_id):
     return scrape_archived_posts(headers,model_id)
    
 
@@ -137,7 +137,6 @@ def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
 
 def parse_posts(posts: list):
     data = list(filter( lambda x:x.get('media')!=None,posts))
-    # [  'data']
     output=[]
     for ele in data:
         medialist=list(filter(lambda x:x["canView"],ele["media"]))
