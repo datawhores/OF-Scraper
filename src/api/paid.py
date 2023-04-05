@@ -7,23 +7,14 @@ r"""
                   |___/                                                        |_|
 """
 from urllib.request import urlopen
-import asyncio
-import math
-import tempfile
-import shutil
-import os
+
 from rich.console import Console
 console=Console()
 from ..constants import purchased_contentEP
 from ..utils import auth
 import httpx
-import pathlib
 from ..utils.config import read_config
-from ..utils.paths import set_directory
-import sqlite3 as sql
-from tqdm import tqdm
-from ..db import operations
-from ..utils.separate import separate_by_id
+
 
 config = read_config()['config']
 paid_content_list_name = 'list'
