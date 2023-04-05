@@ -118,7 +118,7 @@ def convert_num_bytes(num_bytes: int) -> str:
 async def download(client,ele,filename,path,model_id,username,file_size_limit,date=None,id_=None,forced=False):
     url=ele['url']
     media_type=ele['mediatype']
-    id_=ele['id']
+    id_=ele.get("id")
     async with sem:  
         async with client.stream('GET',url) as r:
             if not r.is_error:
@@ -276,12 +276,16 @@ def get_error_message(content):
     except AttributeError:
         return error_content
 def createfilename(ele,username,model_id=None):
+    if ele.get("responsetype")=="profile":
+        url=ele["url"]
+        return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+
     url=ele["url"]
     date=ele['date']
     id=ele['id']
     media_type=ele['mediatype']
-    text=ele['text']
-    count=ele['count']
+    text=ele['text'][0:1]+ele['count']
     return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+
 
 
