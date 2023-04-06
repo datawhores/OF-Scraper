@@ -21,3 +21,5 @@
 - add metadata support
 - username filter
 - progress bar for scraper
+- Added dynamic naming scheme
+

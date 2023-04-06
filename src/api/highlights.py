@@ -85,7 +85,7 @@ def parse_stories(stories: list):
     output=[]
     for story in stories:
         for count, media in enumerate(story["media"]):
-            output.append({"url":media["files"]["source"]["url"],"id":media["id"],"date":media["createdAt"],"responsetype":"stories","count":count+1,"text":None,"mediatype":media["type"],"data":media})
+            output.append({"url":media["files"]["source"]["url"],"id":media["id"],"date":media["createdAt"],"responsetype":"stories","count":count+1,"text":None,"mediatype":media["type"],"postid":story["id"],"data":media,"value":"free"})
     return output
 
 

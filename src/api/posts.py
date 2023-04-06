@@ -148,7 +148,7 @@ def parse_posts(posts: list):
         medialist=list(filter(lambda x:x["canView"],ele["media"]))
         for count,media in enumerate(medialist):
             output.append({"responsetype":ele["responseType"],"id":media["id"],"date":media["createdAt"]
-            ,"text":ele["text"],"count":count+1,"url":media["source"]["source"],"mediatype":media["type"],"data":ele})
+            ,"text":ele["text"],"count":count+1,"url":media["source"]["source"],"mediatype":media["type"],"value":"paid" if (ele["price"] or 0)>0 else "free" ,"postid":ele["id"],"data":ele})
     return output
 
 
