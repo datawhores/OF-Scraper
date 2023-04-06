@@ -135,20 +135,20 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
     if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
             pinned_post_dict=process_pinned_posts(headers, model_id,username)
-    # if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-    #         archived_posts_dicts = process_archived_posts(headers, model_id,username)
-    # if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
-    #         messages_dicts = process_messages(headers, model_id,username)
+    if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
+            archived_posts_dicts = process_archived_posts(headers, model_id,username)
+    if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
+            messages_dicts = process_messages(headers, model_id,username)
 
-    # if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
-    #         highlights_tuple = process_highlights(headers, model_id,username)
-    #         if 'All' in result_areas_prompt:
-    #             highlights_dicts=highlights_tuple[0]
-    #             stories_dicts=highlights_tuple[1]    
-    #         elif 'Highlights'  in result_areas_prompt:
-    #             highlights_dicts=highlights_tuple[0]
-    #         elif 'Stories'  in result_areas_prompt:
-    #             stories_dicts=highlights_tuple[1]    
+    if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
+            highlights_tuple = process_highlights(headers, model_id,username)
+            if 'All' in result_areas_prompt:
+                highlights_dicts=highlights_tuple[0]
+                stories_dicts=highlights_tuple[1]    
+            elif 'Highlights'  in result_areas_prompt:
+                highlights_dicts=highlights_tuple[0]
+            elif 'Stories'  in result_areas_prompt:
+                stories_dicts=highlights_tuple[1]    
     return list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
