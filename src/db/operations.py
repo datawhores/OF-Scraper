@@ -23,6 +23,7 @@ from ..utils import separate, profiles
 from ..db import queries
 from ..utils.paths import createDir,databasePathHelper,messageResponsePathHelper,timelineResponsePathHelper,\
 archiveResponsePathHelper,pinnedResponsePathHelper
+from ..utils.prompts import user_db_prompt
 
 def create_message_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
@@ -221,35 +222,38 @@ def read_foreign_database(path) -> list:
 
     return database_results
 
+def user_db_migration():
+    answers=user_db_prompt()
 
 
 
-def write_from_foreign_database(results: list, model_id):
-    profile = profiles.get_current_profile()
+
+# def write_from_foreign_database(results: list, model_id):
+#     profile = profiles.get_current_profile()
     
 
-    database_path = pathlib.Path.home() / configPath / profile / databaseFile
+#     database_path = pathlib.Path.home() / configPath / profile / databaseFile
 
-    # Create the database table in case it doesn't exist:
-    create_database(model_id, database_path)
+#     # Create the database table in case it doesn't exist:
+#     create_database(model_id, database_path)
 
-    # Filter results to avoid adding duplicates to database:
-    media_ids = get_media_ids(model_id)
-    filtered_results = separate.separate_database_results_by_id(
-        results, media_ids)
+#     # Filter results to avoid adding duplicates to database:
+#     media_ids = get_media_ids(model_id)
+#     filtered_results = separate.separate_database_results_by_id(
+#         results, media_ids)
 
-    # Insert results into our database:
-    with contextlib.closing(sqlite3.connect(database_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            model_insert_sql = f"""
-            INSERT INTO '{model_id}'(
-                media_id, filename
-            )
-            VALUES (?, ?);"""
-            cur.executemany(model_insert_sql, filtered_results)
-            conn.commit()
+#     # Insert results into our database:
+#     with contextlib.closing(sqlite3.connect(database_path,check_same_thread=False)) as conn:
+#         with contextlib.closing(conn.cursor()) as cur:
+#             model_insert_sql = f"""
+#             INSERT INTO '{model_id}'(
+#                 media_id, filename
+#             )
+#             VALUES (?, ?);"""
+#             cur.executemany(model_insert_sql, filtered_results)
+#             conn.commit()
 
-    console.print(f'Migration complete. Migrated {len(filtered_results)} items.')
+#     console.print(f'Migration complete. Migrated {len(filtered_results)} items.')
 
 
 
