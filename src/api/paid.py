@@ -7,23 +7,14 @@ r"""
                   |___/                                                        |_|
 """
 from urllib.request import urlopen
-import asyncio
-import math
-import tempfile
-import shutil
-import os
+
 from rich.console import Console
 console=Console()
 from ..constants import purchased_contentEP
 from ..utils import auth
 import httpx
-import pathlib
 from ..utils.config import read_config
-from ..utils.paths import set_directory
-import sqlite3 as sql
-from tqdm import tqdm
-from ..db import operations
-from ..utils.separate import separate_by_id
+
 
 config = read_config()['config']
 paid_content_list_name = 'list'
@@ -34,24 +25,6 @@ paid_content_list_name = 'list'
 
 
 
-
-
-
-
-
-# def add_to_db(urlbase):
-#     code=md5(urlbase.encode())
-
-#     """Returns True if hash was not in the database and file can continue."""
-    
-#     db.commit()
-#     cursor.execute(f"SELECT * FROM hashes WHERE hash='{code.hexdigest()}'")
-#     results = cursor.fetchall()
-#     if len(results) > 0:
-#         return False
-#     cursor.execute("""INSERT INTO hashes(hash,file_name) VALUES(?,?)""",(code.hexdigest(),urlbase))
-#     db.commit()
-#     return True
 
 
 
@@ -76,20 +49,18 @@ def scrape_paid(username):
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)
             if not r.is_error:
-                console.print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page:{count}")
+                console.print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page: {count}")
                 if "hasMore" in r.json():
                     hasMore = r.json()['hasMore']
                     count=count+1
-                # THIS NEEDS TO BE REWORKED TO WORK LIKE HIGHLIGHTS AND FIGURE OUT THE LIST NAME HAVEN'T HAD TIME.
-                for item in r.json()[paid_content_list_name]:
-                    media_to_download.append(item)
+                media_to_download.extend(list(filter(lambda x:isinstance(x,list),r.json().values()))[0])
     return media_to_download
 
 def parse_paid(paid):
     media_to_download=[]
     for item in paid:
         for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
-            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"data":item})
+            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"responsetype":item["responseType"],"postid":item["id"],"value":"free" if item.get("IsFree") else "paid","data":item})
     return media_to_download
 
 

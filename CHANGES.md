@@ -17,3 +17,9 @@
 - simplify username selection when username args not pass
 - automatic cookie extractions
 - improve authentication flow
+- add cache to scraper
+- add metadata support
+- username filter
+- progress bar for scraper
+- Added dynamic naming scheme
+

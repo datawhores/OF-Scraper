@@ -42,21 +42,31 @@ from .__version__ import  __version__
 
 
 
-# @need_revolution("Getting messages...")
 @Revolution(desc='Getting messages...')
-def process_messages(headers, model_id):
-    messages_ = messages.scrape_messages(headers, model_id)
+def process_messages(headers, model_id,username):
+    messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
+    operations.save_messages_response( model_id,username,messages_)
+    for message in messages_:
+     operations.write_messages_table(message,model_id,username)
     output=[]
     if messages_:
-        [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_]       
+        [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_] 
+        list(map(lambda x:mediaJsonHelper(x),output))      
     return output
 
 # @need_revolution("Getting highlights...")
 @Revolution(desc='Getting highlights and stories...')
-def process_highlights(headers, model_id):
+def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
-    highlight_list=highlights.parse_highlights(highlights_)
-    stories_list=highlights.parse_stories(stories)
+    for post in highlights_:
+        operations.write_stories_table(post,model_id,username)
+    for post in stories:
+        operations.write_stories_table(post,model_id,username)    
+
+    highlight_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_highlights(highlights_)))
+    stories_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_stories(stories)))
+   
+
     return highlight_list,stories_list
 
 
@@ -64,31 +74,39 @@ def process_highlights(headers, model_id):
 
 # @need_revolution("Getting subscriptions...")
 @Revolution(desc='Getting archived media...')
-def process_archived_posts(headers, model_id):
-    archived_posts = posts.scrape_archived_posts(headers, model_id)
-    if archived_posts:
-        archived_posts_urls = posts.parse_posts(archived_posts)
-        return archived_posts_urls
-    return []
+def process_archived_posts(headers, model_id,username):
+    archived_posts = posts.get_archive_post(headers, model_id)
+    operations.save_archive_response(model_id,username,archived_posts)
+    for post in archived_posts:
+        responseJsonHelper(post)
+        operations.write_post_table(post,model_id,username)
+    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(archived_posts)))
+
 
 # @need_revolution("Getting timeline media...")
 @Revolution(desc='Getting timeline media...')
-def process_timeline_posts(headers, model_id):
-    timeline_posts = posts.scrape_timeline_posts(headers, model_id)
-    if timeline_posts:
-        timeline_posts_urls = posts.parse_posts(timeline_posts)
-        return timeline_posts_urls
-    return []
+def process_timeline_posts(headers, model_id,username):
+    timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
+    operations.save_timeline_response(model_id,username,timeline_posts)
+    for post in timeline_posts:
+        responseJsonHelper(post)
+        operations.write_post_table(post,model_id,username)
+    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts)))
+
 
 
 # @need_revolution("Getting pinned media...")
 @Revolution(desc='Getting pinned media...')
-def process_pinned_posts(headers, model_id):
-    pinned_posts = posts.scrape_pinned_posts(headers, model_id)
-    if pinned_posts:
-        pinned_posts_urls = posts.parse_posts(pinned_posts)
-        return pinned_posts_urls
-    return []
+def process_pinned_posts(headers, model_id,username):
+    pinned_posts = posts.get_pinned_post(headers, model_id,username)
+    operations.save_pinned_response(model_id,username, pinned_posts)
+    for post in  pinned_posts:
+        responseJsonHelper(post)
+        operations.write_post_table(post,model_id,username)
+    timeline_posts_urls = posts.parse_posts( pinned_posts)
+    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts_urls)))
+
+
 
 
 def process_profile(headers, username) -> list:
@@ -103,27 +121,27 @@ def process_profile(headers, username) -> list:
 def process_areas(headers, ele, model_id,selected=None) -> list:
     result_areas_prompt = list(map(lambda x:x.capitalize(),(selected or prompts.areas_prompt())
 ))
-    pinned_posts_dicts = []
     timeline_posts_dicts  = []
+    pinned_post_dict=[]
     archived_posts_dicts  = []
     highlights_dicts  = []
     messages_dicts  = []
     stories_dicts=[]
 
-    # profile_dicts  = process_profile(headers, ele["name"])
-    profile_dicts=[]
+    username=ele['name']
+    profile_dicts  = process_profile(headers,username)
+
 
     if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-            pinned_posts_dicts= process_pinned_posts(headers, model_id)
-            timeline_posts_dicts = process_timeline_posts(headers, model_id)
-
+            timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
+            pinned_post_dict=process_pinned_posts(headers, model_id,username)
     if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-            archived_posts_dicts = process_archived_posts(headers, model_id)
+            archived_posts_dicts = process_archived_posts(headers, model_id,username)
     if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
-            messages_dicts = process_messages(headers, model_id)
+            messages_dicts = process_messages(headers, model_id,username)
 
     if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
-            highlights_tuple = process_highlights(headers, model_id)
+            highlights_tuple = process_highlights(headers, model_id,username)
             if 'All' in result_areas_prompt:
                 highlights_dicts=highlights_tuple[0]
                 stories_dicts=highlights_tuple[1]    
@@ -131,7 +149,7 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
                 highlights_dicts=highlights_tuple[0]
             elif 'Stories'  in result_areas_prompt:
                 stories_dicts=highlights_tuple[1]    
-    return list(chain(*[profile_dicts ,pinned_posts_dicts , timeline_posts_dicts ,
+    return list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
 
@@ -175,7 +193,7 @@ def get_models(headers, subscribe_count) -> list:
             list_subscriptions)
     return parsed_subscriptions
 
-
+#check if auth is valid
 def process_me(headers):
     my_profile = me.scrape_user(headers)
     name, username = me.parse_user(my_profile)
@@ -273,21 +291,39 @@ def process_paid():
         print(f"Getting paid content for {ele['name']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
-            paid_content=paid.scrape_paid(ele["name"])
-            paid_url=paid.parse_paid(paid_content)
+            create_tables(model_id,ele['name'])
+            operations.write_profile_table(model_id,ele['name'])
+            paid_url=process_paid_post(model_id,ele['name'])
             profile.print_paid_info(paid_url,ele["name"])
             asyncio.run(download.process_dicts_paid(
-            headers,
             ele["name"],
             model_id,
             paid_url,
             forced=args.dupe,
-            outpath=args.outpath
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)
 
-
+def process_paid_post(model_id,username):
+    paid_content=paid.scrape_paid(username)
+    for post in paid_content:
+        responseJsonHelper(post)
+        operations.write_post_table(post,model_id,username)
+    return list(map(lambda x:mediaJsonHelper(x),paid.parse_paid(paid_content)))
+def responseJsonHelper(data):
+    if data.get("responseType")=="post":
+        data["responseType"]="posts"
+    elif data.get("responseType")=="message":
+        data["responseType"]="messages"
+    return data
+def mediaJsonHelper(data):
+    if data.get("mediatype")=="photo" or data.get("mediatype")=="gif" :
+        data["mediatype"]="images"
+    elif data.get("mediatype")=="audio":
+        data["mediatype"]="audios"
+    elif data.get("mediatype")=="video":
+        data["mediatype"]="videos"
+    return data         
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
@@ -297,9 +333,10 @@ def process_post():
         print(f"Getting Selected post type(s) for {ele['name']}\nSubscription Active: {ele['active']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
+            create_tables(model_id,ele['name'])
+            operations.write_profile_table(model_id,ele['name'])
             combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
             asyncio.run(download.process_dicts(
-            headers,
             ele["name"],
             model_id,
             combined_urls,
@@ -314,7 +351,11 @@ def process_post():
 def process_like():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
+<<<<<<< HEAD
     init.print_sign_status(headers)
+=======
+
+>>>>>>> db
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
@@ -359,7 +400,7 @@ def set_schedule(command,*params,**kwparams):
 def run(command,*params,**kwparams):
     # get usernames prior to potentially supressing output
     getselected_usernames()
-    console.print(f"starting script daemon:{args.daemon!=None} silent-mode:{args.silent}")    
+    console.print(f"starting script daemon: {args.daemon!=None} silent-mode: {args.silent}")    
     if args.silent:
         with suppress_stdout():
             run_helper(command,*params,**kwparams)
@@ -410,7 +451,7 @@ def getselected_usernames():
 
     elif args.username:
         userSelect=set(args.username)
-        selectedusers=list(filter(lambda x:x in userSelect,filter_subscriptions))
+        selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
     #manually select usernames
     else:
         selectedusers= get_model(filter_subscriptions)
@@ -434,9 +475,17 @@ def filteruserHelper(usernames):
     return filterusername
 
 
+def create_tables(model_id,username):
+    operations.create_post_table(model_id,username)
+    operations.create_message_table(model_id,username)
+    operations.create_media_table(model_id,username)
+    operations.create_products_table(model_id,username)
+    operations.create_others_table(model_id,username)
+    operations.create_profile_table(model_id,username)
+    operations.create_stories_table(model_id,username)
 
-#force auth 
-checkAuth()
+
+
 def main():
     global args
     if platform.system == 'Windows':
@@ -468,7 +517,7 @@ def main():
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="+"
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="*"
     )
     post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
@@ -499,9 +548,12 @@ def main():
         process_prompts()
         sys.exit(0)
     
-    #force off
-    
-   #process user selected option
+
+   #check auth
+   
+    if init.print_sign_status(auth.make_headers(auth.read_auth()))=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+
 
 
     if args.posts: 

@@ -33,10 +33,19 @@ def scrape_highlights(headers, user_id) -> list:
         r_one = c.get(url_story, timeout=None)
 
         if not r_multiple.is_error and not r_one.is_error:
-            return r_multiple.json(), r_one.json()
+            return get_highlightList(r_multiple.json()),r_one.json()
 
         r_multiple.raise_for_status()
         r_one.raise_for_status()
+
+def get_highlightList(data):
+    for ele in list(filter(lambda x:isinstance(x,list),data.values())):
+        if len(list(filter(lambda x:isinstance(x.get("id"),int) and data.get("hasMore")!=None,ele)))>0:
+               return ele
+    return []
+
+
+    
 
 
 
@@ -45,14 +54,10 @@ def parse_highlights(highlights: list) -> list:
     #This needs further work but will work for now. I was thinking of adding full recurssive ability until all conditions are met.
     #This means that whenever onlyfans changes the name of the list containing the highlights it wont matter because the name is variable.
     #To break this they would have to change the conditions or in this release the layers.
-    temp=[]
-    for item in list(filter(lambda x:isinstance(x,list),highlights.values())):
-        for highlight in list(filter(lambda x:x.get("id") and isinstance(x['id'],int),item)):
-            temp.append(highlight)
-    output=[]
-    for count,item in enumerate(temp):
-        output.append({"id":item["id"],"date":item["createdAt"],"text":item["title"],"responsetype":"highlight","count":count+1,"url":item["cover"],"mediatype":"photo","data":item})
-    return output
+    ids= [highlight['id'] for highlight in highlights]
+    results=asyncio.run(process_highlights_ids(auth.make_headers(auth.read_auth()),ids))
+    return parse_stories(results)
+    
 async def process_highlights_ids(headers, ids: list) -> list:
     if not ids:
         return []
@@ -79,8 +84,8 @@ async def scrape_story(headers, story_id: int) -> list:
 def parse_stories(stories: list):
     output=[]
     for story in stories:
-        for media in story["media"]:
-            output.append({"url":media["files"]["source"]["url"],"id":media["id"],"date":media["createdAt"],"responsetype":"stories","count":1,"text":None,"mediatype":media["type"],"data":media})
+        for count, media in enumerate(story["media"]):
+            output.append({"url":media["files"]["source"]["url"],"id":media["id"],"date":media["createdAt"],"responsetype":"stories","count":count+1,"text":None,"mediatype":media["type"],"postid":story["id"],"data":media,"value":"free"})
     return output
 
 
