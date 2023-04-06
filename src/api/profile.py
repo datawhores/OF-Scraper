@@ -34,11 +34,14 @@ def scrape_profile(headers, username) -> dict:
 
 def parse_profile(profile: dict) -> tuple:
     media = []
-    if (avatar := profile['avatar']):
-        media.append((avatar,"Profile"))
-    if (header := profile['header']):
-        media.append((header,"Header"))
-    # media_urls = list(zip_longest(media, [], fillvalue=None))
+    media.append(profile.get('avatar'))
+    media.append(profile.get('profile'))
+    media=list(filter(lambda x:x!=None,media))
+
+    output=[]
+    for ele in media:
+        output.append({"url":ele,"responsetype":"profile","mediatype":"images","value":"free","date":profile["joinDate"]})
+
 
     name = encoding.encode_utf_16(profile['name'])
     username = profile['username']
@@ -52,12 +55,8 @@ def parse_profile(profile: dict) -> tuple:
     info = (
         name, username, id_, join_date,
         posts_count, photos_count, videos_count, audios_count, archived_posts_count)
-    output=[]
-                    # ['id', 'date', 'text', 'post-type', 'count', 'url', 'mediatype', 'data']
-    for count,ele in enumerate(media):
-        output.append({})
+  
 
-    
     return output, info
 
 
