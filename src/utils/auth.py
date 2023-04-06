@@ -31,7 +31,7 @@ def read_auth():
 
     profile = get_current_profile()
 
-    p = pathlib.Path.home() / configPath / profile
+    p = pathlib.Path.home()/configPath/profile
     if not p.is_dir():
         p.mkdir(parents=True, exist_ok=True)
     

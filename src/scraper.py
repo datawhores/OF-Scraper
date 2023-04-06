@@ -158,8 +158,7 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
 
 
 def do_database_migration(path, model_id):
-    results = operations.read_foreign_database(path)
-    operations.write_from_foreign_database(results, model_id)
+    operations.user_db_migration()
 
 
 def get_usernames(parsed_subscriptions: list) -> list:
@@ -225,9 +224,7 @@ def process_prompts():
 
     elif result_main_prompt == 4:
         # Migrate from old database
-        path, username = prompts.database_prompt()
-        model_id = profile.get_id(headers, username)
-        do_database_migration(path, model_id)
+        do_database_migration()
      
 
     elif result_main_prompt == 5:
@@ -539,15 +536,15 @@ def main():
     args = parser.parse_args()
     global selectedusers
     selectedusers=None
+    #check auth
+
+    if init.print_sign_status(auth.make_headers(auth.read_auth()))=="DOWN":
+        auth.make_auth(auth=auth.read_auth())
+    
     if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.purchased,args.posts])))==0:
         process_prompts()
         sys.exit(0)
     
-
-   #check auth
-   
-    if init.print_sign_status(auth.make_headers(auth.read_auth()))=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
 
 
 
@@ -559,7 +556,6 @@ def main():
         run(process_like)
     if args.action=="unlike":
         run(process_unlike)  
-
 
 if __name__ == '__main__':
     main()
