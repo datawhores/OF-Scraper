@@ -62,7 +62,7 @@ def parse_paid(paid):
     media_to_download=[]
     for item in paid:
         for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
-            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"responsetype":item["responseType"],"data":item})
+            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"responsetype":item["responseType"],"postid":item["id"],"value":"free" if item.get("IsFree") else "paid","data":item})
     return media_to_download
 
 
