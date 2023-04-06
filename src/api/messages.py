@@ -93,7 +93,7 @@ def parse_messages(messages: list, user_id):
     for message in messages_with_media:
         for count,media in enumerate(list(filter(lambda x:x["canView"]==True,message["media"]))):
                 messages_urls.append({"url":media["source"]["source"],"id":media["id"],"count":count+1,"mediatype":media["type"],
-                    "text":message["text"],'responsetype':"messages","date":message["createdAt"],"data":message})
+        "text":message["text"],'responsetype':"messages","date":message["createdAt"],"value":"free" if message["price"]==0 else "paid","postid":message["id"],"data":message})
 
     return messages_urls
     

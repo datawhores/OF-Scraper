@@ -65,6 +65,8 @@ def process_highlights(headers, model_id,username):
 
     highlight_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_highlights(highlights_)))
     stories_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_stories(stories)))
+   
+
     return highlight_list,stories_list
 
 
@@ -126,27 +128,27 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
     messages_dicts  = []
     stories_dicts=[]
 
-    #need to add this again
-    profile_dicts  = process_profile(headers, ele["name"])
     username=ele['name']
+    profile_dicts  = process_profile(headers,username)
+
 
     if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
             pinned_post_dict=process_pinned_posts(headers, model_id,username)
-    if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
-            archived_posts_dicts = process_archived_posts(headers, model_id,username)
-    if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
-            messages_dicts = process_messages(headers, model_id,username)
+    # if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
+    #         archived_posts_dicts = process_archived_posts(headers, model_id,username)
+    # if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
+    #         messages_dicts = process_messages(headers, model_id,username)
 
-    if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
-            highlights_tuple = process_highlights(headers, model_id,username)
-            if 'All' in result_areas_prompt:
-                highlights_dicts=highlights_tuple[0]
-                stories_dicts=highlights_tuple[1]    
-            elif 'Highlights'  in result_areas_prompt:
-                highlights_dicts=highlights_tuple[0]
-            elif 'Stories'  in result_areas_prompt:
-                stories_dicts=highlights_tuple[1]    
+    # if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
+    #         highlights_tuple = process_highlights(headers, model_id,username)
+    #         if 'All' in result_areas_prompt:
+    #             highlights_dicts=highlights_tuple[0]
+    #             stories_dicts=highlights_tuple[1]    
+    #         elif 'Highlights'  in result_areas_prompt:
+    #             highlights_dicts=highlights_tuple[0]
+    #         elif 'Stories'  in result_areas_prompt:
+    #             stories_dicts=highlights_tuple[1]    
     return list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
@@ -294,7 +296,6 @@ def process_paid():
             paid_url=process_paid_post(model_id,ele['name'])
             profile.print_paid_info(paid_url,ele["name"])
             asyncio.run(download.process_dicts_paid(
-            headers,
             ele["name"],
             model_id,
             paid_url,
@@ -337,7 +338,6 @@ def process_post():
             operations.write_profile_table(model_id,ele['name'])
             combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
             asyncio.run(download.process_dicts(
-            headers,
             ele["name"],
             model_id,
             combined_urls,
@@ -505,7 +505,7 @@ def main():
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="+"
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="*"
     )
     post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
