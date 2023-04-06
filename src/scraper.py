@@ -36,8 +36,7 @@ import webbrowser
 from revolution import Revolution
 from .utils.nap import nap_or_sleep
 from .__version__ import  __version__
-
-
+from .utils.config import read_config
 
 
 
@@ -411,7 +410,8 @@ def run_helper(command,*params,**kwparams):
             job_func()
             jobqueue.task_done()
                 
-def checkAuth():
+def initializer():
+    read_config()
     status=None
     while status!="UP":
         headers = auth.make_headers(auth.read_auth())
@@ -535,10 +535,9 @@ def main():
     args = parser.parse_args()
     global selectedusers
     selectedusers=None
-    #check auth
+    initializer()
 
-    if init.print_sign_status(auth.make_headers(auth.read_auth()))=="DOWN":
-        auth.make_auth(auth=auth.read_auth())
+
     
     if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.purchased,args.posts])))==0:
         process_prompts()

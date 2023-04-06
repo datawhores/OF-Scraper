@@ -14,10 +14,7 @@ console=Console()
 from ..constants import purchased_contentEP
 from ..utils import auth
 import httpx
-from ..utils.config import read_config
 
-
-config = read_config()['config']
 paid_content_list_name = 'list'
 
 
