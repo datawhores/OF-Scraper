@@ -48,7 +48,7 @@ def get_current_config_schema(config: dict) -> dict:
     new_config = {
         'config': {
             mainProfile: config.get(mainProfile) or mainProfile,
-            'save_location': config.get('save_location') or pathlib.Path.home() /'ofscraper/Data',
+            'save_location': config.get('save_location') or str(pathlib.Path.home() /'ofscraper/Data'),
             'file_size_limit': config.get('file_size_limit') or '',
             'dir_format': config.get("dir_format") or '{model_username}/{responsetype}/{mediatype}/',
             'file_format': config.get('file_format') or '{filename}.{ext}',
@@ -64,8 +64,8 @@ def get_current_config_schema(config: dict) -> dict:
 def make_config(path, config):
     config = {
         'config': {
-            mainProfile: mainProfile,
-            'save_location': pathlib.Path.home() /'ofscraper/Data',
+            "mainProfile": mainProfile,
+            'save_location': str(pathlib.Path.home() /'ofscraper/Data'),
             'file_size_limit': '',
             'dir_format':'{model_username}/{responsetype}/{mediatype}/',
             'file_format': '{filename}.{ext}',
