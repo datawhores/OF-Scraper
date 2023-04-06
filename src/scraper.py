@@ -202,7 +202,7 @@ def process_me(headers):
 
 
 def process_prompts():
-    loop = process_prompts
+ .    loop = process_prompts
     result_main_prompt = prompts.main_prompt()
     headers = auth.make_headers(auth.read_auth())
     if result_main_prompt in [0,1,2] and prompts.decide_filters_prompts()=="Yes":
@@ -216,28 +216,28 @@ def process_prompts():
             process_paid()
 
     # like a user's posts
-    elif result_main_prompt == 2:
+    elif result_main_prompt == 1:
         process_like()
     # Unlike a user's posts
-    elif result_main_prompt == 3:
+    elif result_main_prompt == 2:
         process_unlike()
 
-    elif result_main_prompt == 4:
+    elif result_main_prompt == 3:
         # Migrate from old database
         do_database_migration()
      
 
-    elif result_main_prompt == 5:
+    elif result_main_prompt == 4:
         # Edit `auth.json` file
         auth.edit_auth()
     
-    elif result_main_prompt == 6:
+    elif result_main_prompt == 5:
         # Edit `config.json` file
         config.edit_config()
 
       
  
-    elif result_main_prompt == 7:
+    elif result_main_prompt == 6:
         # Display  `Profiles` menu
         result_profiles_prompt = prompts.profiles_prompt()
 
