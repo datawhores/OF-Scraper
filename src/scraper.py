@@ -300,7 +300,6 @@ def process_paid():
             model_id,
             paid_url,
             forced=args.dupe,
-            outpath=args.outpath,
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)
