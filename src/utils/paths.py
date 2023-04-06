@@ -8,9 +8,10 @@ console=Console()
 
 from ..constants import configPath
 from ..utils import profiles
+from .config import read_config
 
 homeDir=pathlib.Path.home()
-
+config = read_config()['config']
 @contextmanager
 def set_directory(path: Path):
     """Sets the cwd within the context
@@ -37,8 +38,9 @@ def createDir(path):
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    profile = profiles.get_current_profile()
-    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"user_data.db"
+    return config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),username=username,model_id=model_id,sitename="Onlyfans",first_letter=username[0])
+
+    
 
 
 def messageResponsePathHelper(model_id,username):

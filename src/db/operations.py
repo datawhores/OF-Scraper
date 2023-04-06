@@ -195,6 +195,12 @@ def create_profile_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.profilesCreate)
             conn.commit()
+def read_foreign_profile_table(datebase_path):
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.profileData)
+            conn.commit()
+            return list(map(lambda x:x,cur.fetchall())) 
 
 def write_profile_table(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
@@ -222,8 +228,6 @@ def read_foreign_database(path) -> list:
 
     return database_results
 
-def user_db_migration():
-    answers=user_db_prompt()
 
 
 
