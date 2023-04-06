@@ -351,11 +351,6 @@ def process_post():
 def process_like():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
-<<<<<<< HEAD
-    init.print_sign_status(headers)
-=======
-
->>>>>>> db
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
