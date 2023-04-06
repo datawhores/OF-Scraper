@@ -53,9 +53,7 @@ def scrape_paid(username):
                 if "hasMore" in r.json():
                     hasMore = r.json()['hasMore']
                     count=count+1
-                # THIS NEEDS TO BE REWORKED TO WORK LIKE HIGHLIGHTS AND FIGURE OUT THE LIST NAME HAVEN'T HAD TIME.
-                for item in r.json()[paid_content_list_name]:
-                    media_to_download.append(item)
+                media_to_download.extend(list(filter(lambda x:isinstance(x,list),r.json().values()))[0])
     return media_to_download
 
 def parse_paid(paid):
