@@ -53,7 +53,9 @@ def get_current_config_schema(config: dict) -> dict:
             'dir_format': config.get("dir_format") or '{model_username}/{responsetype}/{mediatype}/',
             'file_format': config.get('file_format') or '{filename}.{ext}',
             'textlength':config.get('textlength') or 0,
-            'date': config.get('date') or  "MM-DD-YYYY"
+            'date': config.get('date') or  "MM-DD-YYYY",
+            "metadata": config.get('metadata') or "{configpath}/{profile}/.data/{username}_{model_id}"
+
         }
     }
     return new_config
@@ -68,7 +70,8 @@ def make_config(path, config):
             'dir_format':'{model_username}/{responsetype}/{mediatype}/',
             'file_format': '{filename}.{ext}',
             'textlength':0,
-            'date':"MM-DD-YYYY"
+            'date':"MM-DD-YYYY",
+            'metadata':"{configpath}/{profile}/.data/{username}_{model_id}"
         }
     }
 

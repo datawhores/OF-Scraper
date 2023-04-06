@@ -56,10 +56,9 @@ mainPromptChoices = {
     'Download content from a user': 0,
     'Like all of a user\'s posts': 1,
     'Unlike all of a user\'s posts': 2,
-    'Migrate an old database': 3,
-    'Edit `auth.json` file': 4,
-    'Edit `config.json` file': 5,
-    'Edit Profile': 6,
+    'Edit `auth.json` file': 3,
+    'Edit `config.json` file': 4,
+    'Edit Profile': 5,
 
 }
 usernameOrListChoices = {

@@ -484,12 +484,12 @@ def user_db_prompt():
             'message': "What is the path to your download directory",
         },
           {
-            'type': 'select',
-            'message': "If metadata files are found in ofscraper do you want to overwrite these",
+            'type': 'list',
+            'message': "If conflicting metadata files are found in ofscraper do you want to overwrite these",
             'choices':["Yes","No"]
         }
         
     ]
 
     answer = prompt(questions)
-    return answer[0]
+    return answer
