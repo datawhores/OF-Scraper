@@ -104,7 +104,7 @@ def areas_prompt() -> list:
                 Choice('Stories'),
                 Choice('Messages'),
             ]
-            ,"instruction":"\nPress Ctrl -R toggles all choices\nSpace toggles a single choice\nPress enter when done",
+            ,"instruction":"\nKeybindings\nToggle all: Ctrl+R\nToggle single: spacebar\nPress enter when done",
 
         }
     ]
@@ -412,12 +412,15 @@ def model_selector(models) -> bool:
     questions = [
     {"type": "fuzzy", "message": "Which models do you want to scrape:",
       "keybindings":{
-                             "toggle": [{"key": "s-right"}],
+                             "toggle": [{"key": "s-right"},{"key": ["pagedown","right"]},{"key": ["home","right"]}],
+
+                              
                          }
+                         
      ,"multiselect":True
       ,"validate":(lambda result: len(result)> 0),
       "invalid_message":"Input cannot be empty",
-      "instruction":"\nPress Ctrl -R toggles all choices\nShift+Right arrow toggles a single choice\nPress Enter When Done\n\nParantheses indicates number of selected users\n\nValues: Name Renewal_Date/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name']))),"transformer":lambda result:",".join(map(lambda x:x.split(" ")[0],result))
+      "instruction":"\nKeyBindings\nToggle all: Ctrl+r\nToggle single: Shift +Right or Home +Right or pageDown +Right\nPress Enter When Done\n\nParantheses indicates number of selected users\n\nValues: Name Renewal_Date/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name']))),"transformer":lambda result:",".join(map(lambda x:x.split(" ")[0],result))
        ,"prompt":'Filter: ',
        "marker":"\u25c9 ",
        "marker_pl":"\u25cb "
@@ -477,3 +480,5 @@ def modify_filters_prompt(args):
     args.sub_status=answer[1]
     args.account_type=answer[2]
     return args
+
+
