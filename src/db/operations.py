@@ -23,7 +23,6 @@ from ..utils import separate, profiles
 from ..db import queries
 from ..utils.paths import createDir,databasePathHelper,messageResponsePathHelper,timelineResponsePathHelper,\
 archiveResponsePathHelper,pinnedResponsePathHelper
-from ..utils.prompts import user_db_prompt
 
 def create_message_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)

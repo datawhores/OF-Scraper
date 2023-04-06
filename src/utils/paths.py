@@ -38,7 +38,7 @@ def createDir(path):
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),username=username,model_id=model_id,sitename="Onlyfans",first_letter=username[0])
+    return pathlib.Path(config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),username=username,model_id=model_id,sitename="Onlyfans",first_letter=username[0]),"user_data.db)")
 
     
 
