@@ -477,19 +477,3 @@ def modify_filters_prompt(args):
     args.sub_status=answer[1]
     args.account_type=answer[2]
     return args
-def user_db_prompt():
-    questions = [
-        {
-            'type': 'input',
-            'message': "What is the path to your download directory",
-        },
-          {
-            'type': 'list',
-            'message': "If conflicting metadata files are found in ofscraper do you want to overwrite these",
-            'choices':["Yes","No"]
-        }
-        
-    ]
-
-    answer = prompt(questions)
-    return answer
