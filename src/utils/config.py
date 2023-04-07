@@ -14,6 +14,7 @@ from rich.console import Console
 console=Console()
 from .prompts import config_prompt
 from ..constants import configPath, configFile, mainProfile
+from ..utils.prompts import reset_config_prompt,manual_config_prompt
 
 
 def read_config():
@@ -25,7 +26,8 @@ def read_config():
     while True:
         try:
             with open(p / configFile, 'r') as f:
-                config = json.load(f)
+                configText=f.read()
+                config = json.loads(configText)
 
             try:
                 if [*config['config']] != [*get_current_config_schema(config)['config']]:
@@ -36,9 +38,18 @@ def read_config():
             break
         except FileNotFoundError:
             file_not_found_message = f"You don't seem to have a `config.json` file. One has been automatically created for you at: '{p / configFile}'"
-
-            make_config(p, config)
+            make_config(p)
             console.print(file_not_found_message)
+        except json.JSONDecodeError as e:
+            print("You config.json has a syntax error")
+            if reset_config_prompt()=="Reset Default":
+                make_config(p)
+            else:
+                print(f"{e}\n\n")
+                try:
+                    make_config(p, manual_config_prompt(configText))
+                except:
+                   continue
     return config
 
 
@@ -61,8 +72,8 @@ def get_current_config_schema(config: dict) -> dict:
     return new_config
 
 
-def make_config(path, config):
-    config = {
+def make_config(path, config=None):
+    config = config or  {
         'config': {
             "mainProfile": mainProfile,
             'save_location': str(pathlib.Path.home() /'Data/ofscraper'),
@@ -74,6 +85,8 @@ def make_config(path, config):
             'metadata':"{configpath}/{profile}/.data/{username}_{model_id}"
         }
     }
+    if isinstance(config,str):
+        config=json.loads(config)
 
     with open(path / configFile, 'w') as f:
         f.write(json.dumps(config, indent=4))

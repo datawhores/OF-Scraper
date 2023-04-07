@@ -521,3 +521,41 @@ def change_default_profile() -> bool:
 
     answer = prompt(questions)
     return answer[name]
+
+def reset_config_prompt() -> bool:
+    questions = [
+        {
+            'type': 'list',
+            'message': "How do you want to fix this issue",
+            'choices':["Reset Default","Manually Edit Config"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[0]
+
+def manual_config_prompt(configText) -> str:
+    
+    
+    questions = [
+        
+     
+        
+        
+        {
+               "keybindings":{
+                             "answer": [{"key": ["pagedown","enter"]},{"key": ["home","enter"]}],
+
+                              
+                         },
+            'type': 'input',
+            'multiline':True,
+            'default':configText,
+            'message': "Edit config text",
+            "instruction":"\nKeyBindings\nSubmit: esc+Enter or Home+Enter or pageDown +Enter",
+        }
+    ]
+
+
+    answer = prompt(questions)
+    return answer[0]
