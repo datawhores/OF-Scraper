@@ -112,8 +112,8 @@ def process_profile(headers, username) -> list:
 
 
 
-def process_areas(headers, ele, model_id,selected=None) -> list:
-    result_areas_prompt = list(map(lambda x:x.capitalize(),(selected or prompts.areas_prompt())
+def process_areas(headers, ele, model_id) -> list:
+    args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
 ))
     timeline_posts_dicts  = []
     pinned_post_dict=[]
@@ -125,22 +125,22 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
     username=ele['name']
     profile_dicts  = process_profile(headers,username)
 
-    if ('Timeline' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
+    if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
             pinned_post_dict=process_pinned_posts(headers, model_id,username)
-    if ('Archived' in result_areas_prompt or 'All' in result_areas_prompt) and ele["active"]:
+    if ('Archived' in args.posts or 'All' in args.posts) and ele["active"]:
             archived_posts_dicts = process_archived_posts(headers, model_id,username)
-    if 'Messages' in result_areas_prompt or 'All' in result_areas_prompt:
+    if 'Messages' in args.posts or 'All' in args.posts:
             messages_dicts = process_messages(headers, model_id,username)
 
-    if ('Highlights'  in result_areas_prompt or 'Stories'  in result_areas_prompt or 'All' in result_areas_prompt)   and ele["active"]:
+    if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts)   and ele["active"]:
             highlights_tuple = process_highlights(headers, model_id,username)
-            if 'All' in result_areas_prompt:
+            if 'All' in args.posts:
                 highlights_dicts=highlights_tuple[0]
                 stories_dicts=highlights_tuple[1]    
-            elif 'Highlights'  in result_areas_prompt:
+            elif 'Highlights'  in args.posts:
                 highlights_dicts=highlights_tuple[0]
-            elif 'Stories'  in result_areas_prompt:
+            elif 'Stories'  in args.posts:
                 stories_dicts=highlights_tuple[1]    
     return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
@@ -212,6 +212,7 @@ def setfilter():
 def process_prompts():
     changeusernames=True
     while  True:
+        args.posts=None
         result_main_prompt = prompts.main_prompt()
         if changeusernames and result_main_prompt in [0,1,2]:
             setfilter()
@@ -348,7 +349,7 @@ def process_post():
             model_id = profile.get_id(headers, ele["name"])
             create_tables(model_id,ele['name'])
             operations.write_profile_table(model_id,ele['name'])
-            combined_urls=process_areas(headers, ele, model_id,selected=args.posts)
+            combined_urls=process_areas(headers, ele, model_id)
             asyncio.run(download.process_dicts(
             ele["name"],
             model_id,
