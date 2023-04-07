@@ -198,16 +198,18 @@ def process_me(headers):
     me.print_user(name, username)
     return subscribe_count
 
+def setfilter():
+    if prompts.decide_filters_prompts()=="Yes":
+        global args
+        args=prompts.modify_filters_prompt(args)
 
 def process_prompts():
     loop = process_prompts
     result_main_prompt = prompts.main_prompt()
-    if result_main_prompt in [0,1,2] and prompts.decide_filters_prompts()=="Yes":
-        global args
-        args=prompts.modify_filters_prompt(args)
     #download
     if result_main_prompt == 0:
         check_auth()
+        setfilter()
         if prompts.download_paid_prompt()=="Yes":
             process_post()
             process_paid()
@@ -217,10 +219,12 @@ def process_prompts():
     # like a user's posts
     elif result_main_prompt == 1:
         check_auth()
+        setfilter()
         process_like()
     # Unlike a user's posts
     elif result_main_prompt == 2:
         check_auth()
+        setfilter()
         process_unlike()
 
     # elif result_main_prompt == 3:

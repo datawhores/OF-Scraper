@@ -559,3 +559,28 @@ def manual_config_prompt(configText) -> str:
 
     answer = prompt(questions)
     return answer[0]
+def manual_auth_prompt(authText) -> str:
+    
+    
+    questions = [
+        
+     
+        
+        
+        {
+               "keybindings":{
+                             "answer": [{"key": ["pagedown","enter"]},{"key": ["home","enter"]}],
+
+                              
+                         },
+            'type': 'input',
+            'multiline':True,
+            'default':authText,
+            'message': "Edit auth text",
+            "instruction":"\nKeyBindings\nSubmit: esc+Enter or Home+Enter or pageDown +Enter",
+        }
+    ]
+
+
+    answer = prompt(questions)
+    return answer[0]
