@@ -62,7 +62,7 @@ async def process_dicts(username, model_id, medialist,forced=False,outpath=None)
         total_bytes_downloaded = 0
         data = 0
         desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper/Data')}{(config.get('dir_format') or '{model_username}/{responsetype}/{mediatype}')}\n\n")
+        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper/Data')}/{(config.get('dir_format') or '{model_username}/{responsetype}/{mediatype}')}\n\n")
 
         with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
             for ele in medialist:
@@ -192,7 +192,7 @@ async def process_dicts_paid(username,model_id,medialist,forced=False):
         total_bytes_downloaded = 0
         data = 0
         desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'   
-        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper')}/{(config.get('dir_format') or '{model_username}/{responsetype}/{mediatype}')}\n\n")
+        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper')}/{(config.get('dir_format') or '/{model_username}/{responsetype}/{mediatype}')}\n\n")
 
         with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), total=len(aws), colour='cyan', leave=True) as main_bar: 
             for ele in medialist:

@@ -14,7 +14,7 @@ from rich.console import Console
 from rich import print
 console=Console()
 from .config import read_config, update_config
-from .prompts import get_profile_prompt
+from .prompts import get_profile_prompt,change_default_profile
 from ..constants import configPath, configFile, mainProfile
 configPath = '.config/ofscraper'
 
@@ -71,7 +71,7 @@ def change_profile():
 
     update_config(mainProfile, profile)
 
-    print(f'\033[32mSuccessfully changed profile to\033[0m {profile}')
+    print(f'[green]Successfully changed profile to[/green] {profile}')
 
 
 def delete_profile():
@@ -85,7 +85,7 @@ def delete_profile():
     p = get_profile_path() / profile
     shutil.rmtree(p)
 
-    print(f'\033[32mSuccessfully deleted\033[0m {profile}')
+    print(f'[green]Successfully deleted[/green] {profile}')
 
 
 def create_profile(path, dir_name: str):
@@ -93,29 +93,32 @@ def create_profile(path, dir_name: str):
 
     if not dir_path.is_dir():
         dir_path.mkdir(parents=True, exist_ok=False)
-        pathlib()
+    if change_default_profile()=="Yes":
+        update_config(mainProfile, dir_name)
+    console.print('[green]Successfully created[/green] {dir_name}'.format(dir_name=dir_name))
     
-
-    print(f'\033[32mSuccessfully created\033[0m {dir_name}')
-
 
 def edit_profile_name(old_profile_name: str, new_profile_name: str):
     profiles = get_profiles()
 
     for profile in profiles:
         if profile.stem == old_profile_name:
-            profile.rename(profile.parent / new_profile_name)
+            profile.replace(profile.parent / new_profile_name)
+            shutil.rmtree(profile,ignore_errors=True)
+           
+    if old_profile_name == get_current_profile():
+        update_config(mainProfile, new_profile_name)
 
     print(
-        f"\033[32mSuccessfully changed\033[0m '{old_profile_name}' \033[32mto\033[0m '{new_profile_name}'")
+        f"[green]Successfully changed[green] '{old_profile_name}' to '{new_profile_name}'")
 
 
 def print_profiles() -> list:
     profile_names = [profile.stem for profile in get_profiles()]
 
-    profile_fmt = 'Profile: \033[36m{}\033[0m'
+    profile_fmt = 'Profile: [cyan]{}'
     for name in profile_names:
-        print(profile_fmt.format(name))
+        console.print(profile_fmt.format(name))
 
     return profile_names
 

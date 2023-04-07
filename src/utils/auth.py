@@ -59,7 +59,7 @@ def edit_auth():
     p = pathlib.Path.home() / configPath / profile 
     if not p.is_dir():
         p.mkdir(parents=True, exist_ok=True)
-
+    print("Hint: Select 'Enter Each Field Manually' to edit your current config\n")
     try:
         with open(p / authFile, 'r') as f:
             auth = json.load(f)

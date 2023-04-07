@@ -12,6 +12,7 @@ import re
 import json
 import sys
 from rich.console import Console
+import pathlib
 console=Console()
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
@@ -336,45 +337,71 @@ def get_profile_prompt(profiles: list) -> str:
 
     questions = [
         {
-            'type': 'input',
+            'type': 'list',
             'name': name,
-            'message': 'Enter a profile:'
+            'message': 'Select Profile',
+            'choices':profiles
+            ,"validate":(lambda result: len(result)> 0)
         }
     ]
-
-    while True:
-        answer = prompt(questions)
-        profile = answer[name]
-
-        if profile not in profiles:
-            console.print(profile)
-            console.print(profiles)
-            console.print('That profile does not exist.')
-        else:
-            break
+    answer = prompt(questions)
+    profile = answer[name]
 
     return profile
 
+#    'config': {
 
+#             'metadata':"{configpath}/{profile}/.data/{username}_{model_id}"
+#         }
 def config_prompt(config) -> dict:
     questions = [
         {
             'type': 'input',
             'name': 'main_profile',
             'message': 'What would you like your main profile to be?',
-            'default': config['main_profile']
+            'default': config.get('main_profile','main_profile')
         },
         {
             'type': 'input',
             'name': 'save_location',
-            'message': 'Where would you like to save downloaded content?',
-            'default': config.get('save_location', '')
+            'message': 'Where would you like to set as the root save downloaded directory?',
+            'default': config.get('save_location',str(pathlib.Path.home() /'Data/ofscraper'), )
         },
         {
             'type': 'input',
             'name': 'file_size_limit',
-            'message': 'File size limit (enter a value in bytes):',
+            'message': 'File size limit (enter a value in bytes)\nLeave empty string for no limit:',
             'default': config.get('file_size_limit', '')
+        },
+           {
+            'type': 'input',
+            'name': 'dir_format',
+            'message': 'What format do you want for download directories',
+            'default': config.get('dir_format', '{model_username}/{responsetype}/{mediatype}/')
+        },
+              {
+            'type': 'input',
+            'name': 'file_format',
+            'message': 'What format do you want for downloaded files',
+            'default': config.get('file_format', '{filename}.{ext}')
+        },
+                     {
+            'type': 'input',
+            'name': 'textlength',
+            'message': 'Enter the max length to extract for post text, 0 means unlimited',
+            'default': config.get('textlenght', '0')
+        },
+                          {
+            'type': 'input',
+            'name': 'date',
+            'message': 'Enter Date formatting',
+            'default': config.get('textlenght', 'MM-DD-YYYY')
+        },
+                               {
+            'type': 'input',
+            'name': 'metadata',
+            'message': 'Where should metadata files be saved',
+            'default': config.get('metadata', '{configpath}/{profile}/.data/{username}_{model_id}')
         }
     ]
 
@@ -481,4 +508,16 @@ def modify_filters_prompt(args):
     args.account_type=answer[2]
     return args
 
+def change_default_profile() -> bool:
+    name = 'reset username'
+    questions = [
+        {
+            'type': 'list',
+            'name': name,
+            'message': "Set this as the new default profile",
+            'choices':["Yes","No"]
+        }
+    ]
 
+    answer = prompt(questions)
+    return answer[name]

@@ -202,22 +202,25 @@ def process_me(headers):
 def process_prompts():
     loop = process_prompts
     result_main_prompt = prompts.main_prompt()
-    headers = auth.make_headers(auth.read_auth())
     if result_main_prompt in [0,1,2] and prompts.decide_filters_prompts()=="Yes":
         global args
         args=prompts.modify_filters_prompt(args)
     #download
     if result_main_prompt == 0:
-        paid=prompts.download_paid_prompt()=="Yes"
-        process_post()
-        if paid:
+        check_auth()
+        if prompts.download_paid_prompt()=="Yes":
+            process_post()
             process_paid()
+        else:
+            process_post()     
 
     # like a user's posts
     elif result_main_prompt == 1:
+        check_auth()
         process_like()
     # Unlike a user's posts
     elif result_main_prompt == 2:
+        check_auth()
         process_unlike()
 
     # elif result_main_prompt == 3:
@@ -379,39 +382,39 @@ def suppress_stdout():
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
-def set_schedule(command,*params,**kwparams):
-    schedule.every(args.daemon).minutes.do(jobqueue.put,functools.partial(command,*params,**kwparams))
+def set_schedule(*params):
+    [schedule.every(args.daemon).minutes.do(jobqueue.put,param) for param in params]
     while True:
         schedule.run_pending()
         time.sleep(30)
 
 
 ## run script once or on schedule based on args
-def run(command,*params,**kwparams):
+def run(*params):
     # get usernames prior to potentially supressing output
+    check_auth()
     getselected_usernames()
     console.print(f"starting script daemon: {args.daemon!=None} silent-mode: {args.silent}")    
     if args.silent:
         with suppress_stdout():
-            run_helper(command,*params,**kwparams)
+            run_helper(*params)
     else:
-        run_helper(command,*params,**kwparams)
+        run_helper(*params)
     console.print("script finished")
 
-def run_helper(command,*params,**kwparams):   
-    command(*params,**kwparams)
+def run_helper(*params):
+    [param() for param in params]    
     if args.daemon:
         global jobqueue
         jobqueue=queue.Queue()
-        worker_thread = threading.Thread(target=set_schedule,args=[command,*params],kwargs=kwparams)
+        worker_thread = threading.Thread(target=set_schedule,args=[*params])
         worker_thread.start()
         while True:
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
                 
-def initializer():
-    read_config()
+def check_auth():
     status=None
     while status!="UP":
         headers = auth.make_headers(auth.read_auth())
@@ -421,6 +424,7 @@ def initializer():
             continue
         break
         
+
     
 
        
@@ -535,7 +539,7 @@ def main():
     args = parser.parse_args()
     global selectedusers
     selectedusers=None
-    initializer()
+    read_config()
 
 
     
@@ -547,12 +551,16 @@ def main():
 
 
     if args.posts: 
+        check_auth()
         run(process_post)        
     if args.purchased:
+        check_auth()
         run(process_paid)
     if args.action=="like":
+        check_auth()
         run(process_like)
     if args.action=="unlike":
+        check_auth()    
         run(process_unlike)  
 
 if __name__ == '__main__':
