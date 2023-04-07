@@ -142,11 +142,24 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
                 highlights_dicts=highlights_tuple[0]
             elif 'Stories'  in result_areas_prompt:
                 stories_dicts=highlights_tuple[1]    
-    return list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
+    return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
+)
 
-
+def posts_filter(posts):
+    filtersettings=config.read_config()["config"].get('filter')
+    if isinstance(filtersettings,str):
+        filtersettings=filtersettings.split(",")
+    if isinstance(filtersettings,list):
+        filtersettings=list(map(lambda x:x.lower().replace(" ",""),filtersettings))
+        if len(filtersettings)==0:
+            return posts
+        console.print(f"filtering post to {filtersettings}")
+        return list(filter(lambda x:x["mediatype"] in filtersettings,posts))
+    console.print("The settings you picked for the filter are not valid\nNot Filtering")
+    return posts
+        
 
 
 def do_database_migration():
