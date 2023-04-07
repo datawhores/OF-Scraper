@@ -20,8 +20,7 @@ from ..constants import (
     archivedEP, archivedNextEP,timelinePinnedNextEP 
 )
 from ..utils import auth
-from ..db.operations import read_timeline_response,read_archive_response\
-,read_pinned_response
+from ..db.operations import read_timeline_response
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
     with httpx.Client(http2=True, headers=headers) as c:

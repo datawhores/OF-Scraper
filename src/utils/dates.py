@@ -9,6 +9,7 @@ r"""
 """
 
 from datetime import datetime
+import arrow
 
 
 def convert_date_to_mdyhms(date: str):
@@ -24,3 +25,6 @@ def convert_date_to_mdy(date: str):
 def convert_date_to_timestamp(date: str):
     datetime_obj = datetime.fromisoformat(date)
     return datetime_obj.timestamp()
+def convert_local_time(date:str):
+    return arrow.get(date,tzinfo='UTC').to('local').float_timestamp
+
