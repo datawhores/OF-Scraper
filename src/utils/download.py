@@ -344,7 +344,7 @@ def getmediadir(ele,username,model_id):
 
 def trunicate(path):
     if platform.system() == 'Windows' and len(path)>256:
-        return path[0:256]
+        return pathlib.Path(str(path)[0:256])
     elif platform.system() == 'Linux':
         dir=pathlib.Path(path).parent
         file=pathlib.Path(path).name.encode("utf8")[:255].decode("utf8", "ignore")
