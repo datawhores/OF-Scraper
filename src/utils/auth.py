@@ -21,7 +21,7 @@ import browser_cookie3
 from src.utils.browser import getuseragent
 from .profiles import get_current_profile
 from .prompts import auth_prompt, ask_make_auth_prompt,browser_prompt,\
-user_agent_prompt,xbc_prompt,auth_full_paste
+user_agent_prompt,xbc_prompt,auth_full_paste,manual_auth_prompt
 from ..constants import configPath, authFile, DC_EP, requestAuth
 
 
@@ -39,7 +39,8 @@ def read_auth():
     while True:
         try:
             with open(p / authFile, 'r') as f:
-                auth = json.load(f)
+                authText=f.read()
+                auth = json.loads(authText)
                 for key in list(filter(lambda x:x!="auth_uid_",auth.keys())):
                     if auth[key]==None or  auth[key]=="":
                         console.print("Auth Value not set retriving missing values")
@@ -50,6 +51,11 @@ def read_auth():
             console.print(
                 "You don't seem to have an `auth.json` file")
             make_auth(p)
+        except json.JSONDecodeError as e:
+            print("You auth.json has a syntax error")
+            print(f"{e}\n\n")
+            with open(p / authFile, 'w') as f:
+                f.write(manual_auth_prompt(authText))
     return auth
 
 
@@ -59,17 +65,32 @@ def edit_auth():
     p = pathlib.Path.home() / configPath / profile 
     if not p.is_dir():
         p.mkdir(parents=True, exist_ok=True)
-    print("Hint: Select 'Enter Each Field Manually' to edit your current config\n")
+  
     try:
         with open(p / authFile, 'r') as f:
-            auth = json.load(f)
+            authText=f.read()
+            auth = json.loads(authText)
+        print("Hint: Select 'Enter Each Field Manually' to edit your current config\n")
         make_auth(p, auth)
 
         console.print('Your `auth.json` file has been edited.')
     except FileNotFoundError:
+        
         if ask_make_auth_prompt():
             make_auth(p)
-
+    except json.JSONDecodeError as e:
+            while True:
+                try:
+                    print("You auth.json has a syntax error")
+                    print(f"{e}\n\n")
+                    with open(p / authFile, 'w') as f:
+                        f.write(manual_auth_prompt(authText))
+                    with open(p / authFile, 'r') as f:
+                        authText=f.read()
+                        auth = json.loads(authText)
+                    break
+                except:
+                    continue
 
 def make_auth(path=None, auth=None):
     path= path or  pathlib.Path.home() / configPath / get_current_profile()

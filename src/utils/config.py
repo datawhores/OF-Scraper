@@ -115,16 +115,33 @@ def auto_update_config(path, config: dict) -> dict:
 
 
 def edit_config():
-    p = pathlib.Path.home() / configPath / configFile
+    try:
+        p = pathlib.Path.home() / configPath / configFile
 
-    with open(p, 'r') as f:
-        config = json.load(f)
+        with open(p, 'r') as f:
+            configText=f.read()
+            config = json.loads(configText)
 
-    updated_config = {
-        'config': config_prompt(config['config'])
-    }
+        updated_config = {
+            'config': config_prompt(config['config'])
+        }
 
-    with open(p, 'w') as f:
-        f.write(json.dumps(updated_config, indent=4))
+        with open(p, 'w') as f:
+            f.write(json.dumps(updated_config, indent=4))
 
-    console.print('`config.json` has been successfully edited.')
+        console.print('`config.json` has been successfully edited.')
+    except FileNotFoundError:
+        make_config(p)
+    except json.JSONDecodeError as e:
+            while True:
+                try:
+                    print("You auth.json has a syntax error")
+                    print(f"{e}\n\n")
+                    with open(p,"w") as f:
+                        f.write(manual_config_prompt(configText))
+                    with open(p, 'r') as f:
+                        configText=f.read()
+                        config = json.loads(configText)
+                    break
+                except:
+                    continue
