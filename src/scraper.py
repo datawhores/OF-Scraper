@@ -213,7 +213,7 @@ def process_prompts():
     changeusernames=True
     while  True:
         result_main_prompt = prompts.main_prompt()
-        if changeusernames:
+        if changeusernames and result_main_prompt in [0,1,2]:
             setfilter()
             getselected_usernames()
         #download
@@ -285,9 +285,9 @@ def process_prompts():
         if prompts.continue_prompt()=="No":
             break
         global selectedusers
-        changeusernames=False
         if selectedusers:
-            print(f"Currently Selected Users\n{list(map(lambda x:x['name'],selectedusers))}")
+            changeusernames=False
+            console.print(f"Currently Selected Users\n{list(map(lambda x:x['name'],selectedusers))}")
             if prompts.reset_username_prompt()=="Yes":
                 selectedusers=None
                 changeusernames=True

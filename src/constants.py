@@ -67,7 +67,7 @@ usernameOrListChoices = {
     'Scrape all users that I\'m subscribed to': 2
 }
 profilesPromptChoices = {
-    'Change profiles': 0,
+    'Change default profile': 0,
     'Edit a profile name': 1,
     'Create a profile': 2,
     'Delete a profile': 3,
