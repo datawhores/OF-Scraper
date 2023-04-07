@@ -20,6 +20,7 @@ rich = "^13.3.2"
 tenacity = "^8.2.2"
 arrow = "^1.2.3"
 halo = "^0.0.31"
+win32-setctime = "^1.1.0"
 
 
 [build-system]

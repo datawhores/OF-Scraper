@@ -153,6 +153,7 @@ def posts_filter(posts):
         filtersettings=filtersettings.split(",")
     if isinstance(filtersettings,list):
         filtersettings=list(map(lambda x:x.lower().replace(" ",""),filtersettings))
+        filtersettings=list(filter(lambda x:x!="",filtersettings))
         if len(filtersettings)==0:
             return posts
         console.print(f"filtering post to {filtersettings}")
