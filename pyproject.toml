@@ -10,7 +10,6 @@ packages = [{include = "src"}]
 python = ">=3.7.0,<4"
 httpx = {extras = ["http2"], version = "^0.23.3"}
 inquirerpy = "^0.3.4"
-revolution = "^0.3.0"
 tqdm = "^4.65.0"
 setuptools = "^67.6.0"
 schedule = "^1.1.0"
@@ -20,6 +19,7 @@ bs4 = "^0.0.1"
 rich = "^13.3.2"
 tenacity = "^8.2.2"
 arrow = "^1.2.3"
+halo = "^0.0.31"
 
 
 [build-system]

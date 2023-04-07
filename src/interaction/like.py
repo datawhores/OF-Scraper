@@ -11,21 +11,20 @@ r"""
 import random
 import time
 from typing import Union
-
+import asyncio
 import httpx
 from rich.console import Console
 console=Console()
-from revolution import Revolution
-
+from halo import Halo
 from ..api import posts
 from ..constants import favoriteEP, postURL
 from ..utils import auth
 
 
-def get_posts(headers, model_id):
-    with Revolution(desc='Getting posts...') as _:
+def get_posts(headers, model_id,username):
+    with Halo(text='Getting posts...'):
         pinned_posts = posts.scrape_pinned_posts(headers, model_id)
-        timeline_posts = posts.scrape_timeline_posts(headers, model_id)
+        timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
         archived_posts = posts.scrape_archived_posts(headers, model_id)
 
     return pinned_posts + timeline_posts + archived_posts
@@ -56,7 +55,7 @@ def unlike(headers, model_id, username, ids: list):
 
 def _like(headers, model_id, username, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
-    with Revolution(desc=f'{title} posts...', total=len(ids)) as rev:
+    with Halo(text=f'{title} posts...'):
         for i in ids:
             with httpx.Client(http2=True, headers=headers) as c:
                 url = favoriteEP.format(i, model_id)
@@ -76,7 +75,7 @@ def _like(headers, model_id, username, ids: list, like_action: bool):
                             _handle_err(r, postURL.format(i, username))
                     except httpx.TransportError as e:
                         _handle_err(e, postURL.format(i, username))
-                rev.update()
+      
 
 
 def _handle_err(param: Union[httpx.Response, httpx.TransportError], url: str) -> str:

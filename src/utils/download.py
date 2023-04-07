@@ -36,7 +36,7 @@ from .paths import set_directory
 from ..utils import auth
 from ..constants import configPath
 from ..utils.profiles import get_current_profile
-from .dates import convert_date_to_timestamp
+from .dates import convert_local_time
 
 
 config = read_config()['config']
@@ -153,7 +153,7 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                             if pathlib.Path(temp).exists() and  abs(total-pathlib.Path(temp).stat().st_size)<=1000:
                                 shutil.move(temp,path_to_file)
                                 if ele["date"]:
-                                    set_time(path_to_file, convert_date_to_timestamp(ele["date"]))
+                                    set_time(path_to_file, convert_local_time(ele["date"]))
                                 if id_:
                                     operations.write_media(ele,path_to_file,model_id,username)
                                 return media_type,total

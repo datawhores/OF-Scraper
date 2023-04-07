@@ -10,14 +10,12 @@ r"""
 
 import argparse
 import asyncio
-import datetime
 import os
 import sys
 import platform
 from random import randint, choice
 from time import sleep
 import time
-from datetime import datetime, timedelta
 import schedule
 from contextlib import contextmanager
 import threading
@@ -33,7 +31,7 @@ from .db import operations
 from .interaction import like
 from .utils import auth, config, download, profiles, prompts
 import webbrowser
-from revolution import Revolution
+from halo import Halo
 from .utils.nap import nap_or_sleep
 from .__version__ import  __version__
 from .utils.config import read_config
@@ -41,7 +39,7 @@ from .utils.config import read_config
 
 
 
-@Revolution(desc='Getting messages...')
+@Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
     operations.save_messages_response( model_id,username,messages_)
@@ -53,8 +51,8 @@ def process_messages(headers, model_id,username):
         list(map(lambda x:mediaJsonHelper(x),output))      
     return output
 
-# @need_revolution("Getting highlights...")
-@Revolution(desc='Getting highlights and stories...')
+
+@Halo(text='Getting highlights and stories...')
 def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
     for post in highlights_:
@@ -71,8 +69,7 @@ def process_highlights(headers, model_id,username):
 
 
 
-# @need_revolution("Getting subscriptions...")
-@Revolution(desc='Getting archived media...')
+@Halo(text='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
     archived_posts = posts.get_archive_post(headers, model_id)
     operations.save_archive_response(model_id,username,archived_posts)
@@ -82,8 +79,7 @@ def process_archived_posts(headers, model_id,username):
     return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(archived_posts)))
 
 
-# @need_revolution("Getting timeline media...")
-@Revolution(desc='Getting timeline media...')
+@Halo(text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
     operations.save_timeline_response(model_id,username,timeline_posts)
@@ -94,8 +90,7 @@ def process_timeline_posts(headers, model_id,username):
 
 
 
-# @need_revolution("Getting pinned media...")
-@Revolution(desc='Getting pinned media...')
+@Halo(text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = posts.get_pinned_post(headers, model_id,username)
     operations.save_pinned_response(model_id,username, pinned_posts)
@@ -154,7 +149,6 @@ def process_areas(headers, ele, model_id,selected=None) -> list:
 
 
 
-
 def do_database_migration():
     operations.user_db_migration()
 
@@ -178,16 +172,15 @@ def get_model_inputsplit(commaString):
         return range(x[0], x[-1]+1)
     return chain(*[hyphenRange(r) for r in list(filter(lambda x:x.isdigit(),re.split(',| ',commaString)))])
 
-
+@Halo(text='Getting your subscriptions (this may take awhile)...')
 def get_models(headers, subscribe_count) -> list:
     """
     Get user's subscriptions in form of a list.
     """
-    with Revolution(desc='Getting your subscriptions (this may take awhile)...') as _:
-        list_subscriptions = asyncio.run(
-            subscriptions.get_subscriptions(headers, subscribe_count))
-        parsed_subscriptions = subscriptions.parse_subscriptions(
-            list_subscriptions)
+    list_subscriptions = asyncio.run(
+        subscriptions.get_subscriptions(headers, subscribe_count))
+    parsed_subscriptions = subscriptions.parse_subscriptions(
+        list_subscriptions)
     return parsed_subscriptions
 
 #check if auth is valid
@@ -204,83 +197,88 @@ def setfilter():
         args=prompts.modify_filters_prompt(args)
 
 def process_prompts():
-    loop = process_prompts
-    result_main_prompt = prompts.main_prompt()
-    #download
-    if result_main_prompt == 0:
-        check_auth()
-        setfilter()
-        if prompts.download_paid_prompt()=="Yes":
-            process_post()
-            process_paid()
-        else:
-            process_post()     
+    changeusernames=True
+    while  True:
+        result_main_prompt = prompts.main_prompt()
+        if changeusernames:
+            setfilter()
+            getselected_usernames()
+        #download
+        if result_main_prompt == 0:
+            check_auth()
+            if prompts.download_paid_prompt()=="Yes":
+                process_post()
+                process_paid()
+            else:
+                process_post()     
 
-    # like a user's posts
-    elif result_main_prompt == 1:
-        check_auth()
-        setfilter()
-        process_like()
-    # Unlike a user's posts
-    elif result_main_prompt == 2:
-        check_auth()
-        setfilter()
-        process_unlike()
+        # like a user's posts
+        elif result_main_prompt == 1:
+            check_auth()
+            process_like()
+        # Unlike a user's posts
+        elif result_main_prompt == 2:
+            check_auth()
+            process_unlike()
 
-    # elif result_main_prompt == 3:
-    #     # Migrate from old database
-    #     do_database_migration()
-     
+        # elif result_main_prompt == 3:
+        #     # Migrate from old database
+        #     do_database_migration()
+        
 
-    elif result_main_prompt == 3:
-        # Edit `auth.json` file
-        auth.edit_auth()
+        elif result_main_prompt == 3:
+            # Edit `auth.json` file
+            auth.edit_auth()
+        
+        elif result_main_prompt == 4:
+            # Edit `config.json` file
+            config.edit_config()
+
+        
     
-    elif result_main_prompt == 4:
-        # Edit `config.json` file
-        config.edit_config()
+        elif result_main_prompt == 5:
+            # Display  `Profiles` menu
+            result_profiles_prompt = prompts.profiles_prompt()
 
-      
- 
-    elif result_main_prompt == 5:
-        # Display  `Profiles` menu
-        result_profiles_prompt = prompts.profiles_prompt()
+            if result_profiles_prompt == 0:
+                # Change profiles
+                profiles.change_profile()
 
-        if result_profiles_prompt == 0:
-            # Change profiles
-            profiles.change_profile()
+            elif result_profiles_prompt == 1:
+                # Edit a profile
+                profiles_ = profiles.get_profiles()
 
-        elif result_profiles_prompt == 1:
-            # Edit a profile
-            profiles_ = profiles.get_profiles()
+                old_profile_name = prompts.edit_profiles_prompt(profiles_)
+                new_profile_name = prompts.new_name_edit_profiles_prompt(
+                    old_profile_name)
 
-            old_profile_name = prompts.edit_profiles_prompt(profiles_)
-            new_profile_name = prompts.new_name_edit_profiles_prompt(
-                old_profile_name)
+                profiles.edit_profile_name(old_profile_name, new_profile_name)
 
-            profiles.edit_profile_name(old_profile_name, new_profile_name)
+            elif result_profiles_prompt == 2:
+                # Create a new profile
+                profile_path = profiles.get_profile_path()
+                profile_name = prompts.create_profiles_prompt()
 
-        elif result_profiles_prompt == 2:
-            # Create a new profile
-            profile_path = profiles.get_profile_path()
-            profile_name = prompts.create_profiles_prompt()
+                profiles.create_profile(profile_path, profile_name)
 
-            profiles.create_profile(profile_path, profile_name)
+            elif result_profiles_prompt == 3:
+                # Delete a profile
+                profiles.delete_profile()
 
-        elif result_profiles_prompt == 3:
-            # Delete a profile
-            profiles.delete_profile()
-
-        elif result_profiles_prompt == 4:
-            # View profiles
-            profiles.print_profiles()
-    console.print("Done With Run")
-    if prompts.continue_prompt()=="No":
-        return
-    global selectedusers
-    if selectedusers and prompts.reset_username_prompt()=="Yes":
-        getselected_usernames()
-    loop()
+            elif result_profiles_prompt == 4:
+                # View profiles
+                profiles.print_profiles()
+        console.print("Done With Run")
+        if prompts.continue_prompt()=="No":
+            break
+        global selectedusers
+        changeusernames=False
+        if selectedusers:
+            print(f"Currently Selected Users\n{list(map(lambda x:x['name'],selectedusers))}")
+            if prompts.reset_username_prompt()=="Yes":
+                selectedusers=None
+                changeusernames=True
+        
 def process_paid():
 
 
@@ -356,7 +354,7 @@ def process_like():
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
-            posts = like.get_posts(headers, model_id)
+            posts = like.get_posts(headers, model_id,ele["name"])
             unfavorited_posts = like.filter_for_unfavorited(posts)
             post_ids = like.get_post_ids(unfavorited_posts)
             like.like(headers, model_id, ele["name"], post_ids)
@@ -368,7 +366,7 @@ def process_unlike():
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
-            posts = like.get_posts(headers, model_id)
+            posts = like.get_posts(headers, model_id,ele['name'])
             favorited_posts = like.filter_for_favorited(posts)
             post_ids = like.get_post_ids(favorited_posts)
             like.unlike(headers, model_id, ele["name"], post_ids)
