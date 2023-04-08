@@ -1,13 +1,4 @@
-This is a fork of onlyfans-scraper with additional features and fixes
-
-# What should work
-- scraping options like downloading content,unliking, and liking post
-
-other options might not work currently.
-If your auth is not correct, then the latest version will force a proper configuration
-
-# Notes
-This is a fork of onlyfans-scraper 
+A fork of onlyfans-scraper 
 It has been optimized to make it more feature complete with dc's onlyfans script
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
