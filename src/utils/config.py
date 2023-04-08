@@ -66,7 +66,7 @@ def get_current_config_schema(config: dict) -> dict:
             'textlength':config.get('textlength') or 0,
             'date': config.get('date') or  "MM-DD-YYYY",
             "metadata": config.get('metadata') or "{configpath}/{profile}/.data/{username}_{model_id}",
-            "filter":config.get('filter') or ""
+            "filter":config.get('filter') or "Images,Audios,Videos"
         }
     }
     return new_config
@@ -83,7 +83,7 @@ def make_config(path, config=None):
             'textlength':0,
             'date':"MM-DD-YYYY",
             'metadata':"{configpath}/{profile}/.data/{username}_{model_id}",
-            "filter":""
+            "filter":"Images,Audios,Videos"
         }
     }
     if isinstance(config,str):
