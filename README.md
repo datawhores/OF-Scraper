@@ -68,6 +68,20 @@ ofscraper
 ![image](https://user-images.githubusercontent.com/67020411/230732583-dd064665-a59e-4714-92e7-393893061ac0.png)
   
  Select "Download content from a user" is all your need to get started with downloading content
+ 
+## Liking/Unliking
+
+It is also possible to batch unlike or like post by choosing the appropriate option in the menu
+Note their are limitations (currently 1000) on how many post you can like per day
+
+![image](https://user-images.githubusercontent.com/67020411/230735256-2d8aa788-53dc-49ee-ada8-5ddf5546851c.png)
+
+## Selecting specific users
+
+The fuzzy search system can be a little confusing see
+https://github.com/excludedBittern8/ofscraper/wiki/Fuzzy-Search 
+
+for more details on how it works
     
   
  See: https://github.com/excludedBittern8/ofscraper/wiki/Menu-Options 
