@@ -109,7 +109,7 @@ The metadata path from dc's script is used for duplicate check so as long as you
 Files won't download a second time
 
 https://github.com/excludedBittern8/ofscraper/wiki/Migrating-from-DC-script
-https://github.com/excludedBittern8/ofscraper/wiki/Config Options
+https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
 https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
