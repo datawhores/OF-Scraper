@@ -79,23 +79,22 @@ Note their are limitations (currently 1000) on how many post you can like per da
 ## Selecting specific users
 
 The fuzzy search system can be a little confusing see
-https://github.com/excludedBittern8/ofscraper/wiki/Fuzzy-Search 
-
-for more details on how it works
     
+https://github.com/excludedBittern8/ofscraper/wiki/Fuzzy-Search 
+    
+## Other menu options    
   
  See: https://github.com/excludedBittern8/ofscraper/wiki/Menu-Options 
  
- For more information about the other menu option
 
- ## Advanced Usage
+ # Advanced Usage
     
  For those who are comfortable ofscraper has numerous commandline options.
  A matter of fact in many cases you can skip the the menu prompts, and have the script run by itself
  
   https://github.com/excludedBittern8/ofscraper/wiki/command-line-args
  
- ## Customazation
+ # Customazation
     
 https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
 https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
