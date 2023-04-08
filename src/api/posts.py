@@ -12,8 +12,6 @@ import asyncio
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
-global sem
-sem = asyncio.Semaphore(8)
 from ..constants import (
     timelineEP, timelineNextEP,
     timelinePinnedEP,
@@ -41,7 +39,8 @@ def get_pinned_post(headers,model_id,username):
    
 @retry(stop=stop_after_attempt(1),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=False) -> list:
-    
+    global sem
+    sem = asyncio.Semaphore(8)
     if timestamp:
         timestamp=str(timestamp)
         ep = timelineNextEP
