@@ -55,7 +55,7 @@ https://github.com/excludedBittern8/ofscraper/wiki/Auth
 
 
 
-## Usage
+# Usage
 
 Whenever you want to run the program, all you need to do is type `ofscraper` in your terminal:
 
@@ -64,19 +64,41 @@ Basic usage is just to run the command below
 ```
 ofscraper
 ```
-You will be presented with 
-menu options
 
+![image](https://user-images.githubusercontent.com/67020411/230732583-dd064665-a59e-4714-92e7-393893061ac0.png)
+  
+ Select "Download content from a user" is all your need to get started with downloading content
+    
+  
+ See: https://github.com/excludedBittern8/ofscraper/wiki/Menu-Options 
+ 
+ For more information about the other menu option
 
-
-For more advanced usage see
-commandline args
-
-
+ ## Advanced Usage
+    
+ For those who are comfortable ofscraper has numerous commandline options.
+ A matter of fact in many cases you can skip the the menu prompts, and have the script run by itself
+ 
+  https://github.com/excludedBittern8/ofscraper/wiki/command-line-args
+    
+  
 # Issues
 Open a issue in this repo, or you can mention your issue in the discord
 
+https://discord.gg/zRXgb5Nv
+    
+## Common
+### Status Down
+    This typically means that your auth information is not correct, or onlyfans signed you out.
+### 404 Issue 
+    This could mean that the content you are trying to scrape is no longer present. It can also indicate that model has deleted her account, and it is no longer accesible on the platform
+ ### Request taking a long time
+   If a request fails ofscraper will pause and try again a few times. This can lead to certain runs taking longer and points.
 
+ ## Known Limitations
+ - 1000 likes is the max per day
+    
+    
 
 # Migrating from DC script
 
@@ -97,43 +119,17 @@ Ask in the discord or open an issue if you need help with what to change to acco
 # Discord
 
 https://discord.gg/zRXgb5Nv
+    
+    
+
+  
+    
 
 
 
-That's it. It's that simple.
 
- Once the program launches, all you need to do is follow the on-screen directions. The first time you run it, it will ask you to fill out your `auth.json` file (directions for that in the section above). 
 
-You will need to use your arrow keys to select an option:
 
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/main_menu.png" width="450">
 
-If you choose to download content, you will have three options: having a list of all of your subscriptions printed, manually entering a username, or scraping *all* accounts that you're subscribed to.
 
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/list_or_username.png" width="550">
-
-### Liking/Unliking Posts
-
-You can also use this program to like all of a user's posts or remove your likes from their posts. Just select either option during the main menu screen and enter their username.
-
-This program will like posts at a rate of around one post per second. This may be reduced in the future but OnlyFans is strict about how quickly you can like posts.
-
-At the moment, you can only like ~1000 posts per day. That's not *our* restriction, that's OnlyFans's restriction. So choose wisely.
-
-<h1> Bugs/Issues/Suggestions </h1>
-
-If you run into trouble try the discord, careful though we do bite. If you open an issue for any of the following you will be banned from opening future issues. These are not issues they are operator error.
-
-<ol>
-    <li>
-        Status Down - This means that your auth details are bad, keep trying.
-    </li>
-    <li>
-        ofscraper command not found - This means that you have not added the path to your directory. You will have to look this up on your own with google.
-    </li>
-    <li>
-        404 page not found or any other 404 error. - The post or profile can't be found. The user has been suspended or deleted or the post was removed and isn't completely deleted yet. No fix for this other than unsubscribing from the user. Do not open an issue for it.
-    </li>
-</ol>
-<h3>Honestly unless you're one of my subscribers or support the project in some form your suggestions are generally ignored.</h3>
 
