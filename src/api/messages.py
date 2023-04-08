@@ -13,14 +13,14 @@ import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
 import arrow
-global sem
-sem = asyncio.Semaphore(8)
 from ..constants import messagesEP, messagesNextEP
 from ..utils import auth
 from ..db.operations import read_messages_response
 
 
 async def get_messages(headers,  model_id,username):
+    global sem
+    sem = asyncio.Semaphore(8)
     oldmessages=read_messages_response(model_id,username)
     postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x["createdAt"]).float_timestamp,reverse=True)))
     global tasks
