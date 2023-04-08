@@ -550,9 +550,6 @@ def main():
      #Paths
     paths=parser.add_argument_group("paths",description="Change or forced paths in program")
 
-    paths.add_argument(
-        '-op', '--outpath', help = 'Force downloading media into this directory',default=None,required=False
-    )
     args = parser.parse_args()
     global selectedusers
     selectedusers=None
