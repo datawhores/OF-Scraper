@@ -23,7 +23,7 @@ from ..constants import mainPromptChoices, usernameOrListChoices, profilesPrompt
 
 def main_prompt() -> int:
     main_prompt_choices = [*mainPromptChoices]
-    main_prompt_choices.insert(4, Separator())
+    main_prompt_choices.insert(3, Separator())
 
     name = 'action'
 

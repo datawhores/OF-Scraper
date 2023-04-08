@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ofscraper"
-version = "1.72"
+version = "1.73"
 description = "automatically scrape onlyfans"
 authors = ["excludedBittern8 <excludedBittern8@riseup.net>"]
 readme = "README.md"
