@@ -50,9 +50,8 @@ pip3 install git+https://github.com/excludedBittern8/ofscraper.git
 ## Authentication
 
 You'll need to retrive your auth information 
+    
 https://github.com/excludedBittern8/ofscraper/wiki/Auth
-
-
 
 
 
