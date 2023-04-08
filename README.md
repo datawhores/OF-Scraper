@@ -80,7 +80,12 @@ ofscraper
  A matter of fact in many cases you can skip the the menu prompts, and have the script run by itself
  
   https://github.com/excludedBittern8/ofscraper/wiki/command-line-args
+ 
+ ## Customazation
     
+https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
+https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
+
   
 # Issues
 Open a issue in this repo, or you can mention your issue in the discord
