@@ -322,11 +322,19 @@ def texthelper(text,ele):
     count=ele["count"]
     length=int(config.get("textlength") or 0)
     if length!=0:
-        text=text[0:length]
+        temp=""
+        for word in text.split(" "):
+            temp=f"{temp} {word}"
+            if len(word)>=length:
+                break
+        text=temp.strip()
     if (len(ele["data"].get("media",[]))>1) or ele.get("responsetype") in ["stories","highlights"]:
         text= f"{text}{count}"
+    #this is for removing emojis
     # text=re.sub("[^\x00-\x7F]","",text)
+    # this is for removing html tags
     text=re.sub("<[^>]*>", "",text)
+    #this for remove random special invalid special characters
     text=re.sub('[\n<>:"/\|?*]+', '', text)
     text=re.sub(" +"," ",text)
     return text
