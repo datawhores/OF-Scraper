@@ -89,9 +89,12 @@ https://discord.gg/zRXgb5Nv
     
 ## Common
 ### Status Down
-    This typically means that your auth information is not correct, or onlyfans signed you out.
+      
+This typically means that your auth information is not correct, or onlyfans signed you out.
 ### 404 Issue 
-    This could mean that the content you are trying to scrape is no longer present. It can also indicate that model has deleted her account, and it is no longer accesible on the platform
+    
+This could mean that the content you are trying to scrape is no longer present. It can also indicate that model has deleted her account, and it is no longer accesible on the platform
+    
  ### Request taking a long time
    If a request fails ofscraper will pause and try again a few times. This can lead to certain runs taking longer and points.
 
