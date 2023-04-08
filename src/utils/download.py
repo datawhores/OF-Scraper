@@ -322,12 +322,7 @@ def texthelper(text,ele):
     count=ele["count"]
     length=int(config.get("textlength") or 0)
     if length!=0:
-        temp=""
-        for word in text.split(" "):
-            temp=f"{temp} {word}"
-            if len(word)>=length:
-                break
-        text=temp.strip()
+        text=" ".join(text.split(" ")[0:length])
     if (len(ele["data"].get("media",[]))>1) or ele.get("responsetype") in ["stories","highlights"]:
         text= f"{text}{count}"
     #this is for removing emojis
