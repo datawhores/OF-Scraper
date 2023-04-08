@@ -28,7 +28,7 @@ Though it is not complete check out the changes.md file for some general changes
 ### Recommended python3.9 or python3.10
 
 
-Windows: 
+# Windows: 
 ```
 pip install ofscraper
 ```
@@ -38,7 +38,7 @@ or
 pip install git+https://github.com/excludedBittern8/ofscraper.git 
 ```
 
-If you're on macOS/Linux, then do this instead:
+#  macOS/Linux
 ```
 pip3 install ofscraper
 ```
