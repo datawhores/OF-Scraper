@@ -16,7 +16,7 @@ def test_windows_trunicate():
 
 
 
-def test_windows_trunicate():
+def test_linux_trunicate():
     long_path=pathlib.Path("unittestmockprovidesacore/Mockclassremovingtheneedtocreateahostofstubsthroughout/yourtestsuiteAfterperforminganactionyoucanmakeassertionsaboutwhichmethattributeswereusedandargumentstheywerecalledwithYoucanalsospecifyreturnvaluesandsetneededattributesinthenormalway \
                             attributeswereusedandargumentstheywerecalledwithYoucanalsospecifyreturnvaluesandsetneededattributesinthenormalway \
                             attributeswereusedandargumentstheywerecalledwithYoucanalsospecifyreturnvaluesandsetneededattributesinthenormalway \
