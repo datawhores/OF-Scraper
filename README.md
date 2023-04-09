@@ -3,7 +3,7 @@ It has been optimized to make it more feature complete with dc's onlyfans script
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
 In addition there are numerous filtering features to control exactly which type of content you want to scrape.
-Though it is not complete check out the changes.md file for some general changes that have been made
+https://github.com/excludedBittern8/ofscraper/blob/main/CHANGES.md
 
 <h3>DISCLAIMERS:</h3>
 <ol>
