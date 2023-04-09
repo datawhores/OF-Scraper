@@ -86,11 +86,10 @@ https://github.com/excludedBittern8/ofscraper/wiki/Fuzzy-Search
   
  See: https://github.com/excludedBittern8/ofscraper/wiki/Menu-Options 
  
-
- # Advanced Usage
-    
- For those who are comfortable ofscraper has numerous commandline options.
- A matter of fact in many cases you can skip the the menu prompts, and have the script run by itself
+ # commandline
+ While the menu is easy to use, and convient. You may want more automation.
+ 
+ The best way to do this is through the commandline system. This will allow you to skip the menu, and for example scrape a provided list of accounts
  
   https://github.com/excludedBittern8/ofscraper/wiki/command-line-args
  
