@@ -346,13 +346,14 @@ def getmediadir(ele,username,model_id):
     return root /downloadDir
 
 def trunicate(path):
+    path=pathlib.Path(path)
     ext=str(path.suffix)
     basepath=str(path.with_suffix(""))
     if platform.system() == 'Windows' and len(str(path))>256:
         return pathlib.Path(basepath[:256-len(ext)]).with_suffix(ext)
     elif platform.system() == 'Linux':
         dir=pathlib.Path(path).parent
-        file=pathlib.Path(basepath).name.encode("utf8")[:255-len(ext.encode('utf8'))].decode("utf8", "ignore")
+        file=pathlib.Path(basepath).name.encode("utf8")[:(255-len(ext.encode('utf8')))].decode("utf8", "ignore")
         return pathlib.Path(dir,file).with_suffix(ext)
     else:
         return path
