@@ -42,7 +42,7 @@ from .dates import convert_local_time
 config = read_config()['config']
 
 
-async def process_dicts(username, model_id, medialist,forced=False,outpath=None):
+async def process_dicts(username, model_id, medialist,forced=False):
     if medialist:
         if not forced:
             media_ids = set(operations.get_media_ids(model_id,username))

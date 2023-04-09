@@ -356,7 +356,6 @@ def process_post():
             model_id,
             combined_urls,
             forced=args.dupe,
-            outpath=args.outpath
             ))
         except Exception as e:
             console.print("run failed with exception: ", e)
@@ -387,7 +386,7 @@ def process_unlike():
             like.unlike(headers, model_id, ele["name"], post_ids)
 
 @contextmanager
-def suppress_stdout():
+def asuppress_stdout():
     with open(os.devnull, "w") as devnull:
         old_stdout = sys.stdout
         old_stderr=sys.stderr
