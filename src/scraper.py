@@ -566,7 +566,7 @@ def main():
 
 
 
-    if args.posts: 
+    if args.excludedBittern8/cross_seed_findposts: 
         check_auth()
         run(process_post)        
     if args.purchased:
