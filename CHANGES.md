@@ -21,5 +21,8 @@
 - add metadata support
 - username filter
 - progress bar for scraper
-- Added dynamic naming scheme
+- Added dynamic naming scheme for folders, and files
+- Allow for metadata folder selection
+- Allow for filtering by file type
+-
 
