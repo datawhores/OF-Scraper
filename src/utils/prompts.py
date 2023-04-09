@@ -349,10 +349,7 @@ def get_profile_prompt(profiles: list) -> str:
 
     return profile
 
-#    'config': {
 
-#             'metadata':"{configpath}/{profile}/.data/{username}_{model_id}"
-#         }
 def config_prompt(config) -> dict:
     questions = [
         {
@@ -389,13 +386,13 @@ def config_prompt(config) -> dict:
             'type': 'input',
             'name': 'textlength',
             'message': 'Enter the max length to extract for post text, 0 means unlimited',
-            'default': config.get('textlenght', '0')
+            'default': config.get('textlength', '0')
         },
                           {
             'type': 'input',
             'name': 'date',
             'message': 'Enter Date formatting',
-            'default': config.get('textlenght', 'MM-DD-YYYY')
+            'default': config.get('date', 'MM-DD-YYYY')
         },
                                {
             'type': 'input',
