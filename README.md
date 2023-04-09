@@ -139,7 +139,11 @@ Ask in the discord or open an issue if you need help with what to change to acco
 
 https://discord.gg/zRXgb5Nv
     
-    
+# Support
+buymeacoffee.com/datawhores
+BTC: bc1qcnnetrgmtr86rmqvukl2e24f5upghpcsqqsy87
+ETH: 0x1d427a6E336edF6D95e589C16cb740A1372F6609
+
 
   
     
