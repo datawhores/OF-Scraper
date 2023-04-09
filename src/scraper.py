@@ -558,6 +558,8 @@ def main():
 
     
     if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.purchased,args.posts])))==0:
+        if args.daemon:
+            console.print("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
         sys.exit(0)
     
