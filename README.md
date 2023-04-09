@@ -1,20 +1,9 @@
-This is a fork of onlyfans-scraper with additional features and fixes
+A fork of onlyfans-scraper 
+It has been optimized to make it more feature complete with dc's onlyfans script
+A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
-# What should work
-- scraping options like downloading content,unliking, and liking post
-
-other options might not work currently.
-If your auth is not correct, then the latest version will force a proper configuration
-
-# Notes
-
-Note the guide is still a little incomplete, so it might not be up to date with the changes I made 
-I hope to go through it and make the necessary changes soon.
-
-new db branch has some changes that will be coming to the main branch soon
-https://github.com/excludedBittern8/ofscraper/tree/db
-
-Will be added a feature to speed up repeated scraping of models
+In addition there are numerous filtering features to control exactly which type of content you want to scrape.
+https://github.com/excludedBittern8/ofscraper/blob/main/CHANGES.md
 
 <h3>DISCLAIMERS:</h3>
 <ol>
@@ -26,7 +15,6 @@ Will be added a feature to speed up repeated scraping of models
     </li>
 
 
-
   ## Description:
   command-line program to download media, and to process other batch operations such as liking and unliking posts.
     
@@ -35,179 +23,134 @@ Will be added a feature to speed up repeated scraping of models
 
 
 
-
 ## Installation
 
 ### Recommended python3.9 or python3.10
 
 
-Windows: 
+# Windows: 
 ```
 pip install ofscraper
 ```
 or 
 
 ```
-pip install git+https://github.com/excludedBittern8/ofscraper
+pip install git+https://github.com/excludedBittern8/ofscraper.git 
 ```
 
-If you're on macOS/Linux, then do this instead:
+#  macOS/Linux
 ```
 pip3 install ofscraper
 ```
 or
 ```
-pip3 install git+https://github.com/excludedBittern/ofscraper
+pip3 install git+https://github.com/excludedBittern8/ofscraper.git 
 ```
 
-## Setup
+## Authentication
 
-Before you can fully use it, you need to fill out some fields in a `auth.json` file. This file will be created for you when you run the program for the first time.
-
-These are the fields:
-
-```json
-{
-    "auth": {
-        "app-token": "",
-        "sess": "",
-        "auth_id": "",
-        "auth_uniq_": "",
-        "user_agent": "",
-        "x-bc": ""
-    }
-}
-```
-
-It's really not that bad. I'll show you in the next sections how to get these bits of info.
+You'll need to retrive your auth information 
+    
+https://github.com/excludedBittern8/ofscraper/wiki/Auth
 
 
-### Step One: Creating the 'auth.json' File
 
-You first need to run the program in order for the `auth.json` file to be created. To run it, simply type `ofscraper` in your terminal and hit enter. Because you don't have an `auth.json` file, the program will create one for you and then ask you to enter some information. Now we need to get that information.
-
-
-### Step Two: Getting Your Auth Info
-
-***If you've already used DIGITALCRIMINAL's OnlyFans script, you can simply copy and paste the auth information from there to here.***
-
-Go to your [notification area](https://onlyfans.com/my/notifications) on OnlyFans. Once you're there, open your browser's developer tools. If you don't know how to do that, consult the following chart:
-
-| Operating System | Keys |
-| :----------------: | :----: |
-| macOS | <kbd>alt</kbd><kbd>cmd</kbd><kbd>i</kbd> |
-| Windows | <kbd>ctrl</kbd><kbd>shift</kbd><kbd>i</kbd> |
-| Linux | <kbd>ctrl</kbd><kbd>shift</kbd><kbd>i</kbd> |
-
-Once you have your browser's developer tools open, your screen should look like the following:
-
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/browser_tools_open.png">
-
-Click on the `Network` tab at the top of the browser tools:
-
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/network_tab.png">
-
-Then click on `XHR` sub-tab inside of the `Network` tab:
-
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/xhr_tab.png">
-
-Once you're inside of the `XHR` sub-tab, refresh the page while you have your browser's developer tools open. After the page reloads, you should see a section titled `init` appear:
-
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/init.png">
-
-When you click on `init`, you should see a large sidebar appear. Make sure you're in the `Headers` section:
-
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/headers.png">
-
-After that, scroll down until you see a subsection called `Request Headers`. You should then see three important fields inside of the `Request Headers` subsection: `Cookie`, `User-Agent`, and `x-bc`
-
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/request_headers.png">
-
-Inside of the `Cookie` field, you will see a couple of important bits:
-
-* `sess=`
-* `auth_id=`
-* `auth_uid_=`
-
-*Your* `auth_uid_` *will *only* appear **if you have 2FA (two-factor authentication) enabled**. Also, keep in mind that your* `auth_uid_` *will have numbers after the final underscore and before the equal sign (that's your auth_id).*
-
-You need everything ***after*** the equal sign and everything ***before*** the semi-colon for all of those bits. 
-
-Once you've copied the value for your `sess` cookie, go back to the program, paste it in, and hit enter. Now go back to your browser, copy the `auth_id` value, and paste it into the program and hit enter. Then go back to your browser, copy the `auth_uid_` value, and paste it into the program and hit enter (**leave this blank if you don't use 2FA!!!**).
-
-Once you do that, the program will ask for your user agent. You should be able to find your user agent in a field called `User-Agent` below the `Cookie` field. Copy it and paste it into the program and hit enter.
-
-After it asks for your user agent, it will ask for your `x-bc` token. You should also be able to find this in the `Request Headers` section.
-
-You're all set and you can now use `ofscraper`.
-
-
-## Usage
+# Usage
 
 Whenever you want to run the program, all you need to do is type `ofscraper` in your terminal:
+
+Basic usage is just to run the command below
 
 ```
 ofscraper
 ```
 
-That's it. It's that simple.
+![image](https://user-images.githubusercontent.com/67020411/230732583-dd064665-a59e-4714-92e7-393893061ac0.png)
+  
+ Select "Download content from a user" is all your need to get started with downloading content
+ 
+## Liking/Unliking
 
- Once the program launches, all you need to do is follow the on-screen directions. The first time you run it, it will ask you to fill out your `auth.json` file (directions for that in the section above). 
+It is also possible to batch unlike or like post by choosing the appropriate option in the menu
+Note their are limitations (currently 1000) on how many post you can like per day
 
-You will need to use your arrow keys to select an option:
+![image](https://user-images.githubusercontent.com/67020411/230735256-2d8aa788-53dc-49ee-ada8-5ddf5546851c.png)
 
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/main_menu.png" width="450">
+## Selecting specific users
 
-If you choose to download content, you will have three options: having a list of all of your subscriptions printed, manually entering a username, or scraping *all* accounts that you're subscribed to.
+The fuzzy search system can be a little confusing see
+    
+https://github.com/excludedBittern8/ofscraper/wiki/Fuzzy-Search 
+    
+## Other menu options    
+  
+ See: https://github.com/excludedBittern8/ofscraper/wiki/Menu-Options 
+ 
 
-<img src="https://raw.githubusercontent.com/taux1c/onlyfans-scraper/main/media/list_or_username.png" width="550">
+ # Advanced Usage
+    
+ For those who are comfortable ofscraper has numerous commandline options.
+ A matter of fact in many cases you can skip the the menu prompts, and have the script run by itself
+ 
+  https://github.com/excludedBittern8/ofscraper/wiki/command-line-args
+ 
+ # Customazation
+    
+https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
+https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
 
-### Liking/Unliking Posts
+  
+# Issues
+Open a issue in this repo, or you can mention your issue in the discord
 
-You can also use this program to like all of a user's posts or remove your likes from their posts. Just select either option during the main menu screen and enter their username.
+https://discord.gg/zRXgb5Nv
+    
+## Common
+### Status Down
+      
+This typically means that your auth information is not correct, or onlyfans signed you out.
+### 404 Issue 
+    
+This could mean that the content you are trying to scrape is no longer present. It can also indicate that model has deleted her account, and it is no longer accesible on the platform
+    
+ ### Request taking a long time
+   If a request fails ofscraper will pause and try again a few times. This can lead to certain runs taking longer and points.
 
-This program will like posts at a rate of around one post per second. This may be reduced in the future but OnlyFans is strict about how quickly you can like posts.
+ ## Known Limitations
+ - 1000 likes is the max per day
+    
+    
 
-At the moment, you can only like ~1000 posts per day. That's not *our* restriction, that's OnlyFans's restriction. So choose wisely.
+# Migrating from DC script
 
-### Migrating Databases
+You will need to change the settings so that the metadata option is compatible with your current folders
+Additionally you might want to set the save_path, dir_path, and filename so they output similar outputs
 
-If you've used DIGITALCRIMINAL's script, you might've liked how his script prevented duplicates from being downloaded each time you ran it on a user. This is done through database files.
+The metadata path from dc's script is used for duplicate check so as long as your set the right path.
+Files won't download a second time
 
-This program also uses a database file to prevent duplicates. In order to make it easier for user's to transition from his program to this one, this program will migrate the data from those databases for you (***only IDs and filenames***). 
+https://github.com/excludedBittern8/ofscraper/wiki/Migrating-from-DC-script
+https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
+https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
 
-In order to use it select the last option (Migrate an old database) and enter the *path* to the directory that contains the database files (*Posts.db, Archived.db, etc.*). 
+Ask in the discord or open an issue if you need help with what to change to accomplish this
 
-For example, if you have a directory that looks like the following:
 
-```
-Users
-|__ home
-    |__ .sites
-        |__ OnlyFans
-            |__ melodyjai
-                |__ Metadata
-                    |__ Archived.db
-                    |__ Messages.db
-                    |__ Posts.db
-```
 
-Then the path you enter should be `/Users/home/.sites/OnlyFans/melodyjai/Metadata`. The program will detect the .db files in the directory and then ask you for the username to whom those .db files belong. The program will then move the relevant data over.
+# Discord
 
-<h1> Bugs/Issues/Suggestions </h1>
+https://discord.gg/zRXgb5Nv
+    
+    
 
-If you run into trouble try the discord, careful though we do bite. If you open an issue for any of the following you will be banned from opening future issues. These are not issues they are operator error.
+  
+    
 
-<ol>
-    <li>
-        Status Down - This means that your auth details are bad, keep trying.
-    </li>
-    <li>
-        ofscraper command not found - This means that you have not added the path to your directory. You will have to look this up on your own with google.
-    </li>
-    <li>
-        404 page not found or any other 404 error. - The post or profile can't be found. The user has been suspended or deleted or the post was removed and isn't completely deleted yet. No fix for this other than unsubscribing from the user. Do not open an issue for it.
-    </li>
-</ol>
-<h3>Honestly unless you're one of my subscribers or support the project in some form your suggestions are generally ignored.</h3>
+
+
+
+
+
+
+
 
