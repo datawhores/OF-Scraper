@@ -1,5 +1,4 @@
-A fork of onlyfans-scraper 
-It has been optimized to make it more feature complete with dc's onlyfans script
+A fork of onlyfans-scraper. It has been optimized to make it more feature complete with dc's onlyfans script.
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
 In addition there are numerous filtering features to control exactly which type of content you want to scrape.
