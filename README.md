@@ -137,7 +137,7 @@ Ask in the discord or open an issue if you need help with what to change to acco
 
 # Discord
 
-https://discord.gg/zRXgb5Nv
+https://discord.gg/wN7uxEVHRK
     
 # Support
 buymeacoffee.com/datawhores
