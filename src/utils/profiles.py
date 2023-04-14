@@ -14,7 +14,7 @@ from rich.console import Console
 from rich import print
 console=Console()
 from .config import read_config, update_config
-from .prompts import get_profile_prompt,change_default_profile
+from ..prompts.prompts import get_profile_prompt,change_default_profile
 from ..constants import configPath, configFile, mainProfile
 configPath = '.config/ofscraper'
 
@@ -26,16 +26,6 @@ def get_profile_path():
 
 def get_profiles() -> list:
     config_path = get_profile_path()
-
-    # (This block of code should be removed in the 1.0 release)
-    #
-    # If user upgraded from an older version of ofscraper or if the user
-    # has an auth.json or models.db file in the config_path:
-    # if has_files(config_path):
-    #     create_profile(config_path, mainProfile)
-    #     move_files(config_path, mainProfile)
-
-    # If not, continue as usual:
     dir_contents = config_path.glob('*')
     profiles = [item for item in dir_contents if item.is_dir()]
     return profiles

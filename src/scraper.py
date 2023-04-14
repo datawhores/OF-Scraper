@@ -24,12 +24,14 @@ import functools
 from itertools import chain
 import re
 from rich.console import Console
+
+from .prompts import prompts
 console=Console()
 from .constants import donateEP
 from .api import init, highlights, me, messages, posts, profile, subscriptions, paid
 from .db import operations
 from .interaction import like
-from .utils import auth, config, download, profiles, prompts
+from .utils import auth, config, download, profiles
 import webbrowser
 from halo import Halo
 from .utils.nap import nap_or_sleep
@@ -546,13 +548,11 @@ def main():
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
 
-     #Paths
-    paths=parser.add_argument_group("paths",description="Change or forced paths in program")
+  
 
     args = parser.parse_args()
     global selectedusers
     selectedusers=None
-    read_config()
 
 
     
