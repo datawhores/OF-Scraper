@@ -2,7 +2,7 @@
 name = "ofscraper"
 version = "1.75"
 description = "automatically scrape onlyfans"
-authors = ["excludedBittern8 <excludedBittern8@riseup.net>"]
+authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 packages = [{include = "src"}]
 
@@ -21,6 +21,7 @@ tenacity = "^8.2.2"
 arrow = "^1.2.3"
 halo = "^0.0.31"
 win32-setctime = "^1.1.0"
+pathvalidate = "^2.5.2"
 
 
 [build-system]
@@ -34,4 +35,4 @@ ofscraper = "src.scraper:main"
 ofscraper = "src.scraper:main"
 
 [tool.poetry.urls]
-"Homepage" = "https://github.com/excludedBittern8/ofscraper"
+"Homepage" = "https://github.com/datawhores/ofscraper"

@@ -5,6 +5,7 @@ import os
 import sys
 from rich.console import Console
 console=Console()
+import arrow
 
 from ..constants import configPath
 from ..utils import profiles
@@ -38,9 +39,13 @@ def createDir(path):
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return pathlib.Path(config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),username=username,model_id=model_id,sitename="Onlyfans",first_letter=username[0]),"user_data.db")
+    print()
+    return pathlib.Path(config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,model_id=model_id,sitename="Onlyfans",first_letter=username[0]),"user_data.db")
 
-    
+def getmediadir(ele,username,model_id):
+    root= pathlib.Path((config.get('save_location') or pathlib.Path.home()/"ofscraper"))
+    downloadDir=(config.get('dir_format') or "{model_username}/{responsetype}/{mediatype}").format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele['responsetype'].capitalize(),mediatype=ele['mediatype'].capitalize(),value=ele['value'].capitalize(),date=arrow.get(ele['date']).format(config.get('date')))
+    return root /downloadDir   
 
 
 def messageResponsePathHelper(model_id,username):

@@ -2,7 +2,7 @@ A fork of onlyfans-scraper. It has been optimized to make it more feature comple
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
 In addition there are numerous filtering features to control exactly which type of content you want to scrape.
-https://github.com/excludedBittern8/ofscraper/blob/main/CHANGES.md
+https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
 
 <h3>DISCLAIMERS:</h3>
 <ol>
@@ -34,7 +34,7 @@ pip install ofscraper
 or 
 
 ```
-pip install git+https://github.com/excludedBittern8/ofscraper.git 
+pip install git+https://github.com/datawhores/ofscraper.git 
 ```
 
 #  macOS/Linux
@@ -43,14 +43,14 @@ pip3 install ofscraper
 ```
 or
 ```
-pip3 install git+https://github.com/excludedBittern8/ofscraper.git 
+pip3 install git+https://github.com/datawhores/ofscraper.git 
 ```
 
 ## Authentication
 
 You'll need to retrive your auth information 
     
-https://github.com/excludedBittern8/ofscraper/wiki/Auth
+https://github.com/datawhores/ofscraper/wiki/Auth
 
 
 
@@ -79,23 +79,23 @@ Note their are limitations (currently 1000) on how many post you can like per da
 
 The fuzzy search system can be a little confusing see
     
-https://github.com/excludedBittern8/ofscraper/wiki/Fuzzy-Search 
+https://github.com/datawhores/ofscraper/wiki/Fuzzy-Search 
     
 ## Other menu options    
   
- See: https://github.com/excludedBittern8/ofscraper/wiki/Menu-Options 
+ See: https://github.com/datawhores/ofscraper/wiki/Menu-Options 
  
  # commandline
  While the menu is easy to use, and convient. You may want more automation.
  
  The best way to do this is through the commandline system. This will allow you to skip the menu, and for example scrape a provided list of accounts
  
-  https://github.com/excludedBittern8/ofscraper/wiki/command-line-args
+  https://github.com/datawhores/ofscraper/wiki/command-line-args
  
  # Customazation
     
-https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
-https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
+https://github.com/datawhores/ofscraper/wiki/Customizing-save-path
+https://github.com/datawhores/ofscraper/wiki/Config-Options
 
   
 # Issues
@@ -127,9 +127,9 @@ Additionally you might want to set the save_path, dir_path, and filename so they
 The metadata path from dc's script is used for duplicate check so as long as your set the right path.
 Files won't download a second time
 
-https://github.com/excludedBittern8/ofscraper/wiki/Migrating-from-DC-script
-https://github.com/excludedBittern8/ofscraper/wiki/Config-Options
-https://github.com/excludedBittern8/ofscraper/wiki/Customizing-save-path
+https://github.com/datawhores/ofscraper/wiki/Migrating-from-DC-script
+https://github.com/datawhores/ofscraper/wiki/Config-Options
+https://github.com/datawhores/ofscraper/wiki/Customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 

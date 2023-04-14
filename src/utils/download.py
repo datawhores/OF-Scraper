@@ -32,7 +32,7 @@ from .auth import add_cookies
 from .config import read_config
 from .separate import separate_by_id
 from ..db import operations
-from .paths import set_directory
+from .paths import set_directory,getmediadir
 from ..utils import auth
 from ..constants import configPath
 from ..utils.profiles import get_current_profile
@@ -312,11 +312,13 @@ def get_error_message(content):
     except AttributeError:
         return error_content
 def createfilename(ele,username,model_id,ext):
-    filename=ele["url"].split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+    filename=geturlfilename(ele['url'])
     if ele.get("responsetype") in "profile":
         return filename
     
-    return (config.get('file_format') or '{filename}.{ext}').format(filename=filename,sitename="Onlyfans",post_id=ele["postid"],media_id=ele["id"],first_letter=username[0],media_type=ele["mediatype"],value=ele["value"],text=texthelper(ele.get("text") or filename,ele),date=arrow.get(ele['date']).format(config.get('date')),ext=ext,model_username=username,model_id=model_id,responsetype=ele["responsetype"])
+    return (config.get('file_format') or '{filename}.{ext}').format(filename=filename,sitename="Onlyfans",post_id=ele["postid"],media_id=ele["id"],first_letter=username[0],mediatype=ele["mediatype"],value=ele["value"],text=texthelper(ele.get("text") or filename,ele),date=arrow.get(ele['date']).format(config.get('date')),ext=ext,model_username=username,model_id=model_id,responsetype=ele["responsetype"])
+def geturlfilename(url):
+    return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
 
 def texthelper(text,ele):    
     count=ele["count"]
@@ -340,10 +342,7 @@ def texthelper(text,ele):
 
 
 
-def getmediadir(ele,username,model_id):
-    root= pathlib.Path((config.get('save_location') or pathlib.Path.home()/"ofscraper"))
-    downloadDir=(config.get('dir_format') or "{model_username}/{responsetype}/{mediatype}").format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele['responsetype'].capitalize(),mediatype=ele['mediatype'].capitalize(),value=ele['value'].capitalize(),date=arrow.get(ele['date']).format(config.get('date')))
-    return root /downloadDir
+
 
 def trunicate(path):
     path=pathlib.Path(path)

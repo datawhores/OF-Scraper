@@ -17,10 +17,13 @@ console=Console()
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
+from InquirerPy.validator import EmptyInputValidator,PathValidator
 
-from ..constants import mainPromptChoices, usernameOrListChoices, profilesPromptChoices
-
-
+from ..constants import mainPromptChoices, profilesPromptChoices,FILTER_DEFAULT
+from .prompt_strings import CHECKLISTINSTRUCTIONS,FUZZY_INSTRUCTION
+from .prompt_functions import cleanTextInput,emptyListValidator,jsonValidator,jsonloader,namevalitator,dirformatvalidator \
+,dateplaceholdervalidator,fileformatvalidator,metadatavalidator
+import src.utils.config as config
 def main_prompt() -> int:
     main_prompt_choices = [*mainPromptChoices]
     main_prompt_choices.insert(3, Separator())
@@ -32,7 +35,7 @@ def main_prompt() -> int:
             'type': 'list',
             'name': name,
             'message': 'What would you like to do?',
-            'choices': [*main_prompt_choices]
+            'choices': [*main_prompt_choices],
         }
     ]
 
@@ -40,51 +43,12 @@ def main_prompt() -> int:
     return mainPromptChoices[answer[name]]
 
 
-def username_or_list_prompt() -> int:
-    name = 'username_or_list'
-
-    questions = [
-        {
-            'type': 'list',
-            'name': name,
-            'message': 'Choose one of the following options:',
-            'choices': [*usernameOrListChoices]
-        }
-    ]
-
-    answer = prompt(questions)
-    return usernameOrListChoices[answer[name]]
 
 
-def verify_all_users_username_or_list_prompt() -> bool:
-    name = 'all_users'
-
-    questions = [
-        {
-            'type': 'confirm',
-            'name': name,
-            'message': 'Are you sure you want to scrape every model that you\'re subscribed to?',
-            'default': False
-        }
-    ]
-
-    answer = prompt(questions)
-    return answer[name]
 
 
-def username_prompt() -> str:
-    name = 'username'
 
-    questions = [
-        {
-            'type': 'input',
-            'name': name,
-            'message': 'Enter a comma seperated list of model\'s usernames:'
-        }
-    ]
 
-    answer = prompt(questions)
-    return answer[name]
 
 
 def areas_prompt() -> list:
@@ -96,8 +60,7 @@ def areas_prompt() -> list:
             'qmark': '[?]',
             'name': name,
             'message': 'Which area(s) would you like to scrape? (Press ENTER to continue)',
-             "validate":(lambda result: len(result)> 0),
-      "invalid_message":"Input cannot be empty",
+             "validate":emptyListValidator(),
             'choices': [
                 Choice('Timeline'),
                 Choice('Archived'),
@@ -105,38 +68,14 @@ def areas_prompt() -> list:
                 Choice('Stories'),
                 Choice('Messages'),
             ]
-            ,"instruction":"\nKeybindings\nToggle all: Ctrl+R\nToggle single: spacebar\nPress enter when done",
+            ,"instruction":CHECKLISTINSTRUCTIONS,
 
         }
     ]
-
-    while True:
-        answers = prompt(questions)
-        if not answers[name]:
-            console.print('Error: You must select at least one.')
-        break
+    answers = prompt(questions)
     return answers[name]
 
 
-def database_prompt() -> tuple:
-    name1 = 'path'
-    name2 = 'username'
-
-    questions = [
-        {
-            'type': 'input',
-            'name': name1,
-            'message': 'Enter the path to the directory that contains your database files:'
-        },
-        {
-            'type': 'input',
-            'name': name2,
-            'message': 'Enter that model\'s username:'
-        }
-    ]
-
-    answers = prompt(questions)
-    return (answers[name1], answers[name2])
 
 
 def auth_prompt(auth) -> dict:
@@ -144,19 +83,22 @@ def auth_prompt(auth) -> dict:
         {
             'type': 'input',
             'name': 'sess',
-            'message': 'Enter your `sess` cookie:',
+            'message': 'Enter your sess cookie:',
             'default': auth['sess']
+            ,'validate':EmptyInputValidator()
+
         },
         {
             'type': 'input',
             'name': 'auth_id',
-            'message': 'Enter your `auth_id` cookie:',
+            'message': 'Enter your auth_id cookie:',
             'default': auth['auth_id']
+            ,'validate':EmptyInputValidator()
         },
         {
             'type': 'input',
             'name': 'auth_uid_',
-            'message': 'Enter your `auth_uid_` cookie (leave blank if you don\'t use 2FA):',
+            'message': 'Enter your auth_uid cookie (leave blank if you don\'t use 2FA):',
             'default': auth['auth_uid_']
         },
         {
@@ -164,12 +106,14 @@ def auth_prompt(auth) -> dict:
             'name': 'user_agent',
             'message': 'Enter your `user agent`:',
             'default': auth['user_agent']
+            ,'validate':EmptyInputValidator()
         },
         {
             'type': 'input',
             'name': 'x-bc',
             'message': 'Enter your `x-bc` token:',
             'default': auth['x-bc']
+            ,'validate':EmptyInputValidator()
         }
     ]
 
@@ -202,7 +146,7 @@ def browser_prompt()->str:
                 'type': 'list',
                 'message':msg ,
                 'choices':["Enter Each Field Manually","Paste From Cookie Helper", Separator(line="-----------\nBrowser Extractions"),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
-                "default":"Enter Each Field Manually"
+                "default":"Enter Each Field Manually",
 
             }
         ]
@@ -221,27 +165,29 @@ def browser_prompt()->str:
     ]  
       
     return prompt(questions)[0]
-def user_agent_prompt(current,new=None):
-    new =new or "Unknown Please Ignore"
-
+def user_agent_prompt(current):
     questions = [
         {
             'type': 'input',
             'message':'Enter User_Agent from browser',
-            'default':current
+            'default':current,
+            'validate':EmptyInputValidator(),
+            'filter':lambda x:cleanTextInput(x)
         }
     ]
-    return  prompt(questions)[0].strip()
+    return  prompt(questions)[0]
 
 def xbc_prompt():
     questions = [
         {
             'type': 'input',
             'message':'Enter x-bc request header',
-            'instruction':f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/excludedBittern8/ofscraper\n\n"
+            'instruction':f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/datawhores/ofscraper\n\n"
+            ,'validate':EmptyInputValidator(),
+            'filter':lambda x:cleanTextInput(x)
         }
     ]
-    return  prompt(questions)[0].strip()
+    return  prompt(questions)[0]
 
 
 
@@ -251,8 +197,13 @@ def auth_full_paste():
         {
             'type': 'input',
             'message':'Paste Text from Extension',
-            "filter": lambda result: json.loads(result),
-             "instruction":"\n\nCookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper/\n\n"
+            "validate": jsonValidator(),
+            "filter":jsonloader,
+             "instruction":\
+"""
+Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
+"""
+             
 
         }
     ]
@@ -299,7 +250,8 @@ def new_name_edit_profiles_prompt(old_profile_name) -> str:
         {
             'type': 'input',
             'name': name,
-            'message': f'What would you like to rename {old_profile_name} to?'
+            'message': f'What would you like to rename {old_profile_name} to?',
+            'validator':EmptyInputValidator()
         }
     ]
 
@@ -314,21 +266,17 @@ def create_profiles_prompt() -> str:
         {
             'type': 'input',
             'name': name,
-            'message': 'What would you like to name your new profile? [ONLY letters, numbers, and underscores!]'
+            'message': 
+"""
+What would you like to name your new profile?
+only letters, numbers, and underscores are allowed
+""",
+            'validator':namevalitator()
+
         }
     ]
 
-    while True:
-        pattern = re.compile(r'[^\w+^\d+^_+]')
-        answer = prompt(questions)
-
-        if not answer[name]:
-            console.print('You must type a name. Try again.')
-
-        if re.search(pattern, answer[name]):
-            console.print('Profile name contains invalid characters. Try again.')
-        break
-
+    answer = prompt(questions)
     return answer[name]
 
 
@@ -341,70 +289,96 @@ def get_profile_prompt(profiles: list) -> str:
             'name': name,
             'message': 'Select Profile',
             'choices':profiles
-            ,"validate":(lambda result: len(result)> 0)
+            ,"validate":emptyListValidator()
         }
     ]
     answer = prompt(questions)
     profile = answer[name]
-
     return profile
 
 
-def config_prompt(config) -> dict:
+def config_prompt(config_) -> dict:
     questions = [
         {
             'type': 'input',
             'name': 'main_profile',
             'message': 'What would you like your main profile to be?',
-            'default': config.get('main_profile','main_profile')
+            'default': config.get_main_profile(config_),
+            "validate":lambda x:emptyListValidator() and  isinstance(x[0],str)
         },
         {
-            'type': 'input',
+            'type': 'filepath',
             'name': 'save_location',
-            'message': 'Where would you like to set as the root save downloaded directory?',
-            'default': config.get('save_location',str(pathlib.Path.home() /'Data/ofscraper'), )
+            'message':"save_location: ",
+            'long_instruction': 'Where would you like to set as the root save downloaded directory?',
+            'default':config.get_save_location(config_),
+            "filter":lambda x:cleanTextInput(x)
+            
         },
         {
-            'type': 'input',
+            'type': 'number',
             'name': 'file_size_limit',
-            'message': 'File size limit (enter a value in bytes)\nLeave empty string for no limit:',
-            'default': config.get('file_size_limit', '')
+            'message':"file_size_limit: ",
+            'long_instruction':
+"""
+File size limit (enter a value in bytes)
+Enter 0 for no limit
+""",
+            'default': config.get_filesize(config_),
+            'filter':int,
+             'min_allowed':0,
+      
         },
            {
             'type': 'input',
             'name': 'dir_format',
-            'message': 'What format do you want for download directories',
-            'default': config.get('dir_format', '{model_username}/{responsetype}/{mediatype}/')
+            'message':"dir_format: ",
+            'long_instruction': 'What format do you want for download directories',
+            'default': config.get_dirformat(config_),
+             "validate":dirformatvalidator()
         },
               {
             'type': 'input',
             'name': 'file_format',
             'message': 'What format do you want for downloaded files',
-            'default': config.get('file_format', '{filename}.{ext}')
+            'default':config.get_fileformat(config_),
+             "validate":fileformatvalidator()
         },
                      {
-            'type': 'input',
+            'type': 'number',
             'name': 'textlength',
-            'message': 'Enter the max length to extract for post text, 0 means unlimited',
-            'default': config.get('textlength', '0')
+            'message':"textlength: ",
+            'long_instruction': 'Enter the max length to extract for post text, 0 means unlimited\n',
+            'default': config.get_textlength(config_),
+            'min_allowed':0,
+             "validate":EmptyInputValidator()
         },
-                          {
+         {
             'type': 'input',
             'name': 'date',
-            'message': 'Enter Date formatting',
-            'default': config.get('date', 'MM-DD-YYYY')
+            'message': 'date: ',
+            "long_instruction":"Enter Date format",
+            'default': config.get_date(config_),
+             "validate":dateplaceholdervalidator()
         },
-                               {
+        {
             'type': 'input',
             'name': 'metadata',
-            'message': 'Where should metadata files be saved',
-            'default': config.get('metadata', '{configpath}/{profile}/.data/{username}_{model_id}')
+            "message":"metadata: ",
+            'long_instruction': 'Where should metadata files be saved',
+            'default':config.get_metadata(config_),
+             "validate":metadatavalidator()
+        },
+        {
+            'type': 'checkbox',
+            'name': 'filter',
+            "message":"filter: ",
+            'long_instruction': f'What type of media do you want to download\n\n{CHECKLISTINSTRUCTIONS}',
+            'choices':list(map(lambda x:Choice(name=x,value=x, enabled=x.capitalize() in set(config.get_filter(config_))),FILTER_DEFAULT)),
+             "validate":emptyListValidator()
         }
     ]
-
     answers = prompt(questions)
-    answers.update({'save_location': answers.get(
-        'save_location').strip('\"')})
     return answers
 def reset_username_prompt() -> bool:
     name = 'reset username'
@@ -442,9 +416,9 @@ def model_selector(models) -> bool:
                          }
                          
      ,"multiselect":True
-      ,"validate":(lambda result: len(result)> 0),
-      "invalid_message":"Input cannot be empty",
-      "instruction":"\nKeyBindings\nToggle all: Ctrl+r\nToggle single: Shift +Right or Home +Right or pageDown +Right\nPress Enter When Done\n\nParantheses indicates number of selected users\n\nValues: Name Renewal_Date/Expired_Date Active_Subscription","choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name']))),"transformer":lambda result:",".join(map(lambda x:x.split(" ")[0],result))
+      ,"validate":emptyListValidator(),
+      "instruction":FUZZY_INSTRUCTION,
+      "choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name']))),"transformer":lambda result:",".join(map(lambda x:x.split(" ")[0],result))
        ,"prompt":'Filter: ',
        "marker":"\u25c9 ",
        "marker_pl":"\u25cb "

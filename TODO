@@ -3,5 +3,8 @@
 - Add DC import script 
 - is instance list for posts
 - jwt token? in download url
-
-
+- mention model_username key change
+- mention date format validator being very flexiable, and user error prone
+- mention switch to into for config.json values
+- test default
+- print path for each download

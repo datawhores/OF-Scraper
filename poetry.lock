@@ -472,6 +472,21 @@ files = [
 ]
 
 [[package]]
+name = "pathvalidate"
+version = "2.5.2"
+description = "pathvalidate is a Python library to sanitize/validate a string such as filenames/file-paths/etc."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pathvalidate-2.5.2-py3-none-any.whl", hash = "sha256:e39a4dfacdba70e3a96d3e4c6ff617a39e991cf242e6e1f2017f1f67c3408d33"},
+    {file = "pathvalidate-2.5.2.tar.gz", hash = "sha256:5ff57d0fabe5ecb7a4f1e4957bfeb5ad8ab5ab4c0fa71f79c6bbc24bd9b7d14d"},
+]
+
+[package.extras]
+test = ["allpairspy", "click", "faker", "pytest (>=6.0.1)", "pytest-discord (>=0.0.6)", "pytest-md-report (>=0.0.12)"]
+
+[[package]]
 name = "pfzy"
 version = "0.3.4"
 description = "Python port of the fzy fuzzy string matching algorithm"
@@ -821,4 +836,4 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.0,<4"
-content-hash = "ca9fb2e7e761148189cb1931db5d3cb3e1e48258c748a4e7185023d7bc8c28f3"
+content-hash = "38cfc8759277b2af48153b432d350cd3e3af98d49a81dbe9188369c8e77cdd9b"
