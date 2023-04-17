@@ -323,6 +323,10 @@ def process_paid():
 
 def process_paid_post(model_id,username):
     paid_content=paid.scrape_paid(username)
+    issues=filter(lambda x:x.get("createdAt")==None,paid_content) 
+    keys=list(map(lambda x:x.keys(),issues))
+    print(f"Printing Keys: {keys}")
+    quit()
     for post in paid_content:
         responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
