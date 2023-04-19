@@ -53,13 +53,23 @@ def process_messages(headers, model_id,username):
     [ output.extend(message.media) for message in messages_]
     return list(filter(lambda x:isinstance(x,Media),output))
 
+@Halo(text='Getting Paid Content...')
+def process_paid_post(headers, model_id,username):
+    paid_content=paid.scrape_paid(username)
+    paid_content=list(map(lambda x:Post(x,model_id,username),paid_content))
+    for post in paid_content:
+        operations.write_post_table(post,model_id,username)
+    output=[]
+    [output.extend(post.media) for post in paid_content]
+    return list(filter(lambda x:isinstance(x,Media),output))
 
+         
 
 @Halo(text='Getting highlights and stories...')
 def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
     highlights_, stories=list(map(lambda x:Post(x,model_id,username,responsetype="highlights"),highlights_)),\
-    list(map(lambda x:Post(x,model_id,username),stories))
+    list(map(lambda x:Post(x,model_id,username,responsetype="stories"),stories))
     for post in highlights_:
         operations.write_stories_table(post,model_id,username)
     for post in stories:
@@ -117,7 +127,12 @@ def process_profile(headers, username) -> list:
     user_profile = profile.scrape_profile(headers, username)
     urls, info = profile.parse_profile(user_profile)
     profile.print_profile_info(info)
-    return urls
+    output=[]
+    for ele in enumerate(urls):
+        count=ele[0]
+        data=ele[1]
+        output.append(Media({"url":data["url"],"type":data["mediatype"]},count,Post(data,info[2],username,responsetype="profile")))
+    return output
 
 
 
@@ -131,10 +146,10 @@ def process_areas(headers, ele, model_id) -> list:
     highlights_dicts  = []
     messages_dicts  = []
     stories_dicts=[]
+    purchased_dict=[]
 
     username=ele['name']
-    # profile_dicts  = process_profile(headers,username)
-    profile_dicts=[]
+    profile_dicts  = process_profile(headers,username)
 
     if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
@@ -143,17 +158,18 @@ def process_areas(headers, ele, model_id) -> list:
             archived_posts_dicts = process_archived_posts(headers, model_id,username)
     if 'Messages' in args.posts or 'All' in args.posts:
             messages_dicts = process_messages(headers, model_id,username)
-
+    if "Purchased" in args.posts or "All" in args.posts:
+            purchased_dict=process_paid_post(headers, model_id,username)
     if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts)   and ele["active"]:
-            highlights_tuple = process_highlights(headers, model_id,username)
+            highlights_tuple = process_highlights(headers, model_id,username)  
+            if 'Highlights'  in args.posts:
+                highlights_dicts=highlights_tuple[0]
+            if 'Stories'  in args.posts:
+                stories_dicts=highlights_tuple[1]   
             if 'All' in args.posts:
                 highlights_dicts=highlights_tuple[0]
-                stories_dicts=highlights_tuple[1]    
-            elif 'Highlights'  in args.posts:
-                highlights_dicts=highlights_tuple[0]
-            elif 'Stories'  in args.posts:
-                stories_dicts=highlights_tuple[1]    
-    return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
+                stories_dicts=highlights_tuple[1]               
+    return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
 )
@@ -233,11 +249,7 @@ def process_prompts():
         #download
         if result_main_prompt == 0:
             check_auth()
-            if prompts.download_paid_prompt()=="Yes":
-                process_post()
-                process_paid()
-            else:
-                process_post()     
+            process_post()     
 
         # like a user's posts
         elif result_main_prompt == 1:
@@ -306,42 +318,8 @@ def process_prompts():
                 selectedusers=None
                 changeusernames=True
         
-def process_paid():
 
 
-    profiles.print_current_profile()
-    headers = auth.make_headers(auth.read_auth())
-
-    init.print_sign_status(headers)
-    userdata=getselected_usernames()
-    for ele in userdata:
-        print(f"Getting paid content for {ele['name']}")
-        try:
-            model_id = profile.get_id(headers, ele["name"])
-            create_tables(model_id,ele['name'])
-            operations.write_profile_table(model_id,ele['name'])
-            paid_url=process_paid_post(model_id,ele['name'])
-            profile.print_paid_info(paid_url,ele["name"])
-            asyncio.run(download.process_dicts_paid(
-            ele["name"],
-            model_id,
-            paid_url,
-            forced=args.dupe,
-            ))
-        except Exception as e:
-            console.print("run failed with exception: ", e)
-
-def process_paid_post(model_id,username):
-    paid_content=paid.scrape_paid(username)
-    issues=filter(lambda x:x.get("createdAt")==None,paid_content) 
-    keys=list(map(lambda x:x.keys(),issues))
-    print(f"Printing Keys: {keys}")
-    quit()
-    for post in paid_content:
-        responseJsonHelper(post)
-        operations.write_post_table(post,model_id,username)
-    return list(map(lambda x:mediaJsonHelper(x),paid.parse_paid(paid_content)))
-         
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
@@ -531,7 +509,7 @@ def main():
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],action='append'
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories","purchased"],action='append'
     )
     post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
@@ -569,9 +547,6 @@ def main():
     if args.posts: 
         check_auth()
         run(process_post)        
-    if args.purchased:
-        check_auth()
-        run(process_paid)
     if args.action=="like":
         check_auth()
         run(process_like)

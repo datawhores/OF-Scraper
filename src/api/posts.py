@@ -3,7 +3,7 @@ class Post():
         self._post=post
         self._model_id=model_id
         self._username=username
-        self._responsetype=responsetype
+        self._responsetype=responsetype or post.get("responseType")
     
      
     @property
@@ -32,8 +32,12 @@ class Post():
    
     @property
     def text(self):
+        if self.responsetype=="highlights":
+            return ""
+        elif self.responsetype=="stories":
+            return ""
         return self._post.get("text")
- 
+    @property
     def title(self):
         return self._post.get("title")
 
@@ -41,13 +45,11 @@ class Post():
 
     @property
     def responsetype(self):
-        if self._responsetype:
-            return self._responsetype
         if self.archived:
             return "achived"
-        elif self._post.get("responseType")=="post":
+        elif self._responsetype=="post":
             return "posts"
-        return self._post.get("responseType")
+        return self._responsetype
 
 
     @property
@@ -60,7 +62,10 @@ class Post():
         return self._post.get("createdAt") or self._post.get("postedAt")
     @property
     def value(self):
-        return "free" if self.post.get("price")==0 else "paid"
+        if self.price==0:
+            return "free"
+        elif self.price>0:
+            return "paid"
     @property
     def price(self):
         return self.post.get('price') or 0
@@ -108,6 +113,8 @@ class Media():
 
     @property
     def mediatype(self):
+        if self.responsetype=="highlights":
+            return "images"
         if self._media["type"]=="gif" or self._media["type"]=="photo":
             return "images"
         else:
@@ -115,7 +122,14 @@ class Media():
     
     @property
     def url(self):
-        return self._media.get("source",{}).get("source")
+        if self.responsetype=="stories":
+            return self._media.get("files",{}).get("source",{}).get("url")
+        elif self.responsetype=="highlights":
+            return self._media.get("url")
+        elif self.responsetype=="profile":
+            return self._media.get("url")
+        else:
+            return self._media.get("source",{}).get("source")
     @property
     def post(self):
         return self._post
@@ -147,7 +161,7 @@ class Media():
         return self._media.get("createdAt") or self._media.get("postedAt") or self.postdate
     @property
     def id(self):
-        return self._media["id"]
+        return self._media.get("id")
     @property
     def postid(self):
         return self._post.id
