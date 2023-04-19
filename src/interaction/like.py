@@ -16,16 +16,16 @@ import httpx
 from rich.console import Console
 console=Console()
 from halo import Halo
-from ..api import posts
+from ..api import timeline
 from ..constants import favoriteEP, postURL
 from ..utils import auth
 
 
 def get_posts(headers, model_id,username):
     with Halo(text='Getting posts...'):
-        pinned_posts = posts.scrape_pinned_posts(headers, model_id)
-        timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
-        archived_posts = posts.scrape_archived_posts(headers, model_id)
+        pinned_posts = timeline.scrape_pinned_posts(headers, model_id)
+        timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id,username))
+        archived_posts = timeline.scrape_archived_posts(headers, model_id)
 
     return pinned_posts + timeline_posts + archived_posts
 
