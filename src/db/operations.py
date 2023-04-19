@@ -136,7 +136,7 @@ def write_stories_table(data: dict, model_id,username):
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
             if len(cur.execute(queries.storiesDupeCheck,(data.id,)).fetchall())==0:
-                insertData=(data.id,data.text or data.title,data.price,data.paid ,data.archived,data["createdAt"])
+                insertData=(data.postid,data.text or data.title,data.price,data.paid ,data.archived,data.date)
                 cur.execute(queries.storiesInsert,insertData)
                 conn.commit()
 
