@@ -28,7 +28,7 @@ from rich.console import Console
 from .prompts import prompts
 console=Console()
 from .constants import donateEP
-from .api import init, highlights, me, messages, posts, profile, subscriptions, paid
+from .api import init, highlights, me, messages, profile, subscriptions, paid, timeline
 from .db import operations
 from .interaction import like
 from .utils import auth, config, download, profiles
@@ -37,6 +37,7 @@ from halo import Halo
 from .utils.nap import nap_or_sleep
 from .__version__ import  __version__
 from .utils.config import read_config
+from .api.posts import Post,Media
 
 
 
@@ -44,66 +45,73 @@ from .utils.config import read_config
 @Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
-    operations.save_messages_response( model_id,username,messages_)
+    operations.save_messages_response(messages_,model_id,username)
+    messages_=list(map(lambda x:Post(x,model_id,username),messages_))
     for message in messages_:
-     operations.write_messages_table(message,model_id,username)
+     operations.write_messages_table(message)
     output=[]
-    if messages_:
-        [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_] 
-        list(map(lambda x:mediaJsonHelper(x),output))      
-    return output
+    [ output.extend(message.media) for message in messages_]
+    return list(filter(lambda x:isinstance(x,Media),output))
+
 
 
 @Halo(text='Getting highlights and stories...')
 def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
+    highlights_, stories=list(map(lambda x:Post(x,model_id,username,responsetype="highlights"),highlights_)),\
+    list(map(lambda x:Post(x,model_id,username),stories))
     for post in highlights_:
         operations.write_stories_table(post,model_id,username)
     for post in stories:
-        operations.write_stories_table(post,model_id,username)    
+        operations.write_stories_table(post,model_id,username)   
+    output=[]
+    output2=[]
+    [ output.extend(highlight.media) for highlight in highlights_]
+    [ output2.extend(stories.media) for stories in stories]
+    return list(filter(lambda x:isinstance(x,Media),output)),list(filter(lambda x:isinstance(x,Media),output2))
 
-    highlight_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_highlights(highlights_)))
-    stories_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_stories(stories)))
-   
-
-    return highlight_list,stories_list
+     
 
 
 
 
-@Halo(text='Getting archived media...')
-def process_archived_posts(headers, model_id,username):
-    archived_posts = posts.get_archive_post(headers, model_id)
-    operations.save_archive_response(model_id,username,archived_posts)
-    for post in archived_posts:
-        responseJsonHelper(post)
-        operations.write_post_table(post,model_id,username)
-    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(archived_posts)))
 
 
 @Halo(text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
-    timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
+    timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id,username))
     operations.save_timeline_response(model_id,username,timeline_posts)
+    timeline_posts  =list(map(lambda x:Post(x,model_id,username), timeline_posts ))
     for post in timeline_posts:
-        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
-    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts)))
+    output=[]
+    [ output.extend(post.media) for post in  timeline_posts ]
+    return list(filter(lambda x:isinstance(x,Media),output))
+
+@Halo(text='Getting archived media...')
+def process_archived_posts(headers, model_id,username):
+    archived_posts = timeline.get_archive_post(headers, model_id)
+    operations.save_archive_response(model_id,username,archived_posts)
+    archived_posts =list(map(lambda x:Post(x,model_id,username),archived_posts ))
+    for post in archived_posts:
+        operations.write_post_table(post,model_id,username)
+    output=[]
+    [ output.extend(post.media) for post in archived_posts ]
+    return list(filter(lambda x:isinstance(x,Media),output))
+
 
 
 
 @Halo(text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
-    pinned_posts = posts.get_pinned_post(headers, model_id,username)
+    pinned_posts = timeline.get_pinned_post(headers, model_id,username)
     operations.save_pinned_response(model_id,username, pinned_posts)
+    pinned_posts =list(map(lambda x:Post(x,model_id,username),pinned_posts ))
     for post in  pinned_posts:
-        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
-    timeline_posts_urls = posts.parse_posts( pinned_posts)
-    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts_urls)))
-
-
-
+    output=[]
+    [ output.extend(post.media) for post in pinned_posts ]
+    return list(filter(lambda x:isinstance(x,Media),output))
 
 def process_profile(headers, username) -> list:
     user_profile = profile.scrape_profile(headers, username)
@@ -125,7 +133,8 @@ def process_areas(headers, ele, model_id) -> list:
     stories_dicts=[]
 
     username=ele['name']
-    profile_dicts  = process_profile(headers,username)
+    # profile_dicts  = process_profile(headers,username)
+    profile_dicts=[]
 
     if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
@@ -159,9 +168,10 @@ def posts_filter(posts):
         if len(filtersettings)==0:
             return posts
         console.print(f"filtering post to {filtersettings}")
-        return list(filter(lambda x:x["mediatype"] in filtersettings,posts))
-    console.print("The settings you picked for the filter are not valid\nNot Filtering")
-    return posts
+        return list(filter(lambda x:x.mediatype.lower() in filtersettings,posts))
+    else:
+        console.print("The settings you picked for the filter are not valid\nNot Filtering")
+        return posts
         
 
 
@@ -331,20 +341,7 @@ def process_paid_post(model_id,username):
         responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
     return list(map(lambda x:mediaJsonHelper(x),paid.parse_paid(paid_content)))
-def responseJsonHelper(data):
-    if data.get("responseType")=="post":
-        data["responseType"]="posts"
-    elif data.get("responseType")=="message":
-        data["responseType"]="messages"
-    return data
-def mediaJsonHelper(data):
-    if data.get("mediatype")=="photo" or data.get("mediatype")=="gif" :
-        data["mediatype"]="images"
-    elif data.get("mediatype")=="audio":
-        data["mediatype"]="audios"
-    elif data.get("mediatype")=="video":
-        data["mediatype"]="videos"
-    return data         
+         
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
@@ -534,7 +531,7 @@ def main():
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="*"
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],action='append'
     )
     post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])

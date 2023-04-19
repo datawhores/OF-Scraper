@@ -1,6 +1,6 @@
 from constants import *
 from src.utils.download import createfilename,geturlfilename
-from src.api.posts import parse_posts
+from src.api.timeline import parse_posts
 def test_default_timelinefilename_expection(mocker):
     posts=parse_posts([TIMELINE_EXAMPLE])
     migrationConfig={

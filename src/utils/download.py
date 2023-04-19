@@ -34,7 +34,7 @@ from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory,getmediadir
 from ..utils import auth
-from ..constants import configPath
+from ..constants import configPath,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
 from ..utils.profiles import get_current_profile
 from .dates import convert_local_time
 
@@ -50,7 +50,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
             console.print(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
         else:
             print("forcing all downloads")
-        file_size_limit = config.get('file_size_limit')
+        file_size_limit = config.get('file_size_limit') or FILE_SIZE_DEFAULT
         global sem
         sem = asyncio.Semaphore(8)
       
@@ -117,9 +117,9 @@ def convert_num_bytes(num_bytes: int) -> str:
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)  
 async def download(ele,path,model_id,username,file_size_limit,id_=None):
-    url=ele['url']
-    media_type=ele['mediatype']
-    id_=ele.get("id")
+    url=ele.url
+    media_type=ele.mediatype
+    id_=ele.id
     bar=None
     temp=None
 
@@ -152,8 +152,8 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                             
                             if pathlib.Path(temp).exists() and  abs(total-pathlib.Path(temp).stat().st_size)<=1000:
                                 shutil.move(temp,path_to_file)
-                                if ele.get("postdate"):
-                                    set_time(path_to_file, convert_local_time(ele["postdate"]))
+                                if ele.postdate:
+                                    set_time(path_to_file, convert_local_time(ele.postdate))
                                 if id_:
                                     operations.write_media(ele,path_to_file,model_id,username)
                                 return media_type,total
@@ -181,7 +181,7 @@ async def process_dicts_paid(username,model_id,medialist,forced=False):
             console.print(f"Skipping previously downloaded\nPaid media content left for download {len(medialist)}")
         else:
             print("forcing all downloads")
-        file_size_limit = config.get('file_size_limit')
+        file_size_limit = config.get('file_size_limit') or FILE_SIZE_DEFAULT
         global sem
         sem = asyncio.Semaphore(8)
         aws=[]
@@ -312,20 +312,18 @@ def get_error_message(content):
     except AttributeError:
         return error_content
 def createfilename(ele,username,model_id,ext):
-    filename=geturlfilename(ele['url'])
-    if ele.get("responsetype") in "profile":
-        return filename
-    
-    return (config.get('file_format') or '{filename}.{ext}').format(filename=filename,sitename="Onlyfans",post_id=ele["postid"],media_id=ele["id"],first_letter=username[0],mediatype=ele["mediatype"],value=ele["value"],text=texthelper(ele.get("text") or filename,ele),date=arrow.get(ele['date']).format(config.get('date')),ext=ext,model_username=username,model_id=model_id,responsetype=ele["responsetype"])
-def geturlfilename(url):
-    return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+    if ele.responsetype =="profile":
+        return ele.filename
+    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",post_id=ele.postid,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=texthelper(ele),date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
-def texthelper(text,ele):    
-    count=ele["count"]
-    length=int(config.get("textlength") or 0)
+
+def texthelper(ele):    
+    count=ele.count
+    text=ele.text or ele.filename
+    length=int(config.get("textlength") or TEXTLENGTH_DEFAULT)
     if length!=0:
         text=" ".join(text.split(" ")[0:length])
-    if (len(ele["data"].get("media",[]))>1) or ele.get("responsetype") in ["stories","highlights"]:
+    if len(ele.post.media)>1 or ele.responsetype in ["stories","highlights"]:
         text= f"{text}{count}"
     #this is for removing emojis
     # text=re.sub("[^\x00-\x7F]","",text)
