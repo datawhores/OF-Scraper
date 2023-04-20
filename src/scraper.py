@@ -181,6 +181,7 @@ def posts_filter(posts):
     for post in posts:
         if not post.id or post.id not in ids:
             output.append(post)
+            
             ids.add(post.id)
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
