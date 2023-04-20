@@ -56,7 +56,7 @@ def process_messages(headers, model_id,username):
 @Halo(text='Getting Paid Content...')
 def process_paid_post(headers, model_id,username):
     paid_content=paid.scrape_paid(username)
-    paid_content=list(map(lambda x:Post(x,model_id,username),paid_content))
+    paid_content=list(map(lambda x:Post(x,model_id,username,responsetype="paid"),paid_content))
     for post in paid_content:
         operations.write_post_table(post,model_id,username)
     output=[]
