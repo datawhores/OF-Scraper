@@ -40,7 +40,7 @@ def createDir(path):
         sys.exit()
 def databasePathHelper(model_id,username):
     print()
-    return pathlib.Path(config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,model_id=model_id,sitename="Onlyfans",first_letter=username[0]),"user_data.db")
+    return pathlib.Path(config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0]),"user_data.db")
 
 def getmediadir(ele,username,model_id):
     root= pathlib.Path((config.get('save_location') or SAVE_LOCATION_DEFAULT))

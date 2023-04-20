@@ -62,7 +62,6 @@ async def process_dicts(username, model_id, medialist,forced=False):
         total_bytes_downloaded = 0
         data = 0
         desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper/Data')}/{(config.get('dir_format') or '{model_username}/{responsetype}/{mediatype}')}\n\n")
 
         with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
             for ele in medialist:
@@ -141,7 +140,7 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                             temp=trunicate(f"{filename}")
                             pathlib.Path(temp).unlink(missing_ok=True)
                             with open(temp, 'wb') as f:
-                                pathstr=str(temp)
+                                pathstr=str(pathlib.Path(filename).absolute())
                                 bar=tqdm(desc=(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False)
                                 num_bytes_downloaded = r.num_bytes_downloaded
                                 async for chunk in r.aiter_bytes(chunk_size=1024):
@@ -199,7 +198,7 @@ def get_error_message(content):
 def createfilename(ele,username,model_id,ext):
     if ele.responsetype =="profile":
         return ele.filename
-    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",post_id=ele.postid,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=texthelper(ele),date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
+    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.postid,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=texthelper(ele),date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 
 def texthelper(ele):    
