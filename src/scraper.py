@@ -338,20 +338,6 @@ def process_post():
             create_tables(model_id,ele['name'])
             operations.write_profile_table(model_id,ele['name'])
             combined_urls=process_areas(headers, ele, model_id)
-            output={}
-            for ele in combined_urls:
-                data={"media":ele.id,"post":ele.post.post}
-                print(ele.id)
-                if not ele.id:
-                    continue   
-                if isinstance(output.get(ele.id),list):
-                    output[ele.id].append(data)
-                else:
-                    output[ele.id]=[data]
-            keys=list(output.keys())
-            for key in keys:
-                if len(output[key])<2:
-                    output.pop(key)
             asyncio.run(download.process_dicts(
             ele["name"],
             model_id,
