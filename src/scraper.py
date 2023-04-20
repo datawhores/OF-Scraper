@@ -176,6 +176,12 @@ def process_areas(headers, ele, model_id) -> list:
 
 def posts_filter(posts):
     filtersettings=config.read_config()["config"].get('filter')
+    output=[]
+    ids=set()
+    for post in posts:
+        if not post.id or post.id not in ids:
+            output.append(post)
+            ids.add(post.id)
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
     if isinstance(filtersettings,list):
@@ -184,10 +190,10 @@ def posts_filter(posts):
         if len(filtersettings)==0:
             return posts
         console.print(f"filtering post to {filtersettings}")
-        return list(filter(lambda x:x.mediatype.lower() in filtersettings,posts))
+        return list(filter(lambda x:x.mediatype.lower() in filtersettings,output))
     else:
         console.print("The settings you picked for the filter are not valid\nNot Filtering")
-        return posts
+        return output
         
 
 
@@ -332,6 +338,20 @@ def process_post():
             create_tables(model_id,ele['name'])
             operations.write_profile_table(model_id,ele['name'])
             combined_urls=process_areas(headers, ele, model_id)
+            output={}
+            for ele in combined_urls:
+                data={"media":ele.id,"post":ele.post.post}
+                print(ele.id)
+                if not ele.id:
+                    continue   
+                if isinstance(output.get(ele.id),list):
+                    output[ele.id].append(data)
+                else:
+                    output[ele.id]=[data]
+            keys=list(output.keys())
+            for key in keys:
+                if len(output[key])<2:
+                    output.pop(key)
             asyncio.run(download.process_dicts(
             ele["name"],
             model_id,
