@@ -47,7 +47,7 @@ def scrape_paid(username):
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)
             if not r.is_error:
-                console.print(f"Scraping, Scraping isn't frozen. It takes time.\nScraped Page: {count}")
+                console.print(f"Scraping paid content, Scraping isn't frozen. It takes time.\nScraped Page: {count}")
                 if "hasMore" in r.json():
                     hasMore = r.json()['hasMore']
                     count=count+1
