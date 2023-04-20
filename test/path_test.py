@@ -5,7 +5,7 @@ import platform
 import pathlib
 import src.utils.config as config
 import os
-from constants import *
+from test_constants import *
 from src.utils.download import createfilename
 
 
