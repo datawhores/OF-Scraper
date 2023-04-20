@@ -160,7 +160,7 @@ def write_media(media,filename,model_id,username) -> list:
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
             insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
-            math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype.capitalize(),media.mediatype.capitalize() ,
+            math.ceil(pathlib.Path(filename).stat().st_size),media.ogresponsetype.capitalize(),media.mediatype.capitalize() ,
             media.preview,media.linked, 1,media.date]
             if len(cur.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
                 cur.execute(queries.mediaInsert,insertData)

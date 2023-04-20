@@ -3,12 +3,12 @@ class Post():
         self._post=post
         self._model_id=model_id
         self._username=username
-        self._responsetype=responsetype or post.get("responseType")
+        self._ogresponsetype=responsetype or post.get("responseType")
     
      
     @property
     def allmedia(self):
-        if self.responsetype=="highlights":
+        if self._ogresponsetype=="highlights":
             return [{"url":self.post["cover"]}]
         return self._post.get("media") or []
     @property  
@@ -32,24 +32,34 @@ class Post():
    
     @property
     def text(self):
-        if self.responsetype=="highlights":
+        if self._ogresponsetype=="highlights":
             return ""
-        elif self.responsetype=="stories":
+        elif self._ogresponsetype=="stories":
             return ""
         return self._post.get("text")
     @property
     def title(self):
         return self._post.get("title")
 
-    
+    @property
+    def ogresponsetype(self):
+        return self._post.ogresponsetype
 
     @property
     def responsetype(self):
         if self.archived:
             return "achived"
-        elif self._responsetype=="post":
+        elif self._ogresponsetype=="post":
             return "posts"
-        return self._responsetype
+        elif self._ogresponsetype=="stories":
+            return "stories"
+        elif self._ogresponsetype=="highlights":
+            return "stories"
+        elif self._ogresponsetype=="purchased":
+            return "Premium"
+        elif self._ogresponsetype=="messages":
+            return "Premium"
+        return self._ogresponsetype
 
 
     @property
@@ -113,7 +123,7 @@ class Media():
 
     @property
     def mediatype(self):
-        if self.responsetype=="highlights":
+        if self.ogresponsetype=="highlights":
             return "images"
         if self._media["type"]=="gif" or self._media["type"]=="photo":
             return "images"
@@ -122,11 +132,11 @@ class Media():
     
     @property
     def url(self):
-        if self.responsetype=="stories":
+        if self.ogresponsetype=="stories":
             return self._media.get("files",{}).get("source",{}).get("url")
-        elif self.responsetype=="highlights":
+        elif self.ogresponsetype=="highlights":
             return self._media.get("url")
-        elif self.responsetype=="profile":
+        elif self.ogresponsetype=="profile":
             return self._media.get("url")
         else:
             return self._media.get("source",{}).get("source")
@@ -143,12 +153,15 @@ class Media():
 
     @property
     def canview(self):
-        if self.responsetype=="highlights":
+        if self.ogresponsetype=="highlights":
             return True
         return self._media.get("canView") or False
     @property
     def responsetype(self):
         return self._post.responsetype
+    @property
+    def ogresponsetype(self):
+        return self._post.ogresponsetype
     @property
     def value(self):
         return self._post.value

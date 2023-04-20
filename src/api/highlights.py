@@ -50,21 +50,7 @@ def get_highlightList(data):
 
 
 
-def parse_highlights(highlights: list) -> list:
-    #This needs further work but will work for now. I was thinking of adding full recurssive ability until all conditions are met.
-    #This means that whenever onlyfans changes the name of the list containing the highlights it wont matter because the name is variable.
-    #To break this they would have to change the conditions or in this release the layers.
-    ids= [highlight['id'] for highlight in highlights]
-    results=asyncio.run(process_highlights_ids(auth.make_headers(auth.read_auth()),ids))
-    return parse_stories(results)
-    
-async def process_highlights_ids(headers, ids: list) -> list:
-    if not ids:
-        return []
 
-    tasks = [scrape_story(headers, id_) for id_ in ids]
-    results = await asyncio.gather(*tasks)
-    return list(chain.from_iterable(results))
 
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
@@ -80,12 +66,5 @@ async def scrape_story(headers, story_id: int) -> list:
             return r.json()['stories']
         r.raise_for_status()
 
-
-def parse_stories(stories: list):
-    output=[]
-    for story in stories:
-        for count, media in enumerate(story["media"]):
-            output.append({"url":media["files"]["source"]["url"],"id":media["id"],"date":media["createdAt"],"responsetype":"stories","count":count+1,"text":None,"mediatype":media["type"],"postid":story["id"],"data":media,"postdate":story['createdAt'],"value":"free"})
-    return output
 
 

@@ -1,4 +1,4 @@
-from constants import *
+from test_constants import *
 from src.utils.download import createfilename,geturlfilename
 from src.api.timeline import parse_posts
 def test_default_timelinefilename_expection(mocker):
