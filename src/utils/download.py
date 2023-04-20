@@ -139,7 +139,6 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
 
                         with set_directory(pathlib.Path(pathlib.Path.home(),configPath,get_current_profile(),".tempmedia")):
                             temp=trunicate(f"{filename}")
-                            temp="test.mkv"
                             pathlib.Path(temp).unlink(missing_ok=True)
                             with open(temp, 'wb') as f:
                                 pathstr=str(path_to_file)
