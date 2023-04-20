@@ -136,11 +136,13 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                         content_type = rheaders.get("content-type").split('/')[-1]
                         filename=createfilename(ele,username,model_id,content_type)
                         path_to_file = trunicate(pathlib.Path(path,f"{filename}"))
+
                         with set_directory(pathlib.Path(pathlib.Path.home(),configPath,get_current_profile(),".tempmedia")):
                             temp=trunicate(f"{filename}")
+                            temp="test.mkv"
                             pathlib.Path(temp).unlink(missing_ok=True)
                             with open(temp, 'wb') as f:
-                                pathstr=str(pathlib.Path(filename).absolute())
+                                pathstr=str(path_to_file)
                                 bar=tqdm(desc=(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False)
                                 num_bytes_downloaded = r.num_bytes_downloaded
                                 async for chunk in r.aiter_bytes(chunk_size=1024):

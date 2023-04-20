@@ -187,3 +187,9 @@ class Media():
     @property
     def linked(self):
         return None
+    
+    @property
+    def media(self):
+        return self._media
+
+        

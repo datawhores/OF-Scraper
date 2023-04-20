@@ -130,8 +130,8 @@ dmypy.json
 
 #vscode
 .vscode/
+launch.json
 
 #other
 .tempmedia
-launch.json
-.vscode/launch.json
+dupe.json
