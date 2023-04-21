@@ -54,12 +54,7 @@ def scrape_paid(username):
                 media_to_download.extend(list(filter(lambda x:isinstance(x,list),r.json().values()))[0])
     return media_to_download
 
-def parse_paid(paid):
-    media_to_download=[]
-    for item in paid:
-        for count,media in enumerate(list(filter(lambda x:x.get("source"),item['media']))):
-            media_to_download.append({"id":media["id"],"mediatype":media["type"],"url":media["source"]["source"],"count":count+1,"text":item["text"],"date":item["createdAt"],"responsetype":item["responseType"],"postid":item["id"],"value":"free" if item.get("IsFree") else "paid","postdate":item["createdAt"],"data":item})
-    return media_to_download
+
 
 
 

@@ -31,18 +31,18 @@ def get_posts(headers, model_id,username):
 
 
 def filter_for_unfavorited(posts: list) -> list:
-    unfavorited_posts = [post for post in posts if 'isFavorite' in post and not post['isFavorite']]
-    return unfavorited_posts
+    return list(filter(lambda x:x.get("isFavorite")==False,posts))
 
 
 def filter_for_favorited(posts: list) -> list:
-    favorited_posts = [post for post in posts if 'isFavorite' in post and post['isFavorite']]
-    return favorited_posts
+    return list(filter(lambda x:x.get("isFavorite")==True,posts))
+
 
 
 def get_post_ids(posts: list) -> list:
-    ids = [post['id'] for post in posts if 'isOpened' in post and post['isOpened']]
-    return ids
+    valid_post=list(filter(lambda x:x.get("isOpened")==True,posts))
+    return list(map(lambda x:x.get("id"),valid_post))
+   
 
 
 def like(headers, model_id, username, ids: list):

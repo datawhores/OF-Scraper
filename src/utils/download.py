@@ -156,7 +156,7 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                                 if ele.postdate:
                                     set_time(path_to_file, convert_local_time(ele.postdate))
                                 if id_:
-                                    operations.write_media(ele,path_to_file,model_id,username)
+                                    operations.write_media_table(ele,path_to_file,model_id,username)
                                 return media_type,total
                             else:
                                 return 'skipped', 1
@@ -199,25 +199,11 @@ def get_error_message(content):
 def createfilename(ele,username,model_id,ext):
     if ele.responsetype =="profile":
         return ele.filename
-    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.postid,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=texthelper(ele),date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
+    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 
-def texthelper(ele):    
-    count=ele.count
-    text=ele.text or ele.filename
-    length=int(config.get("textlength") or TEXTLENGTH_DEFAULT)
-    if length!=0:
-        text=" ".join(text.split(" ")[0:length])
-    if len(ele.post.media)>1 or ele.responsetype in ["stories","highlights"]:
-        text= f"{text}{count}"
-    #this is for removing emojis
-    # text=re.sub("[^\x00-\x7F]","",text)
-    # this is for removing html tags
-    text=re.sub("<[^>]*>", "",text)
-    #this for remove random special invalid special characters
-    text=re.sub('[\n<>:"/\|?*]+', '', text)
-    text=re.sub(" +"," ",text)
-    return text
+
+
     
 
    

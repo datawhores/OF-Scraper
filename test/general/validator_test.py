@@ -1,6 +1,6 @@
 from src.prompts.prompt_functions import emptyListValidator,jsonValidator,namevalitator,dirformatvalidator \
 ,dateplaceholdervalidator,fileformatvalidator,metadatavalidator
-from constants import *
+from test_constants import *
 from prompt_toolkit.validation import ValidationError, Validator
 import pytest
 from prompt_toolkit.document import Document
