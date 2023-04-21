@@ -41,7 +41,7 @@ def parse_profile(profile: dict) -> tuple:
 
     output=[]
     for ele in media:
-        output.append({"url":ele,"responsetype":"profile","mediatype":"photo","value":"free","createdAt":profile["joinDate"],"text":profile["about"],"id":xxh32(ele)})
+        output.append({"url":ele,"responsetype":"profile","mediatype":"photo","value":"free","createdAt":profile["joinDate"],"text":profile["about"],"id":xxh32(ele).hexdigest()})
 
 
     name = encoding.encode_utf_16(profile['name'])

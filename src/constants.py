@@ -90,3 +90,13 @@ FILTER_DEFAULT=["Images","Audios","Videos"]
 SAVE_LOCATION_DEFAULT=str(pathlib.Path.home()/'Data/ofscraper')
 DATE_DEFAULT="MM-DD-YYYY"
 PROFILE_DEFAULT="main_profile"
+PREMIUM_DEFAULT="Premium"
+RESPONSE_TYPE_DEFAULT= {
+            "message":"messages",
+            "post":"posts",
+            "archived":"archived",
+            "paid":"paid",
+            "stories":"stories",
+            "highlights":"highlights",
+            "profile":"profile"
+        }

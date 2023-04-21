@@ -12,9 +12,7 @@ import json
 import pathlib
 from rich.console import Console
 console=Console()
-from ..constants import configPath, configFile, mainProfile,DIR_FORMAT_DEFAULT,METADATA_DEFAULT,FILE_FORMAT_DEFAULT\
-,FILE_SIZE_DEFAULT,SAVE_LOCATION_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILTER_DEFAULT\
-,PROFILE_DEFAULT
+from ..constants import *
 import src.prompts.prompts as prompts 
 
 
@@ -67,7 +65,16 @@ def get_current_config_schema(config: dict) -> dict:
             'textlength':get_textlength(config),
             'date': get_date(config),
             "metadata": get_metadata(config),
-            "filter":get_filter(config)
+            "filter":get_filter(config),
+            "responsetype":{
+           "post":get_timeline_responsetype(config),
+         "message":get_messages_responsetype(config),
+            "archived":get_archived_responsetype(config),
+            "paid":get_paid_responsetype(config),
+            "stories":get_stories_responsetype(config),
+            "highlights":get_highlights_responsetype(config),
+            "profile":get_profile_responsetype(config),
+            }
         }
     }
     return new_config
@@ -84,7 +91,16 @@ def make_config(path, config=None):
             'textlength':TEXTLENGTH_DEFAULT,
             'date':DATE_DEFAULT,
             'metadata':METADATA_DEFAULT,
-            "filter":FILTER_DEFAULT
+            "filter":FILTER_DEFAULT,
+            "responsetype":{
+        "post":get_timeline_responsetype(config),
+         "message":get_messages_responsetype(config),
+            "archived":get_archived_responsetype(config),
+            "paid":get_paid_responsetype(config),
+            "stories":get_stories_responsetype(config),
+            "highlights":get_highlights_responsetype(config),
+            "profile":get_profile_responsetype(config),
+            }
         }
     }
     if isinstance(config,str):
@@ -107,7 +123,7 @@ def update_config(field: str, value):
 
 
 def auto_update_config(path, config: dict) -> dict:
-    console.print("Auto updating...")
+    console.print("Auto updating config...")
     new_config = get_current_config_schema(config)
 
     with open(path / configFile, 'w') as f:
@@ -149,36 +165,55 @@ def edit_config():
 
 
 def get_save_location(config):
+    if not config:
+        return SAVE_LOCATION_DEFAULT   
     return config.get('save_location') or SAVE_LOCATION_DEFAULT
 
 def get_main_profile(config):
+    if not config:
+        return PROFILE_DEFAULT   
     return config.get('main_profile',PROFILE_DEFAULT)
 
 def get_filesize(config):
+    if not config:
+        return FILE_SIZE_DEFAULT      
     try:
         return int(config.get('file_size_limit', FILE_SIZE_DEFAULT))
     except:
         return 0
 
 def get_dirformat(config):
+    if not config:
+        return DIR_FORMAT_DEFAULT     
     return config.get('dir_format', DIR_FORMAT_DEFAULT)
 
 def get_fileformat(config):
+    if not config:
+        return FILE_FORMAT_DEFAULT     
     return config.get('file_format', FILE_FORMAT_DEFAULT)
 
 def get_textlength(config):
+    if not config:
+        return TEXTLENGTH_DEFAULT    
     try:
-        return config.get('textlength', TEXTLENGTH_DEFAULT)
+        return int(config.get('textlength', TEXTLENGTH_DEFAULT))
     except:
         return 0
 
 def get_date(config):
+    if not config:
+        return DATE_DEFAULT     
     return config.get('date', DATE_DEFAULT)
 
 def get_metadata(config):
+    if not config:
+        return METADATA_DEFAULT      
     return config.get('metadata', METADATA_DEFAULT)
 
+
 def get_filter(config):
+    if not config:
+        return FILTER_DEFAULT
     filter=config.get('filter', FILTER_DEFAULT)
     if isinstance(filter,str):
         return list(map(lambda x:x.capitalize().strip(),filter.split(",")))
@@ -186,3 +221,38 @@ def get_filter(config):
         return list(map(lambda x:x.capitalize(),filter))
     else:
         FILTER_DEFAULT
+def get_timeline_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["post"]
+    return config.get('responsetype',{}).get("post") or RESPONSE_TYPE_DEFAULT["post"]
+
+def get_archived_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["archived"]
+    return config.get('responsetype',{}).get("archived") or RESPONSE_TYPE_DEFAULT["archived"]
+
+def get_stories_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["stories"]    
+    return config.get('responsetype',{}).get("stories") or RESPONSE_TYPE_DEFAULT["stories"]
+
+def get_highlights_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["highlights"]       
+    return config.get('responsetype',{}).get("highlights") or RESPONSE_TYPE_DEFAULT["highlights"]
+
+def get_paid_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["paid"]       
+    return config.get('responsetype',{}).get("paid") or RESPONSE_TYPE_DEFAULT["paid"]
+
+def get_messages_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["message"]      
+    return config.get('responsetype',{}).get("message") or RESPONSE_TYPE_DEFAULT["message"]
+
+
+def get_profile_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["profile"]       
+    return config.get('responsetype',{}).get("profile") or RESPONSE_TYPE_DEFAULT["profile"]

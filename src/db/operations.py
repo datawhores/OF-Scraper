@@ -78,7 +78,7 @@ def create_post_table(model_id,username):
             cur.execute(queries.postCreate)
             conn.commit()
 
-def save_timeline_response(model_id,username,posts):
+def save_timeline_response(posts,model_id,username,):
     messagepath =timelineResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
@@ -93,7 +93,7 @@ def read_timeline_response(model_id,username):
             return messages
     return []
             
-def save_archive_response(model_id,username,posts):
+def save_archive_response(posts,model_id,username):
     messagepath =archiveResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
@@ -107,7 +107,7 @@ def read_archive_response(model_id,username):
         if len(messages)>0:
             return messages
     return []
-def save_pinned_response(model_id,username,posts):
+def save_pinned_response(posts,model_id,username):
     messagepath =pinnedResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
@@ -155,7 +155,7 @@ def get_media_ids(model_id,username) -> list:
             cur.execute(queries.allIDCheck)
             conn.commit()
             return list(map(lambda x:x[0],cur.fetchall()))
-def write_media(media,filename,model_id,username) -> list:
+def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
@@ -192,12 +192,7 @@ def create_profile_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.profilesCreate)
             conn.commit()
-def read_foreign_profile_table(datebase_path):
-    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            cur.execute(queries.profileData)
-            conn.commit()
-            return list(map(lambda x:x,cur.fetchall())) 
+
 
 def write_profile_table(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
@@ -211,19 +206,26 @@ def write_profile_table(model_id,username) -> list:
                 cur.execute(queries.profileUpdate,insertData)
             conn.commit()
    
-def read_foreign_database(path) -> list:
-    database_files = glob.glob(path.strip('\'\"') + '/*.db')
+# def read_foreign_profile_table(datebase_path):
+#     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+#         with contextlib.closing(conn.cursor()) as cur:
+#             cur.execute(queries.profileData)
+#             conn.commit()
+#             return list(map(lambda x:x,cur.fetchall())) 
 
-    database_results = []
-    for file in database_files:
-        with contextlib.closing(sqlite3.connect(file,check_same_thread=False)) as conn:
-            with contextlib.closing(conn.cursor()) as cur:
-                read_sql = """SELECT media_id, filename FROM medias"""
-                cur.execute(read_sql)
-                for result in cur.fetchall():
-                    database_results.append(result)
+# def read_foreign_database(path) -> list:
+#     database_files = glob.glob(path.strip('\'\"') + '/*.db')
 
-    return database_results
+#     database_results = []
+#     for file in database_files:
+#         with contextlib.closing(sqlite3.connect(file,check_same_thread=False)) as conn:
+#             with contextlib.closing(conn.cursor()) as cur:
+#                 read_sql = """SELECT media_id, filename FROM medias"""
+#                 cur.execute(read_sql)
+#                 for result in cur.fetchall():
+#                     database_results.append(result)
+
+#     return database_results
 
 
 

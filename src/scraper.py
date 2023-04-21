@@ -90,18 +90,18 @@ def process_highlights(headers, model_id,username):
 @Halo(text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id,username))
-    operations.save_timeline_response(model_id,username,timeline_posts)
+    operations.save_timeline_response(timeline_posts,model_id,username)
     timeline_posts  =list(map(lambda x:Post(x,model_id,username), timeline_posts ))
     for post in timeline_posts:
         operations.write_post_table(post,model_id,username)
     output=[]
-    [ output.extend(post.media) for post in  timeline_posts ]
+    [output.extend(post.media) for post in  timeline_posts ]
     return list(filter(lambda x:isinstance(x,Media),output))
 
 @Halo(text='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
     archived_posts = timeline.get_archive_post(headers, model_id)
-    operations.save_archive_response(model_id,username,archived_posts)
+    operations.save_archive_response(archived_posts,model_id,username)
     archived_posts =list(map(lambda x:Post(x,model_id,username),archived_posts ))
     for post in archived_posts:
         operations.write_post_table(post,model_id,username)
@@ -115,7 +115,7 @@ def process_archived_posts(headers, model_id,username):
 @Halo(text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = timeline.get_pinned_post(headers, model_id,username)
-    operations.save_pinned_response(model_id,username, pinned_posts)
+    operations.save_pinned_response(pinned_posts,model_id,username)
     pinned_posts =list(map(lambda x:Post(x,model_id,username),pinned_posts ))
     for post in  pinned_posts:
         operations.write_post_table(post,model_id,username)
@@ -181,7 +181,6 @@ def posts_filter(posts):
     for post in posts:
         if not post.id or post.id not in ids:
             output.append(post)
-            
             ids.add(post.id)
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
@@ -422,7 +421,7 @@ def check_auth():
     status=None
     while status!="UP":
         headers = auth.make_headers(auth.read_auth())
-        status=init.print_sign_status(headers)
+        status=init.getstatus(headers)
         if status=="DOWN":
             auth.make_auth(auth=auth.read_auth())
             continue

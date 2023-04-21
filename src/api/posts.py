@@ -1,3 +1,8 @@
+from ..utils.config import read_config
+import re
+from ..constants import TEXTLENGTH_DEFAULT
+config = read_config()['config']
+
 class Post():
     def __init__(self, post,model_id,username,responsetype=None):
         self._post=post
@@ -37,29 +42,33 @@ class Post():
         elif self._ogresponsetype=="stories":
             return ""
         return self._post.get("text")
+
     @property
     def title(self):
         return self._post.get("title")
 
+    #original responsetype for database
     @property
     def ogresponsetype(self):
-        return self._post.ogresponsetype
+        return self._ogresponsetype
 
     @property
     def responsetype(self):
         if self.archived:
-            return "achived"
-        elif self._ogresponsetype=="post":
-            return "posts"
-        elif self._ogresponsetype=="stories":
-            return "stories"
-        elif self._ogresponsetype=="highlights":
-            return "stories"
-        elif self._ogresponsetype=="purchased":
-            return "Premium"
-        elif self._ogresponsetype=="messages":
-            return "Premium"
-        return self._ogresponsetype
+            if config.get("responsetype",{}).get("archived")=="":
+                return "achived"
+            elif config.get("responsetype",{}).get("archived")==None:
+                return "achived"
+            elif config.get("responsetype",{}).get("archived")!="":
+                return config.get("responsetype",{}).get("archived")
+        else:
+            if config.get("responsetype",{}).get(self._ogresponsetype)=="":
+                return self._ogresponsetype
+            elif config.get("responsetype",{}).get(self._ogresponsetype)==None:
+                return self._ogresponsetype
+            elif config.get("responsetype",{}).get(self._ogresponsetype)!="":
+                return config.get("responsetype",{}).get(self._ogresponsetype)
+      
 
 
     @property
@@ -150,6 +159,12 @@ class Media():
     def id(self):
         return self._media["id"]
     
+    #ID for use in dynamic names
+    @property
+    def id_(self):
+        if self.count and len(self._post.allmedia)>1:
+            return f"{self._post._post['id']}_{self.count}"
+        return self._post._post['id']
 
     @property
     def canview(self):
@@ -178,10 +193,28 @@ class Media():
     @property
     def postid(self):
         return self._post.id
-    
+  
     @property
     def text(self):
         return self._post.text
+    
+    #for use in dynamic names
+    @property 
+    def text_(self):
+        length=int(config.get("textlength") or TEXTLENGTH_DEFAULT)
+        text=self.text
+        if length!=0:
+            text=" ".join(text.split(" ")[0:length])
+        if len(self._post.allmedia)>1 or self.responsetype in ["stories","highlights"]:
+            text= f"{text}_{self.count}"
+        #this is for removing emojis
+        # text=re.sub("[^\x00-\x7F]","",text)
+        # this is for removing html tags
+        text=re.sub("<[^>]*>", "",text)
+        #this for remove random special invalid special characters
+        text=re.sub('[\n<>:"/\|?*]+', '', text)
+        text=re.sub(" +"," ",text)
+        return text
     @property
     def count(self):
         return self._count
