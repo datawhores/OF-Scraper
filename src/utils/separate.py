@@ -10,7 +10,8 @@ r"""
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
-    return list(filter(lambda x:x.id not in media_ids,data))
+    media_ids=set(media_ids)
+    return list(filter(lambda x:x.id not in media_ids,data ))
     
   
 

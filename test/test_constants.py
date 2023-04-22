@@ -12,9 +12,9 @@ INVALID_LINUX="\0{model_username}"
 DATE_VALID="MM-DD-YYYY"
 DATE_SILLY="MMRR"
 DATE_INVALID="G$"
-FILE_VALID="{model_username}{date}{responsetype}{mediatype}{value}{model_id}\
+FILEFORMAT_VALID_ALL="{model_username}{date}{responsetype}{mediatype}{value}{model_id}\
     {first_letter}{sitename},{model_username}{value}{post_id}{filename}{text}{ext}"
-FILE_ALLVALIDWTHINVALID="{invalid}{model_username}{date}{responsetype}{mediatype}{value}{model_id}\
+FILEFORMAT_ALLVALIDWTHINVALID="{invalid}{model_username}{date}{responsetype}{mediatype}{value}{model_id}\
     {first_letter}{sitename},{model_username}{value}{post_id}{filename}{text}{ext},{first_letter},{sitename},{model_username}"
 METADATA_INVALID= "{model_username}/{responsetype}/{mediatype2}/"
 METADATA_ALLVALID="{sitename}{first_letter}{model_username}{model_id}{configpath}{profile}"

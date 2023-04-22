@@ -5,9 +5,14 @@ import platform
 import pathlib
 import src.utils.config as config
 import os
+import tempfile
 
 from test_constants import *
 from src.utils.download import createfilename
+from src.api.posts import Post
+import pytest
+from src.utils.dates import convert_local_time
+import arrow
 
 
 def test_windows_trunicate():
@@ -47,17 +52,115 @@ def test_user_data_db(mocker):
 
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
-        "main_profile": "main_profile",
-        "save_location": "/root/Data/ofscraper",
-        "file_size_limit": "",
-        "dir_format": "{model_username}/{responsetype}/{mediatype}/",
-        "file_format": "{filename}.{ext}",
-        "textlength": 0,
-        "date": "MM-DD-YYYY",
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILE_FORMAT_DEFAULT,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
         "metadata": METADATA_DC,
-        "filter": "Images,Audios,Videos"
+        "filter": FILTER_DEFAULT
     }
 
    mocker.patch('src.utils.paths.config', new=migrationConfig)
    assert(str(paths.databasePathHelper("1111","test")))=="/root/test/metadata/user_data.db"    
    
+
+def test_context_provider(mocker):
+    with tempfile.TemporaryDirectory() as p:
+        with paths.set_directory(p):
+            assert(pathlib.Path(".").absolute())==pathlib.Path(p)
+
+def test_context_provider2(mocker):
+    with tempfile.TemporaryDirectory() as p:
+        with paths.set_directory(p):
+            None
+        assert(pathlib.Path(".").absolute())!=pathlib.Path(p)
+
+def test_createfilename(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILE_FORMAT_DEFAULT,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DEFAULT,
+        "filter": FILTER_DEFAULT
+    }
+    mocker.patch('src.utils.download.config', new=migrationConfig)
+    username="test"
+    model_id=1112
+    t=Post(TIMELINE_EXAMPLE,model_id,username)
+    print(t.media[0].filename)
+    assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].filename}.mkv"
+
+def test_createfilename_allkeys(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILEFORMAT_VALID_ALL,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DEFAULT,
+        "filter": FILTER_DEFAULT
+    }
+
+    mocker.patch('src.utils.download.config', new=migrationConfig)
+    username="test"
+    model_id=1112
+    try:
+        t=Post(TIMELINE_EXAMPLE,model_id,username)
+        assert(createfilename(t.media[0],username,model_id,"mkv"))
+    except:
+        raise Exception
+
+def test_createfilename_invalid(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILEFORMAT_ALLVALIDWTHINVALID,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DEFAULT,
+        "filter": FILTER_DEFAULT
+    }
+
+    mocker.patch('src.utils.download.config', new=migrationConfig)
+    username="test"
+    model_id=1112
+    with pytest.raises(Exception):
+        t=Post(TIMELINE_EXAMPLE,model_id,username)
+        assert(createfilename(t.media[0],username,model_id,"mkv"))
+
+def test_settime():
+    with tempfile.NamedTemporaryFile() as p:
+        test_date=arrow.get("2021")
+        download.set_time(p.name,convert_local_time(test_date))
+        assert(arrow.get(os.path.getmtime(p.name)).year)==test_date.year
+
+def test_settime2():
+    with tempfile.NamedTemporaryFile() as p:
+        test_date=arrow.get("2021")
+        download.set_time(p.name,convert_local_time(test_date))
+        assert(arrow.get(os.path.getmtime(p.name)).float_timestamp)==test_date.float_timestamp
+def test_convert_byte_large():
+    size=1*10**12
+    assert(download.convert_num_bytes(size))==f"{1*10**(12-9)}.0 GB"
+
+
+
+def test_convert_byte_small():
+    size=1*10**7
+    assert(download.convert_num_bytes(size))==f"{1*10**(7-6)}.0 MB"
+
+    
+
+
+          

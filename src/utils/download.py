@@ -105,14 +105,6 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     main_bar.update()
 
 
-def convert_num_bytes(num_bytes: int) -> str:
-    if num_bytes == 0:
-      return '0 B'
-    num_digits = int(math.log10(num_bytes)) + 1
-
-    if num_digits >= 10:
-        return f'{round(num_bytes / 10**9, 2)} GB'
-    return f'{round(num_bytes / 10 ** 6, 2)} MB'
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)  
 async def download(ele,path,model_id,username,file_size_limit,id_=None):

@@ -34,7 +34,6 @@ from .interaction import like
 from .utils import auth, config, download, profiles
 import webbrowser
 from halo import Halo
-from .utils.nap import nap_or_sleep
 from .__version__ import  __version__
 from .utils.config import read_config
 from .api.posts import Post,Media
