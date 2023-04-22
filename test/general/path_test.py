@@ -220,6 +220,88 @@ def test_create_postid_name2(mocker):
 
 
 
+
+
+
+
+#Test text counter
+def test_create_text_counter(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILEFORMAT_TEXT,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DEFAULT,
+        "filter": FILTER_DEFAULT
+    }
+    mocker.patch('src.utils.download.config', new=migrationConfig)
+    username="test"
+    model_id=1112
+    t=Post(TIMELINE_EXAMPLE,model_id,username)
+    assert(len(t.media))>1
+
+
+
+
+
+
+def test_create_text_name(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILEFORMAT_TEXT,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DEFAULT,
+        "filter": FILTER_DEFAULT
+    }
+    mocker.patch('src.utils.download.config', new=migrationConfig)
+    username="test"
+    model_id=1112
+    t=Post(TIMELINE_EXAMPLE,model_id,username)
+
+    assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
+
+
+def test_create_text_name2(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILEFORMAT_TEXT,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DEFAULT,
+        "filter": FILTER_DEFAULT
+    }
+    mocker.patch('src.utils.download.config', new=migrationConfig)
+    username="test"
+    model_id=1112
+    t=Post(TIMELINE_EXAMPLE,model_id,username)
+    mocker.patch('src.api.posts.Post.allmedia', new=[t.allmedia[0]])
+    assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def test_settime():
     with tempfile.NamedTemporaryFile() as p:
         test_date=arrow.get("2021")
