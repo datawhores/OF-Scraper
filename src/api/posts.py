@@ -162,8 +162,8 @@ class Media():
     #ID for use in dynamic names
     @property
     def id_(self):
-        if self.count and len(self._post.allmedia)>1:
-            return f"{self._post._post['id']}_{self.count}"
+        if self.count!=None and len(self._post.allmedia)>1:
+            return f"{self._post._post['id']}_{self.count+1}"
         return self._post._post['id']
 
     @property
@@ -206,7 +206,7 @@ class Media():
         if length!=0:
             text=" ".join(text.split(" ")[0:length])
         if len(self._post.allmedia)>1 or self.responsetype in ["stories","highlights"]:
-            text= f"{text}_{self.count}"
+            text= f"{text}_{self.count+1}"
         #this is for removing emojis
         # text=re.sub("[^\x00-\x7F]","",text)
         # this is for removing html tags

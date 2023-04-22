@@ -1,4 +1,4 @@
-from test_constants import *
+from test.test_constants import *
 from src.utils.separate import separate_by_id
 
 def test_seperate(mocker):
