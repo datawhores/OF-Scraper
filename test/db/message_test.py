@@ -1,7 +1,7 @@
 import tempfile
 from src.db.operations import *
 import pytest
-from test_constants import *
+from test.test_constants import *
 from src.api.posts import Post,Media
 
 def test_message_create(mocker):

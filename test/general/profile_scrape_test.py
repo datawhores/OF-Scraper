@@ -1,5 +1,5 @@
 
-from test_constants import *
+from test.test_constants import *
 import src.api.me as me
 import src.api.profile as profile
 from xxhash import xxh32

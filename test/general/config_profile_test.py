@@ -1,4 +1,4 @@
-from test_constants import *
+from test.test_constants import *
 from src.utils.profiles import *
 import pathlib
 def test_profile_count(mocker):

@@ -1,4 +1,4 @@
-from test_constants import *
+from test.test_constants import *
 from src.interaction.like import *
 def test_unlike_filter():
     unliked_only=filter_for_unfavorited(POST_ARRAY)
