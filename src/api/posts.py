@@ -14,7 +14,7 @@ class Post():
     @property
     def allmedia(self):
         if self._ogresponsetype=="highlights":
-            return [{"url":self.post["cover"]}]
+            return [{"url":self.post["cover"],"type":"photo"}]
         return self._post.get("media") or []
     @property  
     def post(self):
@@ -87,7 +87,7 @@ class Post():
             return "paid"
     @property
     def price(self):
-        return self.post.get('price') or 0
+        return float(self.post.get('price') or 0)
 
     @property
     def paid(self):
@@ -115,13 +115,6 @@ class Post():
         else:
             media=map(lambda x:Media(x[1],x[0],self),enumerate(self.allmedia))
             return list(filter(lambda x:x.canview==True,media))
-
-    @responsetype.setter
-    def _setresponsetype(self,responsetype):
-        self.responsetype=responsetype
- 
-
-
 
 
 class Media():
@@ -163,7 +156,7 @@ class Media():
     @property
     def id_(self):
         if self.count!=None and len(self._post.allmedia)>1:
-            return f"{self._post._post['id']}_{self.count+1}"
+            return f"{self._post._post['id']}_{self.count}"
         return self._post._post['id']
 
     @property
@@ -206,7 +199,7 @@ class Media():
         if length!=0:
             text=" ".join(text.split(" ")[0:length])
         if len(self._post.allmedia)>1 or self.responsetype in ["stories","highlights"]:
-            text= f"{text}_{self.count+1}"
+            text= f"{text}_{self.count}"
         #this is for removing emojis
         # text=re.sub("[^\x00-\x7F]","",text)
         # this is for removing html tags
@@ -217,7 +210,7 @@ class Media():
         return text
     @property
     def count(self):
-        return self._count
+        return self._count+1
     @property
     def filename(self):
         if not self.url:
@@ -228,7 +221,7 @@ class Media():
        if self.post.preview:
            return 1
        else:
-            return 1
+            return 0
 
     @property
     def linked(self):

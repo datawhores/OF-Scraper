@@ -25,6 +25,9 @@ pathvalidate = "^2.5.2"
 xxhash = "^3.2.0"
 
 
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.0.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

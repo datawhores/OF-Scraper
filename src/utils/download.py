@@ -196,17 +196,6 @@ def createfilename(ele,username,model_id,ext):
     return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 
-
-
-    
-
-   
-
-
-
-
-
-
 def trunicate(path):
     path=pathlib.Path(path)
     ext=str(path.suffix)
