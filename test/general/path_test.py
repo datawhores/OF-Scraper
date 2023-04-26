@@ -1,5 +1,3 @@
-import sys
-
 import src.utils.download as download
 import src.utils.paths as paths
 from unittest.mock import patch,MagicMock
@@ -94,7 +92,7 @@ def test_createfilename(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     print(t.media[0].filename)
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].filename}.mkv"
@@ -114,7 +112,7 @@ def test_createfilename_allkeys(mocker):
 
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     try:
         t=Post(TIMELINE_EXAMPLE,model_id,username)
         assert(createfilename(t.media[0],username,model_id,"mkv"))
@@ -136,7 +134,7 @@ def test_createfilename_invalid(mocker):
 
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     with pytest.raises(Exception):
         t=Post(TIMELINE_EXAMPLE,model_id,username)
         assert(createfilename(t.media[0],username,model_id,"mkv"))
@@ -155,7 +153,7 @@ def test_create_txt(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     print(t.media[0].filename)
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
@@ -174,7 +172,7 @@ def test_create_postid_counter(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     assert(len(t.media))>1
 
@@ -193,7 +191,7 @@ def test_create_postid_name(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
 
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}_1.mkv"
@@ -213,7 +211,7 @@ def test_create_postid_name2(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('src.api.posts.Post.allmedia', new=[t.allmedia[0]])
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
@@ -239,7 +237,7 @@ def test_create_text_counter(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     assert(len(t.media))>1
 
@@ -262,7 +260,7 @@ def test_create_text_name(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
 
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
@@ -282,7 +280,7 @@ def test_create_text_name2(mocker):
     }
     mocker.patch('src.utils.download.config', new=migrationConfig)
     username="test"
-    model_id=1112
+    model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('src.api.posts.Post.allmedia', new=[t.allmedia[0]])
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
