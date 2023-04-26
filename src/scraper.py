@@ -146,13 +146,16 @@ def process_areas(headers, ele, model_id) -> list:
     messages_dicts  = []
     stories_dicts=[]
     purchased_dict=[]
+    pinned_post_dict=[]
 
     username=ele['name']
     profile_dicts  = process_profile(headers,username)
 
+     
+    if ('Pinned' in args.posts or 'All' in args.posts) and ele["active"]:
+            pinned_post_dict = process_pinned_posts(headers, model_id,username)
     if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
-            pinned_post_dict=process_pinned_posts(headers, model_id,username)
     if ('Archived' in args.posts or 'All' in args.posts) and ele["active"]:
             archived_posts_dicts = process_archived_posts(headers, model_id,username)
     if 'Messages' in args.posts or 'All' in args.posts:
@@ -514,7 +517,7 @@ def main():
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories","purchased"],action='append'
+        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","pinned","stories","purchased",],action='append'
     )
     post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])

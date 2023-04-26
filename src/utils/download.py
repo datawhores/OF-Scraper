@@ -26,7 +26,7 @@ try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 
 from .auth import add_cookies
 from .config import read_config
@@ -72,7 +72,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     try:
                         media_type, num_bytes_downloaded = await coro
                     except Exception as e:
-                        media_type = None
+                        media_type = "skipped"
                         num_bytes_downloaded = 0
                         console.print(e)
 
@@ -105,8 +105,10 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     main_bar.update()
 
 
+def retry_required(value):
+    return value == ('skipped', 1)
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)  
+@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True) 
 async def download(ele,path,model_id,username,file_size_limit,id_=None):
     url=ele.url
     media_type=ele.mediatype

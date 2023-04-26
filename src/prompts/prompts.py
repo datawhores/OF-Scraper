@@ -63,6 +63,7 @@ def areas_prompt() -> list:
              "validate":emptyListValidator(),
             'choices': [
                 Choice('Timeline'),
+                Choice('Pinned'),
                 Choice('Archived'),
                 Choice('Highlights'),
                 Choice('Stories'),
