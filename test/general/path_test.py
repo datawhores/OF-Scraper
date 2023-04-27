@@ -3,52 +3,109 @@ import src.utils.paths as paths
 from unittest.mock import patch,MagicMock
 import platform
 import pathlib
-import src.utils.config as config
 import os
 import tempfile
+from pytest_check import check
+import pytest
 
 from test.test_constants import *
 from src.utils.download import createfilename
-from src.api.posts import Post
-import pytest
+from src.api.posts import Post,Media
 from src.utils.dates import convert_local_time
 import arrow
 
 
-def test_windows_trunicate():
+#Word split
+
+def test_windows_trunicate(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
-        assert(platform.system())=="Windows"
-        long_path=pathlib.Path(WINDOWS_LONGPATH)
+        long_path=pathlib.Path(f"{WINDOWS_LONGPATH}.mkv")
         trunicated=download.trunicate(long_path)
-        assert(len(str(trunicated)))<=256
-        assert(long_path.parent)==trunicated.parent
-        assert(long_path.suffix)==trunicated.suffix
+        with check:
+            assert(len(str(trunicated)))<=256
+        with check:
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
 
 
+def test_windows_trunicate_256(mocker):
+    with patch('platform.system', MagicMock(return_value="Windows")):
+        pathbase=WINDOWS_LONGPATH[:252]
+        long_path=pathlib.Path(f"{pathbase}.mkv")
+        trunicated=download.trunicate(long_path)
+        with check:
+            assert(len(str(long_path)))==256
+        with check:
+            assert(len(str(trunicated)))==256
+        with check: 
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
 
-def test_linux_trunicate():
-    long_path=pathlib.Path(LINUX_LONGPATH)
-    trunicated=download.trunicate(long_path)
-    assert(len(trunicated.name.encode('utf8')))<=255
-    assert(long_path.parent)==trunicated.parent
-    assert(long_path.suffix)==trunicated.suffix
 
-def test_user_data_db(mocker):
-   migrationConfig={
-        "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
-        "file_size_limit":FILE_SIZE_DEFAULT,
-        "dir_format": DIR_FORMAT_DEFAULT,
-        "file_format": FILE_FORMAT_DEFAULT,
-        "textlength": TEXTLENGTH_DEFAULT,
-        "date": DATE_DEFAULT,
-        "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
-    }
+def test_windows_trunicate_small(mocker):
+    with patch('platform.system', MagicMock(return_value="Windows")):
+        pathbase=WINDOWS_LONGPATH[:200]
+        long_path=pathlib.Path(f"{pathbase}.mkv")
+        trunicated=download.trunicate(long_path)
+        with check:
+            assert(len(str(long_path)))==204        
+        with check:
+            assert(len(str(trunicated)))==204
+        with check: 
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
 
-   mocker.patch('src.utils.paths.config', new=migrationConfig)
-   assert(str(paths.databasePathHelper(1111,"test")))=="/root/.config/ofscraper/main_profile/.data/test_1111/user_data.db"
 
+def test_linux_trunicate(mocker):
+    with patch('platform.system', MagicMock(return_value="Linux")):
+        long_path=pathlib.Path(f"{LINUX_LONGPATH}.mkv")
+        trunicated=download.trunicate(long_path)
+        with check:
+            assert(len(str(trunicated.name).encode("utf8")))<=255
+        with check:
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
+
+
+def test_linux_trunicate_255(mocker):
+    with patch('platform.system', MagicMock(return_value="Linux")):
+        dirLength=len(str(pathlib.Path(LINUX_LONGPATH).parent).encode("utf8"))
+        extLength=len(".mkv".encode("utf8"))
+        maxlenth=255
+        pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
+        -extLength]).decode()
+        long_path=pathlib.Path(f"{pathbase}.mkv")
+        trunicated=download.trunicate(long_path)
+        with check:
+            assert(len(str(long_path.name).encode("utf8")))==maxlenth
+        with check:
+            assert(len(str(trunicated.name).encode("utf8")))==maxlenth
+        with check: 
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
+
+def test_linux_trunicate_small(mocker):
+    with patch('platform.system', MagicMock(return_value="Linux")):
+        dirLength=len(str(pathlib.Path(LINUX_LONGPATH).parent).encode("utf8"))
+        extLength=len(".mkv".encode("utf8"))
+        maxlenth=200
+        pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
+        -extLength]).decode()
+        long_path=pathlib.Path(f"{pathbase}.mkv")
+        trunicated=download.trunicate(long_path)
+        with check:
+            assert(len(str(long_path.name).encode("utf8")))==maxlenth
+        with check:
+            assert(len(str(trunicated.name).encode("utf8")))==maxlenth
+        with check: 
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
 
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
@@ -284,19 +341,6 @@ def test_create_text_name2(mocker):
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('src.api.posts.Post.allmedia', new=[t.allmedia[0]])
     assert(createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -67,7 +67,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
             for ele in medialist:
                 with set_directory(getmediadir(ele,username,model_id)):
 
-                    aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit)))
+                    aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,letterSplit)))
             for coro in asyncio.as_completed(aws):
                     try:
                         media_type, num_bytes_downloaded = await coro
@@ -197,14 +197,46 @@ def createfilename(ele,username,model_id,ext):
 
 
 def trunicate(path):
-    path=pathlib.Path(path)
-    ext=str(path.suffix)
-    basepath=str(path.with_suffix(""))
     if platform.system() == 'Windows' and len(str(path))>256:
-        return pathlib.Path(basepath[:256-len(ext)]).with_suffix(ext)
+        return _windows_trunicateHelper(path)
     elif platform.system() == 'Linux':
-        dir=pathlib.Path(path).parent
-        file=pathlib.Path(basepath).name.encode("utf8")[:(255-len(ext.encode('utf8')))].decode("utf8", "ignore")
-        return pathlib.Path(dir,file).with_suffix(ext)
+        return _linux_trunicateHelper(path)
     else:
         return path
+def _windows_trunicateHelper(path):
+    path=pathlib.Path(path)
+    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
+        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    else:
+        ext=""
+    filebase=str(path.with_suffix("").name)
+    dir=path.parent
+    #-1 for path split /
+    maxLength=256-len(ext)-len(str(dir))-1
+    outString=""
+    for ele in list(filebase):
+        temp=outString+ele
+        if len(temp)>maxLength:
+            break
+        outString=temp
+    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+
+def _linux_trunicateHelper(path):
+    path=pathlib.Path(path)
+    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
+        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    else:
+        ext=""
+    filebase=str(re.sub(ext,"",path.name))
+    dir=path.parent
+    maxLength=255-len(ext.encode('utf8'))
+    outString=""
+    for ele in list(filebase):
+        temp=outString+ele
+        if len(temp.encode("utf8"))>maxLength:
+            break
+        outString=temp
+    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+
+
+
