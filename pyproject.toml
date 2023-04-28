@@ -35,6 +35,8 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
 pytest-check = { version = "2.1.4", python = ">3.7" }
+coverage = "^7.2.3"
+pytest-cov = "^4.0.0"
 
 [build-system]
 requires = ["poetry-core"]
