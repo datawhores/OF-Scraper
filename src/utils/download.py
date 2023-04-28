@@ -67,7 +67,8 @@ async def process_dicts(username, model_id, medialist,forced=False):
             for ele in medialist:
                 with set_directory(getmediadir(ele,username,model_id)):
 
-                    aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,letterSplit)))
+                    aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit
+                                                            )))
             for coro in asyncio.as_completed(aws):
                     try:
                         media_type, num_bytes_downloaded = await coro

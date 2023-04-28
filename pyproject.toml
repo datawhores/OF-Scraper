@@ -48,3 +48,11 @@ ofscraper = "src.scraper:main"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/datawhores/ofscraper"
+
+# pyproject.toml
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
