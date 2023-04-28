@@ -13,7 +13,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
 
- ## 1.82 Changes:
+ ## 1.8X Changes:
  - sync keys names across config(old keys will still work)
   * change username to model_username in metadata
   * change site_name to sitename in metadata
@@ -31,6 +31,9 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - added a Post class to serve as a 'single source of truth' for all responsetypes
  - removed unused functions like download_paid that are no longer needed
  - prompts and config functions have been revamped
+ - shutdown handler
+ - removed .tempmedia
+ - added extension to responsetype profile downloads
  - fixed bugs caused by duplicate uploads on pages
  - additional bugs and fixes
 
