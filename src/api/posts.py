@@ -207,7 +207,7 @@ class Media():
         text = re.sub('[\n<>:"/\|?*]+', '', text)
         text = re.sub(" +", " ", text)
         length = int(config.get("textlength") or TEXTLENGTH_DEFAULT)
-        if args_.getargs().letter_split:
+        if args_.getargs().letter_count:
             if length==0 and self._addcount():
                 return f"{text}_{self.count}"
             elif length==0 and not self._addcount():
@@ -218,7 +218,7 @@ class Media():
                 append=f"_{self.count}"
                 return f"{''.join(list(text)[:length-len(append)])}{append}"
                 
-        if not args_.getargs().letter_split:
+        if not args_.getargs().letter_count:
             if length==0 and self._addcount():
                 return f"{text}_{self.count}"
             elif length==0 and not self._addcount():

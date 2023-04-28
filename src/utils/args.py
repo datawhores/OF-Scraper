@@ -31,7 +31,7 @@ def getargs(input=None):
     post.add_argument(
         '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","pinned","stories","purchased",],action='append'
     )
-    post.add_argument("-l","--letter-split",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
+    post.add_argument("-l","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
