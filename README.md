@@ -28,6 +28,9 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - print path for each file
  - responsetype mapping in config
     * This is for example keeping all messages or paid post in same folder, but also allow long time users to keep their current structure
+ - added a Post class to serve as a 'single source of truth' for all responsetypes
+ - removed unused functions like download_paid that are no longer needed
+ - prompts and config functions have been revamped
 
   ## Description:
   command-line program to download media, and to process other batch operations such as liking and unliking posts.
