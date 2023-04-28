@@ -1,5 +1,7 @@
 from test.test_constants import *
 from src.utils.separate import separate_by_id
+import src.utils.args as args_
+from pytest_check import check
 
 def test_seperate(mocker):
     data=[]
@@ -24,3 +26,16 @@ def test_seperate2(mocker):
         media_ids.append(i)   
     assert(len(separate_by_id(data,media_ids)))==100
     
+
+def test_args(mocker):
+    args=args_.getargs([])
+    assert(args)==args_.getargs()
+
+
+def test_args_change(mocker):
+    args=args_.getargs([])
+    args.renewal="test"
+    args_.changeargs(args)
+    for key in vars(args).keys():
+        with check:
+            assert(vars(args)[key])==vars(args_.getargs())[key]

@@ -1,8 +1,4 @@
 - Support Lists
-- cookie extension native messaging
-- Add DC import script 
-- is instance list for posts
-- jwt token? in download url
 - mention model_username key change
 - mention date format validator being very flexiable, and user error prone
 - mention switch to into for config.json values
@@ -10,3 +6,6 @@
 - print path for each download
 - mention paid in post args
 - mention responsetype in wiki
+- explain letters argment
+- explain remove of purchased
+- explain adding of purchase and pinned to post
