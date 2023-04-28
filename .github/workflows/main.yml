@@ -15,7 +15,7 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --with test
       - name: Run tests and collect coverage
         run: pytest --cov app
       - name: Upload coverage to Codecov
