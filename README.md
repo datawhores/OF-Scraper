@@ -101,7 +101,8 @@ https://github.com/datawhores/ofscraper/wiki/Config-Options
 # Issues
 Open a issue in this repo, or you can mention your issue in the discord
 
-https://discord.gg/zRXgb5Nv
+https://discord.gg/wN7uxEVHRK
+    
     
 ## Common
 ### Status Down
@@ -137,7 +138,7 @@ Ask in the discord or open an issue if you need help with what to change to acco
 
 # Discord
 
-https://discord.gg/zRXgb5Nv
+https://discord.gg/wN7uxEVHRK
     
 # Support
 buymeacoffee.com/datawhores
