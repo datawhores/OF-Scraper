@@ -382,7 +382,7 @@ def test_pinned_text_lettertrunicate(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    args_.getargs(["--letter-split"])
+    args_.getargs(["--letter-count"])
     mocker.patch('src.api.posts.config', new=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
@@ -406,7 +406,7 @@ def test_pinned_text_lettertrunicate2(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    args_.getargs(["--letter-split"])
+    args_.getargs(["--letter-count"])
     mocker.patch('src.api.posts.config', new=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
@@ -428,7 +428,7 @@ def test_pinned_text_lettertrunicate3(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    args_.getargs(["--letter-split"])
+    args_.getargs(["--letter-count"])
     mocker.patch('src.api.posts.config', new=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
@@ -453,7 +453,7 @@ def test_pinned_text_lettertrunicate4(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    args_.getargs(["--letter-split"])
+    args_.getargs(["--letter-count"])
     mocker.patch('src.api.posts.config', new=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
@@ -476,7 +476,7 @@ def test_pinned_text_lettertrunicate5(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    args_.getargs(["--letter-split"])
+    args_.getargs(["--letter-count"])
     mocker.patch('src.api.posts.config', new=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
@@ -498,7 +498,7 @@ def test_pinned_text_lettertrunicate6(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    args_.getargs(["--letter-split"])
+    args_.getargs(["--letter-count"])
     mocker.patch('src.api.posts.config', new=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]

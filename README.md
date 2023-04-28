@@ -18,7 +18,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
   - change site_name to sitename in metadata
  - remove --purchased args
  - add purchase and pinned as post types
- - add letter-split argument
+ - add letter-count argument
    * This is counting letters and not words for
    text lengthpoetry run coverage report -m
  - added testi ng
