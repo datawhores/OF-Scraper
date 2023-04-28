@@ -14,9 +14,9 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
     </li>
 
  ## 1.80 Changes:
- - sync keys across config(old keys will still work)
-  - change username to model_username in metadata
-  - change site_name to sitename in metadata
+ - sync keys names across config(old keys will still work)
+  * change username to model_username in metadata
+  * change site_name to sitename in metadata
  - remove --purchased args
  - add purchase and pinned as post types
  - add letter-count argument
@@ -25,7 +25,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - added testi ng
  - print path for each file
  - responsetype mapping in config
-  * This is for example keeping all messages or paid post in same folder, but also allow long time users to keep their current structure
+    * This is for example keeping all messages or paid post in same folder, but also allow long time users to keep their current structure
 
   ## Description:
   command-line program to download media, and to process other batch operations such as liking and unliking posts.
