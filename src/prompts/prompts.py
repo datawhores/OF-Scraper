@@ -385,7 +385,7 @@ Enter 0 for no limit
     questions2 = [
         {
             'type': 'input',
-            'name': 'post',
+            'name': 'timeline',
             'long_instruction': 
             """
 set responsetype for timeline posts

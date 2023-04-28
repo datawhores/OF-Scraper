@@ -86,7 +86,7 @@ def process_highlights(headers, model_id,username):
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id,username))
     operations.save_timeline_response(timeline_posts,model_id,username)
-    timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username), timeline_posts ))
+    timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
     for post in timeline_posts:
         operations.write_post_table(post,model_id,username)
     output=[]
@@ -111,7 +111,7 @@ def process_archived_posts(headers, model_id,username):
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = timeline.get_pinned_post(headers, model_id,username)
     operations.save_pinned_response(pinned_posts,model_id,username)
-    pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username),pinned_posts ))
+    pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
     for post in  pinned_posts:
         operations.write_post_table(post,model_id,username)
     output=[]

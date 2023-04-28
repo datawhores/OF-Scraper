@@ -67,14 +67,14 @@ def get_current_config_schema(config: dict) -> dict:
             "metadata": get_metadata(config),
             "filter":get_filter(config),
             "responsetype":{
-           "post":get_timeline_responsetype(config),
+           "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
             "archived":get_archived_responsetype(config),
             "paid":get_paid_responsetype(config),
             "stories":get_stories_responsetype(config),
             "highlights":get_highlights_responsetype(config),
             "profile":get_profile_responsetype(config),
-            "profile":get_pinned_responsetype(config)
+            "pinned":get_pinned_responsetype(config)
             }
         }
     }
@@ -94,14 +94,14 @@ def make_config(path, config=None):
             'metadata':METADATA_DEFAULT,
             "filter":FILTER_DEFAULT,
             "responsetype":{
-        "post":get_timeline_responsetype(config),
+        "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
             "archived":get_archived_responsetype(config),
             "paid":get_paid_responsetype(config),
             "stories":get_stories_responsetype(config),
             "highlights":get_highlights_responsetype(config),
             "profile":get_profile_responsetype(config),
-            "profile":get_pinned_responsetype(config),
+            "pinned":get_pinned_responsetype(config),
 
             }
         }
@@ -226,8 +226,8 @@ def get_filter(config):
         FILTER_DEFAULT
 def get_timeline_responsetype(config):
     if not config:
-        return RESPONSE_TYPE_DEFAULT["post"]
-    return config.get('responsetype',{}).get("post") or RESPONSE_TYPE_DEFAULT["post"]
+        return RESPONSE_TYPE_DEFAULT["timeline"]
+    return config.get('responsetype',{}).get("timeline") or config.get('responsetype',{}).get("post") or RESPONSE_TYPE_DEFAULT["timeline"]
 
 def get_archived_responsetype(config):
     if not config:

@@ -135,14 +135,14 @@ def test_filter3(mocker):
     assert(get_filter(config))==FILTER_DEFAULT         
 
 def test_timelineresponse(mocker):
-    assert(get_timeline_responsetype(None))==RESPONSE_TYPE_DEFAULT["post"] 
+    assert(get_timeline_responsetype(None))==RESPONSE_TYPE_DEFAULT["timeline"] 
 
 def test_timelineresponse2(mocker):
-    config={"responsetype":{"post": RESPONSE_TYPE_DEFAULT["archived"]}}
+    config={"responsetype":{"timeline": RESPONSE_TYPE_DEFAULT["archived"]}}
     assert(get_timeline_responsetype(config))==RESPONSE_TYPE_DEFAULT["archived"]
 def test_timelineresponse3(mocker):
     config={}
-    assert(get_timeline_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    assert(get_timeline_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 
 
 
@@ -150,8 +150,8 @@ def test_archived_response(mocker):
     assert(get_archived_responsetype(None))==RESPONSE_TYPE_DEFAULT["archived"] 
 
 def test_archived2(mocker):
-    config={"responsetype":{"archived": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_archived_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"archived": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_archived_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_archivedresponse3(mocker):
     config={}
     assert(get_archived_responsetype(config))==RESPONSE_TYPE_DEFAULT["archived"]          
@@ -160,8 +160,8 @@ def test_stories_response(mocker):
     assert(get_stories_responsetype(None))==RESPONSE_TYPE_DEFAULT["stories"] 
 
 def test_stories2(mocker):
-    config={"responsetype":{"stories": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_stories_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"stories": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_stories_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_storiesresponse3(mocker):
     config={}
     assert(get_stories_responsetype(config))==RESPONSE_TYPE_DEFAULT["stories"]          
@@ -172,8 +172,8 @@ def test_highlights_response(mocker):
     assert(get_highlights_responsetype(None))==RESPONSE_TYPE_DEFAULT["highlights"] 
 
 def test_highlights2(mocker):
-    config={"responsetype":{"highlights": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_highlights_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"highlights": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_highlights_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_highlightsresponse3(mocker):
     config={}
     assert(get_highlights_responsetype(config))==RESPONSE_TYPE_DEFAULT["highlights"]          
@@ -182,8 +182,8 @@ def test_paid_response(mocker):
     assert(get_paid_responsetype(None))==RESPONSE_TYPE_DEFAULT["paid"] 
 
 def test_paid2(mocker):
-    config={"responsetype":{"paid": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_paid_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"paid": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_paid_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_paidresponse3(mocker):
     config={}
     assert(get_paid_responsetype(config))==RESPONSE_TYPE_DEFAULT["paid"]          
@@ -194,8 +194,8 @@ def test_messages_response(mocker):
     assert(get_messages_responsetype(None))==RESPONSE_TYPE_DEFAULT["message"] 
 
 def test_messages2(mocker):
-    config={"responsetype":{"message": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_messages_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"message": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_messages_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_messagesresponse3(mocker):
     config={}
     assert(get_messages_responsetype(config))==RESPONSE_TYPE_DEFAULT["message"]          
@@ -206,8 +206,8 @@ def test_profiles_response(mocker):
     assert(get_profile_responsetype(None))==RESPONSE_TYPE_DEFAULT["profile"] 
 
 def test_profiles2(mocker):
-    config={"responsetype":{"profile": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_profile_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"profile": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_profile_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_profilesresponse3(mocker):
     config={}
     assert(get_profile_responsetype(config))==RESPONSE_TYPE_DEFAULT["profile"]          
@@ -218,8 +218,8 @@ def test_pinned_response(mocker):
     assert(get_pinned_responsetype(None))==RESPONSE_TYPE_DEFAULT["pinned"] 
 
 def test_pinned_response2(mocker):
-    config={"responsetype":{"profile": RESPONSE_TYPE_DEFAULT["post"]}}
-    assert(get_pinned_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+    config={"responsetype":{"profile": RESPONSE_TYPE_DEFAULT["timeline"]}}
+    assert(get_pinned_responsetype(config))==RESPONSE_TYPE_DEFAULT["timeline"]
 def test_pinned_response3(mocker):
     config={}
     assert(get_pinned_responsetype(config))==RESPONSE_TYPE_DEFAULT["pinned"]          
