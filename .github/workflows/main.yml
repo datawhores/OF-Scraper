@@ -5,14 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     name: Test coverage
     steps:
-    - name: Install requirements
-      run: pip install -r requirements.txt
-    - name: Run tests and collect coverage
-      run: pytest --cov .
-    - name: Upload coverage reports to Codecov
-      run: |
-        # Replace `linux` below with the appropriate OS
-        # Options are `alpine`, `linux`, `macos`, `windows`
-        curl -Os https://uploader.codecov.io/latest/linux/codecov
-        chmod +x codecov
-        ./codecov -t ${CODECOVERAGE}
+    - uses: actions/checkout@master
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOVERAGE }}
+        files: ./coverage1.xml,./coverage2.xml # optional
+        flags: unittests # optional
+        name: codecov-umbrella # optional
+        fail_ci_if_error: true # optional (default = false)
+        verbose: true # optional (default = false)
