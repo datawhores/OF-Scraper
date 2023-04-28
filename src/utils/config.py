@@ -74,6 +74,7 @@ def get_current_config_schema(config: dict) -> dict:
             "stories":get_stories_responsetype(config),
             "highlights":get_highlights_responsetype(config),
             "profile":get_profile_responsetype(config),
+            "profile":get_pinned_responsetype(config)
             }
         }
     }
@@ -100,6 +101,8 @@ def make_config(path, config=None):
             "stories":get_stories_responsetype(config),
             "highlights":get_highlights_responsetype(config),
             "profile":get_profile_responsetype(config),
+            "profile":get_pinned_responsetype(config),
+
             }
         }
     }
@@ -256,3 +259,9 @@ def get_profile_responsetype(config):
     if not config:
         return RESPONSE_TYPE_DEFAULT["profile"]       
     return config.get('responsetype',{}).get("profile") or RESPONSE_TYPE_DEFAULT["profile"]
+
+
+def get_pinned_responsetype(config):
+    if not config:
+        return RESPONSE_TYPE_DEFAULT["pinned"]       
+    return config.get('responsetype',{}).get("pinned") or RESPONSE_TYPE_DEFAULT["pinned"]

@@ -98,5 +98,6 @@ RESPONSE_TYPE_DEFAULT= {
             "paid":"paid",
             "stories":"stories",
             "highlights":"highlights",
-            "profile":"profile"
+            "profile":"profile",
+            "pinned":"posts"
         }

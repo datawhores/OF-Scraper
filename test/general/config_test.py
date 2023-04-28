@@ -211,3 +211,15 @@ def test_profiles2(mocker):
 def test_profilesresponse3(mocker):
     config={}
     assert(get_profile_responsetype(config))==RESPONSE_TYPE_DEFAULT["profile"]          
+
+
+
+def test_pinned_response(mocker):
+    assert(get_pinned_responsetype(None))==RESPONSE_TYPE_DEFAULT["pinned"] 
+
+def test_pinned_response2(mocker):
+    config={"responsetype":{"profile": RESPONSE_TYPE_DEFAULT["post"]}}
+    assert(get_pinned_responsetype(config))==RESPONSE_TYPE_DEFAULT["post"]
+def test_pinned_response3(mocker):
+    config={}
+    assert(get_pinned_responsetype(config))==RESPONSE_TYPE_DEFAULT["pinned"]          

@@ -405,6 +405,18 @@ Empty string is consider to be 'archived'
             'default': config.get_archived_responsetype(config_),
             'message':"input: "
         },
+
+    {
+            'type': 'input',
+            'name': 'pinned',
+            'long_instruction': 
+            """
+set responsetype for pinned posts
+Empty string is consider to be 'archived'
+            """,
+            'default': config.get_archived_responsetype(config_),
+            'message':"input: "
+        },
                      {
             'type': 'input',
             'name': 'message',
