@@ -154,8 +154,8 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                     else:
                         r.raise_for_status()
     except Exception as e:
-        if not r or r.status_code==200:
-            print(traceback.format_exc())
+        # if not r or r.status_code==200:
+        #     # print(traceback.format_exc())
         return 'skipped', 1
     finally:
         if bar:
@@ -189,7 +189,7 @@ def get_error_message(content):
         return error_content
 def createfilename(ele,username,model_id,ext):
     if ele.responsetype =="profile":
-        return ele.filename
+        return "{filename}.{ext}".format(ext=ext,filename=ele.filename)
     return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 

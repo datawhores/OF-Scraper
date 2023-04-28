@@ -47,6 +47,7 @@ class DelayedKeyboardInterrupt:
         }
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+
         for sig, handler in self._old_signal_handler_map.items():
             signal.signal(sig, handler)
         self.endprogram()
