@@ -13,7 +13,7 @@ jobs:
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.41
+          poetry-version: 1.4.1
       - name: Install dependencies
         run: poetry install
       - name: Run tests and collect coverage
