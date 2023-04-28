@@ -93,7 +93,7 @@ PROFILE_DEFAULT="main_profile"
 PREMIUM_DEFAULT="Premium"
 RESPONSE_TYPE_DEFAULT= {
             "message":"messages",
-            "post":"posts",
+            "timeline":"posts",
             "archived":"archived",
             "paid":"paid",
             "stories":"stories",
