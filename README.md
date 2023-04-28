@@ -20,7 +20,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - remove --purchased args
  - add purchase and pinned as post types
  - add letter-count argument
-   * This is counting letters and not words for
+   * This is for counting letters and not words for
    textlength
  - added testing 
     * to install run poetry install --with test 
