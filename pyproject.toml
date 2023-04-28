@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ofscraper"
-version = "1.75"
+version = "1.80"
 description = "automatically scrape onlyfans"
 authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
@@ -22,7 +22,19 @@ arrow = "^1.2.3"
 halo = "^0.0.31"
 win32-setctime = "^1.1.0"
 pathvalidate = "^2.5.2"
+xxhash = "^3.2.0"
 
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.0.2"
+
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-check = { version = "2.1.4", python = ">3.7" }
 
 [build-system]
 requires = ["poetry-core"]
@@ -36,3 +48,11 @@ ofscraper = "src.scraper:main"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/datawhores/ofscraper"
+
+# pyproject.toml
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

@@ -1,153 +1,274 @@
-r"""
-                                                             
-        _____                                               
-  _____/ ____\______ ________________    ____   ___________ 
- /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
-(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
- \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
-                 \/     \/           \/            \/         
-"""
-import time
-import asyncio
-import httpx
-from tenacity import retry,stop_after_attempt,wait_random
-from tqdm.asyncio import tqdm
-from ..constants import (
-    timelineEP, timelineNextEP,
-    timelinePinnedEP,
-    archivedEP, archivedNextEP,timelinePinnedNextEP 
-)
-from ..utils import auth
-from ..db.operations import read_timeline_response
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
-def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
-    with httpx.Client(http2=True, headers=headers) as c:
-        ep = timelinePinnedNextEP if timestamp else timelinePinnedEP
-        url = ep.format(model_id, timestamp)
-        # url = timelinePinnedEP.format(model_id)
+from ..utils.config import read_config
+import re
+from ..constants import TEXTLENGTH_DEFAULT
+import src.utils.args as args_
+config = read_config()['config']
 
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
 
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            return r.json()['list']
-        r.raise_for_status()
+class Post():
+    def __init__(self, post, model_id, username, responsetype=None):
+        self._post = post
+        self._model_id = model_id
+        self._username = username
+        self._responsetype_ = responsetype or post.get("responseType")
 
-def get_pinned_post(headers,model_id,username):
-    return scrape_pinned_posts(headers,model_id)
+    @property
+    def allmedia(self):
+        if self._responsetype_ == "highlights":
+            return [{"url": self.post["cover"], "type":"photo"}]
+        return self._post.get("media") or []
+
+    @property
+    def post(self):
+        return self._post
+
+    @property
+    def model_id(self):
+        return self._model_id
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def archived(self):
+        if self.post.get("isArchived"):
+            return 1
+        return 0
+
+    @property
+    def text(self):
+        if self._responsetype_ == "highlights":
+            return ""
+        elif self._responsetype_ == "stories":
+            return ""
+        return self._post.get("text")
+
+    @property
+    def title(self):
+        return self._post.get("title")
+
+    # original responsetype for database
+    @property
+    def responsetype_(self):
+        return self._responsetype_
+
+    @property
+    def responsetype(self):
+        if self.archived:
+            if config.get("responsetype", {}).get("archived") == "":
+                return "achived"
+            elif config.get("responsetype", {}).get("archived") == None:
+                return "achived"
+            elif config.get("responsetype", {}).get("archived") != "":
+                return config.get("responsetype", {}).get("archived")
+        else:
+            if config.get("responsetype", {}).get(self._responsetype_) == "":
+                return self._responsetype_
+            elif config.get("responsetype", {}).get(self._responsetype_) == None:
+                return self._responsetype_
+            elif config.get("responsetype", {}).get(self._responsetype_) != "":
+                return config.get("responsetype", {}).get(self._responsetype_)
+
+    @property
+    def id(self):
+        return self._post["id"]
+
+    @property
+    def date(self):
+        return self._post.get("createdAt") or self._post.get("postedAt")
+
+    @property
+    def value(self):
+        if self.price == 0:
+            return "free"
+        elif self.price > 0:
+            return "paid"
+
+    @property
+    def price(self):
+        return float(self.post.get('price') or 0)
+
+    @property
+    def paid(self):
+        if (self.post.get("isOpen") or self.post.get("isOpened") or len(self.media) > 0 or self.price != 0):
+            return True
+        return False
+
+    @property
+    def fromuser(self):
+        if self._post.get("fromUser"):
+            return self._post["fromUser"]["id"]
+        else:
+            return self._model_id
+
+    @property
+    def preview(self):
+        return self._post.get("preview")
+
+    @property
+    def media(self):
+        if (self.fromuser != self.model_id):
+            return []
+        else:
+            media = map(lambda x: Media(
+                x[1], x[0], self), enumerate(self.allmedia))
+            return list(filter(lambda x: x.canview == True, media))
+
+
+class Media():
+    def __init__(self, media, count, post):
+        self._media = media
+        self._count = count
+        self._post = post
+
+    @property
+    def mediatype(self):
+        if self.responsetype_ == "highlights":
+            return "images"
+        if self._media["type"] == "gif" or self._media["type"] == "photo":
+            return "images"
+        else:
+            return f"{self._media['type']}s"
+
+    @property
+    def url(self):
+        if self.responsetype_ == "stories":
+            return self._media.get("files", {}).get("source", {}).get("url")
+        elif self.responsetype_ == "highlights":
+            return self._media.get("url")
+        elif self.responsetype_ == "profile":
+            return self._media.get("url")
+        else:
+            return self._media.get("source", {}).get("source")
+
+    @property
+    def post(self):
+        return self._post
+
+    @property
+    def id(self):
+        return self._media["id"]
+
+    # ID for use in dynamic names
+    @property
+    def id_(self):
+        if self.count != None and len(self._post.allmedia) > 1:
+            return f"{self._post._post['id']}_{self.count}"
+        return self._post._post['id']
+
+    @property
+    def canview(self):
+        if self.responsetype_ == "highlights":
+            return True
+        return self._media.get("canView") or False
+
+    @property
+    def responsetype(self):
+        return self._post.responsetype
+
+    @property
+    def responsetype_(self):
+        return self._post.responsetype_
+
+    @property
+    def value(self):
+        return self._post.value
+
+    @property
+    def postdate(self):
+        return self._post.date
+
+    @property
+    def date(self):
+        return self._media.get("createdAt") or self._media.get("postedAt") or self.postdate
+
+    @property
+    def id(self):
+        return self._media.get("id")
+
+    @property
+    def postid(self):
+        return self._post.id
+
+    @property
+    def text(self):
+        return self._post.text
+
+
+    @property
+    def text_(self):
+        text = self.text
+        # this is for removing emojis
+        # text=re.sub("[^\x00-\x7F]","",text)
+        # this is for removing html tags
+        text = re.sub("<[^>]*>", "", text)
+        # this for remove random special invalid special characters
+        text = re.sub('[\n<>:"/\|?*]+', '', text)
+        text = re.sub(" +", " ", text)
+        length = int(config.get("textlength") or TEXTLENGTH_DEFAULT)
+        if args_.getargs().letter_split:
+            if length==0 and self._addcount():
+                return f"{text}_{self.count}"
+            elif length==0 and not self._addcount():
+                return text
+            elif length!=0 and not self._addcount():
+                return "".join(list(text))[:length]
+            elif length!=0 and self._addcount():
+                append=f"_{self.count}"
+                return f"{''.join(list(text)[:length-len(append)])}{append}"
+                
+        if not args_.getargs().letter_split:
+            if length==0 and self._addcount():
+                return f"{text}_{self.count}"
+            elif length==0 and not self._addcount():
+                return text
+            elif length!=0 and not self._addcount():
+                return "".join(list(filter(lambda x:len(x)!=0,re.split("( )", text)))[:length])
+            elif length!=0 and self._addcount():
+                append=f"_{self.count}"
+                splitArray=list(filter(lambda x:len(x)!=0,re.split("( )", text)))[:length]
+                splitArray[-1]=re.sub(" ","",f"{splitArray[-1]}{append}")
+                return "".join(splitArray)
+
+                
+
+
+
+       
    
-@retry(stop=stop_after_attempt(1),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=False) -> list:
-    global sem
-    sem = asyncio.Semaphore(8)
-    if timestamp:
-        timestamp=str(timestamp)
-        ep = timelineNextEP
-        url = ep.format(model_id, timestamp)
-    else:
-        ep=timelineEP
-        url=ep.format(model_id)
-    async with sem:
-        async with httpx.AsyncClient(http2=True, headers=headers) as c:
-            auth.add_cookies(c)
-            c.headers.update(auth.create_sign(url, headers))
-            r = await c.get(url , timeout=None)
-            if not r.is_error:
-                posts = r.json()['list']
-    
-                if not posts:
-                    return []
-                elif len(posts)==0:
-                    return posts
-                elif not recursive:
-                    return posts
-                # recursive search for posts
-                global tasks
-                tasks.append(asyncio.create_task( scrape_timeline_posts(headers, model_id,posts[-1]['postedAtPrecise'],recursive=True)))
-                return posts
-           
-            r.raise_for_status()
-#max result is 50, try to get 40 in each async task for leeway
-# Also need to grab new posts
-async def get_timeline_post(headers,model_id,username):
-    oldtimeline=read_timeline_response(model_id,username)
-    postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-    global tasks
-    tasks=[]
-    
-    split=40
-    interval=30
-    if len(postedAtArray)>split:
-        #add differing splits and interval for inclusivity and potential breakpoints
-        split=40
-        interval=30
-        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
-        
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id)))
-        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0]-100)),splitArrays[1:-1])))
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][0],recursive=True)))
-    else:
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,recursive=True)))
+     
+       
 
-    responseArray=[]
-   
-   
-    page_count=0 
-    desc = 'Pages Progress: {page_count}'   
+       
 
-    with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2) as main_bar:
-        while len(tasks)!=0:
-            for coro in asyncio.as_completed(tasks):
-                result=await coro
-                page_count=page_count+1
-                main_bar.set_description(desc.format(page_count=page_count), refresh=False)
-                main_bar.update()
-                responseArray.extend(result)
-            time.sleep(2)
-            tasks=list(filter(lambda x:x.done()==False,tasks))
-    unduped=[]
-    dupeSet=set()
-    for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
-        if post["id"] in dupeSet:
-            continue
-        dupeSet.add(post["id"])
-        unduped.append(post)
-    return unduped                                
+    @property
+    def count(self):
+        return self._count+1
 
-def get_archive_post(headers,model_id):
-    return scrape_archived_posts(headers,model_id)
-   
+    @property
+    def filename(self):
+        if not self.url:
+            return
+        return self.url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
-def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
-    ep = archivedNextEP if timestamp else archivedEP
-    url = ep.format(model_id, timestamp)
+    @property
+    def preview(self):
+        if self.post.preview:
+            return 1
+        else:
+            return 0
 
-    with httpx.Client(http2=True, headers=headers) as c:
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
+    @property
+    def linked(self):
+        return None
 
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            posts = r.json()['list']
-            if not posts:
-                return posts
-            posts += scrape_archived_posts(
-                headers, model_id, posts[-1]['postedAtPrecise'])
-            return posts
-        r.raise_for_status()
+    @property
+    def media(self):
+        return self._media
 
-
-def parse_posts(posts: list):
-    data = list(filter( lambda x:x.get('media')!=None,posts))
-    output=[]
-    for ele in data:
-        medialist=list(filter(lambda x:x["canView"],ele["media"]))
-        for count,media in enumerate(medialist):
-            output.append({"responsetype":ele["responseType"],"id":media["id"],"date":media["createdAt"]
-        ,"text":ele["text"],"count":count+1,"url":media["source"]["source"],"mediatype":media["type"],"value":"paid" if (ele["price"] or 0)>0 else "free" ,"postid":ele["id"],"postdate":ele["postedAt"],"data":ele})
-    return output
-
-
-
+    # for use in dynamic names
+    def _addcount(self):
+        if len(self._post.allmedia) > 1 or self.responsetype_ in ["stories", "highlights"]:
+            return True
+        return False

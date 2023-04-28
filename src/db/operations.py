@@ -33,18 +33,17 @@ def create_message_table(model_id,username):
             conn.commit()
 
 
-
-def write_messages_table(data: dict, model_id,username):
-    datebase_path =databasePathHelper(model_id,username)
+def write_messages_table(message: dict):
+    datebase_path =databasePathHelper(message.model_id,message.username)
     createDir(datebase_path.parent)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            if len(cur.execute(queries.messageDupeCheck,(data['id'],)).fetchall())==0:
-                insertData=(data["id"],data["text"],data.get('price') or 0,len(list(filter(lambda x:x['canView']==False,data['media'])))==0,0,data["createdAt"],model_id)
+            if len(cur.execute(queries.messageDupeCheck,(message.id,)).fetchall())==0:
+                insertData=(message.id,message.text,message.price,message.paid,message.archived,message.date,message.model_id)
                 cur.execute(queries.messagesInsert,insertData)
                 conn.commit()
 
-def save_messages_response(model_id,username,messages):
+def save_messages_response(messages,model_id,username):
     messagepath =messageResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:
@@ -66,8 +65,8 @@ def write_post_table(data: dict, model_id,username):
     createDir(datebase_path.parent)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            if len(cur.execute(queries.postDupeCheck,(data['id'],)).fetchall())==0:
-                insertData=(data["id"],data["text"],data.get('price') or 0,data.get("isOpen") or data.get("isOpened") or len(list(filter(lambda x:x['canView']==False,data['media'])))==0 ,data.get("isArchived") or 0,data.get("postedAt" or data.get("createdAt")))
+            if len(cur.execute(queries.postDupeCheck,(data.id,)).fetchall())==0:
+                insertData=(data.id,data.text,data.price,data.paid ,data.archived,data.date)
                 cur.execute(queries.postInsert,insertData)
                 conn.commit()
 
@@ -79,7 +78,7 @@ def create_post_table(model_id,username):
             cur.execute(queries.postCreate)
             conn.commit()
 
-def save_timeline_response(model_id,username,posts):
+def save_timeline_response(posts,model_id,username,):
     messagepath =timelineResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
@@ -94,7 +93,7 @@ def read_timeline_response(model_id,username):
             return messages
     return []
             
-def save_archive_response(model_id,username,posts):
+def save_archive_response(posts,model_id,username):
     messagepath =archiveResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
@@ -108,7 +107,7 @@ def read_archive_response(model_id,username):
         if len(messages)>0:
             return messages
     return []
-def save_pinned_response(model_id,username,posts):
+def save_pinned_response(posts,model_id,username):
     messagepath =pinnedResponsePathHelper(model_id,username)
     createDir(messagepath.parent)
     with open(messagepath,"w") as p:	
@@ -131,14 +130,13 @@ def create_stories_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.storiesCreate)
             conn.commit()
-
 def write_stories_table(data: dict, model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            if len(cur.execute(queries.storiesDupeCheck,(data['id'],)).fetchall())==0:
-                insertData=(data["id"],data.get("text") or data.get("title") or "",0,1 ,0,data["createdAt"])
+            if len(cur.execute(queries.storiesDupeCheck,(data.id,)).fetchall())==0:
+                insertData=(data.id,data.text or data.title or "",data.price,data.paid ,data.archived,data.date)
                 cur.execute(queries.storiesInsert,insertData)
                 conn.commit()
 
@@ -157,17 +155,17 @@ def get_media_ids(model_id,username) -> list:
             cur.execute(queries.allIDCheck)
             conn.commit()
             return list(map(lambda x:x[0],cur.fetchall()))
-def write_media(data,filename,model_id,username) -> list:
+def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            insertData=[data["id"],data["data"]["id"],data['url'],str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
-            math.ceil(pathlib.Path(filename).stat().st_size),data['responsetype'].capitalize(),data['mediatype'].capitalize() ,
-            1 if data["data"].get("preview")!=None else 0,None, 1,data["date"]]
-            if len(cur.execute(queries.mediaDupeCheck,(data['id'],)).fetchall())==0:
+            insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
+            math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+            media.preview,media.linked, 1,media.date]
+            if len(cur.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
                 cur.execute(queries.mediaInsert,insertData)
             else:
-                insertData.append(data["id"])
+                insertData.append(media.id)
                 cur.execute(queries.mediaUpdate,insertData)
             conn.commit()
    
@@ -194,12 +192,7 @@ def create_profile_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.profilesCreate)
             conn.commit()
-def read_foreign_profile_table(datebase_path):
-    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            cur.execute(queries.profileData)
-            conn.commit()
-            return list(map(lambda x:x,cur.fetchall())) 
+
 
 def write_profile_table(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
@@ -213,19 +206,26 @@ def write_profile_table(model_id,username) -> list:
                 cur.execute(queries.profileUpdate,insertData)
             conn.commit()
    
-def read_foreign_database(path) -> list:
-    database_files = glob.glob(path.strip('\'\"') + '/*.db')
+# def read_foreign_profile_table(datebase_path):
+#     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+#         with contextlib.closing(conn.cursor()) as cur:
+#             cur.execute(queries.profileData)
+#             conn.commit()
+#             return list(map(lambda x:x,cur.fetchall())) 
 
-    database_results = []
-    for file in database_files:
-        with contextlib.closing(sqlite3.connect(file,check_same_thread=False)) as conn:
-            with contextlib.closing(conn.cursor()) as cur:
-                read_sql = """SELECT media_id, filename FROM medias"""
-                cur.execute(read_sql)
-                for result in cur.fetchall():
-                    database_results.append(result)
+# def read_foreign_database(path) -> list:
+#     database_files = glob.glob(path.strip('\'\"') + '/*.db')
 
-    return database_results
+#     database_results = []
+#     for file in database_files:
+#         with contextlib.closing(sqlite3.connect(file,check_same_thread=False)) as conn:
+#             with contextlib.closing(conn.cursor()) as cur:
+#                 read_sql = """SELECT media_id, filename FROM medias"""
+#                 cur.execute(read_sql)
+#                 for result in cur.fetchall():
+#                     database_results.append(result)
+
+#     return database_results
 
 
 

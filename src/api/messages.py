@@ -86,14 +86,4 @@ async def scrape_messages(headers, user_id, message_id=None,recursive=False) -> 
             r.raise_for_status()
 
 
-def parse_messages(messages: list, user_id):
-    messages_with_media =list(filter(lambda message:message['fromUser']['id'] == user_id and message['media'] ,messages))
 
-    messages_urls = []
-    for message in messages_with_media:
-        for count,media in enumerate(list(filter(lambda x:x["canView"]==True,message["media"]))):
-                messages_urls.append({"url":media["source"]["source"],"id":media["id"],"count":count+1,"mediatype":media["type"],
-        "text":message["text"],'responsetype':"messages","date":message["createdAt"],"value":"free" if message["price"]==0 else "paid","postid":message["id"],"postdate":message["createdAt"],"data":message})
-
-    return messages_urls
-    

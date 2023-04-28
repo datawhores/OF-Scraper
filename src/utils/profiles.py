@@ -30,31 +30,6 @@ def get_profiles() -> list:
     profiles = [item for item in dir_contents if item.is_dir()]
     return profiles
 
-
-def has_files(path) -> bool:
-    files = path.glob('*.*')
-
-    filtered_files = filter_files(files)
-
-    if filtered_files:
-        return True
-    return False
-
-
-def filter_files(files) -> list:
-    # Check for `config.json` file:
-    filtered_files = [file for file in files if file.name != configFile]
-    return filtered_files
-
-
-def move_files(path, dir_name: str):
-    files = path.glob('*.*')
-    filtered_files = filter_files(files)
-
-    for file in filtered_files:
-        file.rename(file.parent / dir_name / file.name)
-
-
 def change_profile():
     console.print('Current profiles:')
     profile = get_profile_prompt(print_profiles())
