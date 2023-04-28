@@ -6,14 +6,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Python 3.10
+      - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.10.6'
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.40
+          poetry-version: 1.41
       - name: Install dependencies
         run: poetry install
       - name: Run tests and collect coverage
