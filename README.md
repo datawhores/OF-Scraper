@@ -22,7 +22,9 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - add letter-count argument
    * This is counting letters and not words for
    textlength
- - added testing to install run poetry install --with test then poetry run pytest
+ - added testing 
+    * to install run poetry install --with test 
+    * run with poetry run pytest
  - print path for each file
  - responsetype mapping in config
     * This is for example keeping all messages or paid post in same folder, but also allow long time users to keep their current structure
