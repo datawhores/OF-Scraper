@@ -12,6 +12,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
     <li>
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
+
  ## 1.80 Changes:
  - sync keys across config(old keys will still work)
   - change username to model_username in metadata
@@ -20,7 +21,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - add purchase and pinned as post types
  - add letter-count argument
    * This is counting letters and not words for
-   text lengthpoetry run coverage report -m
+   text lengthp
  - added testi ng
  - print path for each file
  - responsetype mapping in config
