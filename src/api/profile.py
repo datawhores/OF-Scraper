@@ -17,6 +17,7 @@ console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import profileEP
 from ..utils import auth, dates, encoding
+from xxhash import xxh32
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_profile(headers, username) -> dict:
@@ -40,7 +41,7 @@ def parse_profile(profile: dict) -> tuple:
 
     output=[]
     for ele in media:
-        output.append({"url":ele,"responsetype":"profile","mediatype":"images","value":"free","date":profile["joinDate"]})
+        output.append({"url":ele,"responsetype":"profile","mediatype":"photo","value":"free","createdAt":profile["joinDate"],"text":profile["about"],"id":xxh32(ele).hexdigest()})
 
 
     name = encoding.encode_utf_16(profile['name'])

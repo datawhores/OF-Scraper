@@ -26,7 +26,7 @@ try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 
 from .auth import add_cookies
 from .config import read_config
@@ -34,7 +34,7 @@ from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory,getmediadir
 from ..utils import auth
-from ..constants import configPath
+from ..constants import configPath,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
 from ..utils.profiles import get_current_profile
 from .dates import convert_local_time
 
@@ -50,7 +50,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
             console.print(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
         else:
             print("forcing all downloads")
-        file_size_limit = config.get('file_size_limit')
+        file_size_limit = config.get('file_size_limit') or FILE_SIZE_DEFAULT
         global sem
         sem = asyncio.Semaphore(8)
       
@@ -62,18 +62,18 @@ async def process_dicts(username, model_id, medialist,forced=False):
         total_bytes_downloaded = 0
         data = 0
         desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper/Data')}/{(config.get('dir_format') or '{model_username}/{responsetype}/{mediatype}')}\n\n")
 
         with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
             for ele in medialist:
                 with set_directory(getmediadir(ele,username,model_id)):
 
-                    aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit)))
+                    aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit
+                                                            )))
             for coro in asyncio.as_completed(aws):
                     try:
                         media_type, num_bytes_downloaded = await coro
                     except Exception as e:
-                        media_type = None
+                        media_type = "skipped"
                         num_bytes_downloaded = 0
                         console.print(e)
 
@@ -106,23 +106,18 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     main_bar.update()
 
 
-def convert_num_bytes(num_bytes: int) -> str:
-    if num_bytes == 0:
-      return '0 B'
-    num_digits = int(math.log10(num_bytes)) + 1
+def retry_required(value):
+    return value == ('skipped', 1)
 
-    if num_digits >= 10:
-        return f'{round(num_bytes / 10**9, 2)} GB'
-    return f'{round(num_bytes / 10 ** 6, 2)} MB'
-
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)  
+@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True) 
 async def download(ele,path,model_id,username,file_size_limit,id_=None):
-    url=ele['url']
-    media_type=ele['mediatype']
-    id_=ele.get("id")
+    url=ele.url
+    media_type=ele.mediatype
+    id_=ele.id
     bar=None
     temp=None
-
+    if not url:
+        return 'skipped', 1
     try:
         async with sem:
             async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None) as c: 
@@ -136,11 +131,12 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                         content_type = rheaders.get("content-type").split('/')[-1]
                         filename=createfilename(ele,username,model_id,content_type)
                         path_to_file = trunicate(pathlib.Path(path,f"{filename}"))
+
                         with set_directory(pathlib.Path(pathlib.Path.home(),configPath,get_current_profile(),".tempmedia")):
                             temp=trunicate(f"{filename}")
                             pathlib.Path(temp).unlink(missing_ok=True)
                             with open(temp, 'wb') as f:
-                                pathstr=str(temp)
+                                pathstr=str(path_to_file)
                                 bar=tqdm(desc=(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False)
                                 num_bytes_downloaded = r.num_bytes_downloaded
                                 async for chunk in r.aiter_bytes(chunk_size=1024):
@@ -152,10 +148,10 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                             
                             if pathlib.Path(temp).exists() and  abs(total-pathlib.Path(temp).stat().st_size)<=1000:
                                 shutil.move(temp,path_to_file)
-                                if ele.get("postdate"):
-                                    set_time(path_to_file, convert_local_time(ele["postdate"]))
+                                if ele.postdate:
+                                    set_time(path_to_file, convert_local_time(ele.postdate))
                                 if id_:
-                                    operations.write_media(ele,path_to_file,model_id,username)
+                                    operations.write_media_table(ele,path_to_file,model_id,username)
                                 return media_type,total
                             else:
                                 return 'skipped', 1
@@ -172,122 +168,6 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
             pathlib.Path(temp).unlink(missing_ok=True)
         
 
-async def process_dicts_paid(username,model_id,medialist,forced=False):
- """Takes a list of purchased content and downloads it."""
- if medialist:
-        if not forced:
-            media_ids = set(operations.get_media_ids(model_id,username))
-            medialist = separate_by_id(medialist, media_ids)
-            console.print(f"Skipping previously downloaded\nPaid media content left for download {len(medialist)}")
-        else:
-            print("forcing all downloads")
-        file_size_limit = config.get('file_size_limit')
-        global sem
-        sem = asyncio.Semaphore(8)
-        aws=[]
-        photo_count = 0
-        video_count = 0
-        audio_count=0
-        skipped = 0
-        total_bytes_downloaded = 0
-        data = 0
-        desc = 'Progress: ({p_count} photos, {v_count} videos, {skipped} skipped || {data})'   
-        print(f"\nDownloading to {(config.get('save_location') or pathlib.Path.home()/'ofscraper')}/{(config.get('dir_format') or '/{model_username}/{responsetype}/{mediatype}')}\n\n")
-
-        with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), total=len(aws), colour='cyan', leave=True) as main_bar: 
-            for ele in medialist:
-                with set_directory(getmediadir(ele,username,model_id)):
-                    aws.append(asyncio.create_task(download_paid(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit)))
-            for coro in asyncio.as_completed(aws):
-                    try:
-                        media_type, num_bytes_downloaded = await coro
-                    except Exception as e:
-                        media_type = None
-                        num_bytes_downloaded = 0
-                        console.print(e)
-
-                    total_bytes_downloaded += num_bytes_downloaded
-                    data = convert_num_bytes(total_bytes_downloaded)
-
-                    if media_type == 'images':
-                        photo_count += 1
-                        main_bar.set_description(
-                            desc.format(
-                                p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=False)
-
-                    elif media_type == 'audios':
-                        audio_count += 1
-                        main_bar.set_description(
-                            desc.format(
-                                p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=False)                        
-                    elif media_type == 'videos':
-                        video_count += 1
-                        main_bar.set_description(
-                            desc.format(
-                                p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=False)
-
-                    elif media_type == 'skipped':
-                        skipped += 1
-                        main_bar.set_description(
-                            desc.format(
-                                p_count=photo_count, v_count=video_count, skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=False)
-
-                    main_bar.update()
-
-
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True)                    
-async def download_paid(ele,path,model_id,username,file_size_limit,id_=None):  
-    url=ele['url']
-    media_type=ele['mediatype']
-    id_=ele['id']
-    bar=None
-    temp=None
-    try:
-        async with sem:  
-            async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None) as c: 
-                auth.add_cookies(c)     
-                async with c.stream('GET', url) as r:
-                    if not r.is_error:            
-                        rheaders=r.headers
-                        total = int(rheaders["Content-Length"])
-                        if file_size_limit and total>int(file_size_limit):
-                            return 'skipped', 1
-                        content_type = rheaders.get("content-type").split('/')[-1]
-                        filename=createfilename(ele,username,model_id,content_type)
-                        path_to_file = trunicate(pathlib.Path(path,f"{filename}"))
-                        with set_directory(pathlib.Path(pathlib.Path.home(),configPath,get_current_profile(),".tempmedia")):
-                            temp=trunicate(f"{filename}")
-                            pathlib.Path(temp).unlink(missing_ok=True)
-                            with open(temp, 'wb') as f:
-                                pathstr=str(temp)
-                                bar=tqdm(desc=(pathstr[:10] + '....') if len(pathstr) > 10 else pathstr,total=total, unit_scale=True, unit_divisor=1024, unit="B",leave=False) 
-                                num_bytes_downloaded = r.num_bytes_downloaded
-                                async for chunk in r.aiter_bytes(chunk_size=1024):
-                                    f.write(chunk)
-                                    bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
-                                    num_bytes_downloaded = r.num_bytes_downloaded
-                            if pathlib.Path(temp).exists() and(total-pathlib.Path(temp).stat().st_size<=1000):
-                                shutil.move(temp,path_to_file)
-                                if ele["date"]:
-                                    set_time(path_to_file, convert_local_time(ele["date"]))   
-                                if id_:
-                                    operations.write_media(ele,path_to_file,model_id,username)
-                                return media_type,total
-                            else:
-                                return 'skipped', 1
-
-                    else:
-                        r.raise_for_status()
-                        
-    except Exception as e:
-        if not r or r.status_code==200:
-            print(traceback.format_exc())
-        return 'skipped', 1
-    finally:
-        if bar:
-            bar.close()
-        if temp:
-            pathlib.Path(temp).unlink(missing_ok=True)
         
 def convert_num_bytes(num_bytes: int) -> str:
     if num_bytes == 0:
@@ -312,47 +192,52 @@ def get_error_message(content):
     except AttributeError:
         return error_content
 def createfilename(ele,username,model_id,ext):
-    filename=geturlfilename(ele['url'])
-    if ele.get("responsetype") in "profile":
-        return filename
-    
-    return (config.get('file_format') or '{filename}.{ext}').format(filename=filename,sitename="Onlyfans",post_id=ele["postid"],media_id=ele["id"],first_letter=username[0],mediatype=ele["mediatype"],value=ele["value"],text=texthelper(ele.get("text") or filename,ele),date=arrow.get(ele['date']).format(config.get('date')),ext=ext,model_username=username,model_id=model_id,responsetype=ele["responsetype"])
-def geturlfilename(url):
-    return url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
-
-def texthelper(text,ele):    
-    count=ele["count"]
-    length=int(config.get("textlength") or 0)
-    if length!=0:
-        text=" ".join(text.split(" ")[0:length])
-    if (len(ele["data"].get("media",[]))>1) or ele.get("responsetype") in ["stories","highlights"]:
-        text= f"{text}{count}"
-    #this is for removing emojis
-    # text=re.sub("[^\x00-\x7F]","",text)
-    # this is for removing html tags
-    text=re.sub("<[^>]*>", "",text)
-    #this for remove random special invalid special characters
-    text=re.sub('[\n<>:"/\|?*]+', '', text)
-    text=re.sub(" +"," ",text)
-    return text
-    
-
-   
-
-
-
-
+    if ele.responsetype =="profile":
+        return ele.filename
+    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 
 def trunicate(path):
-    path=pathlib.Path(path)
-    ext=str(path.suffix)
-    basepath=str(path.with_suffix(""))
     if platform.system() == 'Windows' and len(str(path))>256:
-        return pathlib.Path(basepath[:256-len(ext)]).with_suffix(ext)
+        return _windows_trunicateHelper(path)
     elif platform.system() == 'Linux':
-        dir=pathlib.Path(path).parent
-        file=pathlib.Path(basepath).name.encode("utf8")[:(255-len(ext.encode('utf8')))].decode("utf8", "ignore")
-        return pathlib.Path(dir,file).with_suffix(ext)
+        return _linux_trunicateHelper(path)
     else:
         return path
+def _windows_trunicateHelper(path):
+    path=pathlib.Path(path)
+    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
+        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    else:
+        ext=""
+    filebase=str(path.with_suffix("").name)
+    dir=path.parent
+    #-1 for path split /
+    maxLength=256-len(ext)-len(str(dir))-1
+    outString=""
+    for ele in list(filebase):
+        temp=outString+ele
+        if len(temp)>maxLength:
+            break
+        outString=temp
+    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+
+def _linux_trunicateHelper(path):
+    path=pathlib.Path(path)
+    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
+        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    else:
+        ext=""
+    filebase=str(re.sub(ext,"",path.name))
+    dir=path.parent
+    maxLength=255-len(ext.encode('utf8'))
+    outString=""
+    for ele in list(filebase):
+        temp=outString+ele
+        if len(temp.encode("utf8"))>maxLength:
+            break
+        outString=temp
+    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+
+
+

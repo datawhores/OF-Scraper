@@ -36,7 +36,6 @@ def jsonValidator():
 def jsonloader(x):
     return json.loads(x)
 
-
 def namevalitator():
     def callable(x):
        validchars=re.search("[a-zA-Z0-9_]*",x)

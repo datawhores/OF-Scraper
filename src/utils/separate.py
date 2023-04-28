@@ -10,11 +10,12 @@ r"""
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
-    return list(filter(lambda x:x.get("id") not in media_ids,data))
+    media_ids=set(media_ids)
+    return list(filter(lambda x:x.id not in media_ids,data ))
     
   
 
 
-def separate_database_results_by_id(results: list, media_ids: list) -> list:
-    filtered_results = [r for r in results if r[0] not in media_ids]
-    return filtered_results
+# def separate_database_results_by_id(results: list, media_ids: list) -> list:
+#     filtered_results = [r for r in results if r[0] not in media_ids]
+#     return filtered_results

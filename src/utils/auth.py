@@ -18,7 +18,6 @@ from rich.console import Console
 console=Console()
 import httpx
 import browser_cookie3
-from src.utils.browser import getuseragent
 from .profiles import get_current_profile
 from ..prompts.prompts import auth_prompt, ask_make_auth_prompt,browser_prompt,\
 user_agent_prompt,xbc_prompt,auth_full_paste,manual_auth_prompt

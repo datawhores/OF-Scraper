@@ -1,6 +1,6 @@
 from src.prompts.prompt_functions import emptyListValidator,jsonValidator,namevalitator,dirformatvalidator \
 ,dateplaceholdervalidator,fileformatvalidator,metadatavalidator
-from constants import *
+from test.test_constants import *
 from prompt_toolkit.validation import ValidationError, Validator
 import pytest
 from prompt_toolkit.document import Document
@@ -150,7 +150,7 @@ def test_datesillyvalidformat():
 
 def test_fileformatallvalidkeys():
     document=Document()
-    document._text = FILE_VALID
+    document._text = FILEFORMAT_VALID_ALL
     
     try:
         fileformatvalidator().validate(document)
@@ -159,7 +159,7 @@ def test_fileformatallvalidkeys():
 
 def test_fileformatallvalidkeyWthinvalid():
     document=Document()
-    document._text = FILE_ALLVALIDWTHINVALID
+    document._text = FILEFORMAT_ALLVALIDWTHINVALID
     with pytest.raises(ValidationError):
         fileformatvalidator().validate(document)   
 def test_fileformat_invalidfilenamewin():

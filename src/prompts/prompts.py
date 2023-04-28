@@ -63,10 +63,12 @@ def areas_prompt() -> list:
              "validate":emptyListValidator(),
             'choices': [
                 Choice('Timeline'),
+                Choice('Pinned'),
                 Choice('Archived'),
                 Choice('Highlights'),
                 Choice('Stories'),
                 Choice('Messages'),
+                Choice("Purchased")
             ]
             ,"instruction":CHECKLISTINSTRUCTIONS,
 
@@ -165,7 +167,7 @@ def browser_prompt()->str:
     ]  
       
     return prompt(questions)[0]
-def user_agent_prompt(current):
+def user_agent_prompt(pcurrent):
     questions = [
         {
             'type': 'input',
@@ -298,6 +300,7 @@ def get_profile_prompt(profiles: list) -> str:
 
 
 def config_prompt(config_) -> dict:
+
     questions = [
         {
             'type': 'input',
@@ -373,12 +376,93 @@ Enter 0 for no limit
             'type': 'checkbox',
             'name': 'filter',
             "message":"filter: ",
-            'long_instruction': f'What type of media do you want to download\n\n{CHECKLISTINSTRUCTIONS}',
             'choices':list(map(lambda x:Choice(name=x,value=x, enabled=x.capitalize() in set(config.get_filter(config_))),FILTER_DEFAULT)),
              "validate":emptyListValidator()
-        }
+        },
+  
     ]
+
+    questions2 = [
+        {
+            'type': 'input',
+            'name': 'post',
+            'long_instruction': 
+            """
+set responsetype for timeline posts
+Empty string is consider to be 'posts'
+            """,
+            'default': config.get_timeline_responsetype(config_),
+            'message':"input: "
+        },
+             {
+            'type': 'input',
+            'name': 'archived',
+            'long_instruction': 
+            """
+set responsetype for archived posts
+Empty string is consider to be 'archived'
+            """,
+            'default': config.get_archived_responsetype(config_),
+            'message':"input: "
+        },
+                     {
+            'type': 'input',
+            'name': 'message',
+            'long_instruction': 
+            """
+set responsetype for message posts
+Empty string is consider to be 'message'
+            """,
+            'default': config.get_messages_responsetype(config_),
+            'message':"input: "
+        },
+                        {
+            'type': 'input',
+            'name': 'paid',
+            'long_instruction': 
+            """
+set responsetype for paid posts
+Empty string is consider to be 'paid'
+            """,
+            'default': config.get_paid_responsetype(config_),
+            'message':"input: "
+        },
+                             {
+    'type': 'input',
+            'name': 'stories',
+            'long_instruction': 
+            """
+set responsetype for stories
+Empty string is consider to be 'stories'
+            """,
+            'default': config.get_stories_responsetype(config_),
+            'message':"input: "
+        },
+                                    {
+    'type': 'input',
+            'name': 'highlights',
+            'long_instruction': 
+            """
+set responsetype for highlights
+Empty string is consider to be 'highlights'
+            """,
+            'default': config.get_highlights_responsetype(config_),
+            'message':"input: "
+        },
+                                          {
+    'type': 'input',
+            'name': 'profile',
+            'long_instruction': 
+            """
+set responsetype for profile
+Empty string is consider to be 'profile'
+            """,
+            'default': config.get_profile_responsetype(config_),
+            'message':"input: "
+        }
+     ]
     answers = prompt(questions)
+    answers["responsetype"]=prompt(questions2)
     return answers
 def reset_username_prompt() -> bool:
     name = 'reset username'
@@ -430,17 +514,6 @@ def model_selector(models) -> bool:
     return prompt(questions)[0]
 
 
-def download_paid_prompt() -> bool:
-    questions = [
-        {
-            'type': 'list',
-            'message': "Would you like to also download paid content",
-            'choices':["Yes","No"]
-        }
-    ]
-
-    answer = prompt(questions)
-    return answer[0]
 
 def decide_filters_prompts():
     questions = [

@@ -8,19 +8,15 @@ r"""
                  \/     \/           \/            \/         
 """
 
-import argparse
 import asyncio
 import os
 import sys
 import platform
-from random import randint, choice
-from time import sleep
 import time
 import schedule
 from contextlib import contextmanager
 import threading
 import queue
-import functools
 from itertools import chain
 import re
 from rich.console import Console
@@ -28,15 +24,15 @@ from rich.console import Console
 from .prompts import prompts
 console=Console()
 from .constants import donateEP
-from .api import init, highlights, me, messages, posts, profile, subscriptions, paid
+from .api import init, highlights, me, messages, profile, subscriptions, paid, timeline
 from .db import operations
 from .interaction import like
 from .utils import auth, config, download, profiles
 import webbrowser
 from halo import Halo
-from .utils.nap import nap_or_sleep
-from .__version__ import  __version__
 from .utils.config import read_config
+import src.api.posts as posts_
+import src.utils.args as args_
 
 
 
@@ -44,72 +40,94 @@ from .utils.config import read_config
 @Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
-    operations.save_messages_response( model_id,username,messages_)
+    operations.save_messages_response(messages_,model_id,username)
+    messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
     for message in messages_:
-     operations.write_messages_table(message,model_id,username)
+     operations.write_messages_table(message)
     output=[]
-    if messages_:
-        [output.extend(messages.parse_messages([ele],model_id)) for ele in messages_] 
-        list(map(lambda x:mediaJsonHelper(x),output))      
-    return output
+    [ output.extend(message.media) for message in messages_]
+    return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
+@Halo(text='Getting Paid Content...')
+def process_paid_post(headers, model_id,username):
+    paid_content=paid.scrape_paid(username)
+    paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
+    for post in paid_content:
+        operations.write_post_table(post,model_id,username)
+    output=[]
+    [output.extend(post.media) for post in paid_content]
+    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+
+         
 
 @Halo(text='Getting highlights and stories...')
 def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
+    highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
+    list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
     for post in highlights_:
         operations.write_stories_table(post,model_id,username)
     for post in stories:
-        operations.write_stories_table(post,model_id,username)    
+        operations.write_stories_table(post,model_id,username)   
+    output=[]
+    output2=[]
+    [ output.extend(highlight.media) for highlight in highlights_]
+    [ output2.extend(stories.media) for stories in stories]
+    return list(filter(lambda x:isinstance(x,posts_.Media),output)),list(filter(lambda x:isinstance(x,posts_.Media),output2))
 
-    highlight_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_highlights(highlights_)))
-    stories_list=list(map(lambda x:mediaJsonHelper(x),highlights.parse_stories(stories)))
-   
-
-    return highlight_list,stories_list
+     
 
 
 
 
-@Halo(text='Getting archived media...')
-def process_archived_posts(headers, model_id,username):
-    archived_posts = posts.get_archive_post(headers, model_id)
-    operations.save_archive_response(model_id,username,archived_posts)
-    for post in archived_posts:
-        responseJsonHelper(post)
-        operations.write_post_table(post,model_id,username)
-    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(archived_posts)))
 
 
 @Halo(text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
-    timeline_posts = asyncio.run(posts.get_timeline_post(headers, model_id,username))
-    operations.save_timeline_response(model_id,username,timeline_posts)
+    timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id,username))
+    operations.save_timeline_response(timeline_posts,model_id,username)
+    timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username), timeline_posts ))
     for post in timeline_posts:
-        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
-    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts)))
+    output=[]
+    [output.extend(post.media) for post in  timeline_posts ]
+    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+
+@Halo(text='Getting archived media...')
+def process_archived_posts(headers, model_id,username):
+    archived_posts = timeline.get_archive_post(headers, model_id)
+    operations.save_archive_response(archived_posts,model_id,username)
+    archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
+    for post in archived_posts:
+        operations.write_post_table(post,model_id,username)
+    output=[]
+    [ output.extend(post.media) for post in archived_posts ]
+    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+
 
 
 
 @Halo(text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
-    pinned_posts = posts.get_pinned_post(headers, model_id,username)
-    operations.save_pinned_response(model_id,username, pinned_posts)
+    pinned_posts = timeline.get_pinned_post(headers, model_id,username)
+    operations.save_pinned_response(pinned_posts,model_id,username)
+    pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username),pinned_posts ))
     for post in  pinned_posts:
-        responseJsonHelper(post)
         operations.write_post_table(post,model_id,username)
-    timeline_posts_urls = posts.parse_posts( pinned_posts)
-    return list(map(lambda x:mediaJsonHelper(x),posts.parse_posts(timeline_posts_urls)))
-
-
-
+    output=[]
+    [ output.extend(post.media) for post in pinned_posts ]
+    return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
 def process_profile(headers, username) -> list:
     user_profile = profile.scrape_profile(headers, username)
     urls, info = profile.parse_profile(user_profile)
     profile.print_profile_info(info)
-    return urls
+    output=[]
+    for ele in enumerate(urls):
+        count=ele[0]
+        data=ele[1]
+        output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
+    return output
 
 
 
@@ -123,34 +141,45 @@ def process_areas(headers, ele, model_id) -> list:
     highlights_dicts  = []
     messages_dicts  = []
     stories_dicts=[]
+    purchased_dict=[]
+    pinned_post_dict=[]
 
     username=ele['name']
     profile_dicts  = process_profile(headers,username)
 
+     
+    if ('Pinned' in args.posts or 'All' in args.posts) and ele["active"]:
+            pinned_post_dict = process_pinned_posts(headers, model_id,username)
     if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
-            pinned_post_dict=process_pinned_posts(headers, model_id,username)
     if ('Archived' in args.posts or 'All' in args.posts) and ele["active"]:
             archived_posts_dicts = process_archived_posts(headers, model_id,username)
     if 'Messages' in args.posts or 'All' in args.posts:
             messages_dicts = process_messages(headers, model_id,username)
-
+    if "Purchased" in args.posts or "All" in args.posts:
+            purchased_dict=process_paid_post(headers, model_id,username)
     if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts)   and ele["active"]:
-            highlights_tuple = process_highlights(headers, model_id,username)
+            highlights_tuple = process_highlights(headers, model_id,username)  
+            if 'Highlights'  in args.posts:
+                highlights_dicts=highlights_tuple[0]
+            if 'Stories'  in args.posts:
+                stories_dicts=highlights_tuple[1]   
             if 'All' in args.posts:
                 highlights_dicts=highlights_tuple[0]
-                stories_dicts=highlights_tuple[1]    
-            elif 'Highlights'  in args.posts:
-                highlights_dicts=highlights_tuple[0]
-            elif 'Stories'  in args.posts:
-                stories_dicts=highlights_tuple[1]    
-    return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,
+                stories_dicts=highlights_tuple[1]               
+    return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
 )
 
 def posts_filter(posts):
     filtersettings=config.read_config()["config"].get('filter')
+    output=[]
+    ids=set()
+    for post in posts:
+        if not post.id or post.id not in ids:
+            output.append(post)
+            ids.add(post.id)
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
     if isinstance(filtersettings,list):
@@ -159,9 +188,10 @@ def posts_filter(posts):
         if len(filtersettings)==0:
             return posts
         console.print(f"filtering post to {filtersettings}")
-        return list(filter(lambda x:x["mediatype"] in filtersettings,posts))
-    console.print("The settings you picked for the filter are not valid\nNot Filtering")
-    return posts
+        return list(filter(lambda x:x.mediatype.lower() in filtersettings,output))
+    else:
+        console.print("The settings you picked for the filter are not valid\nNot Filtering")
+        return output
         
 
 
@@ -211,6 +241,7 @@ def setfilter():
     if prompts.decide_filters_prompts()=="Yes":
         global args
         args=prompts.modify_filters_prompt(args)
+        args_.changeargs(args)
 
 def process_prompts():
     changeusernames=True
@@ -223,11 +254,7 @@ def process_prompts():
         #download
         if result_main_prompt == 0:
             check_auth()
-            if prompts.download_paid_prompt()=="Yes":
-                process_post()
-                process_paid()
-            else:
-                process_post()     
+            process_post()     
 
         # like a user's posts
         elif result_main_prompt == 1:
@@ -296,51 +323,8 @@ def process_prompts():
                 selectedusers=None
                 changeusernames=True
         
-def process_paid():
 
 
-    profiles.print_current_profile()
-    headers = auth.make_headers(auth.read_auth())
-
-    init.print_sign_status(headers)
-    userdata=getselected_usernames()
-    for ele in userdata:
-        print(f"Getting paid content for {ele['name']}")
-        try:
-            model_id = profile.get_id(headers, ele["name"])
-            create_tables(model_id,ele['name'])
-            operations.write_profile_table(model_id,ele['name'])
-            paid_url=process_paid_post(model_id,ele['name'])
-            profile.print_paid_info(paid_url,ele["name"])
-            asyncio.run(download.process_dicts_paid(
-            ele["name"],
-            model_id,
-            paid_url,
-            forced=args.dupe,
-            ))
-        except Exception as e:
-            console.print("run failed with exception: ", e)
-
-def process_paid_post(model_id,username):
-    paid_content=paid.scrape_paid(username)
-    for post in paid_content:
-        responseJsonHelper(post)
-        operations.write_post_table(post,model_id,username)
-    return list(map(lambda x:mediaJsonHelper(x),paid.parse_paid(paid_content)))
-def responseJsonHelper(data):
-    if data.get("responseType")=="post":
-        data["responseType"]="posts"
-    elif data.get("responseType")=="message":
-        data["responseType"]="messages"
-    return data
-def mediaJsonHelper(data):
-    if data.get("mediatype")=="photo" or data.get("mediatype")=="gif" :
-        data["mediatype"]="images"
-    elif data.get("mediatype")=="audio":
-        data["mediatype"]="audios"
-    elif data.get("mediatype")=="video":
-        data["mediatype"]="videos"
-    return data         
 def process_post():
     profiles.print_current_profile()
     headers = auth.make_headers(auth.read_auth())
@@ -436,7 +420,7 @@ def check_auth():
     status=None
     while status!="UP":
         headers = auth.make_headers(auth.read_auth())
-        status=init.print_sign_status(headers)
+        status=init.getstatus(headers)
         if status=="DOWN":
             auth.make_auth(auth=auth.read_auth())
             continue
@@ -497,66 +481,33 @@ def create_tables(model_id,username):
     operations.create_profile_table(model_id,username)
     operations.create_stories_table(model_id,username)
 
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr=sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
-
+args=args_.getargs()
 def main():
-    global args
     if platform.system == 'Windows':
         os.system('color')
     # try:
     #     webbrowser.open(donateEP)
     # except:
     #     pass
-
-
-    parser = argparse.ArgumentParser()
-
-    parser = argparse.ArgumentParser(add_help=False)   
-    general=parser.add_argument_group("General",description="General Args")  
-    general.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
-    general.add_argument('-h', '--help', action='help')
-
-                                    
-    general.add_argument(
-        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
-    )
-    general.add_argument(
-        '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
-    )
-    general.add_argument(
-        '-s', '--silent', help = 'mute output', action = 'store_true',default=False
-    )
-    post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
-
-    post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
-    post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","stories"],nargs="*"
-    )
-    post.add_argument("-p","--purchased",action="store_true",default=False,help="Download individually purchased content")
-    post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
-
-     #Filters for accounts
-    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
-    
-    filters.add_argument(
-        '-t', '--account-type', help = 'Filter Free or paid accounts',default=None,required=False,type = str.lower,choices=["paid","free"]
-    )
-    filters.add_argument(
-        '-r', '--renewal', help = 'Filter by whether renewal is on or off for account',default=None,required=False,type = str.lower,choices=["active","disabled"]
-    )
-    filters.add_argument(
-        '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
-    )
-
-  
-
-    args = parser.parse_args()
     global selectedusers
     selectedusers=None
 
 
     
-    if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.purchased,args.posts])))==0:
+    if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.posts])))==0:
         if args.daemon:
             console.print("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
@@ -568,9 +519,6 @@ def main():
     if args.posts: 
         check_auth()
         run(process_post)        
-    if args.purchased:
-        check_auth()
-        run(process_paid)
     if args.action=="like":
         check_auth()
         run(process_like)
@@ -580,3 +528,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
