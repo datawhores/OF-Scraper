@@ -21,8 +21,8 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - add purchase and pinned as post types
  - add letter-count argument
    * This is counting letters and not words for
-   text lengthp
- - added testi ng
+   textlength
+ - added testing to install run poetry install --with test then poetry run pytest
  - print path for each file
  - responsetype mapping in config
     * This is for example keeping all messages or paid post in same folder, but also allow long time users to keep their current structure
