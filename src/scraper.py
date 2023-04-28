@@ -20,6 +20,7 @@ import queue
 from itertools import chain
 import re
 from rich.console import Console
+import traceback
 
 from .prompts import prompts
 console=Console()
@@ -33,7 +34,8 @@ from halo import Halo
 from .utils.config import read_config
 import src.api.posts as posts_
 import src.utils.args as args_
-
+import src.utils.paths as paths
+import src.utils.exit as exit
 
 
 
@@ -496,6 +498,15 @@ def suppress_stdout():
 
 args=args_.getargs()
 def main():
+    with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
+        try:
+            scrapper()
+        except Exception as E:
+            None
+            # console.print(E)
+            # console.print(traceback.format_exc(), style="white")
+        quit()
+def scrapper():
     if platform.system == 'Windows':
         os.system('color')
     # try:

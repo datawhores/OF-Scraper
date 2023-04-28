@@ -3,6 +3,7 @@ from pathlib import Path
 import pathlib
 import os
 import sys
+import re
 from rich.console import Console
 console=Console()
 import arrow
@@ -10,6 +11,7 @@ import arrow
 from ..constants import configPath,DIR_FORMAT_DEFAULT,DATE_DEFAULT,SAVE_LOCATION_DEFAULT
 from ..utils import profiles
 from .config import read_config
+
 
 homeDir=pathlib.Path.home()
 config = read_config()['config']
@@ -64,3 +66,8 @@ def pinnedResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
     return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"pinned.json"
 
+def cleanup():
+    console.print("Cleaning up .part files\n\n")
+    root= pathlib.Path((config.get('save_location') or SAVE_LOCATION_DEFAULT))
+    for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
+        file.unlink(missing_ok=True)
