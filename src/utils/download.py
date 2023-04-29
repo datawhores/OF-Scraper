@@ -139,10 +139,10 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                             num_bytes_downloaded = r.num_bytes_downloaded
                             async for chunk in r.aiter_bytes(chunk_size=1024):
                                 f.write(chunk)
-                                bar.update(
-                                    r.num_bytes_downloaded - num_bytes_downloaded)
-                                num_bytes_downloaded = r.num_bytes_downloaded                           
-                            if pathlib.Path(temp).exists() and  abs(total-pathlib.Path(temp).stat().st_size)<=1000:
+                                bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
+                                num_bytes_downloaded = r.num_bytes_downloaded 
+                                                    
+                            if pathlib.Path(temp).exists() and num_bytes_downloaded==total:
                                 shutil.move(temp,path_to_file)
                                 if ele.postdate:
                                     set_time(path_to_file, convert_local_time(ele.postdate))
