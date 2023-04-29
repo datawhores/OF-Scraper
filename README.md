@@ -1,4 +1,4 @@
-A fork of onlyfans-scraper. It has been optimized to make it more feature complete with dc's onlyfans script.
+A fork of onlyfans-scraper. It has been optimized to make it more feature complete with digitalcriminal's onlyfans script.
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
 In addition there are numerous filtering features to control exactly which type of content you want to scrape.
@@ -148,7 +148,7 @@ This could mean that the content you are trying to scrape is no longer present. 
 You will need to change the settings so that the metadata option is compatible with your current folders
 Additionally you might want to set the save_path, dir_path, and filename so they output similar outputs
 
-The metadata path from dc's script is used for duplicate check so as long as your set the right path.
+The metadata path from digitalcriminal's script is used for duplicate check so as long as your set the right path.
 Files won't download a second time
 
 https://github.com/datawhores/ofscraper/wiki/Migrating-from-DC-script
