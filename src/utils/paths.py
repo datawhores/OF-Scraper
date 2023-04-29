@@ -10,11 +10,11 @@ import arrow
 
 from ..constants import configPath,DIR_FORMAT_DEFAULT,DATE_DEFAULT,SAVE_LOCATION_DEFAULT
 from ..utils import profiles
-from .config import read_config
+import src.utils.config as config_
 
 
 homeDir=pathlib.Path.home()
-config = read_config()['config']
+config = config_.read_config()['config']
 @contextmanager
 def set_directory(path: Path):
     """Sets the cwd within the context
@@ -71,3 +71,9 @@ def cleanup():
     root= pathlib.Path((config.get('save_location') or SAVE_LOCATION_DEFAULT))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
+
+
+def getlogpath():
+    path=pathlib.Path.home() / configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    createDir(path.parent)
+    return path

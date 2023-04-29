@@ -101,3 +101,4 @@ RESPONSE_TYPE_DEFAULT= {
             "profile":"profile",
             "pinned":"posts"
         }
+NUM_TRIES=5

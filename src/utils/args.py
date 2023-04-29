@@ -25,13 +25,16 @@ def getargs(input=None):
     general.add_argument(
         '-s', '--silent', help = 'mute output', action = 'store_true',default=False
     )
+    general.add_argument(
+        '-l', '--log', help = 'set log level', type=str.upper,default=None,choices=["OFF","INFO","DEBUG"]
+    )
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
         '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","pinned","stories","purchased",],action='append'
     )
-    post.add_argument("-l","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
+    post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
