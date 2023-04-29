@@ -121,6 +121,7 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
     bar=None
     temp=None
     attempt.set(attempt.get(0) + 1)
+    log.debug(f"Attempting to download media {ele.filename} with {url or 'no url'}")
     if not url:
         return 'skipped', 1
     try:
@@ -153,10 +154,10 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                             log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {temp} was not created") 
                             return "skipped",1
                         elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}]{filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
                             return "skipped",1 
                         else:
-                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}]{filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
                             log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
                             shutil.move(temp,path_to_file)
                             if ele.postdate:
