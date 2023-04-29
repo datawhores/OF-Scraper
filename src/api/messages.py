@@ -13,7 +13,7 @@ import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
 import arrow
-from ..constants import messagesEP, messagesNextEP
+from ..constants import messagesEP, messagesNextEP,NUM_TRIES
 from ..utils import auth
 from ..db.operations import read_messages_response
 
@@ -63,7 +63,7 @@ async def get_messages(headers,  model_id,username):
         unduped.append(message)
     return unduped
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_messages(headers, user_id, message_id=None,recursive=False) -> list:
     ep = messagesNextEP if message_id else messagesEP
     url = ep.format(user_id, message_id)

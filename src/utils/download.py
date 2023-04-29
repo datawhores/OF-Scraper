@@ -18,6 +18,8 @@ import traceback
 import re
 import httpx
 import os
+import contextvars
+
 from rich.console import Console
 console=Console()
 from tqdm.asyncio import tqdm
@@ -34,12 +36,15 @@ from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory,getmediadir
 from ..utils import auth
-from ..constants import configPath,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
+from ..constants import NUM_TRIES,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
 from ..utils.profiles import get_current_profile
 from .dates import convert_local_time
-
+import logging
+attempt = contextvars.ContextVar("attempt")
 
 config = read_config()['config']
+import src.utils.logger as logger
+log=logger.log
 
 
 async def process_dicts(username, model_id, medialist,forced=False):
@@ -75,7 +80,6 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     except Exception as e:
                         media_type = "skipped"
                         num_bytes_downloaded = 0
-                        console.print(e)
 
                     total_bytes_downloaded += num_bytes_downloaded
                     data = convert_num_bytes(total_bytes_downloaded)
@@ -109,13 +113,14 @@ async def process_dicts(username, model_id, medialist,forced=False):
 def retry_required(value):
     return value == ('skipped', 1)
 
-@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(5),wait=wait_random(min=20, max=40),reraise=True) 
+@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=20, max=40),reraise=True) 
 async def download(ele,path,model_id,username,file_size_limit,id_=None):
     url=ele.url
     media_type=ele.mediatype
     id_=ele.id
     bar=None
     temp=None
+    attempt.set(attempt.get(0) + 1)
     if not url:
         return 'skipped', 1
     try:
@@ -137,27 +142,33 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                         pathlib.Path(temp).unlink(missing_ok=True)
                         with open(temp, 'wb') as f:
                             pathstr=str(path_to_file)
-                            bar=tqdm(desc=(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False)
+                            bar=tqdm(desc=f"{attempt.get()}/{NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False)
                             num_bytes_downloaded = r.num_bytes_downloaded
                             async for chunk in r.aiter_bytes(chunk_size=1024):
                                 f.write(chunk)
                                 bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
                                 num_bytes_downloaded = r.num_bytes_downloaded 
-                                                    
-                        if pathlib.Path(temp).exists() and abs(total-pathlib.Path(temp).absolute.stat().st_size):
+                        
+                        if not pathlib.Path(temp).exists():
+                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {temp} was not created") 
+                            return "skipped",1
+                        elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
+                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}]{filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+                            return "skipped",1 
+                        else:
+                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}]{filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+                            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
                             shutil.move(temp,path_to_file)
                             if ele.postdate:
                                 set_time(path_to_file, convert_local_time(ele.postdate))
                             if id_:
                                 operations.write_media_table(ele,path_to_file,model_id,username)
                             return media_type,total
-                        else:
-                            return 'skipped', 1
                     else:
                         r.raise_for_status()
     except Exception as e:
-        # if not r or r.status_code==200:
-        #     # print(traceback.format_exc())
+        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] exception {e}")   
+        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
     finally:
         if bar:

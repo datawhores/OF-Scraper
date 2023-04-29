@@ -57,7 +57,7 @@ def get_current_config_schema(config: dict) -> dict:
 
     new_config = {
         'config': {
-            mainProfile: config.get(mainProfile) or mainProfile,
+            mainProfile: get_main_profile(config),
             'save_location':get_save_location(config) ,
             'file_size_limit': get_filesize(config),
             'dir_format': get_dirformat(config),
@@ -167,17 +167,17 @@ def edit_config():
                     continue
 
 
-def get_save_location(config):
+def get_save_location(config=None):
     if not config:
         return SAVE_LOCATION_DEFAULT   
     return config.get('save_location') or SAVE_LOCATION_DEFAULT
 
-def get_main_profile(config):
+def get_main_profile(config=None):
     if not config:
         return PROFILE_DEFAULT   
     return config.get('main_profile',PROFILE_DEFAULT)
 
-def get_filesize(config):
+def get_filesize(config=None):
     if not config:
         return FILE_SIZE_DEFAULT      
     try:
@@ -185,17 +185,17 @@ def get_filesize(config):
     except:
         return 0
 
-def get_dirformat(config):
+def get_dirformat(config=None):
     if not config:
         return DIR_FORMAT_DEFAULT     
     return config.get('dir_format', DIR_FORMAT_DEFAULT)
 
-def get_fileformat(config):
+def get_fileformat(config=None):
     if not config:
         return FILE_FORMAT_DEFAULT     
     return config.get('file_format', FILE_FORMAT_DEFAULT)
 
-def get_textlength(config):
+def get_textlength(config=None):
     if not config:
         return TEXTLENGTH_DEFAULT    
     try:
@@ -203,18 +203,18 @@ def get_textlength(config):
     except:
         return 0
 
-def get_date(config):
+def get_date(config=None):
     if not config:
         return DATE_DEFAULT     
     return config.get('date', DATE_DEFAULT)
 
-def get_metadata(config):
+def get_metadata(config=None):
     if not config:
         return METADATA_DEFAULT      
     return config.get('metadata', METADATA_DEFAULT)
 
 
-def get_filter(config):
+def get_filter(config=None):
     if not config:
         return FILTER_DEFAULT
     filter=config.get('filter', FILTER_DEFAULT)
@@ -224,44 +224,44 @@ def get_filter(config):
         return list(map(lambda x:x.capitalize(),filter))
     else:
         FILTER_DEFAULT
-def get_timeline_responsetype(config):
+def get_timeline_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["timeline"]
     return config.get('responsetype',{}).get("timeline") or config.get('responsetype',{}).get("post") or RESPONSE_TYPE_DEFAULT["timeline"]
 
-def get_archived_responsetype(config):
+def get_archived_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["archived"]
     return config.get('responsetype',{}).get("archived") or RESPONSE_TYPE_DEFAULT["archived"]
 
-def get_stories_responsetype(config):
+def get_stories_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["stories"]    
     return config.get('responsetype',{}).get("stories") or RESPONSE_TYPE_DEFAULT["stories"]
 
-def get_highlights_responsetype(config):
+def get_highlights_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["highlights"]       
     return config.get('responsetype',{}).get("highlights") or RESPONSE_TYPE_DEFAULT["highlights"]
 
-def get_paid_responsetype(config):
+def get_paid_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["paid"]       
     return config.get('responsetype',{}).get("paid") or RESPONSE_TYPE_DEFAULT["paid"]
 
-def get_messages_responsetype(config):
+def get_messages_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["message"]      
     return config.get('responsetype',{}).get("message") or RESPONSE_TYPE_DEFAULT["message"]
 
 
-def get_profile_responsetype(config):
+def get_profile_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["profile"]       
     return config.get('responsetype',{}).get("profile") or RESPONSE_TYPE_DEFAULT["profile"]
 
 
-def get_pinned_responsetype(config):
+def get_pinned_responsetype(config=None):
     if not config:
         return RESPONSE_TYPE_DEFAULT["pinned"]       
     return config.get('responsetype',{}).get("pinned") or RESPONSE_TYPE_DEFAULT["pinned"]

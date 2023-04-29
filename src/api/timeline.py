@@ -15,11 +15,11 @@ from tqdm.asyncio import tqdm
 from ..constants import (
     timelineEP, timelineNextEP,
     timelinePinnedEP,
-    archivedEP, archivedNextEP,timelinePinnedNextEP 
+    archivedEP, archivedNextEP,timelinePinnedNextEP,NUM_TRIES
 )
 from ..utils import auth
 from ..db.operations import read_timeline_response
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
         ep = timelinePinnedNextEP if timestamp else timelinePinnedEP
@@ -37,7 +37,7 @@ def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
 def get_pinned_post(headers,model_id,username):
     return scrape_pinned_posts(headers,model_id)
    
-@retry(stop=stop_after_attempt(1),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=False) -> list:
     global sem
     sem = asyncio.Semaphore(8)
@@ -119,7 +119,7 @@ def get_archive_post(headers,model_id):
     return scrape_archived_posts(headers,model_id)
    
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
     ep = archivedNextEP if timestamp else archivedEP
     url = ep.format(model_id, timestamp)
