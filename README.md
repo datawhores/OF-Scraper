@@ -31,6 +31,9 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - added a Post class to serve as a 'single source of truth' for all responsetypes
  - removed unused functions like download_paid that are no longer needed
  - prompts and config functions have been revamped
+ - shutdown handler
+ - removed .tempmedia
+ - added extension to responsetype profile downloads
  - fixed bugs caused by duplicate uploads on pages
  - additional bugs and fixes
 
