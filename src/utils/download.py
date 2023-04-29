@@ -131,6 +131,8 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                         content_type = rheaders.get("content-type").split('/')[-1]
                         filename=createfilename(ele,username,model_id,content_type)
                         path_to_file = trunicate(pathlib.Path(path,f"{filename}"))
+                        
+                        
                         temp=trunicate(f"{path_to_file}.part")
                         pathlib.Path(temp).unlink(missing_ok=True)
                         with open(temp, 'wb') as f:
@@ -142,15 +144,15 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
                                 bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
                                 num_bytes_downloaded = r.num_bytes_downloaded 
                                                     
-                            if pathlib.Path(temp).exists() and num_bytes_downloaded==total:
-                                shutil.move(temp,path_to_file)
-                                if ele.postdate:
-                                    set_time(path_to_file, convert_local_time(ele.postdate))
-                                if id_:
-                                    operations.write_media_table(ele,path_to_file,model_id,username)
-                                return media_type,total
-                            else:
-                                return 'skipped', 1
+                        if pathlib.Path(temp).exists() and abs(total-pathlib.Path(temp).absolute.stat().st_size):
+                            shutil.move(temp,path_to_file)
+                            if ele.postdate:
+                                set_time(path_to_file, convert_local_time(ele.postdate))
+                            if id_:
+                                operations.write_media_table(ele,path_to_file,model_id,username)
+                            return media_type,total
+                        else:
+                            return 'skipped', 1
                     else:
                         r.raise_for_status()
     except Exception as e:
