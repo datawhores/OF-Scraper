@@ -19,10 +19,16 @@ class SensitiveFormatter(logging.Formatter):
     def format(self, record):
         original = logging.Formatter.format(self, record)  # call parent method
         return self._filter(original)
-log=logging.getLogger("ofscraper")
-log.setLevel(args_.getargs().log or 100)
-fh=logging.FileHandler(paths.getlogpath(),mode="a")
-fh.setLevel(args_.getargs().log or 100)
-formatter = SensitiveFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S")
-fh.setFormatter(formatter)
-log.addHandler(fh)
+log=None
+def getlogger():
+    global log
+    if log:
+        return log
+    log=logging.getLogger("ofscraper")
+    log.setLevel(args_.getargs().log or 100)
+    fh=logging.FileHandler(paths.getlogpath(),mode="a")
+    fh.setLevel(args_.getargs().log or 100)
+    formatter = SensitiveFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S")
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
+    return log
