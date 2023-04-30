@@ -43,7 +43,6 @@ attempt = contextvars.ContextVar("attempt")
 
 config = read_config()['config']
 import src.utils.logger as logger
-log=logger.getlogger()
 
 
 async def process_dicts(username, model_id, medialist,forced=False):
@@ -120,6 +119,7 @@ async def download(ele,path,model_id,username,file_size_limit,id_=None):
     bar=None
     temp=None
     attempt.set(attempt.get(0) + 1)
+    log=logger.getlogger()
     log.debug(f"Attempting to download media {ele.filename} with {url or 'no url'}")
     if not url:
         return 'skipped', 1

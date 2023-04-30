@@ -5,8 +5,10 @@ def getargs(input=None):
     global args
     if args and input==None:
         return args
-    if input==None:
+    if input==None and "pytest" not in sys.argv:
         input=sys.argv[1:]
+    elif input==None:
+        input=[]
 
     parser = argparse.ArgumentParser()
 
