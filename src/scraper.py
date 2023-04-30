@@ -132,8 +132,6 @@ def process_profile(headers, username) -> list:
     return output
 
 
-
-
 def process_areas(headers, ele, model_id) -> list:
     args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
 ))
