@@ -51,14 +51,22 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
 
 
 # Windows: 
+## stable
 ```
 pip install ofscraper
 ```
 or 
-
+## development
 ```
 pip install git+https://github.com/datawhores/ofscraper.git 
 ```
+or 
+## specific version
+```
+pip install ofscraper==x
+```
+where x is the vesion you want to install
+
 
 #  macOS/Linux
 ```
@@ -68,6 +76,13 @@ or
 ```
 pip3 install git+https://github.com/datawhores/ofscraper.git 
 ```
+
+or 
+## specific version
+```
+pip install ofscraper==x
+```
+where x is the vesion you want to install
 
 ## Authentication
 
