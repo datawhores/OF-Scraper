@@ -39,12 +39,11 @@ from ..utils import auth
 from ..constants import NUM_TRIES,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
 from ..utils.profiles import get_current_profile
 from .dates import convert_local_time
-import logging
 attempt = contextvars.ContextVar("attempt")
 
 config = read_config()['config']
 import src.utils.logger as logger
-log=logger.log
+log=logger.getlogger()
 
 
 async def process_dicts(username, model_id, medialist,forced=False):
