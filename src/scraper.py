@@ -132,6 +132,7 @@ def process_profile(headers, username) -> list:
     return output
 
 
+
 def process_areas(headers, ele, model_id) -> list:
     args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
 ))
@@ -180,6 +181,7 @@ def posts_filter(posts):
         if not post.id or post.id not in ids:
             output.append(post)
             ids.add(post.id)
+    posts=list(sorted(posts,key=lambda x:x.date,reverse=True))
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
     if isinstance(filtersettings,list):
@@ -249,11 +251,11 @@ def process_prompts():
         args.posts=None
         result_main_prompt = prompts.main_prompt()
         if changeusernames and result_main_prompt in [0,1,2]:
+            check_auth()
             setfilter()
             getselected_usernames()
         #download
         if result_main_prompt == 0:
-            check_auth()
             process_post()     
 
         # like a user's posts
