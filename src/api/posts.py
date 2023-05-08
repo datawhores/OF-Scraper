@@ -1,7 +1,10 @@
 from ..utils.config import read_config
 import re
+import httpx
 from ..constants import TEXTLENGTH_DEFAULT
 import src.utils.args as args_
+from ..utils import auth
+from devine.core.utils.xml import load_xml
 config = read_config()['config']
 
 
@@ -195,6 +198,37 @@ class Media():
     def text(self):
         return self._post.text
 
+    
+    @property
+    def mpd(self):
+        if self.url:
+            return None
+        return self._media.get("files",{}).get("drm",{}).get("manifest",{}).get("dash")
+    @property
+    def policy(self):
+        if self.url:
+            return None
+        return self._media.get("files",{}).get("drm",{}).get("signature",{}).get("dash",{}).get("CloudFront-Policy")
+    
+    @property
+    def keypair(self):
+        if self.url:
+            return None
+        return self._media.get("files",{}).get("drm",{}).get("signature",{}).get("dash",{}).get("CloudFront-Key-Pair-Id")
+    
+    @property
+    def signature(self):
+        if self.url:
+            return None
+        return self._media.get("files",{}).get("drm",{}).get("signature",{}).get("dash",{}).get("CloudFront-Signature")
+    
+
+    @property
+    def mpdout(self):
+        if not self.mpd:
+            return None
+
+
 
     @property
     def text_(self):
@@ -266,6 +300,20 @@ class Media():
     @property
     def media(self):
         return self._media
+    @property
+    def parse_mpd(self): 
+        if not self.mpd:
+            return
+        headers = auth.make_headers(auth.read_auth())
+        params={"Policy":self.policy,"Key-Pair-Id":self.keypair,"Signature":self.signature}
+        with httpx.Client(http2=True, headers=headers,params=params) as c:
+            auth.add_cookies(c)
+            c.headers.update(auth.create_sign(self.mpd, headers))
+            r = c.get(self.mpd, timeout=None)
+            if r.status_code!=200:
+                return None
+            return load_xml(r.content)
+            
 
     # for use in dynamic names
     def _addcount(self):

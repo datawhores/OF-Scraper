@@ -40,7 +40,6 @@ def scrape_paid(username):
     count=1
     with httpx.Client(http2=True, headers=headers, follow_redirects=True) as c:
         while hasMore:
-            headers = auth.make_headers(auth.read_auth())
             auth.add_cookies(c)
             url = purchased_contentEP.format(offset,username)
             offset += 10
