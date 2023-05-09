@@ -237,7 +237,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                 path_to_file.unlink(missing_ok=True)
                 log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {video['name']} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
                 log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
-                subprocess.run([get_mp4tool(),"--key",key,str(temp),str(path_to_file)])
+                subprocess.run([str(get_mp4tool()),"--key",key,str(temp),str(path_to_file)])
                 temp.unlink(missing_ok=True)
                 if ele.postdate:
                     set_time(path_to_file, convert_local_time(ele.postdate))

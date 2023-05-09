@@ -4,6 +4,7 @@ import pathlib
 import os
 import sys
 import re
+import platform
 from rich.console import Console
 console=Console()
 import arrow
@@ -75,5 +76,16 @@ def cleanup():
 
 def getlogpath():
     path=pathlib.Path.home() / configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    createDir(path.parent)
+    return path
+def get_mp4tool():
+    if platform.system == 'Windows':
+        return pathlib.Path(__file__).parents[2] /"bin"/"mp4decrypt.exe"
+    else:
+        return pathlib.Path(__file__).parents[2] /"bin"/"mp4decrypt"
+
+def getcachepath():
+    profile = profiles.get_current_profile()
+    path=pathlib.Path.home() / configPath / profile
     createDir(path.parent)
     return path

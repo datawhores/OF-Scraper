@@ -15,10 +15,13 @@ from tqdm.asyncio import tqdm
 from ..constants import (
     timelineEP, timelineNextEP,
     timelinePinnedEP,
-    archivedEP, archivedNextEP,timelinePinnedNextEP,NUM_TRIES
+    archivedEP, archivedNextEP,timelinePinnedNextEP,NUM_TRIES,RESPONSE_EXPIRY
 )
 from ..utils import auth
-from ..db.operations import read_timeline_response
+from ..utils.paths import getcachepath
+from diskcache import Cache
+cache = Cache(getcachepath())
+
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
@@ -70,8 +73,8 @@ async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=Fals
             r.raise_for_status()
 #max result is 50, try to get 40 in each async task for leeway
 # Also need to grab new posts
-async def get_timeline_post(headers,model_id,username):
-    oldtimeline=read_timeline_response(model_id,username)
+async def get_timeline_post(headers,model_id):
+    oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
     global tasks
     tasks=[]
@@ -113,6 +116,9 @@ async def get_timeline_post(headers,model_id,username):
             continue
         dupeSet.add(post["id"])
         unduped.append(post)
+    cache.set(f"timeline_{model_id}",unduped,expire=RESPONSE_EXPIRY)
+    cache.close() 
+
     return unduped                                
 
 def get_archive_post(headers,model_id):
@@ -123,7 +129,6 @@ def get_archive_post(headers,model_id):
 def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
     ep = archivedNextEP if timestamp else archivedEP
     url = ep.format(model_id, timestamp)
-
     with httpx.Client(http2=True, headers=headers) as c:
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))

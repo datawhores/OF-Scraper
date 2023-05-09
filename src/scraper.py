@@ -41,8 +41,7 @@ import src.utils.exit as exit
 
 @Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
-    messages_ =asyncio.run(messages.get_messages(headers,  model_id,username)) 
-    operations.save_messages_response(messages_,model_id,username)
+    messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
     messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
     for message in messages_:
      operations.write_messages_table(message)
@@ -86,8 +85,7 @@ def process_highlights(headers, model_id,username):
 
 @Halo(text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
-    timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id,username))
-    operations.save_timeline_response(timeline_posts,model_id,username)
+    timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
     timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
     for post in timeline_posts:
         operations.write_post_table(post,model_id,username)
@@ -98,7 +96,6 @@ def process_timeline_posts(headers, model_id,username):
 @Halo(text='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
     archived_posts = timeline.get_archive_post(headers, model_id)
-    operations.save_archive_response(archived_posts,model_id,username)
     archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
     for post in archived_posts:
         operations.write_post_table(post,model_id,username)
@@ -112,7 +109,6 @@ def process_archived_posts(headers, model_id,username):
 @Halo(text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = timeline.get_pinned_post(headers, model_id,username)
-    operations.save_pinned_response(pinned_posts,model_id,username)
     pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
     for post in  pinned_posts:
         operations.write_post_table(post,model_id,username)
