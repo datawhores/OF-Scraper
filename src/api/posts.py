@@ -1,10 +1,10 @@
 from ..utils.config import read_config
 import re
 import httpx
-from ..constants import TEXTLENGTH_DEFAULT
+from ..constants import TEXTLENGTH_DEFAULT,LICENCE_URL
 import src.utils.args as args_
 from ..utils import auth
-from devine.core.utils.xml import load_xml
+from mpegdash.parser import MPEGDASHParser
 config = read_config()['config']
 
 
@@ -312,8 +312,13 @@ class Media():
             r = c.get(self.mpd, timeout=None)
             if r.status_code!=200:
                 return None
-            return load_xml(r.content)
-            
+            return MPEGDASHParser.parse(r.content.decode())
+    @property
+    def license(self):
+        responsetype=self.responsetype_
+        if responsetype in ["timeline","archived","pinned"]:
+            responsetype="post"
+        return LICENCE_URL.format(self.id,responsetype,self.postid)
 
     # for use in dynamic names
     def _addcount(self):
