@@ -180,7 +180,12 @@ def add_cookies(client):
     client.cookies.set('auth_id', auth['auth']['auth_id'], domain=domain)
     if auth['auth']['auth_uid_']:
         client.cookies.set(auth_uid, auth['auth']['auth_uid_'], domain=domain)
-
+def get_cookies():
+    profile = get_current_profile()
+    p = pathlib.Path.home() / configPath / profile
+    with open(p / authFile, 'r') as f:
+        auth = json.load(f)
+    return  f"auth_id={auth['auth']['auth_id']};sess={auth['auth']['sess']};"
 
 def create_sign(link, headers):
     """

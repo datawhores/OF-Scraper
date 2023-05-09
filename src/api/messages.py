@@ -13,15 +13,16 @@ import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
 import arrow
-from ..constants import messagesEP, messagesNextEP,NUM_TRIES
+from ..constants import messagesEP, messagesNextEP,NUM_TRIES,RESPONSE_EXPIRY
 from ..utils import auth
-from ..db.operations import read_messages_response
+from diskcache import Cache
+from ..utils.paths import getcachepath
+cache = Cache(getcachepath())
 
-
-async def get_messages(headers,  model_id,username):
+async def get_messages(headers, model_id):
     global sem
     sem = asyncio.Semaphore(8)
-    oldmessages=read_messages_response(model_id,username)
+    oldmessages=cache.get(f"messages_{model_id}",default=[]) 
     postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x["createdAt"]).float_timestamp,reverse=True)))
     global tasks
     tasks=[]
@@ -61,6 +62,8 @@ async def get_messages(headers,  model_id,username):
             continue
         dupeSet.add(message["id"])
         unduped.append(message)
+    cache.set(f"messages_{model_id}",unduped,expire=RESPONSE_EXPIRY) 
+    cache.close()
     return unduped
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   

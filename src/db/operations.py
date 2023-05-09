@@ -21,8 +21,7 @@ console=Console()
 from ..constants import configPath
 from ..utils import separate, profiles
 from ..db import queries
-from ..utils.paths import createDir,databasePathHelper,messageResponsePathHelper,timelineResponsePathHelper,\
-archiveResponsePathHelper,pinnedResponsePathHelper
+from ..utils.paths import createDir,databasePathHelper
 
 def create_message_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
@@ -43,20 +42,8 @@ def write_messages_table(message: dict):
                 cur.execute(queries.messagesInsert,insertData)
                 conn.commit()
 
-def save_messages_response(messages,model_id,username):
-    messagepath =messageResponsePathHelper(model_id,username)
-    createDir(messagepath.parent)
-    with open(messagepath,"w") as p:
-        p.write(json.dumps({"posts":messages}))
 
-def read_messages_response(model_id,username):
-    messagepath =messageResponsePathHelper(model_id,username)
-    if pathlib.Path(messagepath).exists():
-        with open(messagepath,"r") as p:
-            messages=json.loads(p.read() or '{"posts": []}')["posts"]
-        if len(messages)>0:
-            return messages
-    return []
+
             
   
 
@@ -77,51 +64,6 @@ def create_post_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.postCreate)
             conn.commit()
-
-def save_timeline_response(posts,model_id,username,):
-    messagepath =timelineResponsePathHelper(model_id,username)
-    createDir(messagepath.parent)
-    with open(messagepath,"w") as p:	
-        p.write(json.dumps({"posts":posts}))
-
-def read_timeline_response(model_id,username):
-    messagepath =timelineResponsePathHelper(model_id,username)
-    if pathlib.Path(messagepath).exists():
-        with open(messagepath,"r") as p:
-            messages=json.loads(p.read() or '{"posts": []}')["posts"]
-        if len(messages)>0:
-            return messages
-    return []
-            
-def save_archive_response(posts,model_id,username):
-    messagepath =archiveResponsePathHelper(model_id,username)
-    createDir(messagepath.parent)
-    with open(messagepath,"w") as p:	
-        p.write(json.dumps({"posts":posts}))
-
-def read_archive_response(model_id,username):
-    messagepath =archiveResponsePathHelper(model_id,username)
-    if pathlib.Path(messagepath).exists():
-        with open(messagepath,"r") as p:
-            messages=json.loads(p.read() or '{"posts": []}')["posts"]
-        if len(messages)>0:
-            return messages
-    return []
-def save_pinned_response(posts,model_id,username):
-    messagepath =pinnedResponsePathHelper(model_id,username)
-    createDir(messagepath.parent)
-    with open(messagepath,"w") as p:	
-        p.write(json.dumps({"posts":posts}))           
-
-def read_pinned_response(model_id,username):
-    messagepath =pinnedResponsePathHelper(model_id,username)
-    if pathlib.Path(messagepath).exists():
-        with open(messagepath,"r") as p:
-            messages=json.loads(p.read() or '{"posts": []}')["posts"]
-        if len(messages)>0:
-            return messages
-    return []
-            
 
 def create_stories_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
