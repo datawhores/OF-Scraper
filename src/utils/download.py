@@ -251,7 +251,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
             return "skipped",1 
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
         log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
-        subprocess.run([read_config().get('mp4decrypt'),"--key",key,str(item["path"]),str(newpath)])
+        subprocess.run([read_config()["config"].get('mp4decrypt'),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     path_to_file.unlink(missing_ok=True)
