@@ -118,9 +118,7 @@ def retry_required(value):
     return value == ('skipped', 1)
 
 @retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=20, max=40),reraise=True) 
-async def download(ele,path,model_id,username,file_size_limit,id_=None):
-    bar=None
-    temp=None
+async def download(ele,path,model_id,username,file_size_limit):
     attempt.set(attempt.get(0) + 1)
     log=logger.getlogger()
     try:
