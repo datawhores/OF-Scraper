@@ -432,7 +432,7 @@ def check_config():
     log=logger.getlogger()
     while True:
         log.debug(f"current mp4decrypt path {config.read_config().get('mp4decrypt')}")
-        if config.read_config().get("mp4decrypt")==None or pathlib.Path(config.read_config().get("mp4decrypt")).exists()==False:
+        if config.read_config()["config"].get("mp4decrypt")==None or pathlib.Path(config.read_config()["config"].get("mp4decrypt")).exists()==False:
             config.update_mp4decrypt()
         else:
             break
