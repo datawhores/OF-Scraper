@@ -26,7 +26,7 @@ from src.utils.dates import convert_local_time
 def test_windows_trunicate(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         long_path=pathlib.Path(f"{WINDOWS_LONGPATH}.mkv")
-        trunicated=download.trunicate(long_path)
+        trunicated=paths.trunicate(long_path)
         with check:
             assert(len(str(trunicated)))<=256
         with check:
@@ -39,7 +39,7 @@ def test_windows_trunicate_256(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         pathbase=WINDOWS_LONGPATH[:252]
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=download.trunicate(long_path)
+        trunicated=paths.trunicate(long_path)
         with check:
             assert(len(str(long_path)))==256
         with check:
@@ -54,7 +54,7 @@ def test_windows_trunicate_small(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         pathbase=WINDOWS_LONGPATH[:200]
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=download.trunicate(long_path)
+        trunicated=paths.trunicate(long_path)
         with check:
             assert(len(str(long_path)))==204        
         with check:
@@ -68,7 +68,7 @@ def test_windows_trunicate_small(mocker):
 def test_linux_trunicate(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         long_path=pathlib.Path(f"{LINUX_LONGPATH}.mkv")
-        trunicated=download.trunicate(long_path)
+        trunicated=paths.trunicate(long_path)
         with check:
             assert(len(str(trunicated.name).encode("utf8")))<=255
         with check:
@@ -85,7 +85,7 @@ def test_linux_trunicate_255(mocker):
         pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
         -extLength]).decode()
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=download.trunicate(long_path)
+        trunicated=paths.trunicate(long_path)
         with check:
             assert(len(str(long_path.name).encode("utf8")))==maxlenth
         with check:
@@ -103,7 +103,7 @@ def test_linux_trunicate_small(mocker):
         pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
         -extLength]).decode()
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=download.trunicate(long_path)
+        trunicated=paths.trunicate(long_path)
         with check:
             assert(len(str(long_path.name).encode("utf8")))==maxlenth
         with check:

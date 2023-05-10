@@ -32,16 +32,17 @@ try:
 except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
-
+import ffmpeg
 from .auth import add_cookies
 from .config import read_config
 from .separate import separate_by_id
 from ..db import operations
-from .paths import set_directory,getmediadir,get_mp4tool,getcachepath
+from .paths import set_directory,getmediadir,get_mp4tool,getcachepath,trunicate
 from ..utils import auth
 from ..constants import NUM_TRIES,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
 from ..utils.profiles import get_current_profile
 from .dates import convert_local_time
+
 from diskcache import Cache
 cache = Cache(getcachepath())
 attempt = contextvars.ContextVar("attempt")
@@ -180,6 +181,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
 
 async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     video = None
+    audio = None
     log=logger.getlogger()
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     mpd=ele.parse_mpd
@@ -195,55 +197,68 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
             maxquality=max(map(lambda x:x.height,adapt_set.representations))
             for repr in adapt_set.representations:
                 if repr.height==maxquality:
-                    video={"name":repr.base_urls[0].base_url_value,"pssh":kId}
+                    video={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video"}
                     break
-  
-        url=f"{base_url}{video['name']}"
-        log.debug(f"Attempting to download media {video['name']} with {url or 'no url'}")
-        async with sem:
-            params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-            async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
-                auth.add_cookies(c) 
-                async with c.stream('GET',url) as r:
-                    if not r.is_error:
-                        rheaders=r.headers
-                        total = int(rheaders['Content-Length'])
-                        if file_size_limit and total > int(file_size_limit): 
-                                return 'skipped', 1       
-                        temp = trunicate(f"{path_to_file}.part")     
-                        temp.unlink(missing_ok=True)
-                        pathstr=str(temp)
-                        with tqdm(desc=f"{attempt.get()}/{NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False) as bar:
-                            with open(temp, 'wb') as f:                           
-                                num_bytes_downloaded = r.num_bytes_downloaded
-                                async for chunk in r.aiter_bytes(chunk_size=1024):
-                                    f.write(chunk)
-                                    bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
-                                    num_bytes_downloaded = r.num_bytes_downloaded 
-                    else:
-                        r.raise_for_status()
-            key=await key_helper(video["pssh"],ele.license)
-            if key==None:
-                    return
-            if not pathlib.Path(temp).exists():
-                log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {temp} was not created") 
+        for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
+            kId=None
+            for prot in adapt_set.content_protections:
+                if prot.value==None:
+                    kId = prot.pssh[0].pssh 
+                    break
+            maxquality=max(map(lambda x:x.height,adapt_set.representations))
+            for repr in adapt_set.representations:
+                audio={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio"}
+                break
+        for item in [audio,video]:
+            url=f"{base_url}{item['name']}"
+            log.debug(f"Attempting to download media {item['name']} with {url or 'no url'}")
+            async with sem:
+                params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+                async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
+                    auth.add_cookies(c) 
+                    async with c.stream('GET',url) as r:
+                        if not r.is_error:
+                            rheaders=r.headers
+                            total = int(rheaders['Content-Length'])
+                            item["total"]=total
+                            if file_size_limit and total > int(file_size_limit): 
+                                    return 'skipped', 1       
+                            temp = trunicate(f"{item['name']}.part")     
+                            temp.unlink(missing_ok=True)
+                            item["path"]=temp
+                            pathstr=str(temp)
+                            with tqdm(desc=f"{attempt.get()}/{NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False) as bar:
+                                with open(temp, 'wb') as f:                           
+                                    num_bytes_downloaded = r.num_bytes_downloaded
+                                    async for chunk in r.aiter_bytes(chunk_size=1024):
+                                        f.write(chunk)
+                                        bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
+                                        num_bytes_downloaded = r.num_bytes_downloaded      
+                        else:
+                            r.raise_for_status()
+    log.debug(f"audio and video name same {video['name']==audio['name']}")
+    for item in [audio,video]:
+        if not pathlib.Path(item["path"]).exists():
+                log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {item['path']} was not created") 
                 return "skipped",1
-            elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-                log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {video['name']} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-                return "skipped",1 
-            else:
-                path_to_file.unlink(missing_ok=True)
-                log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {video['name']} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-                log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
-                subprocess.run([str(get_mp4tool()),"--key",key,str(temp),str(path_to_file)])
-                temp.unlink(missing_ok=True)
-                if ele.postdate:
-                    set_time(path_to_file, convert_local_time(ele.postdate))
-                if ele.id:
-                    operations.write_media_table(ele,path_to_file,model_id,username)
-                return ele.mediatype,total            
+        elif abs(item["total"]-pathlib.Path(item['path']).absolute().stat().st_size)>500:
+            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {item['name']} size mixmatch target: {total} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
+            return "skipped",1 
                 
-                
+    for item in [audio,video]:
+        key=await key_helper(item["pssh"],ele.license)
+        if key==None:
+            return "skipped",1 
+        newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
+        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
+        subprocess.run([str(get_mp4tool()),"--key",key,str(item["path"]),str(newpath)])
+        pathlib.Path(item["path"]).unlink(missing_ok=True)
+        item["path"]=newpath
+    path_to_file.unlink(missing_ok=True)
+   
+    ffmpeg.output( ffmpeg.input(str(video["path"])), ffmpeg.input(str(audio["path"])), str(path_to_file),codec='copy',loglevel="quiet").overwrite_output().run( capture_stdout=True)
+    video["path"].unlink(missing_ok=True)
+    audio["path"].unlink(missing_ok=True)
 
 async def key_helper(pssh,licence_url):
     out=cache.get(licence_url)
@@ -305,47 +320,6 @@ def createfilename(ele,username,model_id,ext):
     return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 
-def trunicate(path):
-    if platform.system() == 'Windows' and len(str(path))>256:
-        return _windows_trunicateHelper(path)
-    elif platform.system() == 'Linux':
-        return _linux_trunicateHelper(path)
-    else:
-        return pathlib.Path(path)
-def _windows_trunicateHelper(path):
-    path=pathlib.Path(path)
-    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
-        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
-    else:
-        ext=""
-    filebase=str(path.with_suffix("").name)
-    dir=path.parent
-    #-1 for path split /
-    maxLength=256-len(ext)-len(str(dir))-1
-    outString=""
-    for ele in list(filebase):
-        temp=outString+ele
-        if len(temp)>maxLength:
-            break
-        outString=temp
-    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
-
-def _linux_trunicateHelper(path):
-    path=pathlib.Path(path)
-    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
-        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
-    else:
-        ext=""
-    filebase=str(re.sub(ext,"",path.name))
-    dir=path.parent
-    maxLength=255-len(ext.encode('utf8'))
-    outString=""
-    for ele in list(filebase):
-        temp=outString+ele
-        if len(temp.encode("utf8"))>maxLength:
-            break
-        outString=temp
-    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
 
 
 
