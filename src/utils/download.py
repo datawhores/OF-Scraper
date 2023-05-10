@@ -236,7 +236,8 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                                         num_bytes_downloaded = r.num_bytes_downloaded      
                         else:
                             r.raise_for_status()
-    log.debug(f"audio and video name same {video['name']==audio['name']}")
+    log.debug(f" video name:{video['name']}")
+    log.debug(f"audio name:{audio['name']}")
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
                 log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {item['path']} was not created") 
