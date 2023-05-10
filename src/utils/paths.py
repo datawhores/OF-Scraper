@@ -89,3 +89,44 @@ def getcachepath():
     path=pathlib.Path.home() / configPath / profile
     createDir(path.parent)
     return path
+def trunicate(path):
+    if platform.system() == 'Windows' and len(str(path))>256:
+        return _windows_trunicateHelper(path)
+    elif platform.system() == 'Linux':
+        return _linux_trunicateHelper(path)
+    else:
+        return pathlib.Path(path)
+def _windows_trunicateHelper(path):
+    path=pathlib.Path(path)
+    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
+        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    else:
+        ext=""
+    filebase=str(path.with_suffix("").name)
+    dir=path.parent
+    #-1 for path split /
+    maxLength=256-len(ext)-len(str(dir))-1
+    outString=""
+    for ele in list(filebase):
+        temp=outString+ele
+        if len(temp)>maxLength:
+            break
+        outString=temp
+    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+
+def _linux_trunicateHelper(path):
+    path=pathlib.Path(path)
+    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
+        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    else:
+        ext=""
+    filebase=str(re.sub(ext,"",path.name))
+    dir=path.parent
+    maxLength=255-len(ext.encode('utf8'))
+    outString=""
+    for ele in list(filebase):
+        temp=outString+ele
+        if len(temp.encode("utf8"))>maxLength:
+            break
+        outString=temp
+    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
