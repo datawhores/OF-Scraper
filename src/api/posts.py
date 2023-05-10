@@ -282,9 +282,7 @@ class Media():
 
     @property
     def filename(self):
-        if not self.url:
-            return
-        return self.url.split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ ")
+        return  re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
 
     @property
     def preview(self):
