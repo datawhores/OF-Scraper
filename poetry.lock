@@ -296,6 +296,17 @@ files = [
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "future"
+version = "0.18.3"
+description = "Clean single-source support for Python 3 and 2"
+category = "main"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
+]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -601,6 +612,21 @@ files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
 ]
+
+[[package]]
+name = "mpegdash"
+version = "0.3.1"
+description = "MPEG-DASH MPD(Media Presentation Description) Parser"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "mpegdash-0.3.1-py3-none-any.whl", hash = "sha256:abefe682f5db4528b930013d3dd12f6a108e145cffb6333de464df73f4707a69"},
+    {file = "mpegdash-0.3.1.tar.gz", hash = "sha256:2f314a6e465f1f00fdf775918ff871971fe54daba9c6d0bfb5c145b69b716a24"},
+]
+
+[package.dependencies]
+future = "*"
 
 [[package]]
 name = "packaging"
@@ -1222,4 +1248,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.0,<4"
-content-hash = "2ca0288c56cadb379ba3b92100232441d852db1b22eb1591296d64079b7f7887"
+content-hash = "e0394345f3fdef61ecb0cf1525dcbc10e64451fc9f95dcaca1ea7aea0dd7680e"
