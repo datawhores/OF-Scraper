@@ -19,8 +19,10 @@ import threading
 import queue
 from itertools import chain
 import re
+import src.utils.logger as logger
 from rich.console import Console
 import traceback
+import pathlib
 
 from .prompts import prompts
 console=Console()
@@ -252,6 +254,7 @@ def process_prompts():
             getselected_usernames()
         #download
         if result_main_prompt == 0:
+            check_config()
             process_post()     
 
         # like a user's posts
@@ -425,7 +428,14 @@ def check_auth():
         break
         
 
-    
+def check_config():
+    log=logger.getlogger()
+    if config.read_config().get("mp4decrypt")==None or pathlib.Path(config.read_config().get("mp4decrypt")).exists():
+        config.update_mp4decrypt()
+    log.debug(f"mp4decrypt found {pathlib.Path(config.get('mp4decrypt')).exists()} at {config.get('mp4decrypt')}")
+
+
+
 
        
 
@@ -525,6 +535,7 @@ def scrapper():
 
     if args.posts: 
         check_auth()
+        check_config()
         run(process_post)        
     if args.action=="like":
         check_auth()

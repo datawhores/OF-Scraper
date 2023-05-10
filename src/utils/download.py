@@ -37,7 +37,7 @@ from .auth import add_cookies
 from .config import read_config
 from .separate import separate_by_id
 from ..db import operations
-from .paths import set_directory,getmediadir,get_mp4tool,getcachepath,trunicate
+from .paths import set_directory,getmediadir,getcachepath,trunicate
 from ..utils import auth
 from ..constants import NUM_TRIES,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
 from ..utils.profiles import get_current_profile
@@ -251,8 +251,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
             return "skipped",1 
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
         log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
-        log.debug(f"mp4decrypt found {get_mp4tool().exists()} at {get_mp4tool()}")
-        subprocess.run([str(get_mp4tool()),"--key",key,str(item["path"]),str(newpath)])
+        subprocess.run([config.get('mp4decrypt'),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     path_to_file.unlink(missing_ok=True)
