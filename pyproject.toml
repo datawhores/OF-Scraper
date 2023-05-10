@@ -24,6 +24,7 @@ win32-setctime = "^1.1.0"
 pathvalidate = "^2.5.2"
 xxhash = "^3.2.0"
 mpegdash = "^0.3.1"
+diskcache = "^5.6.1"
 
 
 [tool.poetry.group.dev.dependencies]
