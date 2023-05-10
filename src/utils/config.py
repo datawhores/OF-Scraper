@@ -170,7 +170,7 @@ def edit_config():
 
 def update_mp4decrypt():
     config=read_config()
-    config["mp4decrypt"]=prompts.mp4_prompt()
+    config["config"]["mp4decrypt"]=prompts.mp4_prompt()
     p = pathlib.Path.home() / configPath / configFile
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
