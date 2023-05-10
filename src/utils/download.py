@@ -59,7 +59,6 @@ async def process_dicts(username, model_id, medialist,forced=False):
             console.print(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
         else:
             print("forcing all downloads")
-        medialist=list(filter(lambda x:x.url==None,medialist))
         file_size_limit = config.get('file_size_limit') or FILE_SIZE_DEFAULT
         global sem
         sem = asyncio.Semaphore(8)
@@ -283,7 +282,7 @@ async def key_helper(pssh,licence_url):
         
         async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=None) as c: 
             r=await c.post('https://cdrm-project.com/wv',json=json_data)
-            log.debug(f"key_respose: {r.content}")
+            log.debug(f"key_respose: {r.content.replace(pssh,'')}")
             soup = BeautifulSoup(r.content, 'html.parser')
             out=soup.find("li").contents[0]
             cache.set(licence_url,out, expire=3600)
