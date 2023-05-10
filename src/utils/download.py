@@ -261,7 +261,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     audio["path"].unlink(missing_ok=True)
 
 async def key_helper(pssh,licence_url):
-    out=cache.get(licence_url)
+    out=None
     log=logger.getlogger()
     log.debug(f"pssh: {pssh!=None}")
     log.debug(f"licence: {licence_url}")
@@ -282,7 +282,7 @@ async def key_helper(pssh,licence_url):
         
         async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=None) as c: 
             r=await c.post('https://cdrm-project.com/wv',json=json_data)
-            log.debug(f"key_respose: {r.content.replace(pssh,'')}")
+            log.debug(f"key_respose: {r.content.decode().replace(pssh,'')}")
             soup = BeautifulSoup(r.content, 'html.parser')
             out=soup.find("li").contents[0]
             cache.set(licence_url,out, expire=3600)
