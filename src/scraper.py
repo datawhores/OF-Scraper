@@ -430,10 +430,14 @@ def check_auth():
 
 def check_config():
     log=logger.getlogger()
-    if config.read_config().get("mp4decrypt")==None or pathlib.Path(config.read_config().get("mp4decrypt")).exists():
-        config.update_mp4decrypt()
+    while True:
+        print("mp4decrypt is now required")
+        log.debug(f"mp4decrypt found {pathlib.Path(config.get('mp4decrypt')).exists()} at {config.get('mp4decrypt')}")
+        if config.read_config().get("mp4decrypt")==None or pathlib.Path(config.read_config().get("mp4decrypt")).exists():
+            config.update_mp4decrypt()
+        else:
+            break
     log.debug(f"mp4decrypt found {pathlib.Path(config.get('mp4decrypt')).exists()} at {config.get('mp4decrypt')}")
-
 
 
 
