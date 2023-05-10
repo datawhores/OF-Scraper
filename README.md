@@ -141,6 +141,12 @@ Open a issue in this repo, or you can mention your issue in the discord
 
 https://discord.gg/wN7uxEVHRK
     
+# Feature Requests
+
+https://ofscraper.clearflask.com/feedback
+    
+Or the discord
+    
     
 ## Common
 ### Status Down
