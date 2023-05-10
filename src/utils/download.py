@@ -223,7 +223,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                             item["total"]=total
                             if file_size_limit and total > int(file_size_limit): 
                                     return 'skipped', 1       
-                            temp = trunicate(f"{item['name']}.part")     
+                            temp= trunicate(pathlib.Path(path,f"{item['name']}.part"))
                             temp.unlink(missing_ok=True)
                             item["path"]=temp
                             pathstr=str(temp)
