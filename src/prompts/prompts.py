@@ -379,6 +379,13 @@ Enter 0 for no limit
             'choices':list(map(lambda x:Choice(name=x,value=x, enabled=x.capitalize() in set(config.get_filter(config_))),FILTER_DEFAULT)),
              "validate":emptyListValidator()
         },
+
+        {
+            'type': 'input',
+            'name': 'mp4decrypt',
+            "message":"mp4decrypt path: ",
+             "validate":EmptyInputValidator()
+        },
   
     ]
 
@@ -489,6 +496,26 @@ def reset_username_prompt() -> bool:
 
     answer = prompt(questions)
     return answer[name]
+def mp4_prompt():
+    questions = [
+         {
+            'type': 'input',
+            'name': 'mp4decrypt',
+            "message":"mp4decrypt path: ",
+             "validate":EmptyInputValidator(),
+             "long_instruction": 
+             """
+Certain content requires decryption to process please provide the full path to mp4decrypt
+Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo
+             
+"""
+        },
+    ]
+
+    answer = prompt(questions)
+    return answer["mp4decrypt"]
+    
+
 def continue_prompt() -> bool:
     name = 'reset username'
     questions = [

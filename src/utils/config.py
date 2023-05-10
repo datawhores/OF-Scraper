@@ -66,6 +66,7 @@ def get_current_config_schema(config: dict) -> dict:
             'date': get_date(config),
             "metadata": get_metadata(config),
             "filter":get_filter(config),
+            "mp4decrypt":get_mp4decrypt(config=None),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -85,14 +86,15 @@ def make_config(path, config=None):
     config = config or  {
         'config': {
             "mainProfile": mainProfile,
-            'save_location': SAVE_LOCATION_DEFAULT,
-            'file_size_limit':FILE_SIZE_DEFAULT,
-            'dir_format':DIR_FORMAT_DEFAULT,
-            'file_format': FILE_FORMAT_DEFAULT,
-            'textlength':TEXTLENGTH_DEFAULT,
-            'date':DATE_DEFAULT,
-            'metadata':METADATA_DEFAULT,
-            "filter":FILTER_DEFAULT,
+            'save_location': get_save_location(config),
+            'file_size_limit':get_filesize(config),
+            'dir_format':get_dirformat(config),
+            'file_format': get_fileformat(config),
+            'textlength':get_textlength(config),
+            'date':get_date(config),
+            'metadata':get_metadata(config),
+            "filter":get_filter(config),
+            "mp4decrypt":get_mp4decrypt(config=None),
             "responsetype":{
         "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -166,19 +168,26 @@ def edit_config():
                 except:
                     continue
 
+def update_mp4decrypt():
+    config=read_config()
+    config["mp4decrypt"]=prompts.mp4_prompt()
+    p = pathlib.Path.home() / configPath / configFile
+    with open(p, 'w') as f:
+        f.write(json.dumps(config, indent=4))
 
+    
 def get_save_location(config=None):
-    if not config:
+    if config==None:
         return SAVE_LOCATION_DEFAULT   
     return config.get('save_location') or SAVE_LOCATION_DEFAULT
 
 def get_main_profile(config=None):
-    if not config:
+    if config==None:
         return PROFILE_DEFAULT   
     return config.get('main_profile',PROFILE_DEFAULT)
 
 def get_filesize(config=None):
-    if not config:
+    if config==None:
         return FILE_SIZE_DEFAULT      
     try:
         return int(config.get('file_size_limit', FILE_SIZE_DEFAULT))
@@ -186,17 +195,17 @@ def get_filesize(config=None):
         return 0
 
 def get_dirformat(config=None):
-    if not config:
+    if config==None:
         return DIR_FORMAT_DEFAULT     
     return config.get('dir_format', DIR_FORMAT_DEFAULT)
 
 def get_fileformat(config=None):
-    if not config:
+    if config==None:
         return FILE_FORMAT_DEFAULT     
     return config.get('file_format', FILE_FORMAT_DEFAULT)
 
 def get_textlength(config=None):
-    if not config:
+    if config==None:
         return TEXTLENGTH_DEFAULT    
     try:
         return int(config.get('textlength', TEXTLENGTH_DEFAULT))
@@ -204,18 +213,22 @@ def get_textlength(config=None):
         return 0
 
 def get_date(config=None):
-    if not config:
+    if config==None:
         return DATE_DEFAULT     
     return config.get('date', DATE_DEFAULT)
 
 def get_metadata(config=None):
-    if not config:
+    if config==None:
         return METADATA_DEFAULT      
     return config.get('metadata', METADATA_DEFAULT)
 
+def get_mp4decrypt(config=None):
+    if config==None:
+        return MP4DECRYPT_DEFAULT    
+    return config.get('mp4decrypt', MP4DECRYPT_DEFAULT )
 
 def get_filter(config=None):
-    if not config:
+    if config==None:
         return FILTER_DEFAULT
     filter=config.get('filter', FILTER_DEFAULT)
     if isinstance(filter,str):
@@ -225,43 +238,43 @@ def get_filter(config=None):
     else:
         FILTER_DEFAULT
 def get_timeline_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["timeline"]
     return config.get('responsetype',{}).get("timeline") or config.get('responsetype',{}).get("post") or RESPONSE_TYPE_DEFAULT["timeline"]
 
 def get_archived_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["archived"]
     return config.get('responsetype',{}).get("archived") or RESPONSE_TYPE_DEFAULT["archived"]
 
 def get_stories_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["stories"]    
     return config.get('responsetype',{}).get("stories") or RESPONSE_TYPE_DEFAULT["stories"]
 
 def get_highlights_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["highlights"]       
     return config.get('responsetype',{}).get("highlights") or RESPONSE_TYPE_DEFAULT["highlights"]
 
 def get_paid_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["paid"]       
     return config.get('responsetype',{}).get("paid") or RESPONSE_TYPE_DEFAULT["paid"]
 
 def get_messages_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["message"]      
     return config.get('responsetype',{}).get("message") or RESPONSE_TYPE_DEFAULT["message"]
 
 
 def get_profile_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["profile"]       
     return config.get('responsetype',{}).get("profile") or RESPONSE_TYPE_DEFAULT["profile"]
 
 
 def get_pinned_responsetype(config=None):
-    if not config:
+    if config==None:
         return RESPONSE_TYPE_DEFAULT["pinned"]       
     return config.get('responsetype',{}).get("pinned") or RESPONSE_TYPE_DEFAULT["pinned"]

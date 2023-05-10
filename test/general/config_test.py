@@ -10,12 +10,13 @@ def test_current_schema(mocker):
         "textlength": TEXTLENGTH_DEFAULT,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
+        "mp4decrypt":MP4DECRYPT_DEFAULT  
     }}
     currentConfig=get_current_config_schema(migrationConfig)
     
     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(["main_profile","save_location","file_size_limit",
-    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype"                          
+    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype" ,"mp4decrypt"                         
     ]))
     
 
@@ -28,7 +29,7 @@ def test_current_schema2(mocker):
     currentConfig=get_current_config_schema(migrationConfig)
     
     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(["main_profile","save_location","file_size_limit",
-    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype"                          
+    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype" ,"mp4decrypt"                         
     ]))
 
 def test_savelocation(mocker):
@@ -122,6 +123,16 @@ def test_metadata2(mocker):
 def test_metadata3(mocker):
     config={}
     assert(get_metadata(config))==METADATA_DEFAULT 
+
+def test_mp4decrypt(mocker):
+    assert(get_mp4decrypt(None))==MP4DECRYPT_DEFAULT  
+
+def test_mp4decrypt2(mocker):
+    config={"mp4decrypt":ALT_MP4DECRYPT}
+    assert(get_mp4decrypt(config))==ALT_MP4DECRYPT
+def test_mp4decrypt3(mocker):
+    config={}
+    assert(get_mp4decrypt(config))==MP4DECRYPT_DEFAULT 
 
 
 def test_filter(mocker):
