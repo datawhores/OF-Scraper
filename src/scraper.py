@@ -433,6 +433,7 @@ def check_auth():
         headers = auth.make_headers(auth.read_auth())
         status=init.getstatus(headers)
         if status=="DOWN":
+            log.warning("Auth Failed")
             auth.make_auth(auth=auth.read_auth())
             continue
         break
