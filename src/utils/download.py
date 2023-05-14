@@ -58,9 +58,9 @@ async def process_dicts(username, model_id, medialist,forced=False):
         if not forced:
             media_ids = set(operations.get_media_ids(model_id,username))
             medialist = separate_by_id(medialist, media_ids)
-            console.print(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
+            log.info(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
         else:
-            print("forcing all downloads")
+            log.info("forcing all downloads")
         file_size_limit = config.get('file_size_limit') or FILE_SIZE_DEFAULT
         global sem
         sem = asyncio.Semaphore(8)
@@ -248,7 +248,9 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     for item in [audio,video]:
         key=await key_helper(item["pssh"],ele.license,ele.id)
         if key==None:
+            log.debug(f"ID:{ele.id} Could not get key")
             return "skipped",1 
+        log.debug(f"ID:{ele.id} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
         log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
         subprocess.run([read_config()["config"].get('mp4decrypt'),"--key",key,str(item["path"]),str(newpath)])
@@ -261,7 +263,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     audio["path"].unlink(missing_ok=True)
 
 async def key_helper(pssh,licence_url,id):
-    out=None
+    out=cache.get(licence_url)
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
     if not out:
