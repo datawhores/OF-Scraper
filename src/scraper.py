@@ -341,7 +341,8 @@ def process_post():
     init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in userdata:
-        log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+        if args.posts:
+            log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
             create_tables(model_id,ele['name'])
@@ -523,6 +524,7 @@ def scrapper():
     if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.posts])))==0:
         if args.daemon:
             log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
+
         process_prompts()
         sys.exit(0)
     
