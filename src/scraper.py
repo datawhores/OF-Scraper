@@ -364,7 +364,7 @@ def process_like():
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
-            posts = like.get_posts(headers, model_id,ele["name"])
+            posts = like.get_posts(headers, model_id)
             unfavorited_posts = like.filter_for_unfavorited(posts)
             post_ids = like.get_post_ids(unfavorited_posts)
             like.like(headers, model_id, ele["name"], post_ids)
@@ -376,23 +376,11 @@ def process_unlike():
     userdata=getselected_usernames()
     for ele in list(filter(lambda x: x["active"],userdata)):
             model_id = profile.get_id(headers, ele["name"])
-            posts = like.get_posts(headers, model_id,ele['name'])
+            posts = like.get_posts(headers, model_id)
             favorited_posts = like.filter_for_favorited(posts)
             post_ids = like.get_post_ids(favorited_posts)
             like.unlike(headers, model_id, ele["name"], post_ids)
 
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        old_stderr=sys.stderr
-        sys.stdout = devnull
-        sys.stderr = devnull
-        try:  
-            yield
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
 
 def set_schedule(*params):
     [schedule.every(args.daemon).minutes.do(jobqueue.put,param) for param in params]
@@ -512,18 +500,7 @@ def create_tables(model_id,username):
     operations.create_profile_table(model_id,username)
     operations.create_stories_table(model_id,username)
 
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        old_stderr=sys.stderr
-        sys.stdout = devnull
-        sys.stderr = devnull
-        try:  
-            yield
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+
 def main():
     with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
         try:
