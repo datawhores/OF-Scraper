@@ -16,6 +16,8 @@ from ..utils import auth
 import httpx
 
 paid_content_list_name = 'list'
+from src.utils.logger import getlogger
+log=getlogger()
 
 
 
@@ -51,6 +53,7 @@ def scrape_paid(username):
                     hasMore = r.json()['hasMore']
                     count=count+1
                 media_to_download.extend(list(filter(lambda x:isinstance(x,list),r.json().values()))[0])
+    log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(media_to_download)} found")
     return media_to_download
 
 

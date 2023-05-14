@@ -18,11 +18,16 @@ from ..utils import auth
 from diskcache import Cache
 from ..utils.paths import getcachepath
 cache = Cache(getcachepath())
+from src.utils.logger import getlogger
+log=getlogger()
+
 
 async def get_messages(headers, model_id):
     global sem
     sem = asyncio.Semaphore(8)
     oldmessages=cache.get(f"messages_{model_id}",default=[]) 
+    log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
+    
     postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x["createdAt"]).float_timestamp,reverse=True)))
     global tasks
     tasks=[]
@@ -48,7 +53,7 @@ async def get_messages(headers, model_id):
     with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2) as main_bar:
         while len(tasks)!=0:
                     for coro in asyncio.as_completed(tasks):
-                        result=await coro
+                        result=await coro or []
                         page_count=page_count+1
                         main_bar.set_description(desc.format(page_count=page_count), refresh=False)
                         main_bar.update()
@@ -57,11 +62,13 @@ async def get_messages(headers, model_id):
                     tasks=list(filter(lambda x:x.done()==False,tasks))
     unduped=[]
     dupeSet=set()
+    log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
     for message in responseArray:
         if message["id"] in dupeSet:
             continue
         dupeSet.add(message["id"])
-        unduped.append(message)
+        unduped.append(message)       
+    log.debug(f"[bold]Messages Count without Dupes[/bold] {len(unduped)} found")
     cache.set(f"messages_{model_id}",unduped,expire=RESPONSE_EXPIRY) 
     cache.close()
     return unduped
@@ -86,6 +93,8 @@ async def scrape_messages(headers, user_id, message_id=None,recursive=False) -> 
                 global tasks
                 tasks.append(asyncio.create_task(scrape_messages(headers, user_id, recursive=True,message_id=messages[-1]['id'])))
                 return messages
+            log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
+            log.debug(f"[bold]message response:[/bold] {r.content.decode()}")
             r.raise_for_status()
 
 

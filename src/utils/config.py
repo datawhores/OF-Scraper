@@ -67,6 +67,7 @@ def get_current_config_schema(config: dict) -> dict:
             "metadata": get_metadata(config),
             "filter":get_filter(config),
             "mp4decrypt":get_mp4decrypt(config=None),
+             "discord":get_discord(config=None),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -95,6 +96,7 @@ def make_config(path, config=None):
             'metadata':get_metadata(config),
             "filter":get_filter(config),
             "mp4decrypt":get_mp4decrypt(config=None),
+            "discord":get_discord(config=None),
             "responsetype":{
         "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -225,8 +227,12 @@ def get_metadata(config=None):
 def get_mp4decrypt(config=None):
     if config==None:
         return MP4DECRYPT_DEFAULT    
-    return config.get('mp4decrypt', MP4DECRYPT_DEFAULT )
+    return config.get('mp4decrypt', MP4DECRYPT_DEFAULT) or ""
 
+def get_discord(config=None):
+    if config==None:
+        return DISCORD_DEFAULT   
+    return config.get('discord', DISCORD_DEFAULT ) or ""
 def get_filter(config=None):
     if config==None:
         return FILTER_DEFAULT

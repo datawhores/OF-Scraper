@@ -91,7 +91,8 @@ SAVE_LOCATION_DEFAULT=str(pathlib.Path.home()/'Data/ofscraper')
 DATE_DEFAULT="MM-DD-YYYY"
 PROFILE_DEFAULT="main_profile"
 PREMIUM_DEFAULT="Premium"
-MP4DECRYPT_DEFAULT=None
+MP4DECRYPT_DEFAULT=""
+DISCORD_DEFAULT =""
 RESPONSE_TYPE_DEFAULT= {
             "message":"messages",
             "timeline":"posts",

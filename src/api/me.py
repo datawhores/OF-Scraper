@@ -14,6 +14,7 @@ console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import meEP,subscribeCountEP,NUM_TRIES
 from ..utils import auth, encoding
+from src.utils.logger import updateSenstiveDict
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=2, max=6),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/5")) 
 def scrape_user(headers):
@@ -25,6 +26,9 @@ def scrape_user(headers):
 
         r = c.get(url, timeout=None)
         if not r.is_error:
+            updateSenstiveDict(r.json()["id"],"userid")
+            updateSenstiveDict(r.json()["username"],"username")
+            updateSenstiveDict(r.json()["name"],"name")
             return r.json()
         r.raise_for_status()
 
@@ -32,6 +36,7 @@ def scrape_user(headers):
 def parse_user(profile):
     name = encoding.encode_utf_16(profile['name'])
     username = profile['username']
+
     return (name, username)
 
 

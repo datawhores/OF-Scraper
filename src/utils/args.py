@@ -1,14 +1,15 @@
 import argparse
 from src.__version__ import  __version__
 import sys
+import src.utils.logger as logger
 def getargs(input=None):
     global args
     if args and input==None:
         return args
-    if input==None and "pytest" not in sys.argv:
-        input=sys.argv[1:]
-    elif input==None:
+    if "pytest" in sys.modules and input==None:
         input=[]
+    elif input==None:
+        input=sys.argv[1:]
 
     parser = argparse.ArgumentParser()
 
@@ -24,11 +25,16 @@ def getargs(input=None):
     general.add_argument(
         '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
     )
+
     general.add_argument(
-        '-s', '--silent', help = 'mute output', action = 'store_true',default=False
+        '-l', '--log', help = 'set log file level', type=str.upper,default=None,choices=["OFF","INFO","DEBUG","WARNING"]
+    ),
+    general.add_argument(
+        '-dc', '--discord', help = 'set discord log level', type=str.upper,default="INFO",choices=["OFF","INFO","DEBUG","WARNING"]
     )
+
     general.add_argument(
-        '-l', '--log', help = 'set log level', type=str.upper,default=None,choices=["OFF","INFO","DEBUG"]
+        '-p', '--output', help = 'set output log level', type=str.upper,default="INFO",choices=["OFF","INFO","DEBUG","WARNING"]
     )
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
@@ -52,6 +58,7 @@ def getargs(input=None):
     )
     
     args=parser.parse_args(input)
+    logger.getlogger().debug(args)
     return args
 args=None
 def changeargs(newargs):

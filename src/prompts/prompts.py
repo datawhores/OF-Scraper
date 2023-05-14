@@ -21,8 +21,7 @@ from InquirerPy.validator import EmptyInputValidator,PathValidator
 
 from ..constants import mainPromptChoices, profilesPromptChoices,FILTER_DEFAULT
 from .prompt_strings import CHECKLISTINSTRUCTIONS,FUZZY_INSTRUCTION
-from .prompt_functions import cleanTextInput,emptyListValidator,jsonValidator,jsonloader,namevalitator,dirformatvalidator \
-,dateplaceholdervalidator,fileformatvalidator,metadatavalidator
+from .prompt_functions import *
 import src.utils.config as config
 def main_prompt() -> int:
     main_prompt_choices = [*mainPromptChoices]
@@ -167,7 +166,7 @@ def browser_prompt()->str:
     ]  
       
     return prompt(questions)[0]
-def user_agent_prompt(pcurrent):
+def user_agent_prompt(current):
     questions = [
         {
             'type': 'input',
@@ -384,7 +383,16 @@ Enter 0 for no limit
             'type': 'input',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":EmptyInputValidator()
+             "validate":PathValidator() and  EmptyInputValidator(),
+            "default":config.get_mp4decrypt(config_)
+        },
+
+        {
+            'type': 'input',
+            'name': 'discord',
+            "message":"discord webhook: ",
+             "validate":DiscordValidator(),
+             "default":config.get_discord(config_)
         },
   
     ]
@@ -419,9 +427,9 @@ Empty string is consider to be 'archived'
             'long_instruction': 
             """
 set responsetype for pinned posts
-Empty string is consider to be 'archived'
+Empty string is consider to be 'pinned'
             """,
-            'default': config.get_archived_responsetype(config_),
+            'default': config.get_pinned_responsetype(config_),
             'message':"input: "
         },
                      {
@@ -502,7 +510,7 @@ def mp4_prompt():
             'type': 'input',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":EmptyInputValidator(),
+             "validate":PathValidator() and  EmptyInputValidator(),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to mp4decrypt
