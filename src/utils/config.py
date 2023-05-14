@@ -49,7 +49,7 @@ def read_config():
                     make_config(p, prompts.manual_config_prompt(configText))
                 except:
                    continue
-    return config
+    return config["config"]
 
 
 def get_current_config_schema(config: dict) -> dict:
@@ -171,8 +171,8 @@ def edit_config():
                     continue
 
 def update_mp4decrypt():
-    config=read_config()
-    config["config"]["mp4decrypt"]=prompts.mp4_prompt()
+    config={"config":read_config()}
+    config["config"]["mp4decrypt"]=prompts.mp4_prompt(config)
     p = pathlib.Path.home() / configPath / configFile
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))

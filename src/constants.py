@@ -57,7 +57,7 @@ mainPromptChoices = {
     'Download content from a user': 0,
     'Like all of a user\'s posts': 1,
     'Unlike all of a user\'s posts': 2,
-    'Edit auth.json`file': 3,
+    'Edit auth.json file': 3,
     'Edit config.json file': 4,
     'Edit Profile': 5,
 
@@ -97,9 +97,9 @@ RESPONSE_TYPE_DEFAULT= {
             "message":"messages",
             "timeline":"posts",
             "archived":"archived",
-            "paid":"paid",
+            "paid":"messages",
             "stories":"stories",
-            "highlights":"highlights",
+            "highlights":"stories",
             "profile":"profile",
             "pinned":"posts"
         }

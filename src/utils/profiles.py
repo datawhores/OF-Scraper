@@ -90,7 +90,7 @@ def print_profiles() -> list:
 
 def get_current_profile():
     config = read_config()
-    return config['config'][mainProfile]
+    return config[mainProfile]
 
 
 def print_current_profile():
