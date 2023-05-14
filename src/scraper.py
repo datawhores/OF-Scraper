@@ -381,7 +381,6 @@ def process_unlike():
             post_ids = like.get_post_ids(favorited_posts)
             like.unlike(headers, model_id, ele["name"], post_ids)
 
-
 def set_schedule(*params):
     [schedule.every(args.daemon).minutes.do(jobqueue.put,param) for param in params]
     while True:
