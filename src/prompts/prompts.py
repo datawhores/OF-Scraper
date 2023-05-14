@@ -314,8 +314,8 @@ def config_prompt(config_) -> dict:
             'message':"save_location: ",
             'long_instruction': 'Where would you like to set as the root save downloaded directory?',
             'default':config.get_save_location(config_),
-            "filter":lambda x:cleanTextInput(x)
-            
+            "filter":lambda x:cleanTextInput(x),
+            "validate": lambda x:pathlib.Path(x).is_dir() and PathValidator()
         },
         {
             'type': 'number',
@@ -380,11 +380,15 @@ Enter 0 for no limit
         },
 
         {
-            'type': 'input',
+            'type': 'filepath',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":PathValidator() and  EmptyInputValidator(),
-            "default":config.get_mp4decrypt(config_)
+             "validate":PathValidator() and  EmptyInputValidator() and mp4decryptvalidator(),
+            "default":config.get_mp4decrypt(config_),
+            "long_instruction":             """
+Certain content requires decryption to process please provide the full path to mp4decrypt
+Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo         
+"""
         },
 
         {
@@ -407,7 +411,7 @@ set responsetype for timeline posts
 Empty string is consider to be 'posts'
             """,
             'default': config.get_timeline_responsetype(config_),
-            'message':"input: "
+            'message':"timeline responsetype mapping: "
         },
              {
             'type': 'input',
@@ -418,7 +422,7 @@ set responsetype for archived posts
 Empty string is consider to be 'archived'
             """,
             'default': config.get_archived_responsetype(config_),
-            'message':"input: "
+            'message':"archived responsetype mapping: "
         },
 
     {
@@ -430,7 +434,7 @@ set responsetype for pinned posts
 Empty string is consider to be 'pinned'
             """,
             'default': config.get_pinned_responsetype(config_),
-            'message':"input: "
+            'message':"pinned responsetype mapping: "
         },
                      {
             'type': 'input',
@@ -441,7 +445,7 @@ set responsetype for message posts
 Empty string is consider to be 'message'
             """,
             'default': config.get_messages_responsetype(config_),
-            'message':"input: "
+            'message':"message responstype mapping: "
         },
                         {
             'type': 'input',
@@ -452,7 +456,7 @@ set responsetype for paid posts
 Empty string is consider to be 'paid'
             """,
             'default': config.get_paid_responsetype(config_),
-            'message':"input: "
+            'message':"paid responsetype mapping: "
         },
                              {
     'type': 'input',
@@ -463,7 +467,7 @@ set responsetype for stories
 Empty string is consider to be 'stories'
             """,
             'default': config.get_stories_responsetype(config_),
-            'message':"input: "
+            'message':"stories responsetype mapping: "
         },
                                     {
     'type': 'input',
@@ -474,7 +478,7 @@ set responsetype for highlights
 Empty string is consider to be 'highlights'
             """,
             'default': config.get_highlights_responsetype(config_),
-            'message':"input: "
+            'message':"highlight responsetype mapping: "
         },
                                           {
     'type': 'input',
@@ -485,10 +489,11 @@ set responsetype for profile
 Empty string is consider to be 'profile'
             """,
             'default': config.get_profile_responsetype(config_),
-            'message':"input: "
+            'message':"profile responsetype mapping: "
         }
      ]
     answers = prompt(questions)
+    console.print("Set mapping for {responsetype} placeholder\n\n")
     answers["responsetype"]=prompt(questions2)
     return answers
 def reset_username_prompt() -> bool:
@@ -504,19 +509,19 @@ def reset_username_prompt() -> bool:
 
     answer = prompt(questions)
     return answer[name]
-def mp4_prompt():
+def mp4_prompt(config_):
     questions = [
          {
-            'type': 'input',
+            'type': 'filepath',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":PathValidator() and  EmptyInputValidator(),
+             "validate":PathValidator() and  EmptyInputValidator() and mp4decryptvalidator(),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to mp4decrypt
-Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo
-             
-"""
+Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo         
+""",
+"default":config.get_mp4decrypt(config_)
         },
     ]
 

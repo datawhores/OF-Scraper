@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import platform
+import subprocess
 from rich.console import Console
 console=Console()
 import arrow
@@ -12,10 +13,9 @@ import arrow
 from ..constants import configPath,DIR_FORMAT_DEFAULT,DATE_DEFAULT,SAVE_LOCATION_DEFAULT
 from ..utils import profiles
 import src.utils.config as config_
-
+import src.utils.config as config
 
 homeDir=pathlib.Path.home()
-config = config_.read_config()['config']
 @contextmanager
 def set_directory(path: Path):
     """Sets the cwd within the context
@@ -42,11 +42,12 @@ def createDir(path):
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return pathlib.Path(config.get("metadata").format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0]),"user_data.db")
+    return pathlib.Path(config.get_metadata(config.read_config()).format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0]),"user_data.db")
 
 def getmediadir(ele,username,model_id):
-    root= pathlib.Path((config.get('save_location') or SAVE_LOCATION_DEFAULT))
-    downloadDir=(config.get('dir_format') or DIR_FORMAT_DEFAULT ).format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT))
+    root= pathlib.Path((config.get_save_location(config.read_config())))
+    downloadDir=config.get_dirformat(config.read_config())\
+    .format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config.get_date(config.read_config())))
     return root /downloadDir   
 
 
@@ -69,7 +70,7 @@ def pinnedResponsePathHelper(model_id,username):
 
 def cleanup():
     console.print("Cleaning up .part files\n\n")
-    root= pathlib.Path((config.get('save_location') or SAVE_LOCATION_DEFAULT))
+    root= pathlib.Path((config.get_save_location(config.read_config())))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
 
@@ -125,3 +126,13 @@ def _linux_trunicateHelper(path):
             break
         outString=temp
     return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+
+def mp4decryptchecker(x):
+    if not pathlib.Path(x).is_file():
+        return False
+    try:
+        t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if re.search("mp4decrypt",t.stdout.decode())!=None or  re.search("mp4decrypt",t.stderr.decode())!=None:
+            return True
+    except:
+        return False

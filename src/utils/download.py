@@ -33,22 +33,19 @@ except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 import ffmpeg
-from .auth import add_cookies
 from src.utils.logger import updateSenstiveDict
-from .config import read_config
+from src.utils.config import *
 from .separate import separate_by_id
 from ..db import operations
 from .paths import set_directory,getmediadir,getcachepath,trunicate
 from ..utils import auth
-from ..constants import NUM_TRIES,FILE_FORMAT_DEFAULT,DATE_DEFAULT,TEXTLENGTH_DEFAULT,FILE_SIZE_DEFAULT
-from ..utils.profiles import get_current_profile
+from ..constants import NUM_TRIES
 from .dates import convert_local_time
 
 from diskcache import Cache
 cache = Cache(getcachepath())
 attempt = contextvars.ContextVar("attempt")
 
-config = read_config()['config']
 import src.utils.logger as logger
 log=logger.getlogger()
 
@@ -61,7 +58,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
             log.info(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
         else:
             log.info("forcing all downloads")
-        file_size_limit = config.get('file_size_limit') or FILE_SIZE_DEFAULT
+        file_size_limit = get_filesize()
         global sem
         sem = asyncio.Semaphore(8)
       
@@ -253,7 +250,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
         log.debug(f"ID:{ele.id} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
         log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
-        subprocess.run([read_config()["config"].get('mp4decrypt'),"--key",key,str(item["path"]),str(newpath)])
+        subprocess.run([get_mp4decrypt(read_config()),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     path_to_file.unlink(missing_ok=True)
@@ -318,7 +315,7 @@ def get_error_message(content):
 def createfilename(ele,username,model_id,ext):
     if ele.responsetype =="profile":
         return "{filename}.{ext}".format(ext=ext,filename=ele.filename)
-    return (config.get('file_format') or FILE_FORMAT_DEFAULT).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(config.get('date') or DATE_DEFAULT),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
+    return (get_fileformat(read_config())).format(filename=ele.filename,sitename="Onlyfans",site_name="Onlyfans",post_id=ele.id_,media_id=ele.id,first_letter=username[0],mediatype=ele.mediatype,value=ele.value,text=ele.text_,date=arrow.get(ele.postdate).format(get_date(read_config())),ext=ext,model_username=username,model_id=model_id,responsetype=ele.responsetype) 
 
 
 

@@ -25,7 +25,7 @@ import traceback
 import pathlib
 
 from .prompts import prompts
-console=Console()
+from .prompts.prompt_functions import mp4decryptvalidator
 from .constants import donateEP
 from .api import init, highlights, me, messages, profile, subscriptions, paid, timeline
 from .db import operations
@@ -39,7 +39,7 @@ import src.utils.paths as paths
 import src.utils.exit as exit
 args=args_.getargs()
 log=logger.getlogger()
-
+console=Console()
 
 @Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
@@ -184,7 +184,7 @@ def process_areas(headers, ele, model_id) -> list:
 )
 
 def posts_filter(media):
-    filtersettings=config.read_config()["config"].get('filter')
+    filtersettings=config.get_filter(config.read_config())
     output=[]
     ids=set()
     log.info("Removing duplicate media")
@@ -254,6 +254,7 @@ def process_me(headers):
 
 def setfilter():
     if prompts.decide_filters_prompts()=="Yes":
+        global args
         args=prompts.modify_filters_prompt(args)
         args_.changeargs(args)
 
@@ -442,10 +443,11 @@ def check_auth():
 
 def check_config():
     log=logger.getlogger()
-    while config.read_config()["config"].get("mp4decrypt")==None or not pathlib.Path(config.read_config()["config"].get("mp4decrypt")).exists():
-        log.debug(f"[bold]current mp4decrypt path[/bold] {config.read_config()['config'].get('mp4decrypt')}")
+    while not  paths.mp4decryptchecker(config.get_mp4decrypt(config.read_config())):
+        console.print("You need to select path for mp4decrypt\n\n")
+        log.debug(f"[bold]current mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")
         config.update_mp4decrypt()
-    log.debug(f"[bold]final mp4decrypt path[/bold] {config.read_config()['config'].get('mp4decrypt')}")
+    log.debug(f"[bold]final mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")
 
 
 

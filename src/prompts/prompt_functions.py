@@ -7,6 +7,7 @@ import platform
 import pathlib
 import arrow
 import textwrap
+import src.utils.paths as paths
 def emptyListValidator():
     def callable(x):
         return len(x)>0
@@ -123,7 +124,19 @@ def dateplaceholdervalidator():
     )
 
 
-
+def mp4decryptvalidator():
+    def callable(x):
+       return paths.mp4decryptchecker(x)
+            
+    return Validator.from_callable(
+                callable,
+textwrap.dedent(f"""
+Filepath is invalid or not detected as mp4decrypt
+""").strip()
+                
+                ,
+                move_cursor_to_end=True,
+            )
 
 def metadatavalidator():
     def callable(x):
@@ -154,6 +167,8 @@ Improper syntax or invalid placeholder
             )
 def DiscordValidator():
     def callable(x):
+         if len(x)==0:
+            return True
          return re.search("https://discord.com/api/webhooks/[0-9]*/[0-9a-z]*",x)!=None
     return Validator.from_callable(
     callable,

@@ -9,7 +9,7 @@ from rich.theme import Theme
 from rich.markdown import Markdown
 import src.utils.args as args_
 import src.utils.paths as paths
-from src.utils.config import read_config
+from src.utils.config import read_config,get_discord
 senstiveDict={}
 
 class DebugOnly(logging.Filter):
@@ -27,7 +27,7 @@ class DiscordHandler(logging.Handler):
         logging.Handler.__init__(self)
     def emit(self, record):
         log_entry = self.format(record)
-        url=read_config()["config"].get("discord")
+        url=get_discord(read_config())
         log_entry=f"{log_entry}\n\n"
         if url==None or url=="":
             return

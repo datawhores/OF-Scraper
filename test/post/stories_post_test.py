@@ -233,7 +233,7 @@ def test_stories_text_wordtrunicate(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -259,7 +259,7 @@ def test_stories_text_wordtrunicate2(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -285,7 +285,7 @@ def test_stories_text_wordtrunicate3(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -310,7 +310,7 @@ def test_stories_text_wordtrunicate4(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -336,7 +336,7 @@ def test_stories_text_wordtrunicate5(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -362,7 +362,7 @@ def test_stories_text_wordtrunicate6(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -385,7 +385,7 @@ def test_stories_text_lettertrunicate(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -409,7 +409,7 @@ def test_stories_text_lettertrunicate2(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -431,7 +431,7 @@ def test_stories_text_lettertrunicate3(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -456,7 +456,7 @@ def test_stories_text_lettertrunicate4(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -479,7 +479,7 @@ def test_stories_text_lettertrunicate5(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -501,7 +501,7 @@ def test_stories_text_lettertrunicate6(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('src.api.posts.config', new=migrationConfig)
+    mocker.patch('src.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.allmedia=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")

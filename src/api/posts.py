@@ -1,11 +1,10 @@
-from ..utils.config import read_config
 import re
 import httpx
 from ..constants import TEXTLENGTH_DEFAULT,LICENCE_URL
 import src.utils.args as args_
 from ..utils import auth
 from mpegdash.parser import MPEGDASHParser
-config = read_config()['config']
+import src.utils.config as config
 
 
 class Post():
@@ -59,19 +58,18 @@ class Post():
     @property
     def responsetype(self):
         if self.archived:
-            if config.get("responsetype", {}).get("archived") == "":
+            if config.get_archived_responsetype(config.read_config()) == "":
                 return "achived"
-            elif config.get("responsetype", {}).get("archived") == None:
-                return "achived"
-            elif config.get("responsetype", {}).get("archived") != "":
-                return config.get("responsetype", {}).get("archived")
+            return config.get_archived_responsetype(config.read_config())
+
         else:
-            if config.get("responsetype", {}).get(self._responsetype_) == "":
+            response=config.read_config().get("responsetype", {}).get(self._responsetype_) 
+            if  response == "":
                 return self._responsetype_
-            elif config.get("responsetype", {}).get(self._responsetype_) == None:
+            elif  response == None:
                 return self._responsetype_
-            elif config.get("responsetype", {}).get(self._responsetype_) != "":
-                return config.get("responsetype", {}).get(self._responsetype_)
+            elif  response != "":
+                return  response
 
     @property
     def id(self):
@@ -240,7 +238,7 @@ class Media():
         # this for remove random special invalid special characters
         text = re.sub('[\n<>:"/\|?*]+', '', text)
         text = re.sub(" +", " ", text)
-        length = int(config.get("textlength") or TEXTLENGTH_DEFAULT)
+        length = int(config.get_textlength(config.read_config()))
         if args_.getargs().letter_count:
             if length==0 and self._addcount():
                 return f"{text}_{self.count}"
