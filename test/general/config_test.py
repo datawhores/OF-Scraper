@@ -15,9 +15,7 @@ def test_current_schema(mocker):
     }}
     currentConfig=get_current_config_schema(migrationConfig)
     
-    assert(sorted(set(currentConfig["config"].keys())))==sorted(set(["main_profile","save_location","file_size_limit",
-    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype" ,"mp4decrypt"                         
-    ]))
+    assert(sorted(set(currentConfig["config"].keys())))==sorted(set(CONFIG_KEYS))
     
 
 def test_current_schema2(mocker):
@@ -28,9 +26,7 @@ def test_current_schema2(mocker):
     }}
     currentConfig=get_current_config_schema(migrationConfig)
     
-    assert(sorted(set(currentConfig["config"].keys())))==sorted(set(["main_profile","save_location","file_size_limit",
-    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype" ,"mp4decrypt"                         
-    ]))
+    assert(sorted(set(currentConfig["config"].keys())))==sorted(set(CONFIG_KEYS))
 
 def test_savelocation(mocker):
     assert(get_save_location(None))==SAVE_LOCATION_DEFAULT

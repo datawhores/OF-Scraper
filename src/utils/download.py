@@ -34,6 +34,7 @@ except ModuleNotFoundError:
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 import ffmpeg
 from .auth import add_cookies
+from src.utils.logger import updateSenstiveDict
 from .config import read_config
 from .separate import separate_by_id
 from ..db import operations
@@ -49,10 +50,11 @@ attempt = contextvars.ContextVar("attempt")
 
 config = read_config()['config']
 import src.utils.logger as logger
-
+log=logger.getlogger()
 
 async def process_dicts(username, model_id, medialist,forced=False):
     if medialist:
+    
         if not forced:
             media_ids = set(operations.get_media_ids(model_id,username))
             medialist = separate_by_id(medialist, media_ids)
@@ -112,15 +114,14 @@ async def process_dicts(username, model_id, medialist,forced=False):
                                 p_count=photo_count, v_count=video_count,a_count=audio_count , skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True)
 
                     main_bar.update()
-
-
+        log.warning(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
 def retry_required(value):
     return value == ('skipped', 1)
 
 @retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=20, max=40),reraise=True) 
 async def download(ele,path,model_id,username,file_size_limit):
     attempt.set(attempt.get(0) + 1)
-    log=logger.getlogger()
+    
     try:
         if ele.url:
            return await main_download_helper(ele,path,file_size_limit,username,model_id)
@@ -129,13 +130,12 @@ async def download(ele,path,model_id,username,file_size_limit):
         else:
             return "skipped",1
     except Exception as e:
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] exception {e}")   
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] exception {traceback.format_exc()}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] exception {e}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
 async def main_download_helper(ele,path,file_size_limit,username,model_id):
     url=ele.url
-    log=logger.getlogger()
-    log.debug(f"Attempting to download media {ele.filename} with {url or 'no url'}")
+    log.debug(f"ID:{ele.id} Attempting to download media {ele.filename} with {url or 'no url'}")
     path_to_file=None
     async with sem:
             async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None) as c: 
@@ -163,14 +163,14 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
                     else:
                         r.raise_for_status()
     if not pathlib.Path(temp).exists():
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {temp} was not created") 
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] {temp} was not created") 
         return "skipped",1
     elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {ele.filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] {ele.filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         return "skipped",1 
     else:
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
         if ele.postdate:
             set_time(path_to_file, convert_local_time(ele.postdate))
@@ -181,7 +181,6 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
 async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     video = None
     audio = None
-    log=logger.getlogger()
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     mpd=ele.parse_mpd
     path_to_file = trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}')) 
@@ -203,6 +202,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
             for prot in adapt_set.content_protections:
                 if prot.value==None:
                     kId = prot.pssh[0].pssh 
+                    updateSenstiveDict(kId,"pssh_code")
                     break
             maxquality=max(map(lambda x:x.height,adapt_set.representations))
             for repr in adapt_set.representations:
@@ -210,7 +210,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                 break
         for item in [audio,video]:
             url=f"{base_url}{item['name']}"
-            log.debug(f"Attempting to download media {item['name']} with {url or 'no url'}")
+            log.debug(f"ID:{ele.id} Attempting to download media {item['name']} with {url or 'no url'}")
             async with sem:
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
                 async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
@@ -235,22 +235,22 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                                         num_bytes_downloaded = r.num_bytes_downloaded      
                         else:
                             r.raise_for_status()
-    log.debug(f" video name:{video['name']}")
-    log.debug(f"audio name:{audio['name']}")
+    log.debug(f"ID:{ele.id} video name:{video['name']}")
+    log.debug(f"ID:{ele.id} audio name:{audio['name']}")
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
-                log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {item['path']} was not created") 
+                log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] {item['path']} was not created") 
                 return "skipped",1
         elif abs(item["total"]-pathlib.Path(item['path']).absolute().stat().st_size)>500:
-            log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] {item['name']} size mixmatch target: {total} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
+            log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] {item['name']} size mixmatch target: {total} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
             return "skipped",1 
                 
     for item in [audio,video]:
-        key=await key_helper(item["pssh"],ele.license)
+        key=await key_helper(item["pssh"],ele.license,ele.id)
         if key==None:
             return "skipped",1 
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
-        log.debug(f"[attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
         subprocess.run([read_config()["config"].get('mp4decrypt'),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
@@ -260,11 +260,10 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
 
-async def key_helper(pssh,licence_url):
+async def key_helper(pssh,licence_url,id):
     out=None
-    log=logger.getlogger()
-    log.debug(f"pssh: {pssh!=None}")
-    log.debug(f"licence: {licence_url}")
+    log.debug(f"ID:{id} pssh: {pssh!=None}")
+    log.debug(f"ID:{id} licence: {licence_url}")
     if not out:
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
@@ -282,10 +281,10 @@ async def key_helper(pssh,licence_url):
         
         async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=None) as c: 
             r=await c.post('https://cdrm-project.com/wv',json=json_data)
-            log.debug(f"key_respose: {r.content.decode().replace(pssh,'')}")
+            log.debug(f"ID:{id} key_response: {r.content.decode()}")
             soup = BeautifulSoup(r.content, 'html.parser')
             out=soup.find("li").contents[0]
-            cache.set(licence_url,out, expire=3600)
+            cache.set(licence_url,out, expire=2592000)
             cache.close()
     return out
         

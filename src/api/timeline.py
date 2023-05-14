@@ -21,6 +21,8 @@ from ..utils import auth
 from ..utils.paths import getcachepath
 from diskcache import Cache
 cache = Cache(getcachepath())
+from src.utils.logger import getlogger
+log=getlogger()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
@@ -36,6 +38,8 @@ def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
         if not r.is_error:
             return r.json()['list']
         r.raise_for_status()
+        log.debug(f"[bold]pinned request status code:[/bold]{r.status_code}")
+        log.debug(f"[bold]pinned response:[/bold] {r.content.decode()}")
 
 def get_pinned_post(headers,model_id,username):
     return scrape_pinned_posts(headers,model_id)
@@ -69,12 +73,14 @@ async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=Fals
                 global tasks
                 tasks.append(asyncio.create_task( scrape_timeline_posts(headers, model_id,posts[-1]['postedAtPrecise'],recursive=True)))
                 return posts
-           
+            log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
+            log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
             r.raise_for_status()
 #max result is 50, try to get 40 in each async task for leeway
 # Also need to grab new posts
 async def get_timeline_post(headers,model_id):
     oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
+    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
     global tasks
     tasks=[]
@@ -102,7 +108,7 @@ async def get_timeline_post(headers,model_id):
     with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2) as main_bar:
         while len(tasks)!=0:
             for coro in asyncio.as_completed(tasks):
-                result=await coro
+                result=await coro or []
                 page_count=page_count+1
                 main_bar.set_description(desc.format(page_count=page_count), refresh=False)
                 main_bar.update()
@@ -111,11 +117,13 @@ async def get_timeline_post(headers,model_id):
             tasks=list(filter(lambda x:x.done()==False,tasks))
     unduped=[]
     dupeSet=set()
+    log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
     for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
         if post["id"] in dupeSet:
             continue
         dupeSet.add(post["id"])
         unduped.append(post)
+    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
     cache.set(f"timeline_{model_id}",unduped,expire=RESPONSE_EXPIRY)
     cache.close() 
 
@@ -142,6 +150,8 @@ def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
                 headers, model_id, posts[-1]['postedAtPrecise'])
             return posts
         r.raise_for_status()
+        log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
+        log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
 
 
 

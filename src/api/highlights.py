@@ -18,6 +18,8 @@ from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import NUM_TRIES,highlightsWithStoriesEP, highlightsWithAStoryEP, storyEP
 from ..utils import auth
 
+from src.utils.logger import getlogger
+log=getlogger()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_highlights(headers, user_id) -> list:
@@ -32,7 +34,10 @@ def scrape_highlights(headers, user_id) -> list:
         c.headers.update(auth.create_sign(url_story, headers))
         r_one = c.get(url_story, timeout=None)
 
+        # highlights_, stories
         if not r_multiple.is_error and not r_one.is_error:
+            log.debug(f"[bold]Highlight Post Count without Dupes[/bold] {len(r_multiple.json())} found")
+            log.debug(f"[bold]Story Post Count without Dupes[/bold] {len(r_one.json())} found")
             return get_highlightList(r_multiple.json()),r_one.json()
 
         r_multiple.raise_for_status()
@@ -52,19 +57,6 @@ def get_highlightList(data):
 
 
 
-
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_story(headers, story_id: int) -> list:
-    async with httpx.AsyncClient(http2=True, headers=headers) as c:
-        url = storyEP.format(story_id)
-
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-
-        r = await c.get(url, timeout=None)
-        if not r.is_error:
-            return r.json()['stories']
-        r.raise_for_status()
 
 
 

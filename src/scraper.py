@@ -33,18 +33,20 @@ from .interaction import like
 from .utils import auth, config, download, profiles
 import webbrowser
 from halo import Halo
-from .utils.config import read_config
 import src.api.posts as posts_
 import src.utils.args as args_
 import src.utils.paths as paths
 import src.utils.exit as exit
-
+args=args_.getargs()
+log=logger.getlogger()
 
 
 @Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
     messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
+    log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),messages_))}")
+    log.debug("Removing locked messages media")
     for message in messages_:
      operations.write_messages_table(message)
     output=[]
@@ -55,6 +57,8 @@ def process_messages(headers, model_id,username):
 def process_paid_post(headers, model_id,username):
     paid_content=paid.scrape_paid(username)
     paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
+    log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),paid_content))}")
+    log.debug("Removing locked paid media")
     for post in paid_content:
         operations.write_post_table(post,model_id,username)
     output=[]
@@ -63,11 +67,12 @@ def process_paid_post(headers, model_id,username):
 
          
 
-@Halo(text='Getting highlights and stories...')
+@Halo(text='Getting highlights and stories...\n')
 def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
     highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
     list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
+    log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.allmedia), highlights_))+sum(map(lambda x:len(x.allmedia), stories))}")
     for post in highlights_:
         operations.write_stories_table(post,model_id,username)
     for post in stories:
@@ -89,6 +94,8 @@ def process_highlights(headers, model_id,username):
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
     timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
+    log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),timeline_posts))}")
+    log.debug("Removing locked timeline media")
     for post in timeline_posts:
         operations.write_post_table(post,model_id,username)
     output=[]
@@ -99,6 +106,9 @@ def process_timeline_posts(headers, model_id,username):
 def process_archived_posts(headers, model_id,username):
     archived_posts = timeline.get_archive_post(headers, model_id)
     archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
+    log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),archived_posts))}")
+    log.debug("Removing locked archived media")
+
     for post in archived_posts:
         operations.write_post_table(post,model_id,username)
     output=[]
@@ -112,6 +122,8 @@ def process_archived_posts(headers, model_id,username):
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = timeline.get_pinned_post(headers, model_id,username)
     pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
+    log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),pinned_posts))}")
+    log.debug("Removing locked pinned media")
     for post in  pinned_posts:
         operations.write_post_table(post,model_id,username)
     output=[]
@@ -171,36 +183,39 @@ def process_areas(headers, ele, model_id) -> list:
 
 )
 
-def posts_filter(posts):
+def posts_filter(media):
     filtersettings=config.read_config()["config"].get('filter')
     output=[]
     ids=set()
-    for post in posts:
-        if not post.id or post.id not in ids:
-            output.append(post)
-            ids.add(post.id)
-    posts=list(sorted(posts,key=lambda x:x.date,reverse=True))
+    log.info("Removing duplicate media")
+    log.debug(f"[bold]Combined Media Count with dupes[/bold]  {len(media)}")
+    for item in media:
+        if not item.id or item.id not in ids:
+            output.append(item)
+            ids.add(item.id)
+    log.debug(f"[bold]Combined Media Count without dupes[/bold] {len(output)}")
+    output=list(sorted(output,key=lambda x:x.date,reverse=True))
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
     if isinstance(filtersettings,list):
         filtersettings=list(map(lambda x:x.lower().replace(" ",""),filtersettings))
         filtersettings=list(filter(lambda x:x!="",filtersettings))
         if len(filtersettings)==0:
-            return posts
-        console.print(f"filtering post to {filtersettings}")
-        return list(filter(lambda x:x.mediatype.lower() in filtersettings,output))
+            return media
+        log.info(f"filtering Media to {','.join(filtersettings)}")
+        output= list(filter(lambda x:x.mediatype.lower() in filtersettings,output))
     else:
-        console.print("The settings you picked for the filter are not valid\nNot Filtering")
-        return output
+        log.info("The settings you picked for the filter are not valid\nNot Filtering")
+        log.debug(f"[bold]Combined Media Count Filtered:[/bold] {len(output)}")
+    return output
+
         
 
-
-def do_database_migration():
-    operations.user_db_migration()
 
 
 def get_usernames(parsed_subscriptions: list) -> list:
     usernames = [sub[0] for sub in parsed_subscriptions]
+    log.debug(f"[bold]Usernames on account:[/bold] {usernames}")
     return usernames
 
 
@@ -239,7 +254,6 @@ def process_me(headers):
 
 def setfilter():
     if prompts.decide_filters_prompts()=="Yes":
-        global args
         args=prompts.modify_filters_prompt(args)
         args_.changeargs(args)
 
@@ -265,12 +279,7 @@ def process_prompts():
         elif result_main_prompt == 2:
             check_auth()
             process_unlike()
-
-        # elif result_main_prompt == 3:
-        #     # Migrate from old database
-        #     do_database_migration()
         
-
         elif result_main_prompt == 3:
             # Edit `auth.json` file
             auth.edit_auth()
@@ -313,13 +322,13 @@ def process_prompts():
             elif result_profiles_prompt == 4:
                 # View profiles
                 profiles.print_profiles()
-        console.print("Done With Run")
+        log.warning("Done With Run")
         if prompts.continue_prompt()=="No":
             break
         global selectedusers
         if selectedusers:
             changeusernames=False
-            console.print(f"Currently Selected Users\n{list(map(lambda x:x['name'],selectedusers))}")
+            log.warning(f"Currently Selected Users\n{list(map(lambda x:x['name'],selectedusers))}")
             if prompts.reset_username_prompt()=="Yes":
                 selectedusers=None
                 changeusernames=True
@@ -332,7 +341,7 @@ def process_post():
     init.print_sign_status(headers)
     userdata=getselected_usernames()
     for ele in userdata:
-        print(f"Getting Selected post type(s) for {ele['name']}\nSubscription Active: {ele['active']}")
+        log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
         try:
             model_id = profile.get_id(headers, ele["name"])
             create_tables(model_id,ele['name'])
@@ -345,7 +354,7 @@ def process_post():
             forced=args.dupe,
             ))
         except Exception as e:
-            console.print("run failed with exception: ", e)
+            log.info("run failed with exception: ", e)
     
     
 
@@ -373,7 +382,7 @@ def process_unlike():
             like.unlike(headers, model_id, ele["name"], post_ids)
 
 @contextmanager
-def asuppress_stdout():
+def suppress_stdout():
     with open(os.devnull, "w") as devnull:
         old_stdout = sys.stdout
         old_stderr=sys.stderr
@@ -397,13 +406,27 @@ def run(*params):
     # get usernames prior to potentially supressing output
     check_auth()
     getselected_usernames()
-    console.print(f"starting script daemon: {args.daemon!=None} silent-mode: {args.silent}")    
-    if args.silent:
-        with suppress_stdout():
-            run_helper(*params)
-    else:
-        run_helper(*params)
-    console.print("script finished")
+    log.info(
+f"""
+==============================                            
+[bold]starting script[/bold]
+==============================
+"""
+
+)    
+    if args.log=="OFF":
+        log.info(f"[bold]silent-mode on[/bold]")    
+    if args.daemon:
+        log.info(f"[bold]daemon mode on[/bold]")   
+    run_helper(*params)
+    log.warning(
+"""
+===========================
+[bold]Script Finished[/bold]
+===========================
+"""
+
+    )
 
 def run_helper(*params):
     [param() for param in params]    
@@ -430,13 +453,10 @@ def check_auth():
 
 def check_config():
     log=logger.getlogger()
-    while True:
-        log.debug(f"current mp4decrypt path {config.read_config()['config'].get('mp4decrypt')}")
-        if config.read_config()["config"].get("mp4decrypt")==None or pathlib.Path(config.read_config()["config"].get("mp4decrypt")).exists()==False:
-            config.update_mp4decrypt()
-        else:
-            break
-    log.debug(f"final mp4decrypt path {config.read_config()['config'].get('mp4decrypt')}")
+    while config.read_config()["config"].get("mp4decrypt")==None or not pathlib.Path(config.read_config()["config"].get("mp4decrypt")).exists():
+        log.debug(f"[bold]current mp4decrypt path[/bold] {config.read_config()['config'].get('mp4decrypt')}")
+        config.update_mp4decrypt()
+    log.debug(f"[bold]final mp4decrypt path[/bold] {config.read_config()['config'].get('mp4decrypt')}")
 
 
 
@@ -504,16 +524,12 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
-
-args=args_.getargs()
 def main():
     with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
         try:
             scrapper()
         except Exception as E:
-            None
-            # console.print(E)
-            # console.print(traceback.format_exc(), style="white")
+            log.traceback(E)
         quit()
 def scrapper():
     if platform.system == 'Windows':
@@ -525,11 +541,11 @@ def scrapper():
     global selectedusers
     selectedusers=None
 
-
     
+
     if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.posts])))==0:
         if args.daemon:
-            console.print("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
+            log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
         sys.exit(0)
     

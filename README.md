@@ -13,29 +13,12 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
 
- ## 1.8x Changes:
- - sync keys names across config(old keys will still work)
-  * change username to model_username in metadata
-  * change site_name to sitename in metadata
- - remove --purchased args
- - add purchase and pinned as post types
- - add letter-count argument
-   * This is for counting letters and not words for
-   textlength
- - added testing 
-    * to install run poetry install --with test 
-    * run with poetry run pytest
- - print path for each file
- - responsetype mapping in config
-    * This is for example keeping all messages or paid post in same folder, but also allow long time users to keep their current structure
- - added a Post class to serve as a 'single source of truth' for all responsetypes
- - removed unused functions like download_paid that are no longer needed
- - prompts and config functions have been revamped
- - shutdown handler
- - removed .tempmedia
- - added extension to responsetype profile downloads
- - fixed bugs caused by duplicate uploads on pages
- - additional bugs and fixes
+ ## 1.9x Changes:
+ - support for protected videos 
+ - fixed issue with default 
+ - New config settings mp4decrypt and discord
+ - Support for discord webhooks 
+ - More logs
 
   ## Description:
   command-line program to download media, and to process other batch operations such as liking and unliking posts.

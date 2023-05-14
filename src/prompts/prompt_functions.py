@@ -6,6 +6,7 @@ from pathvalidate import ValidationError, validate_filepath,validate_filename
 import platform
 import pathlib
 import arrow
+import textwrap
 def emptyListValidator():
     def callable(x):
         return len(x)>0
@@ -68,13 +69,9 @@ def dirformatvalidator():
     
     return Validator.from_callable(
                 callable,
-f"""
-Possible Errors
-1. Placeholder syntax must be {{placeholder}}
-2. Invalid placeholder valid placeholders are {["date","responsetype","mediatype","value","model_id","first_letter","sitename","model_username"]}
-3. Must be a valid path when placeholders are replaced
-"""
-                
+textwrap.dedent(f"""
+Improper syntax or invalid placeholder
+""").strip()                
                 ,
                 move_cursor_to_end=True,
             )
@@ -101,13 +98,9 @@ def fileformatvalidator():
     
     return Validator.from_callable(
                 callable,
-f"""
-Possible Errors
-1. Placeholder syntax must be {{placeholder}}
-2. Invalid placeholder valid placeholders are {["date","responsetype","mediatype","model_id",
-                                   "first_letter","sitename","model_username","post_id","filename","value","text","ext"]}
-3. Must be a filename when placeholders are replaced
-"""
+textwrap.dedent(f"""
+Improper syntax or invalid placeholder
+""").strip()
                 
                 ,
                 move_cursor_to_end=True,
@@ -124,8 +117,7 @@ def dateplaceholdervalidator():
     return Validator.from_callable(
                 callable,
                 """
-                Date Format is invalid
-                See:https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens
+    Date Format is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens
                 """
                 ,True
     )
@@ -153,13 +145,20 @@ def metadatavalidator():
     
     return Validator.from_callable(
                 callable,
-f"""
-Possible Errors
-1. Placeholder syntax must be {{placeholder}}
-2. Invalid placeholder valid placeholders are {["sitename","first_letter","model_username","model_id","configpath","profile"]}
-3. Must be a valid path when placeholders are replaced
-"""
+textwrap.dedent(f"""
+Improper syntax or invalid placeholder
+""").strip()
                 
                 ,
                 move_cursor_to_end=True,
             )
+def DiscordValidator():
+    def callable(x):
+         return re.search("https://discord.com/api/webhooks/[0-9]*/[0-9a-z]*",x)!=None
+    return Validator.from_callable(
+    callable,
+textwrap.dedent(    
+"""
+must be discord webhook -> example: https://discord.com/api/webhooks/{numeric}/{alphanumeric}
+    """
+    ).strip())
