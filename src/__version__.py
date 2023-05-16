@@ -8,7 +8,6 @@ r"""
 """
 
 __title__ = 'ofscraper'
-__version__ = '1.87'
 __author__ = 'datawhores'
 __author_email__ = 'datawhores@riseup.net'
 __description__ = 'A command-line program to quickly download,like or unlike posts, and more'

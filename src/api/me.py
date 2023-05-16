@@ -14,7 +14,8 @@ console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import meEP,subscribeCountEP,NUM_TRIES
 from ..utils import auth, encoding
-from src.utils.logger import updateSenstiveDict
+from src.utils.logger import updateSenstiveDict,getlogger
+log=getlogger()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=2, max=6),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/5")) 
 def scrape_user(headers):
@@ -41,7 +42,7 @@ def parse_user(profile):
 
 
 def print_user(name, username):
-    console.print(f'Welcome, {name} | {username}')
+    log.warning(f'Welcome, {name} | {username}')
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def parse_subscriber_count(headers):
     with httpx.Client(http2=True, headers=headers) as c:
