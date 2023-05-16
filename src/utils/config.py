@@ -180,8 +180,8 @@ def update_mp4decrypt():
     
 def get_save_location(config=None):
     if config==None:
-        return SAVE_LOCATION_DEFAULT   
-    return config.get('save_location') or SAVE_LOCATION_DEFAULT
+        return SAVE_PATH_DEFAULT   
+    return config.get('save_location') or SAVE_PATH_DEFAULT
 
 def get_main_profile(config=None):
     if config==None:

@@ -24,7 +24,7 @@ import subprocess
 
 from rich.console import Console
 console=Console()
-from tqdm.asyncio import tqdm
+from tqdm.asyncio import tqdmave_path
 import arrow
 from bs4 import BeautifulSoup
 try:
