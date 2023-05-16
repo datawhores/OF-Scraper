@@ -82,7 +82,7 @@ def getlogpath():
 
 def getcachepath():
     profile = profiles.get_current_profile()
-    path=pathlib.Path.home() / configPath / profile
+    path=pathlib.Path.home() / configPath / profile/"cache"
     createDir(path.parent)
     return path
 def trunicate(path):

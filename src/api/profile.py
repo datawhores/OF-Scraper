@@ -82,14 +82,5 @@ def get_id(headers, username):
             return r.json()['id']
         r.raise_for_status()
 
-def print_paid_info(paid_content,username):
-    console.print(
-f"""
-Username: {username}
-- paid content {len(paid_content)}
- -- photos {len(list(filter(lambda x:x.get("mediatype")=="photo" or x.get("mediatype")=="gif",paid_content)))}
- -- videos {len(list(filter(lambda x:x.get("mediatype")=="video",paid_content)))}
- -- audios {len(list(filter(lambda x:x.get("mediatype")=="audio" ,paid_content)))}
-"""
-)
+
         

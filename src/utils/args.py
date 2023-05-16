@@ -1,7 +1,8 @@
 import argparse
-from src.__version__ import  __version__
 import sys
 import src.utils.logger as logger
+import pkg_resources
+my_version = pkg_resources.get_distribution('ofscraper').version
 def getargs(input=None):
     global args
     if args and input==None:
@@ -15,7 +16,7 @@ def getargs(input=None):
 
     parser = argparse.ArgumentParser(add_help=False)   
     general=parser.add_argument_group("General",description="General Args")  
-    general.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+    general.add_argument('-v', '--version', action='version', version=my_version)
     general.add_argument('-h', '--help', action='help')
 
                                     
@@ -27,20 +28,20 @@ def getargs(input=None):
     )
 
     general.add_argument(
-        '-l', '--log', help = 'set log file level', type=str.upper,default=None,choices=["OFF","INFO","DEBUG","WARNING"]
+        '-l', '--log', help = 'set log file level', type=str.upper,default="OFF",choices=["OFF","LOW","NORMAL","DEBUG"]
     ),
     general.add_argument(
-        '-dc', '--discord', help = 'set discord log level', type=str.upper,default="INFO",choices=["OFF","INFO","DEBUG","WARNING"]
+        '-dc', '--discord', help = 'set discord log level', type=str.upper,default="OFF",choices=["OFF","LOW","NORMAL","DEBUG"]
     )
 
     general.add_argument(
-        '-p', '--output', help = 'set output log level', type=str.upper,default="INFO",choices=["OFF","INFO","DEBUG","WARNING"]
+        '-p', '--output', help = 'set output log level', type=str.upper,default="NORMAL",choices=["PROMPT","LOW","NORMAL","DEBUG"]
     )
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a models wall',default=None,required=False,type = str.lower,choices=["highlights","all","archived","messages","timeline","pinned","stories","purchased",],action='append'
+        '-o', '--posts', help = 'Download content from a model',default=None,required=False,type = posttype_helper,action='extend'
     )
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
@@ -56,8 +57,10 @@ def getargs(input=None):
     filters.add_argument(
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
-    
+
     args=parser.parse_args(input)
+    #deduplicate posts
+    args.posts=list(set(args.posts or []))
     logger.getlogger().debug(args)
     return args
 args=None
@@ -65,4 +68,11 @@ def changeargs(newargs):
     global args
     args=newargs
     
-
+def posttype_helper(x):
+    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased"])
+    if isinstance(x,str):
+        x=x.split(',')
+    if len(list(filter(lambda y:y not in choices,x)))>0:
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: 'timeline,messages,purchased' (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased')")
+    return x
+    

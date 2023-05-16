@@ -521,29 +521,22 @@ def scrapper():
     global selectedusers
     selectedusers=None
 
-    
-
-    if len(list(filter(lambda x:x!=None and x!=False,[args.action,args.posts])))==0:
-        if args.daemon:
-            log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
-
-        process_prompts()
-        sys.exit(0)
-    
 
 
-
-    if args.posts: 
+    if len(args.posts)<0: 
         check_auth()
         check_config()
         run(process_post)        
-    if args.action=="like":
+    elif args.action=="like":
         check_auth()
         run(process_like)
-    if args.action=="unlike":
+    elif args.action=="unlike":
         check_auth()    
         run(process_unlike)  
-
+    else:
+        if args.daemon:
+            log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
+        process_prompts()
 if __name__ == '__main__':
     main()
 

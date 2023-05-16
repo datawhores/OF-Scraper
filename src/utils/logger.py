@@ -11,7 +11,7 @@ import src.utils.args as args_
 import src.utils.paths as paths
 from src.utils.config import read_config,get_discord
 senstiveDict={}
-
+log=None
 class DebugOnly(logging.Filter):
     def filter(self, record):
         if record.levelname=="DEBUG" or record.levelname=="TRACEBACK":
@@ -85,7 +85,15 @@ def updateSenstiveDict(word,replacement):
      global senstiveDict
      senstiveDict[word]=replacement
 
-log=None
+
+def getLevel(input):
+    """
+    ERROR 50
+    WARNING 30
+    INFO 20
+    DEBUG 10
+    """
+    return {"OFF":100,"PROMPT":"ERROR","LOW":"WARNING","NORMAL":"INFO","DEBUG":"DEBUG"}.get(input,100)
 def getlogger():
     global log
     if log:
@@ -95,16 +103,16 @@ def getlogger():
     log.setLevel(1)
     #log file
     fh=logging.FileHandler(paths.getlogpath(),mode="a")
-    fh.setLevel(args_.getargs().log or 100)
+    fh.setLevel(getLevel(args_.getargs().log))
     fh.setFormatter(LogFileFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
     #discord
     cord=DiscordHandler()
-    cord.setLevel(args_.getargs().discord)
+    cord.setLevel(getLevel(args_.getargs().discord))
     cord.setFormatter(SensitiveFormatter('%(message)s'))
-    console = Console(theme=Theme({"logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
+    console = Console(theme=Theme({"logging.level.error":"green","logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
     #console
     sh=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False)
-    sh.setLevel(args_.getargs().output)
+    sh.setLevel(getLevel(args_.getargs().output))
     sh.setFormatter(SensitiveFormatter('%(message)s'))
     sh.addFilter(NoDebug())
     log.addHandler(fh)
@@ -117,10 +125,6 @@ def getlogger():
         sh2.addFilter(DebugOnly())
         log.addHandler(sh2)
 
-    """
-    WARNING 30
-    INFO 20
-    DEBUG 10
-    """
+   
     return log
 
