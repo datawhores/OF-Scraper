@@ -15,6 +15,9 @@ console=Console()
 from ..constants import *
 import src.prompts.prompts as prompts 
 
+from src.utils.logger import getlogger
+log=getlogger()
+
 
 def read_config():
     p = pathlib.Path.home() / configPath
@@ -130,7 +133,7 @@ def update_config(field: str, value):
 
 
 def auto_update_config(path, config: dict) -> dict:
-    console.print("Auto updating config...")
+    log.warning("Auto updating config...")
     new_config = get_current_config_schema(config)
 
     with open(path / configFile, 'w') as f:

@@ -16,6 +16,9 @@ import src.utils.config as config_
 import src.utils.config as config
 
 homeDir=pathlib.Path.home()
+from src.utils.logger import getlogger
+log=getlogger()
+
 @contextmanager
 def set_directory(path: Path):
     """Sets the cwd within the context
@@ -39,7 +42,7 @@ def createDir(path):
     try:
         path.mkdir(exist_ok=True,parents=True)
     except:
-        console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
+        log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
     return pathlib.Path(config.get_metadata(config.read_config()).format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config.get_save_path(config.read_config())))),"user_data.db")
@@ -69,7 +72,7 @@ def pinnedResponsePathHelper(model_id,username):
     return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"pinned.json"
 
 def cleanup():
-    console.print("Cleaning up .part files\n\n")
+    log.info("Cleaning up .part files\n\n")
     root= pathlib.Path((config.get_save_path(config.read_config())))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
