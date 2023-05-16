@@ -19,6 +19,9 @@ from ..constants import profileEP,NUM_TRIES
 from ..utils import auth, dates, encoding
 from xxhash import xxh32
 
+from src.utils.logger import getlogger
+log=getlogger()
+
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_profile(headers, username) -> dict:
     with httpx.Client(http2=True, headers=headers) as c:
@@ -66,7 +69,7 @@ def print_profile_info(info):
     header_fmt = 'Name: {} | Username: {} | ID: {} | Joined: {}\n'
     info_fmt = '- {} posts\n -- {} photos\n -- {} videos\n -- {} audios\n- {} archived posts'
     final_fmt = header_fmt + info_fmt
-    console.print(final_fmt.format(*info))
+    log.warning(final_fmt.format(*info))
 
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   

@@ -45,8 +45,3 @@ def parse_subscriptions(subscriptions: list) -> list:
     return data
 
 
-def print_subscriptions(subscriptions: list):
-    fmt = '{:>4} {:^25} {:>15} {:^35}'
-    console.print(fmt.format('NUM', 'USERNAME', 'ID', 'EXPIRES ON'))
-    for c, t in enumerate(subscriptions, 1):
-        console.print(fmt.format(c, *t))
