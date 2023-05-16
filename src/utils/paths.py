@@ -10,7 +10,7 @@ from rich.console import Console
 console=Console()
 import arrow
 
-from ..constants import configPath,DIR_FORMAT_DEFAULT,DATE_DEFAULT,SAVE_LOCATION_DEFAULT
+from ..constants import configPath,DIR_FORMAT_DEFAULT,DATE_DEFAULT,SAVE_PATH_DEFAULT
 from ..utils import profiles
 import src.utils.config as config_
 import src.utils.config as config
@@ -42,10 +42,10 @@ def createDir(path):
         console.print("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return pathlib.Path(config.get_metadata(config.read_config()).format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0]),"user_data.db")
+    return pathlib.Path(config.get_metadata(config.read_config()).format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config.get_save_path(config.read_config())))),"user_data.db")
 
 def getmediadir(ele,username,model_id):
-    root= pathlib.Path((config.get_save_location(config.read_config())))
+    root= pathlib.Path((config.get_save_path(config.read_config())))
     downloadDir=config.get_dirformat(config.read_config())\
     .format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config.get_date(config.read_config())))
     return root /downloadDir   
@@ -70,7 +70,7 @@ def pinnedResponsePathHelper(model_id,username):
 
 def cleanup():
     console.print("Cleaning up .part files\n\n")
-    root= pathlib.Path((config.get_save_location(config.read_config())))
+    root= pathlib.Path((config.get_save_path(config.read_config())))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
 

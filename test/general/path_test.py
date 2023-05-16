@@ -116,7 +116,7 @@ def test_linux_trunicate_small(mocker):
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILE_FORMAT_DEFAULT,
@@ -144,7 +144,7 @@ def test_context_provider2(mocker):
 def test_createfilename(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILE_FORMAT_DEFAULT,
@@ -163,7 +163,7 @@ def test_createfilename(mocker):
 def test_createfilename_allkeys(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_VALID_ALL,
@@ -185,7 +185,7 @@ def test_createfilename_allkeys(mocker):
 def test_createfilename_invalid(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_ALLVALIDWTHINVALID,
@@ -205,7 +205,7 @@ def test_createfilename_invalid(mocker):
 def test_create_txt(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
@@ -224,7 +224,7 @@ def test_create_txt(mocker):
 def test_create_postid_counter(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
@@ -243,7 +243,7 @@ def test_create_postid_counter(mocker):
 def test_create_postid_name(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
@@ -263,7 +263,7 @@ def test_create_postid_name(mocker):
 def test_create_postid_name2(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
@@ -289,7 +289,7 @@ def test_create_postid_name2(mocker):
 def test_create_text_counter(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
@@ -312,7 +312,7 @@ def test_create_text_counter(mocker):
 def test_create_text_name(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
@@ -332,7 +332,7 @@ def test_create_text_name(mocker):
 def test_create_text_name2(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,

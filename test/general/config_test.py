@@ -3,7 +3,7 @@ from src.utils.config import *
 def test_current_schema(mocker):
     migrationConfig={"config":{
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
@@ -21,7 +21,7 @@ def test_current_schema(mocker):
 def test_current_schema2(mocker):
     migrationConfig={"config":{
         "main_profile": PROFILE_DEFAULT,
-        "save_location": SAVE_LOCATION_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_DEFAULT,
     }}
     currentConfig=get_current_config_schema(migrationConfig)
@@ -29,7 +29,7 @@ def test_current_schema2(mocker):
     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(CONFIG_KEYS))
 
 def test_savelocation(mocker):
-    assert(get_save_location(None))==SAVE_LOCATION_DEFAULT
+    assert(get_save_location(None))==SAVE_PATH_DEFAULT
 
 def test_savelocation2(mocker):
     config={"save_location":SAVE_LOCATION_ALT}
@@ -37,7 +37,7 @@ def test_savelocation2(mocker):
 
 def test_savelocation3(mocker):
     config={}
-    assert(get_save_location(config))==SAVE_LOCATION_DEFAULT   
+    assert(get_save_location(config))==SAVE_PATH_DEFAULT   
 
 
 def test_mainprofile(mocker):

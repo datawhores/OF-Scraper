@@ -313,7 +313,7 @@ def config_prompt(config_) -> dict:
             'name': 'save_location',
             'message':"save_location: ",
             'long_instruction': 'Where would you like to set as the root save downloaded directory?',
-            'default':config.get_save_location(config_),
+            'default':config.get_save_path(config_),
             "filter":lambda x:cleanTextInput(x),
             "validate": lambda x:pathlib.Path(x).is_dir() and PathValidator()
         },
