@@ -13,9 +13,9 @@ import shutil
 from rich.console import Console
 from rich import print
 console=Console()
-from .config import read_config, update_config
-from ..prompts.prompts import get_profile_prompt,change_default_profile
-from ..constants import configPath, configFile, mainProfile
+import src.utils.config as config_
+import src.prompts.prompts as prompts
+import src.constants as constants
 configPath = '.config/ofscraper'
 
 
@@ -32,16 +32,16 @@ def get_profiles() -> list:
 
 def change_profile():
     console.print('Current profiles:')
-    profile = get_profile_prompt(print_profiles())
+    profile = prompts.get_profile_prompt(print_profiles())
 
-    update_config(mainProfile, profile)
+    config_.update_config(constants.mainProfile, profile)
 
     print(f'[green]Successfully changed profile to[/green] {profile}')
 
 
 def delete_profile():
     console.print('Current profiles:')
-    profile = get_profile_prompt(print_profiles())
+    profile = prompts.get_profile_prompt(print_profiles())
 
     if profile == get_current_profile():
         raise OSError(
@@ -58,8 +58,8 @@ def create_profile(path, dir_name: str):
 
     if not dir_path.is_dir():
         dir_path.mkdir(parents=True, exist_ok=False)
-    if change_default_profile()=="Yes":
-        update_config(mainProfile, dir_name)
+    if prompts.change_default_profile()=="Yes":
+        config_.update_config(constants.mainProfile, dir_name)
     console.print('[green]Successfully created[/green] {dir_name}'.format(dir_name=dir_name))
     
 
@@ -72,7 +72,7 @@ def edit_profile_name(old_profile_name: str, new_profile_name: str):
             shutil.rmtree(profile,ignore_errors=True)
            
     if old_profile_name == get_current_profile():
-        update_config(mainProfile, new_profile_name)
+        config_.update_config(constants.mainProfile, new_profile_name)
 
     print(
         f"[green]Successfully changed[green] '{old_profile_name}' to '{new_profile_name}'")
@@ -89,8 +89,8 @@ def print_profiles() -> list:
 
 
 def get_current_profile():
-    config = read_config()
-    return config[mainProfile]
+    config = config_.read_config()
+    return config[constants.mainProfile]
 
 
 def print_current_profile():

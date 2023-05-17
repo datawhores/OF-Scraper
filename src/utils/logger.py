@@ -6,10 +6,8 @@ import logging
 from rich.logging import RichHandler
 from rich.console import Console
 from rich.theme import Theme
-from rich.markdown import Markdown
-import src.utils.args as args_
 import src.utils.paths as paths
-from src.utils.config import read_config,get_discord
+import src.utils.config as config_
 senstiveDict={}
 log=None
 class DebugOnly(logging.Filter):
@@ -27,7 +25,7 @@ class DiscordHandler(logging.Handler):
         logging.Handler.__init__(self)
     def emit(self, record):
         log_entry = self.format(record)
-        url=get_discord(read_config())
+        url=config_.get_discord(config_.read_config())
         log_entry=f"{log_entry}\n\n"
         if url==None or url=="":
             return
@@ -96,35 +94,41 @@ def getLevel(input):
     return {"OFF":100,"PROMPT":"ERROR","LOW":"WARNING","NORMAL":"INFO","DEBUG":"DEBUG"}.get(input,100)
 def getlogger():
     global log
+    return log
+
+def init_logger():
+    # import src.utils.globals as globals
+    global log
     if log:
         return log
+    
     addtrackback()
     log=logging.getLogger("ofscraper")
     log.setLevel(1)
-    #log file
-    fh=logging.FileHandler(paths.getlogpath(),mode="a")
-    fh.setLevel(getLevel(args_.getargs().log))
-    fh.setFormatter(LogFileFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-    #discord
-    cord=DiscordHandler()
-    cord.setLevel(getLevel(args_.getargs().discord))
-    cord.setFormatter(SensitiveFormatter('%(message)s'))
-    console = Console(theme=Theme({"logging.level.error":"green","logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
-    #console
-    sh=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False)
-    sh.setLevel(getLevel(args_.getargs().output))
-    sh.setFormatter(SensitiveFormatter('%(message)s'))
-    sh.addFilter(NoDebug())
-    log.addHandler(fh)
-    log.addHandler(cord)
-    log.addHandler(sh)
-    if args_.getargs().output=="DEBUG":
-        sh2=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False)
-        sh2.setLevel(args_.getargs().output)
-        sh2.setFormatter(SensitiveFormatter('%(message)s'))
-        sh2.addFilter(DebugOnly())
-        log.addHandler(sh2)
+    # #log file
+    # # fh=logging.FileHandler(paths.getlogpath(),mode="a")
+    # # fh.setLevel(getLevel(args_.getargs().log))
+    # # fh.setFormatter(LogFileFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+    # #discord
+    # cord=DiscordHandler()
+    # cord.setFormatter(SensitiveFormatter('%(message)s'))
+    # console = Console(theme=Theme({"logging.level.error":"green","logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
+    # #console
+    # sh=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False)
+    # sh.setLevel(getLevel(globals.args.output))
+    # sh.setFormatter(SensitiveFormatter('%(message)s'))
+    # sh.addFilter(NoDebug())
+    # # log.addHandler(fh)
+    # log.addHandler(cord)
+    # log.addHandler(sh)
+    # if args_.getargs().output=="DEBUG":
+    #     sh2=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False)
+    #     sh2.setLevel(args_.getargs().output)
+    #     sh2.setFormatter(SensitiveFormatter('%(message)s'))
+    #     sh2.addFilter(DebugOnly())
+    #     log.addHandler(sh2)
 
    
-    return log
+    # return log
 
+init_logger()

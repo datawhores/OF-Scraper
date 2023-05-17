@@ -8,19 +8,18 @@ r"""
                  \/     \/           \/            \/         
 """
 
-from datetime import datetime
-from itertools import zip_longest
-
 import httpx
 from rich.console import Console
 console=Console()
+
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import profileEP,NUM_TRIES
 from ..utils import auth, dates, encoding
 from xxhash import xxh32
+import src.constants as constants
 
-from src.utils.logger import getlogger
-log=getlogger()
+import src.utils.logger as logger
+log=logger.getlogger()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_profile(headers, username) -> dict:

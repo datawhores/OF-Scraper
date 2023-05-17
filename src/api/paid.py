@@ -10,10 +10,11 @@ r"""
 from urllib.request import urlopen
 
 from rich.console import Console
-console=Console()
-from ..constants import purchased_contentEP
-from ..utils import auth
 import httpx
+
+console=Console()
+import src.constants as constants
+import src.utils.auth as auth
 
 paid_content_list_name = 'list'
 from src.utils.logger import getlogger

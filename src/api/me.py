@@ -12,15 +12,17 @@ import httpx
 from rich.console import Console
 console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
-from ..constants import meEP,subscribeCountEP,NUM_TRIES
-from ..utils import auth, encoding
-from src.utils.logger import updateSenstiveDict,getlogger
-log=getlogger()
+import src.constants as constants
+import src.utils.auth as auth
+import src.utils.encoding as encoding
+import src.utils.globals as globals
+from src.utils.logger import updateSenstiveDict
+log=globals.log
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=2, max=6),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/5")) 
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=2, max=6),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/5")) 
 def scrape_user(headers):
     with httpx.Client(http2=True, headers=headers) as c:
-        url = meEP
+        url = constants.meEP
 
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
@@ -43,10 +45,10 @@ def parse_user(profile):
 
 def print_user(name, username):
     log.warning(f'Welcome, {name} | {username}')
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def parse_subscriber_count(headers):
     with httpx.Client(http2=True, headers=headers) as c:
-        url = subscribeCountEP
+        url = constants.subscribeCountEP
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
         r = c.get(url, timeout=None)

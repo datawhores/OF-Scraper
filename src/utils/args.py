@@ -1,9 +1,10 @@
 import argparse
 import sys
-import src.utils.logger as logger
 import pkg_resources
 my_version = pkg_resources.get_distribution('ofscraper').version
+args=None
 def getargs(input=None):
+    # import src.utils.globals as globals
     global args
     if args and input==None:
         return args
@@ -61,12 +62,10 @@ def getargs(input=None):
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
-    logger.getlogger().debug(args)
+    # globals.log.debug(args)
     return args
-args=None
-def changeargs(newargs):
-    global args
-    args=newargs
+
+
     
 def posttype_helper(x):
     choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased"])

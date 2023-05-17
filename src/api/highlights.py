@@ -13,19 +13,17 @@ from itertools import chain
 
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
+import src.constants as constants
+import src.utils.auth as auth
+import src.utils.logger as logger
+import src.utils.globals as globals
+log=globals.log
 
-
-from ..constants import NUM_TRIES,highlightsWithStoriesEP, highlightsWithAStoryEP, storyEP
-from ..utils import auth
-
-from src.utils.logger import getlogger
-log=getlogger()
-
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_highlights(headers, user_id) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
-        url_stories = highlightsWithStoriesEP.format(user_id)
-        url_story = highlightsWithAStoryEP.format(user_id)
+        url_stories = constants.highlightsWithStoriesEP.format(user_id)
+        url_story = constants.highlightsWithAStoryEP.format(user_id)
 
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url_stories, headers))
