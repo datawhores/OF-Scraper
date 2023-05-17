@@ -78,5 +78,5 @@ TEXTLENGTH_ALT2=10
 DATE_ALT="YY"
 
 CONFIG_KEYS=["main_profile","save_location","file_size_limit",
-    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype" ,"mp4decrypt","discord"                       
+    "dir_format","file_format" , "textlength"  ,"date"   ,"metadata","filter","responsetype" ,"mp4decrypt","discord" ,"ffmpeg"                      
     ]

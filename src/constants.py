@@ -94,6 +94,7 @@ PREMIUM_DEFAULT="Premium"
 MP4DECRYPT_DEFAULT=""
 FFMPEG_DEFAULT =""
 DISCORD_DEFAULT =""
+SUPPRESS_LOG_LEVEL=31
 RESPONSE_TYPE_DEFAULT= {
             "message":"messages",
             "timeline":"posts",
