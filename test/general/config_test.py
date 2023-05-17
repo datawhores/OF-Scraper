@@ -135,11 +135,11 @@ def test_ffmpeg(mocker):
     assert(get_ffmpeg(None))==FFMPEG_DEFAULT  
 
 def test_ffmpeg2(mocker):
-    config={"mp4decrypt":ALT_FFMPEG}
+    config={"ffmpeg":ALT_FFMPEG}
     assert(get_ffmpeg(config))==ALT_FFMPEG
-def test_ffmpeg(mocker):
+def test_ffmpeg3(mocker):
     config={}
-    assert(get_ffmpe(config))==FFMPEG_DEFAULT 
+    assert(get_ffmpeg(config))==FFMPEG_DEFAULT 
 
 def test_filter(mocker):
     assert(get_filter(None))==FILTER_DEFAULT 

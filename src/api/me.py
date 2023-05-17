@@ -44,7 +44,7 @@ def parse_user(profile):
 
 
 def print_user(name, username):
-    if log.level<=30:
+    if log.level<=constants.SUPPRESS_LOG_LEVEL:
         console.print(f'Welcome, {name} | {username}')
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def parse_subscriber_count(headers):
