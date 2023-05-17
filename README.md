@@ -24,6 +24,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
  - config new keys mp4decrypt and discord
  - Fixed issue with like and unliking posts
  - post arg can be called multiple times or can be in a comma seperated list
+
   ## Description:
   command-line program to download media, and to process other batch operations such as liking and unliking posts.
     
