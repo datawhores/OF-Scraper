@@ -74,4 +74,7 @@ def posttype_helper(x):
     if len(list(filter(lambda y:y not in choices,x)))>0:
         raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: 'timeline,messages,purchased' (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased')")
     return x
-    
+
+def changeargs(newargs):
+    global args
+    args=newargs
