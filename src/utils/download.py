@@ -118,8 +118,10 @@ async def download(ele,path,model_id,username,file_size_limit):
     
     try:
         if ele.url:
+           log.debug(f"ID:{ele.id} Downloading with normal downloader")
            return await main_download_helper(ele,path,file_size_limit,username,model_id)
-        elif ele.mpd:        
+        elif ele.mpd:  
+            log.debug(f"ID:{ele.id} Downloading with protected media downloader")      
             return await alt_download_helper(ele,path,file_size_limit,username,model_id)
         else:
             return "skipped",1
@@ -164,10 +166,14 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
         return "skipped",1 
     else:
         log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.DISCORD_DEFAULTNUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
+        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
         if ele.postdate:
-            set_time(path_to_file, dates.convert_local_time(ele.postdate))
+            newDate=dates.convert_local_time(ele.postdate)
+            log.debug(f"ID:{ele.id} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+            set_time(path_to_file,newDate )
+            log.debug(f"ID:{ele.id} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+
         if ele.id:
             operations.write_media_table(ele,path_to_file,model_id,username)
         return ele.mediatype,total
