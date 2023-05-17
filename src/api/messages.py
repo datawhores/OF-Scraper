@@ -13,13 +13,15 @@ import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
 import arrow
-from ..constants import messagesEP, messagesNextEP,NUM_TRIES,RESPONSE_EXPIRY
+import src.constants as constants
+import src.utils.auth as auth
+import src.utils.paths as paths
+
 from ..utils import auth
 from diskcache import Cache
-from ..utils.paths import getcachepath
-cache = Cache(getcachepath())
-from src.utils.logger import getlogger
-log=getlogger()
+cache = Cache(paths.getcachepath())
+import src.utils.logger as logger
+log=logger.getlogger()
 
 
 async def get_messages(headers, model_id):

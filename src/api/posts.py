@@ -2,7 +2,7 @@ import re
 import httpx
 from ..constants import TEXTLENGTH_DEFAULT,LICENCE_URL
 import src.utils.args as args_
-from ..utils import auth
+import src.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
 import src.utils.config as config
 

@@ -10,35 +10,41 @@ r"""
 
 import asyncio
 import os
-import sys
 import platform
 import time
 import schedule
-from contextlib import contextmanager
 import threading
 import queue
 from itertools import chain
 import re
-import src.utils.logger as logger
 from rich.console import Console
-import traceback
-import pathlib
-
-from .prompts import prompts
-from .prompts.prompt_functions import mp4decryptvalidator
-from .constants import donateEP
-from .api import init, highlights, me, messages, profile, subscriptions, paid, timeline
-from .db import operations
-from .interaction import like
-from .utils import auth, config, download, profiles
 import webbrowser
 from halo import Halo
+import src.prompts.prompts as prompts
+import src.prompts.prompt_functions as prompt_functions
+import src.constants as constants
+import src.api.messages as messages
+import src.db.operations as operations
+import src.interaction as interation
 import src.api.posts as posts_
 import src.utils.args as args_
 import src.utils.paths as paths
 import src.utils.exit as exit
-args=args_.getargs()
-log=logger.getlogger()
+import src.utils.globals as globals
+import src.api.paid as paid
+import src.api.highlights as highlights
+import src.api.timeline as timeline
+import src.api.profile as profile
+import src.utils.config as config
+import src.api.subscriptions as subscriptions
+import src.api.me as me
+import src.utils.auth as auth
+import src.utils.profiles as profiles
+import src.api.init as init
+import src.utils.download as download
+import src.interaction.like as like
+args=globals.args
+log=globals.log
 console=Console()
 
 @Halo(text='Getting messages...')
@@ -442,7 +448,6 @@ def check_auth():
         
 
 def check_config():
-    log=logger.getlogger()
     while not  paths.mp4decryptchecker(config.get_mp4decrypt(config.read_config())):
         console.print("You need to select path for mp4decrypt\n\n")
         log.debug(f"[bold]current mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")

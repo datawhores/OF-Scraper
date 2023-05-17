@@ -9,15 +9,13 @@ import subprocess
 from rich.console import Console
 console=Console()
 import arrow
-
-from ..constants import configPath,DIR_FORMAT_DEFAULT,DATE_DEFAULT,SAVE_PATH_DEFAULT
-from ..utils import profiles
+import src.constants as constants
+import src.utils.profiles as profiles
 import src.utils.config as config_
-import src.utils.config as config
+import src.utils.globals as globals
 
 homeDir=pathlib.Path.home()
-from src.utils.logger import getlogger
-log=getlogger()
+log= globals.log
 
 @contextmanager
 def set_directory(path: Path):
@@ -45,47 +43,47 @@ def createDir(path):
         log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return pathlib.Path(config.get_metadata(config.read_config()).format(configpath=homeDir / configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config.get_save_path(config.read_config())))),"user_data.db")
+    return pathlib.Path(config_.get_metadata(config_.read_config()).format(configpath=homeDir / constants.configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config_.get_save_path(config_.read_config())))),"user_data.db")
 
 def getmediadir(ele,username,model_id):
-    root= pathlib.Path((config.get_save_path(config.read_config())))
-    downloadDir=config.get_dirformat(config.read_config())\
-    .format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config.get_date(config.read_config())))
+    root= pathlib.Path((config_.get_save_path(config_.read_config())))
+    downloadDir=config_.get_dirformat(config_.read_config())\
+    .format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config())))
     return root /downloadDir   
 
 
 def messageResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"messages.json"
+    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"messages.json"
 
 
 def timelineResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"timeline.json"
+    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"timeline.json"
 
 
 def archiveResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"archive.json"
+    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"archive.json"
 def pinnedResponsePathHelper(model_id,username):
     profile = profiles.get_current_profile()
-    return homeDir / configPath / profile / ".data"/f"{username}_{model_id}"/"pinned.json"
+    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"pinned.json"
 
 def cleanup():
     log.info("Cleaning up .part files\n\n")
-    root= pathlib.Path((config.get_save_path(config.read_config())))
+    root= pathlib.Path((config_.get_save_path(config_.read_config())))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
 
 
 def getlogpath():
-    path=pathlib.Path.home() / configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    path=pathlib.Path.home() / constants.configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
     createDir(path.parent)
     return path
 
 def getcachepath():
     profile = profiles.get_current_profile()
-    path=pathlib.Path.home() / configPath / profile/"cache"
+    path=pathlib.Path.home() / constants.configPath / profile/"cache"
     createDir(path.parent)
     return path
 def trunicate(path):
