@@ -10,13 +10,14 @@ r"""
 
 import asyncio
 from itertools import chain
-
+import logging
 import httpx
 from rich.console import Console
 console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import subscriptionsEP,NUM_TRIES
 from ..utils import auth, dates
+log=logging.getLogger(__package__)
 
 
 async def get_subscriptions(headers, subscribe_count):

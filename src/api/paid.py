@@ -8,17 +8,16 @@ r"""
                  \/     \/           \/            \/         
 """
 from urllib.request import urlopen
-
 from rich.console import Console
 import httpx
-
-console=Console()
-import src.constants as constants
+import logging
 import src.utils.auth as auth
-
+import src.constants as constants
 paid_content_list_name = 'list'
-from src.utils.logger import getlogger
-log=getlogger()
+log=logging.getLogger(__package__)
+console=Console()
+
+
 
 
 
@@ -44,7 +43,7 @@ def scrape_paid(username):
     with httpx.Client(http2=True, headers=headers, follow_redirects=True) as c:
         while hasMore:
             auth.add_cookies(c)
-            url = purchased_contentEP.format(offset,username)
+            url = constants.purchased_contentEP.format(offset,username)
             offset += 10
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)

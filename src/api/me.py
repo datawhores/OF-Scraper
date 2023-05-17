@@ -8,16 +8,16 @@ r"""
                  \/     \/           \/            \/         
 """
 
+import logging
 import httpx
 from rich.console import Console
-console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 import src.constants as constants
 import src.utils.auth as auth
 import src.utils.encoding as encoding
-import src.utils.globals as globals
 from src.utils.logger import updateSenstiveDict
-log=globals.log
+log=logging.getLogger(__package__)
+console=Console()
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=2, max=6),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/5")) 
 def scrape_user(headers):
@@ -44,7 +44,8 @@ def parse_user(profile):
 
 
 def print_user(name, username):
-    log.warning(f'Welcome, {name} | {username}')
+    if log.level<=30:
+        console.print(f'Welcome, {name} | {username}')
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def parse_subscriber_count(headers):
     with httpx.Client(http2=True, headers=headers) as c:

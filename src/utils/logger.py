@@ -1,5 +1,4 @@
 import logging
-import types
 import re
 import httpx
 import logging
@@ -8,8 +7,10 @@ from rich.console import Console
 from rich.theme import Theme
 import src.utils.paths as paths
 import src.utils.config as config_
+import src.utils.args as args
+
 senstiveDict={}
-log=None
+
 class DebugOnly(logging.Filter):
     def filter(self, record):
         if record.levelname=="DEBUG" or record.levelname=="TRACEBACK":
@@ -92,43 +93,35 @@ def getLevel(input):
     DEBUG 10
     """
     return {"OFF":100,"PROMPT":"ERROR","LOW":"WARNING","NORMAL":"INFO","DEBUG":"DEBUG"}.get(input,100)
-def getlogger():
-    global log
+
+def init_logger(log):
+    log.setLevel(1)
+    addtrackback()
+    # # #log file
+    fh=logging.FileHandler(paths.getlogpath(),mode="a")
+    fh.setLevel(getLevel(args.getargs().log))
+    fh.setFormatter(LogFileFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+    # #discord
+    cord=DiscordHandler()
+    cord.setLevel(getLevel(args.getargs().discord))
+    cord.setFormatter(SensitiveFormatter('%(message)s'))
+    console = Console(theme=Theme({"logging.level.error":"green","logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
+    #console
+    sh=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False)
+    sh.setLevel(getLevel(args.getargs().output))
+    sh.setFormatter(SensitiveFormatter('%(message)s'))
+    sh.addFilter(NoDebug())
+    log.addHandler(fh)
+    log.addHandler(cord)
+    log.addHandler(sh)
+    if args.getargs().output=="DEBUG":
+        sh2=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False)
+        sh2.setLevel(args.getargs().output)
+        sh2.setFormatter(SensitiveFormatter('%(message)s'))
+        sh2.addFilter(DebugOnly())
+        log.addHandler(sh2)
     return log
 
-def init_logger():
-    # import src.utils.globals as globals
-    global log
-    if log:
-        return log
-    
-    addtrackback()
-    log=logging.getLogger("ofscraper")
-    log.setLevel(1)
-    # #log file
-    # # fh=logging.FileHandler(paths.getlogpath(),mode="a")
-    # # fh.setLevel(getLevel(args_.getargs().log))
-    # # fh.setFormatter(LogFileFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-    # #discord
-    # cord=DiscordHandler()
-    # cord.setFormatter(SensitiveFormatter('%(message)s'))
-    # console = Console(theme=Theme({"logging.level.error":"green","logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
-    # #console
-    # sh=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False)
-    # sh.setLevel(getLevel(globals.args.output))
-    # sh.setFormatter(SensitiveFormatter('%(message)s'))
-    # sh.addFilter(NoDebug())
-    # # log.addHandler(fh)
-    # log.addHandler(cord)
-    # log.addHandler(sh)
-    # if args_.getargs().output=="DEBUG":
-    #     sh2=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False)
-    #     sh2.setLevel(args_.getargs().output)
-    #     sh2.setFormatter(SensitiveFormatter('%(message)s'))
-    #     sh2.addFilter(DebugOnly())
-    #     log.addHandler(sh2)
 
    
-    # return log
 
-init_logger()

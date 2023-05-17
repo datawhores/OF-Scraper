@@ -7,19 +7,16 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-
+import logging
 import httpx
 from rich.console import Console
-console=Console()
-
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import profileEP,NUM_TRIES
-from ..utils import auth, dates, encoding
+from ..utils import auth, encoding
 from xxhash import xxh32
-import src.constants as constants
 
-import src.utils.logger as logger
-log=logger.getlogger()
+log=logging.getLogger(__package__)
+console=Console()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_profile(headers, username) -> dict:

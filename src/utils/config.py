@@ -10,13 +10,13 @@ r"""
 
 import json
 import pathlib
+import logging
 from rich.console import Console
-console=Console()
 import src.constants as constants
 import src.prompts.prompts as prompts 
-import src.utils.globals as globals
-log=globals.log
 
+console=Console()
+log=logging.getLogger(__package__)
 
 def read_config():
     p = pathlib.Path.home() / constants.configPath
@@ -59,7 +59,7 @@ def get_current_config_schema(config: dict) -> dict:
 
     new_config = {
         'config': {
-            'mainProfile': get_main_profile(config),
+            constants.mainProfile: get_main_profile(config),
             'save_location':get_save_location(config) ,
             'file_size_limit': get_filesize(config),
             'dir_format': get_dirformat(config),
@@ -88,7 +88,7 @@ def get_current_config_schema(config: dict) -> dict:
 def make_config(path, config=None):
     config = config or  {
         'config': {
-            "mainProfile": constants.mainProfile,
+            constants.mainProfile: constants.mainProfile,
             'save_location': get_save_location(config),
             'file_size_limit':get_filesize(config),
             'dir_format':get_dirformat(config),

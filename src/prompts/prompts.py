@@ -7,13 +7,9 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-
-import re
-import json
 import sys
 from rich.console import Console
 import pathlib
-console=Console()
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
@@ -22,6 +18,8 @@ import src.constants as constants
 import src.prompts.prompt_strings as prompt_strings
 import src.prompts.prompt_functions as prompt_functions
 import src.utils.config as config
+
+console=Console()
 def main_prompt() -> int:
     main_prompt_choices = [*constants.mainPromptChoices]
     main_prompt_choices.insert(3, Separator())
@@ -312,7 +310,7 @@ def config_prompt(config_) -> dict:
             'name': 'save_location',
             'message':"save_location: ",
             'long_instruction': 'Where would you like to set as the root save downloaded directory?',
-            'default':config.get_save_path(config_),
+            'default':config.get_save_location(config_),
             "filter":lambda x:prompt_functions.cleanTextInput(x),
             "validate": lambda x:pathlib.Path(x).is_dir() and PathValidator()
         },

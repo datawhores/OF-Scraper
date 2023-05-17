@@ -15,13 +15,13 @@ import time
 from urllib.parse import urlparse
 import requests
 from rich.console import Console
-console=Console()
 import httpx
 import browser_cookie3
 from .profiles import get_current_profile
-from ..prompts.prompts import auth_prompt, ask_make_auth_prompt,browser_prompt,\
-user_agent_prompt,xbc_prompt,auth_full_paste,manual_auth_prompt
+from ..prompts.prompts import *
 from ..constants import configPath, authFile, DC_EP, requestAuth
+
+console=Console()
 
 
 

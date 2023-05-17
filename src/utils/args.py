@@ -1,10 +1,11 @@
 import argparse
+import logging
 import sys
 import pkg_resources
 my_version = pkg_resources.get_distribution('ofscraper').version
 args=None
+log=logging.getLogger(__package__)
 def getargs(input=None):
-    # import src.utils.globals as globals
     global args
     if args and input==None:
         return args
@@ -62,7 +63,6 @@ def getargs(input=None):
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
-    # globals.log.debug(args)
     return args
 
 

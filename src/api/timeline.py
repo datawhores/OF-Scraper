@@ -9,25 +9,22 @@ r"""
 """
 import time
 import asyncio
+import logging
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
-from ..constants import (
-    timelineEP, timelineNextEP,
-    timelinePinnedEP,
-    archivedEP, archivedNextEP,timelinePinnedNextEP,NUM_TRIES,RESPONSE_EXPIRY
-)
+import src.constants as constants
 from ..utils import auth
 from ..utils.paths import getcachepath
 from diskcache import Cache
 cache = Cache(getcachepath())
-from src.utils.logger import getlogger
-log=getlogger()
+log=logging.getLogger(__package__)
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
-        ep = timelinePinnedNextEP if timestamp else timelinePinnedEP
+        ep = constants.timelinePinnedNextEP if timestamp else constants.timelinePinnedEP
         url = ep.format(model_id, timestamp)
         # url = timelinePinnedEP.format(model_id)
 
@@ -44,16 +41,16 @@ def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
 def get_pinned_post(headers,model_id,username):
     return scrape_pinned_posts(headers,model_id)
    
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=False) -> list:
     global sem
     sem = asyncio.Semaphore(8)
     if timestamp:
         timestamp=str(timestamp)
-        ep = timelineNextEP
+        ep = constants.timelineNextEP
         url = ep.format(model_id, timestamp)
     else:
-        ep=timelineEP
+        ep=constants.timelineEP
         url=ep.format(model_id)
     async with sem:
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
@@ -124,7 +121,7 @@ async def get_timeline_post(headers,model_id):
         dupeSet.add(post["id"])
         unduped.append(post)
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    cache.set(f"timeline_{model_id}",unduped,expire=RESPONSE_EXPIRY)
+    cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
     cache.close() 
 
     return unduped                                
@@ -133,9 +130,9 @@ def get_archive_post(headers,model_id):
     return scrape_archived_posts(headers,model_id)
    
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
-    ep = archivedNextEP if timestamp else archivedEP
+    ep = constants.archivedNextEP if timestamp else constants.archivedEP
     url = ep.format(model_id, timestamp)
     with httpx.Client(http2=True, headers=headers) as c:
         auth.add_cookies(c)

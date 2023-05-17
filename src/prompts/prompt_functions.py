@@ -2,7 +2,7 @@ import json
 from prompt_toolkit.validation import Validator
 import re
 import string
-from pathvalidate import ValidationError, validate_filepath,validate_filename
+from pathvalidate import  validate_filepath,validate_filename
 import platform
 import pathlib
 import arrow

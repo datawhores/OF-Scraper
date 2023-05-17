@@ -10,6 +10,7 @@ r"""
 
 import random
 import time
+import logging
 from typing import Union
 import asyncio
 import httpx
@@ -19,8 +20,10 @@ from halo import Halo
 from ..api import timeline
 from ..constants import favoriteEP, postURL
 from ..utils import auth
-from src.utils.logger import getlogger
-log=getlogger()
+
+log=logging.getLogger(__package__)
+
+
 
 
 def get_posts(headers, model_id):
