@@ -12,15 +12,15 @@ import pathlib
 import shutil
 from rich.console import Console
 from rich import print
-console=Console()
 import src.utils.config as config_
 import src.prompts.prompts as prompts
 import src.constants as constants
-configPath = '.config/ofscraper'
+
+console=Console()
 
 
 def get_profile_path():
-    config_path = pathlib.Path.home() / configPath
+    config_path = pathlib.Path.home() / constants.configPath
     return config_path
 
 

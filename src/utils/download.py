@@ -15,12 +15,13 @@ import platform
 import shutil
 import traceback
 import re
+import logging
 import httpx
 import contextvars
 import json
 import subprocess
 from rich.console import Console
-from tqdm.asyncio import tqdmave_path
+from tqdm.asyncio import tqdm
 import arrow
 from bs4 import BeautifulSoup
 try:
@@ -29,7 +30,6 @@ except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 import ffmpeg
-import src.utils.logger as logger
 import src.utils.config as config_
 import src.utils.separate as seperate
 import src.db.operations as operations
@@ -37,14 +37,15 @@ import src.utils.paths as paths
 import src.utils.auth as auth
 import src.constants as constants
 import src.utils.dates as dates
+import src.utils.logger as logger
 from tqdm import tqdm
 from diskcache import Cache
+
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
-
-import src.utils.logger as logger
-log=logger.getlogger()
+log=logging.getLogger(__package__)
 console=Console()
+
 async def process_dicts(username, model_id, medialist,forced=False):
     if medialist:
     

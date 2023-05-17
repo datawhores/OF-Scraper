@@ -10,14 +10,15 @@ r"""
 
 import asyncio
 from itertools import chain
-
+import logging
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 import src.constants as constants
 import src.utils.auth as auth
-import src.utils.logger as logger
-import src.utils.globals as globals
-log=globals.log
+log=logging.getLogger(__package__)
+
+
+
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_highlights(headers, user_id) -> list:

@@ -1,11 +1,13 @@
 import re
+import logging
 import httpx
-from ..constants import TEXTLENGTH_DEFAULT,LICENCE_URL
+from ..constants import LICENCE_URL
 import src.utils.args as args_
 import src.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
 import src.utils.config as config
 
+log=logging.getLogger(__package__)
 
 class Post():
     def __init__(self, post, model_id, username, responsetype=None):

@@ -12,25 +12,23 @@ import asyncio
 import os
 import platform
 import time
+import traceback
 import schedule
 import threading
 import queue
+import logging
 from itertools import chain
 import re
 from rich.console import Console
 import webbrowser
 from halo import Halo
 import src.prompts.prompts as prompts
-import src.prompts.prompt_functions as prompt_functions
-import src.constants as constants
 import src.api.messages as messages
 import src.db.operations as operations
-import src.interaction as interation
 import src.api.posts as posts_
 import src.utils.args as args_
 import src.utils.paths as paths
 import src.utils.exit as exit
-import src.utils.globals as globals
 import src.api.paid as paid
 import src.api.highlights as highlights
 import src.api.timeline as timeline
@@ -43,9 +41,14 @@ import src.utils.profiles as profiles
 import src.api.init as init
 import src.utils.download as download
 import src.interaction.like as like
-args=globals.args
-log=globals.log
+import src.utils.logger as logger
+import src.utils.args as args_
+
+
 console=Console()
+log=logger.init_logger(logging.getLogger(__package__))
+args=args_.getargs()
+log.debug(args)
 
 @Halo(text='Getting messages...')
 def process_messages(headers, model_id,username):
@@ -60,7 +63,7 @@ def process_messages(headers, model_id,username):
     return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
 @Halo(text='Getting Paid Content...')
-def process_paid_post(headers, model_id,username):
+def process_paid_post(model_id,username):
     paid_content=paid.scrape_paid(username)
     paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
     log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),paid_content))}")
@@ -174,7 +177,7 @@ def process_areas(headers, ele, model_id) -> list:
     if 'Messages' in args.posts or 'All' in args.posts:
             messages_dicts = process_messages(headers, model_id,username)
     if "Purchased" in args.posts or "All" in args.posts:
-            purchased_dict=process_paid_post(headers, model_id,username)
+            purchased_dict=process_paid_post(model_id,username)
     if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts)   and ele["active"]:
             highlights_tuple = process_highlights(headers, model_id,username)  
             if 'Highlights'  in args.posts:
@@ -362,7 +365,8 @@ def process_post():
             forced=args.dupe,
             ))
         except Exception as e:
-            log.info("run failed with exception: ", e)
+            log.traceback(f"failed with exception: {e}")
+            log.traceback(traceback.format_exc())
     
     
 
@@ -515,6 +519,7 @@ def main():
             scrapper()
         except Exception as E:
             log.traceback(E)
+            log.traceback(traceback.format_exc())
         quit()
 def scrapper():
     if platform.system == 'Windows':
@@ -525,9 +530,6 @@ def scrapper():
     #     pass
     global selectedusers
     selectedusers=None
-
-
-
     if len(args.posts)<0: 
         check_auth()
         check_config()
@@ -542,7 +544,6 @@ def scrapper():
         if args.daemon:
             log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
-if __name__ == '__main__':
-    main()
+
 
 

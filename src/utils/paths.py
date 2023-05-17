@@ -6,16 +6,17 @@ import sys
 import re
 import platform
 import subprocess
+import logging
 from rich.console import Console
-console=Console()
 import arrow
 import src.constants as constants
 import src.utils.profiles as profiles
 import src.utils.config as config_
-import src.utils.globals as globals
 
+console=Console()
 homeDir=pathlib.Path.home()
-log= globals.log
+log=logging.getLogger(__package__)
+
 
 @contextmanager
 def set_directory(path: Path):
@@ -43,10 +44,10 @@ def createDir(path):
         log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return pathlib.Path(config_.get_metadata(config_.read_config()).format(configpath=homeDir / constants.configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config_.get_save_path(config_.read_config())))),"user_data.db")
+    return pathlib.Path(config_.get_metadata(config_.read_config()).format(configpath=homeDir / constants.configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config_.get_save_location(config_.read_config())))),"user_data.db")
 
 def getmediadir(ele,username,model_id):
-    root= pathlib.Path((config_.get_save_path(config_.read_config())))
+    root= pathlib.Path((config_.get_save_location(config_.read_config())))
     downloadDir=config_.get_dirformat(config_.read_config())\
     .format(sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config())))
     return root /downloadDir   
@@ -71,15 +72,10 @@ def pinnedResponsePathHelper(model_id,username):
 
 def cleanup():
     log.info("Cleaning up .part files\n\n")
-    root= pathlib.Path((config_.get_save_path(config_.read_config())))
+    root= pathlib.Path((config_.get_save_location(config_.read_config())))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
 
-
-def getlogpath():
-    path=pathlib.Path.home() / constants.configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
-    createDir(path.parent)
-    return path
 
 def getcachepath():
     profile = profiles.get_current_profile()
@@ -137,3 +133,7 @@ def mp4decryptchecker(x):
             return True
     except:
         return False
+def getlogpath():
+    path=pathlib.Path.home() / constants.configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    createDir(path.parent)
+    return path

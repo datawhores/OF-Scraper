@@ -9,19 +9,14 @@ r"""
 """
 
 import contextlib
-import glob
 import pathlib
 import sqlite3
-import json
 import math
-from itertools import chain
-from hashlib import md5
 from rich.console import Console
-console=Console()
-from ..constants import configPath
-from ..utils import separate, profiles
 from ..db import queries
 from ..utils.paths import createDir,databasePathHelper
+
+console=Console()
 
 def create_message_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
