@@ -387,6 +387,19 @@ Certain content requires decryption to process please provide the full path to m
 Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo         
 """
         },
+        {
+                        'type': 'filepath',
+            'name': 'ffmpeg',
+            "message":"ffmpeg path: ",
+             "validate":PathValidator() and  EmptyInputValidator() and prompt_functions.ffmpegvalidator(),
+             "long_instruction": 
+             """
+Certain content requires decryption to process please provide the full path to ffmpeg
+Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo         
+""",
+"default":config.get_ffmpeg(config_)
+        
+        },
 
         {
             'type': 'input',
@@ -524,7 +537,25 @@ Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in 
 
     answer = prompt(questions)
     return answer["mp4decrypt"]
-    
+
+def ffmpeg_prompt(config_):
+    questions = [
+         {
+            'type': 'filepath',
+            'name': 'ffmpeg',
+            "message":"ffmpeg path: ",
+             "validate":PathValidator() and  EmptyInputValidator() and prompt_functions.ffmpegvalidator(),
+             "long_instruction": 
+             """
+Certain content requires decryption to process please provide the full path to ffmpeg
+Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo         
+""",
+"default":config.get_ffmpeg(config_)
+        },
+    ]
+
+    answer = prompt(questions)
+    return answer["ffmpeg"] 
 
 def continue_prompt() -> bool:
     name = 'reset username'
