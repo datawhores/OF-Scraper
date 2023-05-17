@@ -258,7 +258,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
         item["path"]=newpath
     path_to_file.unlink(missing_ok=True)
    
-    ffmpeg.output( ffmpeg.input(str(video["path"])), ffmpeg.input(str(audio["path"])), str(path_to_file),codec='copy',loglevel="quiet").overwrite_output().run( capture_stdout=True)
+    ffmpeg.output( ffmpeg.input(str(video["path"])), ffmpeg.input(str(audio["path"])), str(path_to_file),codec='copy',loglevel="quiet").overwrite_output().run(capture_stdout=True,cmd=config_.get_ffmpeg(config_.read_config()))
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
     if ele.postdate:
