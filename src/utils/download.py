@@ -269,6 +269,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
         log.debug(f"ID:{ele.id} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         operations.write_media_table(ele,path_to_file,model_id,username)
+    return ele.mediatype,total
 
 async def key_helper(pssh,licence_url,id):
     out=cache.get(licence_url)
