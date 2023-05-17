@@ -529,7 +529,9 @@ def mp4_prompt(config_):
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to mp4decrypt
-Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo         
+Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in the repo
+
+https://www.bento4.com/documentation/mp4decrypt/
 """,
 "default":config.get_mp4decrypt(config_)
         },
@@ -548,7 +550,9 @@ def ffmpeg_prompt(config_):
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to ffmpeg
-Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo         
+Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo 
+
+https://ffmpeg.org/download.html
 """,
 "default":config.get_ffmpeg(config_)
         },
