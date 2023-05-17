@@ -78,6 +78,8 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     try:
                         media_type, num_bytes_downloaded = await coro
                     except Exception as e:
+                        log.traceback(e)
+                        log.traceback(traceback.format_exc())
                         media_type = "skipped"
                         num_bytes_downloaded = 0
 
@@ -140,7 +142,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
                     if not r.is_error:
                         rheaders=r.headers
                         total = int(rheaders['Content-Length'])
-                        if file_size_limit and total > int(file_size_limit): 
+                        if file_size_limit>0 and total > int(file_size_limit): 
                                 return 'skipped', 1       
                         content_type = rheaders.get("content-type").split('/')[-1]
                         filename=createfilename(ele,username,model_id,content_type)
@@ -204,7 +206,6 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                     kId = prot.pssh[0].pssh 
                     logger.updateSenstiveDict(kId,"pssh_code")
                     break
-            maxquality=max(map(lambda x:x.height,adapt_set.representations))
             for repr in adapt_set.representations:
                 audio={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio"}
                 break
@@ -220,7 +221,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                             rheaders=r.headers
                             total = int(rheaders['Content-Length'])
                             item["total"]=total
-                            if file_size_limit and total > int(file_size_limit): 
+                            if file_size_limit>0 and total > int(file_size_limit): 
                                     return 'skipped', 1       
                             temp= paths.trunicate(pathlib.Path(path,f"{item['name']}.part"))
                             temp.unlink(missing_ok=True)
