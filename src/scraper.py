@@ -409,27 +409,13 @@ def run(*params):
     # get usernames prior to potentially supressing output
     check_auth()
     getselected_usernames()
-    log.info(
-f"""
-==============================                            
-[bold]starting script[/bold]
-==============================
-"""
-
-)    
+   
     if args.log=="OFF":
         log.info(f"[bold]silent-mode on[/bold]")    
     if args.daemon:
         log.info(f"[bold]daemon mode on[/bold]")   
     run_helper(*params)
-    log.warning(
-"""
-===========================
-[bold]Script Finished[/bold]
-===========================
-"""
 
-    )
 
 def run_helper(*params):
     [param() for param in params]    
@@ -525,7 +511,23 @@ def create_tables(model_id,username):
 def main():
     with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
         try:
+            log.error(
+                f"""
+                ==============================                            
+                [bold]starting script[/bold]
+                ==============================
+                """
+
+                )   
             scrapper()
+            log.warning(
+"""
+===========================
+[bold]Script Finished[/bold]
+===========================
+"""
+
+    )
         except Exception as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())
