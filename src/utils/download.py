@@ -48,7 +48,6 @@ console=Console()
 
 async def process_dicts(username, model_id, medialist,forced=False):
     if medialist:
-    
         if not forced:
             media_ids = set(operations.get_media_ids(model_id,username))
             medialist = seperate.separate_by_id(medialist, media_ids)
@@ -133,7 +132,7 @@ async def download(ele,path,model_id,username,file_size_limit):
         return 'skipped', 1
 async def main_download_helper(ele,path,file_size_limit,username,model_id):
     url=ele.url
-    log.debug(f"ID:{ele.id} Attempting to download media {ele.filename} with {url or 'no url'}")
+    log.debug(f"ID:{ele.id} Attempting to download media {ele.filename} with {url}")
     path_to_file=None
     async with sem:
             async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None) as c: 
@@ -211,7 +210,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                 break
         for item in [audio,video]:
             url=f"{base_url}{item['name']}"
-            log.debug(f"ID:{ele.id} Attempting to download media {item['name']} with {url or 'no url'}")
+            log.debug(f"ID:{ele.id} Attempting to download media {item['name']} with {url}")
             async with sem:
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
                 async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
