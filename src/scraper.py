@@ -10,6 +10,7 @@ r"""
 
 import asyncio
 import os
+import sys
 import platform
 import time
 import traceback
@@ -51,8 +52,9 @@ console=Console()
 log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
+f = open(os.devnull, 'w')
 
-@Halo(text='Getting messages...')
+@Halo(stream=sys.stdout if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f ,text='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
     messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
@@ -64,7 +66,7 @@ def process_messages(headers, model_id,username):
     [ output.extend(message.media) for message in messages_]
     return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
-@Halo(text='Getting Paid Content...')
+@Halo(stream=sys.stdout if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting Paid Content...')
 def process_paid_post(model_id,username):
     paid_content=paid.scrape_paid(username)
     paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
@@ -78,7 +80,7 @@ def process_paid_post(model_id,username):
 
          
 
-@Halo(text='Getting highlights and stories...\n')
+@Halo(stream=sys.stdout  if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting highlights and stories...\n')
 def process_highlights(headers, model_id,username):
     highlights_, stories = highlights.scrape_highlights(headers, model_id)
     highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
@@ -101,7 +103,7 @@ def process_highlights(headers, model_id,username):
 
 
 
-@Halo(text='Getting timeline media...')
+@Halo(stream=sys.stdout if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
     timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
@@ -113,7 +115,7 @@ def process_timeline_posts(headers, model_id,username):
     [output.extend(post.media) for post in  timeline_posts ]
     return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
-@Halo(text='Getting archived media...')
+@Halo(stream=sys.stdout if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
     archived_posts = timeline.get_archive_post(headers, model_id)
     archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
@@ -129,7 +131,7 @@ def process_archived_posts(headers, model_id,username):
 
 
 
-@Halo(text='Getting pinned media...')
+@Halo(stream=sys.stdout if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
     pinned_posts = timeline.get_pinned_post(headers, model_id,username)
     pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
@@ -245,7 +247,7 @@ def get_model_inputsplit(commaString):
         return range(x[0], x[-1]+1)
     return chain(*[hyphenRange(r) for r in list(filter(lambda x:x.isdigit(),re.split(',| ',commaString)))])
 
-@Halo(text='Getting your subscriptions (this may take awhile)...')
+@Halo(stream=sys.stdout if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting your subscriptions (this may take awhile)...') 
 def get_models(headers, subscribe_count) -> list:
     """
     Get user's subscriptions in form of a list.
