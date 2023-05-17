@@ -13,17 +13,7 @@ https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
 
- ## 1.9x Changes:
- - support for protected videos 
- - more control over output you can now push output to discord
- - Additional output levels added
- - Fix issue with pinned responsetype mapping being set to archive by default
- - version arg now shows commit number, and branch
- - cache has reimplemented updated, this means the old json files can be removed. Unfortunely the cache files will have to be recreated
- - Silent mode is deprechated and replace with --ouput prompts
- - config new keys mp4decrypt and discord
- - Fixed issue with like and unliking posts
- - post arg can be called multiple times or can be in a comma seperated list
+
 
   ## Description:
   command-line program to download media, and to process other batch operations such as liking and unliking posts.
