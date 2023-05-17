@@ -261,6 +261,13 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     ffmpeg.output( ffmpeg.input(str(video["path"])), ffmpeg.input(str(audio["path"])), str(path_to_file),codec='copy',loglevel="quiet").overwrite_output().run( capture_stdout=True)
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
+    if ele.postdate:
+        newDate=dates.convert_local_time(ele.postdate)
+        log.debug(f"ID:{ele.id} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+        set_time(path_to_file,newDate )
+        log.debug(f"ID:{ele.id} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+    if ele.id:
+        operations.write_media_table(ele,path_to_file,model_id,username)
 
 async def key_helper(pssh,licence_url,id):
     out=cache.get(licence_url)
