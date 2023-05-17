@@ -68,8 +68,9 @@ def get_current_config_schema(config: dict) -> dict:
             'date': get_date(config),
             "metadata": get_metadata(config),
             "filter":get_filter(config),
-            "mp4decrypt":get_mp4decrypt(config=None),
-             "discord":get_discord(config=None),
+            "mp4decrypt":get_mp4decrypt(config),
+            "ffmpeg":get_ffmpeg(config),
+             "discord":get_discord(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -98,6 +99,7 @@ def make_config(path, config=None):
             'metadata':get_metadata(config),
             "filter":get_filter(config),
             "mp4decrypt":get_mp4decrypt(config=None),
+            "ffmpeg":get_ffmpeg(config),
             "discord":get_discord(config=None),
             "responsetype":{
         "timeline":get_timeline_responsetype(config),
@@ -179,6 +181,13 @@ def update_mp4decrypt():
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
 
+def update_ffmpeg():
+    config={"config":read_config()}
+    config["config"]["ffmpeg"]=prompts.ffmpeg_prompt(config)
+    p = pathlib.Path.home() / constants.configPath / constants.configFile
+    with open(p, 'w') as f:
+        f.write(json.dumps(config, indent=4))
+
     
 def get_save_location(config=None):
     if config==None:
@@ -230,6 +239,11 @@ def get_mp4decrypt(config=None):
     if config==None:
         return constants.MP4DECRYPT_DEFAULT    
     return config.get('mp4decrypt', constants.MP4DECRYPT_DEFAULT) or ""
+
+def get_ffmpeg(config=None):
+    if config==None:
+        return constants.FFMPEG_DEFAULT  
+    return config.get('ffmpeg', constants.FFMPEG_DEFAULT) or ""
 
 def get_discord(config=None):
     if config==None:

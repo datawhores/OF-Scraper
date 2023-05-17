@@ -138,6 +138,20 @@ Filepath is invalid or not detected as mp4decrypt
                 move_cursor_to_end=True,
             )
 
+def ffmpegvalidator():
+    def callable(x):
+       return paths.ffmpegchecker(x)
+            
+    return Validator.from_callable(
+                callable,
+textwrap.dedent(f"""
+Filepath is invalid or not detected as ffmpeg
+""").strip()
+                
+                ,
+                move_cursor_to_end=True,
+            )
+
 def metadatavalidator():
     def callable(x):
         try:
