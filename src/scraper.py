@@ -146,8 +146,7 @@ def process_pinned_posts(headers, model_id,username):
 def process_profile(headers, username) -> list:
     user_profile = profile.scrape_profile(headers, username)
     urls, info = profile.parse_profile(user_profile)
-    if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL:
-        profile.print_profile_info(info)
+    profile.print_profile_info(info)       
     output=[]
     for ele in enumerate(urls):
         count=ele[0]
@@ -450,7 +449,7 @@ def check_auth():
         headers = auth.make_headers(auth.read_auth())
         status=init.getstatus(headers)
         if status=="DOWN":
-            log.warning("Auth Failed")
+            log.error("Auth Failed")
             auth.make_auth(auth=auth.read_auth())
             continue
         break
