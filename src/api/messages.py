@@ -53,7 +53,7 @@ async def get_messages(headers, model_id):
     page_count=0 
     desc = 'Pages Progress: {page_count}'   
 
-    with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2) as main_bar:
+    with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2,disable=True if logging.getLogger("src").handlers[2].level>=constants.SUPPRESS_LOG_LEVEL else False) as main_bar:
         while len(tasks)!=0:
                     for coro in asyncio.as_completed(tasks):
                         result=await coro or []

@@ -43,6 +43,8 @@ import src.utils.download as download
 import src.interaction.like as like
 import src.utils.logger as logger
 import src.utils.args as args_
+import src.constants as constants
+
 
 
 console=Console()
@@ -142,7 +144,8 @@ def process_pinned_posts(headers, model_id,username):
 def process_profile(headers, username) -> list:
     user_profile = profile.scrape_profile(headers, username)
     urls, info = profile.parse_profile(user_profile)
-    profile.print_profile_info(info)
+    if logging.getLogger("src").handlers[2].level<constants.SUPPRESS_LOG_LEVEL:
+        profile.print_profile_info(info)
     output=[]
     for ele in enumerate(urls):
         count=ele[0]

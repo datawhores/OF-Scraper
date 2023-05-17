@@ -67,7 +67,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
         data = 0
         desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
 
-        with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws), colour='cyan', leave=True) as main_bar:   
+        with tqdm(desc=desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws), colour='cyan', leave=True,disable=True if logging.getLogger("src").handlers[2].level>=constants.SUPPRESS_LOG_LEVEL else False) as main_bar:   
             for ele in medialist:
                 with paths.set_directory(paths.getmediadir(ele,username,model_id)):
 
@@ -149,7 +149,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
                         pathstr=str(path_to_file)
                         temp=paths.trunicate(f"{path_to_file}.part")
                         pathlib.Path(temp).unlink(missing_ok=True)
-                        with tqdm(desc=f"{attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False) as bar:
+                        with tqdm(desc=f"{attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False,disable=True if logging.getLogger("src").handlers[2].level>=constants.SUPPRESS_LOG_LEVEL else False) as bar:
                             with open(temp, 'wb') as f:                           
                                 num_bytes_downloaded = r.num_bytes_downloaded
                                 async for chunk in r.aiter_bytes(chunk_size=1024):
@@ -226,7 +226,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                             temp.unlink(missing_ok=True)
                             item["path"]=temp
                             pathstr=str(temp)
-                            with tqdm(desc=f"{attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False) as bar:
+                            with tqdm(desc=f"{attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False,disable=True if logging.getLogger("src").handlers[2].level>=constants.SUPPRESS_LOG_LEVEL else False) as bar:
                                 with open(temp, 'wb') as f:                           
                                     num_bytes_downloaded = r.num_bytes_downloaded
                                     async for chunk in r.aiter_bytes(chunk_size=1024):
