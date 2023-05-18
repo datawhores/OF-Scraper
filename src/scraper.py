@@ -564,7 +564,7 @@ def scrapper():
     #     pass
     global selectedusers
     selectedusers=None
-    if len(args.posts)<0: 
+    if len(args.posts)>0: 
         check_auth()
         check_config()
         run(process_post)        
