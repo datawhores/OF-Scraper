@@ -67,4 +67,4 @@ testpaths = [
 enable = true
 vcs="git"
 metadata=true
-format="1.87+{branch}.{commit}"
+format="{base}"
