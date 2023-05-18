@@ -313,7 +313,7 @@ class Media():
             return MPEGDASHParser.parse(r.content.decode())
     @property
     def license(self):
-        responsetype=self.responsetype_
+        responsetype=self.post.post["responseType"]
         if responsetype in ["timeline","archived","pinned"]:
             responsetype="post"
         return LICENCE_URL.format(self.id,responsetype,self.postid)
