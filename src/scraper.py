@@ -397,35 +397,38 @@ def process_unlike():
                 favorited_posts = like.filter_for_favorited(posts)
                 post_ids = like.get_post_ids(favorited_posts)
                 like.unlike(headers, model_id, ele["name"], post_ids)
-
-def set_schedule(*params):
-    [schedule.every(args.daemon).minutes.do(jobqueue.put,param) for param in params]
+#Adds a function to the job queue
+def set_schedule(*functs):
+    [schedule.every(args.daemon).minutes.do(jobqueue.put,funct) for funct in functs]
     while True:
         schedule.run_pending()
         time.sleep(30)
 
 
 ## run script once or on schedule based on args
-def run(*params):
+def run(*functs):
     # get usernames prior to potentially supressing output
     check_auth()
     getselected_usernames()
    
-    if args.log=="OFF":
+    if args.output=="PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")    
     if args.daemon:
         log.info(f"[bold]daemon mode on[/bold]")   
-    run_helper(*params)
+    run_helper(*functs)
 
 
-def run_helper(*params):
-    [param() for param in params]    
+def run_helper(*functs):
+    # run each function once
+    [funct() for funct in functs]    
     if args.daemon:
         global jobqueue
         jobqueue=queue.Queue()
-        worker_thread = threading.Thread(target=set_schedule,args=[*params])
+        worker_thread = threading.Thread(target=set_schedule,args=[*functs])
         worker_thread.start()
+        # Check if jobqueue has function
         while True:
+            log.debug(list(jobqueue.queue))
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
@@ -566,20 +569,23 @@ def scrapper():
     #     pass
     global selectedusers
     selectedusers=None
-    if len(args.posts)>0: 
-        check_auth()
-        check_config()
-        run(process_post)        
-    elif args.action=="like":
-        check_auth()
-        run(process_like)
-    elif args.action=="unlike":
-        check_auth()
-        run(process_unlike)  
-    else:
+    functs=[]
+    if len(args.posts)==0 and not args.action:
         if args.daemon:
-            log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
+                    log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
+        return
+    check_auth()
+    check_config()
+    if len(args.posts)>0: 
+        functs.append(process_post)      
+    elif args.action=="like":
+        functs.append(process_like)
+    elif args.action=="unlike":
+        functs.append(process_unlike)
+    run(*functs)  
+  
+       
 
 
 
