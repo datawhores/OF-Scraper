@@ -18,11 +18,15 @@ import schedule
 import threading
 import queue
 import logging
+import textwrap
+from contextlib import contextmanager
+import timeit
 from itertools import chain
 import re
 from rich.console import Console
 import webbrowser
 from halo import Halo
+import arrow
 import src.prompts.prompts as prompts
 import src.api.messages as messages
 import src.db.operations as operations
@@ -272,16 +276,14 @@ def setfilter():
         args_.changeargs(args)
 
 def process_prompts():
-    changeusernames=True
+    
     while  True:
-        args.posts=None
+        args.posts=[]
         result_main_prompt = prompts.main_prompt()
-        if changeusernames and result_main_prompt in [0,1,2]:
-            check_auth()
-            setfilter()
-            getselected_usernames()
+     
         #download
         if result_main_prompt == 0:
+            check_auth()
             check_config()
             process_post()     
 
@@ -339,63 +341,60 @@ def process_prompts():
         log.warning("Done With Run")
         if prompts.continue_prompt()=="No":
             break
-        global selectedusers
-        if selectedusers:
-            changeusernames=False
-            log.warning(f"Currently Selected Users\n{list(map(lambda x:x['name'],selectedusers))}")
-            if prompts.reset_username_prompt()=="Yes":
-                selectedusers=None
-                changeusernames=True
+  
         
 
 
 def process_post():
-    profiles.print_current_profile()
-    headers = auth.make_headers(auth.read_auth())
-    init.print_sign_status(headers)
-    userdata=getselected_usernames()
-    for ele in userdata:
-        if args.posts:
-            log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
-        try:
-            model_id = profile.get_id(headers, ele["name"])
-            create_tables(model_id,ele['name'])
-            operations.write_profile_table(model_id,ele['name'])
-            combined_urls=process_areas(headers, ele, model_id)
-            asyncio.run(download.process_dicts(
-            ele["name"],
-            model_id,
-            combined_urls,
-            forced=args.dupe,
-            ))
-        except Exception as e:
-            log.traceback(f"failed with exception: {e}")
-            log.traceback(traceback.format_exc())
-    
-    
+    with scrape_context_manager():
+        profiles.print_current_profile()
+        headers = auth.make_headers(auth.read_auth())
+        init.print_sign_status(headers)
+        userdata=getselected_usernames()
+        for ele in userdata:
+            if args.posts:
+                log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+            try:
+                model_id = profile.get_id(headers, ele["name"])
+                create_tables(model_id,ele['name'])
+                operations.write_profile_table(model_id,ele['name'])
+                combined_urls=process_areas(headers, ele, model_id)
+                asyncio.run(download.process_dicts(
+                ele["name"],
+                model_id,
+                combined_urls,
+                forced=args.dupe,
+                ))
+            except Exception as e:
+                log.traceback(f"failed with exception: {e}")
+                log.traceback(traceback.format_exc())
+        
+        
 
 def process_like():
-    profiles.print_current_profile()
-    headers = auth.make_headers(auth.read_auth())
-    userdata=getselected_usernames()
-    for ele in list(filter(lambda x: x["active"],userdata)):
-            model_id = profile.get_id(headers, ele["name"])
-            posts = like.get_posts(headers, model_id)
-            unfavorited_posts = like.filter_for_unfavorited(posts)
-            post_ids = like.get_post_ids(unfavorited_posts)
-            like.like(headers, model_id, ele["name"], post_ids)
+    with scrape_context_manager():
+        profiles.print_current_profile()
+        headers = auth.make_headers(auth.read_auth())
+        userdata=getselected_usernames()
+        for ele in list(filter(lambda x: x["active"],userdata)):
+                model_id = profile.get_id(headers, ele["name"])
+                posts = like.get_posts(headers, model_id)
+                unfavorited_posts = like.filter_for_unfavorited(posts)
+                post_ids = like.get_post_ids(unfavorited_posts)
+                like.like(headers, model_id, ele["name"], post_ids)
 
 def process_unlike():
-    profiles.print_current_profile()
-    headers = auth.make_headers(auth.read_auth())
-    init.print_sign_status(headers)
-    userdata=getselected_usernames()
-    for ele in list(filter(lambda x: x["active"],userdata)):
-            model_id = profile.get_id(headers, ele["name"])
-            posts = like.get_posts(headers, model_id)
-            favorited_posts = like.filter_for_favorited(posts)
-            post_ids = like.get_post_ids(favorited_posts)
-            like.unlike(headers, model_id, ele["name"], post_ids)
+    with scrape_context_manager(): 
+        profiles.print_current_profile()
+        headers = auth.make_headers(auth.read_auth())
+        init.print_sign_status(headers)
+        userdata=getselected_usernames()
+        for ele in list(filter(lambda x: x["active"],userdata)):
+                model_id = profile.get_id(headers, ele["name"])
+                posts = like.get_posts(headers, model_id)
+                favorited_posts = like.filter_for_favorited(posts)
+                post_ids = like.get_post_ids(favorited_posts)
+                like.unlike(headers, model_id, ele["name"], post_ids)
 
 def set_schedule(*params):
     [schedule.every(args.daemon).minutes.do(jobqueue.put,param) for param in params]
@@ -461,25 +460,31 @@ def getselected_usernames():
     #username list will be retrived once per run
     global selectedusers
     if selectedusers:
-        return selectedusers
-
-    
-    headers = auth.make_headers(auth.read_auth())
-    subscribe_count = process_me(headers)
-    parsed_subscriptions = get_models(headers, subscribe_count)
-    filter_subscriptions=filteruserHelper(parsed_subscriptions )
-    if args.username and "ALL" in args.username:
-        selectedusers=filter_subscriptions
-    
-
-    elif args.username:
-        userSelect=set(args.username)
-        selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
-    #manually select usernames
+        if len(args.posts)>0:
+            return selectedusers
+        elif prompts.reset_username_prompt()=="No":
+           return selectedusers
+        else:
+            setfilter()
     else:
-        selectedusers= get_model(filter_subscriptions)
-    #remove dupes
-    return selectedusers
+        if len(args.posts)==0:
+            setfilter()
+        headers = auth.make_headers(auth.read_auth())
+        subscribe_count = process_me(headers)
+        parsed_subscriptions = get_models(headers, subscribe_count)
+        filter_subscriptions=filteruserHelper(parsed_subscriptions )
+        if args.username and "ALL" in args.username:
+            selectedusers=filter_subscriptions
+        
+
+        elif args.username:
+            userSelect=set(args.username)
+            selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
+        #manually select usernames
+        else:
+            selectedusers= get_model(filter_subscriptions)
+        #remove dupes
+        return selectedusers
 def filteruserHelper(usernames):
     #paid/free
     filterusername=usernames
@@ -508,26 +513,44 @@ def create_tables(model_id,username):
     operations.create_stories_table(model_id,username)
 
 
-def main():
-    with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
-        try:
-            log.error(
-                f"""
-                ==============================                            
-                [bold]starting script[/bold]
-                ==============================
-                """
 
-                )   
-            scrapper()
-            log.warning(
-"""
-===========================
-[bold]Script Finished[/bold]
-===========================
-"""
+@contextmanager
+def scrape_context_manager():
+        
+        # Before yield as the enter method
+
+        start = timeit.default_timer()
+        log.error(
+    f"""
+    ==============================                            
+    [bold]starting script[/bold]
+    ==============================
+    """
+    
 
     )
+        yield
+        end=timeit.default_timer()
+        log.error(f"""
+===========================
+[bold]Script Finished[/bold]
+Run Time:  {str(arrow.get(end)-arrow.get(start)).split(".")[0]}
+===========================
+""")
+        None   
+def main():
+    
+# Python program for creating a
+# context manager using @contextmanager
+# decorator
+ 
+    with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
+        try:
+ 
+            scrapper()
+
+            
+
         except Exception as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())
@@ -549,7 +572,7 @@ def scrapper():
         check_auth()
         run(process_like)
     elif args.action=="unlike":
-        check_auth()    
+        check_auth()
         run(process_unlike)  
     else:
         if args.daemon:
