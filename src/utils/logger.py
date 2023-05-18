@@ -38,12 +38,8 @@ class DiscordHandler(logging.Handler):
 
 class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
-
     @staticmethod
     def _filter(s):
-        # Filter out the password with regex
-        # or replace etc.
-        # Replace here with your own regex..
         s=re.sub("&Policy=[^&\"]+", "&Policy={hidden}", s)
         s=re.sub("&Signature=[^&\"]+", "&Signature={hidden}", s)
         s=re.sub("&Key-Pair-Id=[^&\"]+", "&Key-Pair-Id={hidden}", s)
@@ -98,9 +94,11 @@ def init_logger(log):
     log.setLevel(1)
     addtrackback()
     # # #log file
-    fh=logging.FileHandler(paths.getlogpath(),mode="a")
+    stream=open(paths.getlogpath(),mode="a")
+    fh=logging.StreamHandler(stream)
     fh.setLevel(getLevel(args.getargs().log))
-    fh.setFormatter(LogFileFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+    fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+    fh.addFilter(NoDebug())
     # #discord
     cord=DiscordHandler()
     cord.setLevel(getLevel(args.getargs().discord))
@@ -120,6 +118,12 @@ def init_logger(log):
         sh2.setFormatter(SensitiveFormatter('%(message)s'))
         sh2.addFilter(DebugOnly())
         log.addHandler(sh2)
+    if args.getargs().log=="DEBUG":
+        fh2=logging.StreamHandler(stream)
+        fh2.setLevel(getLevel(args.getargs().log))
+        fh2.setFormatter(LogFileFormatter('%(asctime)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh2.addFilter(DebugOnly())
+        log.addHandler(fh2)
     return log
 
 
