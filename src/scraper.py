@@ -156,6 +156,7 @@ def process_profile(headers, username) -> list:
         count=ele[0]
         data=ele[1]
         output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
+    log.info(f"Avatar : {list(filter(lambda x:x.filename=='avatar',output))[0].url}")
     return output
 
 
@@ -338,7 +339,6 @@ def process_prompts():
             elif result_profiles_prompt == 4:
                 # View profiles
                 profiles.print_profiles()
-        log.warning("Done With Run")
         if prompts.continue_prompt()=="No":
             break
   
@@ -521,11 +521,11 @@ def scrape_context_manager():
 
         start = timeit.default_timer()
         log.error(
-    f"""
-    ==============================                            
-    [bold]starting script[/bold]
-    ==============================
-    """
+f"""
+==============================                            
+[bold]starting script[/bold]
+==============================
+"""
     
 
     )
@@ -534,7 +534,7 @@ def scrape_context_manager():
         log.error(f"""
 ===========================
 [bold]Script Finished[/bold]
-Run Time:  {str(arrow.get(end)-arrow.get(start)).split(".")[0]}
+Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 ===========================
 """)
         None   
