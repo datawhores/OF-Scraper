@@ -107,6 +107,9 @@ https://github.com/datawhores/ofscraper/wiki/Fuzzy-Search
  The best way to do this is through the commandline system. This will allow you to skip the menu, and for example scrape a provided list of accounts
  
   https://github.com/datawhores/ofscraper/wiki/command-line-args
+
+# Docker Support
+https://github.com/datawhores/ofscraper/pkgs/container/ofscraper
  
  # Customazation
     
