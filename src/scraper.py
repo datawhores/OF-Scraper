@@ -405,6 +405,7 @@ def set_schedule(*functs):
         time.sleep(30)
 
 
+
 ## run script once or on schedule based on args
 def run(*functs):
     # get usernames prior to potentially supressing output
@@ -428,10 +429,10 @@ def run_helper(*functs):
         worker_thread.start()
         # Check if jobqueue has function
         while True:
-            log.debug(list(jobqueue.queue))
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
+            log.debug(schedule.jobs)
                 
 def check_auth():
     status=None
