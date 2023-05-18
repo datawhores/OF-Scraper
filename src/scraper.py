@@ -156,7 +156,9 @@ def process_profile(headers, username) -> list:
         count=ele[0]
         data=ele[1]
         output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
-    log.info(f"Avatar : {list(filter(lambda x:x.filename=='avatar',output))[0].url}")
+    avatars=list(filter(lambda x:x.filename=='avatar',output))
+    if len(avatars)>0:
+        log.info(f"Avatar : {avatars[0].url}")
     return output
 
 
