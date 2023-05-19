@@ -44,7 +44,7 @@ def createDir(path):
         log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    return pathlib.Path(config_.get_metadata(config_.read_config()).format(configpath=homeDir / constants.configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_path=pathlib.Path((config_.get_save_location(config_.read_config())))),"user_data.db")
+    return pathlib.Path(config_.get_metadata(config_.read_config()).format(configpath=homeDir / constants.configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_location=pathlib.Path((config_.get_save_location(config_.read_config())))),"user_data.db")
 
 def getmediadir(ele,username,model_id):
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
