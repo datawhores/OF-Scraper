@@ -1,7 +1,9 @@
 name: release pypi
 on:
+  workflow_dispatch: 
   release:
     types: [published, created, edited]
+    
 jobs:
   run :
     runs-on: ubuntu-latest
