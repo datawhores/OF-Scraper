@@ -94,13 +94,7 @@ def init_logger(log):
     log.setLevel(1)
     addtrackback()
     # # #log file
-    if args.getargs().log!="OFF":
-        stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
-        fh=logging.StreamHandler(stream)
-        fh.setLevel(getLevel(args.getargs().log))
-        fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-        fh.addFilter(NoDebug())
-    # #discord
+      # #discord
     cord=DiscordHandler()
     cord.setLevel(getLevel(args.getargs().discord))
     cord.setFormatter(SensitiveFormatter('%(message)s'))
@@ -110,9 +104,17 @@ def init_logger(log):
     sh.setLevel(getLevel(args.getargs().output))
     sh.setFormatter(SensitiveFormatter('%(message)s'))
     sh.addFilter(NoDebug())
-    log.addHandler(fh)
     log.addHandler(cord)
     log.addHandler(sh)
+    if args.getargs().log!="OFF":
+        stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
+        fh=logging.StreamHandler(stream)
+        fh.setLevel(getLevel(args.getargs().log))
+        fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh.addFilter(NoDebug())
+        log.addHandler(fh)
+
+    
     if args.getargs().output=="DEBUG":
         sh2=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False)
         sh2.setLevel(args.getargs().output)
