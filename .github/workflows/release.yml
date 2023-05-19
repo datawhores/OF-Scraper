@@ -1,4 +1,4 @@
-name: Release
+name: release pypi
 on:
   release:
     types: [published, created, edited]
@@ -22,14 +22,6 @@ jobs:
           pip install dunamai 
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - name: Metadata
-        id: metadata
-        run: |
-          echo '::echo::on'
-          set +e
-          echo $(poetry run dunamai from git --no-metadata --style semver)
-          echo "::set-output name=commit::$(make hash)"       
-           
       - name: Build
         run: |
           poetry version $(dunamai from git --format "{base}")
@@ -43,5 +35,4 @@ jobs:
           #poetry config pypi-token.test-pypi $PYPI_TOKEN2
           #poetry publish --repository test-pypi
           poetry config pypi-token.pypi $PYPI_TOKEN
-
-           poetry publish --build
+          poetry publish
