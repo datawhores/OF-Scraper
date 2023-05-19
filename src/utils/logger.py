@@ -94,11 +94,12 @@ def init_logger(log):
     log.setLevel(1)
     addtrackback()
     # # #log file
-    stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
-    fh=logging.StreamHandler(stream)
-    fh.setLevel(getLevel(args.getargs().log))
-    fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-    fh.addFilter(NoDebug())
+    if args.getargs().log!="OFF":
+        stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
+        fh=logging.StreamHandler(stream)
+        fh.setLevel(getLevel(args.getargs().log))
+        fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh.addFilter(NoDebug())
     # #discord
     cord=DiscordHandler()
     cord.setLevel(getLevel(args.getargs().discord))
