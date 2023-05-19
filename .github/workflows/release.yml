@@ -25,10 +25,8 @@ jobs:
         run: |
           pip install poetry-dynamic-versioning
           pip install dunamai 
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
       - name: Metadata
         id: metadata
         run: |
