@@ -9,12 +9,12 @@ from pytest_check import check
 import pytest
 import arrow
 import logging
-import src.utils.download as download
-import src.utils.paths as paths
+import ofscraper.utils.download as download
+import ofscraper.utils.paths as paths
 
 from test.test_constants import *
-from src.api.posts import Post,Media
-from src.utils.dates import convert_local_time
+from ofscraper.api.posts import Post,Media
+from ofscraper.utils.dates import convert_local_time
 
 
 

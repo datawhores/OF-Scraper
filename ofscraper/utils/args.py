@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 import pkg_resources
-from src.__version__ import __version__ 
+from ofscraper.__version__ import __version__ 
 
 args=None
 log=logging.getLogger(__package__)

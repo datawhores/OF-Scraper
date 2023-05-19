@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "automatically scrape onlyfans"
 authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{include = "ofscraper"}]
 
 [tool.poetry.dependencies]
 python = ">=3.7.0,<4"
@@ -48,10 +48,10 @@ requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.poetry.scripts]
-ofscraper = "src.scraper:main"
+ofscraper = "ofscraper.scraper:main"
 
 [project.scripts]
-ofscraper = "src.scraper:main"
+ofscraper = "ofscraper.scraper:main"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/datawhores/ofscraper"

@@ -7,7 +7,7 @@ import platform
 import pathlib
 import arrow
 import textwrap
-import src.utils.paths as paths
+import ofscraper.utils.paths as paths
 def emptyListValidator():
     def callable(x):
         return len(x)>0

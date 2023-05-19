@@ -9,9 +9,9 @@ import subprocess
 import logging
 from rich.console import Console
 import arrow
-import src.constants as constants
-import src.utils.profiles as profiles
-import src.utils.config as config_
+import ofscraper.constants as constants
+import ofscraper.utils.profiles as profiles
+import ofscraper.utils.config as config_
 
 console=Console()
 homeDir=pathlib.Path.home()

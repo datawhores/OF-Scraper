@@ -12,10 +12,10 @@ import logging
 import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
-import src.constants as constants
-import src.utils.auth as auth
-import src.utils.encoding as encoding
-from src.utils.logger import updateSenstiveDict
+import ofscraper.constants as constants
+import ofscraper.utils.auth as auth
+import ofscraper.utils.encoding as encoding
+from ofscraper.utils.logger import updateSenstiveDict
 log=logging.getLogger(__package__)
 console=Console()
 
