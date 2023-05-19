@@ -24,11 +24,11 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Build
         run: |
-          poetry version $(dunamai from git --format "{base}")
+          poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed")
           poetry build
-      - name: Push to pypi 
-        env:
-          PYPI_TOKEN: ${{ secrets.pypi }}
+#       - name: Push to pypi 
+#         env:
+          #PYPI_TOKEN: ${{ secrets.pypi }}
 #         run: |
 #           poetry config pypi-token.pypi $PYPI_TOKEN
 #           poetry publish
