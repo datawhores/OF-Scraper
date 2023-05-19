@@ -126,7 +126,7 @@ def test_user_data_dc_db_str(mocker):
         "filter": FILTER_DEFAULT
     }
 
-   mocker.patch('src.utils.paths.config_.read_config', return_value=migrationConfig)
+   mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
    assert(str(paths.databasePathHelper("1111","test")))=="/root/test/metadata/user_data.db"    
    
 
@@ -153,7 +153,7 @@ def test_createfilename(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -173,7 +173,7 @@ def test_createfilename_allkeys(mocker):
         "filter": FILTER_DEFAULT
     }
 
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     try:
@@ -195,7 +195,7 @@ def test_createfilename_invalid(mocker):
         "filter": FILTER_DEFAULT
     }
 
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     with pytest.raises(Exception):
@@ -214,7 +214,7 @@ def test_create_txt(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -233,7 +233,7 @@ def test_create_postid_counter(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -252,7 +252,7 @@ def test_create_postid_name(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -272,11 +272,11 @@ def test_create_postid_name2(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    mocker.patch('src.api.posts.Post.allmedia', new=[t.allmedia[0]])
+    mocker.patch('ofscraper.api.posts.Post.allmedia', new=[t.allmedia[0]])
     assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
 
 
@@ -298,7 +298,7 @@ def test_create_text_counter(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -321,7 +321,7 @@ def test_create_text_name(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -341,11 +341,11 @@ def test_create_text_name2(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT
     }
-    mocker.patch('src.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    mocker.patch('src.api.posts.Post.allmedia', new=[t.allmedia[0]])
+    mocker.patch('ofscraper.api.posts.Post.allmedia', new=[t.allmedia[0]])
     assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
 
 
