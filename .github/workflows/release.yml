@@ -1,12 +1,7 @@
 name: Release
 on:
-  push:
-    branches: '*'  
-    # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ "main" ]
-
+  release:
+    types: [published, created, edited]
 jobs:
   run :
     runs-on: ubuntu-latest
@@ -44,8 +39,9 @@ jobs:
           PYPI_TOKEN: ${{ secrets.pypi }}
           PYPI_TOKEN2: ${{ secrets.pypi2 }}
         run: |
-          poetry config repositories.test-pypi https://test.pypi.org/legacy/
-          poetry config pypi-token.test-pypi $PYPI_TOKEN2
-          poetry config pypi-token.pypi $PYPI_TOKEN
+          #poetry config repositories.test-pypi https://test.pypi.org/legacy/
+          #poetry config pypi-token.test-pypi $PYPI_TOKEN2
           #poetry publish --repository test-pypi
-#         poetry publish --build
+          poetry config pypi-token.pypi $PYPI_TOKEN
+
+           poetry publish --build
