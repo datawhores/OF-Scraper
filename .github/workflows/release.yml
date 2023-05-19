@@ -1,29 +1,53 @@
-name: codecov
-on: [push, pull_request]
+name: publish/docker
+on:
+  push:
+    branches: '*'  
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ "main" ]
+
 jobs:
-  run:
+  run :
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: list
+        run:  git tag -l --sort=-creatordate
       - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
           python-version: '3.10.6'
+      - name: 🐍 Install dependencies
+        run: |
+          pip install poetry-dynamic-versioning
+          pip install dunamai 
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: 1.4.1
-      - name: Install dependencies
-        run: poetry install --with test
+      - name: Metadata
+        id: metadata
+        run: |
+          echo '::echo::on'
+          set +e
+          echo $(poetry run dunamai from git --no-metadata --style semver)
+          echo "::set-output name=commit::$(make hash)"       
+           
+      - name: Build
+        run: |
+          poetry version $(dunamai from git --format "{base}")
+          poetry build
       - name: Push to pypi 
         env:
           PYPI_TOKEN: ${{ secrets.pypi }}
+          PYPI_TOKEN2: ${{ secrets.pypi2 }}
         run: |
           poetry config repositories.test-pypi https://test.pypi.org/legacy/
-          poetry config pypi-token.test-pypi $PYPI_TOKEN
-          poetry publish --build
-#         poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry config pypi-token.test-pypi $PYPI_TOKEN2
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          #poetry publish --repository test-pypi
 #         poetry publish --build
-          
- 
