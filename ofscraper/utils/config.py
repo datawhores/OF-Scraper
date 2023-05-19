@@ -12,8 +12,8 @@ import json
 import pathlib
 import logging
 from rich.console import Console
-import src.constants as constants
-import src.prompts.prompts as prompts 
+import ofscraper.constants as constants
+import ofscraper.prompts.prompts as prompts 
 
 console=Console()
 log=logging.getLogger(__package__)

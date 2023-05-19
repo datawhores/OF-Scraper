@@ -13,8 +13,8 @@ from itertools import chain
 import logging
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
-import src.constants as constants
-import src.utils.auth as auth
+import ofscraper.constants as constants
+import ofscraper.utils.auth as auth
 log=logging.getLogger(__package__)
 
 

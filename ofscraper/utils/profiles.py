@@ -12,9 +12,9 @@ import pathlib
 import shutil
 from rich.console import Console
 from rich import print
-import src.utils.config as config_
-import src.prompts.prompts as prompts
-import src.constants as constants
+import ofscraper.utils.config as config_
+import ofscraper.prompts.prompts as prompts
+import ofscraper.constants as constants
 
 console=Console()
 

@@ -14,9 +14,9 @@ import logging
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
 import arrow
-import src.constants as constants
-import src.utils.auth as auth
-import src.utils.paths as paths
+import ofscraper.constants as constants
+import ofscraper.utils.auth as auth
+import ofscraper.utils.paths as paths
 from ..utils import auth
 from diskcache import Cache
 cache = Cache(paths.getcachepath())

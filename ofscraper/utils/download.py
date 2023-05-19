@@ -30,14 +30,14 @@ except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 import ffmpeg
-import src.utils.config as config_
-import src.utils.separate as seperate
-import src.db.operations as operations
-import src.utils.paths as paths
-import src.utils.auth as auth
-import src.constants as constants
-import src.utils.dates as dates
-import src.utils.logger as logger
+import ofscraper.utils.config as config_
+import ofscraper.utils.separate as seperate
+import ofscraper.db.operations as operations
+import ofscraper.utils.paths as paths
+import ofscraper.utils.auth as auth
+import ofscraper.constants as constants
+import ofscraper.utils.dates as dates
+import ofscraper.utils.logger as logger
 from tqdm import tqdm
 from diskcache import Cache
 

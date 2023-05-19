@@ -1,7 +1,7 @@
 from test.test_constants import *
-from src.api.posts import Post,Media
+from ofscraper.api.posts import Post,Media
 import re
-import src.utils.args as args_
+import ofscraper.utils.args as args_
 from pytest_check import check
 def test_postcreate_timeline():
     username="test"

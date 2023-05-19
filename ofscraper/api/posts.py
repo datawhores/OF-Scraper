@@ -2,10 +2,10 @@ import re
 import logging
 import httpx
 from ..constants import LICENCE_URL
-import src.utils.args as args_
-import src.utils.auth as auth
+import ofscraper.utils.args as args_
+import ofscraper.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
-import src.utils.config as config
+import ofscraper.utils.config as config
 
 log=logging.getLogger(__package__)
 

@@ -1,5 +1,5 @@
 from test.test_constants import *
-from src.utils.config import *
+from ofscraper.utils.config import *
 def test_current_schema(mocker):
     migrationConfig={"config":{
         "main_profile": PROFILE_DEFAULT,

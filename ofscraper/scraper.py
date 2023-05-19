@@ -27,28 +27,28 @@ from rich.console import Console
 import webbrowser
 from halo import Halo
 import arrow
-import src.prompts.prompts as prompts
-import src.api.messages as messages
-import src.db.operations as operations
-import src.api.posts as posts_
-import src.utils.args as args_
-import src.utils.paths as paths
-import src.utils.exit as exit
-import src.api.paid as paid
-import src.api.highlights as highlights
-import src.api.timeline as timeline
-import src.api.profile as profile
-import src.utils.config as config
-import src.api.subscriptions as subscriptions
-import src.api.me as me
-import src.utils.auth as auth
-import src.utils.profiles as profiles
-import src.api.init as init
-import src.utils.download as download
-import src.interaction.like as like
-import src.utils.logger as logger
-import src.utils.args as args_
-import src.constants as constants
+import ofscraper.prompts.prompts as prompts
+import ofscraper.api.messages as messages
+import ofscraper.db.operations as operations
+import ofscraper.api.posts as posts_
+import ofscraper.utils.args as args_
+import ofscraper.utils.paths as paths
+import ofscraper.utils.exit as exit
+import ofscraper.api.paid as paid
+import ofscraper.api.highlights as highlights
+import ofscraper.api.timeline as timeline
+import ofscraper.api.profile as profile
+import ofscraper.utils.config as config
+import ofscraper.api.subscriptions as subscriptions
+import ofscraper.api.me as me
+import ofscraper.utils.auth as auth
+import ofscraper.utils.profiles as profiles
+import ofscraper.api.init as init
+import ofscraper.utils.download as download
+import ofscraper.interaction.like as like
+import ofscraper.utils.logger as logger
+import ofscraper.utils.args as args_
+import ofscraper.constants as constants
 
 
 

@@ -1,5 +1,5 @@
 from test.test_constants import *
-from src.utils.profiles import *
+from ofscraper.utils.profiles import *
 import pathlib
 def test_profile_count(mocker):
     mocker.patch("src.utils.profiles.pathlib.Path.glob",return_value=[pathlib.Path("1"),pathlib.Path("1"),pathlib.Path("1")])

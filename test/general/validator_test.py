@@ -1,4 +1,4 @@
-from src.prompts.prompt_functions import emptyListValidator,jsonValidator,namevalitator,dirformatvalidator \
+from ofscraper.prompts.prompt_functions import emptyListValidator,jsonValidator,namevalitator,dirformatvalidator \
 ,dateplaceholdervalidator,fileformatvalidator,metadatavalidator
 from test.test_constants import *
 from prompt_toolkit.validation import ValidationError, Validator
