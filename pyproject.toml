@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ofscraper"
-version = "0.0.0"
+version = "1.90"
 description = "automatically scrape onlyfans"
 authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
@@ -43,8 +43,7 @@ pytest-cov = "^4.0.0"
 pytest-mock = "^3.10.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry_dynamic_versioning.backend"
+requires = "poetry-core>=1.0.0"
 
 [tool.poetry.scripts]
 ofscraper = "src.scraper:main"
@@ -63,8 +62,3 @@ testpaths = [
     "tests",
 ]
 
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs="git"
-metadata=true
-format="{base}"
