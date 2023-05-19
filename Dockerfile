@@ -1,6 +1,5 @@
-FROM docker.io/library/alpine:edge
+FROM ubuntu:latest
 RUN apk --no-cache add python3 py3-pip gcc python3-dev musl-dev git
-RUN python3 -m pip install git+https://github.com/datawhores/ofscraper.git 
-
+RUN pip install .
 WORKDIR /opt
 ENTRYPOINT ["ofscraper"]
