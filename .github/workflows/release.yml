@@ -12,8 +12,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: list
-        run:  git tag -l --sort=-creatordate
       - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
@@ -31,6 +29,6 @@ jobs:
       - name: Push to pypi 
         env:
           PYPI_TOKEN: ${{ secrets.pypi }}
-        run: |
-          poetry config pypi-token.pypi $PYPI_TOKEN
-          poetry publish
+#         run: |
+#           poetry config pypi-token.pypi $PYPI_TOKEN
+#           poetry publish
