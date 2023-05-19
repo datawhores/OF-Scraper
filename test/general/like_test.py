@@ -1,5 +1,5 @@
 from test.test_constants import *
-from src.interaction.like import *
+from ofscraper.interaction.like import *
 def test_unlike_filter():
     unliked_only=filter_for_unfavorited(POST_ARRAY)
     test_array=list(filter(lambda x:x.get("isFavorite")==True,unliked_only))

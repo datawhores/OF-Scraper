@@ -14,10 +14,10 @@ from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
 from InquirerPy.validator import EmptyInputValidator,PathValidator
-import src.constants as constants
-import src.prompts.prompt_strings as prompt_strings
-import src.prompts.prompt_functions as prompt_functions
-import src.utils.config as config
+import ofscraper.constants as constants
+import ofscraper.prompts.prompt_strings as prompt_strings
+import ofscraper.prompts.prompt_functions as prompt_functions
+import ofscraper.utils.config as config
 
 console=Console()
 def main_prompt() -> int:

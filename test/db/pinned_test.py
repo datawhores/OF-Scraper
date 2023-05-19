@@ -1,8 +1,8 @@
 import tempfile
-from src.db.operations import *
+from ofscraper.db.operations import *
 import pytest
 from test.test_constants import *
-from src.api.posts import Post,Media
+from ofscraper.api.posts import Post,Media
 
 def test_pinned_create(mocker):
     with tempfile.NamedTemporaryFile() as p:

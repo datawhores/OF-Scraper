@@ -5,9 +5,9 @@ import logging
 from rich.logging import RichHandler
 from rich.console import Console
 from rich.theme import Theme
-import src.utils.paths as paths
-import src.utils.config as config_
-import src.utils.args as args
+import ofscraper.utils.paths as paths
+import ofscraper.utils.config as config_
+import ofscraper.utils.args as args
 
 senstiveDict={}
 

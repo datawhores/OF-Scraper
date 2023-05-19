@@ -11,8 +11,8 @@ from urllib.request import urlopen
 from rich.console import Console
 import httpx
 import logging
-import src.utils.auth as auth
-import src.constants as constants
+import ofscraper.utils.auth as auth
+import ofscraper.constants as constants
 paid_content_list_name = 'list'
 log=logging.getLogger(__package__)
 console=Console()

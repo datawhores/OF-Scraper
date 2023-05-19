@@ -13,7 +13,7 @@ import logging
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from tqdm.asyncio import tqdm
-import src.constants as constants
+import ofscraper.constants as constants
 from ..utils import auth
 from ..utils.paths import getcachepath
 from diskcache import Cache
