@@ -2,7 +2,8 @@ import argparse
 import logging
 import sys
 import pkg_resources
-my_version = pkg_resources.get_distribution('ofscraper').version
+from src.__version__ import __version__ 
+
 args=None
 log=logging.getLogger(__package__)
 def getargs(input=None):
@@ -18,7 +19,7 @@ def getargs(input=None):
 
     parser = argparse.ArgumentParser(add_help=False)   
     general=parser.add_argument_group("General",description="General Args")  
-    general.add_argument('-v', '--version', action='version', version=my_version)
+    general.add_argument('-v', '--version', action='version', version=__version__ )
     general.add_argument('-h', '--help', action='help')
 
                                     
