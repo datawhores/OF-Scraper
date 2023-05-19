@@ -6,6 +6,7 @@ name: Docker Release
 # documentation.
 
 on:
+  workflow_dispatch: 
   release:
     types: [published, created, edited]
 
