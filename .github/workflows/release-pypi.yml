@@ -26,9 +26,9 @@ jobs:
         run: |
           poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
           poetry build
-#       - name: Push to pypi 
-#         env:
-          #PYPI_TOKEN: ${{ secrets.pypi }}
-#         run: |
-#           poetry config pypi-token.pypi $PYPI_TOKEN
-#           poetry publish
+      - name: Push to pypi 
+        env:
+          PYPI_TOKEN: ${{ secrets.pypi }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish
