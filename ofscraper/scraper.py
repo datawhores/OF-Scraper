@@ -49,6 +49,7 @@ import ofscraper.interaction.like as like
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.constants as constants
+import ofscraper.utils.filters as filters
 
 
 
@@ -158,7 +159,7 @@ def process_profile(headers, username) -> list:
         output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
     avatars=list(filter(lambda x:x.filename=='avatar',output))
     if len(avatars)>0:
-        log.info(f"Avatar : {avatars[0].url}")
+        log.warning(f"Avatar : {avatars[0].url}")
     return output
 
 
@@ -198,36 +199,11 @@ def process_areas(headers, ele, model_id) -> list:
             if 'All' in args.posts:
                 highlights_dicts=highlights_tuple[0]
                 stories_dicts=highlights_tuple[1]               
-    return posts_filter(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
+    return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
 
 )
 
-def posts_filter(media):
-    filtersettings=config.get_filter(config.read_config())
-    output=[]
-    ids=set()
-    log.info("Removing duplicate media")
-    log.debug(f"[bold]Combined Media Count with dupes[/bold]  {len(media)}")
-    for item in media:
-        if not item.id or item.id not in ids:
-            output.append(item)
-            ids.add(item.id)
-    log.debug(f"[bold]Combined Media Count without dupes[/bold] {len(output)}")
-    output=list(sorted(output,key=lambda x:x.date,reverse=True))
-    if isinstance(filtersettings,str):
-        filtersettings=filtersettings.split(",")
-    if isinstance(filtersettings,list):
-        filtersettings=list(map(lambda x:x.lower().replace(" ",""),filtersettings))
-        filtersettings=list(filter(lambda x:x!="",filtersettings))
-        if len(filtersettings)==0:
-            return media
-        log.info(f"filtering Media to {','.join(filtersettings)}")
-        output= list(filter(lambda x:x.mediatype.lower() in filtersettings,output))
-    else:
-        log.info("The settings you picked for the filter are not valid\nNot Filtering")
-        log.debug(f"[bold]Combined Media Count Filtered:[/bold] {len(output)}")
-    return output
 
         
 
