@@ -8,10 +8,11 @@ COPY / ./ofscraper
 WORKDIR ./ofscraper
 RUN apt-get update -y
 RUN apt-get upgrade -y
-RUN apt-get install curl python3 pip git -y
+RUN apt-get install curl python3.10 pip git python3.10-venv -y
 RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN python3.10 -m venv .venv
 RUN pip install dunamai
 RUN /root/.local/bin/poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
 RUN /root/.local/bin/poetry install
 WORKDIR /root
-ENTRYPOINT ["ofscraper"]
+ENTRYPOINT ["/root/ofscraper/.venv/bin/ofscraper"]
