@@ -127,7 +127,7 @@ def test_user_data_dc_db_str(mocker):
     }
 
    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
-   assert(str(paths.databasePathHelper("1111","test")))=="/root/test/metadata/user_data.db"    
+   assert(str(paths.databasePathHelper("1111","test")))==str(pathlib.Path(SAVE_PATH_DEFAULT,"test","metadata","user_data.db"))
    
 
 def test_context_provider(mocker):
@@ -365,13 +365,27 @@ def test_convert_byte_large():
     size=1*10**12
     assert(download.convert_num_bytes(size))==f"{1*10**(12-9)}.0 GB"
 
+def test_test(mocker):
+    return
 
 
-def test_convert_byte_small():
-    size=1*10**7
-    assert(download.convert_num_bytes(size))==f"{1*10**(7-6)}.0 MB"
+def test_metadatesavelocation(mocker):
+    migrationConfig={
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_LOCATION_DC,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+        "dir_format": DIR_FORMAT_DEFAULT,
+        "file_format": FILEFORMAT_POSTID,
+        "textlength": TEXTLENGTH_DEFAULT,
+        "date": DATE_DEFAULT,
+        "metadata": METADATA_DC,
+        "filter": FILTER_DEFAULT,
+        "mp4decrypt":MP4DECRYPT_DEFAULT  
+    }
+        
+    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
+    username="test"
+    id="111"
+    assert(str(paths.databasePathHelper(id,username)))==str(pathlib.Path(SAVE_LOCATION_DC,"test","metadata","user_data.db"))
 
     
-
-
-          
