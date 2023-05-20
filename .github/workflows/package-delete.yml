@@ -1,4 +1,4 @@
-name: Delete branch tag
+name: Delete Package
 on:
   workflow_dispatch: 
 jobs:
