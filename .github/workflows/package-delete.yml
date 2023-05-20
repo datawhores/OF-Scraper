@@ -7,13 +7,12 @@ jobs:
     steps:
     - uses: snok/container-retention-policy@v2
       with:
-        image-names: dev, web, test*
+        image-names: ofscraper
         cut-off: two hours ago UTC+2
         timestamp-to-use: updated_at
-        account-type: org
-        org-name: google
+        account-type: personal
         keep-at-least: 10
-        skip-tags: latest
+        skip-tags: latest,1.*
         token: ${{ secrets.DOCKER_DELETE}}
 
 
