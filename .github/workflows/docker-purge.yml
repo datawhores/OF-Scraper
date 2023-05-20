@@ -1,0 +1,16 @@
+name: Docker Purge
+on:
+  workflow_dispatch: 
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: snok/container-retention-policy@v2
+      with:
+        image-names: ofscraper
+        cut-off: one minute ago UTC-6
+        timestamp-to-use: updated_at
+        account-type: personal
+        keep-at-least: 3
+        token: ${{ secrets.DOCKER_DELETE}}
+
