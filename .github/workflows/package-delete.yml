@@ -7,10 +7,6 @@ jobs:
     steps:
     - uses: actions/delete-package-versions@v4
       with:
-        # Owner of the package.
-        # Defaults to the owner of the repo executing the workflow.
-        # Required if deleting a version from a package hosted in a different org than the one executing the workflow.
-        owner: datawhores
         # Name of the package.
         # Required
         package-name: ofscraper
