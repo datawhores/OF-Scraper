@@ -5,25 +5,15 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/delete-package-versions@v4
+    - uses: snok/container-retention-policy@v2
       with:
-        # Name of the package.
-        # Required
-        package-name: ofscraper
-        # Type of the package. Can be one of container, maven, npm, nuget, or rubygems.
-        # Required
-        package-type: container
-        # The number of old versions to delete starting from the oldest version.
-        # Defaults to 1.
-   
-        min-versions-to-keep: 10
-        # The token used to authenticate with GitHub Packages.
-        # Defaults to github.token.
-        # Required if the repo running the workflow does not have access to delete the package.
-        #   For rubygems and maven package, repo has access if package is hosted in the same repo as the workflow.
-        #   For container, npm and nuget package, repo has access if assigned **Admin** role under Package Settings > Manage Actions Access.
-        #   If `package-version-ids` is given the token only needs the delete packages scope.
-        #   If `package-version-ids` is not given the token needs the delete packages scope and the read packages scope
+        image-names: dev, web, test*
+        cut-off: two hours ago UTC+2
+        timestamp-to-use: updated_at
+        account-type: org
+        org-name: google
+        keep-at-least: 10
+        skip-tags: latest
         token: ${{ secrets.GITHUB_TOKEN}}
 
 
