@@ -55,7 +55,7 @@ ofscraper = "ofscraper.scraper:main"
 ofscraper = "ofscraper.scraper:main"
 
 [tool.poetry.urls]
-"Homepage" = "https://github.com/datawhores/ofscraper"
+"Homepage" = "https://github.com/datawhores/OF-Scraper"
 
 # pyproject.toml
 [tool.pytest.ini_options]
