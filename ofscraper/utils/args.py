@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-import pkg_resources
+import arrow
 from ofscraper.__version__ import __version__ 
 
 args=None
@@ -48,6 +48,13 @@ def getargs(input=None):
     )
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
+    post.add_argument(
+        '-be', '--before', help = 'Download post at or before the given date general synax is Month/Day/Year',type=arrow.get)
+ 
+    post.add_argument(
+        '-af', '--after', help = 'Download post at or after the given date Month/Day/Year',type=arrow.get)
+    
+    
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
