@@ -11,7 +11,7 @@ __title__ = 'ofscraper'
 __author__ = 'datawhores'
 __author_email__ = 'datawhores@riseup.net'
 __description__ = 'A command-line program to quickly download,like or unlike posts, and more'
-__url__ = 'https://github.com/datawhores/ofscraper'
+__url__ = 'https://github.com/datawhores/OF-Scraper'
 __license__ = 'GNU General Public License v3 or later (GPLv3+)'
 __copyright__ = 'Copyright 2023'
 

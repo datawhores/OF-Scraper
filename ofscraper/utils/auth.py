@@ -112,7 +112,7 @@ def make_auth(path=None, auth=None):
         auth=auth or  defaultAuth
         for key in ["sess","auth_id","auth_uid_"]:
             auth["auth"][key]=temp.get(key,"")
-        console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/ofscraper and find the section named 'Getting Your Auth Info'\nCookie information has been retived automatically\nSo You only need to retrive the x-bc header and the user-agent",style="yellow")
+        console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nCookie information has been retived automatically\nSo You only need to retrive the x-bc header and the user-agent",style="yellow")
         if not auth["auth"].get("x-bc"):
             auth["auth"]["x-bc"]=xbc_prompt()
         auth["auth"]["user_agent"]= user_agent_prompt(auth["auth"].get("user_agent") or "")
@@ -140,7 +140,7 @@ def make_auth(path=None, auth=None):
 
 
     else:
-        console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/ofscraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
+        console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
         auth['auth'].update(auth_prompt(auth['auth']))
     
     console.print(f"{auth}\nWriting to {path / authFile}",style="yellow")
