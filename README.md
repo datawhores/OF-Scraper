@@ -2,7 +2,7 @@ A fork of onlyfans-scraper. It has been optimized to make it more feature comple
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
 
 In addition there are numerous filtering features to control exactly which type of content you want to scrape.
-https://github.com/datawhores/ofscraper/blob/main/CHANGES.md
+https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
 
 <h3>DISCLAIMERS:</h3>
 <ol>
@@ -36,7 +36,7 @@ pip install ofscraper
 or 
 ## development
 ```
-pip install git+https://github.com/datawhores/ofscraper.git 
+pip install git+https://github.com/datawhores/OF-Scraper.git 
 ```
 or 
 ## specific version
@@ -52,7 +52,7 @@ pip3 install ofscraper
 ```
 or
 ```
-pip3 install git+https://github.com/datawhores/ofscraper.git 
+pip3 install git+https://github.com/datawhores/OF-Scraper.git 
 ```
 
 or 
@@ -66,7 +66,7 @@ where x is the vesion you want to install
 
 You'll need to retrive your auth information 
     
-https://github.com/datawhores/ofscraper/wiki/Auth
+https://github.com/datawhores/OF-Scraper/wiki/Auth
 
 
 
@@ -95,26 +95,26 @@ Note their are limitations (currently 1000) on how many post you can like per da
 
 The fuzzy search system can be a little confusing see
     
-https://github.com/datawhores/ofscraper/wiki/Fuzzy-Search 
+https://github.com/datawhores/OF-Scraper/wiki/Fuzzy-Search 
     
 ## Other menu options    
   
- See: https://github.com/datawhores/ofscraper/wiki/Menu-Options 
+ See: https://github.com/datawhores/OF-Scraper/wiki/Menu-Options 
  
  # commandline
  While the menu is easy to use, and convient. You may want more automation.
  
  The best way to do this is through the commandline system. This will allow you to skip the menu, and for example scrape a provided list of accounts
  
-  https://github.com/datawhores/ofscraper/wiki/command-line-args
+  https://github.com/datawhores/OF-Scraper/wiki/command-line-args
 
 # Docker Support
-https://github.com/datawhores/ofscraper/pkgs/container/ofscraper
+https://github.com/datawhores/OF-Scraper/pkgs/container/ofscraper
  
  # Customazation
     
-https://github.com/datawhores/ofscraper/wiki/Customizing-save-path
-https://github.com/datawhores/ofscraper/wiki/Config-Options
+https://github.com/datawhores/OF-Scraper/wiki/Customizing-save-path
+https://github.com/datawhores/OF-Scraper/wiki/Config-Options
 
   
 # Issues
@@ -153,9 +153,9 @@ Additionally you might want to set the save_path, dir_path, and filename so they
 The metadata path from digitalcriminal's script is used for duplicate check so as long as your set the right path.
 Files won't download a second time
 
-https://github.com/datawhores/ofscraper/wiki/Migrating-from-DC-script
-https://github.com/datawhores/ofscraper/wiki/Config-Options
-https://github.com/datawhores/ofscraper/wiki/Customizing-save-path
+https://github.com/datawhores/OF-Scraper/wiki/Migrating-from-DC-script
+https://github.com/datawhores/OF-Scraper/wiki/Config-Options
+https://github.com/datawhores/OF-Scraper/wiki/Customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
@@ -173,7 +173,7 @@ BTC: bc1qcnnetrgmtr86rmqvukl2e24f5upghpcsqqsy87
 ETH: 0x1d427a6E336edF6D95e589C16cb740A1372F6609
 
 
-[![codecov](https://codecov.io/github/datawhores/ofscraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/github/datawhores/ofscraper)
+[![codecov](https://codecov.io/github/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/github/datawhores/OF-Scraper)
 
 
 
