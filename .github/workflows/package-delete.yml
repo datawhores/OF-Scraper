@@ -3,7 +3,7 @@ on:
   workflow_dispatch: 
 jobs:
   cleanup:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/delete-package-versions@v4
       with:
