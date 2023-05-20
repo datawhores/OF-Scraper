@@ -19,11 +19,7 @@ jobs:
         package-type: container
         # The number of old versions to delete starting from the oldest version.
         # Defaults to 1.
-        num-old-versions-to-delete: 100
-        # The number of latest versions to keep.
-        # This cannot be specified with `num-old-versions-to-delete`. By default, `min-versions-to-keep` takes precedence over `num-old-versions-to-delete`.
-        # When set to 0, all deletable versions will be deleted.
-        # When set greater than 0, all deletable package versions except the specified number will be deleted.
+   
         min-versions-to-keep: 10
         # The token used to authenticate with GitHub Packages.
         # Defaults to github.token.
