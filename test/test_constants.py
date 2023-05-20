@@ -22,7 +22,8 @@ METADATA_INVALID= "{model_username}/{responsetype}/{mediatype2}/"
 METADATA_ALLVALID="{sitename}{first_letter}{model_username}{model_id}{configpath}{profile}"
 METADATA_ALLWTHINVALID="{invalid}{sitename}{first_letter}{model_username}{model_id}{configpath}{profile}"
 
-METADATA_DC="/root/{model_username}/metadata/"
+METADATA_DC="{save_location}/{model_username}/metadata/"
+SAVE_LOCATION_DC="/root"
 INVALID_JSON='{"auth": {"username": "ddd", "cookie": "auth_id=ddddd; sess=ddddddddddd; auth_hash=; auth_uniq_dds=; auth_uid_ddds=;", \
     "user_agent": "ffffffff6",\
     "x_bc": "ffffffffff", "support_2fa": true, "active": true, "email": "", "password": "", "hashed": false'
