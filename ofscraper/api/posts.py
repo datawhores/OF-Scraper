@@ -233,6 +233,8 @@ class Media():
     @property
     def text_(self):
         text = self.text
+        if len(text)==0:
+            return text
         # this is for removing emojis
         # text=re.sub("[^\x00-\x7F]","",text)
         # this is for removing html tags
@@ -257,11 +259,13 @@ class Media():
                 return f"{text}_{self.count}"
             elif length==0 and not self._addcount():
                 return text
-            elif length!=0 and not self._addcount():
-                return "".join(list(filter(lambda x:len(x)!=0,re.split("( )", text)))[:length])
+            # split and reduce
+            wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", text)))
+            if length!=0 and not self._addcount():
+                return "".join(wordarray[:length])
             elif length!=0 and self._addcount():
                 append=f"_{self.count}"
-                splitArray=list(filter(lambda x:len(x)!=0,re.split("( )", text)))[:length]
+                splitArray=wordarray[:length]
                 splitArray[-1]=re.sub(" ","",f"{splitArray[-1]}{append}")
                 return "".join(splitArray)
 
