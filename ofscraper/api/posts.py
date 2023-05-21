@@ -233,8 +233,8 @@ class Media():
     @property
     def text_(self):
         text = self.text
-        if len(text)==0:
-            return text
+        # if len(text)==0:
+        #     return text
         # this is for removing emojis
         # text=re.sub("[^\x00-\x7F]","",text)
         # this is for removing html tags
