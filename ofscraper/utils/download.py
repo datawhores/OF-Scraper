@@ -119,20 +119,20 @@ async def download(ele,path,model_id,username,file_size_limit):
     
     try:
         if ele.url:
-           log.debug(f"ID:{ele.id} Downloading with normal downloader")
+           log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
            return await main_download_helper(ele,path,file_size_limit,username,model_id)
         elif ele.mpd:  
-            log.debug(f"ID:{ele.id} Downloading with protected media downloader")      
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
             return await alt_download_helper(ele,path,file_size_limit,username,model_id)
         else:
             return "skipped",1
     except Exception as e:
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
 async def main_download_helper(ele,path,file_size_limit,username,model_id):
     url=ele.url
-    log.debug(f"ID:{ele.id} Attempting to download media {ele.filename} with {url}")
+    log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {url}")
     path_to_file=None
     async with sem:
             async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None) as c: 
@@ -160,20 +160,20 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id):
                     else:
                         r.raise_for_status()
     if not pathlib.Path(temp).exists():
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
     elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         return "skipped",1 
     else:
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
         if ele.postdate:
             newDate=dates.convert_local_time(ele.postdate)
-            log.debug(f"ID:{ele.id} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
             set_time(path_to_file,newDate )
-            log.debug(f"ID:{ele.id} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
         if ele.id:
             operations.write_media_table(ele,path_to_file,model_id,username)
@@ -210,7 +210,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                 break
         for item in [audio,video]:
             url=f"{base_url}{item['name']}"
-            log.debug(f"ID:{ele.id} Attempting to download media {item['name']} with {url}")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['name']} with {url}")
             async with sem:
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
                 async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
@@ -235,24 +235,24 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
                                         num_bytes_downloaded = r.num_bytes_downloaded      
                         else:
                             r.raise_for_status()
-    log.debug(f"ID:{ele.id} video name:{video['name']}")
-    log.debug(f"ID:{ele.id} audio name:{audio['name']}")
+    log.debug(f"Media:{ele.id} Post:{ele.postid} video name:{video['name']}")
+    log.debug(f"Media:{ele.id} Post:{ele.postid} audio name:{audio['name']}")
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
-                log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
+                log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
                 return "skipped",1
         elif abs(item["total"]-pathlib.Path(item['path']).absolute().stat().st_size)>500:
-            log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {total} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
+            log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {total} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
             return "skipped",1 
                 
     for item in [audio,video]:
         key=await key_helper(item["pssh"],ele.license,ele.id)
         if key==None:
-            log.debug(f"ID:{ele.id} Could not get key")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
-        log.debug(f"ID:{ele.id} got key")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
-        log.debug(f"ID:{ele.id} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
         subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
@@ -263,9 +263,9 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id):
     audio["path"].unlink(missing_ok=True)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
-        log.debug(f"ID:{ele.id} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
         set_time(path_to_file,newDate )
-        log.debug(f"ID:{ele.id} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+        log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         operations.write_media_table(ele,path_to_file,model_id,username)
     return ele.mediatype,total
