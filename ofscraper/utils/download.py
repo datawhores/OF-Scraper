@@ -237,13 +237,15 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                             temp.unlink(missing_ok=True)
                             item["path"]=temp
                             pathstr=str(temp)
-                            with tqdm(desc=f"{attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}" ,total=total, unit_scale=True, unit_divisor=1024, unit='B', leave=False,disable=True if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else False) as bar:
-                                with open(temp, 'wb') as f:                           
+                            task1 = progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}", total=total,visible=False)
+                            with open(temp, 'wb') as f:                           
+                                num_bytes_downloaded = r.num_bytes_downloaded
+                                progress.update(task1,visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+                                async for chunk in r.aiter_bytes(chunk_size=1024):
+                                    f.write(chunk)
+                                    progress.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
                                     num_bytes_downloaded = r.num_bytes_downloaded
-                                    async for chunk in r.aiter_bytes(chunk_size=1024):
-                                        f.write(chunk)
-                                        bar.update(r.num_bytes_downloaded - num_bytes_downloaded)
-                                        num_bytes_downloaded = r.num_bytes_downloaded      
+                                progress.remove_task(task1) 
                         else:
                             r.raise_for_status()
     log.debug(f"Media:{ele.id} Post:{ele.postid} video name:{video['name']}")
