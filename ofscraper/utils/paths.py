@@ -92,11 +92,14 @@ def trunicate(path):
         return pathlib.Path(path)
 def _windows_trunicateHelper(path):
     path=pathlib.Path(path)
-    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
-        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    prefix="\_[0-9]+.[a-z]*$"
+    if re.search(str(path),prefix,re.IGNORECASE):
+        ext=re.search("\_[0-9]+.[a-z]*$",path.name,re.IGNORECASE).group(0)
     else:
         ext=""
-    filebase=str(path.with_suffix("").name)
+
+
+    filebase=re.sub(ext,"",str(path))
     dir=path.parent
     #-1 for path split /
     maxLength=256-len(ext)-len(str(dir))-1

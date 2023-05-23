@@ -78,6 +78,8 @@ async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=Fals
 # Also need to grab new posts
 async def get_timeline_post(headers,model_id):
     oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
+    oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
+
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
     global tasks
@@ -120,10 +122,14 @@ async def get_timeline_post(headers,model_id):
         if post["id"] in dupeSet:
             continue
         dupeSet.add(post["id"])
+        oldtimeset.discard(post["id"])
         unduped.append(post)
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
-    cache.close() 
+    if len(oldtimeset)==0:
+        cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.close()
+    else:
+        log.debug("Some post where not retrived skipping")
 
     return unduped                                
 
