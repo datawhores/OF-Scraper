@@ -59,7 +59,6 @@ args=args_.getargs()
 log.debug(args)
 f = open(os.devnull, 'w')
 
-@Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f ,text='Getting messages...')
 def process_messages(headers, model_id,username):
     messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
     messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
@@ -538,6 +537,9 @@ def main():
             log.traceback(traceback.format_exc())
         quit()
 def scrapper():
+    import time
+
+
     if platform.system == 'Windows':
         os.system('color')
     # try:

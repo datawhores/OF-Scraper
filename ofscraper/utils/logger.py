@@ -3,11 +3,11 @@ import re
 import httpx
 import logging
 from rich.logging import RichHandler
-from rich.console import Console
 from rich.theme import Theme
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args
+import ofscraper.utils.console as console
 
 senstiveDict={}
 
@@ -98,9 +98,8 @@ def init_logger(log):
     cord=DiscordHandler()
     cord.setLevel(getLevel(args.getargs().discord))
     cord.setFormatter(SensitiveFormatter('%(message)s'))
-    console = Console(theme=Theme({"logging.level.error":"green","logging.level.warning": "green","logging.level.debug":"yellow","logging.level.info":"white","logging.level.traceback":"red"}))
     #console
-    sh=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False)
+    sh=RichHandler(rich_tracebacks=True,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False,console=console.shared_console)
     sh.setLevel(getLevel(args.getargs().output))
     sh.setFormatter(SensitiveFormatter('%(message)s'))
     sh.addFilter(NoDebug())
@@ -116,7 +115,7 @@ def init_logger(log):
 
     
     if args.getargs().output=="DEBUG":
-        sh2=RichHandler(rich_tracebacks=True, console=console,markup=True,tracebacks_show_locals=True,show_time=False)
+        sh2=RichHandler(rich_tracebacks=True, console=console.shared_console,markup=True,tracebacks_show_locals=True,show_time=False)
         sh2.setLevel(args.getargs().output)
         sh2.setFormatter(SensitiveFormatter('%(message)s'))
         sh2.addFilter(DebugOnly())
