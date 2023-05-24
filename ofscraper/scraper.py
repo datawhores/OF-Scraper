@@ -329,23 +329,57 @@ def process_post():
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
         userdata=getselected_usernames()
-        for ele in userdata:
-            if args.posts:
-                log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
-            try:
-                model_id = profile.get_id(headers, ele["name"])
-                create_tables(model_id,ele['name'])
-                operations.write_profile_table(model_id,ele['name'])
-                combined_urls=process_areas(headers, ele, model_id)
-                asyncio.run(download.process_dicts(
-                ele["name"],
-                model_id,
-                combined_urls,
-                forced=args.dupe,
-                ))
-            except Exception as e:
-                log.traceback(f"failed with exception: {e}")
-                log.traceback(traceback.format_exc())
+        length=len(userdata)
+        if args.users_first:
+            eleDict={}
+            for count,ele in enumerate(userdata):
+                key=ele['name']
+                eleDict[key]={}
+                eleDict[key]["name"]=ele['name']
+                log.debug(f"getting content for {count+1}/{length} model")
+                if args.posts:
+                    log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+                try:
+                    model_id = profile.get_id(headers, ele["name"])
+                    eleDict[key]["id"]=model_id
+                    create_tables(model_id,ele['name'])
+                    operations.write_profile_table(model_id,ele['name'])
+                    eleDict[key]["combined"]=process_areas(headers, ele, model_id)
+                
+                except Exception as e:
+                    log.traceback(f"failed with exception: {e}")
+                    log.traceback(traceback.format_exc())      
+            for key in eleDict.keys():
+                try:
+                    asyncio.run(download.process_dicts(
+                        eleDict[key]["name"],
+                        eleDict[key]["id"],
+                        eleDict[key]["combined"],
+                        forced=args.dupe,
+                        ))
+                except Exception as e:
+                    log.traceback(f"failed with exception: {e}")
+                    log.traceback(traceback.format_exc())   
+        else:
+            for count,ele in enumerate(userdata):
+                log.debug(f"Getting content+downloading {count+1}/{length} model")
+
+                if args.posts:
+                    log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+                try:
+                    model_id = profile.get_id(headers, ele["name"])
+                    create_tables(model_id,ele['name'])
+                    operations.write_profile_table(model_id,ele['name'])
+                    combined_urls=process_areas(headers, ele, model_id)
+                    asyncio.run(download.process_dicts(
+                    ele["name"],
+                    model_id,
+                    combined_urls,
+                    forced=args.dupe,
+                    ))
+                except Exception as e:
+                    log.traceback(f"failed with exception: {e}")
+                    log.traceback(traceback.format_exc())
         
         
 

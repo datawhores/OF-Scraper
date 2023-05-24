@@ -3,5 +3,5 @@
     "hash-short": "$Format:%h$",
     "timestamp": "$Format:%cI$",
     "refs": "$Format:%D$",
-    "describe": "$Format:%(describe:tags=true,match=v[0-9]*)$"
+    "describe": "$Format:%(describe:tags=true,match=[0-9]*)$"
   }
