@@ -68,7 +68,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
         url=ep.format(model_id)
     log.debug(url)
     async with sem:
-        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Date -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
 
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
             auth.add_cookies(c)
