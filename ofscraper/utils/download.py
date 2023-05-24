@@ -64,8 +64,8 @@ async def process_dicts(username, model_id, medialist,forced=False):
     BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
     job_progress=Progress(*Progress.get_default_columns(),TransferSpeedColumn(),TotalFileSizeColumn())
     progress_group = Group(
-        Panel(Group(job_progress)),
-        overall_progress)
+    overall_progress
+    , Panel(Group(job_progress)))
     with Live(progress_group, refresh_per_second=10,console=console.shared_console):    
             if not forced:
                 media_ids = set(operations.get_media_ids(model_id,username))
