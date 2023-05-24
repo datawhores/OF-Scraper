@@ -56,8 +56,7 @@ def get_pinned_post(headers,model_id,username):
    
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recursive=False) -> list:
-    global sem
-    sem = asyncio.Semaphore(8)
+    global sem 
     attempt.set(attempt.get(0) + 1)
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
@@ -94,6 +93,8 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
             r.raise_for_status()
 
 async def get_timeline_post(headers,model_id):
+    global sem
+    sem = asyncio.Semaphore(8)
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -152,7 +153,7 @@ async def get_timeline_post(headers,model_id):
         cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.close()
     else:
-        log.debug("Some post where not retrived skipping")
+        log.debug("Some post where not retrived not setting cache")
 
     return unduped                                
 
