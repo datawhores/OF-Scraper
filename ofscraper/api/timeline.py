@@ -34,7 +34,6 @@ from diskcache import Cache
 cache = Cache(getcachepath())
 log=logging.getLogger(__package__)
 attempt = contextvars.ContextVar("attempt")
-
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
