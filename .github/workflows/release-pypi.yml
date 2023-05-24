@@ -2,7 +2,7 @@ name: release pypi
 on:
   workflow_dispatch: 
   release:
-    types: [published,edited]
+    types: [released,edited]
     
 jobs:
   run :
