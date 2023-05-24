@@ -20,7 +20,6 @@ import httpx
 import contextvars
 import json
 import subprocess
-from tqdm.asyncio import tqdm
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -53,7 +52,6 @@ import ofscraper.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
 import ofscraper.utils.console as console
-from tqdm import tqdm
 from diskcache import Cache
 
 cache = Cache(paths.getcachepath())

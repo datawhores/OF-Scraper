@@ -107,7 +107,7 @@ def process_highlights(headers, model_id,username):
 
 
 
-@Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting timeline media...')
+# @Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
     timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
     timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
