@@ -10,15 +10,29 @@ r"""
 import time
 import asyncio
 import logging
+import contextvars
+import math
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
-from tqdm.asyncio import tqdm
+from rich.progress import Progress
+from rich.progress import (
+    Progress,
+    TextColumn,
+    SpinnerColumn
+)
+from rich.panel import Panel
+from rich.console import Group
+from rich.live import Live
+import arrow
 import ofscraper.constants as constants
 from ..utils import auth
 from ..utils.paths import getcachepath
+import ofscraper.utils.console as console
+
 from diskcache import Cache
 cache = Cache(getcachepath())
 log=logging.getLogger(__package__)
+attempt = contextvars.ContextVar("attempt")
 
 
 
@@ -43,21 +57,27 @@ def get_pinned_post(headers,model_id,username):
     return scrape_pinned_posts(headers,model_id)
    
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=False) -> list:
+async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recursive=False) -> list:
     global sem
     sem = asyncio.Semaphore(8)
+    attempt.set(attempt.get(0) + 1)
     if timestamp:
+        log.debug(arrow.get(math.trunc(float(timestamp))))
         timestamp=str(timestamp)
         ep = constants.timelineNextEP
         url = ep.format(model_id, timestamp)
     else:
         ep=constants.timelineEP
         url=ep.format(model_id)
+    log.debug(url)
     async with sem:
+        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Date -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
             auth.add_cookies(c)
             c.headers.update(auth.create_sign(url, headers))
             r = await c.get(url , timeout=None)
+            progress.remove_task(task)
             if not r.is_error:
                 posts = r.json()['list']
     
@@ -69,52 +89,57 @@ async def scrape_timeline_posts(headers, model_id, timestamp=None,recursive=Fals
                     return posts
                 # recursive search for posts
                 global tasks
-                tasks.append(asyncio.create_task( scrape_timeline_posts(headers, model_id,posts[-1]['postedAtPrecise'],recursive=True)))
+                tasks.append(asyncio.create_task( scrape_timeline_posts(headers, model_id,progress,posts[-1]['postedAtPrecise'],recursive=True)))
                 return posts
             log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
             r.raise_for_status()
-#max result is 50, try to get 40 in each async task for leeway
-# Also need to grab new posts
-async def get_timeline_post(headers,model_id):
-    oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
-    oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
 
-    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-    global tasks
-    tasks=[]
-    
-    split=40
-    interval=30
-    if len(postedAtArray)>split:
+async def get_timeline_post(headers,model_id):
+    overall_progress=Progress(SpinnerColumn(),TextColumn("Getting timeline media...\n{task.description}"))
+    job_progress=Progress("{task.description}")
+    progress_group = Group(
+        Panel(Group(job_progress)),
+        overall_progress)
+    with Live(progress_group, refresh_per_second=10,console=console.shared_console): 
+
+        oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
+        oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
+
+        log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
+        postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
+        global tasks
+        tasks=[]
+        #max result is 50, try to get 40 in each async task for leeway
+        # Also need to grab new posts
         #add differing splits and interval for inclusivity and potential breakpoints
         split=40
         interval=30
-        splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
-        
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id)))
-        tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=x[0]-100)),splitArrays[1:-1])))
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,timestamp=splitArrays[-1][0],recursive=True)))
-    else:
-        tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,recursive=True)))
+        if len(postedAtArray)>split:
+            split=40
+            interval=30
+            splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
+            
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress)))
+            tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=x[0]-100)),splitArrays[1:-1])))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-1][0],recursive=True)))
+        else:
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,recursive=True)))
 
-    responseArray=[]
-   
-   
-    page_count=0 
-    desc = 'Pages Progress: {page_count}'   
-
-    with tqdm(desc=desc.format(page_count=page_count), colour='cyan',position=2,disable=True if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else False) as main_bar:
+        responseArray=[]
+    
+    
+        page_count=0 
+        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
         while len(tasks)!=0:
             for coro in asyncio.as_completed(tasks):
                 result=await coro or []
                 page_count=page_count+1
-                main_bar.set_description(desc.format(page_count=page_count), refresh=False)
-                main_bar.update()
+                overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                 responseArray.extend(result)
             time.sleep(2)
             tasks=list(filter(lambda x:x.done()==False,tasks))
+        overall_progress.remove_task(page_task)
     unduped=[]
     dupeSet=set()
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
