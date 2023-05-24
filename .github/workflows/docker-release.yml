@@ -58,7 +58,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          tags:  ghcr.io/datawhores/ofscraper:${{ env.release }}
+          tags:  ghcr.io/datawhores/of-scraper:${{ env.release }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
