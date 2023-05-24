@@ -23,6 +23,7 @@ from rich.progress import (
 from rich.panel import Panel
 from rich.console import Group
 from rich.live import Live
+from rich.style import Style
 import arrow
 import ofscraper.constants as constants
 from ..utils import auth
@@ -96,11 +97,11 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
             r.raise_for_status()
 
 async def get_timeline_post(headers,model_id):
-    overall_progress=Progress(SpinnerColumn(),TextColumn("Getting timeline media...\n{task.description}"))
+    overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
-        Panel(Group(job_progress)),
-        overall_progress)
+    overall_progress,
+    Panel(Group(job_progress)))
     with Live(progress_group, refresh_per_second=10,console=console.shared_console): 
 
         oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
