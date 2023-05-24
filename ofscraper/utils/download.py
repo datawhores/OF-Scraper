@@ -142,7 +142,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
     log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {url}")
     path_to_file=None
     async with sem:
-            async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None) as c: 
+            async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=None) as c: 
                 auth.add_cookies(c)        
                 async with c.stream('GET',url) as r:
                     if not r.is_error:

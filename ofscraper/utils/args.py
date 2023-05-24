@@ -68,6 +68,11 @@ def getargs(input=None):
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
 
+    advanced=parser.add_argument_group("Advanced",description="Advanced Args")  
+    advanced.add_argument(
+        '-uf', '--users-first', help = 'Scrape all users first rather then one at a time',default=False,required=False,action="store_true"
+    )
+
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
