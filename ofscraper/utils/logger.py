@@ -3,7 +3,6 @@ import re
 import httpx
 import logging
 from rich.logging import RichHandler
-from rich.theme import Theme
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args
@@ -88,7 +87,11 @@ def getLevel(input):
     INFO 20
     DEBUG 10
     """
-    return {"OFF":100,"PROMPT":"ERROR","LOW":"WARNING","NORMAL":"INFO","DEBUG":"DEBUG"}.get(input,100)
+    return {"OFF":100,
+            "PROMPT":"ERROR",
+            "LOW":"WARNING",
+            "NORMAL":"INFO",
+            "DEBUG":"DEBUG"}.get(input,100)
 
 def init_logger(log):
     log.setLevel(1)
