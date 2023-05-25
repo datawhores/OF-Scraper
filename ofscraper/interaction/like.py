@@ -36,7 +36,7 @@ def get_posts(headers, model_id):
 
 def filter_for_unfavorited(posts: list) -> list:
     output=list(filter(lambda x:x.get("isFavorite")==False,posts))
-    log.debug(f"[bold]Number of unliked post[/bold {len(output)}")
+    log.debug(f"[bold]Number of unliked post[/bold] {len(output)}")
     return output
 
 
@@ -44,7 +44,7 @@ def filter_for_unfavorited(posts: list) -> list:
 
 def filter_for_favorited(posts: list) -> list:
     output=list(filter(lambda x:x.get("isFavorite")==True,posts))
-    log.debug(f"[bold]Number of liked post[/bold {len(output)}")
+    log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
 
