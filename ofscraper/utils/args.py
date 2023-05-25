@@ -48,13 +48,7 @@ def getargs(input=None):
     )
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
-    post.add_argument(
-        '-be', '--before', help = 'Download post at or before the given date general synax is Month/Day/Year',type=arrow.get)
- 
-    post.add_argument(
-        '-af', '--after', help = 'Download post at or after the given date Month/Day/Year',type=arrow.get)
-    
-    
+   
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
@@ -67,10 +61,16 @@ def getargs(input=None):
     filters.add_argument(
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
-
+    filters.add_argument(
+        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and scraping posts',type=arrow.get)
+ 
+    filters.add_argument(
+        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and scraping posts',type=arrow.get)
+    
+    
     advanced=parser.add_argument_group("Advanced",description="Advanced Args")  
     advanced.add_argument(
-        '-uf', '--users-first', help = 'Scrape all users first rather then one at a time',default=False,required=False,action="store_true"
+        '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects scraping posts',default=False,required=False,action="store_true"
     )
 
     args=parser.parse_args(input)

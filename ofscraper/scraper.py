@@ -390,7 +390,8 @@ def process_like():
         for ele in list(filter(lambda x: x["active"],userdata)):
                 model_id = profile.get_id(headers, ele["name"])
                 posts = like.get_posts(headers, model_id)
-                unfavorited_posts = like.filter_for_unfavorited(posts)               
+                unfavorited_posts = like.filter_for_unfavorited(posts)  
+                unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)             
                 post_ids = like.get_post_ids(unfavorited_posts)
                 like.like(headers, model_id, ele["name"], post_ids)
 
@@ -404,6 +405,7 @@ def process_unlike():
                 model_id = profile.get_id(headers, ele["name"])
                 posts = like.get_posts(headers, model_id)
                 favorited_posts = like.filter_for_favorited(posts)
+                favorited_posts=filters.timeline_array_filter(favorited_posts) 
                 post_ids = like.get_post_ids(favorited_posts)
                 like.unlike(headers, model_id, ele["name"], post_ids)
 #Adds a function to the job queue
@@ -468,11 +470,9 @@ def check_config():
     log.debug(f"[bold]final ffmpeg path[/bold] {config.get_ffmpeg(config.read_config())}")
 
 
-
-       
-
 def getselected_usernames():
-    #username list will be retrived once per run
+    #username list will be retrived once per daemon run
+    # manual prompt will need to recertify options every call
     global selectedusers
     scraper_bool=len(args.posts)>0 or args.action
     #always return with correct args
