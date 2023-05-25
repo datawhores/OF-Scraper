@@ -391,6 +391,7 @@ def process_like():
                 model_id = profile.get_id(headers, ele["name"])
                 posts = like.get_posts(headers, model_id)
                 unfavorited_posts = like.filter_for_unfavorited(posts)
+                
                 post_ids = like.get_post_ids(unfavorited_posts)
                 like.like(headers, model_id, ele["name"], post_ids)
 
@@ -474,32 +475,50 @@ def check_config():
 def getselected_usernames():
     #username list will be retrived once per run
     global selectedusers
-    if selectedusers:
-        if len(args.posts)>0:
+    scraper_bool=len(args.posts)>0 or args.action
+    #always return with correct args
+    if selectedusers and scraper_bool:
             return selectedusers
-        elif prompts.reset_username_prompt()=="No":
-           return selectedusers
-        else:
+    if scraper_bool:
+        selectedusers=selectuserhelper()
+    #create in these situations
+    elif not selectedusers and not scraper_bool:
+        setfilter()
+        selectedusers=selectuserhelper()
+    elif selectedusers and not scraper_bool:
+        if prompts.reset_username_prompt()=="Yes":
             setfilter()
+            selectedusers=selectuserhelper()
+    return selectedusers
+
+def selectuserhelper():
+    headers = auth.make_headers(auth.read_auth())
+    subscribe_count = process_me(headers)
+    parsed_subscriptions = get_models(headers, subscribe_count)
+    filter_subscriptions=filteruserHelper(parsed_subscriptions )
+    if args.username and "ALL" in args.username:
+        selectedusers=filter_subscriptions
+        
+    elif args.username:
+        userSelect=set(args.username)
+        selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
+    #manually select usernames
     else:
-        if len(args.posts)==0:
-            setfilter()
-        headers = auth.make_headers(auth.read_auth())
-        subscribe_count = process_me(headers)
-        parsed_subscriptions = get_models(headers, subscribe_count)
-        filter_subscriptions=filteruserHelper(parsed_subscriptions )
-        if args.username and "ALL" in args.username:
-            selectedusers=filter_subscriptions
+        selectedusers= get_model(filter_subscriptions)
+    return selectedusers
+
         
 
-        elif args.username:
-            userSelect=set(args.username)
-            selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
-        #manually select usernames
-        else:
-            selectedusers= get_model(filter_subscriptions)
-        #remove dupes
-        return selectedusers
+        
+
+                  
+    # else:
+    #     if len(args.posts)==0 or args.action:
+           
+
+  
+    # #remove dupes
+    return selectedusers
 def filteruserHelper(usernames):
     #paid/free
     filterusername=usernames
@@ -507,7 +526,7 @@ def filteruserHelper(usernames):
         filterusername=list(filter(lambda x:x["data"]["subscribePrice"]>0,filterusername))
     if args.account_type=="free":
         filterusername=list(filter(lambda x:x["data"]["subscribePrice"]==0,filterusername))
-    if args.renewal=="acive":
+    if args.renewal=="active":
         filterusername=list(filter(lambda x:x["data"]["subscribedOn"]==True,filterusername))     
     if args.renewal=="disabled":
         filterusername=list(filter(lambda x:x["data"]["subscribedOn"]==False,filterusername))      

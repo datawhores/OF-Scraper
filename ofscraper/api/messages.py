@@ -100,7 +100,7 @@ async def get_messages(headers, model_id):
     return unduped    
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_messages(headers, user_id, progess,message_id=None,recursive=False) -> list:
+async def scrape_messages(headers, user_id, progress,message_id=None,recursive=False) -> list:
     global sem
     ep = constants.messagesNextEP if message_id else constants.messagesEP
     url = ep.format(user_id, message_id)
@@ -119,7 +119,7 @@ async def scrape_messages(headers, user_id, progess,message_id=None,recursive=Fa
                 elif not recursive:
                     return messages
                 global tasks
-                tasks.append(asyncio.create_task(scrape_messages(headers, user_id, recursive=True,message_id=messages[-1]['id'])))
+                tasks.append(asyncio.create_task(scrape_messages(headers, user_id,progress, recursive=True,message_id=messages[-1]['id'])))
                 return messages
             log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]message response:[/bold] {r.content.decode()}")
