@@ -11,6 +11,7 @@ import asyncio
 import time
 import httpx
 import logging
+import contextvars
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -33,7 +34,7 @@ import ofscraper.utils.console as console
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
 log=logging.getLogger(__package__)
-
+attempt = contextvars.ContextVar("attempt")
 
 
 
@@ -50,7 +51,7 @@ async def get_messages(headers, model_id):
         oldmessages=cache.get(f"messages_{model_id}",default=[]) 
         oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
         log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-        
+        oldmessages=list(filter(lambda x:x.get("createdAt")!=None,oldmessages))
         postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x["createdAt"]).float_timestamp,reverse=True)))
         global tasks
         tasks=[]
@@ -92,25 +93,30 @@ async def get_messages(headers, model_id):
         oldmsgset.discard(message["id"])       
         unduped.append(message)
     if len(oldmsgset)==0:
-        cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"messages_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.close()
     else:
-        log.debug("Some post where not retrived not setting cache")
+        cache.set(f"messages_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
+        cache.close()
+        log.debug("Some messages where not retrived resetting cache")
 
     return unduped    
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 async def scrape_messages(headers, user_id, progress,message_id=None,recursive=False) -> list:
     global sem
+    attempt.set(attempt.get(0) + 1)
     ep = constants.messagesNextEP if message_id else constants.messagesEP
     url = ep.format(user_id, message_id)
+    log.debug(url)
     async with sem:
+        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Message ID-> {message_id if message_id else 'initial'}")
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
             auth.add_cookies(c)
-            log.debug(url)
             c.headers.update(auth.create_sign(url, headers))
             r = await c.get(url, timeout=None)
             if not r.is_error:
+                progress.remove_task(task)
                 messages = r.json()['list']
                 if not messages:
                     return []
@@ -119,6 +125,7 @@ async def scrape_messages(headers, user_id, progress,message_id=None,recursive=F
                 elif not recursive:
                     return messages
                 global tasks
+                attempt.set(0)
                 tasks.append(asyncio.create_task(scrape_messages(headers, user_id,progress, recursive=True,message_id=messages[-1]['id'])))
                 return messages
             log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
