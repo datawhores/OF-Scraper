@@ -233,8 +233,8 @@ class Media():
     @property
     def text_(self):
         text = self.text
-        # if len(text)==0:
-        #     return text
+        if len(text)==0:
+            return text
         # this is for removing emojis
         # text=re.sub("[^\x00-\x7F]","",text)
         # this is for removing html tags
@@ -243,31 +243,29 @@ class Media():
         text = re.sub('[\n<>:"/\|?*]+', '', text)
         text = re.sub(" +", " ", text)
         length = int(config.get_textlength(config.read_config()))
-        if args_.getargs().letter_count:
-            if length==0 and self._addcount():
+        if length==0 and self._addcount():
                 return f"{text}_{self.count}"
-            elif length==0 and not self._addcount():
+        elif length==0 and not self._addcount():
                 return text
-            elif length!=0 and not self._addcount():
+ 
+        elif args_.getargs().letter_count:
+            if not self._addcount():
                 return "".join(list(text))[:length]
-            elif length!=0 and self._addcount():
+            elif self._addcount():
                 append=f"_{self.count}"
-                return f"{''.join(list(text)[:length-len(append)])}{append}"
-                
-        if not args_.getargs().letter_count:
-            if length==0 and self._addcount():
-                return f"{text}_{self.count}"
-            elif length==0 and not self._addcount():
-                return text
+                baselength=length-len(append)
+                return f"{''.join(list(text)[:baselength])}{append}"         
+        elif not args_.getargs().letter_count :
             # split and reduce
             wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", text)))
-            if length!=0 and not self._addcount():
+            if not self._addcount():
                 return "".join(wordarray[:length])
-            elif length!=0 and self._addcount():
+            elif self._addcount():
                 append=f"_{self.count}"
-                splitArray=wordarray[:length]
-                splitArray[-1]=re.sub(" ","",f"{splitArray[-1]}{append}")
-                return "".join(splitArray)
+                baselength=length-1
+                splitArray=wordarray[:baselength]
+                text=f"{''.join(splitArray)}{append}"
+                return text
 
                 
 
