@@ -14,15 +14,23 @@ import logging
 from typing import Union
 import asyncio
 import httpx
-from rich.console import Console
-console=Console()
+
 from halo import Halo
+log=logging.getLogger(__package__)
+
+from rich.progress import Progress
+from rich.progress import (
+    Progress,
+    MofNCompleteColumn,
+    BarColumn,
+    TextColumn,
+    SpinnerColumn
+)
+from rich.style import Style
 from ..api import timeline
 from ..constants import favoriteEP, postURL
 from ..utils import auth
-
-log=logging.getLogger(__package__)
-
+import ofscraper.utils.console as console
 
 
 
@@ -65,7 +73,8 @@ def unlike(headers, model_id, username, ids: list):
 
 def _like(headers, model_id, username, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
-    with Halo(text=f'{title} posts...'):
+    with Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}"),BarColumn(),MofNCompleteColumn(),console=console.shared_console) as overall_progress:
+        task1=overall_progress.add_task(f"{title} posts...\n",total=len(ids))
         for i in ids:
             with httpx.Client(http2=True, headers=headers) as c:
                 url = favoriteEP.format(i, model_id)
@@ -81,13 +90,13 @@ def _like(headers, model_id, username, ids: list, like_action: bool):
                         r = c.post(url)
                         if not r.is_error or r.status_code == 400:
                             log.debug(f"ID: {i} Performed {'like' if like_action==True else 'unlike'} action")
+                            overall_progress.update(task1,advance=1,refresh=True)
                             break
                         else:
                             _handle_err(r, postURL.format(i, username))
                     except httpx.TransportError as e:
                         _handle_err(e, postURL.format(i, username))
-      
-
+        overall_progress.remove_task(task1)
 
 def _handle_err(param: Union[httpx.Response, httpx.TransportError], url: str) -> str:
     message = 'unable to execute action'
