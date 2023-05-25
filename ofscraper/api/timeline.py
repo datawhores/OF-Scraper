@@ -95,7 +95,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
 async def get_timeline_post(headers,model_id):
     global sem
     sem = asyncio.Semaphore(8)
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting timeline media...\n{task.description}"))
+    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
