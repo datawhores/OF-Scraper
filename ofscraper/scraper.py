@@ -390,8 +390,7 @@ def process_like():
         for ele in list(filter(lambda x: x["active"],userdata)):
                 model_id = profile.get_id(headers, ele["name"])
                 posts = like.get_posts(headers, model_id)
-                unfavorited_posts = like.filter_for_unfavorited(posts)
-                
+                unfavorited_posts = like.filter_for_unfavorited(posts)               
                 post_ids = like.get_post_ids(unfavorited_posts)
                 like.like(headers, model_id, ele["name"], post_ids)
 
@@ -580,11 +579,7 @@ def main():
  
     with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
         try:
- 
-            scrapper()
-
-            
-
+            scrapper()        
         except Exception as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())

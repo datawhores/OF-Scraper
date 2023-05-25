@@ -1,6 +1,5 @@
 r"""
                                                              
-        _____                                               
   _____/ ____\______ ________________    ____   ___________ 
  /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
 (  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
@@ -74,8 +73,8 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
             auth.add_cookies(c)
             c.headers.update(auth.create_sign(url, headers))
             r = await c.get(url , timeout=None)
-            progress.remove_task(task)
             if not r.is_error:
+                progress.remove_task(task)
                 posts = r.json()['list']
     
                 if not posts:
@@ -85,6 +84,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
                 elif not recursive:
                     return posts
                 # recursive search for posts
+                attempt.set(0)
                 global tasks
                 tasks.append(asyncio.create_task( scrape_timeline_posts(headers, model_id,progress,posts[-1]['postedAtPrecise'],recursive=True)))
                 return posts
@@ -104,8 +104,8 @@ async def get_timeline_post(headers,model_id):
 
         oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
         oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
-
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
+        oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
         global tasks
         tasks=[]
@@ -153,7 +153,9 @@ async def get_timeline_post(headers,model_id):
         cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.close()
     else:
-        log.debug("Some post where not retrived not setting cache")
+        cache.set(f"timeline_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
+        cache.close()
+        log.debug("Some post where not retrived resetting cache")
 
     return unduped                                
 

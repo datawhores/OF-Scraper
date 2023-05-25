@@ -27,10 +27,9 @@ log=logging.getLogger(__package__)
 
 
 def get_posts(headers, model_id):
-    with Halo(text='Getting all timeline posts...'):
-        pinned_posts = timeline.scrape_pinned_posts(headers, model_id)
-        timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
-        archived_posts = timeline.scrape_archived_posts(headers, model_id)
+    pinned_posts = timeline.scrape_pinned_posts(headers, model_id)
+    timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
+    archived_posts = timeline.scrape_archived_posts(headers, model_id)
     log.debug(f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}")
     return pinned_posts + timeline_posts + archived_posts
 
