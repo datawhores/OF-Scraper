@@ -121,6 +121,7 @@ def test_linux_trunicate_255(mocker):
         with check:
             assert(long_path.suffix)==trunicated.suffix
 
+
 def test_linux_trunicate_small(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         dirLength=len(str(pathlib.Path(LINUX_LONGPATH).parent).encode("utf8"))
@@ -139,6 +140,33 @@ def test_linux_trunicate_small(mocker):
         with check:
             assert(long_path.suffix)==trunicated.suffix
 
+def test_linux_trunicate_count(mocker):
+    with patch('platform.system', MagicMock(return_value="Linux")):
+        number=5000
+        long_path=pathlib.Path(f"{LINUX_LONGPATH}_{number}.mkv")
+        trunicated=paths.trunicate(long_path)
+        with check:
+            assert(len(str(trunicated.name).encode("utf8")))<=255
+        with check:
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
+        with check:
+            assert(str(trunicated).find(f"{number}"))!=0
+
+def test_linux_trunicate_count_small(mocker):
+    with patch('platform.system', MagicMock(return_value="Linux")):
+        number=5000
+        long_path=pathlib.Path(f"{LINUX_LONGPATH[:200]}_{number}.mkv")
+        trunicated=paths.trunicate(long_path)
+        with check:
+            assert(len(str(trunicated.name).encode("utf8")))<=255
+        with check:
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
+        with check:
+            assert(str(trunicated).find(f"{number}"))!=0
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
         "main_profile": PROFILE_DEFAULT,
