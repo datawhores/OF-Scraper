@@ -92,41 +92,33 @@ def trunicate(path):
         return pathlib.Path(path)
 def _windows_trunicateHelper(path):
     path=pathlib.Path(path)
-    prefix="\_[0-9]+.[a-z]*$"
-    if re.search(str(path),prefix,re.IGNORECASE):
-        ext=re.search("\_[0-9]+.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    dir=path.parent
+    file=path.name
+    match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
+    if match:
+        ext=match.group(0)
     else:
         ext=""
-
-
-    filebase=re.sub(ext,"",str(path))
-    dir=path.parent
-    #-1 for path split /
-    maxLength=256-len(ext)-len(str(dir))-1
-    outString=""
-    for ele in list(filebase):
-        temp=outString+ele
-        if len(temp)>maxLength:
-            break
-        outString=temp
-    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+    #-1 is for / between parentdirs and file
+    fileLength=256-len(ext)-len(str(dir))-1
+    newFile=f"{re.sub(ext,'',file)[fileLength]}{ext}"
+    return pathlib.Path(dir,newFile)
 
 def _linux_trunicateHelper(path):
     path=pathlib.Path(path)
-    if re.search("\.[a-z]*$",path.name,re.IGNORECASE):
-        ext=re.search("\.[a-z]*$",path.name,re.IGNORECASE).group(0)
+    dir=path.parent
+    file=path.name
+    match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
+    if match:
+        ext=match.group(0)
     else:
         ext=""
-    filebase=str(re.sub(ext,"",path.name))
-    dir=path.parent
-    maxLength=255-len(ext.encode('utf8'))
-    outString=""
-    for ele in list(filebase):
-        temp=outString+ele
-        if len(temp.encode("utf8"))>maxLength:
-            break
-        outString=temp
-    return pathlib.Path(f"{pathlib.Path(dir,outString)}{ext}")
+    fileLength=255-len(ext.encode('utf8'))
+    newFileByte=re.sub(ext,"",file).encode("utf8")[:fileLength]
+    newFile=f"{newFileByte.decode('utf8')}{ext}"
+    return pathlib.Path(dir,newFile)
+
+
 
 def mp4decryptchecker(x):
     if not pathlib.Path(x).is_file():

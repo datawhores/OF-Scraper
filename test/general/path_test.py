@@ -22,7 +22,6 @@ from ofscraper.utils.dates import convert_local_time
 #Word split
 
 
-
 def test_windows_trunicate(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         long_path=pathlib.Path(f"{WINDOWS_LONGPATH}.mkv")
@@ -64,6 +63,33 @@ def test_windows_trunicate_small(mocker):
         with check:
             assert(long_path.suffix)==trunicated.suffix
 
+def test_windows_trunicate_count(mocker):
+    with patch('platform.system', MagicMock(return_value="Windows")):
+        number=5000
+        long_path=pathlib.Path(f"{WINDOWS_LONGPATH}_{number}.mkv")
+        trunicated=paths.trunicate(long_path)
+        with check:
+            assert(len(str(trunicated)))<=256
+        with check:
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
+        with check:
+            assert(str(trunicated).find(f"{number}"))!=0
+
+def test_windows_trunicate_count_small(mocker):
+    with patch('platform.system', MagicMock(return_value="Windows")):
+        number=5000
+        long_path=pathlib.Path(f"{WINDOWS_LONGPATH[:200]}_{number}.mkv")
+        trunicated=paths.trunicate(long_path)
+        with check:
+            assert(len(str(trunicated)))<=256
+        with check:
+            assert(long_path.parent)==trunicated.parent
+        with check:
+            assert(long_path.suffix)==trunicated.suffix
+        with check:
+            assert(str(trunicated).find(f"{number}"))!=0
 
 def test_linux_trunicate(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
