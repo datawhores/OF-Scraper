@@ -15,7 +15,8 @@ from rich import print
 import ofscraper.utils.config as config_
 import ofscraper.prompts.prompts as prompts
 import ofscraper.constants as constants
-
+import logging
+log=logging.getLogger(__package__)
 console=Console()
 
 
@@ -97,4 +98,4 @@ def print_current_profile():
     get_profiles()
 
     current_profile = get_current_profile()
-    print('Using profile: [cyan]{}[/cyan]'.format(current_profile))
+    log.info('Using profile: [cyan]{}[/cyan]'.format(current_profile))

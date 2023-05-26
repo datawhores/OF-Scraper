@@ -67,7 +67,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
         url=ep.format(model_id)
     log.debug(url)
     async with sem:
-        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
 
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
             auth.add_cookies(c)
@@ -100,7 +100,7 @@ async def get_timeline_post(headers,model_id):
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    with Live(progress_group, refresh_per_second=10,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
 
         oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
         oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
@@ -129,7 +129,7 @@ async def get_timeline_post(headers,model_id):
     
     
         page_count=0 
-        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
         while len(tasks)!=0:
             for coro in asyncio.as_completed(tasks):
                 result=await coro or []
