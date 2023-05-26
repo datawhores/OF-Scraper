@@ -9,6 +9,7 @@ r"""
 """
 
 import asyncio
+import time
 import os
 import sys
 import platform
@@ -570,24 +571,29 @@ f"""
 Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 ===========================
 """)
-        None   
 def main():
-    
-# Python program for creating a
-# context manager using @contextmanager
-# decorator
  
-    with exit.DelayedKeyboardInterrupt(paths.cleanup,False):
         try:
-            scrapper()        
+            scrapper()
+        except KeyboardInterrupt as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    paths.cleanup()
+                    sys.exit(0)
+            except KeyboardInterrupt:
+                    sys.exit(0)
+
+
         except Exception as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
-        quit()
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    paths.cleanup()
+                    log.traceback(E)
+                    log.traceback(traceback.format_exc())
+                    sys.exit(0)
+            except KeyboardInterrupt:
+                sys.exit(0)
 def scrapper():
-    import time
-
-
     if platform.system == 'Windows':
         os.system('color')
     # try:
