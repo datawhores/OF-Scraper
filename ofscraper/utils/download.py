@@ -28,11 +28,13 @@ from rich.progress import (
     TransferSpeedColumn,
     TextColumn,
     TaskProgressColumn,
-    BarColumn
+    BarColumn,
+    TimeRemainingColumn
 )
 from rich.live import Live
 from rich.panel import Panel
 from rich.console import Group
+from rich.table import Column
 import arrow
 from bs4 import BeautifulSoup
 try:
@@ -62,10 +64,11 @@ log=logging.getLogger(__package__)
 async def process_dicts(username, model_id, medialist,forced=False):
     overall_progress=Progress(  TextColumn("{task.description}"),
     BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-    job_progress=Progress(*Progress.get_default_columns(),TransferSpeedColumn(),TotalFileSizeColumn())
+    job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+    TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),TotalFileSizeColumn())
     progress_group = Group(
     overall_progress
-    , Panel(Group(job_progress)))
+    , Panel(Group(job_progress,fit=True)))
     with Live(progress_group, refresh_per_second=10,console=console.shared_console):    
             if not forced:
                 media_ids = set(operations.get_media_ids(model_id,username))
@@ -93,6 +96,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
                 with paths.set_directory(paths.getmediadir(ele,username,model_id)):
                     aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
             task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws),visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+            # progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
             for coro in asyncio.as_completed(aws):
                     try:
                         media_type, num_bytes_downloaded = await coro
@@ -156,7 +160,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
                         pathstr=str(path_to_file)
                         temp=paths.trunicate(f"{path_to_file}.part")
                         pathlib.Path(temp).unlink(missing_ok=True)
-                        task1 = progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}", total=total,visible=False)
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=False)
                         with open(temp, 'wb') as f:                           
                             num_bytes_downloaded = r.num_bytes_downloaded
                             progress.update(task1,visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
@@ -235,7 +239,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                             temp.unlink(missing_ok=True)
                             item["path"]=temp
                             pathstr=str(temp)
-                            task1 = progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} {(pathstr[:50] + '....') if len(pathstr) > 50 else pathstr}", total=total,visible=False)
+                            task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=False)
                             with open(temp, 'wb') as f:                           
                                 num_bytes_downloaded = r.num_bytes_downloaded
                                 progress.update(task1,visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
