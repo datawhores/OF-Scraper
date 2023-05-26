@@ -89,7 +89,7 @@ def getLevel(input):
     DEBUG 10
     """
     return {"OFF":100,
-            "PROMPT":"",
+            "PROMPT":"CRITICAL",
             "STATS":"ERROR",
             "LOW":"WARNING",
             "NORMAL":"INFO",

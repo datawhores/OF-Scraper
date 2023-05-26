@@ -15,6 +15,7 @@ from tenacity import retry,stop_after_attempt,wait_random
 import ofscraper.constants as constants
 import ofscraper.utils.auth as auth
 import ofscraper.utils.encoding as encoding
+import ofscraper.utils.stdout as stdout
 from ofscraper.utils.logger import updateSenstiveDict
 log=logging.getLogger(__package__)
 console=Console()
@@ -44,7 +45,7 @@ def parse_user(profile):
 
 
 def print_user(name, username):
-    if log.level<=constants.SUPPRESS_LOG_LEVEL:
+    with stdout.lowstdout():
         console.print(f'Welcome, {name} | {username}')
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def parse_subscriber_count(headers):

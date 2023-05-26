@@ -15,7 +15,6 @@ from typing import Union
 import asyncio
 import httpx
 
-from halo import Halo
 log=logging.getLogger(__package__)
 
 from rich.progress import Progress
