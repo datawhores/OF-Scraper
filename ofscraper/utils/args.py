@@ -31,14 +31,14 @@ def getargs(input=None):
     )
 
     general.add_argument(
-        '-l', '--log', help = 'set log file level', type=str.upper,default="OFF",choices=["OFF","LOW","NORMAL","DEBUG"]
+        '-l', '--log', help = 'set log file level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
     ),
     general.add_argument(
-        '-dc', '--discord', help = 'set discord log level', type=str.upper,default="OFF",choices=["OFF","LOW","NORMAL","DEBUG"]
+        '-dc', '--discord', help = 'set discord log level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
     )
 
     general.add_argument(
-        '-p', '--output', help = 'set output log level', type=str.upper,default="NORMAL",choices=["PROMPT","LOW","NORMAL","DEBUG"]
+        '-p', '--output', help = 'set output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
