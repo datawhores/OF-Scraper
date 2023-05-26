@@ -605,7 +605,7 @@ def scrapper():
     functs=[]
     if len(args.posts)==0 and not args.action:
         if args.daemon:
-                    log.warning("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
+                    log.error("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
         return
     check_auth()
