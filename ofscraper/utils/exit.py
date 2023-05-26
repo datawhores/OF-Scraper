@@ -18,7 +18,7 @@ SIGNAL_TRANSLATION_MAP = {
 
 
 class DelayedKeyboardInterrupt:
-    def __init__(self, endprogram,propagate_to_forked_processes=None):
+    def __init__(self,propagate_to_forked_processes=None):
         """
         Constructs a context manager that suppresses SIGINT & SIGTERM signal handlers
         for a block of code.
@@ -38,7 +38,6 @@ class DelayedKeyboardInterrupt:
         self._sig = None
         self._frame = None
         self._old_signal_handler_map = None
-        self.endprogram=endprogram
 
     def __enter__(self):
         self._old_signal_handler_map = {
@@ -50,7 +49,6 @@ class DelayedKeyboardInterrupt:
 
         for sig, handler in self._old_signal_handler_map.items():
             signal.signal(sig, handler)
-        self.endprogram()
         if self._sig is None:
             return
         self._old_signal_handler_map[self._sig](self._sig, self._frame)
