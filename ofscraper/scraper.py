@@ -26,8 +26,14 @@ from itertools import chain
 import re
 from rich.console import Console
 import webbrowser
-from halo import Halo
 import arrow
+from rich.progress import (
+    Progress,
+    TextColumn,
+    SpinnerColumn
+)
+from rich.style import Style
+
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
 import ofscraper.db.operations as operations
@@ -49,118 +55,132 @@ import ofscraper.utils.download as download
 import ofscraper.interaction.like as like
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
-import ofscraper.constants as constants
 import ofscraper.utils.filters as filters
-
+import ofscraper.utils.stdout as stdout
 
 
 console=Console()
 log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
-f = open(os.devnull, 'w')
-
 def process_messages(headers, model_id,username):
-    messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
-    messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
-    log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),messages_))}")
-    log.debug("Removing locked messages media")
-    for message in messages_:
-     operations.write_messages_table(message)
-    output=[]
-    [ output.extend(message.media) for message in messages_]
-    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
 
-@Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting Paid Content...')
+            messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
+            messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
+            log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),messages_))}")
+            log.debug("Removing locked messages media")
+            for message in messages_:
+                operations.write_messages_table(message)
+            output=[]
+            [ output.extend(message.media) for message in messages_]
+            return list(filter(lambda x:isinstance(x,posts_.Media),output))
+
 def process_paid_post(model_id,username):
-    paid_content=paid.scrape_paid(username)
-    paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
-    log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),paid_content))}")
-    log.debug("Removing locked paid media")
-    for post in paid_content:
-        operations.write_post_table(post,model_id,username)
-    output=[]
-    [output.extend(post.media) for post in paid_content]
-    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            task1=progress.add_task("Getting Paid Media....")
+            paid_content=paid.scrape_paid(username)
+            paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
+            log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),paid_content))}")
+            log.debug("Removing locked paid media")
+            for post in paid_content:
+                operations.write_post_table(post,model_id,username)
+            output=[]
+            [output.extend(post.media) for post in paid_content]
+            progress.remove_task(task1)
+            return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
          
 
-@Halo(stream=sys.stdout  if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting highlights and stories...\n')
 def process_highlights(headers, model_id,username):
-    highlights_, stories = highlights.scrape_highlights(headers, model_id)
-    highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
-    list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
-    log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.allmedia), highlights_))+sum(map(lambda x:len(x.allmedia), stories))}")
-    for post in highlights_:
-        operations.write_stories_table(post,model_id,username)
-    for post in stories:
-        operations.write_stories_table(post,model_id,username)   
-    output=[]
-    output2=[]
-    [ output.extend(highlight.media) for highlight in highlights_]
-    [ output2.extend(stories.media) for stories in stories]
-    return list(filter(lambda x:isinstance(x,posts_.Media),output)),list(filter(lambda x:isinstance(x,posts_.Media),output2))
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            task1=progress.add_task("Highlights and Stories....")
+            highlights_, stories = highlights.scrape_highlights(headers, model_id)
+            highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
+            list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
+            log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.allmedia), highlights_))+sum(map(lambda x:len(x.allmedia), stories))}")
+            for post in highlights_:
+                operations.write_stories_table(post,model_id,username)
+            for post in stories:
+                operations.write_stories_table(post,model_id,username)   
+            output=[]
+            output2=[]
+            [ output.extend(highlight.media) for highlight in highlights_]
+            [ output2.extend(stories.media) for stories in stories]
+            progress.remove_task(task1)
+            return list(filter(lambda x:isinstance(x,posts_.Media),output)),list(filter(lambda x:isinstance(x,posts_.Media),output2))
 
-     
+            
 
 
 
 
 
 
-# @Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting timeline media...')
 def process_timeline_posts(headers, model_id,username):
-    timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
-    timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
-    log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),timeline_posts))}")
-    log.debug("Removing locked timeline media")
-    for post in timeline_posts:
-        operations.write_post_table(post,model_id,username)
-    output=[]
-    [output.extend(post.media) for post in  timeline_posts ]
-    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
+            timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
+            log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),timeline_posts))}")
+            log.debug("Removing locked timeline media")
+            for post in timeline_posts:
+                operations.write_post_table(post,model_id,username)
+            output=[]
+            [output.extend(post.media) for post in  timeline_posts ]
+            return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
-@Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting archived media...')
 def process_archived_posts(headers, model_id,username):
-    archived_posts = timeline.get_archive_post(headers, model_id)
-    archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
-    log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),archived_posts))}")
-    log.debug("Removing locked archived media")
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            task1=progress.add_task("Getting Archived Media....")
+            archived_posts = timeline.get_archive_post(headers, model_id)
+            archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
+            log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),archived_posts))}")
+            log.debug("Removing locked archived media")
 
-    for post in archived_posts:
-        operations.write_post_table(post,model_id,username)
-    output=[]
-    [ output.extend(post.media) for post in archived_posts ]
-    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+            for post in archived_posts:
+                operations.write_post_table(post,model_id,username)
+            output=[]
+            [ output.extend(post.media) for post in archived_posts ]
+            progress.remove_task(task1)
+            return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
 
 
 
-@Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting pinned media...')
 def process_pinned_posts(headers, model_id,username):
-    pinned_posts = timeline.get_pinned_post(headers, model_id,username)
-    pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
-    log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),pinned_posts))}")
-    log.debug("Removing locked pinned media")
-    for post in  pinned_posts:
-        operations.write_post_table(post,model_id,username)
-    output=[]
-    [ output.extend(post.media) for post in pinned_posts ]
-    return list(filter(lambda x:isinstance(x,posts_.Media),output))
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            task1=progress.add_task("Getting Pinned Media....")
+            pinned_posts = timeline.get_pinned_post(headers, model_id,username)
+            pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
+            log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),pinned_posts))}")
+            log.debug("Removing locked pinned media")
+            for post in  pinned_posts:
+                operations.write_post_table(post,model_id,username)
+            output=[]
+            [ output.extend(post.media) for post in pinned_posts ]
+            progress.remove_task(task1)
+            return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
 def process_profile(headers, username) -> list:
-    user_profile = profile.scrape_profile(headers, username)
-    urls, info = profile.parse_profile(user_profile)
-    profile.print_profile_info(info)       
-    output=[]
-    for ele in enumerate(urls):
-        count=ele[0]
-        data=ele[1]
-        output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
-    avatars=list(filter(lambda x:x.filename=='avatar',output))
-    if len(avatars)>0:
-        log.warning(f"Avatar : {avatars[0].url}")
-    return output
+    with stdout.lowstdout():
+        user_profile = profile.scrape_profile(headers, username)
+        urls, info = profile.parse_profile(user_profile)
+        profile.print_profile_info(info)       
+        output=[]
+        for ele in enumerate(urls):
+            count=ele[0]
+            data=ele[1]
+            output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
+        avatars=list(filter(lambda x:x.filename=='avatar',output))
+        if len(avatars)>0:
+            log.warning(f"Avatar : {avatars[0].url}")
+        return output
 
 
 
@@ -229,16 +249,19 @@ def get_model_inputsplit(commaString):
         return range(x[0], x[-1]+1)
     return chain(*[hyphenRange(r) for r in list(filter(lambda x:x.isdigit(),re.split(',| ',commaString)))])
 
-@Halo(stream=sys.stdout if logging.getLogger("ofscraper").handlers[1].level<constants.SUPPRESS_LOG_LEVEL else f,text='Getting your subscriptions (this may take awhile)...') 
 def get_models(headers, subscribe_count) -> list:
     """
     Get user's subscriptions in form of a list.
     """
-    list_subscriptions = asyncio.run(
-        subscriptions.get_subscriptions(headers, subscribe_count))
-    parsed_subscriptions = subscriptions.parse_subscriptions(
-        list_subscriptions)
-    return parsed_subscriptions
+    with stdout.lowstdout():
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
+            list_subscriptions = asyncio.run(
+                subscriptions.get_subscriptions(headers, subscribe_count))
+            parsed_subscriptions = subscriptions.parse_subscriptions(
+                list_subscriptions)
+            progress.remove_task(task1)
+            return parsed_subscriptions
 
 #check if auth is valid
 def process_me(headers):

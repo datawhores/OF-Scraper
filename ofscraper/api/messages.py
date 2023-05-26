@@ -46,7 +46,7 @@ async def get_messages(headers, model_id):
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    with Live(progress_group, refresh_per_second=10,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
 
         oldmessages=cache.get(f"messages_{model_id}",default=[]) 
         oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
@@ -72,7 +72,7 @@ async def get_messages(headers, model_id):
         
         responseArray=[]
         page_count=0 
-        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=False if logging.getLogger("ofscraper").handlers[1].level>=constants.SUPPRESS_LOG_LEVEL else True)
+        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
 
 
         while len(tasks)!=0:
