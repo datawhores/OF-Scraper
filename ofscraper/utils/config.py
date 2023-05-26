@@ -134,7 +134,7 @@ def update_config(field: str, value):
 
 
 def auto_update_config(path, config: dict) -> dict:
-    log.warning("Auto updating config...")
+    log.error("Auto updating config...")
     new_config = get_current_config_schema(config)
 
     with open(path / constants.configFile, 'w') as f:

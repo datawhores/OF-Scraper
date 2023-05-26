@@ -111,4 +111,4 @@ def _handle_err(param: Union[httpx.Response, httpx.TransportError], url: str) ->
             message = str(param)
     except:
         pass
-    log.warning(f'{status}{message}, post at {url}')
+    log.info(f'{status}{message}, post at {url}')

@@ -82,13 +82,15 @@ def updateSenstiveDict(word,replacement):
 
 def getLevel(input):
     """
-    ERROR 50
+    CRITICAL 50
+    ERROR 40
     WARNING 30
     INFO 20
     DEBUG 10
     """
     return {"OFF":100,
-            "PROMPT":"ERROR",
+            "PROMPT":"",
+            "STATS":"ERROR",
             "LOW":"WARNING",
             "NORMAL":"INFO",
             "DEBUG":"DEBUG"}.get(input,100)
