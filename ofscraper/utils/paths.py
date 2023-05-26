@@ -76,6 +76,7 @@ def cleanup():
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
     for file in list(filter(lambda x:re.search("\.part$",str(x))!=None,root.glob("**/*"))):
         file.unlink(missing_ok=True)
+    log.info("Finished with cleanup\n\n")
 
 
 def getcachepath():
