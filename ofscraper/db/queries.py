@@ -139,6 +139,13 @@ allIDCheck=\
 SELECT media_id FROM medias
 """
 
+
+allPOSTCheck=\
+"""
+SELECT post_id FROM medias
+"""
+
+
 mediaInsert=\
 f"""INSERT INTO 'medias'(
 media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at)

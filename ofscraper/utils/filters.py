@@ -11,8 +11,14 @@ def filterMedia(media):
     media=post_datesorter(media)
     media=posts_type_filter(media)
     media=posts_date_filter(media)
+    if args.manual_download():
+        args.dupe=True
+        args_.changeargs(args)
+        media=post_manual_filter(media)
     return media
 
+def post_manual_filter():
+    None
 
 def dupefilter(media):
     output=[]

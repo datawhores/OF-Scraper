@@ -47,10 +47,10 @@ requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.poetry.scripts]
-ofscraper = "ofscraper.scraper:main"
+ofscraper = "ofscraper.start:main"
 
 [project.scripts]
-ofscraper = "ofscraper.scraper:main"
+ofscraper = "ofscraper.start:main"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/datawhores/OF-Scraper"

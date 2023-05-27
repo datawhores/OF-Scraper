@@ -572,6 +572,7 @@ def create_tables(model_id,username):
 
 
 
+
 @contextmanager
 def scrape_context_manager():
         
@@ -645,6 +646,8 @@ def scrapper():
         return
     check_auth()
     check_config()
+    if args.manual_download:
+        update_args_manual()
     if len(args.posts)>0: 
         functs.append(process_post)      
     elif args.action=="like":
