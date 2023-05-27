@@ -2,6 +2,8 @@ import logging
 import re
 import httpx
 import logging
+import threading
+import queue
 from rich.logging import RichHandler
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
@@ -9,6 +11,8 @@ import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 
 senstiveDict={}
+discord_queue=queue.Queue()
+
 
 class DebugOnly(logging.Filter):
     def filter(self, record):
@@ -31,10 +35,16 @@ class DiscordHandler(logging.Handler):
             return
         #convert markup
         log_entry=re.sub("\[bold\]|\[/bold\]","**",log_entry)
-        httpx.post(url, headers={"Content-type": "application/json"},json={"content":log_entry})
+        discord_queue.put((url,log_entry))
 
+def discord_messenger():
+    with httpx.Client() as c:
+        while True:
+            url,entry=discord_queue.get()    
+            c.post(url, headers={"Content-type": "application/json"},json={"content":entry})
 
-
+worker_thread = threading.Thread(target=discord_messenger)
+worker_thread.start()
 class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
     @staticmethod
