@@ -19,7 +19,7 @@ def getargs(input=None):
 
     parser = argparse.ArgumentParser(add_help=False)   
     general=parser.add_argument_group("General",description="General Args")  
-    general.add_argument('-v', '--version', action='version', version=__version__ )
+    general.add_argument('-v', '--version', action='version', version=__version__ ,default=__version__)
     general.add_argument('-h', '--help', action='help')
 
                                     
