@@ -1,33 +1,34 @@
 import logging
 import re
+import httpx
 import ofscraper.utils.args as args_
 import ofscraper.utils.console as console
 import ofscraper.db.operations as operations
 import ofscraper.api.profile as profile
 import ofscraper.utils.auth as auth
-
-
-
-
+import ofscraper.api.timeline as timeline
 log=logging.getLogger(__package__)
 args=args_.getargs()
 
 def main():
     user_dict=create_userpost_dict()
+    post_checker(user_dict)
+   
+   
+def post_checker(user_dict):
     headers = auth.make_headers(auth.read_auth())
+    client=httpx.Client(http2=True, headers=headers)
+    for user_name in user_dict.keys():
+        model_id = profile.get_id(headers, user_name)
+        posts=user_dict[user_name].get("posts")
+        downloaded=set(operations.get_media_ids(model_id,user_name))
+        for ele in posts:
+            media=list(map(lambda x:x["id"],(timeline.get_individual_post(ele,client=client) or {'media':[]})["media"]))
+            if len(list(filter(lambda x:x not in downloaded ,media)))>0:
+                    console.shared_console.print(f"https://onlyfans.com/{ele}/{user_name} has media not in database")
+            else: 
+                console.shared_console.print(f"https://onlyfans.com/{ele}/{user_name} all media already downloaded")
 
-    for key in user_dict.keys():
-        model_id = profile.get_id(headers, key)
-        posts=user_dict[key].get("posts")
-        messages=user_dict[key].get("messages")
-        downloaded=set(operations.get_post_ids(model_id,key))
-        if posts:
-            posts_downloaded=list(filter(lambda x:x in downloaded,posts))
-            posts_missing=list(filter(lambda x:x not in downloaded,posts))
-            for ele in posts_missing:
-                console.shared_console.print(f"https://onlyfans.com/{ele}/{key} was not detected")
-            for ele in posts_downloaded:
-                            console.shared_console.print(f"https://onlyfans.com/{ele}/{key} this post was already found")
 
 
 
