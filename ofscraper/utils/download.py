@@ -254,8 +254,8 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                                 progress.remove_task(task1) 
                         else:
                             r.raise_for_status()
-        log.debug(f"Media:{ele.id} Post:{ele.postid} video name:{video['name']}")
-        log.debug(f"Media:{ele.id} Post:{ele.postid} audio name:{audio['name']}")
+    log.debug(f"Media:{ele.id} Post:{ele.postid} video name:{video['name']}")
+    log.debug(f"Media:{ele.id} Post:{ele.postid} audio name:{audio['name']}")
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
                 log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
