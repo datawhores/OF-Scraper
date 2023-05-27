@@ -92,6 +92,15 @@ def get_media_ids(model_id,username) -> list:
             cur.execute(queries.allIDCheck)
             conn.commit()
             return list(map(lambda x:x[0],cur.fetchall()))
+def get_post_ids(model_id,username) -> list:
+    datebase_path =databasePathHelper(model_id,username)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.allPOSTCheck)
+            conn.commit()
+            return list(map(lambda x:x[0],cur.fetchall()))
+
+
 def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:

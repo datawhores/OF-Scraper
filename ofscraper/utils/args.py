@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 import arrow
+import pathlib
 from ofscraper.__version__ import __version__ 
 
 args=None
@@ -72,6 +73,21 @@ def getargs(input=None):
     advanced.add_argument(
         '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects downloading posts',default=False,required=False,action="store_true"
     )
+    advanced.add_argument(
+        '-m', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
+    )
+    subparser=parser.add_subparsers(help="commands",dest="command")
+    check=subparser.add_parser("check",help="Check if a File is in the data base")
+
+
+    check.add_argument("-u","--url",
+    help = 'Check if media is in library via url',default=None,required=False,type = check_strhelper,action='extend'
+    )
+
+
+    check.add_argument("-f","--file",
+    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    )
 
     args=parser.parse_args(input)
     #deduplicate posts
@@ -79,6 +95,21 @@ def getargs(input=None):
     return args
 
 
+
+def check_strhelper(x):
+    temp=None
+    if isinstance(x,list):
+        temp=x
+    elif isinstance(x,str):
+        temp=x.split(",")
+    return temp
+
+def check_filehelper(x):
+    if isinstance(x,str) and pathlib.Path(x).exists():
+        with open(x,"r") as _:
+           return _.readlines()
+
+   
     
 def posttype_helper(x):
     choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased"])
