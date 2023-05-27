@@ -49,15 +49,15 @@ def discord_cleanup():
     logging.getLogger("ofscraper").info("Pushing Discord Queue")
     with httpx.Client() as c:
         while True:
+            print("ddsd")
             if discord_queue.empty:
                 discord_queue.put(("exit",None))
                 break
             time.sleep(.5)
              
-
-
-worker_thread = threading.Thread(target=discord_messenger)
-worker_thread.start()
+def start_discord_queue():
+    worker_thread = threading.Thread(target=discord_messenger)
+    worker_thread.start()
 class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
     @staticmethod

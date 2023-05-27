@@ -604,6 +604,7 @@ def main():
  
         try:
             print_start()
+            logger.start_discord_queue()
             scrapper()
             paths.cleanup()
             logger.discord_cleanup()
