@@ -57,9 +57,8 @@ import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
+import ofscraper.utils.console as console
 
-
-console=Console()
 log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
@@ -485,11 +484,11 @@ def check_auth():
 
 def check_config():
     while not  paths.mp4decryptchecker(config.get_mp4decrypt(config.read_config())):
-        console.print("You need to select path for mp4decrypt\n\n")
+        console.shared_console.print("You need to select path for mp4decrypt\n\n")
         log.debug(f"[bold]current mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")
         config.update_mp4decrypt()
     while not  paths.ffmpegchecker(config.get_ffmpeg(config.read_config())):
-        console.print("You need to select path for ffmpeg\n\n")
+        console.shared_console.print("You need to select path for ffmpeg\n\n")
         log.debug(f"[bold]current ffmpeg path[/bold] {config.get_ffmpeg(config.read_config())}")
         config.update_ffmpeg()
     log.debug(f"[bold]final mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")
@@ -596,9 +595,15 @@ f"""
 Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 ===========================
 """)
+def print_start():
+    with stdout.lowstdout():
+        console.shared_console.print(
+            f"[bold green]Welcome to OF-Scraper Version {args.version}[/bold green]"
+        )                
 def main():
  
         try:
+            print_start()
             scrapper()
             paths.cleanup()
             logger.discord_cleanup()
