@@ -183,7 +183,18 @@ def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
         log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
         log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
 
+def get_individual_post(id,client=None):
+    headers = auth.make_headers(auth.read_auth())
+    with client or httpx.Client(http2=True, headers=headers) as c:
+        url=f"https://onlyfans.com/api2/v2/posts/{id}?skip_users=all"
+        auth.add_cookies(c)
+        c.headers.update(auth.create_sign(url, headers))
+        r=c.get(url)
+        if not r.is_error:
+            return r.json()
+        log.debug(f"{r.status_code}")
+        log.debug(f"{r.content.decode()}")
 
-
-               
-
+# https://onlyfans.com/519930312/mbrownrae
+# https://onlyfans.com/api2/v2/posts/519930312?skip_users=all
+# https://onlyfans.com/api2/v2/posts/531178660?skip_users=all

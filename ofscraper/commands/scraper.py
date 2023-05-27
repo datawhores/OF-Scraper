@@ -59,7 +59,7 @@ import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.console as console
 
-log=logger.init_logger(logging.getLogger(__package__))
+log=logging.getLogger(__package__)
 args=args_.getargs()
 log.debug(args)
 def process_messages(headers, model_id,username):
@@ -646,8 +646,6 @@ def scrapper():
         return
     check_auth()
     check_config()
-    if args.manual_download:
-        update_args_manual()
     if len(args.posts)>0: 
         functs.append(process_post)      
     elif args.action=="like":

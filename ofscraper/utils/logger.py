@@ -49,7 +49,6 @@ def discord_cleanup():
     logging.getLogger("ofscraper").info("Pushing Discord Queue")
     with httpx.Client() as c:
         while True:
-            print("ddsd")
             if discord_queue.empty:
                 discord_queue.put(("exit",None))
                 break
