@@ -3,6 +3,7 @@ import re
 import httpx
 import logging
 import threading
+import time
 import queue
 from rich.logging import RichHandler
 import ofscraper.utils.paths as paths
@@ -40,8 +41,20 @@ class DiscordHandler(logging.Handler):
 def discord_messenger():
     with httpx.Client() as c:
         while True:
-            url,entry=discord_queue.get()    
+            url,entry=discord_queue.get()   
+            if url=="exit":
+                return 
             c.post(url, headers={"Content-type": "application/json"},json={"content":entry})
+def discord_cleanup():
+    logging.getLogger("ofscraper").info("Pushing Discord Queue")
+    with httpx.Client() as c:
+        while True:
+            if discord_queue.empty:
+                discord_queue.put(("exit",None))
+                break
+            time.sleep(.5)
+             
+
 
 worker_thread = threading.Thread(target=discord_messenger)
 worker_thread.start()
