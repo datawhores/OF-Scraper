@@ -135,4 +135,4 @@ launch.json
 #other
 .tempmedia
 dupe.json
-doc
+doc*
