@@ -47,7 +47,6 @@ async def get_messages(headers, model_id):
     overall_progress,
     Panel(Group(job_progress)))
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
-
         oldmessages=cache.get(f"messages_{model_id}",default=[]) 
         oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
         log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
@@ -56,16 +55,18 @@ async def get_messages(headers, model_id):
         global tasks
         tasks=[]
         
-        #split and interval can't match because of breakpoints
-        split=40
-        interval=30
-        if len(postedAtArray)>split:
-            splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
-            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress)))
-            tasks.extend(list(map(lambda x:asyncio.create_task(scrape_messages(headers,model_id,job_progress,message_id=x[0])),splitArrays[1:-1])))
-            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,message_id=splitArrays[-1][0],recursive=True)))
+        #require a min num of posts to be returned
+        min_posts=50
+        if len(postedAtArray)>min_posts:
+            splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
+            #use the previous split for message_id
+            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,required_ids=set(splitArrays[0]))))
+            [tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,required_ids=set(splitArrays[i]),message_id=splitArrays[i-1][-1])))
+            for i in range(1,len(splitArrays)-1)]
+            # keeping grabbing until nothign left
+            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,message_id=splitArrays[-2][-1])))
         else:
-            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,recursive=True)))
+            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress)))
     
     
         
@@ -103,11 +104,12 @@ async def get_messages(headers, model_id):
     return unduped    
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_messages(headers, user_id, progress,message_id=None,recursive=False) -> list:
+async def scrape_messages(headers, model_id, progress,message_id=None,required_ids=None) -> list:
     global sem
+    global tasks
     attempt.set(attempt.get(0) + 1)
     ep = constants.messagesNextEP if message_id else constants.messagesEP
-    url = ep.format(user_id, message_id)
+    url = ep.format(model_id, message_id)
     log.debug(url)
     async with sem:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Message ID-> {message_id if message_id else 'initial'}")
@@ -121,12 +123,20 @@ async def scrape_messages(headers, user_id, progress,message_id=None,recursive=F
                 if not messages:
                     return []
                 elif len(messages)==0:
-                    return messages
-                elif not recursive:
-                    return messages
-                global tasks
-                attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_messages(headers, user_id,progress, recursive=True,message_id=messages[-1]['id'])))
+                    return []
+                elif required_ids==None:
+                    attempt.set(0)
+                    tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'])))
+                else:
+                    [required_ids.discard(ele["id"]) for ele in messages]
+                    #try once more to grab, else quit
+                    if len(required_ids)==1:
+                        attempt.set(0)
+                        tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'],required_ids=set())))
+
+                    elif len(required_ids)>0:
+                        attempt.set(0)
+                        tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'],required_ids=required_ids)))
                 return messages
             log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]message response:[/bold] {r.content.decode()}")

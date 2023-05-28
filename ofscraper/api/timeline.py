@@ -54,8 +54,9 @@ def get_pinned_post(headers,model_id,username):
     return scrape_pinned_posts(headers,model_id)
    
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recursive=False) -> list:
+async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
     global sem 
+    global tasks
     attempt.set(attempt.get(0) + 1)
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
@@ -68,7 +69,6 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
     log.debug(url)
     async with sem:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
-
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
             auth.add_cookies(c)
             c.headers.update(auth.create_sign(url, headers))
@@ -76,17 +76,24 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,recur
             if not r.is_error:
                 progress.remove_task(task)
                 posts = r.json()['list']
-    
                 if not posts:
                     return []
                 elif len(posts)==0:
-                    return posts
-                elif not recursive:
-                    return posts
-                # recursive search for posts
-                attempt.set(0)
-                global tasks
-                tasks.append(asyncio.create_task( scrape_timeline_posts(headers, model_id,progress,posts[-1]['postedAtPrecise'],recursive=True)))
+                    return []
+                elif required_ids==None:
+                    attempt.set(0)
+                    tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                else:
+                    [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+
+                    #try once more to get id if only 1 left
+                    if len(required_ids)==1:
+                        attempt.set(0)
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+
+                    elif len(required_ids)>0:
+                        attempt.set(0)
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
                 return posts
             log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
@@ -102,29 +109,27 @@ async def get_timeline_post(headers,model_id):
     Panel(Group(job_progress)))
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
 
-        oldtimeline=cache.get(f"timeline_{model_id}",default=[]) 
+        oldtimeline=cache.get(f"timeline_{model_id}",default=[])
         oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
         global tasks
         tasks=[]
-        #max result is 50, try to get 40 in each async task for leeway
-        # Also need to grab new posts
-        #add differing splits and interval for inclusivity and potential breakpoints
-        split=40
-        interval=30
-        if len(postedAtArray)>split:
-            split=40
-            interval=30
-            splitArrays=[postedAtArray[i:i+split] for i in range(0, len(postedAtArray), interval)]
-            
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress)))
-            tasks.extend(list(map(lambda x:asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=x[0]-100)),splitArrays[1:-1])))
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-1][0],recursive=True)))
+        min_posts=50
+        if len(postedAtArray)>min_posts:
+            splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
+            #use the previous split for timesamp
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0]))))
+            [tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
+            for i in range(1,len(splitArrays)-1)]
+            # keeping grabbing until nothign left
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-2][-1])))
         else:
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,recursive=True)))
-
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress)))
+    
+    
+       
         responseArray=[]
     
     
