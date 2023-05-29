@@ -12,6 +12,7 @@ import arrow
 import ofscraper.constants as constants
 import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
+import ofscraper.utils.args as args_
 
 console=Console()
 homeDir=pathlib.Path.home()
@@ -84,6 +85,8 @@ def getcachepath():
     createDir(path.parent)
     return path
 def trunicate(path):
+    if args_.getargs().original:
+        return path
     if platform.system() == 'Windows' and len(str(path))>256:
         return _windows_trunicateHelper(path)
     elif platform.system() == 'Linux':

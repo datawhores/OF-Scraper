@@ -7,8 +7,10 @@ log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
 def main():
-    if args.command=="check":
-        check.main()
+    if args.command=="post":
+        check.post_checker()
+    if args.command=="message":
+        check.message_checker()
     elif args.command=="manual":
         None
     else:
