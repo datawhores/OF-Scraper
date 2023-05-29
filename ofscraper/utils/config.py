@@ -14,6 +14,7 @@ import logging
 from rich.console import Console
 import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts 
+import ofscraper.utils.binaries as binaries
 
 console=Console()
 log=logging.getLogger(__package__)
@@ -176,14 +177,20 @@ def edit_config():
 
 def update_mp4decrypt():
     config={"config":read_config()}
-    config["config"]["mp4decrypt"]=prompts.mp4_prompt(config)
+    if prompts.auto_download_mp4_decrypt()=="Yes":
+        config["config"]["mp4decrypt"]=binaries.mp4decrypt_download()
+    else:
+        config["config"]["mp4decrypt"]=prompts.mp4_prompt(config)
     p = pathlib.Path.home() / constants.configPath / constants.configFile
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
 
 def update_ffmpeg():
     config={"config":read_config()}
-    config["config"]["ffmpeg"]=prompts.ffmpeg_prompt(config)
+    if prompts.auto_download_ffmpeg()=="Yes":
+        config["config"]["ffmpeg"]=binaries.ffmpeg_download()
+    else:
+        config["config"]["ffmpeg"]=prompts.ffmpeg_prompt(config)
     p = pathlib.Path.home() / constants.configPath / constants.configFile
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
