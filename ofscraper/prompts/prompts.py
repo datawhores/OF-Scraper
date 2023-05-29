@@ -560,6 +560,33 @@ https://ffmpeg.org/download.html
 
     answer = prompt(questions)
     return answer["ffmpeg"] 
+def auto_download_mp4_decrypt()-> bool:
+    name = 'manual download'
+    questions = [
+        {
+            'type': 'list',
+            'name': name,
+            'message': "mp4decrypt not found would you like to auto install?",
+            'choices':["Yes","No"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[name]
+
+def auto_download_ffmpeg()-> bool:
+    name = 'manual download'
+    questions = [
+        {
+            'type': 'list',
+            'name': name,
+            'message': "ffmpeg not found would you like to auto install?",
+            'choices':["Yes","No"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[name]
 
 def continue_prompt() -> bool:
     name = 'reset username'
