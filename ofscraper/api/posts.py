@@ -155,7 +155,7 @@ class Media():
 
     # ID for use in dynamic names
     @property
-    def id_(self):
+    def postid_(self):
         if self.count != None and len(self._post.allmedia) > 1:
             return f"{self._post._post['id']}_{self.count}"
         return self._post._post['id']
