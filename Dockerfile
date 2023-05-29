@@ -5,8 +5,6 @@ RUN mkdir -p /root/Data/ofscraper
 RUN mkdir -p /root/ofscraper
 WORKDIR /root
 COPY / ./ofscraper
-RUN chmod +x ./ofscraper/bin/ffmpeg
-RUN chmod +x ./ofscraper/bin/mp4decrypt
 WORKDIR ./ofscraper
 RUN apt-get update -y
 RUN apt-get upgrade -y
