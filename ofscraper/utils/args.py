@@ -41,6 +41,9 @@ def getargs(input=None):
     general.add_argument(
         '-p', '--output', help = 'set output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
+    general.add_argument(
+        '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
+    )
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
