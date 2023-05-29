@@ -11,13 +11,20 @@ import ofscraper.api.messages as messages
 log=logging.getLogger(__package__)
 args=args_.getargs()
 
-def main():
-    checker=()
    
-   
-def post_checker(user_dict):
+def post_checker():
     headers = auth.make_headers(auth.read_auth())
     client=httpx.Client(http2=True, headers=headers)
+    user_dict={}
+    user_dict=args
+    for ele in list(filter(lambda x:re.search("onlyfans.com/[0-9]+/[a-z]+",x),args.url)):
+        name_match=re.search("/([a-z]+$)",ele)
+        num_match=re.search("/([0-9]+)",ele)
+        if name_match and num_match:
+            if not user_dict.get(name_match.group(1)):
+                user_dict[name_match.group(1)]={}
+            user_dict[name_match.group(1)]["posts"]=user_dict[name_match.group(1)].get("posts") or set()
+            user_dict[name_match.group(1)]["posts"].add(num_match.group(1))
     for user_name in user_dict.keys():
         model_id = profile.get_id(headers, user_name)
         posts=user_dict[user_name].get("posts")
@@ -29,20 +36,8 @@ def post_checker(user_dict):
             else: 
                 console.shared_console.print(f"https://onlyfans.com/{ele}/{user_name} all media already downloaded")
 
-def message_checker(num_match):
-     None
 
-def checker():
-    outdict={}
-    for ele in list(filter(lambda x:re.search("onlyfans.com/[0-9]+/[a-z]+",x),args.url)):
-        name_match=re.search("/([a-z]+$)",ele)
-        num_match=re.search("/([0-9]+)",ele)
-        if name_match and num_match:
-            if not outdict.get(name_match.group(1)):
-                outdict[name_match.group(1)]={}
-            outdict[name_match.group(1)]["posts"]=outdict[name_match.group(1)].get("posts") or set()
-            outdict[name_match.group(1)]["posts"].add(num_match.group(1))
-    post_checker(outdict)
+def message_checker(num_match):
     for ele in list(filter(lambda x:re.search("onlyfans.com/.*/chats/[0-9]+",x),args.url)):
             num_match=re.search("/([0-9]+)",ele)
             message_checker(num_match)
@@ -55,4 +50,3 @@ def checker():
 
 
 
-# https://onlyfans.com/my/chats/chat/8551722/

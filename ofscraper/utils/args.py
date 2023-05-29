@@ -77,17 +77,25 @@ def getargs(input=None):
         '-m', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
     )
     subparser=parser.add_subparsers(help="commands",dest="command")
-    check=subparser.add_parser("check",help="Check if a File is in the data base")
+    post_check=subparser.add_parser("post",help="Check if a media in a posts is in the data base")
 
 
-    check.add_argument("-u","--url",
+    post_check.add_argument("-u","--url",
     help = 'Check if media is in library via url',default=None,required=False,type = check_strhelper,action='extend'
     )
 
 
-    check.add_argument("-f","--file",
+    post_check.add_argument("-f","--file",
     help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
     )
+
+    message_check=subparser.add_parser("message",help="Parse a user messages and view status of missing media")
+
+
+    message_check.add_argument("-u","--url",
+    help = 'link to conversation',default=None,required=False,type = check_strhelper,action='extend'
+    )
+
 
     args=parser.parse_args(input)
     #deduplicate posts
