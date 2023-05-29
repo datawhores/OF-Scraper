@@ -39,7 +39,7 @@ def getargs(input=None):
     )
 
     general.add_argument(
-        '-p', '--output', help = 'set output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
+        '-p', '--output', help = 'set console output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
     general.add_argument(
         '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
