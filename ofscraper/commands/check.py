@@ -110,7 +110,7 @@ def message_checker():
 
 
 def get_first_row():
-    return [("Number","Downloaded","Unlocked/Duplicated","Length", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
+    return [("Number","Downloaded","Unlocked","Length", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)
@@ -119,7 +119,7 @@ def texthelper(text):
     text=text if len(text)<constants.TABLE_STR_MAX else f"{text[:constants.TABLE_STR_MAX]}..."
     return text
 def unlocked_helper(ele,mediaset):
-    return ele.canview or ele.id in mediaset
+    return ele.canview
 def datehelper(date):
     if date=="None":
         return "Probably Deleted"
