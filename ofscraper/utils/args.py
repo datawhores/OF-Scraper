@@ -80,7 +80,7 @@ def getargs(input=None):
         '-m', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
     )
     subparser=parser.add_subparsers(help="commands",dest="command")
-    post_check=subparser.add_parser("post",help="Check if a media in a posts is in the data base")
+    post_check=subparser.add_parser("post_check",help="Check if a media in a posts is in the data base")
 
 
     post_check.add_argument("-u","--url",
@@ -92,7 +92,7 @@ def getargs(input=None):
     help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
     )
 
-    message_check=subparser.add_parser("message",help="Parse a user messages and view status of missing media")
+    message_check=subparser.add_parser("msg_check",help="Parse a user messages and view status of missing media")
 
 
     message_check.add_argument("-u","--url",

@@ -200,6 +200,3 @@ def get_individual_post(id,client=None):
         log.debug(f"{r.status_code}")
         log.debug(f"{r.content.decode()}")
 
-# https://onlyfans.com/519930312/mbrownrae
-# https://onlyfans.com/api2/v2/posts/519930312?skip_users=all
-# https://onlyfans.com/api2/v2/posts/531178660?skip_users=all
