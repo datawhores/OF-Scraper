@@ -13,5 +13,7 @@ def main():
         check.message_checker()
     elif args.command=="manual":
         None
+    elif args.help:
+        None
     else:
         scraper.main()
