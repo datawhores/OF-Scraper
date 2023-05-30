@@ -8,6 +8,7 @@ r"""
                  \/     \/           \/            \/         
 """
 import logging
+from typing import Union
 import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
@@ -19,7 +20,7 @@ log=logging.getLogger(__package__)
 console=Console()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-def scrape_profile(headers, username:str|int) -> dict:
+def scrape_profile(headers, username:Union[int, str]) -> dict:
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
 
