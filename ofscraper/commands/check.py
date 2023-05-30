@@ -186,7 +186,7 @@ class InputApp(App):
         table.zebra_stripes=True
         table.add_columns(*self.table_data[0])
         for count, row in enumerate(self.table_data[1:]):
-            if column and not re.search(value,str(row[column],re.IGNORECASE)):
+            if column and not re.search(value,str(row[column]),re.IGNORECASE):
                 continue
             elif not re.search(value," ".join(map(lambda x:str(x),row)),re.IGNORECASE):
                 continue
