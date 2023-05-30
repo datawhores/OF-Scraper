@@ -65,7 +65,8 @@ def post_checker():
         temp = []
         model_id = profile.get_id(headers, user_name)
         operations.create_tables(model_id,user_name)
-        downloaded = set(operations.get_media_ids(model_id, user_name))
+        downloaded={}
+        [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
         [temp.extend(ele.all_media) for ele in map(lambda x:posts_.Post(
             x, model_id, user_name), user_dict[user_name])]
 
@@ -84,7 +85,8 @@ def message_checker():
         model_id = num_match.group(1)
         user_name = profile.scrape_profile(headers, model_id)['name']
         operations.create_tables(model_id,user_name)
-        downloaded = set(operations.get_media_ids(model_id, user_name))
+        downloaded={}
+        [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
         oldmessages=cache.get(f"message_check_{model_id}",default=[])
         messages=None
         #start loop
@@ -110,7 +112,7 @@ def message_checker():
 
 
 def get_first_row():
-    return [("Number","Downloaded","Unlocked","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
+    return [("Number","Downloaded","Unlocked","Douple Purchase","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)
@@ -124,17 +126,27 @@ def datehelper(date):
     if date=="None":
         return "Probably Deleted"
     return arrow.get(date).format("YYYY-MM-DD hh:mm A")
+def duplicated_helper(ele,mediadict,downloaded):
+    if len(list(filter(lambda x:x.canview,mediadict.get(ele,[]))))>1:
+        return True
+    elif downloaded.get(ele,0)>2:
+        return True
+    else:
+        return False
 def add_rows(media,downloaded):
     #fix text
     mediaset=set(map(lambda x:x.id,filter(lambda x:x.canview,media)))
+    mediadict={}
+    [mediadict.update({ele.id:mediadict.get(ele,[]).append(ele)}) for ele in media]
+
     for ele in media:   
-        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
+        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),duplicated_helper(x[1],mediadict,downloaded),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
 
 
 class InputApp(App):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         table = self.query_one(DataTable)
-        table.clear()
+        table.clear(True)
         self.make_table(value=event.value)
         
 
@@ -190,7 +202,7 @@ class InputApp(App):
         table = self.query_one(DataTable)
         table.fixed_rows = 1
         table.zebra_stripes=True
-        table.add_columns(*self.table_data[0])
+        [table.add_column(ele,key=str(ele)) for ele in self.table_data[0]]
         for count, row in enumerate(self.table_data[1:]):
             if column and not re.search(value,str(row[column]),re.IGNORECASE):
                 continue
