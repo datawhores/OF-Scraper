@@ -18,6 +18,7 @@ import ofscraper.api.timeline as timeline
 import ofscraper.api.messages as messages_
 import ofscraper.api.posts as posts_
 import ofscraper.constants as constants
+import ofscraper.api.paid as paid_
 
 from diskcache import Cache
 from ..utils.paths import getcachepath
@@ -105,9 +106,35 @@ def message_checker():
         app = InputApp()
         app.table_data = ROWS
         app.run()
-     
-    
-   
+
+def purchase_checker():
+    headers = auth.make_headers(auth.read_auth())
+    user_name=args.username
+    ROWS = get_first_row()
+    model_id = profile.get_id(headers, user_name)
+    operations.create_tables(model_id,user_name)
+    downloaded={}
+    [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
+    oldpaid=cache.get(f"purchased_check_{model_id}",default=[])
+    paid=None
+    #start loop
+    if len(oldpaid)>0 and not args.force:
+        paid=oldpaid
+    else:
+        paid=paid_.scrape_paid(user_name)
+        cache.set(f"purchased_check_{model_id}",paid,expire=constants.CHECK_EXPIRY)
+    media = []
+    [media.extend(ele.all_media) for ele in map(
+        lambda x:posts_.Post(x, model_id, user_name), paid)]
+    ROWS.extend(add_rows(media,downloaded))
+    # create main loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    app = InputApp()
+    app.table_data = ROWS
+    app.run()     
+
+
 
 
 
@@ -127,7 +154,7 @@ def datehelper(date):
         return "Probably Deleted"
     return arrow.get(date).format("YYYY-MM-DD hh:mm A")
 def duplicated_helper(ele,mediadict,downloaded):
-    if len(list(filter(lambda x:x.canview,mediadict.get(ele,[]))))>1:
+    if len(list(filter(lambda x:x.canview,mediadict.get(ele.id,[]))))>1:
         return True
     elif downloaded.get(ele,0)>2:
         return True
@@ -137,7 +164,7 @@ def add_rows(media,downloaded):
     #fix text
     mediaset=set(map(lambda x:x.id,filter(lambda x:x.canview,media)))
     mediadict={}
-    [mediadict.update({ele.id:mediadict.get(ele,[]).append(ele)}) for ele in media]
+    [mediadict.update({ele.id:mediadict.get(ele.id,[])+ [ele]}) for ele in media]
 
     for ele in media:   
         return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),duplicated_helper(x[1],mediadict,downloaded),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
