@@ -7,9 +7,9 @@ log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
 def main():
-    if args.command=="post":
+    if args.command=="post_check":
         check.post_checker()
-    if args.command=="message":
+    if args.command=="msg_check":
         check.message_checker()
     elif args.command=="manual":
         None
