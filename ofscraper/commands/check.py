@@ -91,8 +91,9 @@ def message_checker():
         if len(oldmessages)>0 and not args.force:
             messages=oldmessages
         else:
-            messages = asyncio.run(messages_.get_messages(headers,  model_id))
-            cache.set(f"message_check_{model_id}",messages,expire=constants.CHECK_EXPIRY)
+            with asyncio.Runner() as runner:
+                messages=runner.run(messages_.get_messages(headers,  model_id))
+                cache.set(f"message_check_{model_id}",messages,expire=constants.CHECK_EXPIRY)
         media = []
         [media.extend(ele.all_media) for ele in map(
             lambda x:posts_.Post(x, model_id, user_name), messages)]
