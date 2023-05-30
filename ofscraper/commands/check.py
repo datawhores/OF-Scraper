@@ -110,7 +110,7 @@ def message_checker():
 
 
 def get_first_row():
-    return [("Number","Downloaded","Unlocked","Length", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
+    return [("Number","Downloaded","Unlocked","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)
@@ -128,7 +128,7 @@ def add_rows(media,downloaded):
     #fix text
     mediaset=set(map(lambda x:x.id,filter(lambda x:x.canview,media)))
     for ele in media:   
-        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),x[1].length_,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
+        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
 
 
 class InputApp(App):
