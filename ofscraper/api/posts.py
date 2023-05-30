@@ -1,11 +1,13 @@
 import re
 import logging
 import httpx
+import arrow
 from ..constants import LICENCE_URL
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
 import ofscraper.utils.config as config
+
 
 log=logging.getLogger(__package__)
 
@@ -136,6 +138,18 @@ class Media():
             return "images"
         else:
             return f"{self._media['type']}s"
+    @property
+    def length(self):
+        return self._media.get("duration")
+    @property
+    def length_(self):
+        if not self.length:
+            return "N\A"
+        return str((arrow.get(self.length)-arrow.get(0)))
+
+
+
+      
 
     @property
     def url(self):
