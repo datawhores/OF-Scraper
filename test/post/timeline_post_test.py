@@ -16,7 +16,7 @@ def test_media_timeline():
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    assert(len(t.allmedia))==len(TIMELINE_EXAMPLE["media"])
+    assert(len(t.post_media))==len(TIMELINE_EXAMPLE["media"])
 
 def test_post_timeline():
     username="test"
@@ -179,7 +179,7 @@ def test_medialen_timeline():
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mediaDict=TIMELINE_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(len(media.post.allmedia))==len(TIMELINE_EXAMPLE["media"])
+    assert(len(media.post.post_media))==len(TIMELINE_EXAMPLE["media"])
 
 
 def test_mediacount_timeline():
@@ -235,7 +235,7 @@ def test_timeline_text_wordtrunicate(mocker):
     args_.getargs([])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=["",""]
+    post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,2,post)
     wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
@@ -261,7 +261,7 @@ def test_timeline_text_wordtrunicate2(mocker):
     args_.getargs([])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=["",""]
+    post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,2,post)
     wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
@@ -287,7 +287,7 @@ def test_timeline_text_wordtrunicate3(mocker):
     args_.getargs([])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=["",""]
+    post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,2,post)
     wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
@@ -312,7 +312,7 @@ def test_timeline_text_wordtrunicate4(mocker):
     args_.getargs([])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=[]
+    post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,0,post)
     wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
@@ -338,7 +338,7 @@ def test_timeline_text_wordtrunicate5(mocker):
     args_.getargs([])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=[]
+    post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,0,post)
     wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
@@ -364,7 +364,7 @@ def test_timeline_text_wordtrunicate6(mocker):
     args_.getargs([])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=[]
+    post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,0,post)
     wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
@@ -387,7 +387,7 @@ def test_timeline_text_lettertrunicate(mocker):
     args_.getargs(["--letter-count"])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=["",""]
+    post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,2,post)
     wordarray=t.text_
@@ -411,7 +411,7 @@ def test_timeline_text_lettertrunicate2(mocker):
     args_.getargs(["--letter-count"])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=["",""]
+    post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,2,post)
     wordarray=t.text_
@@ -433,7 +433,7 @@ def test_timeline_text_lettertrunicate3(mocker):
     args_.getargs(["--letter-count"])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=["",""]
+    post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,2,post)
     wordarray=t.text_
@@ -458,7 +458,7 @@ def test_timeline_text_lettertrunicate4(mocker):
     args_.getargs(["--letter-count"])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=[]
+    post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,0,post)
     wordarray=t.text_
@@ -481,7 +481,7 @@ def test_timeline_text_lettertrunicate5(mocker):
     args_.getargs(["--letter-count"])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=[]
+    post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,0,post)
     wordarray=t.text_
@@ -503,7 +503,7 @@ def test_timeline_text_lettertrunicate6(mocker):
     args_.getargs(["--letter-count"])
     mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
-    post.allmedia=[]
+    post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
     t=Media(None,0,post)
     wordarray=t.text_

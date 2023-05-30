@@ -330,7 +330,7 @@ def test_create_postid_name2(mocker):
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    mocker.patch('ofscraper.api.posts.Post.allmedia', new=[t.allmedia[0]])
+    mocker.patch('ofscraper.api.posts.Post.post_media', new=[t.post_media[0]])
     assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
 
 
@@ -399,7 +399,7 @@ def test_create_text_name2(mocker):
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    mocker.patch('ofscraper.api.posts.Post.allmedia', new=[t.allmedia[0]])
+    mocker.patch('ofscraper.api.posts.Post.post_media', new=[t.post_media[0]])
     assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
 
 

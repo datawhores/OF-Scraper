@@ -68,7 +68,7 @@ def process_messages(headers, model_id,username):
 
             messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
             messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
-            log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),messages_))}")
+            log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
             log.debug("Removing locked messages media")
             for message in messages_:
                 operations.write_messages_table(message)
@@ -82,7 +82,7 @@ def process_paid_post(model_id,username):
             task1=progress.add_task("Getting Paid Media....")
             paid_content=paid.scrape_paid(username)
             paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
-            log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),paid_content))}")
+            log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
             log.debug("Removing locked paid media")
             for post in paid_content:
                 operations.write_post_table(post,model_id,username)
@@ -100,7 +100,7 @@ def process_highlights(headers, model_id,username):
             highlights_, stories = highlights.scrape_highlights(headers, model_id)
             highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
             list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
-            log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.allmedia), highlights_))+sum(map(lambda x:len(x.allmedia), stories))}")
+            log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
             for post in highlights_:
                 operations.write_stories_table(post,model_id,username)
             for post in stories:
@@ -124,7 +124,7 @@ def process_timeline_posts(headers, model_id,username):
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
             timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
-            log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),timeline_posts))}")
+            log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
             log.debug("Removing locked timeline media")
             for post in timeline_posts:
                 operations.write_post_table(post,model_id,username)
@@ -138,7 +138,7 @@ def process_archived_posts(headers, model_id,username):
             task1=progress.add_task("Getting Archived Media....")
             archived_posts = timeline.get_archive_post(headers, model_id)
             archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
-            log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),archived_posts))}")
+            log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
             log.debug("Removing locked archived media")
 
             for post in archived_posts:
@@ -155,9 +155,9 @@ def process_pinned_posts(headers, model_id,username):
     with stdout.lowstdout():
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             task1=progress.add_task("Getting Pinned Media....")
-            pinned_posts = timeline.get_pinned_post(headers, model_id,username)
+            pinned_posts = timeline.get_pinned_post(headers, model_id)
             pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
-            log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.allmedia),pinned_posts))}")
+            log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
             log.debug("Removing locked pinned media")
             for post in  pinned_posts:
                 operations.write_post_table(post,model_id,username)
@@ -364,7 +364,7 @@ def process_post():
                 try:
                     model_id = profile.get_id(headers, ele["name"])
                     eleDict[key]["id"]=model_id
-                    create_tables(model_id,ele['name'])
+                    operations.create_tables(model_id,ele['name'])
                     operations.write_profile_table(model_id,ele['name'])
                     eleDict[key]["combined"]=process_areas(headers, ele, model_id)
                 
@@ -561,14 +561,6 @@ def filteruserHelper(usernames):
     return filterusername
 
 
-def create_tables(model_id,username):
-    operations.create_post_table(model_id,username)
-    operations.create_message_table(model_id,username)
-    operations.create_media_table(model_id,username)
-    operations.create_products_table(model_id,username)
-    operations.create_others_table(model_id,username)
-    operations.create_profile_table(model_id,username)
-    operations.create_stories_table(model_id,username)
 
 
 

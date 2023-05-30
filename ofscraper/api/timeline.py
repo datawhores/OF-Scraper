@@ -50,7 +50,7 @@ def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
         log.debug(f"[bold]pinned request status code:[/bold]{r.status_code}")
         log.debug(f"[bold]pinned response:[/bold] {r.content.decode()}")
 
-def get_pinned_post(headers,model_id,username):
+def get_pinned_post(headers,model_id):
     return scrape_pinned_posts(headers,model_id)
    
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   

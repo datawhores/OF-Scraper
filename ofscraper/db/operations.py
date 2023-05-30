@@ -151,4 +151,13 @@ def write_profile_table(model_id,username) -> list:
                 insertData.append(model_id)
                 cur.execute(queries.profileUpdate,insertData)
             conn.commit()
-   
+
+
+def create_tables(model_id,username):
+    create_post_table(model_id,username)
+    create_message_table(model_id,username)
+    create_media_table(model_id,username)
+    create_products_table(model_id,username)
+    create_others_table(model_id,username)
+    create_profile_table(model_id,username)
+    create_stories_table(model_id,username)

@@ -19,7 +19,7 @@ log=logging.getLogger(__package__)
 console=Console()
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
-def scrape_profile(headers, username) -> dict:
+def scrape_profile(headers, username:str|int) -> dict:
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
 

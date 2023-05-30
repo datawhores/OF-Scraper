@@ -95,9 +95,8 @@ def getargs(input=None):
     message_check=subparser.add_parser("msg_check",help="Parse a user messages and view status of missing media")
 
 
-    message_check.add_argument("-u","--url",
-    help = 'link to conversation',default=None,required=False,type = check_strhelper,action='extend'
-    )
+    message_check.add_argument("url",
+    help = 'link to conversation',default=None,type = str)
 
 
     args=parser.parse_args(input)
