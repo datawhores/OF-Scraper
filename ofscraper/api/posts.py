@@ -17,7 +17,7 @@ class Post():
         self._responsetype_ = responsetype or post.get("responseType")
 
     @property
-    def allmedia(self):
+    def post_media(self):
         if self._responsetype_ == "highlights":
             return [{"url": self.post["cover"], "type":"photo"}]
         return self._post.get("media") or []
@@ -115,9 +115,12 @@ class Post():
             return []
         else:
             media = map(lambda x: Media(
-                x[1], x[0], self), enumerate(self.allmedia))
+                x[1], x[0], self), enumerate(self.post_media))
             return list(filter(lambda x: x.canview == True, media))
-
+    @property
+    def all_media(self):
+        return list(map(lambda x: Media(
+            x[1], x[0], self), enumerate(self.post_media)))
 
 class Media():
     def __init__(self, media, count, post):
@@ -156,7 +159,7 @@ class Media():
     # ID for use in dynamic names
     @property
     def postid_(self):
-        if self.count != None and len(self._post.allmedia) > 1:
+        if self.count != None and len(self._post.post_media) > 1:
             return f"{self._post._post['id']}_{self.count}"
         return self._post._post['id']
 
@@ -322,6 +325,6 @@ class Media():
 
     # for use in dynamic names
     def _addcount(self):
-        if len(self._post.allmedia) > 1 or self.responsetype_ in ["stories", "highlights"]:
+        if len(self._post.post_media) > 1 or self.responsetype_ in ["stories", "highlights"]:
             return True
         return False
