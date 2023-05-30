@@ -102,8 +102,15 @@ def getargs(input=None):
     )
 
     message_check.add_argument("url",
-    help = 'link to conversation',default=None,type = str)
+    help = 'link to conversation',type = str)
 
+    paid_check=subparser.add_parser("paid_check",help="Parse a Purchases for user\nCache last for 24 hours")
+    paid_check.add_argument(
+        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+    )
+
+    paid_check.add_argument("username",
+    help = 'link to conversation',type = str)
 
     args=parser.parse_args(input)
     #deduplicate posts
