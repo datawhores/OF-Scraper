@@ -32,8 +32,8 @@ def post_checker():
     user_dict = {}
     client = httpx.Client(http2=True, headers=headers)
      
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z]+", x), args.url)):
-        name_match = re.search("/([a-z]+$)", ele)
+    for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), args.url)):
+        name_match = re.search("/([a-z_]+$)", ele)
         if name_match:
             user_name=name_match.group(1)
             model_id=profile.get_id(headers,user_name)
@@ -49,7 +49,7 @@ def post_checker():
                 cache.set(f"timeline_check_{model_id}",user_dict[user_name],expire=constants.CHECK_EXPIRY)
 
     #individual links
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z]+", x), args.url)):
+    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), args.url)):
         name_match = re.search("/([a-z]+$)", ele)
         num_match = re.search("/([0-9]+)", ele)
         if name_match and num_match:
@@ -70,13 +70,12 @@ def post_checker():
             x, model_id, user_name), user_dict[user_name])]
 
         ROWS.extend(add_rows(temp,downloaded))
-
-
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     app = InputApp()
     app.table_data = ROWS
     app.run()
-
-
+     
 def message_checker():
     num_match = re.search("/([0-9]+)", args.url)
     headers = auth.make_headers(auth.read_auth())
@@ -88,24 +87,30 @@ def message_checker():
         downloaded = set(operations.get_media_ids(model_id, user_name))
         oldmessages=cache.get(f"message_check_{model_id}",default=[])
         messages=None
+        #start loop
         if len(oldmessages)>0 and not args.force:
             messages=oldmessages
         else:
-            with asyncio.Runner() as runner:
-                messages=runner.run(messages_.get_messages(headers,  model_id))
-                cache.set(f"message_check_{model_id}",messages,expire=constants.CHECK_EXPIRY)
+            messages=asyncio.run(messages_.get_messages(headers,  model_id))
+            cache.set(f"message_check_{model_id}",messages,expire=constants.CHECK_EXPIRY)
         media = []
         [media.extend(ele.all_media) for ele in map(
             lambda x:posts_.Post(x, model_id, user_name), messages)]
         ROWS.extend(add_rows(media,downloaded))
-    app = InputApp()
-    app.table_data = ROWS
-    app.run()
+        # create main loop
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        app = InputApp()
+        app.table_data = ROWS
+        app.run()
+     
+    
+   
 
 
 
 def get_first_row():
-    return [("Number","Downloaded","Unlocked/Duplicated", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
+    return [("Number","Downloaded","Unlocked/Duplicated","Length", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)
@@ -123,7 +128,7 @@ def add_rows(media,downloaded):
     #fix text
     mediaset=set(map(lambda x:x.id,filter(lambda x:x.canview,media)))
     for ele in media:   
-        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
+        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),x[1].length_,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
 
 
 class InputApp(App):
