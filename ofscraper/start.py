@@ -9,11 +9,11 @@ log.debug(args)
 def main():
     if args.command=="post_check":
         check.post_checker()
-    if args.command=="msg_check":
+    elif args.command=="msg_check":
         check.message_checker()
     elif args.command=="manual":
         None
-    elif args.help:
+    elif vars(args).get("help"):
         None
     else:
         scraper.main()
