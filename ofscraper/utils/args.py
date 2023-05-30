@@ -91,9 +91,15 @@ def getargs(input=None):
     post_check.add_argument("-f","--file",
     help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
     )
+    
+    post_check.add_argument(
+        '-fo', '--force', help = 'force retrival of new posts info from API\nCache last for 24 hours', default=False,action="store_true"
+    )
 
-    message_check=subparser.add_parser("msg_check",help="Parse a user messages and view status of missing media")
-
+    message_check=subparser.add_parser("msg_check",help="Parse a user messages and view status of missing media\nCache last for 24 hours")
+    message_check.add_argument(
+        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+    )
 
     message_check.add_argument("url",
     help = 'link to conversation',default=None,type = str)
@@ -102,6 +108,9 @@ def getargs(input=None):
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
+    if args.command=="post_check" and not (args.url or args.file):
+        raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
+
     return args
 
 
