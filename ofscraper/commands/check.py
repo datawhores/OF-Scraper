@@ -68,6 +68,8 @@ def post_checker():
             data = timeline.get_individual_post(model_id, client)
             user_dict[user_name] = user_dict[user_name] or []
             user_dict[user_name].append(data)
+    app_run_helper(user_dict)
+
 
 
 
@@ -99,31 +101,22 @@ def message_checker():
     app_run_helper(user_dict)
 
 def purchase_checker():
+    user_dict={}
     headers = auth.make_headers(auth.read_auth())
-    user_name=args.username
-    ROWS = get_first_row()
-    model_id = profile.get_id(headers, user_name)
-    operations.create_tables(model_id,user_name)
-    downloaded={}
-    [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
-    oldpaid=cache.get(f"purchased_check_{model_id}",default=[])
-    paid=None
-    #start loop
-    if len(oldpaid)>0 and not args.force:
-        paid=oldpaid
-    else:
-        paid=paid_.scrape_paid(user_name)
-        cache.set(f"purchased_check_{model_id}",paid,expire=constants.CHECK_EXPIRY)
-    media = []
-    [media.extend(ele.all_media) for ele in map(
-        lambda x:posts_.Post(x, model_id, user_name), paid)]
-    ROWS.extend(add_rows(media,downloaded,user_name))
-    # create main loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    app = InputApp()
-    app.table_data = ROWS
-    app.run()     
+    for user_name in args.username:
+        user_dict[user_name]=user_dict.get(user_name, [])
+        model_id = profile.get_id(headers, user_name)
+        oldpaid=cache.get(f"purchased_check_{model_id}",default=[])
+        paid=None
+        #start loop
+        if len(oldpaid)>0 and not args.force:
+            paid=oldpaid
+        else:
+            paid=paid_.scrape_paid(user_name)
+            cache.set(f"purchased_check_{model_id}",paid,expire=constants.CHECK_EXPIRY)
+        user_dict[user_name].extend(paid)
+    app_run_helper(user_dict)
+ 
 
 
 def url_helper():
