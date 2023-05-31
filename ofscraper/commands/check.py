@@ -183,7 +183,8 @@ class InputApp(App):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         table = self.query_one(DataTable)
         table.clear(True)
-        self.make_table(value=event.value)
+        self.set_filtered_rows(value=event.value)
+        self.make_table()
         
 
 
@@ -204,7 +205,7 @@ class InputApp(App):
                 )
             self._filter[self.rows_names[event.coordinate[1]]]= f"\\b{event.value}\\b"        
             table.clear(True)
-            self.filter_rows(value=".*")
+            self.set_filtered_rows(value=".*")
             self.make_table()
 
             
@@ -220,6 +221,7 @@ class InputApp(App):
     def on_button_pressed(self, event: events.MouseEvent) -> None:
         table = self.query_one(DataTable)
         self.set_filter()
+        self.set_filtered_rows(reset=True)
         table.clear(True)
         self.make_table()
   
@@ -237,8 +239,10 @@ class InputApp(App):
         self.query_one(DataTable).styles.width = "100%"
         self.query_one(DataTable).styles.height = "70%"
     
-    def filter_rows(self,value=".*"):
-        return filter(lambda x:self.row_allowed(x) and self.filter_string(x,value),self.table_data[1:])
+    def set_filtered_rows(self,value=".*",reset=False):
+        if reset==True:
+            self._filtered_rows=self.table_data[1:]
+        self._filtered_rows=filter(lambda x:self.row_allowed(x) and self.filter_string(x,value),self.table_data[1:])
 
     def set_filter(self):
         self._filter={}
@@ -249,9 +253,9 @@ class InputApp(App):
             if self._filter[name]=="" or self._filter[name]==None:
                 continue
             #count should correspond to the same value
-            elif re.search(self._filter(name),row[count])==None:
+            elif re.search(self._filter[name],row[count])==None:
                 return False
-            elif re.search(self._filter(name),row[count]):
+            elif re.search(self._filter[name],row[count]):
                 continue
         return True
     def filter_string(self,row,value):
@@ -265,19 +269,18 @@ class InputApp(App):
 
 
 
-    def make_table(self,value=".*"):
+    def make_table(self):
         table = self.query_one(DataTable)
         table.fixed_rows = 1
         table.zebra_stripes=True
         [table.add_column(ele,key=str(ele)) for ele in self.table_data[0]]
-        for count, row in enumerate(self.table_data[1:]):
+        for count, row in enumerate(self._filtered_rows):
             # Adding styled and justified `Text` objects instead of plain strings.
             styled_row = [
                 Text(str(cell), style="italic #03AC13") for cell in row
             ]
-            table.add_row(styled_row)
-        
-     
+            table.add_row(*styled_row, key=str(count))
+
         if len(table.rows)==0:
             table.add_row("All Items Filtered")
 
