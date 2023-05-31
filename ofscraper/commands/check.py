@@ -28,14 +28,7 @@ log = logging.getLogger(__package__)
 args = args_.getargs()
 ROW_NAMES="Number","UserName","Downloaded","Unlocked","Douple Purchase","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text"
 
-def url_helper():
-    out=[]
-    out.extend(args.file or [])
-    out.extend(args.url or [])
-    return map(lambda x:x.strip(),out)
-    
-    
- 
+
 
 
 def post_checker():
@@ -45,9 +38,10 @@ def post_checker():
     links=url_helper()
     for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), links)):
         name_match = re.search("/([a-z_]+$)", ele)
-        log.info(f"Getting Full Time for {name_match}")
         if name_match:
             user_name=name_match.group(1)
+            log.info(f"Getting Full Timeline for {user_name}")
+
             model_id=profile.get_id(headers,user_name)
             oldtimeline=cache.get(f"timeline_check_{model_id}",default=[])
             if len(oldtimeline)>0 and not args.force:
@@ -64,60 +58,45 @@ def post_checker():
     for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), links)):
         name_match = re.search("/([a-z]+$)", ele)
         num_match = re.search("/([0-9]+)", ele)
-        log.info(f"Getting Invidiual Link for {name_match}")
         if name_match and num_match:
             model_id=num_match.group(1)
             user_name=name_match.group(1)
+            log.info(f"Getting Invidiual Link for {user_name}")
+
             if not user_dict.get(user_name):
                 user_dict[name_match.group(1)] = {}
             data = timeline.get_individual_post(model_id, client)
             user_dict[user_name] = user_dict[user_name] or []
             user_dict[user_name].append(data)
-    ROWS = get_first_row()
-    for user_name in user_dict.keys():
-        temp = []
-        model_id = profile.get_id(headers, user_name)
-        operations.create_tables(model_id,user_name)
-        downloaded={}
-        [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
-        [temp.extend(ele.all_media) for ele in map(lambda x:posts_.Post(
-            x, model_id, user_name), user_dict[user_name])]
 
-        ROWS.extend(add_rows(temp,downloaded,user_name))
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    app = InputApp()
-    app.table_data = ROWS
-    app.run()
+
+
+
      
 def message_checker():
-    num_match = re.search("/([0-9]+)", args.url)
-    headers = auth.make_headers(auth.read_auth())
+    links=url_helper()
     ROWS = get_first_row()
-    if num_match:
-        model_id = num_match.group(1)
-        user_name = profile.scrape_profile(headers, model_id)['name']
-        operations.create_tables(model_id,user_name)
-        downloaded={}
-        [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
-        oldmessages=cache.get(f"message_check_{model_id}",default=[])
-        messages=None
-        #start loop
-        if len(oldmessages)>0 and not args.force:
-            messages=oldmessages
-        else:
-            messages=asyncio.run(messages_.get_messages(headers,  model_id))
-            cache.set(f"message_check_{model_id}",messages,expire=constants.CHECK_EXPIRY)
-        media = []
-        [media.extend(ele.all_media) for ele in map(
-            lambda x:posts_.Post(x, model_id, user_name), messages)]
-        ROWS.extend(add_rows(media,downloaded,user_name))
-        # create main loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        app = InputApp()
-        app.table_data = ROWS
-        app.run()
+    user_dict={}
+    for item in links:
+        num_match = re.search("/([0-9]+)", item)
+        headers = auth.make_headers(auth.read_auth())
+        if num_match:
+            model_id = num_match.group(1)
+            user_name = profile.scrape_profile(headers, model_id)['name']
+            user_dict[user_name]=user_dict.get(user_name,[])
+            log.info(f"Getting Messages for {user_name}")
+            messages=None
+            oldmessages=cache.get(f"message_check_{model_id}",default=[])
+
+            #start loop
+            if len(oldmessages)>0 and not args.force:
+                messages=oldmessages
+            else:
+                messages=asyncio.run(messages_.get_messages(headers,  model_id))
+                cache.set(f"message_check_{model_id}",messages,expire=constants.CHECK_EXPIRY)
+            user_dict[user_name].extend(messages)
+        
+    app_run_helper(user_dict)
 
 def purchase_checker():
     headers = auth.make_headers(auth.read_auth())
@@ -147,6 +126,31 @@ def purchase_checker():
     app.run()     
 
 
+def url_helper():
+    out=[]
+    out.extend(args.file or [])
+    out.extend(args.url or [])
+    return map(lambda x:x.strip(),out)
+    
+    
+def app_run_helper(user_dict):
+    headers = auth.make_headers(auth.read_auth())
+    ROWS = get_first_row()
+    for user_name in user_dict.keys():
+        temp = []
+        model_id = profile.get_id(headers, user_name)
+        operations.create_tables(model_id,user_name)
+        downloaded={}
+        [downloaded.update({ele:downloaded.get(ele,0)+1}) for ele in operations.get_media_ids(model_id, user_name)]
+        [temp.extend(ele.all_media) for ele in map(lambda x:posts_.Post(
+            x, model_id, user_name), user_dict[user_name])]
+
+        ROWS.extend(add_rows(temp,downloaded,user_name))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    app = InputApp()
+    app.table_data = ROWS
+    app.run()
 
 
 

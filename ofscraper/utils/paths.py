@@ -51,7 +51,7 @@ def databasePathHelper(model_id,username):
 def getmediadir(ele,username,model_id):
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
     downloadDir=config_.get_dirformat(config_.read_config())\
-    .format(post_id=ele.postid,sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype.capitalize(),mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config())))
+    .format(post_id=ele.postid,sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype,mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config())))
     return root /downloadDir   
 
 
