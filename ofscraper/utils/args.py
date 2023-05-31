@@ -100,6 +100,10 @@ def getargs(input=None):
     message_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
+    message_check.add_argument("-f","--file",
+    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    )
+    
 
     message_check.add_argument("url",
     help = 'link to conversation',type = str)
@@ -108,6 +112,10 @@ def getargs(input=None):
     paid_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
+    paid_check.add_argument("-f","--file",
+    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    )
+    
 
     paid_check.add_argument("username",
     help = 'link to conversation',type = str)

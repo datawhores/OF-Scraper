@@ -26,16 +26,26 @@ cache = Cache(getcachepath())
 
 log = logging.getLogger(__package__)
 args = args_.getargs()
-ROW_NAMES="Number","Downloaded","Unlocked","Douple Purchase","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text"
+ROW_NAMES="Number","UserName","Downloaded","Unlocked","Douple Purchase","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text"
+
+def url_helper():
+    out=[]
+    out.extend(args.file or [])
+    out.extend(args.url or [])
+    return map(lambda x:x.strip(),out)
+    
+    
+ 
 
 
 def post_checker():
     headers = auth.make_headers(auth.read_auth())
     user_dict = {}
     client = httpx.Client(http2=True, headers=headers)
-     
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), args.url)):
+    links=url_helper()
+    for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), links)):
         name_match = re.search("/([a-z_]+$)", ele)
+        log.info(f"Getting Full Time for {name_match}")
         if name_match:
             user_name=name_match.group(1)
             model_id=profile.get_id(headers,user_name)
@@ -51,9 +61,10 @@ def post_checker():
                 cache.set(f"timeline_check_{model_id}",user_dict[user_name],expire=constants.CHECK_EXPIRY)
 
     #individual links
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), args.url)):
+    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), links)):
         name_match = re.search("/([a-z]+$)", ele)
         num_match = re.search("/([0-9]+)", ele)
+        log.info(f"Getting Invidiual Link for {name_match}")
         if name_match and num_match:
             model_id=num_match.group(1)
             user_name=name_match.group(1)
@@ -72,7 +83,7 @@ def post_checker():
         [temp.extend(ele.all_media) for ele in map(lambda x:posts_.Post(
             x, model_id, user_name), user_dict[user_name])]
 
-        ROWS.extend(add_rows(temp,downloaded))
+        ROWS.extend(add_rows(temp,downloaded,user_name))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     app = InputApp()
@@ -100,7 +111,7 @@ def message_checker():
         media = []
         [media.extend(ele.all_media) for ele in map(
             lambda x:posts_.Post(x, model_id, user_name), messages)]
-        ROWS.extend(add_rows(media,downloaded))
+        ROWS.extend(add_rows(media,downloaded,user_name))
         # create main loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -127,7 +138,7 @@ def purchase_checker():
     media = []
     [media.extend(ele.all_media) for ele in map(
         lambda x:posts_.Post(x, model_id, user_name), paid)]
-    ROWS.extend(add_rows(media,downloaded))
+    ROWS.extend(add_rows(media,downloaded,user_name))
     # create main loop
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -140,7 +151,7 @@ def purchase_checker():
 
 
 def get_first_row():
-    return ROW_NAMES
+    return [ROW_NAMES]
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)
@@ -161,14 +172,14 @@ def duplicated_helper(ele,mediadict,downloaded):
         return True
     else:
         return False
-def add_rows(media,downloaded):
+def add_rows(media,downloaded,username):
     #fix text
     mediaset=set(map(lambda x:x.id,filter(lambda x:x.canview,media)))
     mediadict={}
     [mediadict.update({ele.id:mediadict.get(ele.id,[])+ [ele]}) for ele in media]
 
     for ele in media:   
-        return map(lambda x: (x[0],x[1].id in downloaded,unlocked_helper(x[1],mediaset),duplicated_helper(x[1],mediadict,downloaded),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
+        return map(lambda x: (x[0],username,x[1].id in downloaded,unlocked_helper(x[1],mediaset),duplicated_helper(x[1],mediadict,downloaded),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
 
 
 class InputApp(App):
