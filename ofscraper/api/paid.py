@@ -13,6 +13,11 @@ import httpx
 import logging
 import ofscraper.utils.auth as auth
 import ofscraper.constants as constants
+import ofscraper.api.profile as profile
+from diskcache import Cache
+from ..utils.paths import getcachepath
+cache = Cache(getcachepath())
+
 paid_content_list_name = 'list'
 log=logging.getLogger(__package__)
 console=Console()
@@ -54,6 +59,9 @@ def scrape_paid(username):
                     count=count+1
                 media_to_download.extend(list(filter(lambda x:isinstance(x,list),r.json().values()))[0])
     log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(media_to_download)} found")
+    model_id=profile.get_id(headers,username)
+    # set purchash check values during scan
+    cache.set(f"purchased_check_{model_id}",media_to_download,expire=constants.CHECK_EXPIRY)
     return media_to_download
 
 
