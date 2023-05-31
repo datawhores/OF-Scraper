@@ -82,7 +82,7 @@ def message_checker():
         headers = auth.make_headers(auth.read_auth())
         if num_match:
             model_id = num_match.group(1)
-            user_name = profile.scrape_profile(headers, model_id)['name']
+            user_name = profile.scrape_profile(headers, model_id)['username']
             user_dict[user_name]=user_dict.get(user_name,[])
             log.info(f"Getting Messages for {user_name}")
             messages=None
