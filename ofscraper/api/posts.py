@@ -69,9 +69,9 @@ class Post():
         else:
             response=config.read_config().get("responsetype", {}).get(self._responsetype_) 
             if  response == "":
-                return self._responsetype_
+                return self._responsetype_.capitalize()
             elif  response == None:
-                return self._responsetype_
+                return self._responsetype_.capitalize()
             elif  response != "":
                 return  response
 
