@@ -202,9 +202,10 @@ class InputApp(App):
                 coordinate=cursor_coordinate,
                 cell_key=cell_key,
                 )
-            
+            self._filter[self.rows_names[event.coordinate[1]]]= f"\\b{event.value}\\b"        
             table.clear(True)
-            self.make_table(value=f"\\b{event.value}\\b",column=event.coordinate[1])
+            self.filter_rows(value=".*")
+            self.make_table()
 
             
 
@@ -218,11 +219,15 @@ class InputApp(App):
 
     def on_button_pressed(self, event: events.MouseEvent) -> None:
         table = self.query_one(DataTable)
+        self.set_filter()
         table.clear(True)
         self.make_table()
   
 
     def on_mount(self) -> None:
+        self.rows_names=ROW_NAMES
+        self._filtered_rows=self.table_data
+        self.set_filter()
         self.make_table()
         self.query_one(Input).styles.width = "70%"
         self.query_one(Vertical).styles.width = "100vw"
@@ -231,24 +236,48 @@ class InputApp(App):
         self.query_one(Horizontal).styles.width = "100%"
         self.query_one(DataTable).styles.width = "100%"
         self.query_one(DataTable).styles.height = "70%"
+    
+    def filter_rows(self,value=".*"):
+        return filter(lambda x:self.row_allowed(x) and self.filter_string(x,value),self.table_data[1:])
+
+    def set_filter(self):
+        self._filter={}
+        for ele in self.rows_names:
+            self._filter[ele]=""
+    def row_allowed(self,row):
+        for count,name in enumerate(self.rows_names):
+            if self._filter[name]=="" or self._filter[name]==None:
+                continue
+            #count should correspond to the same value
+            elif re.search(self._filter(name),row[count])==None:
+                return False
+            elif re.search(self._filter(name),row[count]):
+                continue
+        return True
+    def filter_string(self,row,value):
+        if not re.search(value," ".join(map(lambda x:str(x),row)),re.IGNORECASE):
+            return False
+        return True
 
 
 
-    def make_table(self,value=".*",column=None):
+
+
+
+
+    def make_table(self,value=".*"):
         table = self.query_one(DataTable)
         table.fixed_rows = 1
         table.zebra_stripes=True
         [table.add_column(ele,key=str(ele)) for ele in self.table_data[0]]
         for count, row in enumerate(self.table_data[1:]):
-            if column and not re.search(value,str(row[column]),re.IGNORECASE):
-                continue
-            elif not re.search(value," ".join(map(lambda x:str(x),row)),re.IGNORECASE):
-                continue
             # Adding styled and justified `Text` objects instead of plain strings.
             styled_row = [
                 Text(str(cell), style="italic #03AC13") for cell in row
             ]
-            table.add_row(*styled_row, key=str(count))
+            table.add_row(styled_row)
+        
+     
         if len(table.rows)==0:
             table.add_row("All Items Filtered")
 
