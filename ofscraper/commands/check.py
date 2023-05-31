@@ -26,6 +26,7 @@ cache = Cache(getcachepath())
 
 log = logging.getLogger(__package__)
 args = args_.getargs()
+ROW_NAMES="Number","Downloaded","Unlocked","Douple Purchase","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text"
 
 
 def post_checker():
@@ -139,7 +140,7 @@ def purchase_checker():
 
 
 def get_first_row():
-    return [("Number","Downloaded","Unlocked","Douple Purchase","Length","Mediatype", "Post_Date","Post_Media_Count","Responsetype", "Price", "Post_ID","Media_ID","Text")]
+    return ROW_NAMES
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)

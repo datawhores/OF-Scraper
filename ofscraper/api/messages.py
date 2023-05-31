@@ -95,9 +95,12 @@ async def get_messages(headers, model_id):
         unduped.append(message)
     if len(oldmsgset)==0:
         cache.set(f"messages_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
+
         cache.close()
     else:
         cache.set(f"messages_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"message_check_{model_id}",[],expire=constants.CHECK_EXPIRY)
         cache.close()
         log.debug("Some messages where not retrived resetting cache")
 
