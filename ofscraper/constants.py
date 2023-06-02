@@ -105,10 +105,11 @@ RESPONSE_TYPE_DEFAULT= {
             "profile":"profile",
             "pinned":"posts"
         }
-NUM_TRIES=5
+NUM_TRIES=10
 RESPONSE_EXPIRY=5000000
 CHECK_EXPIRY=86400
 DAILY_EXPIRY=86400
+DISCORDWAIT=5
 LICENCE_URL="https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine"
 logname="ofscraper"
 PATH_STR_MAX=200
@@ -120,3 +121,4 @@ MP4DECRYPT_LINUX="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_6
 MP4DECRYPT_WINDOWS="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-microsoft-win32.zip"
 FFMPEG_LINUX="https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
 FFMPEG_WINDOWS="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+

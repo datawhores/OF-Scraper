@@ -11,6 +11,7 @@ def filterMedia(media):
     media=post_datesorter(media)
     media=posts_type_filter(media)
     media=posts_date_filter(media)
+    media=post_promo_filter(media)
     # if args.manual_download():
     #     args.dupe=True
     #     args_.changeargs(args)
@@ -71,3 +72,8 @@ def posts_date_filter(media):
     if args.after:
         media=filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media)
     return list(media)
+
+def post_promo_filter(media):
+    if args.skip_promo:
+        return list(filter(lambda x:not x.post.expires,media))
+    return media

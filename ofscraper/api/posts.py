@@ -123,7 +123,9 @@ class Post():
     def all_media(self):
         return list(map(lambda x: Media(
             x[1], x[0], self), enumerate(self.post_media)))
-
+    @property
+    def expires(self):
+        return self._post.get("expiredAt",{}).get("expiresAt",None)!=None
 class Media():
     def __init__(self, media, count, post):
         self._media = media

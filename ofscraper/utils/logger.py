@@ -6,11 +6,13 @@ import threading
 import time
 import queue
 from rich.logging import RichHandler
+from tenacity import retry,stop_after_attempt,wait_fixed
+
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args
 import ofscraper.utils.console as console
-
+import ofscraper.constants as constants
 senstiveDict={}
 discord_queue=queue.Queue()
 
@@ -41,10 +43,20 @@ class DiscordHandler(logging.Handler):
 def discord_messenger():
     with httpx.Client() as c:
         while True:
-            url,entry=discord_queue.get()   
+            url,message=discord_queue.get()   
             if url=="exit":
-                return 
-            c.post(url, headers={"Content-type": "application/json"},json={"content":entry})
+                return
+            try:
+                discord_pusher(url,message,c)
+            except httpx.HTTPError as E:
+                console.shared_console.print("Discord Error")
+
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(constants.DISCORDWAIT),reraise=True) 
+def discord_pusher(url,message,c):
+    c.post(url, headers={"Content-type": "application/json"},json={"content":message})
+
+
+
 def discord_cleanup():
     logging.getLogger("ofscraper").info("Pushing Discord Queue")
     with httpx.Client() as c:
