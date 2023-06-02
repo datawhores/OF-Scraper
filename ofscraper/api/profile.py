@@ -17,6 +17,7 @@ from ..utils import auth, encoding
 from xxhash import xxh32
 from diskcache import Cache
 from ..utils.paths import getcachepath
+import ofscraper.constants as constants
 cache = Cache(getcachepath())
 
 
@@ -24,7 +25,7 @@ log=logging.getLogger(__package__)
 console=Console()
 
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile(headers, username:Union[int, str]) -> dict:
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
@@ -74,7 +75,7 @@ def print_profile_info(info):
     log.info(final_fmt.format(*info))
 
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def get_id(headers, username):
     id=cache.get(f"model_id_{username}",None)
     if id:

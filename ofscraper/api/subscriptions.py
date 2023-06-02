@@ -17,6 +17,7 @@ console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import subscriptionsEP,NUM_TRIES
 from ..utils import auth, dates
+import ofscraper.constants as constants
 log=logging.getLogger(__package__)
 
 
@@ -27,7 +28,7 @@ async def get_subscriptions(headers, subscribe_count):
     return list(chain.from_iterable(subscriptions))
 
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_subscriptions(headers, offset=500) -> list:
     async with httpx.AsyncClient(http2=True, headers=headers) as c:
         url = subscriptionsEP.format(offset)
