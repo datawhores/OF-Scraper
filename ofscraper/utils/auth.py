@@ -19,7 +19,7 @@ import httpx
 import browser_cookie3
 from .profiles import get_current_profile
 from ..prompts.prompts import *
-from ..constants import configPath, authFile, DC_EP, requestAuth
+from ..constants import configPath, authFile, DYNAMIC, requestAuth
 
 console=Console()
 
@@ -215,6 +215,7 @@ def create_sign(link, headers):
 
     final_sign = content['format'].format(sha_1_sign, abs(checksum))
 
+
     headers.update(
         {
             'sign': final_sign,
@@ -259,11 +260,11 @@ def make_request_auth():
 
 def get_request_auth():
     with httpx.Client(http2=True) as c:
-        r = c.get(DC_EP)
+        r = c.get(DYNAMIC)
     if not r.is_error:
         content = r.json()
         static_param = content['static_param']
-        fmt = content['format']
+        fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
         checksum_indexes = content['checksum_indexes']
         checksum_constant = content['checksum_constant']
         return (static_param, fmt, checksum_indexes, checksum_constant)
