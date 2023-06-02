@@ -20,7 +20,7 @@ log=logging.getLogger(__package__)
 
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_highlights(headers, user_id) -> list:
     with httpx.Client(http2=True, headers=headers) as c:
         url_stories = constants.highlightsWithStoriesEP.format(user_id)

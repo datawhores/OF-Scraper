@@ -106,7 +106,7 @@ async def get_messages(headers, model_id):
 
     return unduped    
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_messages(headers, model_id, progress,message_id=None,required_ids=None) -> list:
     global sem
     global tasks
