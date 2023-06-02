@@ -96,14 +96,14 @@ FFMPEG_DEFAULT =""
 DISCORD_DEFAULT =""
 SUPPRESS_LOG_LEVEL=21
 RESPONSE_TYPE_DEFAULT= {
-            "message":"messages",
-            "timeline":"posts",
-            "archived":"archived",
-            "paid":"messages",
-            "stories":"stories",
-            "highlights":"stories",
-            "profile":"profile",
-            "pinned":"posts"
+            "message":"Messages",
+            "timeline":"Posts",
+            "archived":"Archived",
+            "paid":"Messages",
+            "stories":"Stories",
+            "highlights":"Stories",
+            "profile":"Profile",
+            "pinned":"Posts"
         }
 NUM_TRIES=10
 RESPONSE_EXPIRY=5000000
