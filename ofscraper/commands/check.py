@@ -165,7 +165,9 @@ def datehelper(date):
         return "Probably Deleted"
     return arrow.get(date).format("YYYY-MM-DD hh:mm A")
 def duplicated_helper(ele,mediadict,downloaded):
-    if len(list(filter(lambda x:x.canview,mediadict.get(ele.id,[]))))>1:
+    if ele.value=="free":
+        return False
+    elif len(list(filter(lambda x:x.canview,mediadict.get(ele.id,[]))))>1:
         return True
     elif downloaded.get(ele,0)>2:
         return True
@@ -201,7 +203,9 @@ class StringField(Horizontal):
         def reset(self):
             self.query_one(Input).value=""
         def validate(self,val):
-             if re.fullmatch(self.query_one(Input).value,str(val),re.IGNORECASE):
+             if self.query_one(Input).value=="" or self.query_one(Input).value==None:
+                 return True
+             elif re.fullmatch(self.query_one(Input).value,str(val),re.IGNORECASE):
                     return True
              return False
              
