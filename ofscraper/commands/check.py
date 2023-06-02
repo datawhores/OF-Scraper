@@ -136,6 +136,8 @@ class InputApp(App):
         table = self.query_one(DataTable)
         table.clear()
         self.make_table(value=event.value)
+    def on_data_table_cell_selected(event):
+        print(event)
         
 
 
@@ -190,7 +192,7 @@ class InputApp(App):
         table = self.query_one(DataTable)
         table.fixed_rows = 1
         table.zebra_stripes=True
-        table.add_columns(*self.table_data[0])
+        [table.add_column(ele,key=str(ele)) for ele in self.table_data[0]]
         for count, row in enumerate(self.table_data[1:]):
             if column and not re.search(value,str(row[column]),re.IGNORECASE):
                 continue

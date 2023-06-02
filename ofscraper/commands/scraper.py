@@ -390,7 +390,7 @@ def process_post():
                     log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
                     model_id = profile.get_id(headers, ele["name"])
-                    create_tables(model_id,ele['name'])
+                    operations.create_tables(model_id,ele['name'])
                     operations.write_profile_table(model_id,ele['name'])
                     combined_urls=process_areas(headers, ele, model_id)
                     asyncio.run(download.process_dicts(
