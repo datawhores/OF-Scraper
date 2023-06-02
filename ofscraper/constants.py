@@ -108,6 +108,7 @@ RESPONSE_TYPE_DEFAULT= {
 NUM_TRIES=5
 RESPONSE_EXPIRY=5000000
 CHECK_EXPIRY=86400
+DAILY_EXPIRY=86400
 LICENCE_URL="https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine"
 logname="ofscraper"
 PATH_STR_MAX=200

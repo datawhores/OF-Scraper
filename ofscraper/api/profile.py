@@ -12,12 +12,17 @@ from typing import Union
 import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
-from ..constants import profileEP,NUM_TRIES
+from ..constants import profileEP,NUM_TRIES,DAILY_EXPIRY
 from ..utils import auth, encoding
 from xxhash import xxh32
+from diskcache import Cache
+from ..utils.paths import getcachepath
+cache = Cache(getcachepath())
+
 
 log=logging.getLogger(__package__)
 console=Console()
+
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def scrape_profile(headers, username:Union[int, str]) -> dict:
@@ -71,6 +76,9 @@ def print_profile_info(info):
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=5, max=20),reraise=True)   
 def get_id(headers, username):
+    id=cache.get(f"model_id_{username}",None)
+    if id:
+        return id
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
 
@@ -79,7 +87,10 @@ def get_id(headers, username):
 
         r = c.get(url, timeout=None)
         if not r.is_error:
-            return r.json()['id']
+            id=r.json()['id']
+            cache.set(f"model_id_{username}",id,DAILY_EXPIRY)
+            return id
+        
         r.raise_for_status()
 
 
