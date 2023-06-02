@@ -52,7 +52,8 @@ def getargs(input=None):
     )
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
-   
+    post.add_argument("-sk","--skip-promo",default=None,help="skip promotional or tempory post",action="store_true")
+
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
