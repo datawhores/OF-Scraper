@@ -11,13 +11,28 @@ r"""
 import contextlib
 import pathlib
 import sqlite3
+import traceback
 import math
+import logging
 from rich.console import Console
 from ..db import queries
 from ..utils.paths import createDir,databasePathHelper
 
 console=Console()
+log=logging.getLogger(__package__)
+#print error 
+def operation_wrapper(func): 
+    def inner1(*args,**kwargs): 
+        try:
+            func(*args,**kwargs) 
+        except sqlite3.OperationalError as E:
+            log.info("DB may be locked") 
+            raise E    
+    return inner1 
 
+
+
+@operation_wrapper
 def create_message_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -26,7 +41,7 @@ def create_message_table(model_id,username):
             cur.execute(queries.messagesCreate)
             conn.commit()
 
-
+@operation_wrapper
 def write_messages_table(message: dict):
     datebase_path =databasePathHelper(message.model_id,message.username)
     createDir(datebase_path.parent)
@@ -41,7 +56,7 @@ def write_messages_table(message: dict):
 
             
   
-
+@operation_wrapper
 def write_post_table(data: dict, model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -51,7 +66,7 @@ def write_post_table(data: dict, model_id,username):
                 insertData=(data.id,data.text,data.price,data.paid ,data.archived,data.date)
                 cur.execute(queries.postInsert,insertData)
                 conn.commit()
-
+@operation_wrapper
 def create_post_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -59,7 +74,7 @@ def create_post_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.postCreate)
             conn.commit()
-
+@operation_wrapper
 def create_stories_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -67,6 +82,7 @@ def create_stories_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.storiesCreate)
             conn.commit()
+@operation_wrapper
 def write_stories_table(data: dict, model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -76,7 +92,7 @@ def write_stories_table(data: dict, model_id,username):
                 insertData=(data.id,data.text or data.title or "",data.price,data.paid ,data.archived,data.date)
                 cur.execute(queries.storiesInsert,insertData)
                 conn.commit()
-
+@operation_wrapper
 def create_media_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -84,7 +100,7 @@ def create_media_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.mediaCreate)
             conn.commit()
-
+@operation_wrapper
 def get_media_ids(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
@@ -92,6 +108,7 @@ def get_media_ids(model_id,username) -> list:
             cur.execute(queries.allIDCheck)
             conn.commit()
             return list(map(lambda x:x[0],cur.fetchall()))
+@operation_wrapper
 def get_post_ids(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
@@ -100,7 +117,7 @@ def get_post_ids(model_id,username) -> list:
             conn.commit()
             return list(map(lambda x:x[0],cur.fetchall()))
 
-
+@operation_wrapper
 def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
@@ -114,8 +131,10 @@ def write_media_table(media,filename,model_id,username) -> list:
                 insertData.append(media.id)
                 cur.execute(queries.mediaUpdate,insertData)
             conn.commit()
-   
 
+            
+   
+@operation_wrapper
 def create_products_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -123,6 +142,7 @@ def create_products_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.productCreate)
             conn.commit()
+@operation_wrapper
 def create_others_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -130,7 +150,7 @@ def create_others_table(model_id,username):
         with contextlib.closing(conn.cursor()) as cur:
             cur.execute(queries.otherCreate)
             conn.commit()
-
+@operation_wrapper
 def create_profile_table(model_id,username):
     datebase_path =databasePathHelper(model_id,username)
     createDir(datebase_path.parent)
@@ -139,7 +159,7 @@ def create_profile_table(model_id,username):
             cur.execute(queries.profilesCreate)
             conn.commit()
 
-
+@operation_wrapper
 def write_profile_table(model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
