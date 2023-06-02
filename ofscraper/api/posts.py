@@ -144,7 +144,7 @@ class Media():
     @property
     def length_(self):
         if not self.length:
-            return "N\A"
+            return "N/A"
         return str((arrow.get(self.length)-arrow.get(0)))
 
 
