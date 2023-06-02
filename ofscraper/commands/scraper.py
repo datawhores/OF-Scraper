@@ -519,8 +519,8 @@ def selectuserhelper():
     headers = auth.make_headers(auth.read_auth())
     subscribe_count = process_me(headers)
     parsed_subscriptions = get_models(headers, subscribe_count)
-    filter_subscriptions=filteruserHelper(parsed_subscriptions )
     if args.username and "ALL" in args.username:
+        filter_subscriptions=filteruserHelper(parsed_subscriptions )
         selectedusers=filter_subscriptions
         
     elif args.username:
@@ -528,6 +528,7 @@ def selectuserhelper():
         selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
     #manually select usernames
     else:
+        filter_subscriptions=filteruserHelper(parsed_subscriptions )
         selectedusers= get_model(filter_subscriptions)
     return selectedusers
 
