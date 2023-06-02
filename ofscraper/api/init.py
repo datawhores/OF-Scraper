@@ -9,6 +9,7 @@ r"""
 """
 
 from . import me
+import traceback
 from rich.console import Console
 import ofscraper.utils.stdout as stdout
 import logging
@@ -31,4 +32,6 @@ def getstatus(headers):
         resp = me.scrape_user(headers)
         return "UP"
     except Exception as e:
+        log.traceback(e)
+        log.traceback(traceback.format_exc())
         return "DOWN"    
