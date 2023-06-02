@@ -156,9 +156,13 @@ async def get_timeline_post(headers,model_id):
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0:
         cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"timeline_check_{model_id}",unduped,expire=constants.CHECK_EXPIRY)
+
         cache.close()
     else:
         cache.set(f"timeline_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"timeline_check_{model_id}",[],expire=constants.CHECK_EXPIRY)
+
         cache.close()
         log.debug("Some post where not retrived resetting cache")
 

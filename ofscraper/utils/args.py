@@ -100,10 +100,25 @@ def getargs(input=None):
     message_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
+    message_check.add_argument("-f","--file",
+    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    )
+    
 
-    message_check.add_argument("url",
-    help = 'link to conversation',default=None,type = str)
+    message_check.add_argument("-u","--url",
+    help = 'link to conversation',type = check_strhelper,action="extend")
 
+    paid_check=subparser.add_parser("paid_check",help="Parse a Purchases for user\nCache last for 24 hours")
+    paid_check.add_argument(
+        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+    )
+    paid_check.add_argument("-f","--file",
+    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    )
+    
+
+    paid_check.add_argument("-us","--username",
+    help = 'link to conversation',type = check_strhelper,action="extend")
 
     args=parser.parse_args(input)
     #deduplicate posts

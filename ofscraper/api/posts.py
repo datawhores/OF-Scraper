@@ -69,9 +69,9 @@ class Post():
         else:
             response=config.read_config().get("responsetype", {}).get(self._responsetype_) 
             if  response == "":
-                return self._responsetype_
+                return self._responsetype_.capitalize()
             elif  response == None:
-                return self._responsetype_
+                return self._responsetype_.capitalize()
             elif  response != "":
                 return  response
 
@@ -144,7 +144,7 @@ class Media():
     @property
     def length_(self):
         if not self.length:
-            return "N\A"
+            return "N/A"
         return str((arrow.get(self.length)-arrow.get(0)))
 
 

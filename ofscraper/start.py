@@ -11,6 +11,8 @@ def main():
         check.post_checker()
     elif args.command=="msg_check":
         check.message_checker()
+    elif args.command=="paid_check":
+        check.purchase_checker()
     elif args.command=="manual":
         None
     elif vars(args).get("help"):
