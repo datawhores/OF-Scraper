@@ -47,7 +47,7 @@ messagesNextEP = 'https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&offse
 favoriteEP = 'https://onlyfans.com/api2/v2/posts/{}/favorites/{}'
 postURL = 'https://onlyfans.com/{}/{}'
 
-DC_EP = 'https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json'
+DYNAMIC = 'https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json'
 
 donateEP = "https://www.buymeacoffee.com/excludedBittern"
 
