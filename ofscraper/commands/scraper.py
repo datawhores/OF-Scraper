@@ -506,11 +506,14 @@ def getselected_usernames():
     if scraper_bool:
         selectedusers=selectuserhelper()
     #create in these situations
+    #set at least once
+    elif args.username and not selectedusers:
+        selectedusers=selectuserhelper()
     elif not selectedusers and not scraper_bool:
         setfilter()
         selectedusers=selectuserhelper()
     elif selectedusers and not scraper_bool:
-        if prompts.reset_username_prompt()=="Yes":
+        if prompts.reset_username_prompt()=="Yes":  
             setfilter()
             selectedusers=selectuserhelper()
     return selectedusers
@@ -525,7 +528,7 @@ def selectuserhelper():
         
     elif args.username:
         userSelect=set(args.username)
-        selectedusers=list(filter(lambda x:x["name"] in userSelect,filter_subscriptions))
+        selectedusers=list(filter(lambda x:x["name"] in userSelect,parsed_subscriptions))
     #manually select usernames
     else:
         filter_subscriptions=filteruserHelper(parsed_subscriptions )
