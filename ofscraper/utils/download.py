@@ -60,6 +60,8 @@ from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+
 
 
 async def process_dicts(username, model_id, medialist,forced=False):
@@ -80,7 +82,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     log.info("forcing all downloads")
                 file_size_limit = config_.get_filesize()
                 global sem
-                sem = asyncio.Semaphore(8)
+                sem = asyncio.Semaphore(constants.MAX_SEMAPHORE)
             
                 aws=[]
                 photo_count = 0

@@ -30,6 +30,7 @@ import ofscraper.utils.auth as auth
 import ofscraper.utils.paths as paths
 from ..utils import auth
 import ofscraper.utils.console as console
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
@@ -40,7 +41,7 @@ attempt = contextvars.ContextVar("attempt")
 
 async def get_messages(headers, model_id):
     global sem
-    sem = asyncio.Semaphore(8)
+    sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting Messages...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
