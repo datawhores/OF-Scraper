@@ -29,19 +29,20 @@ def get_archive_post(headers,model_id):
 async def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
     ep = constants.archivedNextEP if timestamp else constants.archivedEP
     url = ep.format(model_id, timestamp)
-    async with sem:
-        async with httpx.AsyncClient(http2=True, headers=headers) as c:
-            auth.add_cookies(c)
-            c.headers.update(auth.create_sign(url, headers))
+    sem.acquire()
+    async with httpx.AsyncClient(http2=True, headers=headers) as c:
+        auth.add_cookies(c)
+        c.headers.update(auth.create_sign(url, headers))
 
-            r = await c.get(url, timeout=None)
-            if not r.is_error:
-                posts = r.json()['list']
-                if not posts:
-                    return posts
-                posts += await scrape_archived_posts(
-                    headers, model_id, posts[-1]['postedAtPrecise'])
+        r = await c.get(url, timeout=None)
+        if not r.is_error:
+            posts = r.json()['list']
+            if not posts:
                 return posts
-            r.raise_for_status()
-            log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
-            log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
+            sem.release()
+            posts += await scrape_archived_posts(
+                headers, model_id, posts[-1]['postedAtPrecise'])
+            return posts
+        r.raise_for_status()
+        log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
+        log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")

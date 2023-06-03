@@ -13,7 +13,9 @@ attempt = contextvars.ContextVar("attempt")
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
+        
     async with sem:
+        sem.acquire()
         async with httpx.AsyncClient(http2=True, headers=headers) as c:
             ep = constants.timelinePinnedNextEP if timestamp else constants.timelinePinnedEP
             url = ep.format(model_id, timestamp)
@@ -22,6 +24,7 @@ async def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
             c.headers.update(auth.create_sign(url, headers))
 
             r = await c.get(url, timeout=None)
+            sem.release()
             if not r.is_error:
                 return r.json()['list']
             r.raise_for_status()
