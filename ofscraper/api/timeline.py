@@ -8,6 +8,7 @@ r"""
 """
 import time
 import asyncio
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
@@ -101,7 +102,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
 
 async def get_timeline_post(headers,model_id):
     global sem
-    sem = asyncio.Semaphore(8)
+    sem = semaphoreDelayed(8)
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

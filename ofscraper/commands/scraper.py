@@ -58,6 +58,9 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.console as console
+import ofscraper.api.archive as archive
+import ofscraper.api.pinned as pinned
+
 
 log=logging.getLogger(__package__)
 args=args_.getargs()
@@ -136,7 +139,7 @@ def process_archived_posts(headers, model_id,username):
     with stdout.lowstdout():
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             task1=progress.add_task("Getting Archived Media....")
-            archived_posts = timeline.get_archive_post(headers, model_id)
+            archived_posts = archive.get_archive_post(headers, model_id)
             archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
             log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
             log.debug("Removing locked archived media")
@@ -155,7 +158,7 @@ def process_pinned_posts(headers, model_id,username):
     with stdout.lowstdout():
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             task1=progress.add_task("Getting Pinned Media....")
-            pinned_posts = timeline.get_pinned_post(headers, model_id)
+            pinned_posts = pinned.get_pinned_post(headers, model_id)
             pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
             log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
             log.debug("Removing locked pinned media")
