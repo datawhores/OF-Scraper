@@ -29,7 +29,7 @@ def get_archive_post(headers,model_id):
 async def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
     ep = constants.archivedNextEP if timestamp else constants.archivedEP
     url = ep.format(model_id, timestamp)
-    sem.acquire()
+    await sem.acquire()
     async with httpx.AsyncClient(http2=True, headers=headers) as c:
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
