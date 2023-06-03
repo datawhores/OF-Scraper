@@ -100,7 +100,7 @@ def process_highlights(headers, model_id,username):
     with stdout.lowstdout():
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             task1=progress.add_task("Highlights and Stories....")
-            highlights_, stories = highlights.scrape_highlights(headers, model_id)
+            highlights_, stories = asyncio.run(highlights.scrape_highlights(headers, model_id))
             highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
             list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
             log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
