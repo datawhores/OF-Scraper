@@ -522,7 +522,7 @@ def selectuserhelper():
     else:
         filter_subscriptions=filteruserHelper(parsed_subscriptions )
         selectedusers= get_model(filter_subscriptions)
-    selectedusers=list(filter(lambda x:x not in args.excluded_username))
+    selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
     return selectedusers
 
         
