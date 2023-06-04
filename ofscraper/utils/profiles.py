@@ -8,20 +8,20 @@ r"""
                  \/     \/           \/            \/         
 """
 
-import pathlib
 import shutil
+import logging
 from rich.console import Console
 from rich import print
 import ofscraper.utils.config as config_
 import ofscraper.prompts.prompts as prompts
 import ofscraper.constants as constants
-import logging
+import ofscraper.utils.paths as paths_
 log=logging.getLogger(__package__)
 console=Console()
 
 
 def get_profile_path():
-    config_path = pathlib.Path.home() / constants.configPath
+    config_path = paths_.get_config_path()
     return config_path
 
 

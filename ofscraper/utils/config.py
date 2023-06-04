@@ -15,12 +15,14 @@ from rich.console import Console
 import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts 
 import ofscraper.utils.binaries as binaries
+import ofscraper.utils.args as args_
+import ofscraper.utils.paths as paths_
 
 console=Console()
 log=logging.getLogger(__package__)
 
 def read_config():
-    p = pathlib.Path.home() / constants.configPath
+    p = args_.getargs().config or paths_.get_config_path()
     if not p.is_dir():
         p.mkdir(parents=True, exist_ok=True)
 
@@ -123,7 +125,7 @@ def make_config(path, config=None):
 
 
 def update_config(field: str, value):
-    p = pathlib.Path.home() / constants.configPath / constants.configFile
+    p = paths_.get_config_path() / constants.configFile
 
     with open(p, 'r') as f:
         config = json.load(f)
@@ -146,7 +148,7 @@ def auto_update_config(path, config: dict) -> dict:
 
 def edit_config():
     try:
-        p = pathlib.Path.home() / constants.configPath / constants.configFile
+        p = paths_.get_config_path() / constants.configFile
         with open(p, 'r') as f:
             configText=f.read()
             config = json.loads(configText)
@@ -181,7 +183,7 @@ def update_mp4decrypt():
         config["config"]["mp4decrypt"]=binaries.mp4decrypt_download()
     else:
         config["config"]["mp4decrypt"]=prompts.mp4_prompt(config)
-    p = pathlib.Path.home() / constants.configPath / constants.configFile
+    p = paths_.get_config_path() / constants.configFile
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
 
@@ -191,7 +193,7 @@ def update_ffmpeg():
         config["config"]["ffmpeg"]=binaries.ffmpeg_download()
     else:
         config["config"]["ffmpeg"]=prompts.ffmpeg_prompt(config)
-    p = pathlib.Path.home() / constants.configPath / constants.configFile
+    p = paths_.get_config_path() / constants.configFile
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
 

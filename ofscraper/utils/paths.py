@@ -13,6 +13,7 @@ import ofscraper.constants as constants
 import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
+import ofscraper.utils.paths as paths_
 
 console=Console()
 homeDir=pathlib.Path.home()
@@ -46,7 +47,7 @@ def createDir(path):
         sys.exit()
 def databasePathHelper(model_id,username):
     formatStr=config_.get_metadata(config_.read_config())
-    return pathlib.Path(formatStr.format(configpath=homeDir / constants.configPath,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_location=config_.get_save_location(config_.read_config())),"user_data.db")
+    return pathlib.Path(formatStr.format(configpath= get_config_path(),profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_location=config_.get_save_location(config_.read_config())),"user_data.db")
 
 def getmediadir(ele,username,model_id):
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
@@ -55,22 +56,7 @@ def getmediadir(ele,username,model_id):
     return root /downloadDir   
 
 
-def messageResponsePathHelper(model_id,username):
-    profile = profiles.get_current_profile()
-    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"messages.json"
 
-
-def timelineResponsePathHelper(model_id,username):
-    profile = profiles.get_current_profile()
-    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"timeline.json"
-
-
-def archiveResponsePathHelper(model_id,username):
-    profile = profiles.get_current_profile()
-    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"archive.json"
-def pinnedResponsePathHelper(model_id,username):
-    profile = profiles.get_current_profile()
-    return homeDir / constants.configPath / profile / ".data"/f"{username}_{model_id}"/"pinned.json"
 
 def cleanup():
     log.info("Cleaning up .part files\n\n")
@@ -81,7 +67,7 @@ def cleanup():
 
 def getcachepath():
     profile = profiles.get_current_profile()
-    path=pathlib.Path.home() / constants.configPath / profile/"cache"
+    path= get_config_path()/ profile/"cache"
     createDir(path.parent)
     return path
 def trunicate(path):
@@ -142,6 +128,9 @@ def ffmpegchecker(x):
     except:
         return False   
 def getlogpath():
-    path=pathlib.Path.home() / constants.configPath / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    path= get_config_path() / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
     createDir(path.parent)
     return path
+
+def get_config_path():
+    return args_.getargs().config or pathlib.Path.home() / constants.configPath
