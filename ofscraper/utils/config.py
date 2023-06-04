@@ -22,7 +22,7 @@ console=Console()
 log=logging.getLogger(__package__)
 
 def read_config():
-    p = args_.getargs().config or paths_.get_config_path()
+    p = pathlib.Path(args_.getargs().config or paths_.get_config_path())
     if not p.is_dir():
         p.mkdir(parents=True, exist_ok=True)
 

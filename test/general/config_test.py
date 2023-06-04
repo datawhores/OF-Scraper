@@ -1,5 +1,12 @@
+
+import tempfile
+import json
+from pytest_check import check
 from test.test_constants import *
 from ofscraper.utils.config import *
+import ofscraper.utils.config as config_
+import ofscraper.utils.paths as paths_
+
 def test_current_schema(mocker):
     migrationConfig={"config":{
         "main_profile": PROFILE_DEFAULT,
@@ -13,9 +20,32 @@ def test_current_schema(mocker):
         "filter": FILTER_DEFAULT,
         "mp4decrypt":MP4DECRYPT_DEFAULT  
     }}
+    
     currentConfig=get_current_config_schema(migrationConfig)
     
     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(CONFIG_KEYS))
+
+
+def test_new_config_location(mocker):
+    migrationConfig={"config":{
+        "main_profile": PROFILE_DEFAULT,
+        "save_location": SAVE_PATH_DEFAULT,
+        "file_size_limit": FILE_SIZE_DEFAULT,
+    }}
+    currentConfig=get_current_config_schema(migrationConfig)
+    with tempfile.TemporaryDirectory() as p:
+        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",p]))
+        configPath=paths_.get_config_path()/constants.configFile
+
+
+        with open(configPath,"w") as w:
+            w.write(json.dumps(currentConfig))
+
+        new_config=config_.read_config()
+        for key in new_config:
+            with check:
+                assert(new_config[key])==currentConfig["config"][key]
+
     
 
 def test_current_schema2(mocker):

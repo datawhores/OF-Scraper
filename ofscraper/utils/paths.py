@@ -133,4 +133,4 @@ def getlogpath():
     return path
 
 def get_config_path():
-    return args_.getargs().config or pathlib.Path.home() / constants.configPath
+    return pathlib.Path(args_.getargs().config or pathlib.Path.home() / constants.configPath)
