@@ -21,7 +21,7 @@ console=Console()
 
 
 def get_profile_path():
-    config_path = paths_.get_config_path()
+    config_path = paths_.get_config_path().parent
     return config_path
 
 

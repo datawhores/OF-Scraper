@@ -50,7 +50,7 @@ def mp4_decrypt_windows():
                             download.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
                             num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path=paths_.get_config_path() / "bin"/"mp4decrypt.exe"
+        bin_path=paths_.get_config_path().parent / "bin"/"mp4decrypt.exe"
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
@@ -74,7 +74,7 @@ def mp4_decrypt_linux():
                             download.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
                             num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path=paths_.get_config_path() / "bin"/"mp4decrypt"
+        bin_path=paths_.get_config_path().parent / "bin"/"mp4decrypt"
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
@@ -100,7 +100,7 @@ def ffmpeg_windows():
                             download.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
                             num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path=paths_.get_config_path() / "bin"/"ffmpeg.exe"
+        bin_path=paths_.get_config_path().parent / "bin"/"ffmpeg.exe"
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
@@ -124,7 +124,7 @@ def ffmpeg_linux():
                             download.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
                             num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path=paths_.get_config_path() / "bin"/"ffmpeg"
+        bin_path=paths_.get_config_path().parent / "bin"/"ffmpeg"
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with TarFile.open(zip_path,mode="r:xz") as zObject:
              zObject.extractall(path=t)

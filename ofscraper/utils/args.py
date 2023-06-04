@@ -29,7 +29,7 @@ def getargs(input=None):
     )
 
     general.add_argument(
-        '-cg', '--config', help="Change location of config folder",default=None
+        '-cg', '--config', help="Change location of config folder/file",default=None
     )
     general.add_argument(
         '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None

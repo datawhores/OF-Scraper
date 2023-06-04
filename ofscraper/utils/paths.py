@@ -47,7 +47,7 @@ def createDir(path):
         sys.exit()
 def databasePathHelper(model_id,username):
     formatStr=config_.get_metadata(config_.read_config())
-    return pathlib.Path(formatStr.format(configpath= get_config_path(),profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_location=config_.get_save_location(config_.read_config())),"user_data.db")
+    return pathlib.Path(formatStr.format(configpath= get_config_path().parent,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_location=config_.get_save_location(config_.read_config())),"user_data.db")
 
 def getmediadir(ele,username,model_id):
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
@@ -67,7 +67,7 @@ def cleanup():
 
 def getcachepath():
     profile = profiles.get_current_profile()
-    path= get_config_path()/ profile/"cache"
+    path= get_config_path().parent/ profile/"cache"
     createDir(path.parent)
     return path
 def trunicate(path):
@@ -128,9 +128,12 @@ def ffmpegchecker(x):
     except:
         return False   
 def getlogpath():
-    path= get_config_path() / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
     createDir(path.parent)
     return path
 
 def get_config_path():
-    return pathlib.Path(args_.getargs().config or pathlib.Path.home() / constants.configPath)
+    t=pathlib.Path(args_.getargs().config or pathlib.Path.home() / constants.configPath)
+    if t.is_dir():
+        return t/constants.configFile
+    return t

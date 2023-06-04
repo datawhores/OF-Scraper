@@ -6,6 +6,8 @@ from test.test_constants import *
 from ofscraper.utils.config import *
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths_
+from ofscraper.utils.profiles import *
+
 
 def test_current_schema(mocker):
     migrationConfig={"config":{
@@ -35,7 +37,8 @@ def test_new_config_location(mocker):
     currentConfig=get_current_config_schema(migrationConfig)
     with tempfile.TemporaryDirectory() as p:
         mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",p]))
-        configPath=paths_.get_config_path()/constants.configFile
+        configPath=paths_.get_config_path()
+        configPath.parent.mkdir(parents=True,exist_ok=True)
 
 
         with open(configPath,"w") as w:
@@ -46,7 +49,16 @@ def test_new_config_location(mocker):
             with check:
                 assert(new_config[key])==currentConfig["config"][key]
 
-    
+
+def test_profile_count(mocker):
+    with tempfile.TemporaryDirectory() as p:
+        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",p]))
+        p=pathlib.Path(p)
+        (p/"1").mkdir()
+        (p/"2").mkdir()
+        (p/"3").mkdir()
+        assert(len(get_profiles()))==3
+
 
 def test_current_schema2(mocker):
     migrationConfig={"config":{
