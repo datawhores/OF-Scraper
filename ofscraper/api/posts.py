@@ -45,7 +45,7 @@ class Post():
     @property
     def text(self):
         if self._responsetype_ == "highlights":
-            return self.post.get("title")
+            return self.post.get("title") or self.date
         elif self._responsetype_ == "stories":
             
             return arrow.get(self.date).format(config.get_date(config.read_config()))
