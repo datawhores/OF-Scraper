@@ -52,8 +52,8 @@ def post_checker():
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
                 user_dict[user_name].extend(asyncio.run(timeline.get_timeline_post(headers,model_id)))
-                user_dict[user_name].extend(pinned.get_pinned_post(headers,model_id))
-                user_dict[user_name].extend(archive.get_archive_post(headers,model_id))
+                user_dict[user_name].extend(asyncio.run(pinned.get_pinned_post(headers,model_id)))
+                user_dict[user_name].extend(asyncio.run(archive.get_archive_post(headers,model_id)))
                 cache.set(f"timeline_check_{model_id}",user_dict[user_name],expire=constants.CHECK_EXPIRY)
 
     #individual links
@@ -114,7 +114,7 @@ def purchase_checker():
         if len(oldpaid)>0 and not args.force:
             paid=oldpaid
         else:
-            paid=paid_.scrape_paid(user_name)
+            paid=asyncio.run(paid_.scrape_paid(user_name))
             cache.set(f"purchased_check_{model_id}",paid,expire=constants.CHECK_EXPIRY)
         user_dict[user_name].extend(paid)
     app_run_helper(user_dict)
