@@ -45,9 +45,10 @@ class Post():
     @property
     def text(self):
         if self._responsetype_ == "highlights":
-            return ""
+            return self.post.get("title")
         elif self._responsetype_ == "stories":
-            return ""
+            
+            return arrow.get(self.date).format(config.get_date(config.read_config()))
         return self._post.get("text")
 
     @property
@@ -338,10 +339,13 @@ class Media():
             return MPEGDASHParser.parse(r.content.decode())
     @property
     def license(self):
+        if not self.mpd:
+            return None
         responsetype=self.post.post["responseType"]
         if responsetype in ["timeline","archived","pinned"]:
             responsetype="post"
         return LICENCE_URL.format(self.id,responsetype,self.postid)
+
 
     # for use in dynamic names
     def _addcount(self):
