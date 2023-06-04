@@ -37,13 +37,12 @@ def post_checker():
     headers = auth.make_headers(auth.read_auth())
     user_dict = {}
     client = httpx.Client(http2=True, headers=headers)
-    links=url_helper()
+    links=list(url_helper())
     for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), links)):
         name_match = re.search("/([a-z_]+$)", ele)
         if name_match:
             user_name=name_match.group(1)
             log.info(f"Getting Full Timeline for {user_name}")
-
             model_id=profile.get_id(headers,user_name)
             oldtimeline=cache.get(f"timeline_check_{model_id}",default=[])
             if len(oldtimeline)>0 and not args.force:
@@ -78,7 +77,7 @@ def post_checker():
 
      
 def message_checker():
-    links=url_helper()
+    links=list(url_helper())
     ROWS = get_first_row()
     user_dict={}
     for item in links:
