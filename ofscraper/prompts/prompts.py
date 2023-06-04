@@ -11,6 +11,7 @@ import sys
 from rich.console import Console
 import pathlib
 from InquirerPy.resolver import prompt
+from InquirerPy import inquirer
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
 from InquirerPy.validator import EmptyInputValidator,PathValidator
@@ -18,6 +19,7 @@ import ofscraper.constants as constants
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_functions as prompt_functions
 import ofscraper.utils.config as config
+import ofscraper.utils.args as args_
 
 console=Console()
 def main_prompt() -> int:
@@ -601,28 +603,38 @@ def continue_prompt() -> bool:
 
     answer = prompt(questions)
     return answer[name]
-def model_selector(models) -> bool:
-    questions = [
-    {"type": "fuzzy", "message": "Which models do you want to scrape:",
-      "keybindings":{
-                             "toggle": [{"key": "s-right"},{"key": ["pagedown","right"]},{"key": ["home","right"]}],
+def model_selector(models,selected=None) -> bool:
+    choices=list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
+    selectedSet=set(map(lambda x:x["name"],selected or []))
+    for model in choices:
+        if model.name in selectedSet:
+            model.enabled=True
 
-                              
-                         }
-                         
-     ,"multiselect":True
-      ,"validate":prompt_functions.emptyListValidator(),
-      "instruction":prompt_strings.FUZZY_INSTRUCTION,
-      "choices":list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name']))),"transformer":lambda result:",".join(map(lambda x:x.split(" ")[0],result))
-       ,"prompt":'Filter: ',
-       "marker":"\u25c9 ",
-       "marker_pl":"\u25cb "
 
-      },
+    p=inquirer.fuzzy(
+        instruction=prompt_strings.FUZZY_INSTRUCTION,
+        choices=choices,
+        transformer=lambda result:",".join(map(lambda x:x.split(" ")[0],result)),
+        multiselect=True,
+        validate=prompt_functions.emptyListValidator(),
+        prompt='Filter: ',
+        marker="\u25c9 ",
+        marker_pl="\u25cb ",
+        message= "Which models do you want to scrape:",
+        mandatory=False,
+        keybindings=  {
+                                "toggle": [{"key": "s-right"},{"key": ["pagedown","right"]},{"key": ["home","right"]}],
+
+                                
+                        }
+                            
     
-]
+    )
+        
+    answers=p.execute()
+    return answers,p
+        
 
-    return prompt(questions)[0]
 
 
 

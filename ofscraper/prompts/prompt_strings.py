@@ -12,6 +12,9 @@ KeyBindings
 Toggle all: Ctrl+r
 Toggle single: Shift +Right /Home +Right / pageDown +Right
 
+Change Sort Order or Model Filters: Press Ctrl Z
+You previous choices will be saved
+
 Press Enter When Done
 Parantheses indicates number of selected user
 
