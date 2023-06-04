@@ -67,10 +67,10 @@ def getargs(input=None):
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
     filters.add_argument(
-        '-t', '--account-type', help = 'Filter Free or paid accounts',default=None,required=False,type = str.lower,choices=["paid","free"]
+        '-at', '--account-type', help = 'Filter Free or paid accounts',default=None,required=False,type = str.lower,choices=["paid","free"]
     )
     filters.add_argument(
-        '-r', '--renewal', help = 'Filter by whether renewal is on or off for account',default=None,required=False,type = str.lower,choices=["active","disabled"]
+        '-rw', '--renewal', help = 'Filter by whether renewal is on or off for account',default=None,required=False,type = str.lower,choices=["active","disabled"]
     )
     filters.add_argument(
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
@@ -82,12 +82,18 @@ def getargs(input=None):
         '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow.get)
     
     
+    sort=parser.add_argument_group("sort",description="Options on how to sort list")
+    sort.add_argument(
+        '-st', '--sort', help = 'What to sort the model list by',default="Name",choices=["Name","Subscribed","Expiring"],type=str.capitalize)
+    sort.add_argument(
+        '-ds', '--descending', help = 'Sort the model list in descending order',action="store_true",default=False) 
+    
     advanced=parser.add_argument_group("Advanced",description="Advanced Args")  
     advanced.add_argument(
         '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects downloading posts',default=False,required=False,action="store_true"
     )
     advanced.add_argument(
-        '-m', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
+        '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
     )
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Check if a media in a posts is in the data base")

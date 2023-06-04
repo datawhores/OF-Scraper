@@ -64,7 +64,7 @@ def mp4_decrypt_linux():
         zip_path=pathlib.Path(t,"mp4decrypt.zip")
         with Progress(  TextColumn("{task.description}"),
         BarColumn()) as download:
-            with httpx.stream("GET",constants.MP4DECRYPT_LINUX,timeout=None) as r:
+            with httpx.stream("GET",constants.MP4DECRYPT_LINUX,timeout=None,follow_redirects=True) as r:
                     total = int(r.headers['Content-Length'])
                     task1=download.add_task("mp4decrypt download",total=total)
                     num_bytes_downloaded = r.num_bytes_downloaded
