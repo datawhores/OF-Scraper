@@ -74,6 +74,6 @@ def posts_date_filter(media):
     return list(media)
 
 def post_promo_filter(media):
-    if args.skip_promo:
+    if args.skip_timed:
         return list(filter(lambda x:not x.expires,media))
     return media
