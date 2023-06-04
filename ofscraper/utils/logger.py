@@ -73,11 +73,14 @@ class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
     @staticmethod
     def _filter(s):
-        s=re.sub("&Policy=[^&\"]+", "&Policy={hidden}", s)
-        s=re.sub("&Signature=[^&\"]+", "&Signature={hidden}", s)
-        s=re.sub("&Key-Pair-Id=[^&\"]+", "&Key-Pair-Id={hidden}", s)
-        for ele in senstiveDict.items():
-             s=re.sub(re.escape(str(ele[0])),str(ele[1]),s)
+        if s.find("Avatar :"):
+            None
+        else:
+            s=re.sub("&Policy=[^&\"]+", "&Policy={hidden}", s)
+            s=re.sub("&Signature=[^&\"]+", "&Signature={hidden}", s)
+            s=re.sub("&Key-Pair-Id=[^&\"]+", "&Key-Pair-Id={hidden}", s)
+            for ele in senstiveDict.items():
+                s=re.sub(re.escape(str(ele[0])),str(ele[1]),s)
         return s
 
     def format(self, record):
