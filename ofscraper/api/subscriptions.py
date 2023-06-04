@@ -42,8 +42,14 @@ async def scrape_subscriptions(headers, offset=500) -> list:
         r.raise_for_status()
 
 def parse_subscriptions(subscriptions: list) -> list:
-    data = [{"name":profile['username'],"id":profile['id'],"date":dates.convert_date_to_mdyhms(
-        profile['subscribedByExpireDate']),"active":not profile['subscribedIsExpiredNow'],"data":profile} for profile in subscriptions]
+    data = [
+        {"name":profile['username']
+         ,"id":profile['id'],
+         "price":profile.get("currentSubscribePrice",{}),
+         "renewal":profile.get("subscribedByData").get("renewedAt"),
+         "expired":profile.get("subscribedByData").get("expiredAt"),
+        "subscribed":profile.get("subscribedByData").get("subscribeAt"),
+         } for profile in subscriptions]
     return data
 
 

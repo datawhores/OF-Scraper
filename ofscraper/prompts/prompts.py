@@ -10,10 +10,12 @@ r"""
 import sys
 from rich.console import Console
 import pathlib
+import arrow
 from InquirerPy.resolver import prompt
 from InquirerPy import inquirer
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
+from InquirerPy import get_style
 from InquirerPy.validator import EmptyInputValidator,PathValidator
 import ofscraper.constants as constants
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -604,15 +606,46 @@ def continue_prompt() -> bool:
     answer = prompt(questions)
     return answer[name]
 def model_selector(models,selected=None) -> bool:
-    choices=list(map(lambda x:Choice(x,name=f"{x['name']} {x['date'] } {x['active']}")   ,sorted(models,key=lambda x:x['name'])))
+    choices=list(map(lambda x:model_selectorHelper(x[0],x[1])  ,enumerate(models)))
     selectedSet=set(map(lambda x:x["name"],selected or []))
     for model in choices:
         if model.name in selectedSet:
             model.enabled=True
-
+    
+    style=get_style({
+     "questionmark": "fg:#e5c07b bg:#ffffff",
+    "answermark": "#e5c07b",
+    "answer": "#61afef",
+    "input": "#98c379",
+    "question": "",
+    "answered_question": "",
+    "instruction": "#abb2bf",
+    "long_instruction": "#abb2bf",
+    "pointer": "#61afef",
+    "checkbox": "#98c379",
+    "separator": "",
+    "skipped": "#5c6370",
+    "validator": "",
+    "marker": "#e5c07b",
+    "fuzzy_prompt": "#c678dd",
+    "fuzzy_info": "#abb2bf",
+    "fuzzy_border": "#4b5263",
+    "fuzzy_match": "#c678dd bold",
+    "spinner_pattern": "#e5c07b",
+    "spinner_text": "",
+})
 
     p=inquirer.fuzzy(
-        instruction=prompt_strings.FUZZY_INSTRUCTION,
+        long_instruction=prompt_strings.FUZZY_INSTRUCTION.format(sort=args_.getargs().sort.capitalize(),
+                                                                 desc=args_.getargs().desc,
+                                                                 type=(args_.getargs().account_type or "All").capitalize(),
+                                                                status=(args_.getargs().sub_status or "Both").capitalize(),
+                                                                renewal=(args_.getargs().renewal or "Both").capitalize()
+
+                                                                
+                                                                ),
+
+                                                                 
         choices=choices,
         transformer=lambda result:",".join(map(lambda x:x.split(" ")[0],result)),
         multiselect=True,
@@ -620,8 +653,9 @@ def model_selector(models,selected=None) -> bool:
         prompt='Filter: ',
         marker="\u25c9 ",
         marker_pl="\u25cb ",
-        message= "Which models do you want to scrape:",
+        message= "Which models do you want to scrape\n:",
         mandatory=False,
+        style=style,
         keybindings=  {
                                 "toggle": [{"key": "s-right"},{"key": ["pagedown","right"]},{"key": ["home","right"]}],
 
@@ -635,10 +669,19 @@ def model_selector(models,selected=None) -> bool:
     return answers,p
         
 
+def model_selectorHelper(count,x):
+    format='YYYY-MM-DD'
+    expired=arrow.get(x['expired']).format(format) if x['expired'] else None
+    renewal=arrow.get(x['renewal']).format(format)  if x['renewal'] else None
+    subscribed=arrow.get(x['subscribed']).format(format)  if x['subscribed'] else None
+    price=x["price"]or "Unknown"
+    name=x["name"]
+    return Choice(x,name=f"{count+1}: {name}  renewal={renewal}  subdate={subscribed}  exprdate={expired} subprice={price}")
+    
 
 
 
-def decide_filters_prompts():
+def decide_filters_prompt():
     questions = [
         {
             'type': 'list',
@@ -666,13 +709,47 @@ def modify_filters_prompt(args):
             {
             'type': 'list',
             'message': "Filter accounts by the type of subscription",
-            'choices':[Choice("paid","Paid Only"),Choice("free","Free Only"),Choice(None,"Both")]
+            'choices':[Choice("paid","Paid Subscription Only"),Choice("free","Free Subscription Only"),Choice(None,"Both")]
         }
     ]
     answer = prompt(questions)
     args.renewal=answer[0]
     args.sub_status=answer[1]
     args.account_type=answer[2]
+    return args
+
+
+def decide_sort_prompt():
+    questions = [
+        {
+            'type': 'list',
+            'message': f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {'Ascending' if not args_.getargs().desc else 'Descending'} in {args_.getargs().sort.capitalize()} order",
+            'choices':["Yes","No"]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[0]
+def modify_sort_prompt(args):
+    questions = [
+        {
+            'type': 'list',
+            'message': "Sort Accounts by..",
+            'choices':[Choice("name","By Name"),Choice("subscribed","Subscribed Date"),Choice("expired","Expiring Date"),Choice("price","Subscribed Price")],
+        },
+        {
+            'type': 'list',
+            'message': "Sort in Ascending Order",
+            'choices':[Choice(True,"Yes"),Choice(False,"No",enabled=True)],
+            "default":True
+
+        },
+
+    ]
+
+    answer = prompt(questions)
+    args.sort=answer[0]
+    args.desc=answer[1]==False
     return args
 
 def change_default_profile() -> bool:

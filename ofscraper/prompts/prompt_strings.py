@@ -11,13 +11,10 @@ FUZZY_INSTRUCTION=\
 KeyBindings
 Toggle all: Ctrl+r
 Toggle single: Shift +Right /Home +Right / pageDown +Right
-
-Change Sort Order or Model Filters: Press Ctrl Z
-You previous choices will be saved
+Ctrl-Z: Change Sorting/Filters (keeps selections)
 
 Press Enter When Done
 Parantheses indicates number of selected user
-
-Values: Name Renewal_Date/Expired_Date Active_Subscription
+[Sort-Type: {sort}] [Descending: {desc}] [Account-Type {type}] [Subscription Status {status}] [Renewal {renewal}]
 """
 

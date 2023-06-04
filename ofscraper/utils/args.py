@@ -67,7 +67,7 @@ def getargs(input=None):
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
     filters.add_argument(
-        '-at', '--account-type', help = 'Filter Free or paid accounts',default=None,required=False,type = str.lower,choices=["paid","free"]
+        '-at', '--account-type', help = 'Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price',default=None,required=False,type = str.lower,choices=["paid","free"]
     )
     filters.add_argument(
         '-rw', '--renewal', help = 'Filter by whether renewal is on or off for account',default=None,required=False,type = str.lower,choices=["active","disabled"]
@@ -84,9 +84,9 @@ def getargs(input=None):
     
     sort=parser.add_argument_group("sort",description="Options on how to sort list")
     sort.add_argument(
-        '-st', '--sort', help = 'What to sort the model list by',default="Name",choices=["Name","Subscribed","Expiring"],type=str.capitalize)
+        '-st', '--sort', help = 'What to sort the model list by',default="Name",choices=["Name","Subscribed","Expiring","Price"],type=str.lower)
     sort.add_argument(
-        '-ds', '--descending', help = 'Sort the model list in descending order',action="store_true",default=False) 
+        '-ds', '--desc', help = 'Sort the model list in descending order',action="store_true",default=False) 
     
     advanced=parser.add_argument_group("Advanced",description="Advanced Args")  
     advanced.add_argument(
