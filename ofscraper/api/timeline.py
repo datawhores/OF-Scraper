@@ -34,30 +34,13 @@ from diskcache import Cache
 cache = Cache(getcachepath())
 log=logging.getLogger(__package__)
 attempt = contextvars.ContextVar("attempt")
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-def scrape_pinned_posts(headers, model_id,timestamp=0) -> list:
-    with httpx.Client(http2=True, headers=headers) as c:
-        ep = constants.timelinePinnedNextEP if timestamp else constants.timelinePinnedEP
-        url = ep.format(model_id, timestamp)
-        # url = timelinePinnedEP.format(model_id)
 
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            return r.json()['list']
-        r.raise_for_status()
-        log.debug(f"[bold]pinned request status code:[/bold]{r.status_code}")
-        log.debug(f"[bold]pinned response:[/bold] {r.content.decode()}")
-
-def get_pinned_post(headers,model_id):
-    return scrape_pinned_posts(headers,model_id)
-   
+sem = semaphoreDelayed(constants.MAX_SEMAPHORE) 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
-    global sem 
     global tasks
+    global sem
+    posts=None
     attempt.set(attempt.get(0) + 1)
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
@@ -74,40 +57,47 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
             auth.add_cookies(c)
             c.headers.update(auth.create_sign(url, headers))
             r = await c.get(url , timeout=None)
-            if not r.is_error:
-                progress.remove_task(task)
-                posts = r.json()['list']
-                if not posts:
-                    return []
-                elif len(posts)==0:
-                    return []
-                elif required_ids==None:
-                    attempt.set(0)
-                    tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
-                else:
-                    [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+    if not r.is_error:
+        progress.remove_task(task)
+        posts = r.json()['list']
+        if not posts:
+            posts= []
+        elif len(posts)==0:
+            posts= []
+        elif required_ids==None:
+            attempt.set(0)
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+        else:
+            [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
 
-                    #try once more to get id if only 1 left
-                    if len(required_ids)==1:
-                        attempt.set(0)
-                        tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
 
-                    elif len(required_ids)>0:
-                        attempt.set(0)
-                        tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
-                return posts
+            #try once more to get id if only 1 left
+            if len(required_ids)==1:
+                attempt.set(0)
+                tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+
+            elif len(required_ids)>0:
+                attempt.set(0)
+                tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
+    else:
             log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+            progress.remove_task(task)
             r.raise_for_status()
+    return posts
 
-async def get_timeline_post(headers,model_id):
-    global sem
-    sem = semaphoreDelayed(8)
+async def get_timeline_post(headers,model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
+
+    global tasks
+    tasks=[]
+    min_posts=50
+    responseArray=[]
+    page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
 
         oldtimeline=cache.get(f"timeline_{model_id}",default=[])
@@ -115,9 +105,9 @@ async def get_timeline_post(headers,model_id):
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-        global tasks
-        tasks=[]
-        min_posts=50
+        
+    
+       
         if len(postedAtArray)>min_posts:
             splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
             #use the previous split for timesamp
@@ -129,12 +119,7 @@ async def get_timeline_post(headers,model_id):
         else:
             tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress)))
     
-    
-       
-        responseArray=[]
-    
-    
-        page_count=0 
+
         page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
         while len(tasks)!=0:
             for coro in asyncio.as_completed(tasks):
@@ -169,29 +154,6 @@ async def get_timeline_post(headers,model_id):
 
     return unduped                                
 
-def get_archive_post(headers,model_id):
-    return scrape_archived_posts(headers,model_id)
-   
-
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-def scrape_archived_posts(headers, model_id, timestamp=0) -> list:
-    ep = constants.archivedNextEP if timestamp else constants.archivedEP
-    url = ep.format(model_id, timestamp)
-    with httpx.Client(http2=True, headers=headers) as c:
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            posts = r.json()['list']
-            if not posts:
-                return posts
-            posts += scrape_archived_posts(
-                headers, model_id, posts[-1]['postedAtPrecise'])
-            return posts
-        r.raise_for_status()
-        log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
-        log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
 
 def get_individual_post(id,client=None):
     headers = auth.make_headers(auth.read_auth())
