@@ -27,6 +27,9 @@ def getargs(input=None):
     general.add_argument(
         '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
     )
+    general.add_argument(
+        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
+    )
 
     general.add_argument(
         '-cg', '--config', help="Change location of config folder/file",default=None
@@ -55,6 +58,8 @@ def getargs(input=None):
         '-o', '--posts', help = 'Download content from a model',default=[],required=False,type = posttype_helper,action='extend'
     )
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
+    post.add_argument("-sr","--space-replace",default=None,help="replace space in text with given character",type=str)
+
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
 
