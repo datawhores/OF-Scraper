@@ -505,7 +505,7 @@ def selectuserhelper():
     subscribe_count = process_me(headers)
     parsed_subscriptions = get_models(headers, subscribe_count)
     if args.username and "ALL" in args.username:
-        filter_subscriptions=filteruserHelper(parsed_subscriptions )
+        filter_subscriptions=filterNSort(parsed_subscriptions )
         selectedusers=filter_subscriptions
         
     elif args.username:
@@ -515,20 +515,12 @@ def selectuserhelper():
     else:
         selected=None
         while True:
-            filter_subscriptions=filteruserHelper(parsed_subscriptions)
+            filter_subscriptions=filterNSort(parsed_subscriptions)
             selectedusers,p= get_model(filter_subscriptions,selected)
             if selectedusers==None:
                  setfilter()
-            filter_subscriptions=filteruserHelper(parsed_subscriptions)
+            filter_subscriptions=filterNSort(parsed_subscriptions)
             selected=p.selected_choices
-
-
-            
-    
-    
-    
-    
-    
 
     selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
     return selectedusers
@@ -537,19 +529,19 @@ def selectuserhelper():
 
         
 
-                  
-    # else:
-    #     if len(args.posts)==0 or args.action:
-           
-
-  
-    # #remove dupes
-    return selectedusers
+ 
 def setfilter():
     if prompts.decide_filters_prompts()=="Yes":
         global args
         args=prompts.modify_filters_prompt(args)
-def filteruserHelper(usernames):
+
+ 
+def setsort():
+    if prompts.decide_sort_prompts()=="Yes":
+        global args
+        args=prompts.modify_sort_prompt(args)
+
+def filterNSort(usernames):
 
 
     #paid/free
@@ -565,11 +557,20 @@ def filteruserHelper(usernames):
     if args.sub_status=="active":
         filterusername=list(filter(lambda x:x["data"]["subscribedIsExpiredNow"]==False,filterusername))     
     if args.sub_status=="expired":
-        filterusername=list(filter(lambda x:x["data"]["subscribedIsExpiredNow"]==True,filterusername))      
-    return filterusername
+        filterusername=list(filter(lambda x:x["data"]["subscribedIsExpiredNow"]==True,filterusername))
+    return sort_models_helper(filterusername)      
 
 
 
+def sort_models_helper(models):
+    sort=args.sort
+    reverse=args.descending
+    if sort=="Name":
+        return sorted(models,reverse=reverse, key=lambda x:x["name"])
+    elif sort=="Expiring":
+        return sorted(models,reverse=reverse, key=lambda x:arrow.get(x.get("data",{}).get("subscribedByData",{}).get("expiredAt",0)).float_timestamp)
+    elif sort=="Subscribed":
+        return sorted(models,reverse=reverse, key=lambda x:arrow.get(x.get("data",{}).get("subscribedByData",{}).get("subscribeAt",0)).float_timestamp)
 
 
 
