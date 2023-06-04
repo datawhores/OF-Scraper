@@ -223,12 +223,12 @@ def get_usernames(parsed_subscriptions: list) -> list:
     return usernames
 
 
-def get_model(parsed_subscriptions: list) -> tuple:
+def get_model(parsed_subscriptions: list,selected) -> tuple:
     """
     Prints user's subscriptions to console and accepts input from user corresponding 
     to the model(s) whose content they would like to scrape.
     """
-    return prompts.model_selector(parsed_subscriptions)
+    return prompts.model_selector(parsed_subscriptions,selected)
 
   
 def get_model_inputsplit(commaString):
@@ -259,11 +259,6 @@ def process_me(headers):
     me.print_user(name, username)
     return subscribe_count
 
-def setfilter():
-    if prompts.decide_filters_prompts()=="Yes":
-        global args
-        args=prompts.modify_filters_prompt(args)
-        args_.changeargs(args)
 
 def process_prompts():
     
@@ -499,11 +494,9 @@ def getselected_usernames():
     elif args.username and not selectedusers:
         selectedusers=selectuserhelper()
     elif not selectedusers and not scraper_bool:
-        setfilter()
         selectedusers=selectuserhelper()
     elif selectedusers and not scraper_bool:
         if prompts.reset_username_prompt()=="Yes":  
-            setfilter()
             selectedusers=selectuserhelper()
     return selectedusers
 
@@ -520,8 +513,23 @@ def selectuserhelper():
         selectedusers=list(filter(lambda x:x["name"] in userSelect,parsed_subscriptions))
     #manually select usernames
     else:
-        filter_subscriptions=filteruserHelper(parsed_subscriptions )
-        selectedusers= get_model(filter_subscriptions)
+        selected=None
+        while True:
+            filter_subscriptions=filteruserHelper(parsed_subscriptions)
+            selectedusers,p= get_model(filter_subscriptions,selected)
+            if selectedusers==None:
+                 setfilter()
+            filter_subscriptions=filteruserHelper(parsed_subscriptions)
+            selected=p.selected_choices
+
+
+            
+    
+    
+    
+    
+    
+
     selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
     return selectedusers
 
@@ -537,7 +545,13 @@ def selectuserhelper():
   
     # #remove dupes
     return selectedusers
+def setfilter():
+    if prompts.decide_filters_prompts()=="Yes":
+        global args
+        args=prompts.modify_filters_prompt(args)
 def filteruserHelper(usernames):
+
+
     #paid/free
     filterusername=usernames
     if args.account_type=="paid":
