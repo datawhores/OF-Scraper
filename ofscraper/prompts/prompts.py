@@ -10,6 +10,7 @@ r"""
 import sys
 from rich.console import Console
 import pathlib
+import re
 import arrow
 from InquirerPy.resolver import prompt
 from InquirerPy import inquirer
@@ -607,9 +608,10 @@ def continue_prompt() -> bool:
     return answer[name]
 def model_selector(models,selected=None) -> bool:
     choices=list(map(lambda x:model_selectorHelper(x[0],x[1])  ,enumerate(models)))
-    selectedSet=set(map(lambda x:x["name"],selected or []))
+    selectedSet=set(map(lambda x:re.search("^[0-9]+: ([^ ]+)",x["name"]).group(1),selected or []))
     for model in choices:
-        if model.name in selectedSet:
+        name=re.search("^[0-9]+: ([^ ]+)",model.name).group(1)
+        if name in selectedSet:
             model.enabled=True
     
     style=get_style({
@@ -672,11 +674,11 @@ def model_selector(models,selected=None) -> bool:
 def model_selectorHelper(count,x):
     format='YYYY-MM-DD'
     expired=arrow.get(x['expired']).format(format) if x['expired'] else None
-    renewal=arrow.get(x['renewal']).format(format)  if x['renewal'] else None
+    renewed=arrow.get(x['renewed']).format(format)  if x['renewed'] else None
     subscribed=arrow.get(x['subscribed']).format(format)  if x['subscribed'] else None
-    price=x["price"]or "Unknown"
+    price=x["price"] if x["price"]!=None else "Unknown"
     name=x["name"]
-    return Choice(x,name=f"{count+1}: {name}  renewal={renewal}  subdate={subscribed}  exprdate={expired} subprice={price}")
+    return Choice(x,name=f"{count+1}: {name}  renewed={renewed}  subdate={subscribed}  exprdate={expired} subprice={price}")
     
 
 
@@ -696,7 +698,7 @@ def modify_filters_prompt(args):
     questions = [
         {
             'type': 'list',
-            'message': "Filter account by renewal of subscription status",
+            'message': "Filter account by whether it has a renewal date",
             'choices':[Choice("active","Active Only"),Choice("disabled","Disabled Only"),Choice(None,"Both")]
         },
         {
@@ -735,7 +737,7 @@ def modify_sort_prompt(args):
         {
             'type': 'list',
             'message': "Sort Accounts by..",
-            'choices':[Choice("name","By Name"),Choice("subscribed","Subscribed Date"),Choice("expired","Expiring Date"),Choice("price","Subscribed Price")],
+            'choices':[Choice("name","By Name"),Choice("subscribed","Subscribed Date"),Choice("expired","Expiring Date"),Choice("price","Price")],
         },
         {
             'type': 'list',
