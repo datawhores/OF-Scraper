@@ -25,12 +25,11 @@ def getargs(input=None):
 
                                     
     general.add_argument(
-        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
+        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=username_helper,action="extend"
     )
     general.add_argument(
-        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=lambda x: list(filter( lambda y:y!="",x.split(",")))
+        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=username_helper,action="extend"
     )
-
     general.add_argument(
         '-cg', '--config', help="Change location of config folder/file",default=None
     )
@@ -139,6 +138,9 @@ def getargs(input=None):
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
+    args.username=set(args.username or [])
+    args.excluded_username=set( args.excluded_username or [])
+
     if args.command=="post_check" and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
 
@@ -172,3 +174,12 @@ def posttype_helper(x):
 def changeargs(newargs):
     global args
     args=newargs
+
+
+def username_helper(x):
+    temp=None
+    if isinstance(x,list):
+        temp=x
+    elif isinstance(x,str):
+        temp=x.split(",")
+    return temp
