@@ -40,7 +40,7 @@ def mp4_decrypt_windows():
         zip_path=pathlib.Path(t,"mp4decrypt.zip")
         with Progress(  TextColumn("{task.description}"),
         BarColumn()) as download:
-            with httpx.stream("GET",constants.MP4DECRYPT_WINDOWS,timeout=None) as r:
+            with httpx.stream("GET",constants.MP4DECRYPT_WINDOWS,timeout=None,follow_redirects=True) as r:
                     total = int(r.headers['Content-Length'])
                     task1=download.add_task("mp4decrypt download",total=total)
                     num_bytes_downloaded = r.num_bytes_downloaded
@@ -90,7 +90,7 @@ def ffmpeg_windows():
         zip_path=pathlib.Path(t,"ffmpeg.zip")
         with Progress(  TextColumn("{task.description}"),
         BarColumn()) as download:
-            with httpx.stream("GET",constants.FFMPEG_WINDOWS,timeout=None) as r:
+            with httpx.stream("GET",constants.FFMPEG_WINDOWS,timeout=None,follow_redirects=True) as r:
                     total = int(r.headers['Content-Length'])
                     task1=download.add_task("ffmpeg download",total=total)
                     num_bytes_downloaded = r.num_bytes_downloaded
@@ -114,7 +114,7 @@ def ffmpeg_linux():
         zip_path=pathlib.Path(t,"ffmpeg.tar.xz")
         with Progress(  TextColumn("{task.description}"),
         BarColumn()) as download:
-            with httpx.stream("GET",constants.FFMPEG_LINUX,timeout=None) as r:
+            with httpx.stream("GET",constants.FFMPEG_LINUX,timeout=None,follow_redirects=True) as r:
                     total = int(r.headers['Content-Length'])
                     task1=download.add_task("ffmpeg download",total=total)
                     num_bytes_downloaded = r.num_bytes_downloaded
