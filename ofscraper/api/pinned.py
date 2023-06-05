@@ -74,7 +74,7 @@ async def get_pinned_post(headers,model_id):
                 overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                 output.extend(result)
             tasks=list(filter(lambda x:x.done()==False,tasks))
-        overall_progress.remove_task(page_task)  
+    overall_progress.remove_task(page_task)  
     return output
 
 
