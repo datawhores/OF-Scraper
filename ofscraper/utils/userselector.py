@@ -67,8 +67,7 @@ def selectuserhelper():
         selectedusers=filter_subscriptions
         
     elif args.username:
-        userSelect=set(args.username)
-        selectedusers=list(filter(lambda x:x["name"] in userSelect,parsed_subscriptions))
+        selectedusers=list(filter(lambda x:x["name"] in args.username,parsed_subscriptions))
     #manually select usernames
     else:
         selected=None
@@ -76,7 +75,6 @@ def selectuserhelper():
             filter_subscriptions=filterNSort(parsed_subscriptions)
             selectedusers,p= get_model(filter_subscriptions,selected)
             if selectedusers!=None:
-                selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
                 break
 
             setfilter()
@@ -122,6 +120,7 @@ def filterNSort(usernames):
         filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername))     
     elif args.sub_status=="expired":
         filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
+    filterusername=list(filter(lambda x:x["name"] not in args.excluded_username ,filterusername))
     return sort_models_helper(filterusername)      
 
 
