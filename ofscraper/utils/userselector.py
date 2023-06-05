@@ -77,12 +77,13 @@ def selectuserhelper():
             selectedusers,p= get_model(filter_subscriptions,selected)
             if selectedusers!=None:
                 selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
-                return selectedusers
-
+                break
 
             setfilter()
             setsort()
             selected=p.selected_choices
+    return selectedusers or []
+
 
 
         
