@@ -56,8 +56,8 @@ def mp4_decrypt_windows():
         with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
         shutil.move(list(pathlib.Path(t).glob("**/mp4decrypt.exe"))[0],bin_path)
-        # st = os.stat(bin_path)
-        # os.chmod(bin_path, st.st_mode | stat.S_IEXEC)
+        st = os.stat(bin_path)
+        os.chmod(bin_path, st.st_mode | stat.S_IEXEC)
         return str(bin_path)
 
 def mp4_decrypt_linux():
