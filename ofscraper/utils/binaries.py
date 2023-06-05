@@ -89,7 +89,7 @@ def mp4_decrypt_linux():
 
 def ffmpeg_windows():
     with tempfile.TemporaryDirectory() as t:
-        zip_path=pathlib.Path(t,"ffmpeg.tar.xz")
+        zip_path=pathlib.Path(t,"ffmpeg.zip")
         with Progress(  TextColumn("{task.description}"),
         BarColumn(),DownloadColumn()) as download:
             with httpx.stream("GET",constants.FFMPEG_WINDOWS,timeout=None,follow_redirects=True) as r:
@@ -102,11 +102,11 @@ def ffmpeg_windows():
                             download.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
                             num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path=paths_.get_config_path().parent / "bin"/"ffmpeg"
+        bin_path=paths_.get_config_path().parent / "bin"/"ffmpeg.exe"
         bin_path.parent.mkdir(exist_ok=True,parents=True)
-        with TarFile.open(zip_path,mode="r:xz") as zObject:
+        with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
-        shutil.move(list(pathlib.Path(t).glob("**/ffmpeg"))[0],bin_path)
+        shutil.move(list(pathlib.Path(t).glob("**/ffmpeg.exe"))[0],bin_path)
         st = os.stat(bin_path)
         os.chmod(bin_path, st.st_mode | stat.S_IEXEC)
         return str(bin_path)
