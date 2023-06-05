@@ -19,20 +19,10 @@ import schedule
 import threading
 import queue
 import logging
-import textwrap
 from contextlib import contextmanager
 import timeit
 from itertools import chain
-import re
-from rich.console import Console
-import webbrowser
 import arrow
-from rich.progress import (
-    Progress,
-    TextColumn,
-    SpinnerColumn
-)
-from rich.style import Style
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
@@ -117,16 +107,15 @@ def process_highlights(headers, model_id,username):
 
 def process_timeline_posts(headers, model_id,username):
     with stdout.lowstdout():
-        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
-            timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
-            timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
-            log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
-            log.debug("Removing locked timeline media")
-            for post in timeline_posts:
-                operations.write_post_table(post,model_id,username)
-            output=[]
-            [output.extend(post.media) for post in  timeline_posts ]
-            return list(filter(lambda x:isinstance(x,posts_.Media),output))
+        timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
+        timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
+        log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
+        log.debug("Removing locked timeline media")
+        for post in timeline_posts:
+            operations.write_post_table(post,model_id,username)
+        output=[]
+        [output.extend(post.media) for post in  timeline_posts ]
+        return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
 def process_archived_posts(headers, model_id,username):
     with stdout.lowstdout():
