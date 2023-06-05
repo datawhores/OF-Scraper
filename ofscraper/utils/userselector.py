@@ -75,13 +75,15 @@ def selectuserhelper():
         while True:
             filter_subscriptions=filterNSort(parsed_subscriptions)
             selectedusers,p= get_model(filter_subscriptions,selected)
-            if selectedusers==None:
-                 setfilter()
-                 setsort()
+            if selectedusers!=None:
+                selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
+                return selectedusers
+
+
+            setfilter()
+            setsort()
             selected=p.selected_choices
 
-    selectedusers=list(filter(lambda x:x["name"] not in (args.excluded_username or []),selectedusers))
-    return selectedusers
 
         
 

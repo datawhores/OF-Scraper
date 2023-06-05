@@ -50,7 +50,9 @@ def parse_subscriptions(subscriptions: list) -> list:
          "promo-price": sorted(list(filter(lambda x: x.get("canClaim") == True,profile.get("promotions") or [])), key=lambda x: x["price"]),
          "expired":profile.get("subscribedByData").get("expiredAt") if profile.get("subscribedByData") else None,
          "subscribed":(profile.get("subscribedByData").get("subscribes") or [{}])[0].get("startDate") if profile.get("subscribedByData") else None ,
-         "renewed":profile.get("subscribedByData").get("renewedAt") if profile.get("subscribedByData") else None
+         "renewed":profile.get("subscribedByData").get("renewedAt") if profile.get("subscribedByData") else None,
+        "active" :   not profile['subscribedIsExpiredNow']
+
          } for profile in subscriptions]
     data=setpricehelper(data)
     return data
