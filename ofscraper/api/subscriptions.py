@@ -45,11 +45,26 @@ def parse_subscriptions(subscriptions: list) -> list:
     data = [
         {"name":profile['username']
          ,"id":profile['id'],
-         "price":profile.get("currentSubscribePrice",{}),
-         "renewal":profile.get("subscribedByData").get("renewedAt"),
-         "expired":profile.get("subscribedByData").get("expiredAt"),
-        "subscribed":profile.get("subscribedByData").get("subscribeAt"),
+         "sub-price":profile.get("currentSubscribePrice",{}),
+         "regular-price":profile.get("subscribedByData").get("regularPrice") if profile.get("subscribedByData") else None,
+         "promo-price": sorted(list(filter(lambda x: x.get("canClaim") == True,profile.get("promotions") or [])), key=lambda x: x["price"]),
+         "expired":profile.get("subscribedByData").get("expiredAt") if profile.get("subscribedByData") else None,
+         "subscribed":(profile.get("subscribedByData").get("subscribes") or [{}])[0].get("startDate") if profile.get("subscribedByData") else None ,
+         "renewed":profile.get("subscribedByData").get("renewedAt") if profile.get("subscribedByData") else None
          } for profile in subscriptions]
+    data=setpricehelper(data)
     return data
+
+def setpricehelper(data):
+    for ele in data:
+        prices=list(filter(lambda x:x!=None,[ele.get("sub-price"),(ele.get("promo-price") or [{}])[0].get("price"),ele["regular-price"]]))
+        if len(prices)==0:
+            ele["price"]=None
+        else:
+            ele["price"]=min(prices)
+    return data
+    
+
+
 
 

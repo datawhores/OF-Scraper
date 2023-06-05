@@ -106,19 +106,19 @@ def filterNSort(usernames):
     filterusername=usernames
     dateNow=arrow.get()
     if args.account_type=="paid":
-        filterusername=list(filter(lambda x:x.get("price")>0,filterusername))
+        filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
 
-    if args.account_type=="free":
-        filterusername=list(filter(lambda x:x.get("price")==0,filterusername))    
+    elif args.account_type=="free":
+        filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
     
     if args.renewal=="active":
-        filterusername=list(filter(lambda x:x.get("renewal")!=None,filterusername))     
-    if args.renewal=="disabled":
-        filterusername=list(filter(lambda x:x.get("renewal")==None,filterusername))      
+        filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))     
+    elif args.renewal=="disabled":
+        filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))      
     if args.sub_status=="active":
-        filterusername=list(filter(lambda x:arrow.get(x.x.get("expired"))>=dateNow,filterusername))     
-    if args.sub_status=="expired":
-        filterusername=list(filter(lambda x:arrow.get(x.get("expired"))<dateNow,filterusername))
+        filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername))     
+    elif args.sub_status=="expired":
+        filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
     return sort_models_helper(filterusername)      
 
 
