@@ -5,7 +5,7 @@ import textwrap
 import httpx
 import arrow
 from textual.app import App, ComposeResult
-from textual.widgets import Input,ContentSwitcher,DataTable, Button,Switch,Label,Select,Checkbox
+from textual.widgets import Input,DataTable, Button,Checkbox
 from rich.text import Text
 from textual.containers import Horizontal, VerticalScroll,Vertical
 from textual import events
@@ -195,11 +195,14 @@ class StringField(Horizontal):
             super().__init__(id=name)
             self.filter_name = name
         def compose(self):
-            yield Input(placeholder=self.filter_name.capitalize(),id=f"{self.filter_name}_search")
-        def on_mount(self):
-            self.styles.padding=1
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            yield Input(placeholder=f"{self.filter_name.capitalize()} Search",id=f"{self.filter_name}_search")
+            yield Checkbox(f"Match FullString",False,id="fullstring_search")
+        def on_mount(self): 
+            self.styles.height="auto"
+            self.styles.width="2fr"
+            self.query_one(Input).styles.width="4fr"
+            self.query_one(Checkbox).styles.width="1fr"
+
         def update_table_val(self,val):
             self.query_one(Input).value=val
         def reset(self):
@@ -207,7 +210,9 @@ class StringField(Horizontal):
         def validate(self,val):
              if self.query_one(Input).value=="" or self.query_one(Input).value==None:
                  return True
-             elif re.fullmatch(self.query_one(Input).value,str(val),re.IGNORECASE):
+             elif self.query_one(Checkbox).value and re.fullmatch(self.query_one(Input).value,str(val),re.IGNORECASE):
+                    return True
+             elif not self.query_one(Checkbox).value and re.search(self.query_one(Input).value,str(val),re.IGNORECASE):
                     return True
              return False
              
@@ -222,9 +227,8 @@ class NumField(Horizontal):
         def compose(self):
             yield self.IntegerInput(placeholder=self.filter_name.capitalize(),id=f"{self.filter_name}_search")
         def on_mount(self):
-            self.styles.padding=1
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            self.styles.height="auto"
+            self.styles.width="1fr"
         def update_table_val(self,val):
             self.query_one(self.IntegerInput).value=val
         def reset(self):
@@ -266,9 +270,8 @@ class PriceField(Horizontal):
         def compose(self):
             yield self.IntegerInput(placeholder=self.filter_name.capitalize(),id=f"{self.filter_name}_search")
         def on_mount(self):
-            self.styles.padding=1
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            self.styles.height="auto"
+            self.styles.width="1fr"
         def update_table_val(self,val):
             self.query_one(self.IntegerInput).value=val            
         def reset(self):
@@ -307,9 +310,8 @@ class TimeField(Horizontal):
             yield self.IntegerInput(placeholder="Shorter",id=f"{self.filter_name}_search2")
 
         def on_mount(self):
-            self.styles.padding=1
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            self.styles.height="auto"
+            self.styles.width="1fr"
         def update_table_val(self,val):
             for ele in self.query(self.IntegerInput):
                 ele.value=self.convertString(val)
@@ -353,19 +355,22 @@ class TimeField(Horizontal):
                 except ValueError:
                     pass
                 else:
-                    super().insert_text_at_cursor(text)                          
+                    super().insert_text_at_cursor(text)  
+            def on_mount(self):
+                self.styles.width="50%"                        
 
 class BoolField(Horizontal):
         def __init__(self, name: str) -> None:
             super().__init__(id=name,classes="container")
             self.filter_name = name
         def on_mount(self):
-            [setattr(ele,"styles.width","30%") for ele in self.query(Checkbox)]
+            count=len(self.query(Checkbox))
+            [setattr(ele,"styles.width",f"{int(100/count)}%") for ele in self.query(Checkbox)]
         def compose(self):
             yield Checkbox(f"{self.filter_name.capitalize()} True",True,id=f"{self.filter_name}_search")
             yield Checkbox(f"{self.filter_name.capitalize()} False",True,id=f"{self.filter_name}_search2")
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            self.styles.height="auto"
+            self.styles.width="1fr"
         def update_table_val(self,val):
             if val=="True":
                 self.query_one(f"#{self.filter_name}_search").value=True 
@@ -396,8 +401,8 @@ class MediaField(Horizontal):
             yield Checkbox("audios",True,id=f"{self.filter_name}_search")
             yield Checkbox("videos",True,id=f"{self.filter_name}_search2")
             yield Checkbox("Images",True,id=f"{self.filter_name}_search3")
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            self.styles.height="auto"
+            self.styles.width="1fr"
         def update_table_val(self,val):
             if val=="audios":
                 self.query_one(f"#{self.filter_name}_search").value=True
@@ -437,9 +442,8 @@ class DateField(Horizontal):
 
 
         def on_mount(self):
-            self.styles.padding=1
-            self.styles.height="15vh"
-            self.styles.width="100%"
+            self.styles.height="auto"
+            self.styles.width="1fr"
             for ele in self.query(Input):
                 ele.styles.width="1fr"
         def update_table_val(self,val): 
@@ -499,31 +503,30 @@ class InputApp(App):
             
 
     def compose(self) -> ComposeResult:
-        with Horizontal(id="buttons"):
-            yield StyledButton("Table", id="data-table")
-            yield StyledButton("Filters", id="settings")
-            
-        yield StyledButton("Reset", id="reset")
-       
-        with ContentSwitcher(initial="data-table_page"):  
-            with Vertical(id="settings_page"):
-                yield StyledButton("Submit", id="submit")
-                with VerticalScroll():
-                    for ele in ["Text"]:
-                        yield StringField(ele)
-                    for ele in ["Media_ID","Post_ID","Post_Media_Count"]:
-                        yield NumField(ele)
-                    for ele in ["Length"]:
-                        yield TimeField(ele)    
-                    for ele in ["Price"]:
-                        yield PriceField(ele)
-                    for ele in ["Downloaded","Unlocked","Double_Purchase"]:
-                        yield BoolField(ele)
-                    for ele in ["Post_Date"]:
-                        yield DateField(ele)
-                    for ele in ["Mediatype"]:
-                        yield MediaField(ele)
-            yield DataTable(fixed_rows=1,id="data-table_page")
+        with VerticalScroll():    
+            with Horizontal():
+                for ele in ["Text"]:
+                    yield StringField(ele)
+            with Horizontal():
+                for ele in ["Media_ID","Post_ID","Post_Media_Count"]:
+                    yield NumField(ele)
+            with Horizontal(): 
+                for ele in ["Price"]:
+                    yield PriceField(ele)
+                for ele in ["Post_Date"]:
+                    yield DateField(ele)
+                for ele in ["Length"]:
+                    yield TimeField(ele) 
+    
+            with Horizontal():
+                for ele in ["Downloaded","Unlocked","Double_Purchase"]:
+                    yield BoolField(ele)
+                for ele in ["Mediatype"]:
+                    yield MediaField(ele)
+        with Horizontal(id="data"):
+            yield StyledButton("Submit", id="submit")
+            yield StyledButton("Reset", id="reset")
+        yield DataTable(fixed_rows=1,id="data-table_page")
 
 
             
@@ -542,22 +545,19 @@ class InputApp(App):
             self.make_table()
 
             
-        else:
-            self.query_one(ContentSwitcher).current = f"{event.button.id}_page"
+      
     
 
     def on_mount(self) -> None:
         self.make_table()
-        self.query_one("#buttons").styles.padding=1
-        self.query_one("#buttons").styles.height="20%"
-        self.query_one("#buttons").styles.align = ("center", "middle")
         self.query_one("#reset").styles.align = ("center", "middle")
+        self.query_one(VerticalScroll).styles.height="30vh"
+        self.query_one(VerticalScroll).styles.dock="top"
+        self.query_one(DataTable).styles.height="60vh"
 
+        for ele in self.query(Horizontal)[:-1]:
+            ele.styles.height="10vh"
 
-        self.query_one("#submit").styles.dock="top"
-        self.query_one("#settings_page").query_one(VerticalScroll).padding=1
-        self.query_one(DataTable).styles.min_height="30vh"
-        self.query_one(DataTable).styles.max_height="60vh"
 
 
 
