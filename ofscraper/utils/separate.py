@@ -7,11 +7,26 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+from ..utils.paths import getcachepath
+from diskcache import Cache
+cache = Cache(getcachepath())
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
     media_ids=set(media_ids)
     return list(filter(lambda x:x.id not in media_ids,data ))
+
+def seperate_avatars(data):
+    profilelist=list(filter(lambda x:x.responsetype=="profile",data))
+    return list(filter(lambda x:seperate_avatar_helper(x)==False,profilelist))
+
+def seperate_avatar_helper(ele):
+    #id for avatar comes from xxh32 of url
+    value=cache.get(ele.postid,False)
+    cache.set(ele.postid,True)
+    cache.close()
+    return value
+
     
   
 

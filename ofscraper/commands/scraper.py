@@ -23,7 +23,6 @@ from contextlib import contextmanager
 import timeit
 from itertools import chain
 import arrow
-
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
 import ofscraper.db.operations as operations
@@ -36,8 +35,6 @@ import ofscraper.api.highlights as highlights
 import ofscraper.api.timeline as timeline
 import ofscraper.api.profile as profile
 import ofscraper.utils.config as config
-import ofscraper.api.subscriptions as subscriptions
-import ofscraper.api.me as me
 import ofscraper.utils.auth as auth
 import ofscraper.utils.profiles as profiles
 import ofscraper.api.init as init
@@ -51,7 +48,7 @@ import ofscraper.utils.console as console
 import ofscraper.api.archive as archive
 import ofscraper.api.pinned as pinned
 import ofscraper.utils.userselector as userselector
-
+import ofscraper.utils.console as console
 
 log=logging.getLogger(__package__)
 args=args_.getargs()
@@ -156,6 +153,7 @@ def process_profile(headers, username) -> list:
             data=ele[1]
             output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
         avatars=list(filter(lambda x:x.filename=='avatar',output))
+
         if len(avatars)>0:
             log.warning(f"Avatar : {avatars[0].url}")
         return output
