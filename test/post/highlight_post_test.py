@@ -48,7 +48,7 @@ def test_text_highlights():
     username="test"
     model_id=TEST_ID
     t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
-    assert(t.text)==(HIGHLIGHT_EXAMPLE.get("text") or "")
+    assert(t.text)==(HIGHLIGHT_EXAMPLE.get("text") or 'Date me 🥺')
 
 def test_title_highlights():
     username="test"

@@ -95,7 +95,7 @@ def getargs(input=None):
         '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
     )
     subparser=parser.add_subparsers(help="commands",dest="command")
-    post_check=subparser.add_parser("post_check",help="Check if a media in a posts is in the data base")
+    post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
 
 
     post_check.add_argument("-u","--url",
@@ -108,10 +108,10 @@ def getargs(input=None):
     )
     
     post_check.add_argument(
-        '-fo', '--force', help = 'force retrival of new posts info from API\nCache last for 24 hours', default=False,action="store_true"
+        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
 
-    message_check=subparser.add_parser("msg_check",help="Parse a user messages and view status of missing media\nCache last for 24 hours")
+    message_check=subparser.add_parser("msg_check",help="Parse a user's messages and view status of missing media\nCache lasts for 24 hours")
     message_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -123,7 +123,7 @@ def getargs(input=None):
     message_check.add_argument("-u","--url",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
-    paid_check=subparser.add_parser("paid_check",help="Parse a Purchases for user\nCache last for 24 hours")
+    paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours")
     paid_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )

@@ -41,7 +41,7 @@ def read_config():
 
             break
         except FileNotFoundError:
-            file_not_found_message = f"You don't seem to have a `config.json` file. One has been automatically created for you at: '{p / constants.configFile}'"
+            file_not_found_message = f"You don't seem to have a `config.json` file. One has been automatically created for you at: '{p}'"
             make_config(p)
             console.print(file_not_found_message)
         except json.JSONDecodeError as e:
@@ -57,8 +57,10 @@ def read_config():
     return config["config"]
 
 
-def get_current_config_schema(config: dict) -> dict:
-    config = config['config']
+def get_current_config_schema(config:dict=None) -> dict:
+    
+    if config:
+        config = config['config']
 
     new_config = {
         'config': {
@@ -68,6 +70,7 @@ def get_current_config_schema(config: dict) -> dict:
             'dir_format': get_dirformat(config),
             'file_format':get_fileformat(config),
             'textlength':get_textlength(config),
+            'space-replacer':get_spacereplacer(config),
             'date': get_date(config),
             "metadata": get_metadata(config),
             "filter":get_filter(config),
@@ -90,37 +93,12 @@ def get_current_config_schema(config: dict) -> dict:
 
 
 def make_config(path, config=None):
-    config = config or  {
-        'config': {
-            constants.mainProfile: constants.mainProfile,
-            'save_location': get_save_location(config),
-            'file_size_limit':get_filesize(config),
-            'dir_format':get_dirformat(config),
-            'file_format': get_fileformat(config),
-            'textlength':get_textlength(config),
-            'date':get_date(config),
-            'metadata':get_metadata(config),
-            "filter":get_filter(config),
-            "mp4decrypt":get_mp4decrypt(config=None),
-            "ffmpeg":get_ffmpeg(config),
-            "discord":get_discord(config=None),
-            "responsetype":{
-        "timeline":get_timeline_responsetype(config),
-         "message":get_messages_responsetype(config),
-            "archived":get_archived_responsetype(config),
-            "paid":get_paid_responsetype(config),
-            "stories":get_stories_responsetype(config),
-            "highlights":get_highlights_responsetype(config),
-            "profile":get_profile_responsetype(config),
-            "pinned":get_pinned_responsetype(config),
-
-            }
-        }
-    }
+    config = get_current_config_schema(config) 
     if isinstance(config,str):
         config=json.loads(config)
+        
 
-    with open(path / constants.configFile, 'w') as f:
+    with open(path, 'w') as f:
         f.write(json.dumps(config, indent=4))
 
 
@@ -139,7 +117,7 @@ def auto_update_config(path, config: dict) -> dict:
     log.error("Auto updating config...")
     new_config = get_current_config_schema(config)
 
-    with open(path / constants.configFile, 'w') as f:
+    with open(path , 'w') as f:
         f.write(json.dumps(new_config, indent=4))
 
     return new_config
@@ -308,3 +286,7 @@ def get_pinned_responsetype(config=None):
     if config==None:
         return constants.RESPONSE_TYPE_DEFAULT["pinned"]       
     return config.get('responsetype',{}).get("pinned") or constants.RESPONSE_TYPE_DEFAULT["pinned"]
+def get_spacereplacer(config=None):
+    if config==None:
+        return " "      
+    return config.get('space-replacer'," ") or " "

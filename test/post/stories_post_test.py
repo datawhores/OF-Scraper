@@ -48,7 +48,7 @@ def test_text_stories():
     username="test"
     model_id=TEST_ID
     t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.text)==(STORIES_EXAMPLE.get("text") or "")
+    assert(t.text)==(STORIES_EXAMPLE.get("text") or "04-14-2023")
 
 def test_title_stories():
     username="test"

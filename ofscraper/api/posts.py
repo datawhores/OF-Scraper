@@ -46,8 +46,7 @@ class Post():
     def text(self):
         if self._responsetype_ == "highlights":
             return self.post.get("title") or self.date
-        elif self._responsetype_ == "stories":
-            
+        elif self._responsetype_ == "stories": 
             return arrow.get(self.date).format(config.get_date(config.read_config()))
         return self._post.get("text")
 
@@ -266,6 +265,7 @@ class Media():
         # this for remove random special invalid special characters
         text = re.sub('[\n<>:"/\|?*]+', '', text)
         text = re.sub(" +", " ", text)
+        text=re.sub(" ",config.get_spacereplacer(config.read_config()),text)
         length = int(config.get_textlength(config.read_config()))
         if length==0 and self._addcount():
                 return f"{text}_{self.count}"
