@@ -8,7 +8,7 @@ name: Docker Release
 on:
   workflow_dispatch: 
   release:
-    types: [released,edited]
+    types: [released]
 
 
 env:
