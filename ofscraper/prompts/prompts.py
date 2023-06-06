@@ -357,6 +357,14 @@ Enter 0 for no limit
             'min_allowed':0,
              "validate":EmptyInputValidator()
         },
+                {
+        'type': 'input',
+            'name': 'space-replacer',
+            'message':"space-replacer: ",
+            'long_instruction': 'Replace any spaces in text with this character\n',
+            'default': config.get_spacereplacer(config_),
+             "validate":EmptyInputValidator()
+        },
          {
             'type': 'input',
             'name': 'date',
