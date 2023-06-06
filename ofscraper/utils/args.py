@@ -62,7 +62,7 @@ def getargs(input=None):
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
 
      #Filters for accounts
-    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
+    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters\nNote if you include any uppercase characters the search will be case-sensitive")
     
     filters.add_argument(
         '-at', '--account-type', help = 'Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price',default=None,required=False,type = str.lower,choices=["paid","free"]

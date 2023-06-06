@@ -80,4 +80,8 @@ def post_timed_filter(media):
         return list(filter(lambda x:not x.expires,media))
     return media
 def post_user_filter(media):
-    return list(filter(lambda x:re.search(args._get_args().filter,media.text)!=None))
+    userfilter=args.filter
+    if not userfilter.islower():
+        return list(filter(lambda x:re.search(userfilter,x.text)!=None,media))
+    else:
+        return list(filter(lambda x:re.search(userfilter,x.text,re.IGNORECASE)!=None,media))
