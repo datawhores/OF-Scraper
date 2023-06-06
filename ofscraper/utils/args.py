@@ -57,7 +57,6 @@ def getargs(input=None):
         '-o', '--posts', help = 'Download content from a model',default=[],required=False,type = posttype_helper,action='extend'
     )
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
-    post.add_argument("-sr","--space-replace",default=None,help="replace space in text with given character",type=str)
 
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
@@ -91,9 +90,12 @@ def getargs(input=None):
     advanced.add_argument(
         '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects downloading posts',default=False,required=False,action="store_true"
     )
+    # advanced.add_argument(
+    #     '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
+    # )
     advanced.add_argument(
-        '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
-    )
+        '-ft', '--filter', help = 'Filter post by provide regex',default=".*",required=False,type = str
+    ) 
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
 

@@ -1,5 +1,6 @@
 
 import logging
+import re
 import arrow
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
@@ -11,7 +12,8 @@ def filterMedia(media):
     media=post_datesorter(media)
     media=posts_type_filter(media)
     media=posts_date_filter(media)
-    media=post_promo_filter(media)
+    media=post_timed_filter(media)
+    media=post_user_filter(media)
     # if args.manual_download():
     #     args.dupe=True
     #     args_.changeargs(args)
@@ -73,7 +75,9 @@ def posts_date_filter(media):
         media=filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media)
     return list(media)
 
-def post_promo_filter(media):
+def post_timed_filter(media):
     if args.skip_timed:
         return list(filter(lambda x:not x.expires,media))
     return media
+def post_user_filter(media):
+    return list(filter(lambda x:re.search(args._get_args().filter,media.text)!=None))
