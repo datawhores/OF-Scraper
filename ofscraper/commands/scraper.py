@@ -173,11 +173,13 @@ def process_areas(headers, ele, model_id) -> list:
     stories_dicts=[]
     purchased_dict=[]
     pinned_post_dict=[]
+    profile_dict=[]
 
     username=ele['name']
-    profile_dicts  = process_profile(headers,username)
+  
 
-     
+    if ('Profile' in args.posts or 'All' in args.posts):
+        profile_dicts  = process_profile(headers,username)
     if ('Pinned' in args.posts or 'All' in args.posts) and ele["active"]:
             pinned_post_dict = process_pinned_posts(headers, model_id,username)
     if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:

@@ -166,11 +166,11 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased"])
+    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile"])
     if isinstance(x,str):
         x=x.split(',')
     if len(list(filter(lambda y:y not in choices,x)))>0:
-        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: 'timeline,messages,purchased' (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased')")
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile')")
     return x
 
 def changeargs(newargs):
