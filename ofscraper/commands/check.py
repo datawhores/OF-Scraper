@@ -7,7 +7,7 @@ import arrow
 from textual.app import App, ComposeResult
 from textual.widgets import Input,DataTable, Button,Checkbox
 from rich.text import Text
-from textual.containers import Horizontal, VerticalScroll,Vertical
+from textual.containers import Horizontal, VerticalScroll
 from textual import events
 import ofscraper.utils.args as args_
 import ofscraper.db.operations as operations
