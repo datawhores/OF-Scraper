@@ -1,87 +1,87 @@
-# name: Docker Daily
+name: Docker Daily
 
-# # This workflow uses actions that are not certified by GitHub.
-# # They are provided by a third-party and are governed by
-# # separate terms of service, privacy policy, and support
-# # documentation.
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
 
-# on:
-#   push:
-#     branches: '*'  
-#     # Publish semver tags as releases.
-#     tags: [ 'v*.*.*' ]
+on:
+  push:
+    branches: '*'  
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
 
-# env:
-#   # Use docker.io for Docker Hub if empty
-#   REGISTRY: ghcr.io
-#   # github.repository as <account>/<repo>
-#   IMAGE_NAME: ${{ github.repository }}
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
 
 
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       packages: write
-#       # This is used to complete the identity challenge
-#       # with sigstore/fulcio when running outside of PRs.
-#       id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
 
-#     steps:  
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-#         with:
-#             fetch-depth: 0
-#       - name: get tag
-#         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV       
-#       - name: Setup Docker buildx
-#         uses: docker/setup-buildx-action@v2
-#       - name: Set up QEMU
-#         uses: docker/setup-qemu-action@v2
-#       #Install the cosign tool except on PR
-#       #https://github.com/sigstore/cosign-installer
-#       - name: Install cosign
-#         uses: sigstore/cosign-installer@main #v2.6.0
-#         with:
-#           cosign-release: 'v1.13.1'
-#       #Login against a Docker registry except on PR
-#       #https://github.com/docker/login-action
-#       - name: Build and push Docker image 
-#         uses: docker/login-action@v2
-#         with:
-#           registry: ${{ env.REGISTRY }}
-#           username: ${{ github.actor }}
-#           password: ${{ secrets.GITHUB_TOKEN}}
-#       # Extract metadata (tags, labels) for Docker
-#       # https://github.com/docker/metadata-action
-#       - name: Extract Docker metadata
-#         id: meta
-#         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-#         with:
-#           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    steps:  
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+      - name: get tag
+        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV       
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      #Install the cosign tool except on PR
+      #https://github.com/sigstore/cosign-installer
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main #v2.6.0
+        with:
+          cosign-release: 'v1.13.1'
+      #Login against a Docker registry except on PR
+      #https://github.com/docker/login-action
+      - name: Build and push Docker image 
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN}}
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       
       
-#       - name: push to image
-#         id: build-and-push
-#         uses: docker/build-push-action@v4
-#         with:
-#           context: .
-#           tags: ${{ steps.meta.outputs.tags }}
-#           labels: ${{ steps.meta.outputs.labels }}
-#           cache-to: type=gha,mode=max
-#           push: true
+      - name: push to image
+        id: build-and-push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-to: type=gha,mode=max
+          push: true
 
 
-#       # Sign the resulting Docker image digest except on PRs.
-#       # This will only write to the public Rekor transparency log when the Docker
-#       # repository is public to avoid leaking data.  If you would like to publish
-#       # transparency data even for private images, pass --force to cosign below.
-#       # https://github.com/sigstore/cosign
-#       - name: Sign the published Docker image
-#         env:
-#           COSIGN_EXPERIMENTAL: "true"
-#         # This step uses the identity token to provision an ephemeral certificate
-#         # against the sigstore community Fulcio instance.
-#         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+      # Sign the resulting Docker image digest except on PRs.
+      # This will only write to the public Rekor transparency log when the Docker
+      # repository is public to avoid leaking data.  If you would like to publish
+      # transparency data even for private images, pass --force to cosign below.
+      # https://github.com/sigstore/cosign
+      - name: Sign the published Docker image
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        # This step uses the identity token to provision an ephemeral certificate
+        # against the sigstore community Fulcio instance.
+        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
 
