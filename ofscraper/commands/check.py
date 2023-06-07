@@ -268,10 +268,14 @@ class PriceField(Horizontal):
             super().__init__(id=name)
             self.filter_name = name
         def compose(self):
-            yield self.IntegerInput(placeholder=self.filter_name.capitalize(),id=f"{self.filter_name}_search")
+            yield self.IntegerInput(placeholder="Min Price",id=f"{self.filter_name}_search")
+            yield self.IntegerInput(placeholder="Max Price",id=f"{self.filter_name}_search2")
+
         def on_mount(self):
             self.styles.height="auto"
             self.styles.width="1fr"
+            for ele in self.query(self.IntegerInput):
+                ele.styles.width="1fr"
         def update_table_val(self,val):
             if val.lower()=="free":
                 val="0"
@@ -308,8 +312,9 @@ class TimeField(Horizontal):
             super().__init__(id=name)
             self.filter_name = name
         def compose(self):
-            yield self.IntegerInput(placeholder="Longer",id=f"{self.filter_name}_search")
-            yield self.IntegerInput(placeholder="Shorter",id=f"{self.filter_name}_search2")
+            yield self.IntegerInput(placeholder="Min Length",id=f"{self.filter_name}_search")
+            yield self.IntegerInput(placeholder="Max Length",id=f"{self.filter_name}_search2")
+
 
         def on_mount(self):
             self.styles.height="auto"
@@ -439,8 +444,8 @@ class DateField(Horizontal):
             super().__init__(id=name,classes="container")
             self.filter_name = name
         def compose(self):
-            yield Input(placeholder="After",id=f"{self.filter_name}_search")
-            yield Input(placeholder="Before",id=f"{self.filter_name}_search2")
+            yield Input(placeholder="Earliest Date",id=f"{self.filter_name}_search")
+            yield Input(placeholder="Latest Date",id=f"{self.filter_name}_search2")
 
 
         def on_mount(self):
