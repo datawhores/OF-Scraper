@@ -273,6 +273,8 @@ class PriceField(Horizontal):
             self.styles.height="auto"
             self.styles.width="1fr"
         def update_table_val(self,val):
+            if val.lower()=="free":
+                val="0"
             self.query_one(self.IntegerInput).value=val            
         def reset(self):
             self.query_one(self.IntegerInput).value=""
