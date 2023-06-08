@@ -650,7 +650,7 @@ class InputApp(App):
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[0],reverse=self.reverse)
             self.make_table()
         elif label=="UserName":
-            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:ele,reverse=self.reverse)
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x,reverse=self.reverse)
             self.make_table()
         elif label=="Downloaded":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[2]==True else 0,reverse=self.reverse)
