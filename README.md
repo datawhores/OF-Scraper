@@ -1,9 +1,38 @@
 # Warning
-responsetype will no longer autocapitalize you will have to manually change the config file
-Please do this to avoid duplicate folders
+## Dated Jun 8 2023
+Autocapitalization for responsetype will be removed very soon
+If you have a correct config and are using the script please update your config
+
+from something like
+```
+"responsetype": {
+            "timeline": "posts",
+            "message": "messages",
+            "archived": "archived",
+            "paid": "paid",
+            "stories": "stories",
+            "highlights": "highlights",
+            "profile": "profile",
+            "pinned": pinned"
+        }
 
 
+```
+to basic difference is the second value on each line is explicity capitalize
 
+```
+"responsetype": {
+            "timeline": "Posts",
+            "message": "Messages",
+            "archived": "Archived",
+            "paid": "Paid",
+            "stories": "Stories",
+            "highlights": "Highlights",
+            "profile": "Profile",
+            "pinned": "Pinned"
+        }
+
+```
 # Intro
 
 A fork of onlyfans-scraper. It has been optimized to make it more feature complete with digitalcriminal's onlyfans script.

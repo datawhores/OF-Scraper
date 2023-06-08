@@ -73,7 +73,7 @@ class Post():
             elif  response == None:
                 return self._responsetype_.capitalize()
             elif  response != "":
-                return  response
+                return  response.capitalize()
 
     @property
     def id(self):
