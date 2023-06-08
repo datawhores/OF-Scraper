@@ -82,6 +82,10 @@ class Post():
     @property
     def date(self):
         return self._post.get("createdAt") or self._post.get("postedAt")
+    #modify verison of post date
+    @property
+    def date_(self):
+        return arrow.get(self.date).format("YYYY-MM-DD hh:mm:ss")
 
     @property
     def value(self):
@@ -204,11 +208,23 @@ class Media():
     @property
     def postdate(self):
         return self._post.date
+    #modified verison of post date
+    @property
+    def postdate_(self):
+        return self._post.date_ 
 
     @property
     def date(self):
         return self._media.get("createdAt") or self._media.get("postedAt") or self.postdate
+    
+    #modified verison of media date
+    @property
+    def date_(self):
+        if self._media.get("createdAt") or self._media.get("postedAt"):
+            return arrow.get(self._media.get("createdAt") or self._media.get("postedAt")).format("YYYY-MM-DD hh:mm:ss")()
+        return self.postdate_
 
+ 
     @property
     def id(self):
         return self._media.get("id")

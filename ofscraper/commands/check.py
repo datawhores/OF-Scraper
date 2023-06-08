@@ -168,7 +168,7 @@ def unlocked_helper(ele,mediaset):
 def datehelper(date):
     if date=="None":
         return "Probably Deleted"
-    return arrow.get(date).format("YYYY-MM-DD hh:mm A")
+    return date
 def duplicated_helper(ele,mediadict,downloaded):
     if ele.value=="free":
         return False
@@ -185,8 +185,10 @@ def add_rows(media,downloaded,username):
     [mediadict.update({ele.id:mediadict.get(ele.id,[])+ [ele]}) for ele in media]
     out=[]
 
-    for count,ele in enumerate(media):  
-        out.append((count+1,username,ele.id in downloaded,unlocked_helper(ele,mediaset),duplicated_helper(ele,mediadict,downloaded),ele.length_,ele.mediatype,datehelper(ele.postdate),len(ele._post.post_media),ele.responsetype ,"Free" if ele._post.price==0 else "{:.2f}".format(ele._post.price),  ele.postid,ele.id,texthelper(ele.text)))
+    for i in range(len(media)-1,-1,-1):
+        count=i
+        ele=media[i]
+        out.append((count+1,username,ele.id in downloaded,unlocked_helper(ele,mediaset),duplicated_helper(ele,mediadict,downloaded),ele.length_,ele.mediatype,datehelper(ele.postdate_),len(ele._post.post_media),ele.responsetype ,"Free" if ele._post.price==0 else "{:.2f}".format(ele._post.price),  ele.postid,ele.id,texthelper(ele.text)))
     return out
 
 
@@ -629,6 +631,7 @@ class InputApp(App):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id=="submit":
             self.set_filtered_rows()
+            self.sort_helper()
             self.make_table()
         elif event.button.id=="reset":
             self.set_filtered_rows(reset=True)
@@ -636,55 +639,60 @@ class InputApp(App):
             self.set_reverse(init=True)
             self.make_table()
     def on_data_table_header_selected(self,event):
+        self.sort_helper(event.label.plain)
 
         #set reverse
         #use native python sorting until textual has key support
-        self.set_reverse(label=event.label.plain)
-        if event.label.plain=="Number":
+    
+    def sort_helper(self,label=None):
+        #to allow sorting after submit
+        if label!=None:
+            self.set_reverse(label=label)
+        if label=="Number":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[0],reverse=self.reverse)
             self.make_table()
-        elif event.label.plain=="UserName":
+        elif label=="UserName":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:ele,reverse=self.reverse)
             self.make_table()
-        elif event.label.plain=="Downloaded":
+        elif label=="Downloaded":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[2]==True else 0,reverse=self.reverse)
             self.make_table()
         
-        elif event.label.plain=="Unlocked":
+        elif label=="Unlocked":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[3]==True else 0,reverse=self.reverse)
             self.make_table()
-        elif event.label.plain=="Double Purchase":
+        elif label=="Double Purchase":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[4]==True else 0,reverse=self.reverse)
             self.make_table()          
-        elif event.label.plain=="Length":
+        elif label=="Length":
             helperNode=self.query_one("#Length")
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:helperNode.convertString(x[5]) if x[5]!="N/A" else 0,reverse=self.reverse)
             self.make_table()          
-        elif event.label.plain=="Mediatype":
+        elif label=="Mediatype":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[6],reverse=self.reverse)
             self.make_table() 
-        elif event.label.plain=="Post Date":
+        elif label=="Post Date":
             helperNode=self.query_one("#Post_Date")
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:helperNode.convertString(x[7]) if x[7]!="N/A" else 0,reverse=self.reverse)
             self.make_table() 
-        elif event.label.plain=="Post Media Count":
+        elif label=="Post Media Count":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[8],reverse=self.reverse)
             self.make_table()
 
-        elif event.label.plain=="Responsetype":
+        elif label=="Responsetype":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[9],reverse=self.reverse)
             self.make_table()
-        elif event.label.plain=="Price":
+        elif label=="Price":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:int(float(x[10])) if x[10]!="Free" else 0,reverse=self.reverse)
             self.make_table() 
         
-        elif event.label.plain=="Post ID":
+        elif label=="Post ID":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[11],reverse=self.reverse)
             self.make_table() 
-        elif event.label.plain=="Media ID":
+        elif label=="Media ID":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[12],reverse=self.reverse)
             self.make_table() 
-        elif event.label.plain=="Text":
+        elif label=="Text":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[13],reverse=self.reverse)
             self.make_table() 
 
