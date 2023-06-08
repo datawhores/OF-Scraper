@@ -183,10 +183,11 @@ def add_rows(media,downloaded,username):
     mediaset=set(map(lambda x:x.id,filter(lambda x:x.canview,media)))
     mediadict={}
     [mediadict.update({ele.id:mediadict.get(ele.id,[])+ [ele]}) for ele in media]
+    out=[]
 
-    for ele in media:   
-        return map(lambda x: (x[0],username,x[1].id in downloaded,unlocked_helper(x[1],mediaset),duplicated_helper(x[1],mediadict,downloaded),x[1].length_,x[1].mediatype,datehelper(x[1].postdate),len(ele._post.post_media),x[1].responsetype ,"Free" if x[1]._post.price==0 else "{:.2f}".format(x[1]._post.price),  x[1].postid,x[1].id,texthelper(x[1].text)), enumerate(media))
-
+    for count,ele in enumerate(media):  
+        out.append((count+1,username,ele.id in downloaded,unlocked_helper(ele,mediaset),duplicated_helper(ele,mediadict,downloaded),ele.length_,ele.mediatype,datehelper(ele.postdate),len(ele._post.post_media),ele.responsetype ,"Free" if ele._post.price==0 else "{:.2f}".format(ele._post.price),  ele.postid,ele.id,texthelper(ele.text)))
+    return out
 
 
 class StyledButton(Button):
@@ -643,7 +644,7 @@ class InputApp(App):
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[0],reverse=self.reverse)
             self.make_table()
         elif event.label.plain=="UserName":
-            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[1],reverse=self.reverse)
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:ele,reverse=self.reverse)
             self.make_table()
         elif event.label.plain=="Downloaded":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[2]==True else 0,reverse=self.reverse)
