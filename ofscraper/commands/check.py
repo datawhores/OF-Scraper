@@ -5,6 +5,7 @@ import textwrap
 import httpx
 import arrow
 from textual.app import App, ComposeResult
+from textual.coordinate import Coordinate
 from textual.widgets import Input,DataTable, Button,Checkbox,Label
 from rich.text import Text
 from textual.containers import Horizontal, VerticalScroll
@@ -215,9 +216,9 @@ class StringField(Horizontal):
         def validate(self,val):
              if self.query_one(Input).value=="" or self.query_one(Input).value==None:
                  return True
-             elif self.query_one(Checkbox).value and re.fullmatch(self.query_one(Input).value,str(val),re.IGNORECASE):
+             elif self.query_one(Checkbox).value and re.fullmatch(self.query_one(Input).value,str(val),(re.IGNORECASE if self.query_one(Input).value.islower() else 0)):
                     return True
-             elif not self.query_one(Checkbox).value and re.search(self.query_one(Input).value,str(val),re.IGNORECASE):
+             elif not self.query_one(Checkbox).value and re.search(self.query_one(Input).value,str(val),(re.IGNORECASE if self.query_one(Input).value.islower() else 0)):
                     return True
              return False
              
@@ -508,8 +509,8 @@ class DateField(Horizontal):
             super().__init__(id=name,classes="container")
             self.filter_name = name
         def compose(self):
-            yield Input(placeholder="Earliest Date",id=f"{self.filter_name}_search")
-            yield Input(placeholder="Latest Date",id=f"{self.filter_name}_search2")
+            yield Input(placeholder="Earliest Date",id=f"minDate")
+            yield Input(placeholder="Latest Date",id=f"maxDate")
         def empty(self):
             return self.query(Input)[0].value=="" and self.query(Input)[1].value==""
 
@@ -536,29 +537,25 @@ class DateField(Horizontal):
 
            
         def validateAfter(self,val):
-            if self.query(Input)[0].value=="":
+            if self.query_one("#minDate").value=="":
                 return True
-            compare=cache.get(self.convertString(val)) or arrow.get(self.convertString(val))
-            cache.set(self.convertString(val),compare,constants.RESPONSE_EXPIRY)
-            earlystr=cache.get(self.convertString(self.query_one(f"#{self.filter_name}_search").value)) or arrow.get(self.convertString(self.query_one(f"#{self.filter_name}_search").value))
-            cache.set(self.convertString(self.query_one(f"#{self.filter_name}_search").value),earlystr,constants.RESPONSE_EXPIRY)
+            compare=arrow.get(self.convertString(val))
+            early=arrow.get(self.convertString(self.query_one("#minDate").value))
 
-            if compare<earlystr:
+            if compare<early:
                     return False
             return True
         def validateBefore(self,val):
-            if self.query(Input)[1].value=="":
+            if self.query_one("#maxDate").value=="":
                 return True
-            compare=cache.get(self.convertString(val)) or arrow.get(val)
-            cache.set(self.convertString(val),compare,constants.RESPONSE_EXPIRY)
-            latestr=cache.get(self.convertString(self.query_one(f"#{self.filter_name}_search2").value)) or arrow.get(self.convertString(self.query_one(f"#{self.filter_name}_search2").value))
-            cache.set(self.convertString(self.query_one(f"#{self.filter_name}_search2").value),latestr,constants.RESPONSE_EXPIRY)
-            if compare>latestr:
+            compare=arrow.get(self.convertString(val))
+            late=arrow.get(self.convertString(self.query_one("#maxDate").value))
+            if compare>late:
                     return False
             return True
             
         def convertString(self,val):
-            match=re.search("[0-9-/]+",val)
+            match=re.search("[0-9-/\.]+",val)
             if not match:
                 return ""
             return match.group(0)
@@ -714,4 +711,4 @@ class InputApp(App):
 
         if len(table.rows)==0:
             table.add_row("All Items Filtered")
-
+        table.cursor_coordinate=Coordinate(0,0)
