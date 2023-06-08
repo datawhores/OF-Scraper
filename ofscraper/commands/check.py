@@ -700,7 +700,8 @@ class InputApp(App):
         elif self.label==label and not self.reverse:
             self.reverse=True
 
-        
+        elif self.label==label and self.reverse:
+            self.reverse=False
 
     def on_mount(self) -> None:
         self._lastclick=arrow.get()
