@@ -171,7 +171,7 @@ def process_areas(headers, ele, model_id) -> list:
     stories_dicts=[]
     purchased_dict=[]
     pinned_post_dict=[]
-    profile_dict=[]
+    profile_dicts=[]
 
     username=ele['name']
   

@@ -388,6 +388,16 @@ Enter 0 for no limit
             'choices':list(map(lambda x:Choice(name=x,value=x, enabled=x.capitalize() in set(config.get_filter(config_))),constants.FILTER_DEFAULT)),
              "validate":prompt_functions.emptyListValidator()
         },
+        {
+            'type': 'number',
+            'name': 'threads',
+            "message":"Number of Download Theads: ",
+            'min_allowed':1,
+            'max_allowed':10,
+             "validate":EmptyInputValidator(),
+             'long_instruction':"Value can be 1-10",
+             'default':config.get_threads(config_),
+        },
 
         {
             'type': 'filepath',

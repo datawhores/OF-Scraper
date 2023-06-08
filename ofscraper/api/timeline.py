@@ -29,13 +29,14 @@ import ofscraper.constants as constants
 from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
+import ofscraper.utils.config as config_
 
 from diskcache import Cache
 cache = Cache(getcachepath())
 log=logging.getLogger(__package__)
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE) 
+sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
     global tasks

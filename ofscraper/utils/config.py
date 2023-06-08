@@ -74,6 +74,7 @@ def get_current_config_schema(config:dict=None) -> dict:
             'date': get_date(config),
             "metadata": get_metadata(config),
             "filter":get_filter(config),
+            "threads":get_threads(config),
             "mp4decrypt":get_mp4decrypt(config),
             "ffmpeg":get_ffmpeg(config),
              "discord":get_discord(config),
@@ -220,6 +221,10 @@ def get_metadata(config=None):
     if config==None:
         return constants.METADATA_DEFAULT      
     return config.get('metadata', constants.METADATA_DEFAULT)
+def get_threads(config=None):
+    if config==None:
+        return constants.MP4DECRYPT_DEFAULT    
+    return int(config.get('threads', constants.THREADS_DEFAULT) or constants.THREADS_DEFAULT)
 
 def get_mp4decrypt(config=None):
     if config==None:
