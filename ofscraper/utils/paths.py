@@ -8,8 +8,8 @@ import re
 import platform
 import subprocess
 import logging
-from rich.console import Console
 import arrow
+from InquirerPy.utils import patched_print
 import ofscraper.constants as constants
 import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
@@ -112,31 +112,45 @@ def _linux_trunicateHelper(path):
 
 
 def mp4decryptchecker(x):
+   return mp4decryptpathcheck(x) and mp4decryptexecutecheck(x)
+
+def mp4decryptpathcheck(x):
     if not pathlib.Path(x).is_file():
-        log.info("path to mp4decrypt is not valid")
+        patched_print("path to mp4decrypt is not valid")
         return False
+    return True
+def mp4decryptexecutecheck(x):
     try:
         t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if re.search("mp4decrypt",t.stdout.decode())!=None or  re.search("mp4decrypt",t.stderr.decode())!=None:
             return True
-        log.info("issue executing path as mp4decrypt")
+        patched_print("issue executing path as mp4decrypt")
     except Exception as E:
-        log.debug(E)
-        console.print(traceback.format_exc())
+        patched_print(E)
+        patched_print(traceback.format_exc())
         return False
+
+
 def ffmpegchecker(x):
+    return ffmpegexecutecheck(x) and ffmpegpathcheck(x)
+
+def ffmpegpathcheck(x):
     if not pathlib.Path(x).is_file():
-        log.info("path to ffmpeg is not valid")
+        patched_print("path to ffmpeg is not valid")
         return False
+    return True 
+
+def ffmpegexecutecheck(x):
     try:
         t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if re.search("ffmpeg",t.stdout.decode())!=None or  re.search("ffmpeg",t.stderr.decode())!=None:
             return True
-        log.info("issue executing path as ffmpeg")
+        patched_print("issue executing path as ffmpeg")
     except Exception as E:
-        log.debug(E)
-        console.print(traceback.format_exc())
-        return False   
+        patched_print(E)
+        patched_print(traceback.format_exc())
+        return False  
+   
 def getlogpath():
     path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
     createDir(path.parent)

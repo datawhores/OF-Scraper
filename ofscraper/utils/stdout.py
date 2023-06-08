@@ -17,11 +17,10 @@ def lowstdout():
         yield
         None
 
-# @contextlib.contextmanager
-# def nostdout(level):
-#     if logging.getLogger("ofscraper").handlers[1].level>constants.LOW_LOG_LEVEL:
-#         save_stdout = sys.stdout
-#         sys.stdout = io.BytesIO()
-#         yield
-#         sys.stdout = save_stdout
-        
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    sys.stdout = io.BytesIO()
+    yield
+    sys.stdout = save_stdout
+    

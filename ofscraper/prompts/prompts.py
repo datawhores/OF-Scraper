@@ -20,7 +20,7 @@ from InquirerPy import get_style
 from InquirerPy.validator import EmptyInputValidator,PathValidator
 import ofscraper.constants as constants
 import ofscraper.prompts.prompt_strings as prompt_strings
-import ofscraper.prompts.prompt_functions as prompt_functions
+import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
 
@@ -61,7 +61,7 @@ def areas_prompt() -> list:
             'qmark': '[?]',
             'name': name,
             'message': 'Which area(s) would you like to scrape? (Press ENTER to continue)',
-             "validate":prompt_functions.emptyListValidator(),
+             "validate":prompt_validators.emptyListValidator(),
             'choices': [
                 Choice('Timeline'),
                 Choice('Pinned'),
@@ -175,7 +175,7 @@ def user_agent_prompt(current):
             'message':'Enter User_Agent from browser',
             'default':current,
             'validate':EmptyInputValidator(),
-            'filter':lambda x:prompt_functions.cleanTextInput(x)
+            'filter':lambda x:prompt_validators.cleanTextInput(x)
         }
     ]
     return  prompt(questions)[0]
@@ -187,7 +187,7 @@ def xbc_prompt():
             'message':'Enter x-bc request header',
             'instruction':f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/datawhores/ofscraper\n\n"
             ,'validate':EmptyInputValidator(),
-            'filter':lambda x:prompt_functions.cleanTextInput(x)
+            'filter':lambda x:prompt_validators.cleanTextInput(x)
         }
     ]
     return  prompt(questions)[0]
@@ -200,8 +200,8 @@ def auth_full_paste():
         {
             'type': 'input',
             'message':'Paste Text from Extension',
-            "validate": prompt_functions.jsonValidator(),
-            "filter":prompt_functions.jsonloader,
+            "validate": prompt_validators.jsonValidator(),
+            "filter":prompt_validators.jsonloader,
              "instruction":\
 """
 Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
@@ -274,7 +274,7 @@ def create_profiles_prompt() -> str:
 What would you like to name your new profile?
 only letters, numbers, and underscores are allowed
 """,
-            'validator':prompt_functions.namevalitator()
+            'validator':prompt_validators.namevalitator()
 
         }
     ]
@@ -292,7 +292,7 @@ def get_profile_prompt(profiles: list) -> str:
             'name': name,
             'message': 'Select Profile',
             'choices':profiles
-            ,"validate":prompt_functions.emptyListValidator()
+            ,"validate":prompt_validators.emptyListValidator()
         }
     ]
     answer = prompt(questions)
@@ -308,7 +308,7 @@ def config_prompt(config_) -> dict:
             'name': 'main_profile',
             'message': 'What would you like your main profile to be?',
             'default': config.get_main_profile(config_),
-            "validate":lambda x:prompt_functions.emptyListValidator() and  isinstance(x[0],str)
+            "validate":EmptyInputValidator()
         },
         {
             'type': 'filepath',
@@ -316,8 +316,8 @@ def config_prompt(config_) -> dict:
             'message':"save_location: ",
             'long_instruction': 'Where would you like to set as the root save downloaded directory?',
             'default':config.get_save_location(config_),
-            "filter":lambda x:prompt_functions.cleanTextInput(x),
-            "validate": lambda x:pathlib.Path(x).is_dir() and PathValidator()
+            "filter":lambda x:prompt_validators.cleanTextInput(x),
+            "validate": PathValidator(is_dir=True)
         },
         {
             'type': 'number',
@@ -339,14 +339,14 @@ Enter 0 for no limit
             'message':"dir_format: ",
             'long_instruction': 'What format do you want for download directories',
             'default': config.get_dirformat(config_),
-             "validate":prompt_functions.dirformatvalidator()
+             "validate":prompt_validators.dirformatvalidator()
         },
               {
             'type': 'input',
             'name': 'file_format',
             'message': 'What format do you want for downloaded files',
             'default':config.get_fileformat(config_),
-             "validate":prompt_functions.fileformatvalidator()
+             "validate":prompt_validators.fileformatvalidator()
         },
                      {
             'type': 'number',
@@ -371,7 +371,7 @@ Enter 0 for no limit
             'message': 'date: ',
             "long_instruction":"Enter Date format",
             'default': config.get_date(config_),
-             "validate":prompt_functions.dateplaceholdervalidator()
+             "validate":prompt_validators.dateplaceholdervalidator()
         },
         {
             'type': 'input',
@@ -379,14 +379,14 @@ Enter 0 for no limit
             "message":"metadata: ",
             'long_instruction': 'Where should metadata files be saved',
             'default':config.get_metadata(config_),
-             "validate":prompt_functions.metadatavalidator()
+             "validate":prompt_validators.metadatavalidator()
         },
         {
             'type': 'checkbox',
             'name': 'filter',
             "message":"filter: ",
             'choices':list(map(lambda x:Choice(name=x,value=x, enabled=x.capitalize() in set(config.get_filter(config_))),constants.FILTER_DEFAULT)),
-             "validate":prompt_functions.emptyListValidator()
+             "validate":prompt_validators.emptyListValidator()
         },
         {
             'type': 'number',
@@ -403,7 +403,7 @@ Enter 0 for no limit
             'type': 'filepath',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":PathValidator() and  EmptyInputValidator(),
+             "validate":prompt_validators.MultiValidator(EmptyInputValidator(),prompt_validators.mp4decryptpathvalidator(),prompt_validators.mp4decryptexecutevalidator()),
             "default":config.get_mp4decrypt(config_),
             "long_instruction":             """
 Certain content requires decryption to process please provide the full path to mp4decrypt
@@ -414,7 +414,7 @@ Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in 
                         'type': 'filepath',
             'name': 'ffmpeg',
             "message":"ffmpeg path: ",
-             "validate":PathValidator() and  EmptyInputValidator(),
+             "validate":prompt_validators.MultiValidator(EmptyInputValidator(),prompt_validators.ffmpegpathvalidator(),prompt_validators.ffmpegexecutevalidator()),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to ffmpeg
@@ -428,7 +428,7 @@ Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo
             'type': 'input',
             'name': 'discord',
             "message":"discord webhook: ",
-             "validate":prompt_functions.DiscordValidator(),
+             "validate":prompt_validators.DiscordValidator(),
              "default":config.get_discord(config_)
         },
   
@@ -548,7 +548,7 @@ def mp4_prompt(config_):
             'type': 'filepath',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":PathValidator() and  EmptyInputValidator(),
+             "validate":prompt_validators.MultiValidator(EmptyInputValidator(),prompt_validators.mp4decryptpathvalidator(),prompt_validators.mp4decryptexecutevalidator()),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to mp4decrypt
@@ -569,7 +569,7 @@ def ffmpeg_prompt(config_):
             'type': 'filepath',
             'name': 'ffmpeg',
             "message":"ffmpeg path: ",
-             "validate":PathValidator() and  EmptyInputValidator(),
+             "validate":prompt_validators.MultiValidator(EmptyInputValidator(),prompt_validators.ffmpegpathvalidator(),prompt_validators.ffmpegexecutevalidator()),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to ffmpeg
@@ -669,7 +669,7 @@ def model_selector(models,selected=None) -> bool:
         choices=choices,
         transformer=lambda result:",".join(map(lambda x:x.split(" ")[0],result)),
         multiselect=True,
-        validate=prompt_functions.emptyListValidator(),
+        validate=prompt_validators.emptyListValidator(),
         prompt='Filter: ',
         marker="\u25c9 ",
         marker_pl="\u25cb ",

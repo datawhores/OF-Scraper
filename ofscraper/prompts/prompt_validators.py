@@ -8,6 +8,30 @@ import pathlib
 import arrow
 import textwrap
 import ofscraper.utils.paths as paths
+import ofscraper.utils.stdout as stdout
+
+
+
+class MultiValidator(Validator):
+    """:Runs Multiple Validators Since Inquirerpy does seem to support this functionality natively
+
+    Args:
+        *args:List of validator objects
+    
+    """
+
+    def __init__(
+        self,
+        *args):
+        self.inputs=args
+
+    def validate(self,document) -> None:
+       for input in self.inputs:
+            try:
+                input.validate(document)
+            except Exception as E:
+                raise E
+                
 def emptyListValidator():
     def callable(x):
         return len(x)>0
@@ -124,34 +148,63 @@ def dateplaceholdervalidator():
     )
 
 
-# def mp4decryptvalidator():
-#     def callable(x):
-#        return paths.mp4decryptchecker(x)
+def mp4decryptpathvalidator():
+    def callable(x):
+       return paths.mp4decryptpathcheck(x)
             
-#     return Validator.from_callable(
-#                 callable,
-# textwrap.dedent(f"""
-# Filepath is invalid or not detected as mp4decrypt
-# """).strip()
+    return Validator.from_callable(
+                callable,
+textwrap.dedent(f"""
+Path to mp4decrypt is not valid filepath or does not exists
+""").strip()
                 
-#                 ,
-#                 move_cursor_to_end=True,
-#             )
+                ,
+                move_cursor_to_end=True,
+            )
 
-# def ffmpegvalidator():
-#     def callable(x):
-#        return paths.ffmpegchecker(x)
+
+def mp4decryptexecutevalidator():
+    def callable(x):
+       return paths.mp4decryptexecutecheck(x)
             
-#     return Validator.from_callable(
-#                 callable,
-# textwrap.dedent(f"""
-# Filepath is invalid or not detected as ffmpeg
-# """).strip()
+    return Validator.from_callable(
+                callable,
+textwrap.dedent(f"""
+Path is valid but the given path could not be verified to be mp4decrypt
+""").strip()
                 
-#                 ,
-#                 move_cursor_to_end=True,
-#             )
+                ,
+                move_cursor_to_end=True,
+            )
 
+def ffmpegpathvalidator():
+    def callable(x):
+       return paths.ffmpegpathcheck(x)
+            
+    return Validator.from_callable(
+                callable,
+textwrap.dedent(f"""
+Path to ffmpeg is not valid filepath or does not exists
+""").strip()
+                
+                ,
+                move_cursor_to_end=True,
+            )
+
+
+def ffmpegexecutevalidator():
+    def callable(x):
+       return paths.ffmpegexecutecheck(x)
+            
+    return Validator.from_callable(
+                callable,
+textwrap.dedent(f"""
+Path is valid but the given path could not be verified to be ffmpeg
+""").strip()
+                
+                ,
+                move_cursor_to_end=True,
+)
 def metadatavalidator():
     def callable(x):
         try:
