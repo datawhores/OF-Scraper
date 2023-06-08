@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from pathlib import Path
+import traceback
 import pathlib
 import os
 import sys
@@ -14,8 +15,9 @@ import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.paths as paths_
+import ofscraper.utils.console as console_
 
-console=Console()
+console=console_.shared_console
 homeDir=pathlib.Path.home()
 log=logging.getLogger(__package__)
 
@@ -111,21 +113,29 @@ def _linux_trunicateHelper(path):
 
 def mp4decryptchecker(x):
     if not pathlib.Path(x).is_file():
+        log.info("mp4decrypt not found")
         return False
     try:
         t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if re.search("mp4decrypt",t.stdout.decode())!=None or  re.search("mp4decrypt",t.stderr.decode())!=None:
             return True
-    except:
+        log.info("issue executing mp4decrypt path")
+    except Exception as E:
+        log.debug(E)
+        console.print(traceback.format_exc())
         return False
 def ffmpegchecker(x):
     if not pathlib.Path(x).is_file():
+        log.info("ffmpeg not found")
         return False
     try:
         t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if re.search("ffmpeg",t.stdout.decode())!=None or  re.search("ffmpeg",t.stderr.decode())!=None:
             return True
-    except:
+        log.info("issue executing ffmpeg path")
+    except Exception as E:
+        log.debug(E)
+        console.print(traceback.format_exc())
         return False   
 def getlogpath():
     path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'

@@ -216,7 +216,7 @@ class StringField(Horizontal):
         def validate(self,val):
              if self.query_one(Input).value=="" or self.query_one(Input).value==None:
                  return True
-             elif self.query_one(Checkbox).value and re.fullmatch(self.query_one(Input).value,str(val),(re.IGNORECASE if self.query_one(Input).value.islower() else 0)):
+             elif self.query_one(Checkbox).value and re.fullmatch(self.query_one(Input).value,str(val),(re.IGNORECASE if self.query_one(Input).islower() else 0)):
                     return True
              elif not self.query_one(Checkbox).value and re.search(self.query_one(Input).value,str(val),(re.IGNORECASE if self.query_one(Input).value.islower() else 0)):
                     return True
