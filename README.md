@@ -4,6 +4,7 @@ Please do this to avoid duplicate folders
 
 
 
+# Intro
 
 A fork of onlyfans-scraper. It has been optimized to make it more feature complete with digitalcriminal's onlyfans script.
 A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
