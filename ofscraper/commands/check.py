@@ -362,7 +362,6 @@ class TimeField(Horizontal):
             for ele in self.query(self.IntegerInput):
                 ele.value=""
         def convertString(self,val):
-            
             if val=="N/A":
                 return 0
             if isinstance(val,int):
@@ -586,6 +585,11 @@ class InputApp(App):
             self.update_input(row_name,event.value.plain)
             self.set_filtered_rows()
             self.make_table()
+        # if event.key=="enter" and arrow.get().float_timestamp-self._lastclick.float_timestamp>3:
+        #     self._lastclick=arrow.get()
+        #     self.set_filtered_rows()
+        #     self.make_table()
+    
 
             
 
@@ -628,13 +632,79 @@ class InputApp(App):
         elif event.button.id=="reset":
             self.set_filtered_rows(reset=True)
             self.reset_all_inputs()
+            self.set_reverse(init=True)
+            self.make_table()
+    def on_data_table_header_selected(self,event):
+
+        #set reverse
+        #use native python sorting until textual has key support
+        self.set_reverse(label=event.label.plain)
+        if event.label.plain=="Number":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[0],reverse=self.reverse)
+            self.make_table()
+        elif event.label.plain=="UserName":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[1],reverse=self.reverse)
+            self.make_table()
+        elif event.label.plain=="Downloaded":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[2]==True else 0,reverse=self.reverse)
+            self.make_table()
+        
+        elif event.label.plain=="Unlocked":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[3]==True else 0,reverse=self.reverse)
+            self.make_table()
+        elif event.label.plain=="Double Purchase":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[4]==True else 0,reverse=self.reverse)
+            self.make_table()          
+        elif event.label.plain=="Length":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[5] if x[5]!="N/A" else 0,reverse=self.reverse)
+            self.make_table()          
+        elif event.label.plain=="Mediatype":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[6],reverse=self.reverse)
+            self.make_table() 
+        elif event.label.plain=="Post Date":
+            helperNode=self._query_one("$Post_Date")
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:helperNode.convertString(x[7]) if x[7]!="N/A" else 0,reverse=self.reverse)
+            self.make_table() 
+        elif event.label.plain=="Post Media Count":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[8],reverse=self.reverse)
             self.make_table()
 
-            
-      
-    
+        elif event.label.plain=="Responsetype":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[9],reverse=self.reverse)
+            self.make_table()
+        elif event.label.plain=="Price":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:int(float(x[10])) if x[10]!="Free" else 0,reverse=self.reverse)
+            self.make_table() 
+        
+        elif event.label.plain=="Post ID":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[11],reverse=self.reverse)
+            self.make_table() 
+        elif event.label.plain=="Media ID":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[12],reverse=self.reverse)
+            self.make_table() 
+        elif event.label.plain=="Text":
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[13],reverse=self.reverse)
+            self.make_table() 
+
+    def set_reverse(self,label=None,init=False):
+        if init:
+            self.reverse=None
+            self.label=None
+        if not self.label:
+            self.label=label
+            self.reverse=False
+        elif label!=self.label:
+            self.label=label
+            self.reverse=False
+
+        elif self.label==label and not self.reverse:
+            self.reverse=True
+
+        
 
     def on_mount(self) -> None:
+        self._lastclick=arrow.get()
+        self.set_reverse(init=True)
         self.make_table()
         self.query_one("#reset").styles.align = ("center", "middle")
         self.query_one(VerticalScroll).styles.height="35vh"
