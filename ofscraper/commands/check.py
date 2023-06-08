@@ -656,13 +656,14 @@ class InputApp(App):
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:1 if x[4]==True else 0,reverse=self.reverse)
             self.make_table()          
         elif event.label.plain=="Length":
-            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[5] if x[5]!="N/A" else 0,reverse=self.reverse)
+            helperNode=self.query_one("#Length")
+            self._filtered_rows=sorted(self._filtered_rows,key=lambda x:helperNode.convertString(x[5]) if x[5]!="N/A" else 0,reverse=self.reverse)
             self.make_table()          
         elif event.label.plain=="Mediatype":
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:x[6],reverse=self.reverse)
             self.make_table() 
         elif event.label.plain=="Post Date":
-            helperNode=self._query_one("$Post_Date")
+            helperNode=self.query_one("#Post_Date")
             self._filtered_rows=sorted(self._filtered_rows,key=lambda x:helperNode.convertString(x[7]) if x[7]!="N/A" else 0,reverse=self.reverse)
             self.make_table() 
         elif event.label.plain=="Post Media Count":
