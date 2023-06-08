@@ -393,7 +393,7 @@ Enter 0 for no limit
             'type': 'filepath',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":PathValidator() and  EmptyInputValidator() and prompt_functions.mp4decryptvalidator(),
+             "validate":PathValidator() and  EmptyInputValidator(),
             "default":config.get_mp4decrypt(config_),
             "long_instruction":             """
 Certain content requires decryption to process please provide the full path to mp4decrypt
@@ -404,7 +404,7 @@ Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in 
                         'type': 'filepath',
             'name': 'ffmpeg',
             "message":"ffmpeg path: ",
-             "validate":PathValidator() and  EmptyInputValidator() and prompt_functions.ffmpegvalidator(),
+             "validate":PathValidator() and  EmptyInputValidator(),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to ffmpeg
@@ -538,7 +538,7 @@ def mp4_prompt(config_):
             'type': 'filepath',
             'name': 'mp4decrypt',
             "message":"mp4decrypt path: ",
-             "validate":PathValidator() and  EmptyInputValidator() and prompt_functions.mp4decryptvalidator(),
+             "validate":PathValidator() and  EmptyInputValidator(),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to mp4decrypt
@@ -559,7 +559,7 @@ def ffmpeg_prompt(config_):
             'type': 'filepath',
             'name': 'ffmpeg',
             "message":"ffmpeg path: ",
-             "validate":PathValidator() and  EmptyInputValidator() and prompt_functions.ffmpegvalidator(),
+             "validate":PathValidator() and  EmptyInputValidator(),
              "long_instruction": 
              """
 Certain content requires decryption to process please provide the full path to ffmpeg

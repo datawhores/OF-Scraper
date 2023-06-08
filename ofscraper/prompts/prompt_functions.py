@@ -124,33 +124,33 @@ def dateplaceholdervalidator():
     )
 
 
-def mp4decryptvalidator():
-    def callable(x):
-       return paths.mp4decryptchecker(x)
+# def mp4decryptvalidator():
+#     def callable(x):
+#        return paths.mp4decryptchecker(x)
             
-    return Validator.from_callable(
-                callable,
-textwrap.dedent(f"""
-Filepath is invalid or not detected as mp4decrypt
-""").strip()
+#     return Validator.from_callable(
+#                 callable,
+# textwrap.dedent(f"""
+# Filepath is invalid or not detected as mp4decrypt
+# """).strip()
                 
-                ,
-                move_cursor_to_end=True,
-            )
+#                 ,
+#                 move_cursor_to_end=True,
+#             )
 
-def ffmpegvalidator():
-    def callable(x):
-       return paths.ffmpegchecker(x)
+# def ffmpegvalidator():
+#     def callable(x):
+#        return paths.ffmpegchecker(x)
             
-    return Validator.from_callable(
-                callable,
-textwrap.dedent(f"""
-Filepath is invalid or not detected as ffmpeg
-""").strip()
+#     return Validator.from_callable(
+#                 callable,
+# textwrap.dedent(f"""
+# Filepath is invalid or not detected as ffmpeg
+# """).strip()
                 
-                ,
-                move_cursor_to_end=True,
-            )
+#                 ,
+#                 move_cursor_to_end=True,
+#             )
 
 def metadatavalidator():
     def callable(x):

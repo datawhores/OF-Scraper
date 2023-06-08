@@ -11,14 +11,14 @@ r"""
 import json
 import pathlib
 import logging
-from rich.console import Console
 import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts 
 import ofscraper.utils.binaries as binaries
 import ofscraper.utils.args as args_
 import ofscraper.utils.paths as paths_
+import ofscraper.utils.console as console_
 
-console=Console()
+console=console_.shared_console
 log=logging.getLogger(__package__)
 
 def read_config():
@@ -159,7 +159,7 @@ def update_mp4decrypt():
     if prompts.auto_download_mp4_decrypt()=="Yes":
         config["config"]["mp4decrypt"]=binaries.mp4decrypt_download()
     else:
-        config["config"]["mp4decrypt"]=prompts.mp4_prompt(config)
+        config["config"]["mp4decrypt"]=prompts.mp4_prompt(config["config"])
     p = paths_.get_config_path() 
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))
@@ -169,7 +169,7 @@ def update_ffmpeg():
     if prompts.auto_download_ffmpeg()=="Yes":
         config["config"]["ffmpeg"]=binaries.ffmpeg_download()
     else:
-        config["config"]["ffmpeg"]=prompts.ffmpeg_prompt(config)
+        config["config"]["ffmpeg"]=prompts.ffmpeg_prompt((config["config"]))
     p = paths_.get_config_path() 
     with open(p, 'w') as f:
         f.write(json.dumps(config, indent=4))

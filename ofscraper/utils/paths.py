@@ -113,26 +113,26 @@ def _linux_trunicateHelper(path):
 
 def mp4decryptchecker(x):
     if not pathlib.Path(x).is_file():
-        log.info("mp4decrypt not found")
+        log.info("path to mp4decrypt is not valid")
         return False
     try:
         t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if re.search("mp4decrypt",t.stdout.decode())!=None or  re.search("mp4decrypt",t.stderr.decode())!=None:
             return True
-        log.info("issue executing mp4decrypt path")
+        log.info("issue executing path as mp4decrypt")
     except Exception as E:
         log.debug(E)
         console.print(traceback.format_exc())
         return False
 def ffmpegchecker(x):
     if not pathlib.Path(x).is_file():
-        log.info("ffmpeg not found")
+        log.info("path to ffmpeg is not valid")
         return False
     try:
         t=subprocess.run([x],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if re.search("ffmpeg",t.stdout.decode())!=None or  re.search("ffmpeg",t.stderr.decode())!=None:
             return True
-        log.info("issue executing ffmpeg path")
+        log.info("issue executing path as ffmpeg")
     except Exception as E:
         log.debug(E)
         console.print(traceback.format_exc())
