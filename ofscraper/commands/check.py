@@ -184,10 +184,8 @@ def add_rows(media,downloaded,username):
     mediadict={}
     [mediadict.update({ele.id:mediadict.get(ele.id,[])+ [ele]}) for ele in media]
     out=[]
-
-    for i in range(len(media)-1,-1,-1):
-        count=i
-        ele=media[i]
+    media=sorted(media,key=lambda x:arrow.get(x.date),reverse=True)
+    for count,ele in enumerate(media):  
         out.append((count+1,username,ele.id in downloaded,unlocked_helper(ele,mediaset),duplicated_helper(ele,mediadict,downloaded),ele.length_,ele.mediatype,datehelper(ele.postdate_),len(ele._post.post_media),ele.responsetype ,"Free" if ele._post.price==0 else "{:.2f}".format(ele._post.price),  ele.postid,ele.id,texthelper(ele.text)))
     return out
 
