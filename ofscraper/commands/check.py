@@ -5,7 +5,7 @@ import textwrap
 import httpx
 import arrow
 from textual.app import App, ComposeResult
-from textual.widgets import Input,DataTable, Button,Checkbox
+from textual.widgets import Input,DataTable, Button,Checkbox,Label
 from rich.text import Text
 from textual.containers import Horizontal, VerticalScroll
 from textual import events
@@ -153,6 +153,8 @@ def app_run_helper(user_dict):
 
 def get_first_row():
     return [ROW_NAMES]
+
+
 def texthelper(text):
     text=textwrap.dedent(text)
     text=re.sub(" +$","",text)
@@ -196,12 +198,15 @@ class StringField(Horizontal):
             self.filter_name = name
         def compose(self):
             yield Input(placeholder=f"{self.filter_name.capitalize()} Search",id=f"{self.filter_name}_search")
-            yield Checkbox(f"Match FullString",False,id="fullstring_search")
+            yield Checkbox(f"FullString",False,id="fullstring_search")
         def on_mount(self): 
             self.styles.height="auto"
             self.styles.width="2fr"
             self.query_one(Input).styles.width="4fr"
             self.query_one(Checkbox).styles.width="1fr"
+        def empty(self):
+            return self.query_one(Input).value==""
+
 
         def update_table_val(self,val):
             self.query_one(Input).value=val
@@ -229,6 +234,9 @@ class NumField(Horizontal):
         def on_mount(self):
             self.styles.height="auto"
             self.styles.width="1fr"
+        def empty(self):
+            return self.query_one(self.IntegerInput).value==""
+
         def update_table_val(self,val):
             self.query_one(self.IntegerInput).value=val
         def reset(self):
@@ -270,7 +278,8 @@ class PriceField(Horizontal):
         def compose(self):
             yield self.IntegerInput(placeholder="Min Price",id=f"{self.filter_name}_search")
             yield self.IntegerInput(placeholder="Max Price",id=f"{self.filter_name}_search2")
-
+        def empty(self):
+            return self.query(self.IntegerInput)[0].value=="" and self.query(self.IntegerInput)[1].value==""
         def on_mount(self):
             self.styles.height="auto"
             self.styles.width="1fr"
@@ -279,15 +288,22 @@ class PriceField(Horizontal):
         def update_table_val(self,val):
             if val.lower()=="free":
                 val="0"
-            self.query_one(self.IntegerInput).value=val            
+            for ele in self.query(self.IntegerInput):
+                ele.value=val            
         def reset(self):
             self.query_one(self.IntegerInput).value=""
         def validate(self,val):
-             if self.query_one(self.IntegerInput).value=="":
+             minval=self.query_one(f"#{self.filter_name}_search").value
+             maxval=self.query_one(f"#{self.filter_name}_search2").value
+             if val.lower()=="free":
+                 val=0
+             if not maxval and not minval :
                  return True
-             if float(val)==float(self.query_one(self.IntegerInput).value):
-                 return True
-             return False            
+             elif minval and float(val)<float(minval):
+                 return False
+             elif maxval and float(val)>float(maxval):
+                 return False
+             return True           
         class IntegerInput(Input):
             def __init__(
                 self,
@@ -311,39 +327,80 @@ class TimeField(Horizontal):
         def __init__(self, name: str) -> None:
             super().__init__(id=name)
             self.filter_name = name
+            self.timeconversions=[60*60,60,1]
         def compose(self):
-            yield self.IntegerInput(placeholder="Min Length",id=f"{self.filter_name}_search")
-            yield self.IntegerInput(placeholder="Max Length",id=f"{self.filter_name}_search2")
+            with Horizontal(id="minLength"):
+                yield Label("MinLength")
+                yield self.IntegerInput(placeholder="Hour")
+                yield self.IntegerInput(placeholder="Min")
+                yield self.IntegerInput(placeholder="Sec")
+            with Horizontal(id="maxLength"):
+                yield Label("MaxLength")
+                yield self.IntegerInput(placeholder="Hour")
+                yield self.IntegerInput(placeholder="Min")
+                yield self.IntegerInput(placeholder="Sec")
 
+        def empty(self):
+            return len( list(filter(lambda x:x.value!="",self.query(self.IntegerInput))))==0
 
         def on_mount(self):
+            for ele in self.query_one("#minLength").query(self.IntegerInput):
+                ele.styles.width="1fr"
+            for ele in self.query_one("#maxLength").query(self.IntegerInput):
+                ele.styles.width="1fr"
             self.styles.height="auto"
-            self.styles.width="1fr"
+            self.styles.width="2fr"
         def update_table_val(self,val):
-            for ele in self.query(self.IntegerInput):
-                ele.value=self.convertString(val)
+            minLenthInputs= list(self.query_one("#minLength").query(self.IntegerInput))
+            maxLenthInputs= list(self.query_one("#maxLength").query(self.IntegerInput))
+            valArray=val.split(":")
+            for pack in zip(maxLenthInputs,minLenthInputs,valArray):
+                pack[0].value=pack[2]
+                pack[1].value=pack[2]
         def reset(self):
             for ele in self.query(self.IntegerInput):
                 ele.value=""
         def convertString(self,val):
+            
             if val=="N/A":
                 return 0
             if isinstance(val,int):
                 return val
             elif val.find(":")!=-1:
-                 a=val.split(":")
-                 return (int(a[0])*60*60)+(int(a[1])*60)+(int(a[2])*1)
+                a=val.split(":")
+                total=sum([(int(a[i] or 0)*self.timeconversions[i]) for i in range(len(a))])
+                return total
+            
             return int(val)
         def validate(self,val):
-             [setattr(ele,"value",self.convertString(ele.value)) for ele in self.query(self.IntegerInput)]
-             val=self.convertString(val)
-             if len(list(filter(lambda x:x.value=="",self.query(self.IntegerInput))))==2:
-                 return True
-             if val<self.query_one(f"#{self.filter_name}_search").value:
-                 return False
-             if val>self.query_one(f"#{self.filter_name}_search2").value:
-                 return False
-             return True            
+            if self.validateAfter(val) and self.validateBefore(val):
+                return True
+            return False
+
+        def validateAfter(self,val):
+            if val=="N/A":
+                return True
+            comparestr=""
+            if len(list(filter(lambda x:x.value!="",self.query_one("#minLength").query(self.IntegerInput))))==0:
+                return True
+            for ele in self.query_one("#minLength").query(self.IntegerInput):
+                comparestr=f"{comparestr}{ele.value or '00'}:"
+            comparestr=comparestr[:-1]
+            if self.convertString(val) < self.convertString(comparestr):
+                return False
+            return True
+        def validateBefore(self,val):
+            if val=="N/A":
+                return True
+            comparestr=""
+            if len(list(filter(lambda x:x.value!="",self.query_one("#maxLength").query(self.IntegerInput))))==0:
+                return True
+            for ele in self.query_one("#maxLength").query(self.IntegerInput):
+                comparestr=f"{comparestr}{ele.value}:"
+            comparestr=comparestr[:-1]
+            if self.convertString(val) >self.convertString(comparestr):
+                return False
+            return True           
         class IntegerInput(Input):
             def __init__(
                 self,
@@ -357,8 +414,11 @@ class TimeField(Horizontal):
 
             def insert_text_at_cursor(self, text: str) -> None:
                 try:
-                    if text!=":":
-                        int(text)
+                    if not text.isdigit():
+                        raise ValueError
+                    if len(self.value)==2:
+                        raise ValueError
+        
                 except ValueError:
                     pass
                 else:
@@ -385,10 +445,12 @@ class BoolField(Horizontal):
             elif val=="False" :
                 self.query_one(f"#{self.filter_name}_search2").value=True
                 self.query_one(f"#{self.filter_name}_search").value=False
+        def empty(self):
+            return self.query(Checkbox)[0].value==False and self.query(Checkbox)[1].value==False
  
      
         def reset(self):
-            for ele in self.query(self.IntegerInput):
+            for ele in self.query(Checkbox):
                 ele.value=True
         def validate(self,val):
              
@@ -410,6 +472,8 @@ class MediaField(Horizontal):
             yield Checkbox("Images",True,id=f"{self.filter_name}_search3")
             self.styles.height="auto"
             self.styles.width="1fr"
+        def empty(self):
+            return self.query(Checkbox)[0].value==False and self.query(Checkbox)[1].value==False and self.query(Checkbox)[2].value==False
         def update_table_val(self,val):
             if val=="audios":
                 self.query_one(f"#{self.filter_name}_search").value=True
@@ -446,6 +510,8 @@ class DateField(Horizontal):
         def compose(self):
             yield Input(placeholder="Earliest Date",id=f"{self.filter_name}_search")
             yield Input(placeholder="Latest Date",id=f"{self.filter_name}_search2")
+        def empty(self):
+            return self.query(Input)[0].value=="" and self.query(Input)[1].value==""
 
 
         def on_mount(self):
@@ -462,19 +528,35 @@ class DateField(Horizontal):
                     ele.value=""     
         def reset(self):
             for ele in self.query(Input):
-                ele.styles.width=""
+                ele.value=""
         def validate(self,val):
-            val=self.convertString(val)
-            if len(list(filter(lambda x:x.value=="",self.query(Input))))==2:
+            if self.validateAfter(val) and self.validateBefore(val):
                 return True
-            try:
-                if arrow.get(val)<arrow.get(self.query_one(f"#{self.filter_name}_search").value):
+            return False
+
+           
+        def validateAfter(self,val):
+            if self.query(Input)[0].value=="":
+                return True
+            compare=cache.get(self.convertString(val)) or arrow.get(self.convertString(val))
+            cache.set(self.convertString(val),compare,constants.RESPONSE_EXPIRY)
+            earlystr=cache.get(self.convertString(self.query_one(f"#{self.filter_name}_search").value)) or arrow.get(self.convertString(self.query_one(f"#{self.filter_name}_search").value))
+            cache.set(self.convertString(self.query_one(f"#{self.filter_name}_search").value),earlystr,constants.RESPONSE_EXPIRY)
+
+            if compare<earlystr:
                     return False
-                if arrow.get(val)>arrow.get(self.query_one(f"#{self.filter_name}_search2").value):
+            return True
+        def validateBefore(self,val):
+            if self.query(Input)[1].value=="":
+                return True
+            compare=cache.get(self.convertString(val)) or arrow.get(val)
+            cache.set(self.convertString(val),compare,constants.RESPONSE_EXPIRY)
+            latestr=cache.get(self.convertString(self.query_one(f"#{self.filter_name}_search2").value)) or arrow.get(self.convertString(self.query_one(f"#{self.filter_name}_search2").value))
+            cache.set(self.convertString(self.query_one(f"#{self.filter_name}_search2").value),latestr,constants.RESPONSE_EXPIRY)
+            if compare>latestr:
                     return False
-                return True
-            except:
-                return True
+            return True
+            
         def convertString(self,val):
             match=re.search("[0-9-/]+",val)
             if not match:
@@ -484,6 +566,7 @@ class DateField(Horizontal):
 
 
                          
+
 
 class InputApp(App):
 
@@ -503,7 +586,7 @@ class InputApp(App):
                 cell_key=cell_key,
                 )
             row_name=self.row_names[event.coordinate[1]]
-            self.update_input(row_name,event.value.plain)        
+            self.update_input(row_name,event.value.plain)
             self.set_filtered_rows()
             self.make_table()
 
@@ -514,7 +597,6 @@ class InputApp(App):
             with Horizontal():
                 for ele in ["Text"]:
                     yield StringField(ele)
-            with Horizontal():
                 for ele in ["Media_ID","Post_ID","Post_Media_Count"]:
                     yield NumField(ele)
             with Horizontal(): 
@@ -558,7 +640,7 @@ class InputApp(App):
     def on_mount(self) -> None:
         self.make_table()
         self.query_one("#reset").styles.align = ("center", "middle")
-        self.query_one(VerticalScroll).styles.height="30vh"
+        self.query_one(VerticalScroll).styles.height="35vh"
         self.query_one(VerticalScroll).styles.dock="top"
         self.query_one(DataTable).styles.height="60vh"
 
@@ -573,20 +655,23 @@ class InputApp(App):
     def set_filtered_rows(self,reset=False):
         if reset==True:
             self._filtered_rows=self.table_data[1:]
-        else:     
-            self._filtered_rows=filter(lambda x:self.row_allowed(x)==True,self.table_data[1:])
+        else:
+            rows=self.table_data[1:]
+            for count,name in enumerate(self.row_names[1:]):
+                try:
+                    targetNode=self.query_one(f"#{name}")
+                    if targetNode.empty():
+                        continue
+                    rows=list(filter(lambda x:targetNode.validate(x[count+1])==True,rows))
+                except:
+                    None
+            self._filtered_rows=rows
+            
 
 
-    def row_allowed(self,row):
-        for count,name in enumerate(self.row_names[1:]):
-            try:
-                targetNode=self.query_one(f"#{name}")
-                if targetNode.validate(row[count+1]):
-                    continue
-                return False
-            except:
-                None
-        return True
+
+
+
 
 
     def update_input(self,row_name,value):

@@ -146,7 +146,7 @@ class Media():
             return f"{self._media['type']}s"
     @property
     def length(self):
-        return self._media.get("duration")
+        return self._media.get("duration") or self._media.get("source",{}).get("duration")
     @property
     def length_(self):
         if not self.length:
