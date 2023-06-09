@@ -30,6 +30,7 @@ from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.utils.config as config_
+import ofscraper.utils.args as args_
 
 from diskcache import Cache
 cache = Cache(getcachepath())
@@ -43,6 +44,8 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
+    if timestamp and (arrow.get(timestamp)<arrow.get(args_.getargs().after) or arrow.get(timestamp)>arrow.get(args_.getargs().before)):
+        return []
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
         timestamp=str(timestamp)
@@ -83,7 +86,6 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     else:
             log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
-            log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
             progress.remove_task(task)
             r.raise_for_status()
     return posts
@@ -113,7 +115,7 @@ async def get_timeline_post(headers,model_id):
         if len(postedAtArray)>min_posts:
             splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
             #use the previous split for timesamp
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0]))))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0])),timestamp=splitArrays[0][0]-10000))
             [tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
             for i in range(1,len(splitArrays)-1)]
             # keeping grabbing until nothign left
@@ -129,7 +131,7 @@ async def get_timeline_post(headers,model_id):
                 page_count=page_count+1
                 overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                 responseArray.extend(result)
-            time.sleep(2)
+            time.sleep(1)
             tasks=list(filter(lambda x:x.done()==False,tasks))
         overall_progress.remove_task(page_task)
     unduped=[]
@@ -142,12 +144,12 @@ async def get_timeline_post(headers,model_id):
         oldtimeset.discard(post["id"])
         unduped.append(post)
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    if len(oldtimeset)==0:
+    if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.set(f"timeline_check_{model_id}",unduped,expire=constants.CHECK_EXPIRY)
 
         cache.close()
-    else:
+    elif len(oldtimeset)>0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"timeline_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
         cache.set(f"timeline_check_{model_id}",[],expire=constants.CHECK_EXPIRY)
 
