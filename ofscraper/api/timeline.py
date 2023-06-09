@@ -44,7 +44,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
-    if timestamp and (arrow.get(timestamp)<arrow.get(args_.getargs().after) or arrow.get(timestamp)>arrow.get(args_.getargs().before)):
+    if timestamp and  (float(timestamp)<arrow.get(args_.getargs().after or 0).float_timestamp or float(timestamp)>arrow.get(args_.getargs().before or arrow.get()).float_timestamp):
         return []
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
@@ -115,7 +115,7 @@ async def get_timeline_post(headers,model_id):
         if len(postedAtArray)>min_posts:
             splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
             #use the previous split for timesamp
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0])),timestamp=splitArrays[0][0]-10000))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0]))))
             [tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
             for i in range(1,len(splitArrays)-1)]
             # keeping grabbing until nothign left
