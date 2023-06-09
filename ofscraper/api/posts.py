@@ -269,7 +269,10 @@ class Media():
 
     @property
     def text_(self):
-        text = self.text or self.filename or arrow.get(self.date).format(config.get_date(config.read_config()))
+        if self.responsetype_!="Profile":
+            text = self.text or self.filename or arrow.get(self.date).format(config.get_date(config.read_config()))
+        elif self.responsetype__=="Profile":
+            text=f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
         if len(text)==0:
             return text
         # this is for removing emojis
@@ -322,7 +325,11 @@ class Media():
 
     @property
     def filename(self):
-        return  re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+        if not self.responsetype=="Profile":
+            return  re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+        else:
+            filename= re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+            return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
 
     @property
     def preview(self):
