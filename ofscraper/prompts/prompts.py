@@ -63,6 +63,7 @@ def areas_prompt() -> list:
             'message': 'Which area(s) would you like to scrape? (Press ENTER to continue)',
              "validate":prompt_validators.emptyListValidator(),
             'choices': [
+                Choice("Profile"),
                 Choice('Timeline'),
                 Choice('Pinned'),
                 Choice('Archived'),
@@ -708,7 +709,9 @@ def model_selectorHelper(count,x):
     subscribed=arrow.get(x['subscribed']).format(format)  if x['subscribed'] else None
     price=x["price"] if x["price"]!=None else "Unknown"
     name=x["name"]
-    return Choice(x,name=f"{count+1}: {name}  renewed={renewed}  subdate={subscribed}  exprdate={expired} subprice={price}")
+    active=x["active"]
+
+    return Choice(x,name=f"{count+1}: {name}  renewed={renewed}  subdate={subscribed}  exprdate={expired} subprice={price} active={active}")
     
 
 
@@ -771,8 +774,8 @@ def modify_sort_prompt(args):
         },
         {
             'type': 'list',
-            'message': "Sort in Ascending Order",
-            'choices':[Choice(True,"Yes"),Choice(False,"No",enabled=True)],
+            'message': "Sort Direction",
+            'choices':[Choice(True,"Ascending"),Choice(False,"Descending",enabled=True)],
             "default":True
 
         },

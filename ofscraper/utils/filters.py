@@ -82,6 +82,6 @@ def post_timed_filter(media):
 def post_user_filter(media):
     userfilter=args.filter
     if not userfilter.islower():
-        return list(filter(lambda x:re.search(userfilter,x.text)!=None,media))
+        return list(filter(lambda x:re.search(userfilter,x.text or "")!=None,media))
     else:
-        return list(filter(lambda x:re.search(userfilter,x.text,re.IGNORECASE)!=None,media))
+        return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)!=None,media))

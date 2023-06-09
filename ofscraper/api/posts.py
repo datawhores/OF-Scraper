@@ -45,9 +45,7 @@ class Post():
     @property
     def text(self):
         if self._responsetype_ == "highlights":
-            return self.post.get("title") or self.date
-        elif self._responsetype_ == "stories": 
-            return arrow.get(self.date).format(config.get_date(config.read_config()))
+            return self.post.get("title") 
         return self._post.get("text")
 
     @property
@@ -271,7 +269,7 @@ class Media():
 
     @property
     def text_(self):
-        text = self.text
+        text = self.text or self.filename or arrow.get(self.date).format(config.get_date(config.read_config()))
         if len(text)==0:
             return text
         # this is for removing emojis
