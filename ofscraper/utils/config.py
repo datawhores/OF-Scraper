@@ -75,9 +75,12 @@ def get_current_config_schema(config:dict=None) -> dict:
             "metadata": get_metadata(config),
             "filter":get_filter(config),
             "threads":get_threads(config),
+                "code-execution":get_allow_code_execution(config),
+
             "mp4decrypt":get_mp4decrypt(config),
             "ffmpeg":get_ffmpeg(config),
              "discord":get_discord(config),
+
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -216,7 +219,10 @@ def get_date(config=None):
     if config==None:
         return constants.DATE_DEFAULT     
     return config.get('date', constants.DATE_DEFAULT)
-
+def get_allow_code_execution(config=None):
+    if config==None:
+        return constants.CODE_EXECUTION_DEFAULT  
+    return config.get('code-execution', constants.CODE_EXECUTION_DEFAULT)
 def get_metadata(config=None):
     if config==None:
         return constants.METADATA_DEFAULT      

@@ -126,3 +126,4 @@ FFMPEG_WINDOWS="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/f
 
 THREADS_DEFAULT=8
 MAX_SEMAPHORE=8
+CODE_EXECUTION_DEFAULT =False

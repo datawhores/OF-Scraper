@@ -398,6 +398,18 @@ Enter 0 for no limit
              'long_instruction':"Value can be 1-10",
              'default':config.get_threads(config_),
         },
+          {
+            'type': 'list',
+            'name':"code-execution",
+            'message': "Enable Code Execution:",
+            'choices':[Choice(True,"Yes"),Choice(False,"No",enabled=True)],
+            "default":config.get_allow_code_execution(config_),
+            "long_instruction":"Be careful if turning this on this only effects file_format,metadata, and dir_format"
+
+
+        },
+
+
 
         {
             'type': 'filepath',

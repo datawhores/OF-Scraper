@@ -48,14 +48,68 @@ def createDir(path):
         log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    formatStr=config_.get_metadata(config_.read_config())
-    return pathlib.Path(formatStr.format(configpath= get_config_path().parent,profile=profiles.get_current_profile(),model_username=username,username=username,model_id=model_id,sitename="Onlyfans",site_name="Onlyfans",first_letter=username[0],save_location=config_.get_save_location(config_.read_config())),"user_data.db")
+    configpath= get_config_path().parent
+    profile=profiles.get_current_profile()
+    model_username=username
+    username=username
+    modelusername=username
+    modelusername=username
+    model_id=model_id
+    sitename="Onlyfans"
+    site_name="Onlyfans"
+    first_letter=username[0]
+    save_location=config_.get_save_location(config_.read_config())
+    if config_.get_allow_code_execution(config_.read_config()):
+        formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
+    else:
+        formatStr=config_.get_metadata(config_.read_config()).format(
+                         profile=profile,
+                         model_username=username,
+                         username=username,
+                         model_id=model_id,
+                         sitename=site_name,
+                         site_name=site_name,
+                         first_letter=first_letter,
+                         save_location=save_location,
+                         configpath=configpath)
+
+
+    formatStr
+    return pathlib.Path(formatStr,"user_data.db")
 
 def getmediadir(ele,username,model_id):
+    sitename="onlyfans"
+    site_name="onlyfans"
+    post_id=ele.postid
+    media_id=ele.id
+    first_letter=username[0].capitalize()
+    mediatype=ele.mediatype.capitalize()
+    value=ele.value.capitalize()
+    date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
+    model_username=username
+    responsetype=ele.responsetype
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
-    downloadDir=config_.get_dirformat(config_.read_config())\
-    .format(post_id=ele.postid,sitename="onlyfans",first_letter=username[0].capitalize(),model_id=model_id,model_username=username,responsetype=ele.responsetype,mediatype=ele.mediatype.capitalize(),value=ele.value.capitalize(),date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config())))
-    return root /downloadDir   
+    if config_.get_allow_code_execution(config_.read_config()):
+        downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
+    else:
+        downloadDir=config_.get_dirformat(config_.read_config())\
+        .format(post_id=post_id,
+                sitename=site_name,
+                site_name=site_name,
+                username=model_username,
+                modeluesrname=model_username,
+                first_letter=first_letter,
+                model_id=model_id,
+                model_username=username,
+                responsetype=responsetype,
+                mediatype=mediatype,
+                date=date,
+                value=value)
+        
+    return root /downloadDir  
+
+
+
 
 
 
