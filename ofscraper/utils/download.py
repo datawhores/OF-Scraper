@@ -361,7 +361,7 @@ def createfilename(ele,username,model_id,ext):
     model_username=username
     responsetype=ele.responsetype
 
-    if ele.responsetype =="profile":
+    if ele.responsetype_ =="profile":
         return f"{filename}.{ext}"
     elif config_.get_allow_code_execution(config_.read_config()):
         return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))

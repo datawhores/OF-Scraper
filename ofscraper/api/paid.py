@@ -107,8 +107,9 @@ async def scrape_paid(username,job_progress,offset=0):
         job_progress.remove_task(task)
 
     else:
-        log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
-        log.debug(f"[bold]message response:[/bold] {r.content.decode()}")
+        log.debug(f"[bold]paid request status code:[/bold]{r.status_code}")
+        log.debug(f"[bold]paid response:[/bold] {r.content.decode()}")
+        log.debug(f"[bold]paid headers:[/bold] {r.headers}")
         job_progress.remove_task(task)
         r.raise_for_status()
     return media

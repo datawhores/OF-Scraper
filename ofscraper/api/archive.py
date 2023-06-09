@@ -83,6 +83,7 @@ async def scrape_archived_posts(headers, model_id,job_progress, timestamp=0) -> 
     else:
         log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
         log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
+        log.debug(f"[bold]archived headers:[/bold] {r.headers}")
         job_progress.remove_task(task)
         r.raise_for_status()
     return posts

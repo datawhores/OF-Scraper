@@ -155,6 +155,8 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
     else:
         log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
         log.debug(f"[bold]message response:[/bold] {r.content.decode()}")
+        log.debug(f"[bold]message headers:[/bold] {r.headers}")
+
         progress.remove_task(task)
         r.raise_for_status()
     return messages

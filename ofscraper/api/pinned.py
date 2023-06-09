@@ -48,6 +48,7 @@ async def scrape_pinned_posts(headers, model_id,job_progress,timestamp=0) -> lis
     else:
         log.debug(f"[bold]pinned request status code:[/bold]{r.status_code}")
         log.debug(f"[bold]pinned response:[/bold] {r.content.decode()}")
+        log.debug(f"[bold]pinned headers:[/bold] {r.headers}")
         job_progress.remove_task(task)
         r.raise_for_status()
     return posts

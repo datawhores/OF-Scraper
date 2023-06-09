@@ -271,7 +271,7 @@ class Media():
     def text_(self):
         if self.responsetype_!="Profile":
             text = self.text or self.filename or arrow.get(self.date).format(config.get_date(config.read_config()))
-        elif self.responsetype__=="Profile":
+        elif self.responsetype_=="Profile":
             text=f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
         if len(text)==0:
             return text
