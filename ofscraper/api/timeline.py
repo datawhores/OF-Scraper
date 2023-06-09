@@ -44,7 +44,7 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
-    if timestamp and  (float(timestamp)<arrow.get(args_.getargs().after or 0).float_timestamp or float(timestamp)>arrow.get(args_.getargs().before or arrow.get()).float_timestamp):
+    if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.get()).float_timestamp):
         return []
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
@@ -109,19 +109,20 @@ async def get_timeline_post(headers,model_id):
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
+        filteredArray=list(filter(lambda x:x>=(args_.getargs().after or arrow.get(0)).float_timestamp,postedAtArray))
         
     
        
-        if len(postedAtArray)>min_posts:
-            splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
+        if len(filteredArray)>min_posts:
+            splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
             #use the previous split for timesamp
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0]))))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= splitArrays[0][0]-20000)))
             [tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
             for i in range(1,len(splitArrays)-1)]
             # keeping grabbing until nothign left
             tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-2][-1])))
         else:
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress)))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=(args_.getargs().after).float_timestamp or 0)))
     
 
         page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
@@ -147,7 +148,6 @@ async def get_timeline_post(headers,model_id):
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.set(f"timeline_check_{model_id}",unduped,expire=constants.CHECK_EXPIRY)
-
         cache.close()
     elif len(oldtimeset)>0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"timeline_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
