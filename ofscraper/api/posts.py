@@ -346,15 +346,15 @@ class Media():
     def media(self):
         return self._media
     @property
-    def parse_mpd(self): 
+    async def parse_mpd(self): 
         if not self.mpd:
             return
         headers = auth.make_headers(auth.read_auth())
         params={"Policy":self.policy,"Key-Pair-Id":self.keypair,"Signature":self.signature}
-        with httpx.Client(http2=True, headers=headers,params=params) as c:
+        async with httpx.AsyncClient(http2=True, headers=headers,params=params) as c:
             auth.add_cookies(c)
             c.headers.update(auth.create_sign(self.mpd, headers))
-            r = c.get(self.mpd, timeout=None)
+            r = await c.get(self.mpd, timeout=None)
             if r.status_code!=200:
                 return None
             return MPEGDASHParser.parse(r.content.decode())

@@ -96,7 +96,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
                 total_bytes_downloaded = 0
                 data = 0
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-            
+
                 
 
                 
@@ -140,7 +140,6 @@ async def download(ele,path,model_id,username,file_size_limit,progress):
         if ele.url:
            return await main_download_helper(ele,path,file_size_limit,username,model_id,progress)
         elif ele.mpd: 
-            return "skipped",1
             return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
         else:
             return "skipped",1
@@ -205,7 +204,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         video = None
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
-        mpd=ele.parse_mpd
+        mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}')) 
 
         for period in mpd.periods:
@@ -234,10 +233,9 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                 url=f"{base_url}{item['name']}"
                 log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['name']} with {url}")
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
-                    auth.add_cookies(c) 
-                    async with c.stream('GET',url) as r:
-                        if not r.is_error:
+                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as c: 
+                    async with c.get(url,params=params) as r:
+                        if r.ok:
                             rheaders=r.headers
                             total = int(rheaders['Content-Length'])
                             item["total"]=total
@@ -249,12 +247,10 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                             pathstr=str(temp)
                             task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                             with open(temp, 'wb') as f:                           
-                                num_bytes_downloaded = r.num_bytes_downloaded
                                 progress.update(task1,visible=True )
-                                async for chunk in r.aiter_bytes(chunk_size=1024):
+                                async for chunk in r.content.iter_chunked(1024):
                                     f.write(chunk)
-                                    progress.update(task1, advance=r.num_bytes_downloaded - num_bytes_downloaded)
-                                    num_bytes_downloaded = r.num_bytes_downloaded
+                                    progress.update(task1, advance=len(chunk))
                                 progress.remove_task(task1) 
                         else:
                             r.raise_for_status()
