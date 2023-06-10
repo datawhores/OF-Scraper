@@ -1,6 +1,17 @@
+r"""
+                                                             
+  _____/ ____\______ ________________    ____   ___________ 
+ /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
+(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
+ \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
+                 \/     \/           \/            \/         
+"""
+import time
 import asyncio
-import contextvars
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
+import contextvars
+import math
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
@@ -13,70 +24,92 @@ from rich.panel import Panel
 from rich.console import Group
 from rich.live import Live
 from rich.style import Style
+import arrow
 import ofscraper.constants as constants
 from ..utils import auth
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.console as console
+import ofscraper.utils.args as args_
 
 log=logging.getLogger(__package__)
-sem = semaphoreDelayed(1)
 attempt = contextvars.ContextVar("attempt")
 
+sem = semaphoreDelayed(constants.AlT_SEM)
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_pinned_posts(headers, model_id,job_progress,timestamp=0) -> list:
-    global sem
+async def scrape_pinned_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
     global tasks
+    global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
-    
-
-    await sem.acquire()
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    async with httpx.AsyncClient(http2=True, headers=headers) as c:
-        ep = constants.timelinePinnedNextEP if timestamp else constants.timelinePinnedEP
+    if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.get()).float_timestamp):
+        return []
+    if timestamp:
+        log.debug(arrow.get(math.trunc(float(timestamp))))
+        timestamp=str(timestamp)
+        ep = constants.timelinePinnedNextEP
         url = ep.format(model_id, timestamp)
-        # url = timelinePinnedEP.format(model_id)
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-        r = await c.get(url, timeout=None)
-        sem.release()
-    if not r.is_error:
-        attempt.set(0)
-        posts=r.json()['list']
-        job_progress.remove_task(task)
-
     else:
-        log.debug(f"[bold]pinned request status code:[/bold]{r.status_code}")
-        log.debug(f"[bold]pinned response:[/bold] {r.content.decode()}")
-        log.debug(f"[bold]pinned headers:[/bold] {r.headers}")
-        job_progress.remove_task(task)
-        r.raise_for_status()
+        ep=constants.timelinePinnedEP
+        url=ep.format(model_id)
+    log.debug(url)
+    async with sem:
+        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
+        async with httpx.AsyncClient(http2=True, headers=headers) as c:
+            auth.add_cookies(c)
+            c.headers.update(auth.create_sign(url, headers))
+            r = await c.get(url , timeout=None)
+    if not r.is_error:
+        progress.remove_task(task)
+        posts = r.json()['list']
+        if not posts:
+            posts= []
+        elif len(posts)==0:
+            posts= []
+        #post infinite loops            
+        # elif required_ids==None:
+        #     attempt.set(0)
+            # tasks.append(asyncio.create_task(scrape_pinned_posts(headers, model_id,progress,timestamp=posts[0]['postedAtPrecise'])))
+    else:
+            log.debug(f"[bold]pinned request status code:[/bold]{r.status_code}")
+            log.debug(f"[bold]pinned response:[/bold] {r.content.decode()}")
+            log.debug(f"[bold]pinned headers:[/bold] {r.headers}")
+            progress.remove_task(task)
+            r.raise_for_status()
     return posts
 
-
-async def get_pinned_post(headers,model_id):
+async def get_pinned_post(headers,model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting pinned media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    
-    page_count=0    
+
     global tasks
     tasks=[]
-    output=[]
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        tasks.append(asyncio.create_task(scrape_pinned_posts(headers,model_id,job_progress)))
-        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
-        while len(tasks)>0:
+    min_posts=50
+    responseArray=[]
+    page_count=0
+    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+
+        tasks.append(asyncio.create_task(scrape_pinned_posts(headers,model_id,job_progress,timestamp=(args_.getargs().after or arrow.get(0)).float_timestamp)))
+    
+
+        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
+        while len(tasks)!=0:
             for coro in asyncio.as_completed(tasks):
                 result=await coro or []
                 page_count=page_count+1
                 overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                output.extend(result)
+                responseArray.extend(result)
+            time.sleep(1)
             tasks=list(filter(lambda x:x.done()==False,tasks))
-    overall_progress.remove_task(page_task)  
-    return output
-
-
-   
+        overall_progress.remove_task(page_task)
+    unduped=[]
+    dupeSet=set()
+    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
+    for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
+        if post["id"] in dupeSet:
+            continue
+        dupeSet.add(post["id"])
+        unduped.append(post)
+    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(unduped)} found")
+    return unduped                                

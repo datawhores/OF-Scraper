@@ -37,7 +37,7 @@ cache = Cache(getcachepath())
 log=logging.getLogger(__package__)
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+sem = semaphoreDelayed(constants.AlT_SEM)
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_archived_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
     global tasks
