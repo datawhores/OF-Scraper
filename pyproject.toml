@@ -26,6 +26,8 @@ ffmpeg-python = "^0.2.0"
 dunamai = "^1.17.0"
 poetry-dynamic-versioning = "^0.22.0"
 textual = "^0.27.0"
+aiohttp = {extras = ["speedups"], version = "^3.8.4"}
+faust-cchardet = "^2.1.18"
 
 
 [tool.poetry.group.dev.dependencies]
