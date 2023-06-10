@@ -206,7 +206,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         video = None
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
-        mpd=ele.parse_mpd
+        mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}')) 
 
         for period in mpd.periods:
