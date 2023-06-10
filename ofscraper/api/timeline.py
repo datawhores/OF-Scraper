@@ -86,6 +86,8 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     else:
             log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+            log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+
             progress.remove_task(task)
             r.raise_for_status()
     return posts

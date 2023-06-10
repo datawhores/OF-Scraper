@@ -53,7 +53,7 @@ def post_checker():
                 user_dict[user_name] = user_dict[user_name] or []
                 user_dict[user_name].extend(asyncio.run(timeline.get_timeline_post(headers,model_id)))
                 user_dict[user_name].extend(asyncio.run(pinned.get_pinned_post(headers,model_id)))
-                user_dict[user_name].extend(asyncio.run(archive.get_archive_post(headers,model_id)))
+                user_dict[user_name].extend(asyncio.run(archive.get_archived_post(headers,model_id)))
                 cache.set(f"timeline_check_{model_id}",user_dict[user_name],expire=constants.CHECK_EXPIRY)
 
     #individual links
