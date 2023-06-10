@@ -6,11 +6,12 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+import time
 import asyncio
-import contextvars
-
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
+import contextvars
+import math
 import httpx
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
@@ -26,40 +27,92 @@ from rich.style import Style
 import arrow
 import ofscraper.constants as constants
 from ..utils import auth
-import ofscraper.utils.console as console
-import ofscraper.utils.args as args_
 from ..utils.paths import getcachepath
-
+import ofscraper.utils.console as console
+import ofscraper.utils.config as config_
+import ofscraper.utils.args as args_
 
 from diskcache import Cache
 cache = Cache(getcachepath())
-
-
 log=logging.getLogger(__package__)
-sem = semaphoreDelayed(constants.MAX_ARCHIVED_SEMAPHORE)
 attempt = contextvars.ContextVar("attempt")
 
-async def get_archive_post(headers,model_id):
+sem = semaphoreDelayed(constants.AlT_SEM)
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+async def scrape_archived_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
+    global tasks
+    global sem
+    posts=None
+    attempt.set(attempt.get(0) + 1)
+    if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.get()).float_timestamp):
+        return []
+    if timestamp:
+        log.debug(arrow.get(math.trunc(float(timestamp))))
+        timestamp=str(timestamp)
+        ep = constants.archivedNextEP
+        url = ep.format(model_id, timestamp)
+    else:
+        ep=constants.archivedEP
+        url=ep.format(model_id)
+    log.debug(url)
+    async with sem:
+        task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
+        async with httpx.AsyncClient(http2=True, headers=headers) as c:
+            auth.add_cookies(c)
+            c.headers.update(auth.create_sign(url, headers))
+            r = await c.get(url , timeout=None)
+    if not r.is_error:
+        progress.remove_task(task)
+        posts = r.json()['list']
+        if not posts:
+            posts= []
+        elif len(posts)==0:
+            posts= []
+        elif required_ids==None:
+            attempt.set(0)
+            tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+        else:
+            [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+
+
+            #try once more to get id if only 1 left
+            if len(required_ids)==1:
+                attempt.set(0)
+                tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+
+            elif len(required_ids)>0:
+                attempt.set(0)
+                tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
+    else:
+            log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
+            log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
+            log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+            progress.remove_task(task)
+            r.raise_for_status()
+    return posts
+
+async def get_archived_post(headers,model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting archived media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-   
-    responseArray=[]
     global tasks
     tasks=[]
-    page_count=0
     min_posts=50
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        
-        oldarchived=cache.get(f"archive_{model_id}",default=[])
+    responseArray=[]
+    page_count=0
+    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+
+        oldarchived=cache.get(f"archived_{model_id}",default=[])
         oldtimeset=set(map(lambda x:x.get("id"),oldarchived))
         log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
         oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
         filteredArray=list(filter(lambda x:x>=(args_.getargs().after or arrow.get(0)).float_timestamp,postedAtArray))
         
+    
+       
         if len(filteredArray)>min_posts:
             splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
             #use the previous split for timesamp
@@ -71,22 +124,20 @@ async def get_archive_post(headers,model_id):
         else:
             tasks.append(asyncio.create_task(scrape_archived_posts(headers,model_id,job_progress,timestamp=(args_.getargs().after or arrow.get(0)).float_timestamp)))
     
-    
-        
-        
-        tasks.append(asyncio.create_task(scrape_archived_posts(headers,model_id,job_progress)))
-        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
+
+        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
         while len(tasks)!=0:
             for coro in asyncio.as_completed(tasks):
                 result=await coro or []
                 page_count=page_count+1
                 overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                 responseArray.extend(result)
+            time.sleep(1)
             tasks=list(filter(lambda x:x.done()==False,tasks))
-        overall_progress.remove_task(page_task)  
+        overall_progress.remove_task(page_task)
     unduped=[]
     dupeSet=set()
-    log.debug(f"[bold]Archive Count with Dupes[/bold] {len(responseArray)} found")
+    log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
     for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
         if post["id"] in dupeSet:
             continue
@@ -103,58 +154,4 @@ async def get_archive_post(headers,model_id):
         cache.close()
         log.debug("Some post where not retrived resetting cache")
 
-    return unduped 
-
-   
-
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_archived_posts(headers, model_id,job_progress, timestamp=0,required_ids=None) -> list:
-    attempt.set(attempt.get(0) + 1)
-    global tasks
-    global sem
-    posts=None
-
-    ep = constants.archivedNextEP if timestamp else constants.archivedEP
-    url = ep.format(model_id, timestamp)
-    await sem.acquire()
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    async with httpx.AsyncClient(http2=True, headers=headers) as c:
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-        r = await c.get(url, timeout=None)
-        sem.release()
-    if not r.is_error:
-        attempt.set(0)
-        posts = r.json()['list']
-        if not posts:
-            return[]
-        if len(posts)==0:
-            return posts
-        elif required_ids==None:
-            attempt.set(0)
-            tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,job_progress,timestamp=posts[-1]['postedAtPrecise'])))
-        else:
-            [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
-
-
-            #try once more to get id if only 1 left
-            if len(required_ids)==1:
-                attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_archived_posts, model_id,job_progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set()))
-
-            elif len(required_ids)>0:
-                attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,job_progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
-        
-            tasks.append(asyncio.create_task(scrape_archived_posts(
-            headers, model_id, job_progress,posts[-1]['postedAtPrecise'])))
-        
-        job_progress.remove_task(task)
-    else:
-        log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
-        log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
-        log.debug(f"[bold]archived headers:[/bold] {r.headers}")
-        job_progress.remove_task(task)
-        r.raise_for_status()
-    return posts
-
+    return unduped                                

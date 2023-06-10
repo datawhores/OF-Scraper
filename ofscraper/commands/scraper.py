@@ -116,7 +116,7 @@ def process_timeline_posts(headers, model_id,username):
 
 def process_archived_posts(headers, model_id,username):
     with stdout.lowstdout():
-        archived_posts = asyncio.run(archive.get_archive_post(headers, model_id))
+        archived_posts = asyncio.run(archive.get_archived_post(headers, model_id))
         archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
         log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
         log.debug("Removing locked archived media")

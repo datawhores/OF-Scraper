@@ -86,6 +86,8 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     else:
             log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+            log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+
             progress.remove_task(task)
             r.raise_for_status()
     return posts
@@ -122,8 +124,8 @@ async def get_timeline_post(headers,model_id):
             # keeping grabbing until nothign left
             tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-2][-1])))
         else:
-            # tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=(args_.getargs().after or arrow.get(0)).float_timestamp or 0)))
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=arrow.get("2023.06.01").float_timestamp)))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=(args_.getargs().after or arrow.get(0)).float_timestamp)))
+    
 
         page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
         while len(tasks)!=0:

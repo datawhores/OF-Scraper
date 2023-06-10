@@ -38,7 +38,7 @@ import ofscraper.utils.console as console
 def get_posts(headers, model_id):
     pinned_posts = asyncio.run(pinned.get_pinned_post(headers, model_id))
     timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
-    archived_posts = asyncio.run(archive.get_archive_post(headers, model_id))
+    archived_posts = asyncio.run(archive.get_archived_post(headers, model_id))
     log.debug(f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}")
     return pinned_posts + timeline_posts + archived_posts
 
