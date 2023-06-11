@@ -9,6 +9,8 @@ from pytest_check import check
 import pytest
 import arrow
 import logging
+import random
+import string
 import ofscraper.utils.download as download
 import ofscraper.utils.paths as paths
 
@@ -167,6 +169,12 @@ def test_linux_trunicate_count_small(mocker):
             assert(long_path.suffix)==trunicated.suffix
         with check:
             assert(str(trunicated).find(f"{number}"))!=0
+def test_linux_trunicator_super():
+    with tempfile.TemporaryDirectory() as p:
+        masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
+                             , k=5000))
+        for i in range(0,5000):
+            paths._linux_trunicateHelper(pathlib.Path(p,masterfile[:i]))
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
         "main_profile": PROFILE_DEFAULT,
