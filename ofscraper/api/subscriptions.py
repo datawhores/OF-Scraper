@@ -13,6 +13,7 @@ from itertools import chain
 import logging
 import httpx
 from rich.console import Console
+import arrow
 console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import subscriptionsEP,NUM_TRIES
@@ -42,6 +43,7 @@ async def scrape_subscriptions(headers, offset=500) -> list:
         r.raise_for_status()
 
 def parse_subscriptions(subscriptions: list) -> list:
+    datenow=arrow.now()
     data = [
         {"name":profile['username']
          ,"id":profile['id'],
@@ -51,7 +53,8 @@ def parse_subscriptions(subscriptions: list) -> list:
          "expired":profile.get("subscribedByData").get("expiredAt") if profile.get("subscribedByData") else None,
          "subscribed":(profile.get("subscribedByData").get("subscribes") or [{}])[0].get("startDate") if profile.get("subscribedByData") else None ,
          "renewed":profile.get("subscribedByData").get("renewedAt") if profile.get("subscribedByData") else None,
-        "active" :   not profile['subscribedIsExpiredNow']
+        "active" :  arrow.get(profile.get("subscribedByData").get("expiredAt"))>datenow if profile.get("subscribedByData") else None
+
 
          } for profile in subscriptions]
     data=setpricehelper(data)

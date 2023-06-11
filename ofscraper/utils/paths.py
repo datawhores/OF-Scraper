@@ -174,7 +174,7 @@ def _linux_trunicateHelper(path):
         else:
             small=int(large/2)
             
-            
+
     newFile=f"{file[:target]}{ext}"
     return pathlib.Path(dir,newFile)
 
@@ -221,7 +221,7 @@ def ffmpegexecutecheck(x):
         return False  
    
 def getlogpath():
-    path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}.log'
     createDir(path.parent)
     return path
 
