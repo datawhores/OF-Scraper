@@ -163,7 +163,7 @@ def _linux_trunicateHelper(path):
         target=large
     while True and not target:
         if len(file[:large].encode('utf8'))>fileLength:
-            large=int(small+large)/2
+            large=int((small+large)/2)
         elif len(file[:large].encode('utf8'))==fileLength:
             target=large
         elif len(file[:small].encode('utf8'))==fileLength:
