@@ -178,17 +178,17 @@ def process_areas(headers, ele, model_id) -> list:
 
     if ('Profile' in args.posts or 'All' in args.posts):
         profile_dicts  = process_profile(headers,username)
-    if ('Pinned' in args.posts or 'All' in args.posts) and ele["active"]:
+    if ('Pinned' in args.posts or 'All' in args.posts):
             pinned_post_dict = process_pinned_posts(headers, model_id,username)
-    if ('Timeline' in args.posts or 'All' in args.posts) and ele["active"]:
+    if ('Timeline' in args.posts or 'All' in args.posts):
             timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
-    if ('Archived' in args.posts or 'All' in args.posts) and ele["active"]:
+    if ('Archived' in args.posts or 'All' in args.posts):
             archived_posts_dicts = process_archived_posts(headers, model_id,username)
     if 'Messages' in args.posts or 'All' in args.posts:
             messages_dicts = process_messages(headers, model_id,username)
     if "Purchased" in args.posts or "All" in args.posts:
             purchased_dict=process_paid_post(model_id,username)
-    if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts)   and ele["active"]:
+    if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts):
             highlights_tuple = process_highlights(headers, model_id,username)  
             if 'Highlights'  in args.posts:
                 highlights_dicts=highlights_tuple[0]

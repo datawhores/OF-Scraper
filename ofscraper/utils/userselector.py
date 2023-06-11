@@ -105,7 +105,7 @@ def filterNSort(usernames):
 
     #paid/free
     filterusername=usernames
-    dateNow=arrow.get()
+    dateNow=arrow.now()
     if args.account_type=="paid":
         filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
 

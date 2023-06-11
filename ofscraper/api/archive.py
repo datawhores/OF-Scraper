@@ -44,7 +44,7 @@ async def scrape_archived_posts(headers, model_id,progress, timestamp=None,requi
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
-    if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.get()).float_timestamp):
+    if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.now()).float_timestamp):
         return []
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))

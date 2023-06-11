@@ -586,8 +586,8 @@ class InputApp(App):
             self.update_input(row_name,event.value.plain)
             self.set_filtered_rows()
             self.make_table()
-        # if event.key=="enter" and arrow.get().float_timestamp-self._lastclick.float_timestamp>3:
-        #     self._lastclick=arrow.get()
+        # if event.key=="enter" and arrow.now().float_timestamp-self._lastclick.float_timestamp>3:
+        #     self._lastclick=arrow.now()
         #     self.set_filtered_rows()
         #     self.make_table()
     
@@ -712,7 +712,7 @@ class InputApp(App):
             self.reverse=False
 
     def on_mount(self) -> None:
-        self._lastclick=arrow.get()
+        self._lastclick=arrow.now()
         self.set_reverse(init=True)
         self.make_table()
         self.query_one("#reset").styles.align = ("center", "middle")

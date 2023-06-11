@@ -152,15 +152,30 @@ def _windows_trunicateHelper(path):
 def _linux_trunicateHelper(path):
     path=pathlib.Path(path)
     dir=path.parent
-    file=path.name
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
-    if match:
-        ext=match.group(0)
-    else:
-        ext=""
+    ext= match.group(0) if match else ""
+    file=re.sub(ext,"",path.name)
     fileLength=255-len(ext.encode('utf8'))
-    newFileByte=re.sub(ext,"",file).encode("utf8")[:fileLength]
-    newFile=f"{newFileByte.decode('utf8')}{ext}"
+    small=0
+    large=len(file)
+    target=None
+    if large<=fileLength:
+        target=large
+    while True and not target:
+        if len(file[:large].encode('utf8'))>fileLength:
+            large=int(small+large)/2
+        elif len(file[:large].encode('utf8'))==fileLength:
+            target=large
+        elif len(file[:small].encode('utf8'))==fileLength:
+            target=small
+        elif large==small+1: 
+            target=small
+
+        else:
+            small=int(large/2)
+            
+
+    newFile=f"{file[:target]}{ext}"
     return pathlib.Path(dir,newFile)
 
 
@@ -206,7 +221,7 @@ def ffmpegexecutecheck(x):
         return False  
    
 def getlogpath():
-    path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.get().format("YYYY-MM-DD")}.log'
+    path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}.log'
     createDir(path.parent)
     return path
 
