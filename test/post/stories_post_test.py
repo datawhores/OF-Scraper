@@ -48,8 +48,18 @@ def test_text_stories():
     username="test"
     model_id=TEST_ID
     t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.text)==(STORIES_EXAMPLE.get("text") or "04-14-2023")
+    assert(t.text)==None
 
+def test_text_stories2():
+
+    username="test"
+    model_id=TEST_ID
+    index=0
+
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
+    media=Media(mediaDict,index,t)
+    assert(media.text_.find(media.filename))==0
 def test_title_stories():
     username="test"
     model_id=TEST_ID
@@ -118,6 +128,7 @@ def test_mediacanview_stories():
 def test_mediaclass_stories():
     username="test"
     model_id=TEST_ID
+    
     t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     for ele in t.media:
         assert(isinstance(ele,Media))==True
