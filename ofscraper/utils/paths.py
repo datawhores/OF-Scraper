@@ -155,7 +155,7 @@ def _linux_trunicateHelper(path):
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
     file=re.sub(ext,"",path.name)
-    fileLength=255-len(ext.encode('utf8'))
+    fileLength=254-len(ext.encode('utf8'))
     small=0
     large=len(file)
     maxLength=len(file)
@@ -177,6 +177,7 @@ def _linux_trunicateHelper(path):
              small=large
              large=int((large+maxLength)/2)        
     newFile=f"{file[:target]}{ext}"
+    log.debug(f"path: {path} size: {len(file[:large].encode('utf8'))}")
     return pathlib.Path(dir,newFile)
 
 

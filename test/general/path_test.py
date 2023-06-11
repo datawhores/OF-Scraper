@@ -174,7 +174,9 @@ def test_linux_trunicator_super():
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
                              , k=5000))
         for i in range(0,5000):
-            paths._linux_trunicateHelper(pathlib.Path(p,masterfile[:i]))
+            with check:
+                modified=paths._linux_trunicateHelper(pathlib.Path(p,masterfile[:i]))
+                assert(len(modified.name.encode('utf8')))<=255
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
         "main_profile": PROFILE_DEFAULT,
