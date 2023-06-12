@@ -155,29 +155,28 @@ def _linux_trunicateHelper(path):
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
     file=re.sub(ext,"",path.name)
-    fileLength=254-len(ext.encode('utf8'))
     small=0
     large=len(file)
-    maxLength=len(file)
+    maxLength=254
     target=None
-    if large<=fileLength:
-        target=large
+    if len(pathlib.Path(dir,f"{file[:maxLength]}{ext}").name.encode('utf8'))<=maxLength:
+        target=maxLength
     while True and not target:
-        if len(file[:large].encode('utf8'))==fileLength:
+        if len(pathlib.Path(dir,f"{file[:large]}{ext}").name.encode('utf8'))==maxLength:
             target=large
-        elif len(file[:small].encode('utf8'))==fileLength:
+        elif len(pathlib.Path(dir,f"{file[:small]}{ext}").name.encode('utf8'))==maxLength:
             target=small
         elif large==small:
             target=large
         elif large==small+1:
             target=small
-        elif len(file[:large].encode('utf8'))>fileLength:
+        elif  len(pathlib.Path(dir,f"{file[:large]}{ext}").name.encode('utf8'))>maxLength:
             large=int((small+large)/2)
-        elif len(file[:large].encode('utf8'))<fileLength:
+        elif len(pathlib.Path(dir,f"{file[:large]}{ext}").name.encode('utf8'))<maxLength:
              small=large
-             large=int((large+maxLength)/2)        
+             large=int((large+maxLength)/2)  
     newFile=f"{file[:target]}{ext}"
-    log.debug(f"path: {path} size: {len(file[:large].encode('utf8'))}")
+    log.debug(f"path: {path} size: {len(newFile.encode('utf8'))}")
     return pathlib.Path(dir,newFile)
 
 
