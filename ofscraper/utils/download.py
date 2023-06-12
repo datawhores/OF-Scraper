@@ -80,6 +80,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
                     media_ids = set(operations.get_media_ids(model_id,username))
                     medialist = seperate.separate_by_id(medialist, media_ids)
                     medialist=seperate.seperate_avatars(medialist)
+
                     log.info(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
                 else:
                     log.info("forcing all downloads")
@@ -138,7 +139,7 @@ async def download(ele,path,model_id,username,file_size_limit,progress):
     try:
         if ele.url:
            return await main_download_helper(ele,path,file_size_limit,username,model_id,progress)
-        elif ele.mpd:  
+        elif ele.mpd:
             return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
         else:
             return "skipped",1
@@ -197,6 +198,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
 
         if ele.id:
             operations.write_media_table(ele,path_to_file,model_id,username)
+        set_cache_helper(ele)
         return ele.mediatype,total
 
 async def alt_download_helper(ele,path,file_size_limit,username,model_id,progress):
@@ -292,6 +294,10 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         operations.write_media_table(ele,path_to_file,model_id,username)
+    set_cache_helper(ele)
+    if ele.url_hash and (ele.responsetype_=="highlights" or ele.responsetype_=="profile"):
+                cache.set(ele.url_hash ,True)
+                cache.close()
     return ele.mediatype,total
 
 async def key_helper(pssh,licence_url,id):
@@ -370,7 +376,10 @@ def createfilename(ele,username,model_id,ext):
 
     
 
-
-
-
-
+def set_cache_helper(ele):
+    if  ele.postid and ele.responsetype_=="profile":
+        cache.set(ele.postid ,True)
+        cache.close()
+    elif  ele.filename and ele.responsetype_=="highlights":
+        cache.set(ele.filename,True)
+        cache.close()

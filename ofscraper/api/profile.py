@@ -14,7 +14,7 @@ from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import profileEP,NUM_TRIES,DAILY_EXPIRY
 from ..utils import auth, encoding
-from xxhash import xxh64
+from xxhash import xxh128
 from diskcache import Cache
 from ..utils.paths import getcachepath
 import ofscraper.constants as constants
@@ -47,7 +47,7 @@ def parse_profile(profile: dict) -> tuple:
 
     output=[]
     for ele in media:
-        output.append({"url":ele,"responsetype":"profile","mediatype":"photo","value":"free","createdAt":profile["joinDate"],"text":profile["about"],"id":xxh64(ele).hexdigest()})
+        output.append({"url":ele,"responsetype":"profile","mediatype":"photo","value":"free","createdAt":profile["joinDate"],"text":profile["about"],"id":xxh128(ele).hexdigest()})
 
 
     name = encoding.encode_utf_16(profile['name'])
