@@ -137,6 +137,21 @@ def getargs(input=None):
     paid_check.add_argument("-us","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
+
+
+
+    story_check=subparser.add_parser("story_check",help="Parse Stories/Highlights sent from a user\nCache last for 24 hours")
+    story_check.add_argument(
+        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+    )
+    story_check.add_argument("-f","--file",
+    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    )
+    
+
+    story_check.add_argument("-us","--username",
+    help = 'link to conversation',type = check_strhelper,action="extend")
+
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))

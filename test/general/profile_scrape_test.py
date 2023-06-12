@@ -2,7 +2,7 @@
 from test.test_constants import *
 import ofscraper.api.me as me
 import ofscraper.api.profile as profile
-from xxhash import xxh32
+from xxhash import xxh64
 import tempfile
 
 def test_me():
@@ -27,7 +27,7 @@ def test_parse_profile3():
 def test_parse_profile4():
     profile_=USERPROFILE_EXAMPLE_DICT
     assert(profile.parse_profile
-    (profile_)[0][0]["id"])==xxh32(USERPROFILE_EXAMPLE_DICT["avatar"]).hexdigest()
+    (profile_)[0][0]["id"])==xxh64(USERPROFILE_EXAMPLE_DICT["avatar"]).hexdigest()
 def test_parse_profile5():
     profile_=USERPROFILE_EXAMPLE_DICT
     if USERPROFILE_EXAMPLE_DICT.get("profile"):

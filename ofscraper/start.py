@@ -13,6 +13,8 @@ def main():
         check.message_checker()
     elif args.command=="paid_check":
         check.purchase_checker()
+    elif args.command=="story_check":
+        check.stories_checker()
     elif args.command=="manual":
         None
     elif vars(args).get("help"):

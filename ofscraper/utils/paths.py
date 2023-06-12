@@ -155,27 +155,29 @@ def _linux_trunicateHelper(path):
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
     file=re.sub(ext,"",path.name)
-    fileLength=255-len(ext.encode('utf8'))
+    fileLength=254-len(ext.encode('utf8'))
     small=0
     large=len(file)
+    maxLength=len(file)
     target=None
     if large<=fileLength:
         target=large
     while True and not target:
-        if len(file[:large].encode('utf8'))>fileLength:
-            large=int((small+large)/2)
-        elif len(file[:large].encode('utf8'))==fileLength:
+        if len(file[:large].encode('utf8'))==fileLength:
             target=large
         elif len(file[:small].encode('utf8'))==fileLength:
             target=small
-        elif large==small+1: 
+        elif large==small:
+            target=large
+        elif large==small+1:
             target=small
-
-        else:
-            small=int(large/2)
-            
-
+        elif len(file[:large].encode('utf8'))>fileLength:
+            large=int((small+large)/2)
+        elif len(file[:large].encode('utf8'))<fileLength:
+             small=large
+             large=int((large+maxLength)/2)        
     newFile=f"{file[:target]}{ext}"
+    log.debug(f"path: {path} size: {len(file[:large].encode('utf8'))}")
     return pathlib.Path(dir,newFile)
 
 
