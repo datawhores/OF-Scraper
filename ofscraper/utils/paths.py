@@ -147,6 +147,8 @@ def _windows_trunicateHelper(path):
     #-1 is for / between parentdirs and file
     fileLength=256-len(ext)-len(str(dir))-1
     newFile=f"{re.sub(ext,'',file)[fileLength]}{ext}"
+    final=pathlib.Path(dir,newFile)
+    log.debug(f"path: {final} path size: {len(final)}")
     return pathlib.Path(dir,newFile)
 
 def _linux_trunicateHelper(path):
@@ -177,7 +179,7 @@ def _linux_trunicateHelper(path):
              small=large
              large=int((large+maxLength)/2)        
     newFile=f"{file[:target]}{ext}"
-    log.debug(f"path: {path} filename_size: {len(newFile.encode('utf8'))}")
+    log.debug(f"path: {path} filename_bytePsize: {len(newFile.encode('utf8'))}")
     return pathlib.Path(dir,newFile)
 
 
