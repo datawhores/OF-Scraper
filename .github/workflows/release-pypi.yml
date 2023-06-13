@@ -6,7 +6,6 @@ on:
     
 jobs:
   run :
-    if: "!github.event.release.prerelease"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
