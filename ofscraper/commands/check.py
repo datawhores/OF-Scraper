@@ -240,9 +240,8 @@ def duplicated_helper(ele, mediadict, downloaded):
         return True
     else:
         return False
-
-
 def row_gather(media, downloaded, username):
+
     # fix text
     mediaset = set(map(lambda x: x.id, filter(lambda x: x.canview, media)))
     mediadict = {}
@@ -251,7 +250,7 @@ def row_gather(media, downloaded, username):
     out = []
     media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
     for count, ele in enumerate(media):
-        out.append((count+1, username, ele.id in downloaded, unlocked_helper(ele, mediaset), duplicated_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
+        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None , unlocked_helper(ele, mediaset), duplicated_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
             ele.postdate_), len(ele._post.post_media), ele.responsetype_, "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),  ele.postid, ele.id, texthelper(ele.text)))
     return out
 

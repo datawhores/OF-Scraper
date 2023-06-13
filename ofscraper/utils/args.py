@@ -60,6 +60,9 @@ def getargs(input=None):
 
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
+    post.add_argument(
+        '-ft', '--filter', help = 'Filter post by provide regex',default=".*",required=False,type = str
+    )
 
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters\nNote if you include any uppercase characters the search will be case-sensitive")
@@ -93,9 +96,7 @@ def getargs(input=None):
     # advanced.add_argument(
     #     '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
     # )
-    advanced.add_argument(
-        '-ft', '--filter', help = 'Filter post by provide regex',default=".*",required=False,type = str
-    ) 
+  
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
 
