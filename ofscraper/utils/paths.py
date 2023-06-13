@@ -228,7 +228,10 @@ def getlogpath():
     return path
 
 def get_config_path():
-    t=pathlib.Path(args_.getargs().config or pathlib.Path.home() / constants.configPath)
-    if t.is_dir():
-        return t/constants.configFile
-    return t
+    t=pathlib.Path(args_.getargs().config or pathlib.Path.home() / constants.configPath)        
+    if t.is_file():
+         return t
+    elif t.parent.is_dir():
+        t/constants.configFile
+    return t/constants.configFile
+   
