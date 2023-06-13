@@ -105,22 +105,36 @@ def filterNSort(usernames):
 
     #paid/free
     filterusername=usernames
+    log.debug(f"Init username length: {len(filterusername)}")
     dateNow=arrow.now()
     if args.account_type=="paid":
         filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
+        log.debug(f"+paid filter username length: {len(filterusername)}")
 
     elif args.account_type=="free":
         filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
+        log.debug(f"+free filter username length: {len(filterusername)}")
     
     if args.renewal=="active":
-        filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))     
+        filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
+        log.debug(f"+active renewal filter username length: {len(filterusername)}")
+
     elif args.renewal=="disabled":
-        filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))      
+        filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
+        log.debug(f"+disabled renewal filter username length: {len(filterusername)}")
+
     if args.sub_status=="active":
-        filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername))     
+        filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
+        log.debug(f"+active subscribtion filter username length: {len(filterusername)}")
+
     elif args.sub_status=="expired":
         filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
+        log.debug(f"+expired subscribtion filter username length: {len(filterusername)}")
+
     filterusername=list(filter(lambda x:x["name"] not in args.excluded_username ,filterusername))
+    log.debug(f"final length with all filters: {len(filterusername)}")
+    if len(filterusername)==0:
+        raise Exception("You have filtered the user list to zero\nPlease Select less restrictive filters")
     return sort_models_helper(filterusername)      
 
 
