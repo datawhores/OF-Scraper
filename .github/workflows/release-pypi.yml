@@ -1,8 +1,6 @@
 name: release pypi
 on:
   workflow_dispatch: 
-  release:
-    types: [released]
     
 jobs:
   run :
@@ -29,6 +27,9 @@ jobs:
       - name: Push to pypi 
         env:
           PYPI_TOKEN: ${{ secrets.pypi }}
-#         run: |
-#           poetry config pypi-token.pypi $PYPI_TOKEN
-#           poetry publish
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish
+  - run :  
+      if: "!github.event.release.prerelease"
+
