@@ -61,11 +61,11 @@ def getargs(input=None):
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
     post.add_argument(
-        '-ft', '--filter', help = 'Filter post by provide regex',default=".*",required=False,type = str
+        '-ft', '--filter', help = 'Filter post by provide regex\nNote if you include any uppercase characters the search will be case-sensitive',default=".*",required=False,type = str
     )
 
      #Filters for accounts
-    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters\nNote if you include any uppercase characters the search will be case-sensitive")
+    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
     filters.add_argument(
         '-at', '--account-type', help = 'Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price',default=None,required=False,type = str.lower,choices=["paid","free"]
