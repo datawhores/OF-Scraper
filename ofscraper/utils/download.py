@@ -209,7 +209,8 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
-        path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}')) 
+        path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
+        temp_path=paths.trunicate(pathlib.Path(path,f"{ele.id}.mkv"))
 
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
@@ -282,11 +283,16 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
+    
     path_to_file.unlink(missing_ok=True)
-   
-    ffmpeg.output( ffmpeg.input(str(video["path"])), ffmpeg.input(str(audio["path"])), str(path_to_file),codec='copy',loglevel="quiet").overwrite_output().run(capture_stdout=True,cmd=config_.get_ffmpeg(config_.read_config()))
+    temp_path.unlink(missing_ok=True)
+    t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    if t.stderr.decode().find("Output")==-1:
+        log.debug(t.stdout.decode())
+        log.debug(t.stderr.decode())
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
+    shutil.move(temp_path,path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
