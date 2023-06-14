@@ -177,7 +177,7 @@ def get_all_found_media(user_name, posts):
     model_id = profile.get_id(headers, user_name)
     posts_array=list(map(lambda x:posts_.Post(
         x, model_id, user_name), posts))
-    [temp.extend(ele.media) for ele in posts_array]
+    [temp.extend(ele.all_media) for ele in posts_array]
     return temp
 
 
@@ -222,7 +222,7 @@ def texthelper(text):
     return text
 
 
-def unlocked_helper(ele, mediaset):
+def unlocked_helper(ele):
     return ele.canview
 
 
@@ -233,19 +233,19 @@ def datehelper(date):
 
 
 def times_helper(ele, mediadict, downloaded):
-    return max(len(list(filter(lambda x: x.canview, mediadict.get(ele.id, [])))), downloaded.get(ele, 0))
+    return max(len(mediadict.get(ele.id, [])), downloaded.get(ele, 0))
   
 def row_gather(media, downloaded, username):
 
     # fix text
-    mediaset = set(map(lambda x: x.id, filter(lambda x: x.canview, media)))
+
     mediadict = {}
     [mediadict.update({ele.id: mediadict.get(ele.id, []) + [ele]})
-     for ele in media]
+     for ele in list(filter(lambda x:x.canview,media))]
     out = []
     media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
     for count, ele in enumerate(media):
-        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele, mediaset), times_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
+        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele), times_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
             ele.postdate_), len(ele._post.post_media), ele.responsetype_, "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),  ele.postid, ele.id, texthelper(ele.text)))
     return out
 
