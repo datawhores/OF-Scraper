@@ -30,7 +30,7 @@ cache = Cache(getcachepath())
 
 log = logging.getLogger(__package__)
 args = args_.getargs()
-ROW_NAMES = "Number", "UserName", "Downloaded", "Unlocked", "Double_Purchase", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
+ROW_NAMES = "Number", "UserName", "Downloaded", "Unlocked", "Times_detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
 
 
@@ -231,15 +231,9 @@ def datehelper(date):
     return date
 
 
-def duplicated_helper(ele, mediadict, downloaded):
-    if ele.value == "free":
-        return False
-    elif len(list(filter(lambda x: x.canview, mediadict.get(ele.id, [])))) > 1:
-        return True
-    elif downloaded.get(ele, 0) > 2:
-        return True
-    else:
-        return False
+def times_helper(ele, mediadict, downloaded):
+    return max(len(list(filter(lambda x: x.canview, mediadict.get(ele.id, [])))), downloaded.get(ele, 0))
+  
 def row_gather(media, downloaded, username):
 
     # fix text
@@ -250,7 +244,7 @@ def row_gather(media, downloaded, username):
     out = []
     media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
     for count, ele in enumerate(media):
-        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele, mediaset), duplicated_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
+        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele, mediaset), times_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
             ele.postdate_), len(ele._post.post_media), ele.responsetype_, "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),  ele.postid, ele.id, texthelper(ele.text)))
     return out
 
@@ -707,7 +701,7 @@ class InputApp(App):
                     yield TimeField(ele)
 
             with Horizontal():
-                for ele in ["Downloaded", "Unlocked", "Double_Purchase"]:
+                for ele in ["Downloaded", "Unlocked", "Times_detected"]:
                     yield BoolField(ele)
                 for ele in ["Mediatype"]:
                     yield MediaField(ele)
@@ -741,7 +735,7 @@ class InputApp(App):
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: x[0], reverse=self.reverse)
             self.make_table()
-        elif label == "UserName":
+        elif label == "Username":
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: x, reverse=self.reverse)
             self.make_table()
@@ -754,7 +748,7 @@ class InputApp(App):
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: 1 if x[3] == True else 0, reverse=self.reverse)
             self.make_table()
-        elif label == "Double Purchase":
+        elif label == "Times Detected":
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: 1 if x[4] == True else 0, reverse=self.reverse)
             self.make_table()
