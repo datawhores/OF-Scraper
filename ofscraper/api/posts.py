@@ -18,6 +18,7 @@ class Post():
         self._username = username
         self._responsetype_ = responsetype or post.get("responseType")
 
+    #All media return from API dict
     @property
     def post_media(self):
         if self._responsetype_ == "highlights":
@@ -113,6 +114,7 @@ class Post():
     def preview(self):
         return self._post.get("preview")
 
+    #media object array for media that is unlocked or viewable
     @property
     def media(self):
         if (self.fromuser != self.model_id):
@@ -121,6 +123,7 @@ class Post():
             media = map(lambda x: Media(
                 x[1], x[0], self), enumerate(self.post_media))
             return list(filter(lambda x: x.canview == True, media))
+    #media object array for all media
     @property
     def all_media(self):
         return list(map(lambda x: Media(

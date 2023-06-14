@@ -175,8 +175,9 @@ def get_all_found_media(user_name, posts):
 
     temp = []
     model_id = profile.get_id(headers, user_name)
-    [temp.extend(ele.all_media) for ele in map(lambda x:posts_.Post(
-        x, model_id, user_name), posts)]
+    posts_array=list(map(lambda x:posts_.Post(
+        x, model_id, user_name), posts))
+    [temp.extend(ele.media) for ele in posts_array]
     return temp
 
 
@@ -690,6 +691,8 @@ class InputApp(App):
             with Horizontal():
                 for ele in ["Text"]:
                     yield StringField(ele)
+                for ele in ["Times_detected"]:
+                    yield NumField(ele)
                 for ele in ["Media_ID", "Post_ID", "Post_Media_Count"]:
                     yield NumField(ele)
             with Horizontal():
@@ -701,7 +704,7 @@ class InputApp(App):
                     yield TimeField(ele)
 
             with Horizontal():
-                for ele in ["Downloaded", "Unlocked", "Times_detected"]:
+                for ele in ["Downloaded", "Unlocked"]:
                     yield BoolField(ele)
                 for ele in ["Mediatype"]:
                     yield MediaField(ele)
