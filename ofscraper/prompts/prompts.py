@@ -102,7 +102,21 @@ def like_areas_prompt() -> list:
     answers = prompt(questions)
     return answers[name]
 
+def scrape_paid_pomrpot(args):
+    questions = [
+        {
+            'type': 'list',
+            'message': "Scrape entire paid page",
+            'choices':[Choice(True,"Ascending"),Choice(False,"Descending",enabled=True)],
+            'long_instruction': prompt_strings.SCRAPE_PAID,
+            "default":False
 
+        },
+
+    ]
+
+    answer = prompt(questions)
+    return answer[0]
 
 def auth_prompt(auth) -> dict:
     questions = [
@@ -154,7 +168,7 @@ def ask_make_auth_prompt() -> bool:
         {
             'type': 'confirm',
             'name': name,
-            'message': "It doesn't seem you have an `auth.json` file. Would you like to make one?",
+            'message': "You don't seem to have an `auth.json` file. Would you like to make one?",
         }
     ]
 
@@ -166,7 +180,7 @@ def browser_prompt()->str:
     msg="Select how to retrive auth information"
 
     if pythonver<3.9 or pythonver>=3.11:
-        console.print("\nNote: Browser Extractions only works with default Profile\n\n")
+        console.print("\nNote: Browser Extractions only works with default browser profile\n\n")
         questions = [
             {
                 'type': 'list',

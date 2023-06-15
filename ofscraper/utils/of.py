@@ -163,9 +163,15 @@ def process_all_paid():
         return output
 
 
-def process_areas(headers, ele, model_id) -> list:
+def select_areas():
     args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
 ))
+    if not args.scrape_paid:
+          args.scrape_paid=prompts.scrape_paid_prompt()
+    args_.changeargs(args)
+     
+def process_areas(headers, ele, model_id) -> list:
+    select_areas()
     timeline_posts_dicts  = []
     pinned_post_dict=[]
     archived_posts_dicts  = []
