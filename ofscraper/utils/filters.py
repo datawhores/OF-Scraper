@@ -14,11 +14,15 @@ def filterMedia(media):
     media=posts_date_filter(media)
     media=post_timed_filter(media)
     media=post_user_filter(media)
+    media=sort_media(media)
     # if args.manual_download():
     #     args.dupe=True
     #     args_.changeargs(args)
     #     media=post_manual_filter(media)
     return media
+
+def sort_media(media):
+    return sorted(media,key=lambda x:x.date)
 
 def post_manual_filter():
     None
@@ -42,8 +46,8 @@ def post_datesorter(output):
     
 def timeline_array_filter(posts):
     out=[]
-    undated=filter(lambda x:x.get("postedAt")==None,posts)
-    dated=filter(lambda x:x.get("postedAt")!=None,posts)
+    undated=list(filter(lambda x:x.get("postedAt")==None,posts))
+    dated=list(filter(lambda x:x.get("postedAt")!=None,posts))
     dated=sorted(dated,key=lambda x:arrow.get(x.get("postedAt")))
     if args.before:
         dated=list(filter(lambda x:arrow.get(x.get("postedAt"))<=args.before,dated))
@@ -70,10 +74,10 @@ def posts_type_filter(media):
 
 def posts_date_filter(media):
     if args.before:
-        media=filter(lambda x:x.postdate==None or arrow.get(x.postdate)<=args.before,media)
+        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)<=args.before,media))
     if args.after:
-        media=filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media)
-    return list(media)
+        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media))
+    return media
 
 def post_timed_filter(media):
     if args.skip_timed:

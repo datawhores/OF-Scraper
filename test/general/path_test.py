@@ -2,6 +2,7 @@
 from unittest.mock import patch,MagicMock
 from unittest import mock
 import platform
+import shutil
 import pathlib
 import os
 import tempfile
@@ -13,6 +14,7 @@ import random
 import string
 import ofscraper.utils.download as download
 import ofscraper.utils.paths as paths
+from random_unicode_emoji import random_emoji
 
 from test.test_constants import *
 from ofscraper.api.posts import Post,Media
@@ -109,7 +111,7 @@ def test_linux_trunicate_255(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         dirLength=len(str(pathlib.Path(LINUX_LONGPATH).parent).encode("utf8"))
         extLength=len(".mkv".encode("utf8"))
-        maxlenth=255
+        maxlenth=254
         pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
         -extLength]).decode()
         long_path=pathlib.Path(f"{pathbase}.mkv")
@@ -173,9 +175,56 @@ def test_linux_trunicator_super():
     with tempfile.TemporaryDirectory() as p:
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
                              , k=5000))
-        for i in range(0,5000):
+        for i in range(1,5000):
+            print(i)
             with check:
-                modified=paths._linux_trunicateHelper(pathlib.Path(p,masterfile[:i]))
+                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}_1.ext"))
+                assert(len(modified.name.encode('utf8')))<=255
+
+def test_linux_trunicator_super2():
+    with tempfile.TemporaryDirectory() as p:
+        masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
+                             , k=5000))
+        for i in range(1,5000):
+            with check:
+                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
+                if (len(modified.name.encode('utf8')))>255:
+                    print("dd")
+                assert(len(modified.name.encode('utf8')))<=255
+
+
+def test_linux_trunicator_super3():
+    with tempfile.TemporaryDirectory() as p:
+        masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
+                             , k=5000))
+        for i in range(1,5000):
+            with check:
+                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
+                assert(len(modified.name.encode('utf8')))<=255
+                modified.unlink(missing_ok=True)
+            
+
+def test_linux_trunicator_super_emoji():
+    with tempfile.TemporaryDirectory() as p:
+        masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase+random_emoji()[0]
+                             , k=5000))
+        for i in range(260,5000):
+            with check:
+                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}_1.ext"))
+                if (len(modified.name.encode('utf8')))>255:
+                    print("dd")
+                assert(len(modified.name.encode('utf8')))<=255
+
+
+def test_linux_trunicator_super_emoji2():
+    with tempfile.TemporaryDirectory() as p:
+        masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase+random_emoji()[0]
+                             , k=5000))
+        for i in range(260,5000):
+            with check:
+                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
+                if (len(modified.name.encode('utf8')))>255:
+                    print("dd")
                 assert(len(modified.name.encode('utf8')))<=255
 def test_user_data_dc_db_str(mocker):
    migrationConfig={

@@ -30,7 +30,7 @@ cache = Cache(getcachepath())
 
 log = logging.getLogger(__package__)
 args = args_.getargs()
-ROW_NAMES = "Number", "UserName", "Downloaded", "Unlocked", "Double_Purchase", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
+ROW_NAMES = "Number", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
 
 
@@ -39,26 +39,31 @@ def post_checker():
     user_dict = {}
     client = httpx.Client(http2=True, headers=headers)
     links = list(url_helper())
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), links)):
+    for ele in links:
         name_match = re.search("/([a-z_]+$)", ele)
         if name_match:
             user_name = name_match.group(1)
             log.info(f"Getting Full Timeline for {user_name}")
             model_id = profile.get_id(headers, user_name)
-            oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
-            if len(oldtimeline) > 0 and not args.force:
-                user_dict[user_name] = oldtimeline
-            elif not user_dict.get(user_name):
-                user_dict[user_name] = {}
-                user_dict[user_name] = user_dict[user_name] or []
-                user_dict[user_name].extend(asyncio.run(
-                    timeline.get_timeline_post(headers, model_id)))
-                user_dict[user_name].extend(asyncio.run(
-                    pinned.get_pinned_post(headers, model_id)))
-                user_dict[user_name].extend(asyncio.run(
-                    archive.get_archived_post(headers, model_id)))
-                cache.set(
-                    f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+        name_match = re.search("^[a-z]+$", ele)
+        if name_match:
+            user_name = name_match.group(0)
+            model_id = profile.get_id(headers, user_name)
+
+        oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+        if len(oldtimeline) > 0 and not args.force:
+            user_dict[user_name] = oldtimeline
+        elif not user_dict.get(user_name):
+            user_dict[user_name] = {}
+            user_dict[user_name] = user_dict[user_name] or []
+            user_dict[user_name].extend(asyncio.run(
+                timeline.get_timeline_post(headers, model_id)))
+            user_dict[user_name].extend(asyncio.run(
+                pinned.get_pinned_post(headers, model_id)))
+            user_dict[user_name].extend(asyncio.run(
+                archive.get_archived_post(headers, model_id)))
+            cache.set(
+                f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
 
     # individual links
     for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), links)):
@@ -94,22 +99,26 @@ def message_checker():
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile(headers, model_id)['username']
-            user_dict[user_name] = user_dict.get(user_name, [])
-            log.info(f"Getting Messages for {user_name}")
-            messages = None
-            oldmessages = cache.get(f"message_check_{model_id}", default=[])
+        name_match = re.search("^[a-z]+$", item)
+        if name_match:
+            user_name = name_match.group(0)
+            model_id = profile.get_id(headers, user_name)     
+        user_dict[user_name] = user_dict.get(user_name, [])
+        log.info(f"Getting Messages for {user_name}")
+        messages = None
+        oldmessages = cache.get(f"message_check_{model_id}", default=[])
 
-            
-            if len(oldmessages) > 0 and not args.force:
-                messages = oldmessages
-            else:
-                messages = asyncio.run(
-                    messages_.get_messages(headers,  model_id))
-                cache.set(f"message_check_{model_id}",
-                          messages, expire=constants.CHECK_EXPIRY)
-            downloaded = get_downloaded(user_name, model_id)
-            media = get_all_found_media(user_name, messages)
-            ROWS.extend(row_gather(media, downloaded, user_name))
+        
+        if len(oldmessages) > 0 and not args.force:
+            messages = oldmessages
+        else:
+            messages = asyncio.run(
+                messages_.get_messages(headers,  model_id))
+            cache.set(f"message_check_{model_id}",
+                        messages, expire=constants.CHECK_EXPIRY)
+        downloaded = get_downloaded(user_name, model_id)
+        media = get_all_found_media(user_name, messages)
+        ROWS.extend(row_gather(media, downloaded, user_name))
 
     app_run_helper(ROWS)
 
@@ -175,8 +184,9 @@ def get_all_found_media(user_name, posts):
 
     temp = []
     model_id = profile.get_id(headers, user_name)
-    [temp.extend(ele.all_media) for ele in map(lambda x:posts_.Post(
-        x, model_id, user_name), posts)]
+    posts_array=list(map(lambda x:posts_.Post(
+        x, model_id, user_name), posts))
+    [temp.extend(ele.all_media) for ele in posts_array]
     return temp
 
 
@@ -221,7 +231,7 @@ def texthelper(text):
     return text
 
 
-def unlocked_helper(ele, mediaset):
+def unlocked_helper(ele):
     return ele.canview
 
 
@@ -231,27 +241,20 @@ def datehelper(date):
     return date
 
 
-def duplicated_helper(ele, mediadict, downloaded):
-    if ele.value == "free":
-        return False
-    elif len(list(filter(lambda x: x.canview, mediadict.get(ele.id, [])))) > 1:
-        return True
-    elif downloaded.get(ele, 0) > 2:
-        return True
-    else:
-        return False
-
-
+def times_helper(ele, mediadict, downloaded):
+    return max(len(mediadict.get(ele.id, [])), downloaded.get(ele, 0))
+  
 def row_gather(media, downloaded, username):
+
     # fix text
-    mediaset = set(map(lambda x: x.id, filter(lambda x: x.canview, media)))
+
     mediadict = {}
     [mediadict.update({ele.id: mediadict.get(ele.id, []) + [ele]})
-     for ele in media]
+     for ele in list(filter(lambda x:x.canview,media))]
     out = []
     media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
     for count, ele in enumerate(media):
-        out.append((count+1, username, ele.id in downloaded, unlocked_helper(ele, mediaset), duplicated_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
+        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele), times_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
             ele.postdate_), len(ele._post.post_media), ele.responsetype_, "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),  ele.postid, ele.id, texthelper(ele.text)))
     return out
 
@@ -697,6 +700,8 @@ class InputApp(App):
             with Horizontal():
                 for ele in ["Text"]:
                     yield StringField(ele)
+                for ele in ["Times_Detected"]:
+                    yield NumField(ele)
                 for ele in ["Media_ID", "Post_ID", "Post_Media_Count"]:
                     yield NumField(ele)
             with Horizontal():
@@ -708,7 +713,7 @@ class InputApp(App):
                     yield TimeField(ele)
 
             with Horizontal():
-                for ele in ["Downloaded", "Unlocked", "Double_Purchase"]:
+                for ele in ["Downloaded", "Unlocked"]:
                     yield BoolField(ele)
                 for ele in ["Mediatype"]:
                     yield MediaField(ele)
@@ -742,7 +747,7 @@ class InputApp(App):
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: x[0], reverse=self.reverse)
             self.make_table()
-        elif label == "UserName":
+        elif label == "Username":
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: x, reverse=self.reverse)
             self.make_table()
@@ -755,7 +760,7 @@ class InputApp(App):
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: 1 if x[3] == True else 0, reverse=self.reverse)
             self.make_table()
-        elif label == "Double Purchase":
+        elif label == "Times Detected":
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: 1 if x[4] == True else 0, reverse=self.reverse)
             self.make_table()

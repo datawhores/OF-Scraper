@@ -31,6 +31,8 @@ import ofscraper.utils.paths as paths
 from ..utils import auth
 import ofscraper.utils.console as console
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+import ofscraper.utils.args as args_
+
 
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
@@ -58,7 +60,7 @@ async def get_messages(headers, model_id):
     #require a min num of posts to be returned
     min_posts=50
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
-        oldmessages=cache.get(f"messages_{model_id}",default=[]) 
+        oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
         oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
         log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
         oldmessages=list(filter(lambda x:x.get("createdAt")!=None,oldmessages))

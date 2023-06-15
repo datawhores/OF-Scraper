@@ -1,35 +1,34 @@
-# name: release pypi
-# on:
-#   workflow_dispatch: 
-#   release:
-#     types: [released]
+name: release pypi
+on:
+  workflow_dispatch: 
     
-# jobs:
-#   run :
-#     if: "!github.event.release.prerelease"
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#         with:
-#           fetch-depth: 0
-#       - name: Set up Python 3.10.6
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.10.6'
-#       - name: 🐍 Install dependencies
-#         run: |
-#           pip install poetry-dynamic-versioning
-#           pip install dunamai 
-#       - name: Install Poetry
-#         uses: snok/install-poetry@v1
-#       - name: Build
-#         run: |
-#           poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
-#           poetry build
-#       - name: Push to pypi 
-#         env:
-#           PYPI_TOKEN: ${{ secrets.pypi }}
-#         run: |
-#           poetry config pypi-token.pypi $PYPI_TOKEN
-#           poetry publish
+jobs:
+  run :
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: 🐍 Install dependencies
+        run: |
+          pip install poetry-dynamic-versioning
+          pip install dunamai 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Build
+        run: |
+          poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
+          poetry build
+      - name: Push to pypi 
+        env:
+          PYPI_TOKEN: ${{ secrets.pypi }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish
+
+

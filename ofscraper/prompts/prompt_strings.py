@@ -18,3 +18,12 @@ Parantheses indicates number of selected user
 [Sort-Type: {sort}] [Descending: {desc}] [Account-Type {type}] [Subscription Status {status}] [Renewal {renewal}]
 """
 
+SCRAPE_PAID=\
+"""
+This is meant really for scraping content for deleted models
+This can greatly increase the time needed for a single scrape
+
+It should not be needed to turn this on everytime, especially with  frequent scrapes
+
+"""
+

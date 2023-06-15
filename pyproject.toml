@@ -43,6 +43,8 @@ pytest-check = { version = "2.1.4", python = ">3.7" }
 coverage = "^7.2.3"
 pytest-cov = "^4.0.0"
 pytest-mock = "^3.10.0"
+random-unicode-emoji = "^2.8"
+random-emoji = "^1.0.15"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]

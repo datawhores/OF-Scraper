@@ -24,7 +24,7 @@ log=logging.getLogger(__package__)
 def read_config():
     p = pathlib.Path(paths_.get_config_path())
     if not p.parent.is_dir():
-        p.mkdir(parents=True, exist_ok=True)
+        p.parent.mkdir(parents=True, exist_ok=True)
 
     config = {}
     while True:
@@ -98,6 +98,7 @@ def get_current_config_schema(config:dict=None) -> dict:
 
 def make_config(path, config=None):
     config = get_current_config_schema(config) 
+    
     if isinstance(config,str):
         config=json.loads(config)
         

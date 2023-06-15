@@ -21,18 +21,12 @@ import queue
 import logging
 from contextlib import contextmanager
 import timeit
-from itertools import chain
 import arrow
 import ofscraper.prompts.prompts as prompts
-import ofscraper.api.messages as messages
 import ofscraper.db.operations as operations
-import ofscraper.api.posts as posts_
 import ofscraper.utils.args as args_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.exit as exit
-import ofscraper.api.paid as paid
-import ofscraper.api.highlights as highlights
-import ofscraper.api.timeline as timeline
 import ofscraper.api.profile as profile
 import ofscraper.utils.config as config
 import ofscraper.utils.auth as auth
@@ -44,163 +38,13 @@ import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
-import ofscraper.utils.console as console
-import ofscraper.api.archive as archive
-import ofscraper.api.pinned as pinned
 import ofscraper.utils.userselector as userselector
 import ofscraper.utils.console as console
+import ofscraper.utils.of as OF
 
 log=logging.getLogger(__package__)
 args=args_.getargs()
 log.debug(args)
-def process_messages(headers, model_id,username):
-    with stdout.lowstdout():
-        messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
-        messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
-        log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
-        log.debug("Removing locked messages media")
-        for message in messages_:
-            operations.write_messages_table(message)
-        output=[]
-        [ output.extend(message.media) for message in messages_]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
-
-def process_paid_post(model_id,username):
-    with stdout.lowstdout():
-        paid_content=asyncio.run(paid.get_paid_posts(username,model_id))
-        paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
-        log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
-        log.debug("Removing locked paid media")
-        for post in paid_content:
-            operations.write_post_table(post,model_id,username)
-        output=[]
-        [output.extend(post.media) for post in paid_content]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
-
-         
-
-def process_highlights(headers, model_id,username):
-    with stdout.lowstdout():
-        highlights_, stories = asyncio.run(highlights.get_highlight_post(headers, model_id))
-        highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
-        list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
-        log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
-        for post in highlights_:
-            operations.write_stories_table(post,model_id,username)
-        for post in stories:
-            operations.write_stories_table(post,model_id,username)   
-        output=[]
-        output2=[]
-        [ output.extend(highlight.media) for highlight in highlights_]
-        [ output2.extend(stories.media) for stories in stories]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output)),list(filter(lambda x:isinstance(x,posts_.Media),output2))
-
-        
-
-
-
-
-
-
-def process_timeline_posts(headers, model_id,username):
-    with stdout.lowstdout():
-        timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
-        timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
-        log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
-        log.debug("Removing locked timeline media")
-        for post in timeline_posts:
-            operations.write_post_table(post,model_id,username)
-        output=[]
-        [output.extend(post.media) for post in  timeline_posts ]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
-
-def process_archived_posts(headers, model_id,username):
-    with stdout.lowstdout():
-        archived_posts = asyncio.run(archive.get_archived_post(headers, model_id))
-        archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
-        log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
-        log.debug("Removing locked archived media")
-
-        for post in archived_posts:
-            operations.write_post_table(post,model_id,username)
-        output=[]
-        [ output.extend(post.media) for post in archived_posts ]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
-
-
-
-
-def process_pinned_posts(headers, model_id,username):
-    with stdout.lowstdout():
-        pinned_posts = asyncio.run(pinned.get_pinned_post(headers, model_id))
-        pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
-        log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
-        log.debug("Removing locked pinned media")
-        for post in  pinned_posts:
-            operations.write_post_table(post,model_id,username)
-        output=[]
-        [ output.extend(post.media) for post in pinned_posts ]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
-
-def process_profile(headers, username) -> list:
-    with stdout.lowstdout():
-        user_profile = profile.scrape_profile(headers, username)
-        urls, info = profile.parse_profile(user_profile)
-        profile.print_profile_info(info)       
-        output=[]
-        for ele in enumerate(urls):
-            count=ele[0]
-            data=ele[1]
-            output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
-        avatars=list(filter(lambda x:x.filename=='avatar',output))
-
-        if len(avatars)>0:
-            log.warning(f"Avatar : {avatars[0].url}")
-        return output
-
-
-
-def process_areas(headers, ele, model_id) -> list:
-    args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
-))
-    timeline_posts_dicts  = []
-    pinned_post_dict=[]
-    archived_posts_dicts  = []
-    highlights_dicts  = []
-    messages_dicts  = []
-    stories_dicts=[]
-    purchased_dict=[]
-    pinned_post_dict=[]
-    profile_dicts=[]
-
-    username=ele['name']
-  
-
-    if ('Profile' in args.posts or 'All' in args.posts):
-        profile_dicts  = process_profile(headers,username)
-    if ('Pinned' in args.posts or 'All' in args.posts):
-            pinned_post_dict = process_pinned_posts(headers, model_id,username)
-    if ('Timeline' in args.posts or 'All' in args.posts):
-            timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
-    if ('Archived' in args.posts or 'All' in args.posts):
-            archived_posts_dicts = process_archived_posts(headers, model_id,username)
-    if 'Messages' in args.posts or 'All' in args.posts:
-            messages_dicts = process_messages(headers, model_id,username)
-    if "Purchased" in args.posts or "All" in args.posts:
-            purchased_dict=process_paid_post(model_id,username)
-    if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts):
-            highlights_tuple = process_highlights(headers, model_id,username)  
-            if 'Highlights'  in args.posts:
-                highlights_dicts=highlights_tuple[0]
-            if 'Stories'  in args.posts:
-                stories_dicts=highlights_tuple[1]   
-            if 'All' in args.posts:
-                highlights_dicts=highlights_tuple[0]
-                stories_dicts=highlights_tuple[1]               
-    return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
-            archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
-
-)
 
 def process_prompts():
     
@@ -271,65 +115,95 @@ def process_prompts():
         
 
 
+
+
+
+
+
 def process_post():
-    with scrape_context_manager():
+    if args.users_first:
+         process_post_user_first()
+    else:
+        normal_post_process()
+           
+def process_post_user_first():
+     with scrape_context_manager():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        userdata=userselector.getselected_usernames()
-        length=len(userdata)
         if args.users_first:
-            eleDict={}
+            output=[]
+            userdata=userselector.getselected_usernames() if "None" not in args.posts else []
+            length=len(userdata)
             for count,ele in enumerate(userdata):
-                key=ele['name']
-                eleDict[key]={}
-                eleDict[key]["name"]=ele['name']
                 log.debug(f"getting content for {count+1}/{length} model")
                 if args.posts:
                     log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
                     model_id = profile.get_id(headers, ele["name"])
-                    eleDict[key]["id"]=model_id
                     operations.create_tables(model_id,ele['name'])
                     operations.write_profile_table(model_id,ele['name'])
-                    eleDict[key]["combined"]=process_areas(headers, ele, model_id)
-                
+                    output.extend(OF.process_areas(headers, ele, model_id)) 
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())      
-            for key in eleDict.keys():
-                try:
+                    log.traceback(traceback.format_exc())               
+            if args.scrape_paid:
+                output.extend(OF.process_all_paid())
+            user_dict={}
+            [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in output]
+            for value in user_dict.values():
+                model_id =value[0].post.model_id
+                username=value[0].post.username
+                operations.create_tables(model_id,username)
+                operations.write_profile_table(model_id,username)
+                asyncio.run(download.process_dicts(
+                username,
+                model_id,
+                value,
+                ))  
+def normal_post_process():
+    with scrape_context_manager():
+        profiles.print_current_profile()
+        headers = auth.make_headers(auth.read_auth())
+        init.print_sign_status(headers)
+        userdata=userselector.getselected_usernames() if "None" not in args.posts else []
+        length=len(userdata)
+        for count,ele in enumerate(userdata):
+            log.debug(f"Getting content+downloading {count+1}/{length} model")
+            if args.posts:
+                log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+            try:
+                model_id = profile.get_id(headers, ele["name"])
+                operations.create_tables(model_id,ele['name'])
+                operations.write_profile_table(model_id,ele['name'])
+                combined_urls=OF.process_areas(headers, ele, model_id)
+                asyncio.run(download.process_dicts(
+                ele["name"],
+                model_id,
+                combined_urls,
+                ))
+            except Exception as e:
+                log.traceback(f"failed with exception: {e}")
+                log.traceback(traceback.format_exc())
+        
+        if args.scrape_paid:
+            try:
+                user_dict={}
+                [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in OF.process_all_paid()]
+                for value in user_dict.values():
+                    model_id =value[0].post.model_id
+                    username=value[0].post.username
+                    operations.create_tables(model_id,username)
+                    operations.write_profile_table(model_id,username)
                     asyncio.run(download.process_dicts(
-                        eleDict[key]["name"],
-                        eleDict[key]["id"],
-                        eleDict[key]["combined"],
-                        forced=args.dupe,
-                        ))
-                except Exception as e:
-                    log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())   
-        else:
-            for count,ele in enumerate(userdata):
-                log.debug(f"Getting content+downloading {count+1}/{length} model")
-
-                if args.posts:
-                    log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
-                try:
-                    model_id = profile.get_id(headers, ele["name"])
-                    operations.create_tables(model_id,ele['name'])
-                    operations.write_profile_table(model_id,ele['name'])
-                    combined_urls=process_areas(headers, ele, model_id)
-                    asyncio.run(download.process_dicts(
-                    ele["name"],
+                    username,
                     model_id,
-                    combined_urls,
-                    forced=args.dupe,
+                    value,
                     ))
-                except Exception as e:
-                    log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())
-        
-        
+            except Exception as e:
+                log.traceback(f"failed with exception: {e}")
+                log.traceback(traceback.format_exc())     
+            
 
 def process_like():
     with scrape_context_manager():
@@ -341,8 +215,10 @@ def process_like():
                     model_id = profile.get_id(headers, ele["name"])
                     posts = like.get_posts(headers, model_id)
                     unfavorited_posts = like.filter_for_unfavorited(posts)  
-                    unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)             
+                    unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)   
+                    log.debug(f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}")
                     post_ids = like.get_post_ids(unfavorited_posts)
+                    log.debug(f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}")
                     like.like(headers, model_id, ele["name"], post_ids)
 
 def process_unlike():
@@ -357,7 +233,9 @@ def process_unlike():
                     posts = like.get_posts(headers, model_id)
                     favorited_posts = like.filter_for_favorited(posts)
                     favorited_posts=filters.timeline_array_filter(favorited_posts) 
+                    log.debug(f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}")
                     post_ids = like.get_post_ids(favorited_posts)
+                    log.debug(f"[bold]Final Number of open and unlikable post[/bold] {len(post_ids)}")
                     like.unlike(headers, model_id, ele["name"], post_ids)
 #Adds a function to the job queue
 def set_schedule(*functs):
@@ -488,14 +366,14 @@ def scrapper():
     global selectedusers
     selectedusers=None
     functs=[]
-    if len(args.posts)==0 and not args.action:
+    if len(args.posts)==0 and not args.action and not args.scrape_paid:
         if args.daemon:
                     log.error("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
         return
     check_auth()
     check_config()
-    if len(args.posts)>0: 
+    if len(args.posts)>0 or args.scrape_paid: 
         functs.append(process_post)      
     elif args.action=="like":
         functs.append(process_like)

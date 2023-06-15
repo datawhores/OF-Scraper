@@ -60,9 +60,18 @@ def getargs(input=None):
 
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
+    post.add_argument(
+        '-ft', '--filter', help = 'Filter post by provide regex\nNote if you include any uppercase characters the search will be case-sensitive',default=".*",required=False,type = str
+    )
+    post.add_argument(
+        '-sp', '--scrape-paid', help = 'scrape the entire paid page for content. This can take a very long time',default=False,required=False,action="store_true"
+    )
+    post.add_argument(
+        '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
+    )
 
      #Filters for accounts
-    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters\nNote if you include any uppercase characters the search will be case-sensitive")
+    filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
     filters.add_argument(
         '-at', '--account-type', help = 'Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price',default=None,required=False,type = str.lower,choices=["paid","free"]
@@ -93,9 +102,7 @@ def getargs(input=None):
     # advanced.add_argument(
     #     '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
     # )
-    advanced.add_argument(
-        '-ft', '--filter', help = 'Filter post by provide regex',default=".*",required=False,type = str
-    ) 
+  
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
 
@@ -123,6 +130,8 @@ def getargs(input=None):
     
 
     message_check.add_argument("-u","--url",
+    help = 'link to conversation',type = check_strhelper,action="extend")
+    message_check.add_argument("-un","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
     paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours")
@@ -181,7 +190,7 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile"])
+    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile","none"])
     if isinstance(x,str):
         x=x.split(',')
     if len(list(filter(lambda y:y not in choices,x)))>0:

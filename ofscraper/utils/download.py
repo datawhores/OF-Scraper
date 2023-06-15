@@ -57,6 +57,7 @@ import ofscraper.utils.logger as logger
 import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
+import ofscraper.utils.args as args_
 
 from diskcache import Cache
 
@@ -67,7 +68,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
-async def process_dicts(username, model_id, medialist,forced=False):
+async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
         overall_progress=Progress(  TextColumn("{task.description}"),
         BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
@@ -77,7 +78,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
         overall_progress
         , Panel(Group(job_progress,fit=True)))
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
-                if not forced:
+                if not args_.getargs().dupe:
                     media_ids = set(operations.get_media_ids(model_id,username))
                     medialist = seperate.separate_by_id(medialist, media_ids)
                     medialist=seperate.seperate_avatars(medialist)
@@ -139,7 +140,7 @@ async def download(ele,path,model_id,username,file_size_limit,progress):
     try:
         if ele.url:
            return await main_download_helper(ele,path,file_size_limit,username,model_id,progress)
-        elif ele.mpd: 
+        elif ele.mpd:
             return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
         else:
             return "skipped",1
@@ -195,6 +196,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
 
         if ele.id:
             operations.write_media_table(ele,path_to_file,model_id,username)
+        set_cache_helper(ele)
         return ele.mediatype,total
 
 async def alt_download_helper(ele,path,file_size_limit,username,model_id,progress):
@@ -205,7 +207,8 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
-        path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}')) 
+        path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
+        temp_path=paths.trunicate(pathlib.Path(path,f"{ele.id}.mkv"))
 
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
@@ -275,11 +278,16 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)])
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
+    
     path_to_file.unlink(missing_ok=True)
-   
-    ffmpeg.output( ffmpeg.input(str(video["path"])), ffmpeg.input(str(audio["path"])), str(path_to_file),codec='copy',loglevel="quiet").overwrite_output().run(capture_stdout=True,cmd=config_.get_ffmpeg(config_.read_config()))
+    temp_path.unlink(missing_ok=True)
+    t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    if t.stderr.decode().find("Output")==-1:
+        log.debug(t.stdout.decode())
+        log.debug(t.stderr.decode())
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
+    shutil.move(temp_path,path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -287,6 +295,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         operations.write_media_table(ele,path_to_file,model_id,username)
+    set_cache_helper(ele)
     return ele.mediatype,total
 
 async def key_helper(pssh,licence_url,id):
@@ -365,7 +374,10 @@ def createfilename(ele,username,model_id,ext):
 
     
 
-
-
-
-
+def set_cache_helper(ele):
+    if  ele.postid and ele.responsetype_=="profile":
+        cache.set(ele.postid ,True)
+        cache.close()
+    elif  ele.filename and ele.responsetype_=="highlights":
+        cache.set(ele.filename,True)
+        cache.close()

@@ -8,7 +8,6 @@ r"""
 """
 import time
 import asyncio
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
@@ -26,10 +25,10 @@ from rich.live import Live
 from rich.style import Style
 import arrow
 import ofscraper.constants as constants
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
-import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 
 from diskcache import Cache
@@ -106,7 +105,7 @@ async def get_timeline_post(headers,model_id):
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
 
-        oldtimeline=cache.get(f"timeline_{model_id}",default=[])
+        oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
         oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
@@ -124,7 +123,7 @@ async def get_timeline_post(headers,model_id):
             # keeping grabbing until nothign left
             tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-2][-1])))
         else:
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=args_.getargs().float_timestamp if args_.getargs().after else None)))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
     
 
         page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
@@ -140,7 +139,7 @@ async def get_timeline_post(headers,model_id):
     unduped=[]
     dupeSet=set()
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
-    for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
+    for post in responseArray:
         if post["id"] in dupeSet:
             continue
         dupeSet.add(post["id"])
