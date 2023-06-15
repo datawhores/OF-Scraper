@@ -8,6 +8,8 @@ r"""
                  \/     \/           \/            \/         
 """
 import logging
+import contextvars
+
 from typing import Union
 import httpx
 from rich.console import Console
@@ -23,11 +25,15 @@ cache = Cache(getcachepath())
 
 log=logging.getLogger(__package__)
 console=Console()
+attempt = contextvars.ContextVar("attempt")
+
 
 
 # can get profile from username or id
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile(headers, username:Union[int, str]) -> dict:
+    attempt.set(attempt.get(0) + 1)
+    log.info(f"Attempt {attempt.get()}/{constants.NUM_TRIES} to get profile {username}")
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
 
@@ -36,7 +42,10 @@ def scrape_profile(headers, username:Union[int, str]) -> dict:
 
         r = c.get(profileEP.format(username), timeout=None)
         if not r.is_error:
+            attempt.set(0)
             return r.json()
+        elif r.status_code==404:
+            return {"username":"modeldeleted"}
         r.raise_for_status()
 
 

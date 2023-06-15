@@ -139,7 +139,7 @@ async def get_archived_post(headers,model_id):
     unduped=[]
     dupeSet=set()
     log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
-    for post in sorted(responseArray,key=lambda x:x["postedAtPrecise"]):
+    for post in responseArray:
         if post["id"] in dupeSet:
             continue
         dupeSet.add(post["id"])

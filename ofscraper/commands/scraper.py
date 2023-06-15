@@ -157,6 +157,31 @@ def process_profile(headers, username) -> list:
             log.warning(f"Avatar : {avatars[0].url}")
         return output
 
+def process_all_paid():
+    with stdout.lowstdout():
+        paid_content=asyncio.run(paid.get_all_paid_posts())
+        user_dict={}
+        post_array=[]
+        headers = auth.make_headers(auth.read_auth())
+        [user_dict.update({(ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id"):user_dict.get((ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id"),[])+[ele]}) for ele in paid_content]
+
+        for model_id,value in user_dict.items():
+            username=profile.scrape_profile(headers,model_id).get("username")
+            if username=="modeldeleted":
+                username=operations.get_profile_info(model_id,username) or username
+            log.info(f"Processing {username}_{model_id}")
+            operations.create_tables(model_id,username)
+            log.debug(f"Created table for {username}")
+            new_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
+            post_array.extend(new_posts)
+            [operations.write_post_table(post,model_id,username) for post in new_posts]
+            log.debug(f"Added Paid media for {username}_{model_id}")
+
+                     
+        log.debug(f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.media),post_array))}")
+        output=[]
+        [output.extend(post.media) for post in post_array]
+        return output
 
 
 def process_areas(headers, ele, model_id) -> list:
@@ -273,36 +298,22 @@ def process_prompts():
 
 
 
-def process_all_paid():
-    with stdout.lowstdout():
-        paid_content=asyncio.run(paid.get_all_paid_posts())
-        user_dict={}
-        post_array=[]
-        headers = auth.make_headers(auth.read_auth())
-        for ele in paid_content:
-            model_id=(ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id")
-            username=user_dict.get(model_id)
-            if not username:
-                username=profile.scrape_profile(headers,model_id)['username']
-                operations.create_tables(model_id,username)
-                user_dict[model_id]=username
-            new_post=posts_.Post(ele,model_id,username,responsetype="paid")
-            post_array.append(new_post)
-            operations.write_post_table(new_post,model_id,username)            
-        log.debug(f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.post_media),post_array))}")
-        output=[]
-        [output.extend(post.media) for post in post_array]
-        return output
+
 
 
 
 def process_post():
-    with scrape_context_manager():
+    if args.users_first:
+         process_post_user_first()
+    else:
+        normal_post_process()
+           
+def process_post_user_first():
+     with scrape_context_manager():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
         userdata=userselector.getselected_usernames()
-        userdata=[userdata[0]]
         length=len(userdata)
         if args.users_first:
             output=[]
@@ -332,28 +343,34 @@ def process_post():
                     model_id,
                     value,
                     forced=args.dupe,
-                    ))
-            for count,ele in enumerate(userdata):
-                log.debug(f"Getting content+downloading {count+1}/{length} model")
-
-                if args.posts:
-                    log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
-                try:
-                    model_id = profile.get_id(headers, ele["name"])
-                    operations.create_tables(model_id,ele['name'])
-                    operations.write_profile_table(model_id,ele['name'])
-                    combined_urls=process_areas(headers, ele, model_id)
-                    asyncio.run(download.process_dicts(
-                    ele["name"],
-                    model_id,
-                    combined_urls,
-                    forced=args.dupe,
-                    ))
-                except Exception as e:
-                    log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())
-                
+                    ))  
+def normal_post_process():
+    with scrape_context_manager():
+        profiles.print_current_profile()
+        headers = auth.make_headers(auth.read_auth())
+        init.print_sign_status(headers)
+        userdata=userselector.getselected_usernames()
+        length=len(userdata)
+        for count,ele in enumerate(userdata):
+            log.debug(f"Getting content+downloading {count+1}/{length} model")
+            if args.posts:
+                log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+            try:
+                model_id = profile.get_id(headers, ele["name"])
+                operations.create_tables(model_id,ele['name'])
+                operations.write_profile_table(model_id,ele['name'])
+                combined_urls=process_areas(headers, ele, model_id)
+                asyncio.run(download.process_dicts(
+                ele["name"],
+                model_id,
+                combined_urls,
+                forced=args.dupe,
+                ))
+            except Exception as e:
+                log.traceback(f"failed with exception: {e}")
+                log.traceback(traceback.format_exc())
         
+        if args.scrape_paid:
             try:
                 user_dict={}
                 [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in process_all_paid()]
@@ -370,10 +387,8 @@ def process_post():
                     ))
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
-                log.traceback(traceback.format_exc())
-
-        
-        
+                log.traceback(traceback.format_exc())     
+            
 
 def process_like():
     with scrape_context_manager():

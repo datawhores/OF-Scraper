@@ -118,6 +118,18 @@ def get_post_ids(model_id,username) -> list:
             return list(map(lambda x:x[0],cur.fetchall()))
 
 @operation_wrapper
+def get_profile_info(model_id,username) -> list:
+    datebase_path =databasePathHelper(model_id,username)
+    if not pathlib.Path(datebase_path).exists():
+        return None
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            modelinfo=cur.execute(queries.profileDupeCheck,(model_id,)).fetchall() or [(None,)]
+            conn.commit()
+            return modelinfo[0][-1]
+
+
+@operation_wrapper
 def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:

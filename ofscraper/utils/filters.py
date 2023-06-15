@@ -14,11 +14,15 @@ def filterMedia(media):
     media=posts_date_filter(media)
     media=post_timed_filter(media)
     media=post_user_filter(media)
+    media=sort_media(media)
     # if args.manual_download():
     #     args.dupe=True
     #     args_.changeargs(args)
     #     media=post_manual_filter(media)
     return media
+
+def sort_media(media):
+    return sorted(media,key=lambda x:x.date)
 
 def post_manual_filter():
     None
