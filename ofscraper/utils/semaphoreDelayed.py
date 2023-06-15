@@ -8,8 +8,8 @@ class semaphoreDelayed(asyncio.Semaphore):
     def delay(self):
         return self._delay
     @delay.setter
-    def name(self, value):
-        self.delay = value
+    def delay(self, value):
+        self._delay = value
     async def acquire(self):
         await super().acquire()
         await asyncio.sleep(self._delay)

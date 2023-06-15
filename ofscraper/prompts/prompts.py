@@ -80,6 +80,28 @@ def areas_prompt() -> list:
     return answers[name]
 
 
+def like_areas_prompt() -> list:
+    name = 'areas'
+
+    questions = [
+        {
+            'type': 'checkbox',
+            'qmark': '[?]',
+            'name': name,
+            'message': 'Which area(s) would you to perform like/unlike actions on',
+             "validate":prompt_validators.emptyListValidator(),
+            'choices': [
+                Choice('Timeline'),
+                Choice('Pinned'),
+                Choice('Archived'),
+            ]
+            ,"instruction":prompt_strings.CHECKLISTINSTRUCTIONS,
+
+        }
+    ]
+    answers = prompt(questions)
+    return answers[name]
+
 
 
 def auth_prompt(auth) -> dict:

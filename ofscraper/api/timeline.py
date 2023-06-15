@@ -8,7 +8,6 @@ r"""
 """
 import time
 import asyncio
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
@@ -26,6 +25,7 @@ from rich.live import Live
 from rich.style import Style
 import arrow
 import ofscraper.constants as constants
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
