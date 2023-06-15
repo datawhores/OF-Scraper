@@ -30,6 +30,5 @@ jobs:
         run: |
           poetry config pypi-token.pypi $PYPI_TOKEN
           poetry publish
-  - run :  
-      if: "!github.event.release.prerelease"
+
 
