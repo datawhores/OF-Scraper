@@ -74,10 +74,10 @@ def posts_type_filter(media):
 
 def posts_date_filter(media):
     if args.before:
-        media=filter(lambda x:x.postdate==None or arrow.get(x.postdate)<=args.before,media)
+        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)<=args.before,media))
     if args.after:
-        media=filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media)
-    return list(media)
+        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media))
+    return media
 
 def post_timed_filter(media):
     if args.skip_timed:
