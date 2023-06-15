@@ -102,7 +102,7 @@ def like_areas_prompt() -> list:
     answers = prompt(questions)
     return answers[name]
 
-def scrape_paid_pomrpot(args):
+def scrape_paid_prompt(args):
     questions = [
         {
             'type': 'list',
