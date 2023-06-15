@@ -107,7 +107,7 @@ def scrape_paid_prompt():
         {
             'type': 'list',
             'message': "Scrape entire paid page",
-            'choices':[Choice(True,"Ascending"),Choice(False,"Descending",enabled=True)],
+            'choices':[Choice(True,"True"),Choice(False,"False",enabled=True)],
             'long_instruction': prompt_strings.SCRAPE_PAID,
             "default":False
 
