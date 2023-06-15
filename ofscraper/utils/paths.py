@@ -148,7 +148,7 @@ def _windows_trunicateHelper(path):
     fileLength=256-len(ext)-len(str(dir))-1
     newFile=f"{re.sub(ext,'',file)[fileLength]}{ext}"
     final=pathlib.Path(dir,newFile)
-    log.debug(f"path: {final} path size: {len(final)}")
+    log.debug(f"path: {final} path size: {len(str(final))}")
     return pathlib.Path(dir,newFile)
 
 def _linux_trunicateHelper(path):
