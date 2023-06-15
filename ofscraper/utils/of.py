@@ -164,10 +164,11 @@ def process_all_paid():
 
 
 def select_areas():
+    if not args.scrape_paid and len( args.posts or [])==0:
+          args.scrape_paid=prompts.scrape_paid_prompt()
     args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
 ))
-    if not args.scrape_paid:
-          args.scrape_paid=prompts.scrape_paid_prompt()
+
     args_.changeargs(args)
      
 def process_areas(headers, ele, model_id) -> list:
