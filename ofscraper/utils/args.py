@@ -63,6 +63,9 @@ def getargs(input=None):
     post.add_argument(
         '-ft', '--filter', help = 'Filter post by provide regex\nNote if you include any uppercase characters the search will be case-sensitive',default=".*",required=False,type = str
     )
+    post.add_argument(
+        '-sp', '--scrape-paid', help = 'scrape the entire paid page for content. This can take a very long time',default=False,required=False,action="store_true"
+    )
 
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
@@ -182,7 +185,7 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile"])
+    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile","none"])
     if isinstance(x,str):
         x=x.split(',')
     if len(list(filter(lambda y:y not in choices,x)))>0:

@@ -172,9 +172,11 @@ def process_areas(headers, ele, model_id) -> list:
     pinned_post_dict=[]
     profile_dicts=[]
 
-    username=ele['name']
-  
 
+    username=ele['name']
+    if "NONE" in args.posts:
+        return []
+  
     if ('Profile' in args.posts or 'All' in args.posts):
         profile_dicts  = process_profile(headers,username)
     if ('Pinned' in args.posts or 'All' in args.posts):
@@ -270,44 +272,67 @@ def process_prompts():
         
 
 
+
+def process_all_paid():
+    with stdout.lowstdout():
+        paid_content=asyncio.run(paid.get_all_paid_posts())
+        user_dict={}
+        post_array=[]
+        headers = auth.make_headers(auth.read_auth())
+        for ele in paid_content:
+            model_id=(ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id")
+            username=user_dict.get(model_id)
+            if not username:
+                username=profile.scrape_profile(headers,model_id)['username']
+                operations.create_tables(model_id,username)
+                user_dict[model_id]=username
+            new_post=posts_.Post(ele,model_id,username,responsetype="paid")
+            post_array.append(new_post)
+            operations.write_post_table(new_post,model_id,username)            
+        log.debug(f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.post_media),post_array))}")
+        output=[]
+        [output.extend(post.media) for post in post_array]
+        return output
+
+
+
 def process_post():
     with scrape_context_manager():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
         userdata=userselector.getselected_usernames()
+        userdata=[userdata[0]]
         length=len(userdata)
         if args.users_first:
-            eleDict={}
+            output=[]
             for count,ele in enumerate(userdata):
-                key=ele['name']
-                eleDict[key]={}
-                eleDict[key]["name"]=ele['name']
                 log.debug(f"getting content for {count+1}/{length} model")
                 if args.posts:
                     log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
                     model_id = profile.get_id(headers, ele["name"])
-                    eleDict[key]["id"]=model_id
                     operations.create_tables(model_id,ele['name'])
                     operations.write_profile_table(model_id,ele['name'])
-                    eleDict[key]["combined"]=process_areas(headers, ele, model_id)
-                
+                    output.extend(process_areas(headers, ele, model_id)) 
+                    if args.scrape_paid:
+                        output.extend(process_all_paid())
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())      
-            for key in eleDict.keys():
-                try:
+                    log.traceback(traceback.format_exc())               
+                user_dict={}
+                [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in output]
+                for value in user_dict.values():
+                    model_id =value[0].post.model_id
+                    username=value[0].post.username
+                    operations.create_tables(model_id,username)
+                    operations.write_profile_table(model_id,username)
                     asyncio.run(download.process_dicts(
-                        eleDict[key]["name"],
-                        eleDict[key]["id"],
-                        eleDict[key]["combined"],
-                        forced=args.dupe,
-                        ))
-                except Exception as e:
-                    log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())   
-        else:
+                    username,
+                    model_id,
+                    value,
+                    forced=args.dupe,
+                    ))
             for count,ele in enumerate(userdata):
                 log.debug(f"Getting content+downloading {count+1}/{length} model")
 
@@ -327,6 +352,26 @@ def process_post():
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
                     log.traceback(traceback.format_exc())
+                
+        
+            try:
+                user_dict={}
+                [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in process_all_paid()]
+                for value in user_dict.values():
+                    model_id =value[0].post.model_id
+                    username=value[0].post.username
+                    operations.create_tables(model_id,username)
+                    operations.write_profile_table(model_id,username)
+                    asyncio.run(download.process_dicts(
+                    username,
+                    model_id,
+                    value,
+                    forced=args.dupe,
+                    ))
+            except Exception as e:
+                log.traceback(f"failed with exception: {e}")
+                log.traceback(traceback.format_exc())
+
         
         
 
@@ -487,14 +532,14 @@ def scrapper():
     global selectedusers
     selectedusers=None
     functs=[]
-    if len(args.posts)==0 and not args.action:
+    if len(args.posts)==0 and not args.action and not args.scrape_paid:
         if args.daemon:
                     log.error("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
         return
     check_auth()
     check_config()
-    if len(args.posts)>0: 
+    if len(args.posts)>0 or args.scrape_paid: 
         functs.append(process_post)      
     elif args.action=="like":
         functs.append(process_like)

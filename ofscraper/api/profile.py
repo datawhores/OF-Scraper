@@ -25,6 +25,7 @@ log=logging.getLogger(__package__)
 console=Console()
 
 
+# can get profile from username or id
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile(headers, username:Union[int, str]) -> dict:
     with httpx.Client(http2=True, headers=headers) as c:

@@ -22,13 +22,13 @@ console=Console()
 log=logging.getLogger(__package__)
 #print error 
 def operation_wrapper(func): 
-    def inner1(*args,**kwargs): 
+    def inner(*args,**kwargs): 
         try:
             return func(*args,**kwargs) 
         except sqlite3.OperationalError as E:
             log.info("DB may be locked") 
             raise E    
-    return inner1 
+    return inner
 
 
 
