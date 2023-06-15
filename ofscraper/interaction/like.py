@@ -127,24 +127,12 @@ async def _like_request(headers,id,model_id,username):
             if not r.is_error or r.status_code == 400:
                 return id
                      
-            else:
-                _handle_err(r, postURL.format(i, username))
+            
+            log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
+            log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+            log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+            r.raise_for_status()
 
-    
 
 
-def _handle_err(param: Union[httpx.Response, httpx.TransportError], url: str) -> str:
-    message = 'unable to execute action'
-    status = ''
-    try:
-        if isinstance(param, httpx.Response):
-            json = param.json()
-            if 'error' in json and 'message' in json['error']:
-                message = json['error']['message']
-            status = f'STATUS CODE {param.status_code}: '
-        else:
-            message = str(param)
-    except:
-        pass
-    log.info(f'{status}{message}, post at {url}')
-    raise Exception()
+
