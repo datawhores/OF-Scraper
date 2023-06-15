@@ -45,7 +45,7 @@ def post_checker():
             user_name = name_match.group(1)
             log.info(f"Getting Full Timeline for {user_name}")
             model_id = profile.get_id(headers, user_name)
-        name_match = re.search("^[a-z]+$)", ele)
+        name_match = re.search("^[a-z]+$", ele)
         if name_match:
             user_name = name_match.group(0)
             model_id = profile.get_id(headers, user_name)
@@ -99,23 +99,26 @@ def message_checker():
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile(headers, model_id)['username']
-            
-            user_dict[user_name] = user_dict.get(user_name, [])
-            log.info(f"Getting Messages for {user_name}")
-            messages = None
-            oldmessages = cache.get(f"message_check_{model_id}", default=[])
+        name_match = re.search("^[a-z]+$", item)
+        if name_match:
+            user_name = name_match.group(0)
+            model_id = profile.get_id(headers, user_name)     
+        user_dict[user_name] = user_dict.get(user_name, [])
+        log.info(f"Getting Messages for {user_name}")
+        messages = None
+        oldmessages = cache.get(f"message_check_{model_id}", default=[])
 
-            
-            if len(oldmessages) > 0 and not args.force:
-                messages = oldmessages
-            else:
-                messages = asyncio.run(
-                    messages_.get_messages(headers,  model_id))
-                cache.set(f"message_check_{model_id}",
-                          messages, expire=constants.CHECK_EXPIRY)
-            downloaded = get_downloaded(user_name, model_id)
-            media = get_all_found_media(user_name, messages)
-            ROWS.extend(row_gather(media, downloaded, user_name))
+        
+        if len(oldmessages) > 0 and not args.force:
+            messages = oldmessages
+        else:
+            messages = asyncio.run(
+                messages_.get_messages(headers,  model_id))
+            cache.set(f"message_check_{model_id}",
+                        messages, expire=constants.CHECK_EXPIRY)
+        downloaded = get_downloaded(user_name, model_id)
+        media = get_all_found_media(user_name, messages)
+        ROWS.extend(row_gather(media, downloaded, user_name))
 
     app_run_helper(ROWS)
 
