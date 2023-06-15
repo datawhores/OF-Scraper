@@ -103,10 +103,13 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
         for count,coro in enumerate(asyncio.as_completed(tasks)):
                 id=await coro
                 log.debug(f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action")
-                if count+1%60==0:
+                if count+1%60==0 and count+1%50==0:
+                    sem.delay=15
+                elif count+1%60==0:
                     sem.delay=3
                 elif count+1%50==0:
-                    sem.delay=30   
+                    sem.delay=30  
+                 
                 overall_progress.update(task1,advance=1,refresh=True)
 
         
