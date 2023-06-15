@@ -702,7 +702,7 @@ def model_selector(models,selected=None) -> bool:
 
                                                                  
         choices=choices,
-        transformer=lambda result:",".join(map(lambda x:x.split(" ")[0],result)),
+        transformer=lambda result:",".join(map(lambda x:x.split(" ")[1],result)),
         multiselect=True,
         validate=prompt_validators.emptyListValidator(),
         prompt='Filter: ',
