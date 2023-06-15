@@ -81,7 +81,6 @@ async def process_dicts(username, model_id, medialist):
                     media_ids = set(operations.get_media_ids(model_id,username))
                     medialist = seperate.separate_by_id(medialist, media_ids)
                     medialist=seperate.seperate_avatars(medialist)
-
                     log.info(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
                 else:
                     log.info("forcing all downloads")
