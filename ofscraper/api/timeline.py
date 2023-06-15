@@ -29,7 +29,6 @@ import ofscraper.constants as constants
 from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
-import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 
 from diskcache import Cache
@@ -106,7 +105,7 @@ async def get_timeline_post(headers,model_id):
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
 
-        oldtimeline=cache.get(f"timeline_{model_id}",default=[])
+        oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
         oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))

@@ -66,6 +66,9 @@ def getargs(input=None):
     post.add_argument(
         '-sp', '--scrape-paid', help = 'scrape the entire paid page for content. This can take a very long time',default=False,required=False,action="store_true"
     )
+    post.add_argument(
+        '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
+    )
 
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
