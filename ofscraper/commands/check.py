@@ -39,26 +39,31 @@ def post_checker():
     user_dict = {}
     client = httpx.Client(http2=True, headers=headers)
     links = list(url_helper())
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[a-z_]+$", x), links)):
+    for ele in links:
         name_match = re.search("/([a-z_]+$)", ele)
         if name_match:
             user_name = name_match.group(1)
             log.info(f"Getting Full Timeline for {user_name}")
             model_id = profile.get_id(headers, user_name)
-            oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
-            if len(oldtimeline) > 0 and not args.force:
-                user_dict[user_name] = oldtimeline
-            elif not user_dict.get(user_name):
-                user_dict[user_name] = {}
-                user_dict[user_name] = user_dict[user_name] or []
-                user_dict[user_name].extend(asyncio.run(
-                    timeline.get_timeline_post(headers, model_id)))
-                user_dict[user_name].extend(asyncio.run(
-                    pinned.get_pinned_post(headers, model_id)))
-                user_dict[user_name].extend(asyncio.run(
-                    archive.get_archived_post(headers, model_id)))
-                cache.set(
-                    f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+        name_match = re.search("^[a-z]+$)", ele)
+        if name_match:
+            user_name = name_match.group(0)
+            model_id = profile.get_id(headers, user_name)
+
+        oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+        if len(oldtimeline) > 0 and not args.force:
+            user_dict[user_name] = oldtimeline
+        elif not user_dict.get(user_name):
+            user_dict[user_name] = {}
+            user_dict[user_name] = user_dict[user_name] or []
+            user_dict[user_name].extend(asyncio.run(
+                timeline.get_timeline_post(headers, model_id)))
+            user_dict[user_name].extend(asyncio.run(
+                pinned.get_pinned_post(headers, model_id)))
+            user_dict[user_name].extend(asyncio.run(
+                archive.get_archived_post(headers, model_id)))
+            cache.set(
+                f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
 
     # individual links
     for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), links)):
@@ -94,6 +99,7 @@ def message_checker():
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile(headers, model_id)['username']
+            
             user_dict[user_name] = user_dict.get(user_name, [])
             log.info(f"Getting Messages for {user_name}")
             messages = None

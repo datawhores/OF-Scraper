@@ -128,6 +128,8 @@ def getargs(input=None):
 
     message_check.add_argument("-u","--url",
     help = 'link to conversation',type = check_strhelper,action="extend")
+    message_check.add_argument("-un","--username",
+    help = 'link to conversation',type = check_strhelper,action="extend")
 
     paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours")
     paid_check.add_argument(
