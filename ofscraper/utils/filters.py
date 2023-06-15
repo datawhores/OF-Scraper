@@ -46,8 +46,8 @@ def post_datesorter(output):
     
 def timeline_array_filter(posts):
     out=[]
-    undated=filter(lambda x:x.get("postedAt")==None,posts)
-    dated=filter(lambda x:x.get("postedAt")!=None,posts)
+    undated=list(filter(lambda x:x.get("postedAt")==None,posts))
+    dated=list(filter(lambda x:x.get("postedAt")!=None,posts))
     dated=sorted(dated,key=lambda x:arrow.get(x.get("postedAt")))
     if args.before:
         dated=list(filter(lambda x:arrow.get(x.get("postedAt"))<=args.before,dated))

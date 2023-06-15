@@ -215,7 +215,8 @@ def process_like():
                     model_id = profile.get_id(headers, ele["name"])
                     posts = like.get_posts(headers, model_id)
                     unfavorited_posts = like.filter_for_unfavorited(posts)  
-                    unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)             
+                    unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)   
+                    log.debug(f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}")
                     post_ids = like.get_post_ids(unfavorited_posts)
                     like.like(headers, model_id, ele["name"], post_ids)
 
@@ -231,6 +232,7 @@ def process_unlike():
                     posts = like.get_posts(headers, model_id)
                     favorited_posts = like.filter_for_favorited(posts)
                     favorited_posts=filters.timeline_array_filter(favorited_posts) 
+                    log.debug(f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}")
                     post_ids = like.get_post_ids(favorited_posts)
                     like.unlike(headers, model_id, ele["name"], post_ids)
 #Adds a function to the job queue

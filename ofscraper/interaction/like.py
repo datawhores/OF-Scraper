@@ -86,7 +86,8 @@ def like(headers, model_id, username, ids: list):
 
 
 def unlike(headers, model_id, username, ids: list):
-    _like(headers, model_id, username, ids, False)
+    asyncio.run(_like(headers, model_id, username, ids, False))
+
 
 
 
