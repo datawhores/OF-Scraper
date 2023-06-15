@@ -90,7 +90,7 @@ async def get_pinned_post(headers,model_id):
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
 
-        tasks.append(asyncio.create_task(scrape_pinned_posts(headers,model_id,job_progress,timestamp=args_.getargs().float_timestamp if args_.getargs().after else None)))
+        tasks.append(asyncio.create_task(scrape_pinned_posts(headers,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
     
 
         page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)

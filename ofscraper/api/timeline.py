@@ -124,7 +124,7 @@ async def get_timeline_post(headers,model_id):
             # keeping grabbing until nothign left
             tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-2][-1])))
         else:
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=args_.getargs().float_timestamp if args_.getargs().after else None)))
+            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
     
 
         page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
