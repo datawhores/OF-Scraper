@@ -313,10 +313,10 @@ def process_post_user_first():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        userdata=userselector.getselected_usernames()
-        length=len(userdata)
         if args.users_first:
             output=[]
+            userdata=userselector.getselected_usernames() if "None" not in args.posts else []
+            length=len(userdata)
             for count,ele in enumerate(userdata):
                 log.debug(f"getting content for {count+1}/{length} model")
                 if args.posts:
@@ -326,30 +326,30 @@ def process_post_user_first():
                     operations.create_tables(model_id,ele['name'])
                     operations.write_profile_table(model_id,ele['name'])
                     output.extend(process_areas(headers, ele, model_id)) 
-                    if args.scrape_paid:
-                        output.extend(process_all_paid())
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
                     log.traceback(traceback.format_exc())               
-                user_dict={}
-                [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in output]
-                for value in user_dict.values():
-                    model_id =value[0].post.model_id
-                    username=value[0].post.username
-                    operations.create_tables(model_id,username)
-                    operations.write_profile_table(model_id,username)
-                    asyncio.run(download.process_dicts(
-                    username,
-                    model_id,
-                    value,
-                    forced=args.dupe,
-                    ))  
+            if args.scrape_paid:
+                output.extend(process_all_paid())
+            user_dict={}
+            [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in output]
+            for value in user_dict.values():
+                model_id =value[0].post.model_id
+                username=value[0].post.username
+                operations.create_tables(model_id,username)
+                operations.write_profile_table(model_id,username)
+                asyncio.run(download.process_dicts(
+                username,
+                model_id,
+                value,
+                forced=args.dupe,
+                ))  
 def normal_post_process():
     with scrape_context_manager():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        userdata=userselector.getselected_usernames()
+        userdata=userselector.getselected_usernames() if "None" not in args.posts else []
         length=len(userdata)
         for count,ele in enumerate(userdata):
             log.debug(f"Getting content+downloading {count+1}/{length} model")

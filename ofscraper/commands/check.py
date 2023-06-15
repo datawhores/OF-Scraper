@@ -30,7 +30,7 @@ cache = Cache(getcachepath())
 
 log = logging.getLogger(__package__)
 args = args_.getargs()
-ROW_NAMES = "Number", "UserName", "Downloaded", "Unlocked", "Times_detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
+ROW_NAMES = "Number", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
 
 
