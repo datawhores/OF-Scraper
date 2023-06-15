@@ -218,6 +218,7 @@ def process_like():
                     unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)   
                     log.debug(f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}")
                     post_ids = like.get_post_ids(unfavorited_posts)
+                    log.debug(f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}")
                     like.like(headers, model_id, ele["name"], post_ids)
 
 def process_unlike():
@@ -234,6 +235,7 @@ def process_unlike():
                     favorited_posts=filters.timeline_array_filter(favorited_posts) 
                     log.debug(f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}")
                     post_ids = like.get_post_ids(favorited_posts)
+                    log.debug(f"[bold]Final Number of open and unlikable post[/bold] {len(post_ids)}")
                     like.unlike(headers, model_id, ele["name"], post_ids)
 #Adds a function to the job queue
 def set_schedule(*functs):
