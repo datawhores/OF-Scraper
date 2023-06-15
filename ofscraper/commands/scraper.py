@@ -342,7 +342,6 @@ def process_post_user_first():
                 username,
                 model_id,
                 value,
-                forced=args.dupe,
                 ))  
 def normal_post_process():
     with scrape_context_manager():
@@ -364,7 +363,6 @@ def normal_post_process():
                 ele["name"],
                 model_id,
                 combined_urls,
-                forced=args.dupe,
                 ))
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
@@ -383,7 +381,6 @@ def normal_post_process():
                     username,
                     model_id,
                     value,
-                    forced=args.dupe,
                     ))
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")

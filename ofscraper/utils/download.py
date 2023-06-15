@@ -56,6 +56,7 @@ import ofscraper.utils.logger as logger
 import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
+import ofscraper.utils.args as args_
 
 from diskcache import Cache
 
@@ -66,7 +67,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
-async def process_dicts(username, model_id, medialist,forced=False):
+async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
         overall_progress=Progress(  TextColumn("{task.description}"),
         BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
@@ -76,7 +77,7 @@ async def process_dicts(username, model_id, medialist,forced=False):
         overall_progress
         , Panel(Group(job_progress,fit=True)))
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
-                if not forced:
+                if not args_.getargs().dupe:
                     media_ids = set(operations.get_media_ids(model_id,username))
                     medialist = seperate.separate_by_id(medialist, media_ids)
                     medialist=seperate.seperate_avatars(medialist)
