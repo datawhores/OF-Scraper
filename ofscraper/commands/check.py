@@ -691,7 +691,7 @@ class InputApp(App):
             with Horizontal():
                 for ele in ["Text"]:
                     yield StringField(ele)
-                for ele in ["Times_detected"]:
+                for ele in ["Times_Detected"]:
                     yield NumField(ele)
                 for ele in ["Media_ID", "Post_ID", "Post_Media_Count"]:
                     yield NumField(ele)
