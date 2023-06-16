@@ -20,7 +20,7 @@ jobs:
     - name: Delete untagged
       uses: snok/container-retention-policy@v2
       with:
-        image-names: dev/*
+        image-names: of-scraper
         cut-off: 1 second ago UTC
         filter-tags: "rc*"
         account-type: personal
