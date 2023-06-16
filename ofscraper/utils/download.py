@@ -25,7 +25,7 @@ from rich.progress import Progress
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
-    TotalFileSizeColumn,
+    DownloadColumn,
     TransferSpeedColumn,
     TextColumn,
     TaskProgressColumn,
@@ -45,7 +45,6 @@ except ModuleNotFoundError:
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 
 
-import ffmpeg
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
@@ -73,7 +72,7 @@ async def process_dicts(username, model_id, medialist):
         overall_progress=Progress(  TextColumn("{task.description}"),
         BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
         job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),TotalFileSizeColumn())
+        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())
         progress_group = Group(
         overall_progress
         , Panel(Group(job_progress,fit=True)))
@@ -86,9 +85,7 @@ async def process_dicts(username, model_id, medialist):
                 else:
                     log.info("forcing all downloads")
                 file_size_limit = config_.get_filesize()
-                global sem
-               
-            
+
                 aws=[]
                 photo_count = 0
                 video_count = 0
@@ -100,46 +97,46 @@ async def process_dicts(username, model_id, medialist):
 
                 
 
-                
-                for ele in medialist:
-                    with paths.set_directory(paths.getmediadir(ele,username,model_id)):
-                        aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
-                task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws),visible=True)
-                # progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
-                for coro in asyncio.as_completed(aws):
-                        try:
-                            media_type, num_bytes_downloaded = await coro
-                        except Exception as e:
-                            log.traceback(e)
-                            log.traceback(traceback.format_exc())
-                            media_type = "skipped"
-                            num_bytes_downloaded = 0
+                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio()) as c: 
+                    for ele in medialist:
+                        with paths.set_directory(paths.getmediadir(ele,username,model_id)):
+                            aws.append(asyncio.create_task(download(c,ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
+                    task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws),visible=True)
+                    # progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
+                    for coro in asyncio.as_completed(aws):
+                            try:
+                                media_type, num_bytes_downloaded = await coro
+                            except Exception as e:
+                                log.traceback(e)
+                                log.traceback(traceback.format_exc())
+                                media_type = "skipped"
+                                num_bytes_downloaded = 0
 
-                        total_bytes_downloaded += num_bytes_downloaded
-                        data = convert_num_bytes(total_bytes_downloaded)
-                        if media_type == 'images':
-                            photo_count += 1 
+                            total_bytes_downloaded += num_bytes_downloaded
+                            data = convert_num_bytes(total_bytes_downloaded)
+                            if media_type == 'images':
+                                photo_count += 1 
 
-                        elif media_type == 'videos':
-                            video_count += 1
-                        elif media_type == 'audios':
-                            audio_count += 1
-                        elif media_type == 'skipped':
-                            skipped += 1
-                        overall_progress.update(task1,description=desc.format(
-                                    p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)
+                            elif media_type == 'videos':
+                                video_count += 1
+                            elif media_type == 'audios':
+                                audio_count += 1
+                            elif media_type == 'skipped':
+                                skipped += 1
+                            overall_progress.update(task1,description=desc.format(
+                                        p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)
         overall_progress.remove_task(task1)
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
 def retry_required(value):
     return value == ('skipped', 1)
 
 @retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def download(ele,path,model_id,username,file_size_limit,progress):
+async def download(c,ele,path,model_id,username,file_size_limit,progress):
     attempt.set(attempt.get(0) + 1)
     
     try:
         if ele.url:
-           return await main_download_helper(ele,path,file_size_limit,username,model_id,progress)
+           return await main_download_helper(c,ele,path,file_size_limit,username,model_id,progress)
         elif ele.mpd:
             return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
         else:
@@ -148,36 +145,34 @@ async def download(ele,path,model_id,username,file_size_limit,progress):
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
-async def main_download_helper(ele,path,file_size_limit,username,model_id,progress):
+async def main_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     url=ele.url
     path_to_file=None
     async with sem:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-
-            async with aiohttp.ClientSession(cookies=auth.add_cookies_aio()) as c: 
-                async with c.get(url) as r:
-                    if r.ok:
-                        rheaders=r.headers
-                        total = int(rheaders['Content-Length'])
-                        if file_size_limit>0 and total > int(file_size_limit): 
-                                return 'skipped', 1       
-                        content_type = rheaders.get("content-type").split('/')[-1]
-                        filename=createfilename(ele,username,model_id,content_type)
-                        path_to_file = paths.trunicate(pathlib.Path(path,f"{filename}"))                 
-                        pathstr=str(path_to_file)
-                        temp=paths.trunicate(f"{path_to_file}.part")
-                        pathlib.Path(temp).unlink(missing_ok=True)
-                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                        with open(temp, 'wb') as f:                           
-                            progress.update(task1,visible=True )
-                            async for chunk in r.content.iter_chunked(1024):
-                                f.write(chunk)
-                                progress.update(task1, advance=len(chunk))
-                            progress.remove_task(task1) 
-        
-                    else:
-                        r.raise_for_status()
+            async with c.get(url) as r:
+                if r.ok:
+                    rheaders=r.headers
+                    total = int(rheaders['Content-Length'])
+                    if file_size_limit>0 and total > int(file_size_limit): 
+                            return 'skipped', 1       
+                    content_type = rheaders.get("content-type").split('/')[-1]
+                    filename=createfilename(ele,username,model_id,content_type)
+                    path_to_file = paths.trunicate(pathlib.Path(path,f"{filename}"))                 
+                    pathstr=str(path_to_file)
+                    temp=paths.trunicate(f"{path_to_file}.part")
+                    pathlib.Path(temp).unlink(missing_ok=True)
+                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                    with open(temp, 'wb') as f:                           
+                        progress.update(task1,visible=True )
+                        async for chunk in r.content.iter_chunked(1024):
+                            f.write(chunk)
+                            progress.update(task1, advance=len(chunk))
+                        progress.remove_task(task1) 
+    
+                else:
+                    r.raise_for_status()
     if not pathlib.Path(temp).exists():
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
