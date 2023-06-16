@@ -15,6 +15,6 @@ jobs:
         account-type: personal
         keep-at-least: 3
         token: ${{ secrets.DOCKER_DELETE}}
-        filter-tags: sha-*
+        filter-tags: sha*
         cut-off: 1 second ago UTC
 
