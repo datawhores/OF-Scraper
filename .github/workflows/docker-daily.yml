@@ -84,7 +84,7 @@ jobs:
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: cosign sign --key cosign.key ${{ steps.meta.outputs.tags }}
+        run: cosign sign --yes --key cosign.key ${{ steps.meta.outputs.tags }}
 
 
 #       # Sign the resulting Docker image digest except on PRs.
