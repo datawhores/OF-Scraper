@@ -8,6 +8,7 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
+    - name: Main purger
     - uses: snok/container-retention-policy@v2
       with:
         image-names: of-scraper
@@ -16,4 +17,14 @@ jobs:
         token: ${{ secrets.DOCKER_DELETE}}
         filter-tags: sha*
         cut-off: 1 second ago UTC
+    - name: Delete untaagged
+      uses: snok/container-retention-policy@v2
+      with:
+        image-names: dev/*
+        cut-off: 1 second ago UTC
+        filter-tags: "rc*"
+        account-type: personal
+        token: ${{ secrets.PAT }}
+        untagged-only: true
+
 
