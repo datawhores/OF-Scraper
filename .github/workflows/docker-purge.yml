@@ -23,7 +23,7 @@ jobs:
         image-names: of-scraper
         cut-off: 1 second ago UTC
         account-type: personal
-        token: ${{ secrets.PAT }}
+        token: ${{ secrets.DOCKER_DELETE}}
         untagged-only: true
 
 
