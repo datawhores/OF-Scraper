@@ -10,8 +10,6 @@ on:
 
 
 env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
 
@@ -52,7 +50,7 @@ jobs:
       - name: Build and push Docker image 
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
+          registry:  ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN}}
             
