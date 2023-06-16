@@ -13,4 +13,5 @@ jobs:
         account-type: personal
         keep-at-least: 3
         token: ${{ secrets.DOCKER_DELETE}}
+        filter-tags: sha-*
 
