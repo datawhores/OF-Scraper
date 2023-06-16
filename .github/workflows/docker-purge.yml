@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Main purger
-    - uses: snok/container-retention-policy@v2
+      uses: snok/container-retention-policy@v2
       with:
         image-names: of-scraper
         timestamp-to-use: created_at
