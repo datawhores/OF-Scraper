@@ -11,7 +11,7 @@ jobs:
     - uses: snok/container-retention-policy@v2
       with:
         image-names: of-scraper
-        timestamp-to-use: updated_at
+        timestamp-to-use: created_at
         account-type: personal
         keep-at-least: 3
         token: ${{ secrets.DOCKER_DELETE}}
