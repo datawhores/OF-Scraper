@@ -96,15 +96,15 @@ async def scrape_paid(username,job_progress,offset=0):
     async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as c:
         auth.add_cookies(c)
         url = constants.purchased_contentEP.format(offset,username)
-        offset += 10
         c.headers.update(auth.create_sign(url, headers))
         r = await c.get(url, timeout=None)
         sem.release()
     if not r.is_error:
         attempt.set(0)
-        if "hasMore" in r.json() and r.json()['hasMore']:
-            tasks.append(asyncio.create_task(scrape_paid(username,offset=offset)))
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
+        if "hasMore" in r.json() and r.json()['hasMore']:
+            offset += len(media)-3
+            tasks.append(asyncio.create_task(scrape_paid(username,job_progress,offset=offset)))
         job_progress.remove_task(task)
 
     else:
