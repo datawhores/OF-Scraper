@@ -328,7 +328,7 @@ class Media():
 
     @property
     def filename(self):
-        if not self.url or self.mpd:
+        if not self.url and not self.mpd:
             return None
         elif not self.responsetype=="Profile":
             return  re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
