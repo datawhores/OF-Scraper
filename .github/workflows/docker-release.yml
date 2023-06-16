@@ -64,20 +64,34 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-
-
-
-      # Sign the resulting Docker image digest except on PRs.
-      # This will only write to the public Rekor transparency log when the Docker
-      # repository is public to avoid leaking data.  If you would like to publish
-      # transparency data even for private images, pass --force to cosign below.
-      # https://github.com/sigstore/cosign
+      - name: cosign-installer
+        uses: sigstore/cosign-installer@v3.0.5
+        
+      - name: Write signing key to disk
+        run: 'echo "$KEY" > cosign.key'
+        shell: bash
+        env:
+          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      
       - name: Sign the published Docker image
         env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        # This step uses the identity token to provision an ephemeral certificate
-        # against the sigstore community Fulcio instance.
-        run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
+
+
+
+#       # Sign the resulting Docker image digest except on PRs.
+#       # This will only write to the public Rekor transparency log when the Docker
+#       # repository is public to avoid leaking data.  If you would like to publish
+#       # transparency data even for private images, pass --force to cosign below.
+#       # https://github.com/sigstore/cosign
+#       - name: Sign the published Docker image
+#         env:
+#           COSIGN_EXPERIMENTAL: "true"
+#         # This step uses the identity token to provision an ephemeral certificate
+#         # against the sigstore community Fulcio instance.
+#         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
       - name: login to ghcr
