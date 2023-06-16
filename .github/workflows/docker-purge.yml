@@ -17,7 +17,7 @@ jobs:
         token: ${{ secrets.DOCKER_DELETE}}
         filter-tags: sha*
         cut-off: 1 second ago UTC
-    - name: Delete untaagged
+    - name: Delete untagged
       uses: snok/container-retention-policy@v2
       with:
         image-names: dev/*
