@@ -9,7 +9,7 @@ on:
   push:
     branches: '*'  
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
+    tags: [ '*.*.*' ]
 
 
 jobs:
@@ -71,6 +71,9 @@ jobs:
           images:  |
             ghcr.io/datawhores/of-scraper
             datawhores/ofscraper
+          tags: |
+            type=ref,event=branch
+
       
       
       - name: push to image
