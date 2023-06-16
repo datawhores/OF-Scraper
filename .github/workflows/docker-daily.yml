@@ -83,6 +83,7 @@ jobs:
       - name: Sign the published Docker image
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_EXPERIMENTAL: "true"
         run: cosign sign --key cosign.key ${{ steps.meta.outputs.tags }}
 
 
