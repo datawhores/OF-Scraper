@@ -72,8 +72,8 @@ jobs:
             ghcr.io/datawhores/of-scraper
             datawhores/ofscraper
           tags: |
-            type=raw,value=mytag-{{branch}}-{{sha}}
-            type=raw,value=mytag-{{branch}}
+            type=raw,value={{branch}}-{{sha}}
+            type=raw,value={{branch}}
 
       
       
