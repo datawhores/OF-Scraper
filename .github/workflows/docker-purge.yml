@@ -16,5 +16,5 @@ jobs:
         keep-at-least: 3
         token: ${{ secrets.DOCKER_DELETE}}
         filter-tags: sha-*
-        cut-off: 0 week ago UTC
+        cut-off: 1 second ago UTC
 
