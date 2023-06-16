@@ -9,13 +9,7 @@ on:
   push:
     branches: '*'  
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
-
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
+    tags: [ '*.*.*' ]
 
 
 jobs:
@@ -47,19 +41,31 @@ jobs:
           cosign-release: 'v1.13.1'
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
-      - name: Build and push Docker image 
+    
+      -  name: Set up Docker Buildx
+         uses: docker/setup-buildx-action@v2
+      
+            
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN}}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      
+      
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images:  |
+            datawhores/of-scraper
+          tags: |
+            type=raw,value={{branch}}
+            type=raw,value={{branch}}-{{sha}}
+
       
       
       - name: push to image
@@ -84,4 +90,32 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+      #Login against a Docker registry except on PR
+      #https://github.com/docker/login-action
+      - name: login to ghcr
+        uses: docker/login-action@v2
+        with:
+          registry:  ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN}}
+          # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta2
+        uses: docker/metadata-action@v4
+        with:
+          images:  |
+            ghcr.io/datawhores/of-scraper
+          tags: |
+            type=raw,value={{branch}}
+            type=raw,value={{branch}}-{{sha}}
 
+      - name: push to image
+        id: build-and-push2
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          tags: ${{ steps.meta2.outputs.tags }}
+          labels: ${{ steps.meta2.outputs.labels }}
+          cache-to: type=gha,mode=max
+          push: true
