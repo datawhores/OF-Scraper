@@ -83,7 +83,7 @@ jobs:
       - name: Sign the published Docker image
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-        run: cosign sign --key cosign.key "${{ steps.meta.outputs.tags }}"
+        run: cosign sign --key cosign.key datawhores/of-scraper
 
 
 #       # Sign the resulting Docker image digest except on PRs.
