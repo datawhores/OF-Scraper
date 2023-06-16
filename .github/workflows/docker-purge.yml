@@ -10,8 +10,7 @@ jobs:
     steps:
     - uses: snok/container-retention-policy@v2
       with:
-        image-names: ofscraper
-        cut-off: one minute ago UTC-6
+        image-names: of-scraper
         timestamp-to-use: updated_at
         account-type: personal
         keep-at-least: 3
