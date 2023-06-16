@@ -77,7 +77,7 @@ jobs:
           COSIGN_EXPERIMENTAL: "true"
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
-        run: echo "${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+        run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
       - name: login to ghcr
