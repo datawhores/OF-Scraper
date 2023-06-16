@@ -70,9 +70,10 @@ jobs:
         with:
           images:  |
             ghcr.io/datawhores/of-scraper
-            datawhores/ofscraper
+            datawhores/of-scraper
           tags: |
             type=raw,value={{branch}}
+            type=raw,value={{branch}}-{{sha}}
 
       
       
