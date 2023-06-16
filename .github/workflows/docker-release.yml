@@ -79,9 +79,7 @@ jobs:
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
-        run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
-
-
+        run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
 
 #       # Sign the resulting Docker image digest except on PRs.
 #       # This will only write to the public Rekor transparency log when the Docker
