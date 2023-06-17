@@ -172,6 +172,9 @@ class Media():
             return self._media.get("url")
         else:
             return self._media.get("source", {}).get("source")
+        
+
+
 
     @property
     def post(self):
@@ -331,7 +334,8 @@ class Media():
         if not self.url and not self.mpd:
             return None
         elif not self.responsetype=="Profile":
-            return  re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+            file=re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+            return re.sub("_source","",file)
         else:
             filename= re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
             return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
