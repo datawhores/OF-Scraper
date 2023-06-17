@@ -102,7 +102,9 @@ async def scrape_paid(username,job_progress,offset=0):
     if not r.is_error:
         attempt.set(0)
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
-        if "hasMore" in r.json() and r.json()['hasMore']:
+        log.debug(f"offset={offset} -> media found {len(media)}")
+        log.debug(f"offset={offset} -> hasmore value in json {r.json().get('hasMore','undefined') }")
+        if  r.json().get("hasMore"):
             offset += len(media)
             tasks.append(asyncio.create_task(scrape_paid(username,job_progress,offset=offset)))
         job_progress.remove_task(task)
