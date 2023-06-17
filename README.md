@@ -1,3 +1,22 @@
+# Table-of-contents
+- [Intro](#intro)
+- [Installation](#installation)
+  * [Windows: ](#windows)
+  * [macOS/Linux](#macoslinux)
+  * [Upgrade](#upgrade)
+  * [Authentication](#authentication)
+- [Usage](#usage)
+  * [Liking/Unliking](#likingunliking)
+  * [Selecting specific users](#selecting-specific-users)
+  * [Other menu options    ](#other-menu-options)
+- [Docker Support](#docker-support)
+- [Issues](#issues)
+- [Feature Requests](#feature-requests)
+  * [Common](#common)
+- [Migrating from DC script](#migrating-from-dc-script)
+- [Discord](#discord)
+- [Support](#support)
+
 # Intro
 
 A fork of onlyfans-scraper. It has been optimized to make it more feature complete with digitalcriminal's onlyfans script.
