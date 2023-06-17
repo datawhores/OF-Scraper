@@ -108,7 +108,7 @@ async def get_messages(headers, model_id):
         dupeSet.add(message["id"])
         oldmsgset.discard(message["id"])       
         unduped.append(message)
-    if len(oldmsgset)==0 and not (args_.getargs().before or args_.get.args().after):
+    if len(oldmsgset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"messages_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
 
