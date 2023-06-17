@@ -124,7 +124,7 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
     attempt.set(attempt.get(0) + 1)
     ep = constants.messagesNextEP if message_id else constants.messagesEP
     url = ep.format(model_id, message_id)
-    log.debug(url)
+    log.debug(f"{message_id if message_id else 'init'}{url}")
 
 
     async with sem:
@@ -135,11 +135,18 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
             r = await c.get(url, timeout=None)
     if not r.is_error:
         messages = r.json()['list']
+        log.debug(f"{message_id if message_id else 'init id'} -> number of messages found {len(messages)}")
+
+
 
         if not messages:
+            log.deb
             messages=[]
         elif len(messages)==0:
             messages=[]
+        elif messages[-1].get("createdAt") and   (arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
+            attempt.set(0)
+
         elif required_ids==None:
             attempt.set(0)
             tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'])))
@@ -161,6 +168,13 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
 
         progress.remove_task(task)
         r.raise_for_status()
+    log.debug(f"{message_id if message_id else 'init id'} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
+    log.debug(f"{message_id if message_id else 'init id'} -> first ID {messages[0]['id']}")
+
+    log.debug(f"{message_id if message_id else 'init id'} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
+    log.debug(f"{message_id if message_id else 'init id'} -> last ID {messages[-1]['id']}")
+
+
     return messages
 
 
