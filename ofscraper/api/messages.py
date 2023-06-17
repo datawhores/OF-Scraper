@@ -113,7 +113,7 @@ async def get_messages(headers, model_id):
         cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
 
         cache.close()
-    else:
+    elif len(oldmsgset)>0:
         cache.set(f"messages_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check_{model_id}",[],expire=constants.CHECK_EXPIRY)
         cache.close()
