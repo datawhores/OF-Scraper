@@ -87,7 +87,6 @@ async def scrape_paid(username,job_progress,offset=0):
     global sem
     global tasks
     media = None
-    offset = 0
     headers = auth.make_headers(auth.read_auth())
     attempt.set(attempt.get(0) + 1)
     
@@ -197,7 +196,7 @@ async def scrape_all_paid(job_progress,offset=0,count=0,required=0):
         
         job_progress.remove_task(task)
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
-        if not "hasMore" in r.json() or not r.json()['hasMore']:
+        if not r.json().get("hasMore"):
             media=[]
         if not media:
             media=[]
