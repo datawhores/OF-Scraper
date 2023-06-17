@@ -116,8 +116,8 @@ def message_checker():
                 messages_.get_messages(headers,  model_id))
             cache.set(f"message_check_{model_id}",
                         messages, expire=constants.CHECK_EXPIRY)
-        downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, messages)
+        downloaded = get_downloaded(user_name, model_id)
         ROWS.extend(row_gather(media, downloaded, user_name))
 
     app_run_helper(ROWS)
@@ -196,11 +196,23 @@ def get_downloaded(user_name, model_id):
     downloaded = {}
     operations.create_tables(model_id, user_name)
     [downloaded.update({ele: downloaded.get(ele, 0)+1})
-     for ele in operations.get_media_ids(model_id, user_name)]
+     for ele in operations.get_media_ids(model_id, user_name)+get_paid_ids(model_id,user_name)]
+    
     return downloaded
 
-
-
+def get_paid_ids(model_id,user_name):
+    oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+    paid = None
+        
+    if len(oldpaid) > 0 and not args.force:
+         paid = oldpaid
+    else:
+        paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
+        cache.set(f"purchased_check_{model_id}",
+                      paid, expire=constants.CHECK_EXPIRY)
+    media = get_all_found_media(user_name, paid)
+    media=list(filter(lambda x:x.canview==True,media))
+    return list(map(lambda x:x.id,media))
 
 
 def app_run_helper(ROWS_):
@@ -242,7 +254,7 @@ def datehelper(date):
 
 
 def times_helper(ele, mediadict, downloaded):
-    return max(len(mediadict.get(ele.id, [])), downloaded.get(ele, 0))
+    return max(len(mediadict.get(ele.id, [])), downloaded.get(ele.id, 0))
   
 def row_gather(media, downloaded, username):
 
