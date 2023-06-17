@@ -149,8 +149,8 @@ https://github.com/datawhores/OF-Scraper/wiki/Fuzzy-Search
   https://github.com/datawhores/OF-Scraper/wiki/command-line-args
 
 # Docker Support
-https://github.com/datawhores/OF-Scraper/pkgs/container/ofscraper
- 
+https://github.com/datawhores/OF-Scraper/wiki/Docker
+
  # Customazation
     
 https://github.com/datawhores/OF-Scraper/wiki/Customizing-save-path
