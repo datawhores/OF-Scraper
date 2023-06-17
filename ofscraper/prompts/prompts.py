@@ -106,7 +106,7 @@ def scrape_paid_prompt():
     questions = [
         {
             'type': 'list',
-            'message': "Scrape entire paid page",
+            'message': "Scrape entire paid page [WARNING ONLY USE IF NEEDED i.e for DELETED MODELS]",
             'choices':[Choice(True,"True"),Choice(False,"False",enabled=True)],
             'long_instruction': prompt_strings.SCRAPE_PAID,
             "default":False
