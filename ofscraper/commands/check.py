@@ -99,7 +99,7 @@ def message_checker():
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile(headers, model_id)['username']
-        name_match = re.search("^[a-z]+$", item)
+        name_match = re.search("^[a-z_.]+$", item)
         if name_match:
             user_name = name_match.group(0)
             model_id = profile.get_id(headers, user_name)     
