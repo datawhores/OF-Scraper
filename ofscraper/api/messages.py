@@ -63,21 +63,26 @@ async def get_messages(headers, model_id):
         oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
         oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
         log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-        oldmessages=list(filter(lambda x:x.get("createdAt")!=None,oldmessages))
-        postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x["createdAt"]).float_timestamp,reverse=True)))
+        oldmessages=list(filter(lambda x:(x.get("createdAt") or x.get("postedAt"))!=None,oldmessages))
+        startdex=0 if len(oldmessages)==0 else \
+        max(([i for i in range(len(oldmessages)) if arrow.get(oldmessages[i].get("createdAt") or oldmessages[i].get("postedAt")) <=(args_.getargs().before or arrow.now())] or [len(oldmessages)])[0]-1,0)
+        log.debug(f"Setting Start Index at {startdex}")
+        postedAtArray=list(map(lambda x:x["id"],sorted(oldmessages,key=lambda x:arrow.get(x.get("createdAt") or x.get("postedAt") ).float_timestamp,reverse=True)))
+        postedAtArray=postedAtArray[startdex:]
+
     
         
      
         if len(postedAtArray)>min_posts:
             splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
             #use the previous split for message_id
-            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,required_ids=set(splitArrays[0]))))
+            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,message_id=None if startdex==0 else splitArrays[0][0] ,required_ids=set(splitArrays[0]))))
             [tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,required_ids=set(splitArrays[i]),message_id=splitArrays[i-1][-1])))
             for i in range(1,len(splitArrays)-1)]
-            # keeping grabbing until nothign left
+            # keeping grabbing until nothing left
             tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,message_id=splitArrays[-2][-1])))
         else:
-            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress)))
+            tasks.append(asyncio.create_task(scrape_messages(headers,model_id,job_progress,message_id=None if startdex==0 else postedAtArray[0])))
     
     
         
@@ -103,7 +108,7 @@ async def get_messages(headers, model_id):
         dupeSet.add(message["id"])
         oldmsgset.discard(message["id"])       
         unduped.append(message)
-    if len(oldmsgset)==0:
+    if len(oldmsgset)==0 and not (args_.getargs().before or args_.get.args().after):
         cache.set(f"messages_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
 
@@ -135,32 +140,31 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
             r = await c.get(url, timeout=None)
     if not r.is_error:
         messages = r.json()['list']
-        log.debug(f"{message_id if message_id else 'init id'} -> number of messages found {len(messages)}")
-
-
-
         if not messages:
-            log.deb
             messages=[]
-        elif len(messages)==0:
-            messages=[]
-        elif messages[-1].get("createdAt") and   (arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
-            attempt.set(0)
-
-        elif required_ids==None:
-            attempt.set(0)
-            tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'])))
-        else:
-            [required_ids.discard(ele["id"]) for ele in messages]
-            #try once more to grab, else quit
-            if len(required_ids)==1:
+        if len(messages)==0:
+            log.debug(f"{message_id if message_id else 'init id'} -> number of messages found 0")
+        elif len(messages)>0:
+            log.debug(f"{message_id if message_id else 'init id'} -> number of messages found {len(messages)}")
+            log.debug(f"{message_id if message_id else 'init id'} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
+            log.debug(f"{message_id if message_id else 'init id'} -> first ID {messages[0]['id']}")
+            log.debug(f"{message_id if message_id else 'init id'} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
+            log.debug(f"{message_id if message_id else 'init id'} -> last ID {messages[-1]['id']}")    
+            if (arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
                 attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'],required_ids=set())))
-
-            elif len(required_ids)>0:
+            elif required_ids==None:
                 attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'],required_ids=required_ids)))
-            progress.remove_task(task)
+                tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'])))
+            else:
+                [required_ids.discard(ele["id"]) for ele in messages]
+                #try once more to grab, else quit
+                if len(required_ids)==1:
+                    attempt.set(0)
+                    tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'],required_ids=set())))
+
+                elif len(required_ids)>0:
+                    attempt.set(0)
+                    tasks.append(asyncio.create_task(scrape_messages(headers, model_id,progress,message_id=messages[-1]['id'],required_ids=required_ids)))
     else:
         log.debug(f"[bold]message request status code:[/bold]{r.status_code}")
         log.debug(f"[bold]message response:[/bold] {r.content.decode()}")
@@ -168,13 +172,8 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
 
         progress.remove_task(task)
         r.raise_for_status()
-    log.debug(f"{message_id if message_id else 'init id'} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
-    log.debug(f"{message_id if message_id else 'init id'} -> first ID {messages[0]['id']}")
 
-    log.debug(f"{message_id if message_id else 'init id'} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
-    log.debug(f"{message_id if message_id else 'init id'} -> last ID {messages[-1]['id']}")
-
-
+    progress.remove_task(task)
     return messages
 
 
