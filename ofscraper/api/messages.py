@@ -176,5 +176,16 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
     progress.remove_task(task)
     return messages
 
+def get_individual_post(model_id,postid,client=None):
+    headers = auth.make_headers(auth.read_auth())
+    url=f"https://onlyfans.com/api2/v2/chats/{model_id}/messages?limit=10&order=desc&skip_users=all&firstId={postid}"
+    auth.add_cookies(client)
+    client.headers.update(auth.create_sign(url, headers))
+    r=client.get(url)
+    if not r.is_error:
+        return r.json()['list'][0]
+    log.debug(f"{r.status_code}")
+    log.debug(f"{r.content.decode()}")
+
 
 

@@ -10,6 +10,8 @@ import ofscraper.utils.auth as auth
 import ofscraper.api.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.utils.download as download
+import ofscraper.api.messages as messages_
+
 
 log = logging.getLogger(__package__)
 
@@ -32,6 +34,11 @@ def manual_download():
                 model_id=user_name_dict.get(model) or profile.get_id(headers, model)
                 user_name_dict[model]=model_id
                 id_dict[model_id]=id_dict.get(model_id,[])+[timeline.get_individual_post(postid,client=c)]
+            elif type=="msg":
+                model_id=model
+                id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
+
+
     media_dict=get_all_media(id_dict)
     for value in media_dict.values():
         model_id =value[0].post.model_id
