@@ -87,10 +87,10 @@ def getargs(input=None):
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
     filters.add_argument(
-        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts',type=arrow.get)
+        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts',type=arrow_helper)
  
     filters.add_argument(
-        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow.get)
+        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow_helper)
     
     
     sort=parser.add_argument_group("sort",description="Options on how to sort list")
@@ -220,3 +220,16 @@ def username_helper(x):
     elif isinstance(x,str):
         temp=x.split(",")
     return temp
+
+def arrow_helper(x):
+    print(x)
+    try:
+        return arrow.get(x)
+    except arrow.parser.ParserError as E:
+        try:
+            arw=arrow.utcnow()
+            return arw.dehumanize(x)
+        except ValueError as E:
+             raise E
+
+
