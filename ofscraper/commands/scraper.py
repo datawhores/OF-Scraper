@@ -133,7 +133,7 @@ def process_post_user_first():
         init.print_sign_status(headers)
         if args.users_first:
             output=[]
-            userdata=userselector.getselected_usernames() if "None" not in args.posts else []
+            userdata=userselector.getselected_usernames()
             length=len(userdata)
             for count,ele in enumerate(userdata):
                 log.debug(f"getting content for {count+1}/{length} model")

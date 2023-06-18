@@ -38,18 +38,22 @@ def getargs(input=None):
     )
 
     general.add_argument(
+        '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
+    )
+    output=parser.add_argument_group("Logging",description="Arguments for output controls")  
+
+
+    output.add_argument(
         '-l', '--log', help = 'set log file level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
     ),
-    general.add_argument(
+    output.add_argument(
         '-dc', '--discord', help = 'set discord log level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
     )
 
-    general.add_argument(
+    output.add_argument(
         '-p', '--output', help = 'set console output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
-    general.add_argument(
-        '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
-    )
+
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
@@ -99,10 +103,7 @@ def getargs(input=None):
     advanced.add_argument(
         '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects downloading posts',default=False,required=False,action="store_true"
     )
-    # advanced.add_argument(
-    #     '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
-    # )
-  
+
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
 
@@ -161,6 +162,15 @@ def getargs(input=None):
     story_check.add_argument("-us","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
+    manual=subparser.add_parser("manual",help="Manually download content via url or ID")
+    manual.add_argument("-f","--file",
+    help = 'Pass links/IDs to download via file',default=None,required=False,type = check_filehelper
+    )
+    manual.add_argument("-us","--url",
+    help = 'pass links to download via url',type = check_strhelper,action="extend")
+
+
+
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
@@ -190,10 +200,11 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile","none"])
+    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","None"])
     if isinstance(x,str):
         x=x.split(',')
-    if len(list(filter(lambda y:y not in choices,x)))>0:
+        x=list(map(lambda x:x.capitalize() ,x))
+    if len(list(filter(lambda y: y not in choices,x)))>0:
         raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile')")
     return x
 

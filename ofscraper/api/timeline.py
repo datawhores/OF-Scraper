@@ -162,13 +162,12 @@ async def get_timeline_post(headers,model_id):
 
 def get_individual_post(id,client=None):
     headers = auth.make_headers(auth.read_auth())
-    with client or httpx.Client(http2=True, headers=headers) as c:
-        url=f"https://onlyfans.com/api2/v2/posts/{id}?skip_users=all"
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-        r=c.get(url)
-        if not r.is_error:
-            return r.json()
-        log.debug(f"{r.status_code}")
-        log.debug(f"{r.content.decode()}")
+    url=f"https://onlyfans.com/api2/v2/posts/{id}?skip_users=all"
+    auth.add_cookies(client)
+    client.headers.update(auth.create_sign(url, headers))
+    r=client.get(url)
+    if not r.is_error:
+        return r.json()
+    log.debug(f"{r.status_code}")
+    log.debug(f"{r.content.decode()}")
 
