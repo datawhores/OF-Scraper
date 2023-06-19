@@ -57,13 +57,12 @@ import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
-
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 from diskcache import Cache
 
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
@@ -95,7 +94,6 @@ async def process_dicts(username, model_id, medialist):
                 total_bytes_downloaded = 0
                 data = 0
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-            
 
                 
                 for ele in medialist:
@@ -140,7 +138,7 @@ async def download(ele,path,model_id,username,file_size_limit,progress):
         elif ele.mpd:
             return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
         else:
-            return "skipped",1
+            return None
     except Exception as e:
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   

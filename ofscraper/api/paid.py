@@ -101,8 +101,8 @@ async def scrape_paid(username,job_progress,offset=0):
     if not r.is_error:
         attempt.set(0)
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
-        log.debug(f"offset={offset} -> media found {len(media)}")
-        log.debug(f"offset={offset} -> hasmore value in json {r.json().get('hasMore','undefined') }")
+        log.debug(f"offset:{offset} -> media found {len(media)}")
+        log.debug(f"offset:{offset} -> hasmore value in json {r.json().get('hasMore','undefined') }")
         if  r.json().get("hasMore"):
             offset += len(media)
             tasks.append(asyncio.create_task(scrape_paid(username,job_progress,offset=offset)))
@@ -192,7 +192,9 @@ async def scrape_all_paid(job_progress,offset=0,count=0,required=0):
         r = await c.get(url, timeout=None)
         sem.release()
     if not r.is_error:
-        attempt.set(0)     
+        attempt.set(0) 
+        log_id=offset or 0
+
         
         job_progress.remove_task(task)
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
@@ -200,17 +202,23 @@ async def scrape_all_paid(job_progress,offset=0,count=0,required=0):
             media=[]
         if not media:
             media=[]
-        elif len(media)==0:
-            media=[]
-        elif required==0:
-            attempt.set(0)
-            tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media))))
+        if len(media)==0:
+            log.debug(f"offset:{log_id} -> number of post found 0")
+        elif len(media)>0:
+            log.debug(f"{log_id} -> number of post found {len(media)}")
+            log.debug(f"{log_id} -> first date {media[0].get('createdAt') or media[0].get('postedAt')}")
+            log.debug(f"{log_id} -> last date {media[-1].get('createdAt') or media[-1].get('postedAt')}")
+            log.debug(f"{log_id} -> first ID {media[0]['id']}")
+            log.debug(f"{log_id} -> last ID {media[-1]['id']}")
+            if required==0:
+                attempt.set(0)
+                tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media))))
 
-        elif len(count)<len(required):
-            tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media),required=required,count=count+len(media))))
+            elif len(count)<len(required):
+                tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media),required=required,count=count+len(media))))
 
 
-    
+        
 
     else:
         log.debug(f"[bold]paid request status code:[/bold]{r.status_code}")
