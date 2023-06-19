@@ -139,17 +139,19 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
             c.headers.update(auth.create_sign(url, headers))
             r = await c.get(url, timeout=None)
     if not r.is_error:
+
         messages = r.json()['list']
+        log_id=f"offset messageid:{message_id if message_id else 'init id'}"
         if not messages:
             messages=[]
         if len(messages)==0:
-            log.debug(f"{message_id if message_id else 'init id'} -> number of messages found 0")
+            log.debug(f"{log_id} -> number of messages found 0")
         elif len(messages)>0:
-            log.debug(f"{message_id if message_id else 'init id'} -> number of messages found {len(messages)}")
-            log.debug(f"{message_id if message_id else 'init id'} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
-            log.debug(f"{message_id if message_id else 'init id'} -> first ID {messages[0]['id']}")
-            log.debug(f"{message_id if message_id else 'init id'} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
-            log.debug(f"{message_id if message_id else 'init id'} -> last ID {messages[-1]['id']}")    
+            log.debug(f"{log_id} -> number of messages found {len(messages)}")
+            log.debug(f"{log_id} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
+            log.debug(f"{log_id} -> first ID {messages[0]['id']}")
+            log.debug(f"{log_id} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
+            log.debug(f"{log_id} -> last ID {messages[-1]['id']}")    
             if (arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
                 attempt.set(0)
             elif required_ids==None:
