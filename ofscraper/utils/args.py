@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import re
 import arrow
 import pathlib
 from ofscraper.__version__ import __version__ 
@@ -227,6 +228,11 @@ def arrow_helper(x):
         return arrow.get(x)
     except arrow.parser.ParserError as E:
         try:
+            x=re.sub("\\byear\\b","years",x)
+            x=re.sub("\\bday\\b","days",x)
+            x=re.sub("\\bmonth\\b","months",x)
+            x=re.sub("\\bweek\\b","weeks",x)
+            print(x)
             arw=arrow.utcnow()
             return arw.dehumanize(x)
         except ValueError as E:

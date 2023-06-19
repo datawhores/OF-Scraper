@@ -96,7 +96,6 @@ async def process_dicts(username, model_id, medialist):
                 data = 0
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
             
-                
 
                 
                 for ele in medialist:
@@ -279,7 +278,13 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         log.debug(f"Media:{ele.id} Post:{ele.postid} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
-        subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)])
+        r=subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if not pathlib.Path(newpath).exists():
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt failed")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stderr.decode()}")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stdout.decode()}")
+
+         
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     
@@ -287,8 +292,10 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
-        log.debug(t.stdout.decode())
-        log.debug(t.stderr.decode())
+        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg failed")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stderr.decode()}")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stdout.decode()}")
+
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
     log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")

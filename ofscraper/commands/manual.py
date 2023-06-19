@@ -25,11 +25,17 @@ def manual_download():
     with httpx.Client(http2=True, headers=headers) as c:
         for url in url_helper():
             response=get_info(url)
-            if None in response:
-                continue
             model=response[0]
             postid=response[1]
             type=response[2]
+            date=None
+            data=timeline.get_individual_post(postid,client=c) if (type=="unknown" or type=="post") else None
+            data = data or messages_.get_individual_post(model_id,postid,client=c) if type=="msg" else None
+            data = data or messages_.get_individual_post(model_id,postid,client=c) if type=="paid" else None
+
+
+
+
             if type=="post":
                 model_id=user_name_dict.get(model) or profile.get_id(headers, model)
                 user_name_dict[model]=model_id
@@ -37,6 +43,11 @@ def manual_download():
             elif type=="msg":
                 model_id=model
                 id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
+            elif type=="unknown":
+                unknown_type_helper(postid,c)
+            else:
+                continue
+                
 
 
     media_dict=get_all_media(id_dict)
@@ -50,7 +61,10 @@ def manual_download():
         username,
         model_id,
         value,
-        ))  
+        )) 
+    log.info(f"Finished")
+
+
             
 
     
@@ -76,11 +90,15 @@ def get_all_media(id_dict):
 def get_info(url):
     search1=re.search("chat/([0-9]+)/.*?([0-9]+)",url)
     search2=re.search("/([0-9]+)/([a-z-]+)",url)
+    search3=re.search("^[0-9]+$",url)
+
 
     if search1:
         return search1.group(1),search1.group(2),"msg"
     elif search2:
         return search2.group(2),search2.group(1),"post"
+    elif search3:
+        return None,search3.group(0),"unknown"
 
     return None,None,None
 
@@ -90,3 +108,10 @@ def url_helper():
     out.extend(args.file or [])
     out.extend(args.url or [])
     return map(lambda x: x.strip(), out)
+
+def unknown_type_helper(postid,client):
+    # try to get post by id
+    data=timeline.get_individual_post(postid,client)
+    print(data)
+    return
+    
