@@ -1,9 +1,13 @@
 import logging
 import re
+import time
+import queue
 import asyncio
+import threading
 import textwrap
 import httpx
 import arrow
+import schedule
 import ofscraper.utils.args as args_
 import ofscraper.db.operations as operations
 import ofscraper.api.profile as profile
@@ -18,6 +22,9 @@ import ofscraper.api.pinned as pinned
 import ofscraper.api.highlights as highlights_
 import ofscraper.utils.console as console_
 import ofscraper.utils.table as table
+import ofscraper.commands.manual as manual
+import ofscraper.utils.download as download
+import ofscraper.db.operations as operations
 
 from diskcache import Cache
 from ..utils.paths import getcachepath
@@ -28,6 +35,54 @@ args = args_.getargs()
 console=console_.shared_console
 ROW_NAMES = "Download_Cart","Number", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
+app=None
+
+
+def process_download_cart():
+        while True:
+            global app
+            if not app:
+                time.sleep(10)
+            while not app.row_queue.empty():
+                row=app.row_queue.get()   
+                restype=app.row_names.index('Responsetype')
+                username=app.row_names.index('UserName')
+                post_id=app.row_names.index('Post_ID')
+                media_id=app.row_names.index('Media_ID')
+                url=None
+                if row[restype].plain=="message":
+                    url=f"https://onlyfans.com/my/chats/chat/{row[username].plain}/?firstId={row[post_id].plain}"
+                else:
+                    log.info("URL not supported")
+                log.info(f"Added url {url}")
+                log.info("Sending URLs to OF-Scraper")
+                media_dict= manual.get_media_from_urls(urls=[url])
+                medialist=list(filter(lambda x: x.id==int(row[media_id].plain) ,list(media_dict.values())[0]))
+                try:
+                    media=medialist[0]
+                    model_id =media.post.model_id
+                    username=media.post.username
+                    log.info(f"Downloading Invidual media for {username} {media.filename}")
+                    operations.create_tables(model_id,username)
+                    operations.write_profile_table(model_id,username)
+                    asyncio.run(download.process_dicts(
+                    username,
+                    model_id,
+                    [media],
+                    ))
+                    log.info("Download Finished")
+                except Exception as E:
+                    log.debug(E)
+
+                
+            time.sleep(10)
+
+
+
+
+
+
+
 
 
 def post_checker():
@@ -81,7 +136,7 @@ def post_checker():
         downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, user_dict[user_name])
         ROWS.extend(row_gather(media, downloaded, user_name))
-    app_run_helper(ROWS)
+    thread_starters(ROWS)
 
 
 
@@ -116,7 +171,7 @@ def message_checker():
         downloaded = get_downloaded(user_name, model_id)
         ROWS.extend(row_gather(media, downloaded, user_name))
 
-    app_run_helper(ROWS)
+    thread_starters(ROWS)
 
 
 
@@ -140,7 +195,7 @@ def purchase_checker():
         media = get_all_found_media(user_name, paid)
         ROWS.extend(row_gather(media, downloaded, user_name))
 
-    app_run_helper(ROWS)
+    thread_starters(ROWS)
 
 
 def stories_checker():
@@ -163,7 +218,7 @@ def stories_checker():
         [media.extend(ele.all_media) for ele in stories+highlights]
         ROWS.extend(row_gather(media, downloaded, user_name))
 
-    app_run_helper(ROWS)
+    thread_starters(ROWS)
 
   
 
@@ -211,17 +266,26 @@ def get_paid_ids(model_id,user_name):
     return list(map(lambda x:x.id,media))
 
 
-def app_run_helper(ROWS_):
-    ROWS = get_first_row()
-    ROWS.extend(ROWS_)
+def thread_starters(ROWS_): 
+    worker_thread = threading.Thread(target=process_download_cart)
+    worker_thread.start()
+    start_table(ROWS_)
+    
+
+def start_table(ROWS_):
+    global app
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    app = table.InputApp()
-    # we have to set properies before run
+    app=table.InputApp()
+    ROWS = get_first_row()
+    ROWS.extend(ROWS_)
     app.table_data = ROWS
     app.row_names = ROW_NAMES
     app.set_filtered_rows(reset=True)
     app.run()
+
+
+
 
 
 def get_first_row():

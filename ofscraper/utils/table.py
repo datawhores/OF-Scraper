@@ -1,5 +1,5 @@
 import logging
-import asyncio
+import queue
 from textual.app import App, ComposeResult
 from textual.widgets import Input, DataTable, Button, Checkbox, Label,ContentSwitcher,TextLog
 from rich.text import Text
@@ -16,6 +16,13 @@ import ofscraper.utils.console as console_
 from ..utils.paths import getcachepath
 cache = Cache(getcachepath())
 log = logging.getLogger(__package__)
+
+
+
+
+
+
+
 
 
 console=console_.shared_console
@@ -456,10 +463,10 @@ class InputApp(App):
                 self.set_filtered_rows()
                 self.make_table()
             else:
-                self.process_download_Cart(event.coordinate[0])
+                self.change_download_cart(event.coordinate[0])
 
     
-    def process_download_Cart(self,row):
+    def change_download_cart(self,row):
         row=str(row+1)
         table=self.query_one(DataTable)
         Download_Cart=table.get_row(row)[0]
@@ -472,6 +479,15 @@ class InputApp(App):
         elif Download_Cart.plain=="[added]":
             self.query_one(DataTable).update_cell(
              row, "Download_Cart", Text("[]"), update_width=True)
+    
+        elif Download_Cart.plain=="[downloaded]":
+            self.query_one(DataTable).update_cell(
+             row, "Download_Cart", Text("[]"), update_width=True)
+            
+
+
+            
+
             
             
        
@@ -514,7 +530,7 @@ class InputApp(App):
                 
 
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "submit":
             self.set_filtered_rows()
             self.sort_helper()
@@ -525,18 +541,21 @@ class InputApp(App):
             self.set_reverse(init=True)
             self.make_table()
         elif event.button.id=="send_downloads":
+            log.info("Adding Downloads to queue")
+            self.add_to_row_queue()
             self.query_one(ContentSwitcher).current = 'console_page'
-            log.info("test")
-            log.info("test")
-            log.info("test")
-            log.info("test")          
 
-            
-           
-           
         elif event.button.id in ["console","table"]:
              self.query_one(ContentSwitcher).current = f"{event.button.id}_page"  
 
+    def add_to_row_queue(self):
+        table=self.query_one(DataTable)
+        keys=[str(i + 1) for i in range(self.query_one(DataTable).row_count)]
+        filter_keys=list(filter(lambda x:table.get_row(x)[0].plain=="[added]",keys))
+        [table.update_cell(ele,"Download_Cart",Text("[downloaded]")) for ele in filter_keys]
+        filtered_rows=list(map(lambda x:table.get_row(x),filter_keys))
+       
+        [self.row_queue.put(ele) for ele in filtered_rows]
 
 
     def on_data_table_header_selected(self, event):
@@ -629,7 +648,7 @@ class InputApp(App):
             self.reverse = False
 
     def on_mount(self) -> None:
-        self._lastclick = arrow.now()
+        self.row_queue=queue.Queue()
         self.set_reverse(init=True)
         self.make_table()
         self.query_one("#reset").styles.align = ("center", "middle")

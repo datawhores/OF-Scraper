@@ -96,7 +96,7 @@ class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
     @staticmethod
     def _filter(s):
-        if s.find("Avatar :"):
+        if s.find("Avatar :")!=-1:
             None
         else:
             s=re.sub("&Policy=[^&\"]+", "&Policy={hidden}", s)
@@ -169,7 +169,6 @@ def init_logger(log):
     sh.setFormatter(SensitiveFormatter('%(message)s'))
     sh.addFilter(NoDebug())
     tx=TextHandler()
-    tx.addFilter(NoDebug())
     tx.setLevel(getLevel(args.getargs().output))
     tx.setFormatter(SensitiveFormatter('%(message)s'))
     log.addHandler(cord)
@@ -189,12 +188,7 @@ def init_logger(log):
         sh2.setLevel(args.getargs().output)
         sh2.setFormatter(SensitiveFormatter('%(message)s'))
         sh2.addFilter(DebugOnly())
-        tx2=TextHandler()
-        tx2.addFilter(NoDebug())
-        tx2.setLevel(getLevel(args.getargs().output))
-        tx2.setFormatter(SensitiveFormatter('%(message)s'))
         log.addHandler(sh2)
-        log.addHandler(tx2)
     if args.getargs().log=="DEBUG":
         fh2=logging.StreamHandler(stream)
         fh2.setLevel(getLevel(args.getargs().log))

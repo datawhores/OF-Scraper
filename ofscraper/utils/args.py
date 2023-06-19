@@ -16,33 +16,10 @@ def getargs(input=None):
         input=[]
     elif input==None:
         input=sys.argv[1:]
-
-    parser = argparse.ArgumentParser()
-
-    parser = argparse.ArgumentParser(add_help=False)   
-    general=parser.add_argument_group("General",description="General Args")  
+    parent_parser=argparse.ArgumentParser(add_help=False)
+    general=parent_parser.add_argument_group("General",description="General Args")  
     general.add_argument('-v', '--version', action='version', version=__version__ ,default=__version__)
-    general.add_argument('-h', '--help', action='help')
-
-                                    
-    general.add_argument(
-        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=username_helper,action="extend"
-    )
-    general.add_argument(
-        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=username_helper,action="extend"
-    )
-    general.add_argument(
-        '-cg', '--config', help="Change location of config folder/file",default=None
-    )
-    general.add_argument(
-        '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
-    )
-
-    general.add_argument(
-        '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
-    )
-    output=parser.add_argument_group("Logging",description="Arguments for output controls")  
-
+    output=parent_parser.add_argument_group("Logging",description="Arguments for output controls")  
 
     output.add_argument(
         '-l', '--log', help = 'set log file level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
@@ -54,6 +31,27 @@ def getargs(input=None):
     output.add_argument(
         '-p', '--output', help = 'set console output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
+
+    parser = argparse.ArgumentParser(add_help=False,parents=[parent_parser])  
+    parser.add_argument( '-h', '--help', action='help')
+    scraper=parser.add_argument_group("scraper",description="General Arguments for scraper")                                
+    scraper.add_argument(
+        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=username_helper,action="extend"
+    )
+    scraper.add_argument(
+        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=username_helper,action="extend"
+    )
+    scraper.add_argument(
+        '-cg', '--config', help="Change location of config folder/file",default=None
+    )
+    scraper.add_argument(
+        '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
+    )
+
+    scraper.add_argument(
+        '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
+    )
+
 
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
@@ -106,7 +104,7 @@ def getargs(input=None):
     )
 
     subparser=parser.add_subparsers(help="commands",dest="command")
-    post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
+    post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours",parents=[parent_parser])
 
 
     post_check.add_argument("-u","--url",
@@ -122,7 +120,7 @@ def getargs(input=None):
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
 
-    message_check=subparser.add_parser("msg_check",help="Parse a user's messages and view status of missing media\nCache lasts for 24 hours")
+    message_check=subparser.add_parser("msg_check",help="Parse a user's messages and view status of missing media\nCache lasts for 24 hours",parents=[parent_parser])
     message_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -136,7 +134,7 @@ def getargs(input=None):
     message_check.add_argument("-un","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
-    paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours")
+    paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours",parents=[parent_parser])
     paid_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -151,7 +149,7 @@ def getargs(input=None):
 
 
 
-    story_check=subparser.add_parser("story_check",help="Parse Stories/Highlights sent from a user\nCache last for 24 hours")
+    story_check=subparser.add_parser("story_check",help="Parse Stories/Highlights sent from a user\nCache last for 24 hours",parents=[parent_parser])
     story_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -163,13 +161,12 @@ def getargs(input=None):
     story_check.add_argument("-us","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
-    manual=subparser.add_parser("manual",help="Manually download content via url or ID")
+    manual=subparser.add_parser("manual",help="Manually download content via url or ID",parents=[parent_parser])
     manual.add_argument("-f","--file",
     help = 'Pass links/IDs to download via file',default=None,required=False,type = check_filehelper
     )
     manual.add_argument("-us","--url",
     help = 'pass links to download via url',type = check_strhelper,action="extend")
-
 
 
     args=parser.parse_args(input)

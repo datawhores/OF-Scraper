@@ -83,7 +83,7 @@ async def process_dicts(username, model_id, medialist):
                     medialist=seperate.seperate_avatars(medialist)
                     log.info(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
                 else:
-                    log.info("forcing all downloads")
+                    log.info(f"forcing all downloads {len(medialist)}")
                 file_size_limit = config_.get_filesize()
                 global sem
                   
