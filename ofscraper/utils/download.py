@@ -11,6 +11,7 @@ r"""
 import asyncio
 import math
 import pathlib
+from random import randint
 import platform
 import shutil
 import traceback
@@ -94,7 +95,7 @@ async def process_dicts(username, model_id, medialist):
                 total_bytes_downloaded = 0
                 data = 0
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-
+                medialist=list(filter(lambda x:x.mpd,medialist))
                 
                 for ele in medialist:
                     with paths.set_directory(paths.getmediadir(ele,username,model_id)):
@@ -206,8 +207,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename}.mkv"))
-
+        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename}_{randint(100,999)}.mkv"))
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                 kId=None
@@ -222,13 +222,15 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                         break
             for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
                 kId=None
+                name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
                 for prot in adapt_set.content_protections:
                     if prot.value==None:
                         kId = prot.pssh[0].pssh 
                         logger.updateSenstiveDict(kId,"pssh_code")
                         break
                 for repr in adapt_set.representations:
-                    audio={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio"}
+                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
+                    audio={"name":name,"pssh":kId,"type":"audio"}
                     break
             for item in [audio,video]:
                 url=f"{base_url}{item['name']}"
