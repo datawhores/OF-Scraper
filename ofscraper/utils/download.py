@@ -94,9 +94,7 @@ async def process_dicts(username, model_id, medialist):
                 skipped = 0
                 total_bytes_downloaded = 0
                 data = 0
-                desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
-                medialist=list(filter(lambda x:x.mpd,medialist))
-                
+                desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'                    
                 for ele in medialist:
                     with paths.set_directory(paths.getmediadir(ele,username,model_id)):
                         aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
@@ -163,7 +161,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
                         filename=createfilename(ele,username,model_id,content_type)
                         path_to_file = paths.trunicate(pathlib.Path(path,f"{filename}"))                 
                         pathstr=str(path_to_file)
-                        temp=paths.trunicate(f"{path_to_file}.part")
+                        temp=paths.trunicate(f"{path_to_file}_{randint(100,999)}.part")
                         pathlib.Path(temp).unlink(missing_ok=True)
                         task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                         with open(temp, 'wb') as f:                           
@@ -217,8 +215,9 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                         break
                 maxquality=max(map(lambda x:x.height,adapt_set.representations))
                 for repr in adapt_set.representations:
+                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
                     if repr.height==maxquality:
-                        video={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video"}
+                        video={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video","name":name}
                         break
             for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
                 kId=None
@@ -230,11 +229,11 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                         break
                 for repr in adapt_set.representations:
                     name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
-                    audio={"name":name,"pssh":kId,"type":"audio"}
+                    audio={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio","name":name}
                     break
             for item in [audio,video]:
-                url=f"{base_url}{item['name']}"
-                log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['name']} with {url}")
+                url=f"{base_url}{item['origname']}"
+                log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
                 async with httpx.AsyncClient(http2=True, headers = auth.make_headers(auth.read_auth()), follow_redirects=True, timeout=None,params=params) as c: 
                     auth.add_cookies(c) 

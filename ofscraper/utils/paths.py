@@ -179,7 +179,7 @@ def _linux_trunicateHelper(path):
              small=large
              large=int((large+maxLength)/2)        
     newFile=f"{file[:target]}{ext}"
-    log.debug(f"path: {path} filename_bytePsize: {len(newFile.encode('utf8'))}")
+    log.debug(f"path: {path} filename bytesize: {len(newFile.encode('utf8'))}")
     return pathlib.Path(dir,newFile)
 
 
