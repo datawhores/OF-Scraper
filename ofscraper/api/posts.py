@@ -338,6 +338,7 @@ class Media():
             return re.sub("_source","",file)
         else:
             filename= re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+            
             return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
 
     @property

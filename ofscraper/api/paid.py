@@ -134,7 +134,7 @@ async def get_all_paid_posts():
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
         allpaid=cache.get(f"purchased_all",default=[]) if not args_.getargs().no_cache else []
-        log.debug(f"[bold]ALl Paid Cache[/bold] {len(allpaid)} found")
+        log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
         
       
         if len(allpaid)>min_posts:

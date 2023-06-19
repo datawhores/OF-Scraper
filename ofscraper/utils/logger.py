@@ -6,6 +6,7 @@ import threading
 import time
 import queue
 from rich.logging import RichHandler
+
 from tenacity import retry,stop_after_attempt,wait_fixed
 
 import ofscraper.utils.paths as paths
@@ -39,6 +40,28 @@ class DiscordHandler(logging.Handler):
         #convert markup
         log_entry=re.sub("\[bold\]|\[/bold\]","**",log_entry)
         discord_queue.put((url,log_entry))
+
+
+
+class TextHandler(logging.Handler):
+    def __init__(self):
+        logging.Handler.__init__(self)
+        self._widget=None
+    def emit(self, record):
+        # only emit after widget is set
+        if self._widget==None:
+            return
+        log_entry = self.format(record)
+        log_entry=f"{log_entry}"
+        self._widget.write(log_entry)
+        
+    @property
+    def widget(self):
+        return self._widget
+    @widget.setter
+    def widget(self,widget):
+        self._widget=widget
+
 
 def discord_messenger():
     with httpx.Client() as c:
@@ -145,8 +168,13 @@ def init_logger(log):
     sh.setLevel(getLevel(args.getargs().output))
     sh.setFormatter(SensitiveFormatter('%(message)s'))
     sh.addFilter(NoDebug())
+    tx=TextHandler()
+    tx.addFilter(NoDebug())
+    tx.setLevel(getLevel(args.getargs().output))
+    tx.setFormatter(SensitiveFormatter('%(message)s'))
     log.addHandler(cord)
     log.addHandler(sh)
+    log.addHandler(tx)
     if args.getargs().log!="OFF":
         stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
         fh=logging.StreamHandler(stream)
@@ -161,15 +189,22 @@ def init_logger(log):
         sh2.setLevel(args.getargs().output)
         sh2.setFormatter(SensitiveFormatter('%(message)s'))
         sh2.addFilter(DebugOnly())
+        tx2=TextHandler()
+        tx2.addFilter(NoDebug())
+        tx2.setLevel(getLevel(args.getargs().output))
+        tx2.setFormatter(SensitiveFormatter('%(message)s'))
         log.addHandler(sh2)
+        log.addHandler(tx2)
     if args.getargs().log=="DEBUG":
         fh2=logging.StreamHandler(stream)
         fh2.setLevel(getLevel(args.getargs().log))
         fh2.setFormatter(LogFileFormatter('%(asctime)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(DebugOnly())
         log.addHandler(fh2)
+    
+
     return log
 
 
-   
-
+def add_widget(widget):
+    [setattr(ele,"widget",widget) for ele in list(filter(lambda x:isinstance(x,TextHandler),logging.getLogger("ofscraper").handlers))]
