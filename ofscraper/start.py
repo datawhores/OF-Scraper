@@ -10,11 +10,6 @@ log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
 def main():
-    import ofscraper.utils.binaries as binaries
-    binaries.ffmpeg_mac()
-    binaries.mp4_decrypt_mac()
-
-    return
     if args.command=="post_check":
         check.post_checker()
     elif args.command=="msg_check":
