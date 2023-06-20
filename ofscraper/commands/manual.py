@@ -11,6 +11,7 @@ import ofscraper.api.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.utils.download as download
 import ofscraper.api.messages as messages_
+import ofscraper.api.highlights as highlights_
 
 
 log = logging.getLogger(__package__)
@@ -59,7 +60,22 @@ def get_media_from_urls(urls):
                 model_id=user_name_dict.get(model) or profile.get_id(headers, model)
                 id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
             elif type=="unknown":
-                unknown_type_helper(postid,c)
+                data=unknown_type_helper(postid,c) or {}
+                model_id=data.get("author",{}).get("id")
+                id_dict[model_id]=id_dict.get(model_id,[])+[data]
+            elif type=="highlights":
+                data=highlights_.get_individual_highlight(postid,c) or {}
+                model_id=data.get("userId")
+                id_dict[model_id]=id_dict.get(model_id,[])+[data]
+                #special case
+                return get_all_media(id_dict,"highlights")
+            elif type=="stories":
+                data=highlights_.get_individual_stories(postid,c) or {}
+                model_id=data.get("userId")
+                id_dict[model_id]=id_dict.get(model_id,[])+[data]
+                #special case
+                return get_all_media(id_dict,"stories")
+
             else:
                 continue
                 
@@ -68,13 +84,12 @@ def get_media_from_urls(urls):
 
 def unknown_type_helper(postid,client):
     # try to get post by id
-    data=timeline.get_individual_post(postid,client)
-    return data
+    return timeline.get_individual_post(postid,client)
             
 
     
 
-def get_all_media(id_dict):
+def get_all_media(id_dict,inputtype=None):
     media_dict={}
     headers = auth.make_headers(auth.read_auth())
 
@@ -82,7 +97,7 @@ def get_all_media(id_dict):
         temp = []
         user_name = profile.scrape_profile(headers, model_id)['username']
         posts_array=list(map(lambda x:posts_.Post(
-        x, model_id, user_name), value))
+        x, model_id, user_name,responsetype=inputtype), value))
         [temp.extend(ele.media) for ele in posts_array]
         media_dict[model_id]=temp
    
@@ -90,33 +105,42 @@ def get_all_media(id_dict):
     return media_dict
 
     
-    
 
 def get_info(url):
-    search1=re.search("chat/([0-9]+)/.*?([0-9]+)",url)
-    search2=re.search("/([0-9]+)/([a-z-_.]+)",url)
-    search3=re.search("chat/([a-z-\._]+)/.*?([0-9]+)",url)
-    search4=re.search("^[0-9]+$",url)
+    search1=re.search("chat/chats/([0-9]+)/.*?([0-9]+)",url)
+    search2=re.search("/([0-9]+)/stories/highlights",url)
+    search3=re.search("/([0-9]+)/stories",url)
+    search4=re.search("chats/([a-z-\._]+)/.*?id=([0-9]+)",url)
+    search5=re.search("/([0-9]+)/([a-z-_.]+)",url)
+    search6=re.search("^[0-9]+$",url)
 
 
     if search1:
         return search1.group(1),search1.group(2),"msg"
     elif search2:
-        return search2.group(2),search2.group(1),"post"
-    
+        return None,search2.group(1),"highlights"
     elif search3:
-        return search3.group(1),search3.group(2),"msg2"
+        return None,search3.group(1),"stories"
+
+
     elif search4:
-        return None,search4.group(0),"unknown"
+        return search4.group(1),search4.group(2),"msg2"
+
+    elif search5:
+        return search5.group(1),search5.group(1),"post"
+    elif search6:
+        return None,search6.group(0),"unknown"
+
 
     return None,None,None
 
 
 def url_helper(urls):
     args = args_.getargs()
+    args=vars(args)
     out = []
-    out.extend(args.file or [])
-    out.extend(args.url or [])
+    out.extend(args.get("file",[]) or [])
+    out.extend(args.get("url",[]) or [])
     out.extend(urls or [])
     return map(lambda x: x.strip(), out)
 

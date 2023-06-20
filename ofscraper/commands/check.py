@@ -25,6 +25,7 @@ import ofscraper.utils.table as table
 import ofscraper.commands.manual as manual
 import ofscraper.utils.download as download
 import ofscraper.db.operations as operations
+import ofscraper.constants as constants
 
 from diskcache import Cache
 from ..utils.paths import getcachepath
@@ -41,24 +42,31 @@ app=None
 def process_download_cart():
         while True:
             global app
-            if not app:
-                time.sleep(10)
-            while not app.row_queue.empty():
-                row=app.row_queue.get()   
-                restype=app.row_names.index('Responsetype')
-                username=app.row_names.index('UserName')
-                post_id=app.row_names.index('Post_ID')
-                media_id=app.row_names.index('Media_ID')
-                url=None
-                if row[restype].plain=="message":
-                    url=f"https://onlyfans.com/my/chats/chat/{row[username].plain}/?firstId={row[post_id].plain}"
-                else:
-                    log.info("URL not supported")
-                log.info(f"Added url {url}")
-                log.info("Sending URLs to OF-Scraper")
-                media_dict= manual.get_media_from_urls(urls=[url])
-                medialist=list(filter(lambda x: x.id==int(row[media_id].plain) ,list(media_dict.values())[0]))
+            while app and not app.row_queue.empty():
+                log.info("Getting items from queue")
                 try:
+                    row=app.row_queue.get()   
+                    restype=app.row_names.index('Responsetype')
+                    username=app.row_names.index('UserName')
+                    post_id=app.row_names.index('Post_ID')
+                    media_id=app.row_names.index('Media_ID')
+                    url=None
+                    if row[restype].plain=="message":
+                        url=constants.messagesNextEP.format(row[username].plain,row[post_id].plain)
+                    elif row[restype].plain=="post":
+                        url=f"{row[post_id]}"
+                    elif row[restype].plain=="highlights":
+                        url=constants.highlightsWithStoriesEP.format(row[post_id].plain)
+                    elif row[restype].plain=="stories":
+                        url=constants.highlightsWithAStoryEP.format(row[post_id].plain)
+                    else:
+                        log.info("URL not supported")
+                        continue
+                    log.info(f"Added url {url}")
+                    log.info("Sending URLs to OF-Scraper")
+                    media_dict= manual.get_media_from_urls(urls=[url])
+                    # None for stories and highlights
+                    medialist=list(filter(lambda x: x.id==(int(row[media_id].plain) if x.id else None) ,list(media_dict.values())[0]))
                     media=medialist[0]
                     model_id =media.post.model_id
                     username=media.post.username
@@ -72,9 +80,7 @@ def process_download_cart():
                     ))
                     log.info("Download Finished")
                 except Exception as E:
-                    log.debug(E)
-
-                
+                        log.debug(E)     
             time.sleep(10)
 
 

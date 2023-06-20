@@ -180,7 +180,8 @@ async def scrape_messages(headers, model_id, progress,message_id=None,required_i
 
 def get_individual_post(model_id,postid,client=None):
     headers = auth.make_headers(auth.read_auth())
-    url=f"https://onlyfans.com/api2/v2/chats/{model_id}/messages?limit=10&order=desc&skip_users=all&firstId={postid}"
+    url=constants.messageSPECIFIC.format(model_id,postid)
+
     auth.add_cookies(client)
     client.headers.update(auth.create_sign(url, headers))
     r=client.get(url)

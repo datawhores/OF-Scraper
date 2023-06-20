@@ -54,6 +54,10 @@ donateEP = "https://www.buymeacoffee.com/excludedBittern"
 purchased_contentEP = "https://onlyfans.com/api2/v2/posts/paid?limit=100&skip_users=all&format=infinite&offset={}&user_id={}"
 purchased_contentALL = "https://onlyfans.com/api2/v2/posts/paid?limit=100&skip_users=all&format=infinite&offset={}"
 
+messageSPECIFIC="https://onlyfans.com/my/chats/chat/{}/?firstId={}"
+highlightSPECIFIC="https://onlyfans.com/api2/v2/stories/highlights/{}"
+storiesSPECIFIC="https://onlyfans.com/api2/v2/stories/{}"
+messageSPECIFIC= "https://onlyfans.com/api2/v2/chats/{}/messages?limit=10&order=desc&skip_users=all&firstId={}"
 
 mainPromptChoices = {
     'Download content from a user': 0,
