@@ -99,7 +99,6 @@ async def process_dicts(username, model_id, medialist):
                     with paths.set_directory(paths.getmediadir(ele,username,model_id)):
                         aws.append(asyncio.create_task(download(ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
                 task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws),visible=True)
-                # progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
                 for coro in asyncio.as_completed(aws):
                         try:
                             media_type, num_bytes_downloaded = await coro
@@ -124,6 +123,7 @@ async def process_dicts(username, model_id, medialist):
                                     p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)
         overall_progress.remove_task(task1)
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    return photo_count+video_count+audio_count,skipped
 def retry_required(value):
     return value == ('skipped', 1)
 
