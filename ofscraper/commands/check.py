@@ -1,13 +1,12 @@
 import logging
 import re
 import time
-import queue
 import asyncio
 import threading
+import queue
 import textwrap
 import httpx
 import arrow
-import schedule
 import ofscraper.utils.args as args_
 import ofscraper.db.operations as operations
 import ofscraper.api.profile as profile
@@ -34,7 +33,7 @@ cache = Cache(getcachepath())
 log = logging.getLogger(__package__)
 args = args_.getargs()
 console=console_.shared_console
-ROW_NAMES = "Download_Cart","Number", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
+ROW_NAMES = "Number","Download_Cart", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
 app=None
 
@@ -45,7 +44,7 @@ def process_download_cart():
             while app and not app.row_queue.empty():
                 log.info("Getting items from queue")
                 try:
-                    row=app.row_queue.get()   
+                    row,key=app.row_queue.get() 
                     restype=app.row_names.index('Responsetype')
                     username=app.row_names.index('UserName')
                     post_id=app.row_names.index('Post_ID')
@@ -79,7 +78,11 @@ def process_download_cart():
                     [media],
                     ))
                     log.info("Download Finished")
+                    app.update_downloadcart_cell(key,"[downloaded]")
+
+
                 except Exception as E:
+                        app.update_downloadcart_cell(key,"[failed]")
                         log.debug(E)     
             time.sleep(10)
 
@@ -142,8 +145,12 @@ def post_checker():
         downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, user_dict[user_name])
         ROWS.extend(row_gather(media, downloaded, user_name))
+    set_count(ROWS)
     thread_starters(ROWS)
 
+def set_count(ROWS):
+    for count,ele in enumerate(ROWS):
+        ele[0]=count+1
 
 
 def message_checker():
@@ -176,6 +183,7 @@ def message_checker():
         media = get_all_found_media(user_name, messages)
         downloaded = get_downloaded(user_name, model_id)
         ROWS.extend(row_gather(media, downloaded, user_name))
+    set_count(ROWS)
 
     thread_starters(ROWS)
 
@@ -200,6 +208,7 @@ def purchase_checker():
         downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, paid)
         ROWS.extend(row_gather(media, downloaded, user_name))
+    set_count(ROWS)
 
     thread_starters(ROWS)
 
@@ -223,6 +232,7 @@ def stories_checker():
         media=[]
         [media.extend(ele.all_media) for ele in stories+highlights]
         ROWS.extend(row_gather(media, downloaded, user_name))
+    set_count(ROWS)
 
     thread_starters(ROWS)
 
@@ -283,11 +293,14 @@ def start_table(ROWS_):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     app=table.InputApp()
+    app.mutex=threading.Lock()
+    app.row_queue=queue.Queue()
     ROWS = get_first_row()
     ROWS.extend(ROWS_)
+   
     app.table_data = ROWS
     app.row_names = ROW_NAMES
-    app.set_filtered_rows(reset=True)
+    app._filtered_rows = app.table_data[1:]
     app.run()
 
 
@@ -321,6 +334,9 @@ def datehelper(date):
 
 def times_helper(ele, mediadict, downloaded):
     return max(len(mediadict.get(ele.id, [])), downloaded.get(ele.id, 0))
+
+def checkmarkhelper(ele):
+    return '[]' if unlocked_helper(ele) else ""
   
 def row_gather(media, downloaded, username):
 
@@ -332,7 +348,7 @@ def row_gather(media, downloaded, username):
     out = []
     media = sorted(media, key=lambda x: arrow.get(x.date), reverse=True)
     for count, ele in enumerate(media):
-        out.append((count+1, username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele), times_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
-            ele.postdate_), len(ele._post.post_media), ele.responsetype_, "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),  ele.postid, ele.id, texthelper(ele.text)))
+        out.append([None,checkmarkhelper(ele),username, ele.id in downloaded or cache.get(ele.postid)!=None or  cache.get(ele.filename)!=None , unlocked_helper(ele), times_helper(ele, mediadict, downloaded), ele.length_, ele.mediatype, datehelper(
+            ele.postdate_), len(ele._post.post_media), ele.responsetype_, "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),  ele.postid, ele.id, texthelper(ele.text)])
     return out
 
