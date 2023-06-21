@@ -14,8 +14,9 @@ import ofscraper.constants as constants
 import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
-import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
+from .profiles import get_current_profile
+
 
 console=console_.shared_console
 homeDir=pathlib.Path.home()
@@ -236,4 +237,13 @@ def get_config_path():
     elif t.parent.is_dir():
         t/constants.configFile
     return t/constants.configFile
+
+def get_auth_file():
+    profile = get_current_profile()
+    auth= get_config_path().parent/profile /constants.authFile if not args_.getargs().auth else args_.getargs().auth
+    if auth.is_dir():
+        raise Exception("Auth File must be a file")
+    return auth
+
+    
    

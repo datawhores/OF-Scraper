@@ -76,8 +76,6 @@ async def process_dicts(username, model_id, medialist):
         progress_group = Group(
         overall_progress
         , Panel(Group(job_progress,fit=True)))
-
-        medialist=[list(filter(lambda x:x.mpd,medialist))[0]]
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
                 if not args_.getargs().dupe:
                     media_ids = set(operations.get_media_ids(model_id,username))
