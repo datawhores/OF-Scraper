@@ -31,6 +31,13 @@ def getargs(input=None):
     output.add_argument(
         '-p', '--output', help = 'set console output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
+    output.add_argument(
+        '-cg', '--config', help="Change location of config folder/file",default=None
+    )
+    output.add_argument(
+        '-au', '--auth', help="Change location of auth file",default=None
+    )
+
 
     parser = argparse.ArgumentParser(add_help=False,parents=[parent_parser])  
     parser.add_argument( '-h', '--help', action='help')
@@ -41,9 +48,7 @@ def getargs(input=None):
     scraper.add_argument(
         '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=username_helper,action="extend"
     )
-    scraper.add_argument(
-        '-cg', '--config', help="Change location of config folder/file",default=None
-    )
+  
     scraper.add_argument(
         '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
     )
