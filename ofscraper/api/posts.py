@@ -329,17 +329,26 @@ class Media():
     def count(self):
         return self._count+1
 
+    #og filename
     @property
     def filename(self):
         if not self.url and not self.mpd:
             return None
         elif not self.responsetype=="Profile":
-            filename=re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
-            return filename if re.search("_source",filename) else f"{filename}_source"
+            return re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
         else:
             filename= re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
-            filename=f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
-            return filename if re.search("_source",filename) else f"{filename}_source"
+            return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
+    @property
+    def filename_(self):
+        if self.filename==None:
+            return None
+        if self.mediatype=="videos":
+            return self.filename if re.search("_source",self.filename) else f"{self.filename}_source"
+        return self.filename
+
+            
+
 
     @property
     def preview(self):

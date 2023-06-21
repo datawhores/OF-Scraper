@@ -146,7 +146,7 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
     url=ele.url
     path_to_file=None
     async with sem:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {url}")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
 
             async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=None) as c: 
@@ -179,10 +179,10 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
     elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         return "skipped",1 
     else:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
         if ele.postdate:
@@ -199,13 +199,13 @@ async def main_download_helper(ele,path,file_size_limit,username,model_id,progre
 async def alt_download_helper(ele,path,file_size_limit,username,model_id,progress):
     async with sem:
         log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {ele.mpd}")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
         video = None
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename}_{randint(100,999)}.mkv"))
+        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mkv"))
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                 kId=None
@@ -363,13 +363,13 @@ def get_error_message(content):
     except AttributeError:
         return error_content
 def createfilename(ele,username,model_id,ext):
-    filename=ele.filename
+    filename=ele.filename_
     sitename="Onlyfans"
     site_name="Onlyfans"
     post_id=ele.postid_
     media_id=ele.id
     first_letter=username[0]
-    mediatype=ele.mediatype,
+    mediatype=ele.mediatype
     value=ele.value
     text=ele.text_
     date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
@@ -389,6 +389,6 @@ def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
         cache.close()
-    elif  ele.filename and ele.responsetype_=="highlights":
-        cache.set(ele.filename,True)
+    elif  ele.filename_ and ele.responsetype_=="highlights":
+        cache.set(ele.filename_,True)
         cache.close()
