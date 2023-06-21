@@ -334,12 +334,12 @@ class Media():
         if not self.url and not self.mpd:
             return None
         elif not self.responsetype=="Profile":
-            file=re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
-            return re.sub("_source","",file)
+            filename=re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+            return filename if re.search("_source",filename) else f"{filename}_source"
         else:
             filename= re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
-            
-            return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
+            filename=f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
+            return filename if re.search("_source",filename) else f"{filename}_source"
 
     @property
     def preview(self):
