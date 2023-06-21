@@ -20,14 +20,13 @@ from ofscraper.utils.logger import updateSenstiveDict
 log=logging.getLogger(__package__)
 console=Console()
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),reraise=True,after=lambda retry_state:print(f"Attempting to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}")) 
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),reraise=True,after=lambda retry_state:print(f"Trying to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}")) 
 def scrape_user(headers):
     with httpx.Client(http2=True, headers=headers) as c:
         url = constants.meEP
 
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
-
         r = c.get(url, timeout=None)
         if not r.is_error:
             updateSenstiveDict(r.json()["id"],"userid")

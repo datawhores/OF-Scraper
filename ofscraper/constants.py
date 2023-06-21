@@ -54,6 +54,10 @@ donateEP = "https://www.buymeacoffee.com/excludedBittern"
 purchased_contentEP = "https://onlyfans.com/api2/v2/posts/paid?limit=100&skip_users=all&format=infinite&offset={}&user_id={}"
 purchased_contentALL = "https://onlyfans.com/api2/v2/posts/paid?limit=100&skip_users=all&format=infinite&offset={}"
 
+messageSPECIFIC="https://onlyfans.com/my/chats/chat/{}/?firstId={}"
+highlightSPECIFIC="https://onlyfans.com/api2/v2/stories/highlights/{}"
+storiesSPECIFIC="https://onlyfans.com/api2/v2/stories/{}"
+messageSPECIFIC= "https://onlyfans.com/api2/v2/chats/{}/messages?limit=10&order=desc&skip_users=all&firstId={}"
 
 mainPromptChoices = {
     'Download content from a user': 0,
@@ -123,10 +127,16 @@ refreshScreen=20
 
 MP4DECRYPT_LINUX="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-unknown-linux.zip"
 MP4DECRYPT_WINDOWS="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-microsoft-win32.zip"
+MP4DECRYPT_MAC="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.universal-apple-macosx.zip"
 FFMPEG_LINUX="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
 FFMPEG_WINDOWS="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+FFMPEG_MAC="https://evermeet.cx/ffmpeg/ffmpeg-111111-gc44fe10160.zip"
+
 
 THREADS_DEFAULT=8
 MAX_SEMAPHORE=8
 AlT_SEM=4
 CODE_EXECUTION_DEFAULT =False
+
+NUMBER_REGEX="[0-9]"
+USERNAME_REGEX="[a-z-_\.]"

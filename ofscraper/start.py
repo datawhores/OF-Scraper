@@ -3,6 +3,9 @@ import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.commands.scraper as scraper
 import ofscraper.commands.check as check
+import ofscraper.commands.manual as manual
+
+
 log=logger.init_logger(logging.getLogger(__package__))
 args=args_.getargs()
 log.debug(args)
@@ -16,7 +19,7 @@ def main():
     elif args.command=="story_check":
         check.stories_checker()
     elif args.command=="manual":
-        None
+        manual.manual_download()
     elif vars(args).get("help"):
         None
     else:

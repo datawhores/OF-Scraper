@@ -102,9 +102,27 @@ def get_highlightList(data):
 
 
 
+def get_individual_highlight(id,client=None):
+    headers = auth.make_headers(auth.read_auth())
+    url=constants.highlightSPECIFIC.format(id)
+    auth.add_cookies(client)
+    client.headers.update(auth.create_sign(url, headers))
+    r=client.get(url)
+    if not r.is_error:
+        return r.json()
+    log.debug(f"{r.status_code}")
+    log.debug(f"{r.content.decode()}")
 
-
-
+def get_individual_stories(id,client=None):
+    headers = auth.make_headers(auth.read_auth())
+    url=constants.storiesSPECIFIC.format(id)
+    auth.add_cookies(client)
+    client.headers.update(auth.create_sign(url, headers))
+    r=client.get(url)
+    if not r.is_error:
+        return r.json()
+    log.debug(f"{r.status_code}")
+    log.debug(f"{r.content.decode()}")
 
 
 

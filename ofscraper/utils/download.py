@@ -11,6 +11,7 @@ r"""
 import asyncio
 import math
 import pathlib
+from random import randint
 import platform
 import shutil
 import traceback
@@ -57,13 +58,12 @@ import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
-
+from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 from diskcache import Cache
 
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
@@ -83,9 +83,8 @@ async def process_dicts(username, model_id, medialist):
                     medialist=seperate.seperate_avatars(medialist)
                     log.info(f"Skipping previously downloaded\nMedia left for download {len(medialist)}")
                 else:
-                    log.info("forcing all downloads")
+                    log.info(f"forcing all downloads media count {len(medialist)}")
                 file_size_limit = config_.get_filesize()
-
                 aws=[]
                 photo_count = 0
                 video_count = 0
@@ -127,6 +126,7 @@ async def process_dicts(username, model_id, medialist):
                                         p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)
         overall_progress.remove_task(task1)
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    return photo_count+video_count+audio_count,skipped
 def retry_required(value):
     return value == ('skipped', 1)
 
@@ -140,7 +140,7 @@ async def download(c,ele,path,model_id,username,file_size_limit,progress):
         elif ele.mpd:
             return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
         else:
-            return "skipped",1
+            return None
     except Exception as e:
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
@@ -149,7 +149,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
     url=ele.url
     path_to_file=None
     async with sem:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {url}")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
             async with c.get(url) as r:
                 if r.ok:
@@ -177,10 +177,10 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
     elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         return "skipped",1 
     else:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
         if ele.postdate:
@@ -197,14 +197,13 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
 async def alt_download_helper(ele,path,file_size_limit,username,model_id,progress):
     async with sem:
         log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename} with {ele.mpd}")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
         video = None
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.trunicate(pathlib.Path(path,f"{ele.id}.mkv"))
-
+        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mkv"))
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                 kId=None
@@ -214,22 +213,25 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                         break
                 maxquality=max(map(lambda x:x.height,adapt_set.representations))
                 for repr in adapt_set.representations:
+                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
                     if repr.height==maxquality:
-                        video={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video"}
+                        video={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video","name":name}
                         break
             for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
                 kId=None
+                name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
                 for prot in adapt_set.content_protections:
                     if prot.value==None:
                         kId = prot.pssh[0].pssh 
                         logger.updateSenstiveDict(kId,"pssh_code")
                         break
                 for repr in adapt_set.representations:
-                    audio={"name":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio"}
+                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
+                    audio={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio","name":name}
                     break
             for item in [audio,video]:
-                url=f"{base_url}{item['name']}"
-                log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['name']} with {url}")
+                url=f"{base_url}{item['origname']}"
+                log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
                 async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as c: 
                     async with c.get(url,params=params) as r:
@@ -270,7 +272,13 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         log.debug(f"Media:{ele.id} Post:{ele.postid} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
-        subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)])
+        r=subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if not pathlib.Path(newpath).exists():
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt failed")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stderr.decode()}")
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stdout.decode()}")
+        else:
+            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt success {newpath}")    
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     
@@ -278,10 +286,13 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
-        log.debug(t.stdout.decode())
-        log.debug(t.stderr.decode())
+        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg failed")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stderr.decode()}")
+        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stdout.decode()}")
+
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
+    log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")
     shutil.move(temp_path,path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
@@ -347,13 +358,13 @@ def get_error_message(content):
     except AttributeError:
         return error_content
 def createfilename(ele,username,model_id,ext):
-    filename=ele.filename
+    filename=ele.filename_
     sitename="Onlyfans"
     site_name="Onlyfans"
     post_id=ele.postid_
     media_id=ele.id
     first_letter=username[0]
-    mediatype=ele.mediatype,
+    mediatype=ele.mediatype
     value=ele.value
     text=ele.text_
     date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
@@ -373,6 +384,6 @@ def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
         cache.close()
-    elif  ele.filename and ele.responsetype_=="highlights":
-        cache.set(ele.filename,True)
+    elif  ele.filename_ and ele.responsetype_=="highlights":
+        cache.set(ele.filename_,True)
         cache.close()

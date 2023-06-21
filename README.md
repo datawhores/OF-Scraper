@@ -1,3 +1,22 @@
+# Table-of-contents
+- [Intro](#intro)
+- [Installation](#installation)
+  * [Windows: ](#windows)
+  * [macOS/Linux](#macoslinux)
+  * [Upgrade](#upgrade)
+  * [Authentication](#authentication)
+- [Usage](#usage)
+  * [Liking/Unliking](#likingunliking)
+  * [Selecting specific users](#selecting-specific-users)
+  * [Other menu options    ](#other-menu-options)
+- [Docker Support](#docker-support)
+- [Issues](#issues)
+- [Feature Requests](#feature-requests)
+  * [Common](#common)
+- [Migrating from DC script](#migrating-from-dc-script)
+- [Discord](#discord)
+- [Support](#support)
+
 # Intro
 
 A fork of onlyfans-scraper. It has been optimized to make it more feature complete with digitalcriminal's onlyfans script.
@@ -25,30 +44,30 @@ https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
 
 
 
-## Installation
+# Installation
 
 ### Recommended python3.9 or python3.10
 
 
-# Windows: 
-## stable
+## Windows: 
+### stable
 ```
 pip install ofscraper
 ```
 or 
-## development
+### development
 ```
 pip install git+https://github.com/datawhores/OF-Scraper.git 
 ```
 or 
-## specific version
+### specific version
 ```
 pip install ofscraper==x
 ```
 where x is the vesion you want to install
 
 
-#  macOS/Linux
+##  macOS/Linux
 ```
 pip3 install ofscraper
 ```
@@ -58,11 +77,30 @@ pip3 install git+https://github.com/datawhores/OF-Scraper.git
 ```
 
 or 
-## specific version
+### specific version
 ```
 pip install ofscraper==x
 ```
 where x is the vesion you want to install
+
+## Upgrade
+Not uninstalling has caused user issues in the past
+```
+pip3 uninstall ofscraper
+```
+
+Then run one of the install commands above
+
+```
+pip3 install ofscraper --upgrade
+```
+or 
+
+```
+pip3 install ofscraper==latest version number
+```
+
+
 
 ## Authentication
 
@@ -111,8 +149,8 @@ https://github.com/datawhores/OF-Scraper/wiki/Fuzzy-Search
   https://github.com/datawhores/OF-Scraper/wiki/command-line-args
 
 # Docker Support
-https://github.com/datawhores/OF-Scraper/pkgs/container/ofscraper
- 
+https://github.com/datawhores/OF-Scraper/wiki/Docker
+
  # Customazation
     
 https://github.com/datawhores/OF-Scraper/wiki/Customizing-save-path
@@ -175,7 +213,7 @@ BTC: bc1qcnnetrgmtr86rmqvukl2e24f5upghpcsqqsy87
 ETH: 0x1d427a6E336edF6D95e589C16cb740A1372F6609
 
 
-[![codecov](https://codecov.io/github/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/github/datawhores/OF-Scraper)
+[![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
 
 
 

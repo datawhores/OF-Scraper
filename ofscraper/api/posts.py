@@ -172,6 +172,9 @@ class Media():
             return self._media.get("url")
         else:
             return self._media.get("source", {}).get("source")
+        
+
+
 
     @property
     def post(self):
@@ -192,7 +195,7 @@ class Media():
     def canview(self):
         if self.responsetype_ == "highlights":
             return True
-        return self._media.get("canView") or False
+        return self._media.get("canView") or True if (self.url or self.mpd)!=None else False
 
     @property
     def responsetype(self):
@@ -326,15 +329,26 @@ class Media():
     def count(self):
         return self._count+1
 
+    #og filename
     @property
     def filename(self):
-        if not self.url or self.mpd:
+        if not self.url and not self.mpd:
             return None
         elif not self.responsetype=="Profile":
-            return  re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
+            return re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
         else:
             filename= re.sub("\.mpd$","",(self.url or self.mpd).split('.')[-2].split('/')[-1].strip("/,.;!_-@#$%^&*()+\\ "))
             return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
+    @property
+    def filename_(self):
+        if self.filename==None:
+            return None
+        if self.mediatype=="videos":
+            return self.filename if re.search("_source",self.filename) else f"{self.filename}_source"
+        return self.filename
+
+            
+
 
     @property
     def preview(self):

@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import re
 import arrow
 import pathlib
 from ofscraper.__version__ import __version__ 
@@ -15,41 +16,43 @@ def getargs(input=None):
         input=[]
     elif input==None:
         input=sys.argv[1:]
-
-    parser = argparse.ArgumentParser()
-
-    parser = argparse.ArgumentParser(add_help=False)   
-    general=parser.add_argument_group("General",description="General Args")  
+    parent_parser=argparse.ArgumentParser(add_help=False)
+    general=parent_parser.add_argument_group("General",description="General Args")  
     general.add_argument('-v', '--version', action='version', version=__version__ ,default=__version__)
-    general.add_argument('-h', '--help', action='help')
+    output=parent_parser.add_argument_group("Logging",description="Arguments for output controls")  
 
-                                    
-    general.add_argument(
-        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=username_helper,action="extend"
-    )
-    general.add_argument(
-        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=username_helper,action="extend"
-    )
-    general.add_argument(
-        '-cg', '--config', help="Change location of config folder/file",default=None
-    )
-    general.add_argument(
-        '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
-    )
-
-    general.add_argument(
+    output.add_argument(
         '-l', '--log', help = 'set log file level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
     ),
-    general.add_argument(
+    output.add_argument(
         '-dc', '--discord', help = 'set discord log level', type=str.upper,default="OFF",choices=["OFF","STATS","LOW","NORMAL","DEBUG"]
     )
 
-    general.add_argument(
+    output.add_argument(
         '-p', '--output', help = 'set console output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
-    general.add_argument(
+
+    parser = argparse.ArgumentParser(add_help=False,parents=[parent_parser])  
+    parser.add_argument( '-h', '--help', action='help')
+    scraper=parser.add_argument_group("scraper",description="General Arguments for scraper")                                
+    scraper.add_argument(
+        '-u', '--username', help="select which username to process (name,name2)\nSet to ALL for all users",type=username_helper,action="extend"
+    )
+    scraper.add_argument(
+        '-eu', '--excluded-username', help="select which usernames to exclude  (name,name2)\nThis has preference over --username",type=username_helper,action="extend"
+    )
+    scraper.add_argument(
+        '-cg', '--config', help="Change location of config folder/file",default=None
+    )
+    scraper.add_argument(
+        '-d', '--daemon', help='run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes', type=int,default=None
+    )
+
+    scraper.add_argument(
         '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
     )
+
+
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
@@ -83,10 +86,10 @@ def getargs(input=None):
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
     filters.add_argument(
-        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts',type=arrow.get)
+        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts',type=arrow_helper)
  
     filters.add_argument(
-        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow.get)
+        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow_helper)
     
     
     sort=parser.add_argument_group("sort",description="Options on how to sort list")
@@ -99,12 +102,9 @@ def getargs(input=None):
     advanced.add_argument(
         '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects downloading posts',default=False,required=False,action="store_true"
     )
-    # advanced.add_argument(
-    #     '-ml', '--manual', help = 'Download media from post url',default=None,required=False,type = posttype_helper,action='extend'
-    # )
-  
+
     subparser=parser.add_subparsers(help="commands",dest="command")
-    post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours")
+    post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours",parents=[parent_parser])
 
 
     post_check.add_argument("-u","--url",
@@ -120,7 +120,7 @@ def getargs(input=None):
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
 
-    message_check=subparser.add_parser("msg_check",help="Parse a user's messages and view status of missing media\nCache lasts for 24 hours")
+    message_check=subparser.add_parser("msg_check",help="Parse a user's messages and view status of missing media\nCache lasts for 24 hours",parents=[parent_parser])
     message_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -134,7 +134,7 @@ def getargs(input=None):
     message_check.add_argument("-un","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
-    paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours")
+    paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours",parents=[parent_parser])
     paid_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -149,7 +149,7 @@ def getargs(input=None):
 
 
 
-    story_check=subparser.add_parser("story_check",help="Parse Stories/Highlights sent from a user\nCache last for 24 hours")
+    story_check=subparser.add_parser("story_check",help="Parse Stories/Highlights sent from a user\nCache last for 24 hours",parents=[parent_parser])
     story_check.add_argument(
         '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
     )
@@ -160,6 +160,14 @@ def getargs(input=None):
 
     story_check.add_argument("-us","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
+
+    manual=subparser.add_parser("manual",help="Manually download content via url or ID",parents=[parent_parser])
+    manual.add_argument("-f","--file",
+    help = 'Pass links/IDs to download via file',default=None,required=False,type = check_filehelper
+    )
+    manual.add_argument("-us","--url",
+    help = 'pass links to download via url',type = check_strhelper,action="extend")
+
 
     args=parser.parse_args(input)
     #deduplicate posts
@@ -190,10 +198,11 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["highlights","all","archived","messages","timeline","pinned","stories","purchased","profile","none"])
+    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","None"])
     if isinstance(x,str):
         x=x.split(',')
-    if len(list(filter(lambda y:y not in choices,x)))>0:
+        x=list(map(lambda x:x.capitalize() ,x))
+    if len(list(filter(lambda y: y not in choices,x)))>0:
         raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile')")
     return x
 
@@ -209,3 +218,21 @@ def username_helper(x):
     elif isinstance(x,str):
         temp=x.split(",")
     return temp
+
+def arrow_helper(x):
+    print(x)
+    try:
+        return arrow.get(x)
+    except arrow.parser.ParserError as E:
+        try:
+            x=re.sub("\\byear\\b","years",x)
+            x=re.sub("\\bday\\b","days",x)
+            x=re.sub("\\bmonth\\b","months",x)
+            x=re.sub("\\bweek\\b","weeks",x)
+            print(x)
+            arw=arrow.utcnow()
+            return arw.dehumanize(x)
+        except ValueError as E:
+             raise E
+
+

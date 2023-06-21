@@ -60,10 +60,17 @@ async def scrape_pinned_posts(headers, model_id,progress, timestamp=None,require
     if not r.is_error:
         progress.remove_task(task)
         posts = r.json()['list']
+        log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
         if not posts:
             posts= []
-        elif len(posts)==0:
-            posts= []
+        if len(posts)==0:
+            log.debug(f"{log_id} -> number of pinned post f found 0")
+        else:
+            log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
+            log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
+            log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
+            log.debug(f"{log_id} -> first ID {posts[0]['id']}")
+            log.debug(f"{log_id} -> last ID {posts[-1]['id']}")
         #post infinite loops            
         # elif required_ids==None:
         #     attempt.set(0)

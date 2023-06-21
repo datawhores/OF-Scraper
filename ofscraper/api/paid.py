@@ -87,7 +87,6 @@ async def scrape_paid(username,job_progress,offset=0):
     global sem
     global tasks
     media = None
-    offset = 0
     headers = auth.make_headers(auth.read_auth())
     attempt.set(attempt.get(0) + 1)
     
@@ -96,15 +95,17 @@ async def scrape_paid(username,job_progress,offset=0):
     async with httpx.AsyncClient(http2=True, headers=headers, follow_redirects=True) as c:
         auth.add_cookies(c)
         url = constants.purchased_contentEP.format(offset,username)
-        offset += 10
         c.headers.update(auth.create_sign(url, headers))
         r = await c.get(url, timeout=None)
         sem.release()
     if not r.is_error:
         attempt.set(0)
-        if "hasMore" in r.json() and r.json()['hasMore']:
-            tasks.append(asyncio.create_task(scrape_paid(username,offset=offset)))
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
+        log.debug(f"offset:{offset} -> media found {len(media)}")
+        log.debug(f"offset:{offset} -> hasmore value in json {r.json().get('hasMore','undefined') }")
+        if  r.json().get("hasMore"):
+            offset += len(media)
+            tasks.append(asyncio.create_task(scrape_paid(username,job_progress,offset=offset)))
         job_progress.remove_task(task)
 
     else:
@@ -133,7 +134,7 @@ async def get_all_paid_posts():
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
         allpaid=cache.get(f"purchased_all",default=[]) if not args_.getargs().no_cache else []
-        log.debug(f"[bold]ALl Paid Cache[/bold] {len(allpaid)} found")
+        log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
         
       
         if len(allpaid)>min_posts:
@@ -191,25 +192,33 @@ async def scrape_all_paid(job_progress,offset=0,count=0,required=0):
         r = await c.get(url, timeout=None)
         sem.release()
     if not r.is_error:
-        attempt.set(0)     
+        attempt.set(0) 
+        log_id=offset or 0
+
         
         job_progress.remove_task(task)
         media=list(filter(lambda x:isinstance(x,list),r.json().values()))[0]
-        if not "hasMore" in r.json() or not r.json()['hasMore']:
+        if not r.json().get("hasMore"):
             media=[]
         if not media:
             media=[]
-        elif len(media)==0:
-            media=[]
-        elif required==0:
-            attempt.set(0)
-            tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media))))
+        if len(media)==0:
+            log.debug(f"offset:{log_id} -> number of post found 0")
+        elif len(media)>0:
+            log.debug(f"{log_id} -> number of post found {len(media)}")
+            log.debug(f"{log_id} -> first date {media[0].get('createdAt') or media[0].get('postedAt')}")
+            log.debug(f"{log_id} -> last date {media[-1].get('createdAt') or media[-1].get('postedAt')}")
+            log.debug(f"{log_id} -> first ID {media[0]['id']}")
+            log.debug(f"{log_id} -> last ID {media[-1]['id']}")
+            if required==0:
+                attempt.set(0)
+                tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media))))
 
-        elif len(count)<len(required):
-            tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media),required=required,count=count+len(media))))
+            elif len(count)<len(required):
+                tasks.append(asyncio.create_task(scrape_all_paid(job_progress,offset=offset+len(media),required=required,count=count+len(media))))
 
 
-    
+        
 
     else:
         log.debug(f"[bold]paid request status code:[/bold]{r.status_code}")

@@ -64,25 +64,32 @@ async def scrape_archived_posts(headers, model_id,progress, timestamp=None,requi
     if not r.is_error:
         progress.remove_task(task)
         posts = r.json()['list']
+        log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
         if not posts:
             posts= []
-        elif len(posts)==0:
-            posts= []
-        elif required_ids==None:
-            attempt.set(0)
-            tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
-        else:
-            [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
-
-
-            #try once more to get id if only 1 left
-            if len(required_ids)==1:
+        if len(posts)==0:
+            log.debug(f" {log_id} -> number of post found 0")
+        elif len(posts)>0:
+            log.debug(f"{log_id} -> number of archived post found {len(posts)}")
+            log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
+            log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
+            log.debug(f"{log_id} -> first ID {posts[0]['id']}")
+            log.debug(f"{log_id} -> last ID {posts[-1]['id']}")        
+            if required_ids==None:
                 attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+                tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+            else:
+                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
 
-            elif len(required_ids)>0:
-                attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
+
+                #try once more to get id if only 1 left
+                if len(required_ids)==1:
+                    attempt.set(0)
+                    tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+
+                elif len(required_ids)>0:
+                    attempt.set(0)
+                    tasks.append(asyncio.create_task(scrape_archived_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
     else:
             log.debug(f"[bold]archived request status code:[/bold]{r.status_code}")
             log.debug(f"[bold]archived response:[/bold] {r.content.decode()}")
