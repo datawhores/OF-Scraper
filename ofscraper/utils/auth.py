@@ -19,7 +19,8 @@ import httpx
 import browser_cookie3
 from .profiles import get_current_profile
 from ..prompts.prompts import *
-from ..constants import configPath, authFile, DYNAMIC, requestAuth
+from ..constants import configPath, DYNAMIC, requestAuth
+import ofscraper.utils.paths as paths
 
 console=Console()
 
@@ -28,16 +29,11 @@ console=Console()
 def read_auth():
     make_request_auth()
 
-    profile = get_current_profile()
-
-    p = pathlib.Path.home()/configPath/profile
-    if not p.is_dir():
-        p.mkdir(parents=True, exist_ok=True)
-    
-
+    authFile=paths.get_auth_file()
+   
     while True:
         try:
-            with open(p / authFile, 'r') as f:
+            with open(authFile, 'r') as f:
                 authText=f.read()
                 auth = json.loads(authText)
                 for key in list(filter(lambda x:x!="auth_uid_",auth.keys())):
@@ -49,50 +45,45 @@ def read_auth():
         except FileNotFoundError:
             console.print(
                 "You don't seem to have an `auth.json` file")
-            make_auth(p)
+            make_auth()
         except json.JSONDecodeError as e:
             print("You auth.json has a syntax error")
             print(f"{e}\n\n")
-            with open(p / authFile, 'w') as f:
+            with open( authFile, 'w') as f:
                 f.write(manual_auth_prompt(authText))
     return auth
 
 
 def edit_auth():
-    profile = get_current_profile()
-
-    p = pathlib.Path.home() / configPath / profile 
-    if not p.is_dir():
-        p.mkdir(parents=True, exist_ok=True)
-  
+    authFile=paths.get_auth_file()
     try:
-        with open(p / authFile, 'r') as f:
+        with open(authFile, 'r') as f:
             authText=f.read()
             auth = json.loads(authText)
         print("Hint: Select 'Enter Each Field Manually' to edit your current config\n")
-        make_auth(p, auth)
+        make_auth(auth)
 
         console.print('Your `auth.json` file has been edited.')
     except FileNotFoundError:
         
         if ask_make_auth_prompt():
-            make_auth(p)
+            make_auth(auth)
     except json.JSONDecodeError as e:
             while True:
                 try:
                     print("You auth.json has a syntax error")
                     print(f"{e}\n\n")
-                    with open(p / authFile, 'w') as f:
+                    with open(authFile, 'w') as f:
                         f.write(manual_auth_prompt(authText))
-                    with open(p / authFile, 'r') as f:
+                    with open(authFile, 'r') as f:
                         authText=f.read()
                         auth = json.loads(authText)
                     break
                 except:
                     continue
 
-def make_auth(path=None, auth=None):
-    path= path or  pathlib.Path.home() / configPath / get_current_profile()
+def make_auth( auth=None):
+    authFile=paths.get_auth_file()
     defaultAuth=  {
             'auth': {
                 'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
@@ -143,14 +134,12 @@ def make_auth(path=None, auth=None):
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
         auth['auth'].update(auth_prompt(auth['auth']))
     
-    console.print(f"{auth}\nWriting to {path / authFile}",style="yellow")
-    with open(path / authFile, 'w') as f:
+    console.print(f"{auth}\nWriting to {authFile}",style="yellow")
+    with open(authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))
 
 
-def get_auth_id() -> str:
-    auth_id = read_auth()['auth']['auth_id']
-    return auth_id
+
 
 
 def make_headers(auth):
@@ -166,10 +155,8 @@ def make_headers(auth):
 
 
 def add_cookies(client):
-    profile = get_current_profile()
-
-    p = pathlib.Path.home() / configPath / profile
-    with open(p / authFile, 'r') as f:
+    authFile=paths.get_auth_file()
+    with open(authFile, 'r') as f:
         auth = json.load(f)
 
     domain = 'onlyfans.com'
@@ -199,9 +186,9 @@ def add_cookies_aio():
 
     return cookies
 def get_cookies():
-    profile = get_current_profile()
-    p = pathlib.Path.home() / configPath / profile
-    with open(p / authFile, 'r') as f:
+    authFile=paths.get_auth_file()
+
+    with open( authFile, 'r') as f:
         auth = json.load(f)
     return  f"auth_id={auth['auth']['auth_id']};sess={auth['auth']['sess']};"
 
@@ -245,7 +232,8 @@ def create_sign(link, headers):
 
 def read_request_auth() -> dict:
     profile = get_current_profile()
-    p = pathlib.Path.home() / configPath / profile / requestAuth
+
+    p = paths.get_config_path().parent/profile/ requestAuth
     with open(p, 'r') as f:
         content = json.load(f)
     return content
@@ -268,7 +256,7 @@ def make_request_auth():
 
         profile = get_current_profile()
 
-        p = pathlib.Path.home() / configPath / profile
+        p = paths.get_config_path().parent/profile
         if not p.is_dir():
             p.mkdir(parents=True, exist_ok=True)
 

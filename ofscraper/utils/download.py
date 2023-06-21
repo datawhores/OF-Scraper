@@ -45,7 +45,6 @@ except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 
-
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
@@ -64,7 +63,6 @@ from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
-sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
 async def process_dicts(username, model_id, medialist):
@@ -76,6 +74,10 @@ async def process_dicts(username, model_id, medialist):
         progress_group = Group(
         overall_progress
         , Panel(Group(job_progress,fit=True)))
+        # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
+        global sem
+        sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
+
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
                 if not args_.getargs().dupe:
                     media_ids = set(operations.get_media_ids(model_id,username))
@@ -85,6 +87,7 @@ async def process_dicts(username, model_id, medialist):
                 else:
                     log.info(f"forcing all downloads media count {len(medialist)}")
                 file_size_limit = config_.get_filesize()
+                  
                 aws=[]
                 photo_count = 0
                 video_count = 0
@@ -203,7 +206,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mkv"))
+        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                 kId=None
@@ -284,7 +287,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
     
     path_to_file.unlink(missing_ok=True)
     temp_path.unlink(missing_ok=True)
-    t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
         log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg failed")
         log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stderr.decode()}")
