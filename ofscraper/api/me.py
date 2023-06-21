@@ -27,7 +27,6 @@ def scrape_user(headers):
 
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
-
         r = c.get(url, timeout=None)
         if not r.is_error:
             updateSenstiveDict(r.json()["id"],"userid")

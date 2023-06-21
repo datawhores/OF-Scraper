@@ -609,9 +609,10 @@ class InputApp(App):
 
     def sort_helper(self, label=None):
         # to allow sorting after submit
+        if label == None:
+            return
         index=self.row_names.index(re.sub(" ","_",label))
-        if label != None:
-            self.set_reverse(label=label)
+        self.set_reverse(label=label)
         if label=="Download Cart":
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)

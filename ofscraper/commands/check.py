@@ -101,15 +101,16 @@ def post_checker():
     client = httpx.Client(http2=True, headers=headers)
     links = list(url_helper())
     for ele in links:
-        name_match = re.search("/([a-z_]+$)", ele)
+        name_match = re.search("/([a-z_\.]+$)", ele)
         if name_match:
             user_name = name_match.group(1)
             log.info(f"Getting Full Timeline for {user_name}")
             model_id = profile.get_id(headers, user_name)
-        name_match = re.search("^[a-z]+$", ele)
+        name_match = re.search("^[a-z\._]+$", ele)
         if name_match:
             user_name = name_match.group(0)
             model_id = profile.get_id(headers, user_name)
+       
 
         oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
         if len(oldtimeline) > 0 and not args.force:
@@ -127,7 +128,7 @@ def post_checker():
                 f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
 
     # individual links
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_]+$", x), links)):
+    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_\.]+$", x), links)):
         name_match = re.search("/([a-z]+$)", ele)
         num_match = re.search("/([0-9]+)", ele)
         if name_match and num_match:
