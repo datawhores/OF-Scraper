@@ -291,7 +291,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
     
     path_to_file.unlink(missing_ok=True)
     temp_path.unlink(missing_ok=True)
-    t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path2)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
         log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg failed")
         log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stderr.decode()}")
