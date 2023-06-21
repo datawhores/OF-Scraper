@@ -168,15 +168,11 @@ def add_cookies(client):
     if auth['auth']['auth_uid_']:
         client.cookies.set(auth_uid, auth['auth']['auth_uid_'], domain=domain)
 def add_cookies_aio():
-    profile = get_current_profile()
 
-    p = pathlib.Path.home() / configPath / profile
-    with open(p / authFile, 'r') as f:
+    authFile=paths.get_auth_file()
+    with open(authFile, 'r') as f:
         auth = json.load(f)
 
-    domain = 'onlyfans.com'
-
-    auth_uid = 'auth_uid_{}'.format(auth['auth']['auth_id'])
     cookies={}
     cookies.update({"sess": auth['auth']['sess']})
     cookies.update({"auth_id": auth['auth']['auth_id']})
