@@ -127,6 +127,7 @@ def ffmpeg_windows():
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
+        pathlib.Path(bin_path).unlink(missing_ok=True)
         shutil.move(list(pathlib.Path(t).glob("**/ffmpeg.exe"))[0],bin_path)
         st = os.stat(bin_path)
         os.chmod(bin_path, st.st_mode | stat.S_IEXEC)
@@ -152,6 +153,7 @@ def ffmpeg_linux():
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with TarFile.open(zip_path,mode="r:xz") as zObject:
              zObject.extractall(path=t)
+        pathlib.Path(bin_path).unlink(missing_ok=True)
         shutil.move(list(pathlib.Path(t).glob("**/ffmpeg"))[0],bin_path)
         st = os.stat(bin_path)
         os.chmod(bin_path, st.st_mode | stat.S_IEXEC)
@@ -178,6 +180,7 @@ def ffmpeg_mac():
         bin_path.parent.mkdir(exist_ok=True,parents=True)
         with ZipFile(zip_path) as zObject:
              zObject.extractall(path=t)
+        pathlib.Path(bin_path).unlink(missing_ok=True)
         shutil.move(list(pathlib.Path(t).glob("**/ffmpeg"))[0],bin_path)
         st = os.stat(bin_path)
         os.chmod(bin_path, st.st_mode | stat.S_IEXEC)

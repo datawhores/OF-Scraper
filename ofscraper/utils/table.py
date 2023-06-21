@@ -1,22 +1,17 @@
 import logging
-import queue
 from textual.app import App, ComposeResult
 from textual.widgets import Input, DataTable, Button, Checkbox, Label,ContentSwitcher,TextLog
 from rich.text import Text
 from textual.containers import Horizontal, VerticalScroll,Vertical
 import ofscraper.utils.logger as logger
-
-
 from textual import events
 import arrow
 import re
 from diskcache import Cache
 import ofscraper.utils.console as console_
-
 from ..utils.paths import getcachepath
 cache = Cache(getcachepath())
 log = logging.getLogger(__package__)
-
 
 
 
@@ -439,9 +434,35 @@ class DateField(Horizontal):
             return ""
         return match.group(0)
 
-
 class InputApp(App):
 
+    # Events
+    def on_data_table_header_selected(self, event):
+        self.sort_helper(event.label.plain)
+
+        # set reverse
+        # use native python sorting until textual has key support
+
+
+
+   
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "submit":
+            self.set_filtered_rows()
+            self.sort_helper()
+            self.make_table()
+        elif event.button.id == "reset":
+            self.set_filtered_rows(reset=True)
+            self.reset_all_inputs()
+            self.set_reverse(init=True)
+            self.make_table()
+        elif event.button.id=="send_downloads":
+            log.info("Adding Downloads to queue")
+            self.add_to_row_queue()
+            self.query_one(ContentSwitcher).current = 'console_page'
+
+        elif event.button.id in ["console","table"]:
+             self.query_one(ContentSwitcher).current = f"{event.button.id}_page"  
     def on_key(self, event: events.Key) -> None:
         if event.key == "escape":
             self.exit()
@@ -462,36 +483,10 @@ class InputApp(App):
                 self.update_input(row_name, event.value.plain)
                 self.set_filtered_rows()
                 self.make_table()
+                self.reset_cart()
             else:
-                self.change_download_cart(event.coordinate[0])
-
-    
-    def change_download_cart(self,row):
-        row=str(row+1)
-        table=self.query_one(DataTable)
-        Download_Cart=table.get_row(row)[0]
-        if Download_Cart=="":
-            return
-        elif Download_Cart.plain=="[]":
-            table.update_cell(
-            row, "Download_Cart", Text("[added]"), update_width=True)
-            
-        elif Download_Cart.plain=="[added]":
-            self.query_one(DataTable).update_cell(
-             row, "Download_Cart", Text("[]"), update_width=True)
-    
-        elif Download_Cart.plain=="[downloaded]":
-            self.query_one(DataTable).update_cell(
-             row, "Download_Cart", Text("[]"), update_width=True)
-            
-
-
-            
-
-            
-            
-       
-
+                self.change_download_cart(event.coordinate)
+    #Main
     def compose(self) -> ComposeResult:
         with Horizontal(id="buttons"):  
             yield Button("DataTable", id="table")  
@@ -527,107 +522,168 @@ class InputApp(App):
                 yield DataTable(fixed_rows=1, id="data-table_page")
             with Vertical(id="console_page"):
                 yield OutConsole()
-                
+
+    def on_mount(self) -> None:
+        self.set_reverse(init=True)
+        self.make_table()
+        self.query_one("#reset").styles.align = ("center", "middle")
+        self.query_one(VerticalScroll).styles.height = "25vh"
+        self.query_one(VerticalScroll).styles.dock = "top"
+        self.query_one(DataTable).styles.height = "60vh"
+        self.query_one("#send_downloads").styles.content_align=("right", "middle")
+        for ele in self.query(Horizontal)[:-1]:
+            ele.styles.height = "10vh"
+        logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
+       
 
 
-    async def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "submit":
-            self.set_filtered_rows()
-            self.sort_helper()
-            self.make_table()
-        elif event.button.id == "reset":
-            self.set_filtered_rows(reset=True)
-            self.reset_all_inputs()
-            self.set_reverse(init=True)
-            self.make_table()
-        elif event.button.id=="send_downloads":
-            log.info("Adding Downloads to queue")
-            self.add_to_row_queue()
-            self.query_one(ContentSwitcher).current = 'console_page'
-
-        elif event.button.id in ["console","table"]:
-             self.query_one(ContentSwitcher).current = f"{event.button.id}_page"  
+    # Cart
+    def change_download_cart(self,coord):
+        table=self.query_one(DataTable)
+        Download_Cart=table.get_row_at(coord[0])[ self.row_names.index("Download_Cart")]
+        if Download_Cart.plain=="":
+            return
+        elif Download_Cart.plain=="[]":
+            self.update_downloadcart_cell_coord(coord,"[added]")
+          
+            
+        elif Download_Cart.plain=="[added]":
+            self.update_downloadcart_cell_coord(coord,"[]")
+    
+        elif Download_Cart.plain=="[downloaded]" or "[failed]":
+            self.update_downloadcart_cell_coord(coord,"[]")
 
     def add_to_row_queue(self):
         table=self.query_one(DataTable)
-        keys=[str(i + 1) for i in range(self.query_one(DataTable).row_count)]
-        filter_keys=list(filter(lambda x:table.get_row(x)[0].plain=="[added]",keys))
-        [table.update_cell(ele,"Download_Cart",Text("[downloaded]")) for ele in filter_keys]
-        filtered_rows=list(map(lambda x:table.get_row(x),filter_keys))
+        keys=[str(ele[0]) for ele in self._filtered_rows]
+        index=self.row_names.index("Download_Cart")
+        filter_keys=list(filter(lambda x:table.get_row(x)[index].plain=="[added]",keys))
+        self.update_downloadcart_cell(filter_keys,"[downloading]")
+        log.debug(f"Number of Downloads Set to queue {len(filter_keys)}")
+        [self.row_queue.put(ele) for ele in map(lambda x:(table.get_row(x),x),filter_keys)]
+    
+    def reset_cart(self):
+        index=self.row_names.index("Download_Cart")
+        self.update_downloadcart_cell(  [str(x[0]) for x in list(filter(lambda x:x[index]=="[added]",self.table_data[1:]))],"[]")
+    
+    def reset_filtered_cart(self):
+        index=self.row_names.index("Download_Cart")
+        self.update_downloadcart_cell(  list(filter(lambda x:x[index]!="",self._filtered_rows)),"[]")
+
+    def update_downloadcart_cell_coord(self,keys,value):
+        index=self.row_names.index("Download_Cart")
+        if not isinstance(keys,list):
+            keys=[keys]
+        with self.mutex:
+            for key in keys:
+                try:
+                    table=self.query_one(DataTable)
+                    table.update_cell_at(key,Text(value))
+                    #table.ordered_rows gets the keys in table order
+                    self.table_data[int(table.ordered_rows[keys[0]].key.value)][index]=value
+
+                except Exception as E:
+                    log.debug("Row was probably removed")
+                    log.debug(E)
+    
+    
+    
+    def update_downloadcart_cell(self,keys,value):
+        self.update_cell(keys,"Download_Cart",value)
        
-        [self.row_queue.put(ele) for ele in filtered_rows]
+
+    def update_cell(self,keys,name,value,perst=True):
+        index=self.row_names.index(name)
+        if not isinstance(keys,list):
+            keys=[keys]
+        with self.mutex:
+            for key in keys:
+                try:
+                    if perst:
+                        self.table_data[int(key)][index]=value
+                    table=self.query_one(DataTable)
+                    table.update_cell(key,name,Text(str(value)))
+                except Exception as E:
+                    log.debug("Row was probably removed")
+                    log.debug(E)
+    
 
 
-    def on_data_table_header_selected(self, event):
-        self.sort_helper(event.label.plain)
+ 
 
-        # set reverse
-        # use native python sorting until textual has key support
+    # Table Functions
 
     def sort_helper(self, label=None):
         # to allow sorting after submit
-        if label != None:
-            self.set_reverse(label=label)
-        if label == "Number":
+        if label == None:
+            return
+        index=self.row_names.index(re.sub(" ","_",label))
+        self.set_reverse(label=label)
+        if label=="Download Cart":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[0], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
             self.make_table()
-        elif label == "Username":
+
+        elif label == "Number":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x, reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
+            self.make_table()
+        elif label == "UserName":
+            self._filtered_rows = sorted(
+                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
             self.make_table()
         elif label == "Downloaded":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: 1 if x[2] == True else 0, reverse=self.reverse)
+                self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
             self.make_table()
 
         elif label == "Unlocked":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: 1 if x[3] == True else 0, reverse=self.reverse)
+                self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
             self.make_table()
         elif label == "Times Detected":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: 1 if x[4] == True else 0, reverse=self.reverse)
+                self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
             self.make_table()
         elif label == "Length":
             helperNode = self.query_one("#Length")
             self._filtered_rows = sorted(self._filtered_rows, key=lambda x: helperNode.convertString(
-                x[5]) if x[5] != "N/A" else 0, reverse=self.reverse)
+                x[index]) if x[index] != "N/A" else 0, reverse=self.reverse)
             self.make_table()
         elif label == "Mediatype":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[6], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index] , reverse=self.reverse)
             self.make_table()
         elif label == "Post Date":
             helperNode = self.query_one("#Post_Date")
             self._filtered_rows = sorted(self._filtered_rows, key=lambda x: helperNode.convertString(
-                x[7]) if x[7] != "N/A" else 0, reverse=self.reverse)
+                x[index]) if x[index] != "N/A" else 0, reverse=self.reverse)
             self.make_table()
         elif label == "Post Media Count":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[8], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
             self.make_table()
 
         elif label == "Responsetype":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[9], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
             self.make_table()
         elif label == "Price":
             self._filtered_rows = sorted(self._filtered_rows, key=lambda x: int(
-                float(x[10])) if x[10] != "Free" else 0, reverse=self.reverse)
+                float(x[index])) if x[index] != "Free" else 0, reverse=self.reverse)
             self.make_table()
 
         elif label == "Post ID":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[11], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index] if  x[index] else 0, reverse=self.reverse)
             self.make_table()
         elif label == "Media ID":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[12], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index] if  x[index] else 0, reverse=self.reverse)
             self.make_table()
         elif label == "Text":
             self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[13], reverse=self.reverse)
+                self._filtered_rows, key=lambda x: x[index] , reverse=self.reverse)
             self.make_table()
 
     def set_reverse(self, label=None, init=False):
@@ -647,36 +703,23 @@ class InputApp(App):
         elif self.label == label and self.reverse:
             self.reverse = False
 
-    def on_mount(self) -> None:
-        self.row_queue=queue.Queue()
-        self.set_reverse(init=True)
-        self.make_table()
-        self.query_one("#reset").styles.align = ("center", "middle")
-        self.query_one(VerticalScroll).styles.height = "25vh"
-        self.query_one(VerticalScroll).styles.dock = "top"
-        self.query_one(DataTable).styles.height = "60vh"
-        self.query_one("#send_downloads").styles.content_align=("right", "middle")
-        for ele in self.query(Horizontal)[:-1]:
-            ele.styles.height = "10vh"
-        logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
-
-        
-
     def set_filtered_rows(self, reset=False):
         if reset == True:
             self._filtered_rows = self.table_data[1:]
+            self.reset_cart()
         else:
-            rows = self.table_data[1:]
+            filter_rows = self.table_data[1:]
             for count, name in enumerate(self.row_names[1:]):
                 try:
                     targetNode = self.query_one(f"#{name}")
                     if targetNode.empty():
                         continue
-                    rows = list(
-                        filter(lambda x: targetNode.validate(x[count+1]) == True, rows))
+                    filter_rows= list(
+                        filter(lambda x: targetNode.validate(x[count+1]) == True, filter_rows))
                 except:
                     None
-            self._filtered_rows = rows
+            self._filtered_rows=filter_rows
+        self.reset_filtered_cart()
 
     def update_input(self, row_name, value):
         try:
@@ -693,21 +736,20 @@ class InputApp(App):
                 continue
 
     def make_table(self):
-        log.info("53d")
-        log.info("dd")
-        table = self.query_one(DataTable)
-        table.clear(True)
-        table.fixed_rows = 0
-        table.zebra_stripes = True
-        [table.add_column(re.sub("_", " ", ele), key=str(ele))
-        for ele in self.table_data[0]]
-        for count, row in enumerate(self._filtered_rows):
-            # Adding styled and justified `Text` objects instead of plain strings.
-            styled_row=[Text("" if row[3]==False else '[]')]
-            styled_row.extend( Text(str(cell), style="italic #03AC13") for cell in row)
-            table.add_row(*styled_row, key=str(count+1))
+        with self.mutex:
+            table = self.query_one(DataTable)
+            table.clear(True)
+            table.fixed_rows = 0
+            table.zebra_stripes = True
+            [table.add_column(re.sub("_", " ", ele), key=str(ele))
+            for ele in self.table_data[0]]
+            for count,row in enumerate(self._filtered_rows):
+                # Adding styled and justified `Text` objects instead of plain strings.
+                styled_row=[(Text(str(count+1)))]
+                styled_row.extend( Text(str(cell), style="italic #03AC13") for cell in row[1:])
+                table.add_row(*styled_row, key=str(row[0]))
 
-        
+            
 
-        if len(table.rows) == 0:
-            table.add_row("All Items Filtered")
+            if len(table.rows) == 0:
+                table.add_row("All Items Filtered")

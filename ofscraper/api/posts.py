@@ -195,7 +195,7 @@ class Media():
     def canview(self):
         if self.responsetype_ == "highlights":
             return True
-        return self._media.get("canView") or False
+        return self._media.get("canView") or True if (self.url or self.mpd)!=None else False
 
     @property
     def responsetype(self):

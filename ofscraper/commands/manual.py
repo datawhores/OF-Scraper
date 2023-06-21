@@ -12,6 +12,7 @@ import ofscraper.db.operations as operations
 import ofscraper.utils.download as download
 import ofscraper.api.messages as messages_
 import ofscraper.api.highlights as highlights_
+import ofscraper.constants as constants
 
 
 log = logging.getLogger(__package__)
@@ -107,13 +108,13 @@ def get_all_media(id_dict,inputtype=None):
     
 
 def get_info(url):
-    search1=re.search("chat/chats/([0-9]+)/.*?([0-9]+)",url)
-    search2=re.search("/([0-9]+)/stories/highlights",url)
-    search3=re.search("/([0-9]+)/stories",url)
-    search4=re.search("chats/([a-z-\._]+)/.*?id=([0-9]+)",url)
-    search5=re.search("/([0-9]+)/([a-z-_.]+)",url)
-    search6=re.search("^[0-9]+$",url)
-
+    search1=re.search(f"chat/chats/({constants.NUMBER_REGEX}+)/.*?({constants.NUMBER_REGEX}+)",url)
+    search2=re.search(f"/({constants.NUMBER_REGEX}+)/stories/highlights",url)
+    search3=re.search(f"/({constants.NUMBER_REGEX}+)/stories",url)
+    search4=re.search(f"chats/({constants.USERNAME_REGEX}+)/.*?id=({constants.NUMBER_REGEX}+)",url)
+    search5=re.search(f"/({constants.NUMBER_REGEX}+)/({constants.USERNAME_REGEX}+)",url)
+    search6=re.search(f"^{constants.NUMBER_REGEX}+$",url)
+  #model,postid,type
 
     if search1:
         return search1.group(1),search1.group(2),"msg"
@@ -127,7 +128,7 @@ def get_info(url):
         return search4.group(1),search4.group(2),"msg2"
 
     elif search5:
-        return search5.group(1),search5.group(1),"post"
+        return search5.group(2),search5.group(1),"post"
     elif search6:
         return None,search6.group(0),"unknown"
 

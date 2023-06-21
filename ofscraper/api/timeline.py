@@ -164,7 +164,6 @@ async def get_timeline_post(headers,model_id):
 
         cache.close()
         log.debug("Some post where not retrived resetting cache")
-
     return unduped                                
 
 
