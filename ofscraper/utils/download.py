@@ -64,7 +64,6 @@ from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
-sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
 async def process_dicts(username, model_id, medialist):
@@ -76,6 +75,10 @@ async def process_dicts(username, model_id, medialist):
         progress_group = Group(
         overall_progress
         , Panel(Group(job_progress,fit=True)))
+        # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
+        global sem
+        sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
+
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
                 if not args_.getargs().dupe:
                     media_ids = set(operations.get_media_ids(model_id,username))
@@ -85,7 +88,6 @@ async def process_dicts(username, model_id, medialist):
                 else:
                     log.info(f"forcing all downloads media count {len(medialist)}")
                 file_size_limit = config_.get_filesize()
-                global sem
                   
                 aws=[]
                 photo_count = 0
