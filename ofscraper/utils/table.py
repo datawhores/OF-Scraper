@@ -589,19 +589,25 @@ class InputApp(App):
     
     
     def update_downloadcart_cell(self,keys,value):
-        index=self.row_names.index("Download_Cart")
+        self.update_cell(keys,"Download_Cart",value)
+       
+
+    def update_cell(self,keys,name,value,perst=True):
+        index=self.row_names.index(name)
         if not isinstance(keys,list):
             keys=[keys]
         with self.mutex:
             for key in keys:
                 try:
-                    self.table_data[int(key)][index]=value
+                    if perst:
+                        self.table_data[int(key)][index]=value
                     table=self.query_one(DataTable)
-                    table.update_cell(key,"Download_Cart",Text(value))
+                    table.update_cell(key,name,Text(str(value)))
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
     
+
 
  
 

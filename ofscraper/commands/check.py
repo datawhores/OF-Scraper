@@ -80,7 +80,8 @@ def process_download_cart():
                     if values==None or values[0]!=1:
                         raise Exception("Download is marked as skipped")
                     log.info("Download Finished")
-                    app.update_downloadcart_cell(key,"[downloaded]")
+                    app.update_cell(key,"Download_Cart","[downloaded]")
+                    app.update_cell(key,"Downloaded",True)
 
                 except Exception as E:
                         app.update_downloadcart_cell(key,"[failed]")
@@ -101,17 +102,19 @@ def post_checker():
     client = httpx.Client(http2=True, headers=headers)
     links = list(url_helper())
     for ele in links:
-        name_match = re.search("/([a-z_\.]+$)", ele)
+        name_match = re.search(f"onlyfans.com/({constants.USERNAME_REGEX}+$)", ele)
+        name_match2 = re.search(f"^{constants.USERNAME_REGEX}+$", ele)
+
         if name_match:
             user_name = name_match.group(1)
             log.info(f"Getting Full Timeline for {user_name}")
             model_id = profile.get_id(headers, user_name)
-        name_match = re.search("^[a-z\._]+$", ele)
-        if name_match:
-            user_name = name_match.group(0)
+        elif name_match2:
+            user_name = name_match2.group(0)
             model_id = profile.get_id(headers, user_name)
+        else:
+            continue
        
-
         oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
         if len(oldtimeline) > 0 and not args.force:
             user_dict[user_name] = oldtimeline
@@ -128,27 +131,43 @@ def post_checker():
                 f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
 
     # individual links
-    for ele in list(filter(lambda x: re.search("onlyfans.com/[0-9]+/[a-z_\.]+$", x), links)):
-        name_match = re.search("/([a-z]+$)", ele)
-        num_match = re.search("/([0-9]+)", ele)
+    for ele in list(filter(lambda x: re.search(f"onlyfans.com/{constants.NUMBER_REGEX}+/{constants.USERNAME_REGEX}+$", x), links)):
+        name_match = re.search(f"/({constants.USERNAME_REGEX}+$)", ele)
+        num_match = re.search(f"/({constants.NUMBER_REGEX}+)", ele)
         if name_match and num_match:
-            model_id = num_match.group(1)
             user_name = name_match.group(1)
+            post_id=num_match.group(1)
+            model_id = profile.get_id(headers, user_name)
             log.info(f"Getting Invidiual Link for {user_name}")
-
             if not user_dict.get(user_name):
                 user_dict[name_match.group(1)] = {}
-            data = timeline.get_individual_post(model_id, client)
+            data = timeline.get_individual_post(post_id, client)
             user_dict[user_name] = user_dict[user_name] or []
             user_dict[user_name].append(data)
 
     ROWS=[]
     for user_name in user_dict.keys():
-        downloaded = get_downloaded(user_name, model_id)
+        downloaded = get_downloaded(user_name, model_id,True)
         media = get_all_found_media(user_name, user_dict[user_name])
         ROWS.extend(row_gather(media, downloaded, user_name))
+    reset_url() 
     set_count(ROWS)
     thread_starters(ROWS)
+
+def reset_url():
+    #clean up args once check modes are ready to launch
+    args=args_.getargs()
+    argdict=vars(args)
+    if argdict.get("url"):
+        args.url=None
+    if argdict.get("file"):
+        args.file=None
+    if argdict.get("username"):
+        args.username=None
+    args_.changeargs(args)
+    
+
+
 
 def set_count(ROWS):
     for count,ele in enumerate(ROWS):
@@ -160,19 +179,22 @@ def message_checker():
     user_dict = {}
     ROWS=[]
     for item in links:
-        num_match = re.search("/([0-9]+)", item)
+        num_match = re.search(f"({constants.NUMBER_REGEX}+)", item)
+        name_match = re.search(f"^{constants.USERNAME_REGEX}+$", item)
         headers = auth.make_headers(auth.read_auth())
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile(headers, model_id)['username']
-        name_match = re.search("^[a-z_.]+$", item)
-        if name_match:
+        elif name_match:
             user_name = name_match.group(0)
-            model_id = profile.get_id(headers, user_name)     
+            model_id = profile.get_id(headers, user_name) 
+        else:
+            continue    
         user_dict[user_name] = user_dict.get(user_name, [])
         log.info(f"Getting Messages for {user_name}")
         messages = None
         oldmessages = cache.get(f"message_check_{model_id}", default=[])
+        log.debug(f"Number of messages in cache {len(oldmessages)}")
 
         
         if len(oldmessages) > 0 and not args.force:
@@ -183,10 +205,10 @@ def message_checker():
             cache.set(f"message_check_{model_id}",
                         messages, expire=constants.CHECK_EXPIRY)
         media = get_all_found_media(user_name, messages)
-        downloaded = get_downloaded(user_name, model_id)
+        downloaded = get_downloaded(user_name, model_id,True)
         ROWS.extend(row_gather(media, downloaded, user_name))
+    reset_url()
     set_count(ROWS)
-
     thread_starters(ROWS)
 
 
@@ -210,8 +232,8 @@ def purchase_checker():
         downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, paid)
         ROWS.extend(row_gather(media, downloaded, user_name))
+    reset_url()
     set_count(ROWS)
-
     thread_starters(ROWS)
 
 
@@ -234,8 +256,8 @@ def stories_checker():
         media=[]
         [media.extend(ele.all_media) for ele in stories+highlights]
         ROWS.extend(row_gather(media, downloaded, user_name))
+    reset_url()
     set_count(ROWS)
-
     thread_starters(ROWS)
 
   
@@ -261,12 +283,12 @@ def get_all_found_media(user_name, posts):
 
 
 
-def get_downloaded(user_name, model_id):
+def get_downloaded(user_name, model_id,paid=False):
     downloaded = {}
     operations.create_tables(model_id, user_name)
-    [downloaded.update({ele: downloaded.get(ele, 0)+1})
-     for ele in operations.get_media_ids(model_id, user_name)+get_paid_ids(model_id,user_name)]
-    
+    paid=get_paid_ids(model_id,user_name) if paid else []
+    [downloaded.update({ele: downloaded.get(ele, 0)+1}) for ele in operations.get_media_ids(model_id, user_name)+paid]
+
     return downloaded
 
 def get_paid_ids(model_id,user_name):
