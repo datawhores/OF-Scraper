@@ -151,7 +151,7 @@ https://app.gitbook.com/o/KULkvbsBAkF5q8PRvd1h/s/OlkVHnCqS3EnmDo4hGKm/using-prom
 # Docker Support
 https://of-scraper.gitbook.io/of-scraper/docker
 
- # customazation
+# Customazation
 https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-pat
 https://of-scraper.gitbook.io/of-scraper/config-options
   
