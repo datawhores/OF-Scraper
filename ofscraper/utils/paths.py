@@ -139,7 +139,7 @@ def truncate(path):
     else:
         return pathlib.Path(path)
 def _windows_truncateHelper(path):
-    if len(str(path))<256:
+    if len(str(path))<=256:
         return path
     path=pathlib.Path(path)
     dir=path.parent
