@@ -438,8 +438,10 @@ class InputApp(App):
 
     # Events
     def on_data_table_header_selected(self, event):
+        added= self.get_current_added_rows()
         self.sort_helper(event.label.plain)
-
+        self.restore_added_rows(added)
+      
         # set reverse
         # use native python sorting until textual has key support
 
@@ -448,9 +450,11 @@ class InputApp(App):
    
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "submit":
+            added=self.get_current_added_rows()
             self.set_filtered_rows()
             self.sort_helper()
             self.make_table()
+            self.restore_added_rows(added)
         elif event.button.id == "reset":
             self.set_filtered_rows(reset=True)
             self.reset_all_inputs()
@@ -480,10 +484,11 @@ class InputApp(App):
             )
             row_name = self.row_names[event.coordinate[1]]
             if row_name!="Download_Cart":
+                added=self.get_current_added_rows()
                 self.update_input(row_name, event.value.plain)
                 self.set_filtered_rows()
                 self.make_table()
-                self.reset_cart()
+                self.restore_added_rows(added)
             else:
                 self.change_download_cart(event.coordinate)
     #Main
@@ -542,7 +547,7 @@ class InputApp(App):
     def change_download_cart(self,coord):
         table=self.query_one(DataTable)
         Download_Cart=table.get_row_at(coord[0])[ self.row_names.index("Download_Cart")]
-        if Download_Cart.plain=="":
+        if Download_Cart.plain=="Not Unlocked":
             return
         elif Download_Cart.plain=="[]":
             self.update_downloadcart_cell_coord(coord,"[added]")
@@ -562,14 +567,25 @@ class InputApp(App):
         self.update_downloadcart_cell(filter_keys,"[downloading]")
         log.info(f"Number of Downloads Set to queue {len(filter_keys)}")
         [self.row_queue.put(ele) for ele in map(lambda x:(table.get_row(x),x),filter_keys)]
-    
+    def get_current_added_rows(self):
+        table=self.query_one(DataTable)
+        keys=[str(ele[0]) for ele in self._filtered_rows]
+        index=self.row_names.index("Download_Cart")
+        filter_keys=list(filter(lambda x:table.get_row(x)[index].plain=="[added]",keys))
+        return filter_keys
+    def restore_added_rows(self,added):
+        table=self.query_one(DataTable)
+        currentkeys=set(map(lambda x:x.value,table.rows.keys()))
+        [table.update_cell(key,"Download_Cart",Text("[added]")) for key in filter(lambda x:x in currentkeys,added)]
+
+
     def reset_cart(self):
         index=self.row_names.index("Download_Cart")
         self.update_downloadcart_cell(  [str(x[0]) for x in list(filter(lambda x:x[index]=="[added]",self.table_data[1:]))],"[]")
     
     def reset_filtered_cart(self):
         index=self.row_names.index("Download_Cart")
-        self.update_downloadcart_cell(  list(filter(lambda x:x[index]!="",self._filtered_rows)),"[]")
+        self.update_downloadcart_cell(  list(filter(lambda x:x[index]!="Not Unlocked",self._filtered_rows)),"[]")
 
     def update_downloadcart_cell_coord(self,keys,value):
         index=self.row_names.index("Download_Cart")
@@ -620,7 +636,7 @@ class InputApp(App):
             return
         index=self.row_names.index(re.sub(" ","_",label))
         if label=="Download Cart":
-            filtered_status=["[downloading]",""]
+            filtered_status=["[downloading]","Not Unlocked","[downloaded]"]
             table=self.query_one(DataTable)
             self.set_cart_toggle()
             keys=[str(ele[0]) for ele in self._filtered_rows]

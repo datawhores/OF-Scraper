@@ -256,6 +256,7 @@ def stories_checker():
     headers = auth.make_headers(auth.read_auth())
     ROWS=[]
     for user_name in args.username:
+        user_name=profile.scrape_profile(headers,user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id(headers, user_name)    
         highlights, stories = asyncio.run(highlights_.get_highlight_post(headers, model_id))
@@ -374,7 +375,7 @@ def times_helper(ele, mediadict, downloaded):
     return max(len(mediadict.get(ele.id, [])), downloaded.get(ele.id, 0))
 
 def checkmarkhelper(ele):
-    return '[]' if unlocked_helper(ele) else ""
+    return '[]' if unlocked_helper(ele) else "Not Unlocked"
   
 def row_gather(media, downloaded, username):
 
