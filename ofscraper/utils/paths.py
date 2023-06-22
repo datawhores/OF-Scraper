@@ -130,7 +130,7 @@ def getcachepath():
 def truncate(path):
     if args_.getargs().original:
         return path
-    if platform.system() == 'Windows' and len(str(path))>256:
+    if platform.system() == 'Windows':
         return _windows_truncateHelper(path)
     elif platform.system() == 'Linux':
         return _linux_truncateHelper(path)
@@ -139,6 +139,8 @@ def truncate(path):
     else:
         return pathlib.Path(path)
 def _windows_truncateHelper(path):
+    if len(str(path))<256:
+        return path
     path=pathlib.Path(path)
     dir=path.parent
     file=path.name
