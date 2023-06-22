@@ -3,6 +3,7 @@ from unittest.mock import patch,MagicMock
 from unittest import mock
 import platform
 import shutil
+import re
 import pathlib
 import os
 import tempfile
@@ -226,6 +227,20 @@ def test_linux_truncator_super_emoji2():
                 if (len(modified.name.encode('utf8')))>255:
                     print("dd")
                 assert(len(modified.name.encode('utf8')))<=255
+def test_mac_truncate_255(mocker):
+    with patch('platform.system', MagicMock(return_value="Darwin")):
+        suffix=".mkv"
+        long_path=f"{pathlib.Path(LINUX_LONGPATH)}{suffix}"
+        maxlength=255
+        truncated=paths.truncate(long_path)
+     
+        with check:
+            assert(len(str(truncated.name)))== maxlength
+        with check: 
+            assert(pathlib.Path(long_path).parent)==truncated.parent
+        with check:
+            assert(re.search(f"{suffix}$",str(truncated.name)))!=None
+
 def test_user_data_dc_db_str(mocker):
    migrationConfig={
         "main_profile": PROFILE_DEFAULT,

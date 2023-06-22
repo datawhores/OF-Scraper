@@ -134,6 +134,8 @@ def truncate(path):
         return _windows_truncateHelper(path)
     elif platform.system() == 'Linux':
         return _linux_truncateHelper(path)
+    elif platform.system() == 'Darwin':
+        return _mac_truncateHelper(path)
     else:
         return pathlib.Path(path)
 def _windows_truncateHelper(path):
@@ -150,6 +152,19 @@ def _windows_truncateHelper(path):
     newFile=f"{re.sub(ext,'',file)[fileLength]}{ext}"
     final=pathlib.Path(dir,newFile)
     log.debug(f"path: {final} path size: {len(str(final))}")
+    return pathlib.Path(dir,newFile)
+
+def _mac_truncateHelper(path):
+    path=pathlib.Path(path)
+    dir=path.parent
+    match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
+    ext= match.group(0) if match else ""
+    file=re.sub(ext,"",path.name)
+    maxlength=255-len(ext)
+    newFile=f"{file[:maxlength]}{ext}"
+    final=pathlib.Path(dir,newFile)
+    log.debug(f"path: {final} path size: {len(str(final))}")
+    log.debug(f"path: {final} filename size: {len(str(final.name))}")
     return pathlib.Path(dir,newFile)
 
 def _linux_truncateHelper(path):
