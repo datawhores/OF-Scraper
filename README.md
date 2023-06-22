@@ -25,6 +25,10 @@ A matter of fact with the right settings transitioning between the two scripts s
 In addition there are numerous filtering features to control exactly which type of content you want to scrape.
 https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
 
+# Documentation
+
+https://of-scraper.gitbook.io/of-scraper
+
 <h3>DISCLAIMERS:</h3>
 <ol>
     <li>
