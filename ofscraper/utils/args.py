@@ -9,13 +9,6 @@ from ofscraper.__version__ import __version__
 args=None
 log=logging.getLogger(__package__)
 def create_parser(input=None):
-    global args
-    if args and input==None:
-        return args
-    if "pytest" in sys.modules and input==None:
-        input=[]
-    elif input==None:
-        input=sys.argv[1:]
     parent_parser=argparse.ArgumentParser(add_help=False)
     general=parent_parser.add_argument_group("Program",description="Program Args")  
     general.add_argument('-v', '--version', action='version', version=__version__ ,default=__version__)
@@ -179,6 +172,13 @@ def create_parser(input=None):
     
 
 def getargs(input=None):
+    global args
+    if args and input==None:
+        return args
+    if "pytest" in sys.modules and input==None:
+        input=[]
+    elif input==None:
+        input=sys.argv[1:]
     parser=create_parser(input)
     args=parser.parse_args(input)
     #deduplicate posts
