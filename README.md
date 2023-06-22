@@ -59,7 +59,9 @@ The metadata path from DIGITALCRIMINALS' script is used for duplicate check so a
 Files won't download a second time
 
 https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script
+
 https://of-scraper.gitbook.io/of-scraper/config-options
+
 https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
