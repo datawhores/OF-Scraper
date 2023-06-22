@@ -1,19 +1,8 @@
 # Table-of-contents
 - [Intro](#intro)
 - [Documentation](#documentation)
-- [Installation](#installation)
-  * [Windows: ](#windows)
-  * [macOS/Linux](#macoslinux)
-  * [Upgrade](#upgrade)
-  * [Authentication](#authentication)
-- [Usage](#usage)
-  * [Liking/Unliking](#likingunliking)
-  * [Selecting specific users](#selecting-specific-users)
-  * [Other menu options    ](#other-menu-options)
-- [Docker Support](#docker-support)
 - [Issues](#issues)
 - [Feature Requests](#feature-requests)
-  * [Common](#common)
 - [Migrating from DC script](#migrating-from-dc-script)
 - [Discord](#discord)
 - [Support](#support)
@@ -27,6 +16,10 @@ In addition there are numerous filtering features to control exactly which type 
 https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
 
 # Documentation
+For information on how to 
+- install
+- run
+- and other things you might want to know
 
 https://of-scraper.gitbook.io/of-scraper
 
@@ -47,119 +40,6 @@ https://of-scraper.gitbook.io/of-scraper
 
 ![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
-
-
-# Installation
-
-### Recommended python3.9 or python3.10
-
-
-## Windows: 
-### stable
-```
-pip install ofscraper
-```
-or 
-### development
-```
-pip install git+https://github.com/datawhores/OF-Scraper.git 
-```
-or 
-### specific version
-```
-pip install ofscraper==x
-```
-where x is the vesion you want to install
-
-
-##  macOS/Linux
-```
-pip3 install ofscraper
-```
-or
-```
-pip3 install git+https://github.com/datawhores/OF-Scraper.git 
-```
-
-or 
-### specific version
-```
-pip install ofscraper==x
-```
-where x is the vesion you want to install
-
-## Upgrade
-Not uninstalling has caused user issues in the past
-```
-pip3 uninstall ofscraper
-```
-
-Then run one of the install commands above
-
-```
-pip3 install ofscraper --upgrade
-```
-or 
-
-```
-pip3 install ofscraper==latest version number
-```
-
-
-
-## Authentication
-
-You'll need to retrive your auth information 
-    
-https://of-scraper.gitbook.io/of-scraper/auth
-
-
-
-# Usage
-
-Whenever you want to run the program, all you need to do is type `ofscraper` in your terminal:
-
-Basic usage is just to run the command below
-
-```
-ofscraper
-```
-
-![image](https://user-images.githubusercontent.com/67020411/230732583-dd064665-a59e-4714-92e7-393893061ac0.png)
-  
- Select "Download content from a user" is all your need to get started with downloading content
- 
-## Liking/Unliking
-
-It is also possible to batch unlike or like post by choosing the appropriate option in the menu
-Note their are limitations (currently 1000) on how many post you can like per day
-
-![image](https://user-images.githubusercontent.com/67020411/230735256-2d8aa788-53dc-49ee-ada8-5ddf5546851c.png)
-
-## Selecting specific users
-
-The fuzzy search system can be a little confusing see
-    
-https://app.gitbook.com/o/KULkvbsBAkF5q8PRvd1h/s/OlkVHnCqS3EnmDo4hGKm/using-prompts/username-selection-or-fuzzy-search
-    
-## Other menu options    
-  
- See: https://of-scraper.gitbook.io/of-scraper/
- 
- # commandline
- While the menu is easy to use, and convient. You may want more automation.
- 
- The best way to do this is through the commandline system. This will allow you to skip the menu, and for example scrape a provided list of accounts
- 
-  https://app.gitbook.com/o/KULkvbsBAkF5q8PRvd1h/s/OlkVHnCqS3EnmDo4hGKm/batch-scraping-and-bot-actions
-
-# Docker Support
-https://of-scraper.gitbook.io/of-scraper/docker
-
-# Customazation
-https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-pat
-https://of-scraper.gitbook.io/of-scraper/config-options
-  
 # Issues
 Open a issue in this repo, or you can mention your issue in the discord
 
@@ -187,7 +67,6 @@ This could mean that the content you are trying to scrape is no longer present. 
  - 1000 likes is the max per day
     
     
-
 # Migrating from DC script
 
 You will need to change the settings so that the metadata option is compatible with your current folders
@@ -201,7 +80,6 @@ https://of-scraper.gitbook.io/of-scraper/config-options
 https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
-
 
 
 # Discord
