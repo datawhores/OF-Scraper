@@ -8,7 +8,7 @@ from ofscraper.__version__ import __version__
 
 args=None
 log=logging.getLogger(__package__)
-def getargs(input=None):
+def create_parser(input=None):
     global args
     if args and input==None:
         return args
@@ -17,8 +17,14 @@ def getargs(input=None):
     elif input==None:
         input=sys.argv[1:]
     parent_parser=argparse.ArgumentParser(add_help=False)
-    general=parent_parser.add_argument_group("General",description="General Args")  
+    general=parent_parser.add_argument_group("Program",description="Program Args")  
     general.add_argument('-v', '--version', action='version', version=__version__ ,default=__version__)
+    general.add_argument(
+        '-cg', '--config', help="Change location of config folder/file",default=None
+    )
+    general.add_argument(
+        '-au', '--auth', help="Change location of auth file",default=None
+    )
     output=parent_parser.add_argument_group("Logging",description="Arguments for output controls")  
 
     output.add_argument(
@@ -31,15 +37,10 @@ def getargs(input=None):
     output.add_argument(
         '-p', '--output', help = 'set console output log level', type=str.upper,default="NORMAL",choices=["PROMPT","STATS","LOW","NORMAL","DEBUG"]
     )
-    output.add_argument(
-        '-cg', '--config', help="Change location of config folder/file",default=None
-    )
-    output.add_argument(
-        '-au', '--auth', help="Change location of auth file",default=None
-    )
+  
 
 
-    parser = argparse.ArgumentParser(add_help=False,parents=[parent_parser])  
+    parser = argparse.ArgumentParser(add_help=False,parents=[parent_parser],prog="OF-Scraper")  
     parser.add_argument( '-h', '--help', action='help')
     scraper=parser.add_argument_group("scraper",description="General Arguments for scraper")                                
     scraper.add_argument(
@@ -67,16 +68,14 @@ def getargs(input=None):
     post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
 
     post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
-    post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or tempory post",action="store_true")
+    post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or temporary post",action="store_true")
     post.add_argument(
         '-ft', '--filter', help = 'Filter post by provide regex\nNote if you include any uppercase characters the search will be case-sensitive',default=".*",required=False,type = str
     )
     post.add_argument(
         '-sp', '--scrape-paid', help = 'scrape the entire paid page for content. This can take a very long time',default=False,required=False,action="store_true"
     )
-    post.add_argument(
-        '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
-    )
+   
 
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
@@ -107,59 +106,61 @@ def getargs(input=None):
     advanced.add_argument(
         '-uf', '--users-first', help = 'Scrape all users first rather then one at a time. This only effects downloading posts',default=False,required=False,action="store_true"
     )
+    advanced.add_argument(
+        '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
+    )
 
     subparser=parser.add_subparsers(help="commands",dest="command")
-    post_check=subparser.add_parser("post_check",help="Check if data from a post\nCache lasts for 24 hours",parents=[parent_parser])
+    post_check=subparser.add_parser("post_check",help="Display a generated table of data with information about models post(s)\nCache lasts for 24 hours",parents=[parent_parser])
 
 
     post_check.add_argument("-u","--url",
-    help = 'Check if media is in library via url',default=None,required=False,type = check_strhelper,action='extend'
+    help = 'Scan posts via url',default=None,required=False,type = check_strhelper,action='extend'
     )
 
 
     post_check.add_argument("-f","--file",
-    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    help = 'Scan posts via file\nWith line seperated URL(s)',default=None,required=False,type = check_filehelper
     )
     
     post_check.add_argument(
-        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+        '-fo', '--force', help = 'force retrieval of new posts info from API', default=False,action="store_true"
     )
 
-    message_check=subparser.add_parser("msg_check",help="Parse a user's messages and view status of missing media\nCache lasts for 24 hours",parents=[parent_parser])
+    message_check=subparser.add_parser("msg_check",help="Display a generated table of data with information about models messages\nCache lasts for 24 hours",parents=[parent_parser])
     message_check.add_argument(
-        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+        '-fo', '--force', help = 'force retrieval of new messages info from API', default=False,action="store_true"
     )
     message_check.add_argument("-f","--file",
-    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    help = 'Scan messages via file\nWith line seperated URL(s)',default=None,required=False,type = check_filehelper
     )
     
 
     message_check.add_argument("-u","--url",
-    help = 'link to conversation',type = check_strhelper,action="extend")
-    message_check.add_argument("-un","--username",
-    help = 'link to conversation',type = check_strhelper,action="extend")
+    help = 'scan messages via file',type = check_strhelper,action="extend")
+ 
 
-    paid_check=subparser.add_parser("paid_check",help="Parse Purchases sent from a user\nCache last for 24 hours",parents=[parent_parser])
+    paid_check=subparser.add_parser("paid_check",help="Display a generated table of data with information purchashes from model\nCache last for 24 hours",parents=[parent_parser])
     paid_check.add_argument(
-        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+        '-fo', '--force', help = 'force retrieval of new purchases info from API', default=False,action="store_true"
     )
     paid_check.add_argument("-f","--file",
-    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    help = 'Scan purchases via file\nWith line seperated usernames(s)',default=None,required=False,type = check_filehelper
     )
     
 
     paid_check.add_argument("-us","--username",
-    help = 'link to conversation',type = check_strhelper,action="extend")
+    help = 'Scan purchases via usernames',type = check_strhelper,action="extend")
 
 
 
 
     story_check=subparser.add_parser("story_check",help="Parse Stories/Highlights sent from a user\nCache last for 24 hours",parents=[parent_parser])
     story_check.add_argument(
-        '-fo', '--force', help = 'force retrival of new posts info from API', default=False,action="store_true"
+        '-fo', '--force', help = 'force retrieval of new posts info from API', default=False,action="store_true"
     )
     story_check.add_argument("-f","--file",
-    help = 'Check if media is in library via file',default=None,required=False,type = check_filehelper
+    help = 'Scan mevia file',default=None,required=False,type = check_filehelper
     )
     
 
@@ -173,7 +174,12 @@ def getargs(input=None):
     manual.add_argument("-us","--url",
     help = 'pass links to download via url',type = check_strhelper,action="extend")
 
+    return parser
+  
+    
 
+def getargs(input=None):
+    parser=create_parser(input)
     args=parser.parse_args(input)
     #deduplicate posts
     args.posts=list(set(args.posts or []))
@@ -182,8 +188,8 @@ def getargs(input=None):
 
     if args.command=="post_check" and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
-
     return args
+
 
 
 
@@ -203,7 +209,7 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","None"])
+    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Skip"])
     if isinstance(x,str):
         x=x.split(',')
         x=list(map(lambda x:x.capitalize() ,x))

@@ -136,3 +136,5 @@ launch.json
 .tempmedia
 dupe.json
 doc*
+source
+sphinx

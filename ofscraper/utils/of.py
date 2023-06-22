@@ -185,7 +185,7 @@ def process_areas(headers, ele, model_id) -> list:
 
 
     username=ele['name']
-    if "NONE" in args.posts:
+    if "Skip" in args.posts:
         return []
   
     if ('Profile' in args.posts or 'All' in args.posts):

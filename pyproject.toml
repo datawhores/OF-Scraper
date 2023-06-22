@@ -46,6 +46,13 @@ pytest-mock = "^3.10.0"
 random-unicode-emoji = "^2.8"
 random-emoji = "^1.0.15"
 
+
+
+
+
+[tool.poetry.group.docs.dependencies]
+sphinx-argparse = "^0.4.0"
+
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
