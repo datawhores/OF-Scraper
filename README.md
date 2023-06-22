@@ -106,7 +106,7 @@ pip3 install ofscraper==latest version number
 
 You'll need to retrive your auth information 
     
-https://github.com/datawhores/OF-Scraper/wiki/Auth
+https://of-scraper.gitbook.io/of-scraper/auth
 
 
 
@@ -135,27 +135,25 @@ Note their are limitations (currently 1000) on how many post you can like per da
 
 The fuzzy search system can be a little confusing see
     
-https://github.com/datawhores/OF-Scraper/wiki/Fuzzy-Search 
+https://app.gitbook.com/o/KULkvbsBAkF5q8PRvd1h/s/OlkVHnCqS3EnmDo4hGKm/using-prompts/username-selection-or-fuzzy-search
     
 ## Other menu options    
   
- See: https://github.com/datawhores/OF-Scraper/wiki/Menu-Options 
+ See: https://of-scraper.gitbook.io/of-scraper/
  
  # commandline
  While the menu is easy to use, and convient. You may want more automation.
  
  The best way to do this is through the commandline system. This will allow you to skip the menu, and for example scrape a provided list of accounts
  
-  https://github.com/datawhores/OF-Scraper/wiki/command-line-args
+  https://app.gitbook.com/o/KULkvbsBAkF5q8PRvd1h/s/OlkVHnCqS3EnmDo4hGKm/batch-scraping-and-bot-actions
 
 # Docker Support
-https://github.com/datawhores/OF-Scraper/wiki/Docker
+https://of-scraper.gitbook.io/of-scraper/docker
 
- # Customazation
-    
-https://github.com/datawhores/OF-Scraper/wiki/Customizing-save-path
-https://github.com/datawhores/OF-Scraper/wiki/Config-Options
-
+ # customazation
+https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-pat
+https://of-scraper.gitbook.io/of-scraper/config-options
   
 # Issues
 Open a issue in this repo, or you can mention your issue in the discord
@@ -193,9 +191,9 @@ Additionally you might want to set the save_path, dir_path, and filename so they
 The metadata path from digitalcriminal's script is used for duplicate check so as long as your set the right path.
 Files won't download a second time
 
-https://github.com/datawhores/OF-Scraper/wiki/Migrating-from-DC-script
-https://github.com/datawhores/OF-Scraper/wiki/Config-Options
-https://github.com/datawhores/OF-Scraper/wiki/Customizing-save-path
+https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script
+https://of-scraper.gitbook.io/of-scraper/config-options
+https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
