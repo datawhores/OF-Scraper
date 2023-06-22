@@ -271,7 +271,7 @@ def test_createfilename(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     print(t.media[0].filename)
-    assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].filename}.mkv"
+    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].filename}.mkv"
 
 def test_createfilename_allkeys(mocker):
     migrationConfig={
@@ -291,7 +291,7 @@ def test_createfilename_allkeys(mocker):
     model_id=TEST_ID
     try:
         t=Post(TIMELINE_EXAMPLE,model_id,username)
-        assert(download.createfilename(t.media[0],username,model_id,"mkv"))
+        assert(paths.createfilename(t.media[0],username,model_id,"mkv"))
     except:
         raise Exception
 
@@ -313,7 +313,7 @@ def test_createfilename_invalid(mocker):
     model_id=TEST_ID
     with pytest.raises(Exception):
         t=Post(TIMELINE_EXAMPLE,model_id,username)
-        assert(download.createfilename(t.media[0],username,model_id,"mkv"))
+        assert(paths.createfilename(t.media[0],username,model_id,"mkv"))
 
 def test_create_txt(mocker):
     migrationConfig={
@@ -332,7 +332,7 @@ def test_create_txt(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     print(t.media[0].filename)
-    assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
+    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
 #Test postid counter
 def test_create_postid_counter(mocker):
     migrationConfig={
@@ -370,7 +370,7 @@ def test_create_postid_name(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
 
-    assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}_1.mkv"
+    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}_1.mkv"
 
 
 def test_create_postid_name2(mocker):
@@ -390,7 +390,7 @@ def test_create_postid_name2(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('ofscraper.api.posts.Post.post_media', new=[t.post_media[0]])
-    assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
+    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
 
 
 
@@ -439,7 +439,7 @@ def test_create_text_name(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
 
-    assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
+    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
 
 
 def test_create_text_name2(mocker):
@@ -459,7 +459,7 @@ def test_create_text_name2(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('ofscraper.api.posts.Post.post_media', new=[t.post_media[0]])
-    assert(download.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
+    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
 
 
 
