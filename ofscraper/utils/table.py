@@ -525,6 +525,7 @@ class InputApp(App):
 
     def on_mount(self) -> None:
         self.set_reverse(init=True)
+        self.set_cart_toggle(init=True)
         self.make_table()
         self.query_one("#reset").styles.align = ("center", "middle")
         self.query_one(VerticalScroll).styles.height = "25vh"
@@ -559,7 +560,7 @@ class InputApp(App):
         index=self.row_names.index("Download_Cart")
         filter_keys=list(filter(lambda x:table.get_row(x)[index].plain=="[added]",keys))
         self.update_downloadcart_cell(filter_keys,"[downloading]")
-        log.debug(f"Number of Downloads Set to queue {len(filter_keys)}")
+        log.info(f"Number of Downloads Set to queue {len(filter_keys)}")
         [self.row_queue.put(ele) for ele in map(lambda x:(table.get_row(x),x),filter_keys)]
     
     def reset_cart(self):
@@ -618,13 +619,21 @@ class InputApp(App):
         if label == None:
             return
         index=self.row_names.index(re.sub(" ","_",label))
-        self.set_reverse(label=label)
         if label=="Download Cart":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
-            self.make_table()
+            filtered_status=["[downloading]",""]
+            table=self.query_one(DataTable)
+            self.set_cart_toggle()
+            keys=[str(ele[0]) for ele in self._filtered_rows]
+            filter_keys=list(filter(lambda x:table.get_row(x)[index].plain not in filtered_status,keys))
+            [table.update_cell(key,"Download_Cart",self.cart_toggle) for key in filter_keys]
+            
 
-        elif label == "Number":
+           
+           
+            return
+        self.set_reverse(label=label)
+        
+        if label == "Number":
             self._filtered_rows = sorted(
                 self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
             self.make_table()
@@ -702,6 +711,14 @@ class InputApp(App):
 
         elif self.label == label and self.reverse:
             self.reverse = False
+
+    def set_cart_toggle(self,init=False):
+        if init:
+            self.cart_toggle = Text("[added]")
+        if self.cart_toggle.plain == "[added]":
+            self.cart_toggle = Text("[]")
+        elif self.cart_toggle.plain == "[]":
+            self.cart_toggle = Text("[added]")
 
     def set_filtered_rows(self, reset=False):
         if reset == True:

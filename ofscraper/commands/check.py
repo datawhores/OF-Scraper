@@ -176,10 +176,9 @@ def set_count(ROWS):
 
 def message_checker():
     links = list(url_helper())
-    user_dict = {}
     ROWS=[]
     for item in links:
-        num_match = re.search(f"({constants.NUMBER_REGEX}+)", item)
+        num_match = re.search(f"({constants.NUMBER_REGEX}+)", item) or re.search(f"^({constants.NUMBER_REGEX}+)$", item)
         name_match = re.search(f"^{constants.USERNAME_REGEX}+$", item)
         headers = auth.make_headers(auth.read_auth())
         if num_match:
@@ -190,12 +189,11 @@ def message_checker():
             model_id = profile.get_id(headers, user_name) 
         else:
             continue    
-        user_dict[user_name] = user_dict.get(user_name, [])
-        log.info(f"Getting Messages for {user_name}")
+        log.info(f"Getting Messages/Paid content for {user_name}")
+        # messages
         messages = None
         oldmessages = cache.get(f"message_check_{model_id}", default=[])
         log.debug(f"Number of messages in cache {len(oldmessages)}")
-
         
         if len(oldmessages) > 0 and not args.force:
             messages = oldmessages
@@ -204,9 +202,24 @@ def message_checker():
                 messages_.get_messages(headers,  model_id))
             cache.set(f"message_check_{model_id}",
                         messages, expire=constants.CHECK_EXPIRY)
-        media = get_all_found_media(user_name, messages)
+        oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+        paid = None
+        # paid content
+        if len(oldpaid) > 0 and not args.force:
+            paid = oldpaid
+        else:
+            paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
+            cache.set(f"purchased_check_{model_id}",
+                      paid, expire=constants.CHECK_EXPIRY)  
+        media = get_all_found_media(user_name, messages+paid)
+        unduped=[]
+        id_set=set()
+        for ele in media:
+            if ele.id==None or ele.id not in id_set:
+                unduped.append(ele)
+                id_set.add(ele.id)
         downloaded = get_downloaded(user_name, model_id,True)
-        ROWS.extend(row_gather(media, downloaded, user_name))
+        ROWS.extend(row_gather(unduped, downloaded, user_name))
     reset_url()
     set_count(ROWS)
     thread_starters(ROWS)
@@ -218,6 +231,7 @@ def purchase_checker():
     headers = auth.make_headers(auth.read_auth())
     ROWS = []
     for user_name in args.username:
+        user_name=profile.scrape_profile(headers,user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id(headers, user_name)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
