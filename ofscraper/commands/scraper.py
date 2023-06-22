@@ -359,10 +359,6 @@ def main():
 def scrapper():
     if platform.system == 'Windows':
         os.system('color')
-    # try:
-    #     webbrowser.open(donateEP)
-    # except:
-    #     pass
     global selectedusers
     selectedusers=None
     functs=[]
