@@ -240,7 +240,7 @@ def get_config_path():
 
 def get_auth_file():
     profile = get_current_profile()
-    auth= get_config_path().parent/profile /constants.authFile if not args_.getargs().auth else args_.getargs().auth
+    auth= get_config_path().parent/profile /constants.authFile if not args_.getargs().auth else pathlib.Path(args_.getargs().auth)
     if auth.is_dir():
         raise Exception("Auth File must be a file")
     return auth
