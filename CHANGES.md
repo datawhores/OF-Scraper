@@ -1,3 +1,9 @@
+Note:
+
+This doc was made around the beginning
+it is not being updated and won't be
+
+There have been a lot more features added since then
 - scrape paid content for a single model or multiple models using --username name,name2 --purchased
 - allow for multiple downloads simetenously during paid content scraping
 - tracking of paid content progress
