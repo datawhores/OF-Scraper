@@ -14,7 +14,7 @@ log=logging.getLogger(__package__)
 class Post():
     def __init__(self, post, model_id, username, responsetype=None):
         self._post = post
-        self._model_id = model_id
+        self._model_id = int(model_id)
         self._username = username
         self._responsetype_ = responsetype or post.get("responseType")
 
@@ -106,7 +106,7 @@ class Post():
     @property
     def fromuser(self):
         if self._post.get("fromUser"):
-            return self._post["fromUser"]["id"]
+            return int(self._post["fromUser"]["id"])
         else:
             return self._model_id
 
@@ -117,7 +117,7 @@ class Post():
     #media object array for media that is unlocked or viewable
     @property
     def media(self):
-        if (self.fromuser != self.model_id):
+        if (int(self.fromuser) != int(self.model_id)):
             return []
         else:
             media = map(lambda x: Media(

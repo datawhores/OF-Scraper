@@ -20,10 +20,13 @@ log = logging.getLogger(__package__)
 
 def manual_download(urls=None):
     media_dict=get_media_from_urls(urls)
+    log.debug(f"Media dict length {len(list(media_dict.values()))}")
     for value in media_dict.values():
+        if len(value)==0:
+            continue
         model_id =value[0].post.model_id
         username=value[0].post.username
-        log.info(f"Downloading Invidual Post for {username}")
+        log.info(f"Downloading individual for {username}")
         operations.create_tables(model_id,username)
         operations.write_profile_table(model_id,username)
         asyncio.run(download.process_dicts(
@@ -46,9 +49,6 @@ def get_media_from_urls(urls):
             model=response[0]
             postid=response[1]
             type=response[2]
-            data=timeline.get_individual_post(postid,client=c) if (type=="unknown" or type=="post") else None
-            data = data or messages_.get_individual_post(model_id,postid,client=c) if type=="msg" else None
-            data = data or messages_.get_individual_post(model_id,postid,client=c) if type=="paid" else None
             if type=="post":
                 model_id=user_name_dict.get(model) or profile.get_id(headers, model)
                 user_name_dict[model]=model_id
@@ -56,7 +56,6 @@ def get_media_from_urls(urls):
             elif type=="msg":
                 model_id=model
                 id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
-                id_dict[model_id]=id_dict.get(model_id,[])+[timeline.get_individual_post(postid,client=c)]
             elif type=="msg2":
                 model_id=user_name_dict.get(model) or profile.get_id(headers, model)
                 id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
@@ -108,7 +107,7 @@ def get_all_media(id_dict,inputtype=None):
     
 
 def get_info(url):
-    search1=re.search(f"chat/chats/({constants.NUMBER_REGEX}+)/.*?({constants.NUMBER_REGEX}+)",url)
+    search1=re.search(f"chats/chat/({constants.NUMBER_REGEX}+)/.*?({constants.NUMBER_REGEX}+)",url)
     search2=re.search(f"/({constants.NUMBER_REGEX}+)/stories/highlights",url)
     search3=re.search(f"/({constants.NUMBER_REGEX}+)/stories",url)
     search4=re.search(f"chats/({constants.USERNAME_REGEX}+)/.*?id=({constants.NUMBER_REGEX}+)",url)
