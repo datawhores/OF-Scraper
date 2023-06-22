@@ -55,7 +55,7 @@ def create_parser(input=None):
     )
 
     scraper.add_argument(
-        '-g', '--original', help = 'don\'t trunicate long paths', default=False,action="store_true"
+        '-g', '--original', help = 'don\'t truncate long paths', default=False,action="store_true"
     )
 
 
@@ -149,7 +149,7 @@ def create_parser(input=None):
     )
     
 
-    paid_check.add_argument("-us","--username",
+    paid_check.add_argument("-u","--username",
     help = 'Scan purchases via usernames',type = check_strhelper,action="extend")
 
 
@@ -164,14 +164,14 @@ def create_parser(input=None):
     )
     
 
-    story_check.add_argument("-us","--username",
+    story_check.add_argument("-u","--username",
     help = 'link to conversation',type = check_strhelper,action="extend")
 
     manual=subparser.add_parser("manual",help="Manually download content via url or ID",parents=[parent_parser])
     manual.add_argument("-f","--file",
     help = 'Pass links/IDs to download via file',default=None,required=False,type = check_filehelper
     )
-    manual.add_argument("-us","--url",
+    manual.add_argument("-u","--url",
     help = 'pass links to download via url',type = check_strhelper,action="extend")
 
     return parser
@@ -186,8 +186,10 @@ def getargs(input=None):
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
 
-    if args.command=="post_check" and not (args.url or args.file):
+    if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
+    if args.command in set(["story_check","paid_check"])and not (args.username or args.file):
+        raise argparse.ArgumentTypeError("error: argument missing --username or --file must be specified )")
     return args
 
 

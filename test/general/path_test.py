@@ -26,88 +26,88 @@ from ofscraper.utils.dates import convert_local_time
 #Word split
 
 
-def test_windows_trunicate(mocker):
+def test_windows_truncate(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         long_path=pathlib.Path(f"{WINDOWS_LONGPATH}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
-            assert(len(str(trunicated)))<=256
+            assert(len(str(truncated)))<=256
         with check:
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
 
 
-def test_windows_trunicate_256(mocker):
+def test_windows_truncate_256(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         pathbase=WINDOWS_LONGPATH[:252]
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
             assert(len(str(long_path)))==256
         with check:
-            assert(len(str(trunicated)))==256
+            assert(len(str(truncated)))==256
         with check: 
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
 
 
-def test_windows_trunicate_small(mocker):
+def test_windows_truncate_small(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         pathbase=WINDOWS_LONGPATH[:200]
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
             assert(len(str(long_path)))==204        
         with check:
-            assert(len(str(trunicated)))==204
+            assert(len(str(truncated)))==204
         with check: 
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
 
-def test_windows_trunicate_count(mocker):
+def test_windows_truncate_count(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         number=5000
         long_path=pathlib.Path(f"{WINDOWS_LONGPATH}_{number}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
-            assert(len(str(trunicated)))<=256
+            assert(len(str(truncated)))<=256
         with check:
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
         with check:
-            assert(str(trunicated).find(f"{number}"))!=0
+            assert(str(truncated).find(f"{number}"))!=0
 
-def test_windows_trunicate_count_small(mocker):
+def test_windows_truncate_count_small(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
         number=5000
         long_path=pathlib.Path(f"{WINDOWS_LONGPATH[:200]}_{number}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
-            assert(len(str(trunicated)))<=256
+            assert(len(str(truncated)))<=256
         with check:
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
         with check:
-            assert(str(trunicated).find(f"{number}"))!=0
+            assert(str(truncated).find(f"{number}"))!=0
 
-def test_linux_trunicate(mocker):
+def test_linux_truncate(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         long_path=pathlib.Path(f"{LINUX_LONGPATH}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
-            assert(len(str(trunicated.name).encode("utf8")))<=255
+            assert(len(str(truncated.name).encode("utf8")))<=255
         with check:
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
 
 
-def test_linux_trunicate_255(mocker):
+def test_linux_truncate_255(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         dirLength=len(str(pathlib.Path(LINUX_LONGPATH).parent).encode("utf8"))
         extLength=len(".mkv".encode("utf8"))
@@ -115,18 +115,18 @@ def test_linux_trunicate_255(mocker):
         pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
         -extLength]).decode()
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
             assert(len(str(long_path.name).encode("utf8")))==maxlenth
         with check:
-            assert(len(str(trunicated.name).encode("utf8")))==maxlenth
+            assert(len(str(truncated.name).encode("utf8")))==maxlenth
         with check: 
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
 
 
-def test_linux_trunicate_small(mocker):
+def test_linux_truncate_small(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         dirLength=len(str(pathlib.Path(LINUX_LONGPATH).parent).encode("utf8"))
         extLength=len(".mkv".encode("utf8"))
@@ -134,95 +134,95 @@ def test_linux_trunicate_small(mocker):
         pathbase=(LINUX_LONGPATH.encode("utf8")[:dirLength+1+maxlenth
         -extLength]).decode()
         long_path=pathlib.Path(f"{pathbase}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
             assert(len(str(long_path.name).encode("utf8")))==maxlenth
         with check:
-            assert(len(str(trunicated.name).encode("utf8")))==maxlenth
+            assert(len(str(truncated.name).encode("utf8")))==maxlenth
         with check: 
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
 
-def test_linux_trunicate_count(mocker):
+def test_linux_truncate_count(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         number=5000
         long_path=pathlib.Path(f"{LINUX_LONGPATH}_{number}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
-            assert(len(str(trunicated.name).encode("utf8")))<=255
+            assert(len(str(truncated.name).encode("utf8")))<=255
         with check:
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
         with check:
-            assert(str(trunicated).find(f"{number}"))!=0
+            assert(str(truncated).find(f"{number}"))!=0
 
-def test_linux_trunicate_count_small(mocker):
+def test_linux_truncate_count_small(mocker):
     with patch('platform.system', MagicMock(return_value="Linux")):
         number=5000
         long_path=pathlib.Path(f"{LINUX_LONGPATH[:200]}_{number}.mkv")
-        trunicated=paths.trunicate(long_path)
+        truncated=paths.truncate(long_path)
         with check:
-            assert(len(str(trunicated.name).encode("utf8")))<=255
+            assert(len(str(truncated.name).encode("utf8")))<=255
         with check:
-            assert(long_path.parent)==trunicated.parent
+            assert(long_path.parent)==truncated.parent
         with check:
-            assert(long_path.suffix)==trunicated.suffix
+            assert(long_path.suffix)==truncated.suffix
         with check:
-            assert(str(trunicated).find(f"{number}"))!=0
-def test_linux_trunicator_super():
+            assert(str(truncated).find(f"{number}"))!=0
+def test_linux_truncator_super():
     with tempfile.TemporaryDirectory() as p:
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
                              , k=5000))
         for i in range(1,5000):
             print(i)
             with check:
-                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}_1.ext"))
+                modified=paths._linux_truncateHelper(pathlib.Path(p,f"{masterfile[:i]}_1.ext"))
                 assert(len(modified.name.encode('utf8')))<=255
 
-def test_linux_trunicator_super2():
+def test_linux_truncator_super2():
     with tempfile.TemporaryDirectory() as p:
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
                              , k=5000))
         for i in range(1,5000):
             with check:
-                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
+                modified=paths._linux_truncateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
                 if (len(modified.name.encode('utf8')))>255:
                     print("dd")
                 assert(len(modified.name.encode('utf8')))<=255
 
 
-def test_linux_trunicator_super3():
+def test_linux_truncator_super3():
     with tempfile.TemporaryDirectory() as p:
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase
                              , k=5000))
         for i in range(1,5000):
             with check:
-                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
+                modified=paths._linux_truncateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
                 assert(len(modified.name.encode('utf8')))<=255
                 modified.unlink(missing_ok=True)
             
 
-def test_linux_trunicator_super_emoji():
+def test_linux_truncator_super_emoji():
     with tempfile.TemporaryDirectory() as p:
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase+random_emoji()[0]
                              , k=5000))
         for i in range(260,5000):
             with check:
-                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}_1.ext"))
+                modified=paths._linux_truncateHelper(pathlib.Path(p,f"{masterfile[:i]}_1.ext"))
                 if (len(modified.name.encode('utf8')))>255:
                     print("dd")
                 assert(len(modified.name.encode('utf8')))<=255
 
 
-def test_linux_trunicator_super_emoji2():
+def test_linux_truncator_super_emoji2():
     with tempfile.TemporaryDirectory() as p:
         masterfile= ''.join(random.choices(string.ascii_uppercase +string.ascii_lowercase+random_emoji()[0]
                              , k=5000))
         for i in range(260,5000):
             with check:
-                modified=paths._linux_trunicateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
+                modified=paths._linux_truncateHelper(pathlib.Path(p,f"{masterfile[:i]}.part"))
                 if (len(modified.name.encode('utf8')))>255:
                     print("dd")
                 assert(len(modified.name.encode('utf8')))<=255

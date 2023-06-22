@@ -127,16 +127,16 @@ def getcachepath():
     path= get_config_path().parent/ profile/"cache"
     createDir(path.parent)
     return path
-def trunicate(path):
+def truncate(path):
     if args_.getargs().original:
         return path
     if platform.system() == 'Windows' and len(str(path))>256:
-        return _windows_trunicateHelper(path)
+        return _windows_truncateHelper(path)
     elif platform.system() == 'Linux':
-        return _linux_trunicateHelper(path)
+        return _linux_truncateHelper(path)
     else:
         return pathlib.Path(path)
-def _windows_trunicateHelper(path):
+def _windows_truncateHelper(path):
     path=pathlib.Path(path)
     dir=path.parent
     file=path.name
@@ -152,7 +152,7 @@ def _windows_trunicateHelper(path):
     log.debug(f"path: {final} path size: {len(str(final))}")
     return pathlib.Path(dir,newFile)
 
-def _linux_trunicateHelper(path):
+def _linux_truncateHelper(path):
     path=pathlib.Path(path)
     dir=path.parent
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)

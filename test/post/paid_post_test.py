@@ -218,7 +218,7 @@ def test_mediamedia_paid():
     media=Media(mediaDict,index,t)
     assert(media.media)==mediaDict
 
-def test_paid_text_wordtrunicate(mocker):
+def test_paid_text_wordtruncate(mocker):
     length=TEXTLENGTH_ALT2
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -244,7 +244,7 @@ def test_paid_text_wordtrunicate(mocker):
     with check:
         assert(len(wordarray))< length+1
 
-def test_paid_text_wordtrunicate2(mocker):
+def test_paid_text_wordtruncate2(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -270,7 +270,7 @@ def test_paid_text_wordtrunicate2(mocker):
     with check:
         assert(len(wordarray))<length+1
 
-def test_paid_text_wordtrunicate3(mocker):
+def test_paid_text_wordtruncate3(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -296,7 +296,7 @@ def test_paid_text_wordtrunicate3(mocker):
     with check:
         assert(len(wordarray))<=len(textarray)+2
 
-def test_paid_text_wordtrunicate4(mocker):
+def test_paid_text_wordtruncate4(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
@@ -321,7 +321,7 @@ def test_paid_text_wordtrunicate4(mocker):
     with check:
         assert(len(wordarray))<TEXTLENGTH_ALT2+1
 
-def test_paid_text_wordtrunicate5(mocker):
+def test_paid_text_wordtruncate5(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -347,7 +347,7 @@ def test_paid_text_wordtrunicate5(mocker):
     with check:
         assert(len(wordarray))<length+1
 
-def test_paid_text_wordtrunicate6(mocker):
+def test_paid_text_wordtruncate6(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -370,7 +370,7 @@ def test_paid_text_wordtrunicate6(mocker):
     assert(len(wordarray))>=len("{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
 
 
-def test_paid_text_lettertrunicate(mocker):
+def test_paid_text_lettertruncate(mocker):
     length=TEXTLENGTH_ALT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -394,7 +394,7 @@ def test_paid_text_lettertrunicate(mocker):
   
         
 
-def test_paid_text_lettertrunicate2(mocker):
+def test_paid_text_lettertruncate2(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -416,7 +416,7 @@ def test_paid_text_lettertrunicate2(mocker):
     wordarray=t.text_
     assert(len(wordarray))==length
 
-def test_paid_text_lettertrunicate3(mocker):
+def test_paid_text_lettertruncate3(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -441,7 +441,7 @@ def test_paid_text_lettertrunicate3(mocker):
 
 
 
-def test_paid_text_lettertrunicate4(mocker):
+def test_paid_text_lettertruncate4(mocker):
     length=TEXTLENGTH_ALT2
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -464,7 +464,7 @@ def test_paid_text_lettertrunicate4(mocker):
     assert(len(wordarray))==length
    
 
-def test_paid_text_lettertrunicate5(mocker):
+def test_paid_text_lettertruncate5(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -486,7 +486,7 @@ def test_paid_text_lettertrunicate5(mocker):
     wordarray=t.text_
     assert(len(wordarray))==length
 
-def test_paid_text_lettertrunicate6(mocker):
+def test_paid_text_lettertruncate6(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,

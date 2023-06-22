@@ -163,9 +163,9 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
                             return 'skipped', 1       
                     content_type = rheaders.get("content-type").split('/')[-1]
                     filename=createfilename(ele,username,model_id,content_type)
-                    path_to_file = paths.trunicate(pathlib.Path(path,f"{filename}"))                 
+                    path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))                 
                     pathstr=str(path_to_file)
-                    temp=paths.trunicate(f"{path_to_file}.part")
+                    temp=paths.truncate(f"{path_to_file}.part")
                     pathlib.Path(temp).unlink(missing_ok=True)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                     with open(temp, 'wb') as f:                           
@@ -206,8 +206,8 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
-        path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.trunicate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
+        path_to_file = paths.truncate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
+        temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                 kId=None
@@ -245,7 +245,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                             item["total"]=total
                             if file_size_limit>0 and total > int(file_size_limit): 
                                     return 'skipped', 1       
-                            temp= paths.trunicate(pathlib.Path(path,f"{item['name']}.part"))
+                            temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
                             temp.unlink(missing_ok=True)
                             item["path"]=temp
                             pathstr=str(temp)
