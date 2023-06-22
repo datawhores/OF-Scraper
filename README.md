@@ -1,7 +1,6 @@
 # Table-of-contents
 - [Intro](#intro)
 - [Documentation](#documentation)
-- [Issues](#issues)
 - [Feature Requests](#feature-requests)
 - [Migrating from DC script](#migrating-from-dc-script)
 - [Discord](#discord)
