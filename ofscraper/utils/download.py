@@ -162,7 +162,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
                     if file_size_limit>0 and total > int(file_size_limit): 
                             return 'skipped', 1       
                     content_type = rheaders.get("content-type").split('/')[-1]
-                    filename=createfilename(ele,username,model_id,content_type)
+                    filename=paths.createfilename(ele,username,model_id,content_type)
                     path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))                 
                     pathstr=str(path_to_file)
                     temp=paths.truncate(f"{path_to_file}.part")
@@ -206,7 +206,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         audio = None
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
-        path_to_file = paths.truncate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
+        path_to_file = paths.truncate(pathlib.Path(path,f'{paths.createfilename(ele,username,model_id,"mp4")}'))
         temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
@@ -361,28 +361,7 @@ def get_error_message(content):
         return error_content.get('message', 'No error message available')
     except AttributeError:
         return error_content
-def createfilename(ele,username,model_id,ext):
-    filename=ele.filename_
-    sitename="Onlyfans"
-    site_name="Onlyfans"
-    post_id=ele.postid_
-    media_id=ele.id
-    first_letter=username[0]
-    mediatype=ele.mediatype
-    value=ele.value
-    text=ele.text_
-    date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
-    model_username=username
-    responsetype=ele.responsetype
 
-    if ele.responsetype_ =="profile":
-        return f"{filename}.{ext}"
-    elif config_.get_allow_code_execution(config_.read_config()):
-        return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
-    else:
-        return config_.get_fileformat(config_.read_config()).format(filename=filename,sitename=sitename,site_name=sitename,post_id=post_id,media_id=media_id,first_letter=first_letter,mediatype=mediatype,value=value,text=text,date=date,ext=ext,model_username=username,model_id=model_id,responsetype=responsetype) 
-
-    
 
 def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
