@@ -1,5 +1,6 @@
 # Table-of-contents
 - [Intro](#intro)
+- [Documentation](#documentation)
 - [Installation](#installation)
   * [Windows: ](#windows)
   * [macOS/Linux](#macoslinux)
