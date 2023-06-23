@@ -16,7 +16,7 @@ def create_parser(input=None):
         '-cg', '--config', help="Change location of config folder/file",default=None
     )
     general.add_argument(
-        '-r', '--profile', help="Change which profile you want to use\nDefault is based on what the config file\nProfiles are always within the config file parent directory",default=None,type=lambda x:f"{re.sub('_profile','', x)}_profile"
+        '-r', '--profile', help="Change which profile you want to use\nIf not set then the config file is used\nProfiles are always within the config file parent directory",default=None,type=lambda x:f"{re.sub('_profile','', x)}_profile"
     )
     output=parent_parser.add_argument_group("Logging",description="Arguments for output controls")  
 
