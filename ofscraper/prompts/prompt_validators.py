@@ -8,7 +8,7 @@ import pathlib
 import arrow
 import textwrap
 import ofscraper.utils.paths as paths
-import ofscraper.utils.stdout as stdout
+import ofscraper.utils.profiles as profiles
 
 
 
@@ -28,10 +28,40 @@ class MultiValidator(Validator):
     def validate(self,document) -> None:
        for input in self.inputs:
             try:
-                input.validate(document)
+                if isinstance(input,Validator):
+                    input.validate(document)
+                else:
+                    if input(document.text)==False: 
+                        raise Exception()
             except Exception as E:
                 raise E
                 
+def currentProfilesValidator():
+    def callable(x):
+        x=profiles.profile_name_fixer(x)
+        return x not in set(profiles.get_profile_names())
+    return Validator.from_callable(
+    callable,
+    "You can not change name to a current profile name"
+    )
+
+def currentProfilesCreationValidator():
+    def callable(x):
+        x=profiles.profile_name_fixer(x)
+        return x not in set(profiles.get_profile_names())
+    return Validator.from_callable(
+    callable,
+    "This Profile already exists"
+    )
+def currentProfileDeleteValidator():
+    def callable(x):
+        return profiles.profile_name_fixer(x)!=profiles.get_active_profile()
+    
+    return Validator.from_callable(
+    callable,
+    "You can not delete the active profile"
+    )
+
 def emptyListValidator():
     def callable(x):
         return len(x)>0

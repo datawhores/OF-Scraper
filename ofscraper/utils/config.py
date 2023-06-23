@@ -135,7 +135,8 @@ def auto_update_config(path, config: dict) -> dict:
 
 def edit_config():
     try:
-        p = paths_.get_config_path() 
+        p = paths_.get_config_path()
+        log.info(f"config path: {p}")
         with open(p, 'r') as f:
             configText=f.read()
             config = json.loads(configText)

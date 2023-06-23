@@ -16,7 +16,7 @@ def create_parser(input=None):
         '-cg', '--config', help="Change location of config folder/file",default=None
     )
     general.add_argument(
-        '-r', '--profile', help="Change which profile you want to use\nDefault is based on what the config file\nProfiles are always within the config file parent directory",default=None
+        '-r', '--profile', help="Change which profile you want to use\nDefault is based on what the config file\nProfiles are always within the config file parent directory",default=None,type=lambda x:f"{re.sub('_profile','', x)}_profile"
     )
     output=parent_parser.add_argument_group("Logging",description="Arguments for output controls")  
 
@@ -50,6 +50,8 @@ def create_parser(input=None):
     scraper.add_argument(
         '-g', '--original', help = 'don\'t truncate long paths', default=False,action="store_true"
     )
+    scraper.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
+    scraper.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
 
 
     post=parser.add_argument_group("Post",description="What type of post to scrape")                                      
@@ -58,9 +60,7 @@ def create_parser(input=None):
     post.add_argument(
         '-o', '--posts', help = 'Download content from a model',default=[],required=False,type = posttype_helper,action='extend'
     )
-    post.add_argument("-c","--letter-count",action="store_true",default=False,help="intrepret config 'textlength' as max length by letter")
 
-    post.add_argument("-a","--action",default=None,help="perform like or unlike action on each post",choices=["like","unlike"])
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or temporary post",action="store_true")
     post.add_argument(
         '-ft', '--filter', help = 'Filter post by provide regex\nNote if you include any uppercase characters the search will be case-sensitive',default=".*",required=False,type = str

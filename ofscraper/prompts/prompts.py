@@ -291,13 +291,12 @@ def new_name_edit_profiles_prompt(old_profile_name) -> str:
             'type': 'input',
             'name': name,
             'message': f'What would you like to rename {old_profile_name} to?',
-            'validator':EmptyInputValidator()
+            'validate':prompt_validators.MultiValidator(EmptyInputValidator(),prompt_validators.currentProfilesValidator())
         }
     ]
 
     answer = prompt(questions)
     return answer[name]
-
 
 def create_profiles_prompt() -> str:
     name = 'create'
@@ -311,7 +310,8 @@ def create_profiles_prompt() -> str:
 What would you like to name your new profile?
 only letters, numbers, and underscores are allowed
 """,
-            'validator':prompt_validators.namevalitator()
+            'validate':prompt_validators.MultiValidator(prompt_validators.namevalitator(),prompt_validators.currentProfilesCreationValidator()
+)
 
         }
     ]
@@ -329,7 +329,9 @@ def get_profile_prompt(profiles: list) -> str:
             'name': name,
             'message': 'Select Profile',
             'choices':profiles
-            ,"validate":prompt_validators.emptyListValidator()
+            ,"validate":prompt_validators.MultiValidator(  prompt_validators.emptyListValidator(),prompt_validators.currentProfileDeleteValidator())
+            
+          
         }
     ]
     answer = prompt(questions)

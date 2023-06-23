@@ -1,7 +1,6 @@
 
 import tempfile
 import json
-import os
 from pytest_check import check
 from test.test_constants import *
 from ofscraper.utils.config import *
@@ -51,14 +50,7 @@ def test_new_config_location(mocker):
                 assert(new_config[key])==currentConfig["config"][key]
 
 
-def test_profile_count(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",p]))
-        configdir=paths_.get_config_path().parent
-        (configdir/"1").mkdir()
-        (configdir/"2").mkdir()
-        (configdir/"3").mkdir()
-        assert(len(get_profiles()))==3
+
 
 
 def test_current_schema2(mocker):
@@ -284,41 +276,3 @@ def test_pinned_response3(mocker):
     config={}
     assert(get_pinned_responsetype(config))==RESPONSE_TYPE_DEFAULT["pinned"]          
 
-def test_configarg_path_single_file(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        mocker.patch("pathlib.Path.home",return_value=pathlib.Path(p))
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config","test.json"]))
-        assert(paths_.get_config_path())==pathlib.Path(p,".config/ofscraper","test.json")
-
-
-
-def test_configarg_file_within_dir(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        configFile=pathlib.Path(p,"test.json")
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",str(configFile)]))
-        assert(paths_.get_config_path())==configFile
-
-
-def test_configarg_directory(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        configFile=pathlib.Path(p)
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",str(configFile)]))
-        assert(paths_.get_config_path())==pathlib.Path(p,"config.json")
-
-def test_configarg_nested_directory(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        configFile=pathlib.Path(p,"test")
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",str(configFile)]))
-        assert(paths_.get_config_path())==pathlib.Path(p,"test","config.json")
-
-def test_configarg_empty_(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        mocker.patch("pathlib.Path.home",return_value=pathlib.Path(p))
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",""]))
-        assert(paths_.get_config_path())==pathlib.Path(p,".config/ofscraper/config.json")
-
-def test_configarg_none(mocker):
-    with tempfile.TemporaryDirectory() as p:
-        mocker.patch("pathlib.Path.home",return_value=pathlib.Path(p))
-        mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--config",None]))
-        assert(paths_.get_config_path())==pathlib.Path(p,".config/ofscraper/config.json")

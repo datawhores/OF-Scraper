@@ -15,7 +15,7 @@ import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.console as console_
-from .profiles import get_current_profile
+from .profiles import get_current_config_profile
 
 
 console=console_.shared_console
@@ -49,8 +49,8 @@ def createDir(path):
         log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
         sys.exit()
 def databasePathHelper(model_id,username):
-    configpath= get_config_path().parent
-    profile=profiles.get_current_profile()
+    configpath= get_config_home()
+    profile=profiles.get_active_profile()
     model_username=username
     username=username
     modelusername=username
@@ -243,7 +243,7 @@ def ffmpegexecutecheck(x):
         return False  
    
 def getlogpath():
-    path= get_config_path().parent / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}.log'
+    path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}.log'
     createDir(path.parent)
     return path
 
@@ -268,11 +268,16 @@ def get_config_path():
         return ofscraperHome/configPath
     return configPath
 
-def get_profile_path():
-    if not args_.getargs().profile:
-        return get_config_path().parent/get_current_profile()
-    return get_config_path().parent/f"{re.sub('_profile','', args_.getargs().profile)}_profile"
-   
+def get_profile_path(name=None):
+    if name:
+        return get_config_home()/name
+    elif not args_.getargs().profile:
+        return get_config_home()/get_current_config_profile()
+    return get_config_home()/args_.getargs().profile
+
+def get_config_home():
+    return get_config_path().parent
+
 
 def get_auth_file():
     return get_profile_path() /constants.authFile
@@ -301,4 +306,3 @@ def createfilename(ele,username,model_id,ext):
     else:
         return config_.get_fileformat(config_.read_config()).format(filename=filename,sitename=sitename,site_name=sitename,post_id=post_id,media_id=media_id,first_letter=first_letter,mediatype=mediatype,value=value,text=text,date=date,ext=ext,model_username=username,model_id=model_id,responsetype=responsetype) 
 
-    

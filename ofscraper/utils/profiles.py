@@ -9,6 +9,7 @@ r"""
 """
 
 import shutil
+import re
 import logging
 from rich.console import Console
 from rich import print
@@ -16,6 +17,7 @@ import ofscraper.utils.config as config_
 import ofscraper.prompts.prompts as prompts
 import ofscraper.constants as constants
 import ofscraper.utils.paths as paths_
+import ofscraper.utils.args as args_
 log=logging.getLogger(__package__)
 console=Console()
 
@@ -24,81 +26,100 @@ console=Console()
 
 
 
-def get_profile_path():
-    out=paths_.get_profile_path()
+def create_profile_path(name=None):
+    out=paths_.get_profile_path(name)
     out.mkdir(exist_ok=True,parents=True)
     return out
 
 
 def get_profiles() -> list:
-    config_path = paths_.get_config_path().parent
-    dir_contents = config_path.glob('_profile')
-    profiles = [item for item in dir_contents if item.is_dir()]
-    return profiles
+    config_path = paths_.get_config_home()
+    return list(filter(lambda x:re.search(".*_profile$",str(x)) and x.is_dir(),config_path.glob('*')))
 
 def change_profile():
-    console.print('Current profiles:')
-    profile = prompts.get_profile_prompt(print_profiles())
-
+    print_profiles()
+    profile = prompts.get_profile_prompt(get_profile_names())
     config_.update_config(constants.mainProfile, profile)
-
+    args=args_.getargs()
+    # remove profile argument
+    args.profile=None
+    args_.changeargs(args)
     print(f'[green]Successfully changed profile to[/green] {profile}')
 
 
 def delete_profile():
-    console.print('Current profiles:')
-    profile = prompts.get_profile_prompt(print_profiles())
-
-    if profile == get_current_profile():
-        raise OSError(
-            'You cannot delete a profile that you\'re currently using')
-
-    p = paths_.get_config_path().parent / profile
+    print_profiles()
+    profile = prompts.get_profile_prompt(get_profile_names())
+    p = paths_.get_config_home() / profile
     shutil.rmtree(p)
 
     print(f'[green]Successfully deleted[/green] {profile}')
 
 
-def create_profile(path, dir_name: str):
-    dir_path = path / dir_name
-
-    if not dir_path.is_dir():
-        dir_path.mkdir(parents=True, exist_ok=False)
+def create_profile():
+    print_profiles()
+    name=profile_name_fixer( prompts.create_profiles_prompt())
+    create_profile_path(name)
     if prompts.change_default_profile()=="Yes":
-        config_.update_config(constants.mainProfile, dir_name)
-    console.print('[green]Successfully created[/green] {dir_name}'.format(dir_name=dir_name))
-    
-
-def edit_profile_name(old_profile_name: str, new_profile_name: str):
-    profiles = get_profiles()
-
-    for profile in profiles:
-        if profile.stem == old_profile_name:
-            profile.replace(profile.parent / new_profile_name)
-            shutil.rmtree(profile,ignore_errors=True)
-           
-    if old_profile_name == get_current_profile():
-        config_.update_config(constants.mainProfile, new_profile_name)
-
-    print(
-        f"[green]Successfully changed[green] '{old_profile_name}' to '{new_profile_name}'")
+        config_.update_config(constants.mainProfile,name )
+    console.print('[green]Successfully created[/green] {dir_name}'.format(dir_name=name))
 
 
+
+
+def edit_profile_name():
+    print_profiles()
+    profiles_ = get_profiles()
+    old_profile_name = prompts.edit_profiles_prompt(profiles_)
+    new_profile_name=profile_name_fixer(prompts.new_name_edit_profiles_prompt(old_profile_name))
+    configFolder=paths_.get_config_home()
+    oldFolder=configFolder/old_profile_name
+    newFolder=configFolder/new_profile_name    
+
+    if not oldFolder.exists():
+        create_profile_path(new_profile_name)
+    else:
+        shutil.move(oldFolder,newFolder)
+        change_current_profile(new_profile_name,old_profile_name)
+        print(
+            f"[green]Successfully changed[green] '{old_profile_name}' to '{new_profile_name}'")
+
+
+
+def change_current_profile(new_profile,old_profile):
+    args=args_.getargs()
+    if args.profile==old_profile:
+        args.profile=new_profile
+        args_.changeargs(args)
+    # required because name has changed
+    if old_profile== get_current_config_profile():
+        config_.update_config(constants.mainProfile, new_profile)
+
+  
 def print_profiles() -> list:
-    profile_names = [profile.stem for profile in get_profiles()]
-
+    print_current_profile()
+    console.print("\n\nCurrent Profiles\n")
     profile_fmt = 'Profile: [cyan]{}'
-    for name in profile_names:
+    for name in  get_profile_names():
         console.print(profile_fmt.format(name))
 
-    return profile_names
 
+def get_profile_names():
+    return [profile.name for profile in get_profiles()]
 
-def get_current_profile():
+    
+def get_current_config_profile():
     config = config_.read_config()
     return config[constants.mainProfile]
 
+def get_active_profile():
+    if args_.getargs().profile:
+        return args_.getargs().profile
+    return get_current_config_profile()
 
 def print_current_profile():
-    current_profile = get_current_profile()
+    current_profile = get_active_profile()
     log.info('Using profile: [cyan]{}[/cyan]'.format(current_profile))
+
+def profile_name_fixer(input):
+    return f"{re.sub('_profile','', input)}_profile" if input else None

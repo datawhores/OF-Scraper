@@ -87,20 +87,12 @@ def process_prompts():
 
             elif result_profiles_prompt == 1:
                 # Edit a profile
-                profiles_ = profiles.get_profiles()
-
-                old_profile_name = prompts.edit_profiles_prompt(profiles_)
-                new_profile_name = prompts.new_name_edit_profiles_prompt(
-                    old_profile_name)
-
-                profiles.edit_profile_name(old_profile_name, new_profile_name)
+                profiles.edit_profile_name()
 
             elif result_profiles_prompt == 2:
                 # Create a new profile
-                profile_path = config.get_config_folder()
-                profile_name = prompts.create_profiles_prompt()
 
-                profiles.create_profile(profile_path, profile_name)
+                profiles.create_profile()
 
             elif result_profiles_prompt == 3:
                 # Delete a profile

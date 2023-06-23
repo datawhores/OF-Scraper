@@ -10,21 +10,21 @@ r"""
 
 import hashlib
 import json
-import pathlib
 import time
+import logging
 from urllib.parse import urlparse
 import requests
 from rich.console import Console
 import httpx
 import browser_cookie3
-from .profiles import get_current_profile
+from .profiles import get_active_profile
 from ..prompts.prompts import *
 from ..constants import configPath, DYNAMIC, requestAuth
 import ofscraper.utils.paths as paths
 
+
 console=Console()
-
-
+log=logging.getLogger(__package__)
 
 def read_auth():
     make_request_auth()
@@ -56,6 +56,7 @@ def read_auth():
 
 def edit_auth():
     authFile=paths.get_auth_file()
+    log.info(f"Auth Path {authFile}" )
     try:
         with open(authFile, 'r') as f:
             authText=f.read()
@@ -67,7 +68,7 @@ def edit_auth():
     except FileNotFoundError:
         
         if ask_make_auth_prompt():
-            make_auth(auth)
+            make_auth()
     except json.JSONDecodeError as e:
             while True:
                 try:
@@ -227,9 +228,10 @@ def create_sign(link, headers):
 
 
 def read_request_auth() -> dict:
-    profile = get_current_profile()
+    profile = get_active_profile()
+    
 
-    p = paths.get_config_path().parent/profile/ requestAuth
+    p = paths.get_config_home()/profile/ requestAuth
     with open(p, 'r') as f:
         content = json.load(f)
     return content
@@ -250,9 +252,9 @@ def make_request_auth():
 
         request_auth.update(zip(request_auth.keys(), values))
 
-        profile = get_current_profile()
+        profile = get_active_profile()
 
-        p = paths.get_config_path().parent/profile
+        p = paths.get_config_home()/profile
         if not p.is_dir():
             p.mkdir(parents=True, exist_ok=True)
 
