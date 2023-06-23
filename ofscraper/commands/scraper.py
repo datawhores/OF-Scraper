@@ -97,7 +97,7 @@ def process_prompts():
 
             elif result_profiles_prompt == 2:
                 # Create a new profile
-                profile_path = profiles.get_profile_path()
+                profile_path = config.get_config_folder()
                 profile_name = prompts.create_profiles_prompt()
 
                 profiles.create_profile(profile_path, profile_name)

@@ -897,3 +897,17 @@ def manual_auth_prompt(authText) -> str:
 
     answer = prompt(questions)
     return answer[0]
+
+def relative_config_path_prompt(curr,file) -> bool:
+    name = 'path'
+    questions = [
+        {
+            'type': 'list',
+            'name': name,
+            'message': "Where do you want to make the config folder",
+            'choices':[Choice(True,str(pathlib.Path(curr,file))),Choice(False,str(pathlib.Path(file)))]
+        }
+    ]
+
+    answer = prompt(questions)
+    return answer[name]

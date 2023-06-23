@@ -20,14 +20,19 @@ log=logging.getLogger(__package__)
 console=Console()
 
 
+
+
+
+
 def get_profile_path():
-    config_path = paths_.get_config_path().parent
-    return config_path
+    out=paths_.get_profile_path()
+    out.mkdir(exist_ok=True,parents=True)
+    return out
 
 
 def get_profiles() -> list:
-    config_path = get_profile_path()
-    dir_contents = config_path.glob('*')
+    config_path = paths_.get_config_path().parent
+    dir_contents = config_path.glob('_profile')
     profiles = [item for item in dir_contents if item.is_dir()]
     return profiles
 
@@ -48,7 +53,7 @@ def delete_profile():
         raise OSError(
             'You cannot delete a profile that you\'re currently using')
 
-    p = get_profile_path() / profile
+    p = paths_.get_config_path().parent / profile
     shutil.rmtree(p)
 
     print(f'[green]Successfully deleted[/green] {profile}')
@@ -95,7 +100,5 @@ def get_current_profile():
 
 
 def print_current_profile():
-    get_profiles()
-
     current_profile = get_current_profile()
     log.info('Using profile: [cyan]{}[/cyan]'.format(current_profile))

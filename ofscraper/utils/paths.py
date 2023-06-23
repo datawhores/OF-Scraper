@@ -123,8 +123,8 @@ def cleanup():
 
 
 def getcachepath():
-    profile = profiles.get_current_profile()
-    path= get_config_path().parent/ profile/"cache"
+    profile = get_profile_path()
+    path= profile/"cache"
     createDir(path.parent)
     return path
 def truncate(path):
@@ -248,19 +248,34 @@ def getlogpath():
     return path
 
 def get_config_path():
-    t=pathlib.Path(args_.getargs().config or pathlib.Path.home() / constants.configPath)        
-    if t.is_file():
-         return t
-    elif t.parent.is_dir():
-        t/constants.configFile
-    return t/constants.configFile
+    configPath=args_.getargs().config
+    defaultPath=pathlib.Path.home() / constants.configPath/constants.configFile
+    ofscraperHome=pathlib.Path.home() / constants.configPath
+
+    if configPath==None or configPath=="":
+        return defaultPath
+    configPath=pathlib.Path(configPath)
+    # check if path exists
+    if  configPath.is_file():
+         return configPath
+    elif configPath.is_dir():
+        return configPath/constants.configFile
+    #enforce that configpath needs some extension
+    elif configPath.suffix=="":
+        return configPath/constants.configFile
+    
+    elif str(configPath.parent)==".":
+        return ofscraperHome/configPath
+    return configPath
+
+def get_profile_path():
+    if not args_.getargs().profile:
+        return get_config_path().parent/get_current_profile()
+    return get_config_path().parent/f"{re.sub('_profile','', args_.getargs().profile)}_profile"
+   
 
 def get_auth_file():
-    profile = get_current_profile()
-    auth= get_config_path().parent/profile /constants.authFile if not args_.getargs().auth else pathlib.Path(args_.getargs().auth)
-    if auth.is_dir():
-        raise Exception("Auth File must be a file")
-    return auth
+    return get_profile_path() /constants.authFile
 
     
    

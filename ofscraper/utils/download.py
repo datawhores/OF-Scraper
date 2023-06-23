@@ -77,7 +77,6 @@ async def process_dicts(username, model_id, medialist):
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         global sem
         sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
-        medialist=list(filter(lambda x:x.mpd,medialist))
 
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
                 if not args_.getargs().dupe:

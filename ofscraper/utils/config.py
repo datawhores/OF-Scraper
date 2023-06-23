@@ -21,6 +21,11 @@ import ofscraper.utils.console as console_
 console=console_.shared_console
 log=logging.getLogger(__package__)
 
+def get_config_folder():
+    out=paths_.get_config_path().parent
+    out.mkdir(exist_ok=True,parents=True)
+    return out
+
 def read_config():
     p = pathlib.Path(paths_.get_config_path())
     if not p.parent.is_dir():
