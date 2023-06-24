@@ -31,7 +31,12 @@ attempt = contextvars.ContextVar("attempt")
 
 # can get profile from username or id
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-def scrape_profile(headers, username:Union[int, str]) -> dict:
+def scrape_profile(username:Union[int, str]) -> dict:
+    id=cache.get(f"model_id_{username}",None)
+    if id:
+        return id
+    headers = auth.make_headers(auth.read_auth())
+
     attempt.set(attempt.get(0) + 1)
     log.info(f"Attempt {attempt.get()}/{constants.NUM_TRIES} to get profile {username}")
     with httpx.Client(http2=True, headers=headers) as c:
@@ -86,10 +91,8 @@ def print_profile_info(info):
 
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-def get_id(headers, username):
-    id=cache.get(f"model_id_{username}",None)
-    if id:
-        return id
+def get_id( username):
+    headers = auth.make_headers(auth.read_auth())
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
 

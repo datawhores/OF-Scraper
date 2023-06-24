@@ -82,7 +82,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=
                     r.raise_for_status()
     return posts
 
-async def get_pinned_post(headers,model_id): 
+async def get_pinned_post(model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting pinned media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

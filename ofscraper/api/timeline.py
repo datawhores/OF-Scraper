@@ -98,7 +98,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                     r.raise_for_status()
     return posts
 
-async def get_timeline_post(headers,model_id): 
+async def get_timeline_post(model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

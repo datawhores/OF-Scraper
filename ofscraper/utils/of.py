@@ -32,9 +32,9 @@ log=logging.getLogger(__package__)
 args=args_.getargs()
 log.debug(args)
 
-def process_messages(headers, model_id,username):
+def process_messages(model_id,username):
     with stdout.lowstdout():
-        messages_ =asyncio.run(messages.get_messages(headers,  model_id)) 
+        messages_ =asyncio.run(messages.get_messages(  model_id)) 
         messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
         log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
         log.debug("Removing locked messages media")
@@ -58,9 +58,9 @@ def process_paid_post(model_id,username):
 
          
 
-def process_highlights(headers, model_id,username):
+def process_highlights( model_id,username):
     with stdout.lowstdout():
-        highlights_, stories = asyncio.run(highlights.get_highlight_post(headers, model_id))
+        highlights_, stories = asyncio.run(highlights.get_highlight_post( model_id))
         highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
         list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
         log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
@@ -81,9 +81,9 @@ def process_highlights(headers, model_id,username):
 
 
 
-def process_timeline_posts(headers, model_id,username):
+def process_timeline_posts(model_id,username):
     with stdout.lowstdout():
-        timeline_posts = asyncio.run(timeline.get_timeline_post(headers, model_id))
+        timeline_posts = asyncio.run(timeline.get_timeline_post( model_id))
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")
@@ -93,9 +93,9 @@ def process_timeline_posts(headers, model_id,username):
         [output.extend(post.media) for post in  timeline_posts ]
         return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
-def process_archived_posts(headers, model_id,username):
+def process_archived_posts( model_id,username):
     with stdout.lowstdout():
-        archived_posts = asyncio.run(archive.get_archived_post(headers, model_id))
+        archived_posts = asyncio.run(archive.get_archived_post(model_id))
         archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
         log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
         log.debug("Removing locked archived media")
@@ -109,9 +109,9 @@ def process_archived_posts(headers, model_id,username):
 
 
 
-def process_pinned_posts(headers, model_id,username):
+def process_pinned_posts( model_id,username):
     with stdout.lowstdout():
-        pinned_posts = asyncio.run(pinned.get_pinned_post(headers, model_id))
+        pinned_posts = asyncio.run(pinned.get_pinned_post( model_id))
         pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
         log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
         log.debug("Removing locked pinned media")
@@ -121,9 +121,9 @@ def process_pinned_posts(headers, model_id,username):
         [ output.extend(post.media) for post in pinned_posts ]
         return list(filter(lambda x:isinstance(x,posts_.Media),output))
 
-def process_profile(headers, username) -> list:
+def process_profile( username) -> list:
     with stdout.lowstdout():
-        user_profile = profile.scrape_profile(headers, username)
+        user_profile = profile.scrape_profile( username)
         urls, info = profile.parse_profile(user_profile)
         profile.print_profile_info(info)       
         output=[]
@@ -141,11 +141,10 @@ def process_all_paid():
         paid_content=asyncio.run(paid.get_all_paid_posts())
         user_dict={}
         post_array=[]
-        headers = auth.make_headers(auth.read_auth())
         [user_dict.update({(ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id"):user_dict.get((ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id"),[])+[ele]}) for ele in paid_content]
 
         for model_id,value in user_dict.items():
-            username=profile.scrape_profile(headers,model_id).get("username")
+            username=profile.scrape_profile(model_id).get("username")
             if username=="modeldeleted":
                 username=operations.get_profile_info(model_id,username) or username
             log.info(f"Processing {username}_{model_id}")
@@ -171,7 +170,7 @@ def select_areas():
 
     args_.changeargs(args)
      
-def process_areas(headers, ele, model_id) -> list:
+def process_areas(ele, model_id) -> list:
     select_areas()
     timeline_posts_dicts  = []
     pinned_post_dict=[]
@@ -189,19 +188,19 @@ def process_areas(headers, ele, model_id) -> list:
         return []
   
     if ('Profile' in args.posts or 'All' in args.posts):
-        profile_dicts  = process_profile(headers,username)
+        profile_dicts  = process_profile(username)
     if ('Pinned' in args.posts or 'All' in args.posts):
-            pinned_post_dict = process_pinned_posts(headers, model_id,username)
+            pinned_post_dict = process_pinned_posts(model_id,username)
     if ('Timeline' in args.posts or 'All' in args.posts):
-            timeline_posts_dicts = process_timeline_posts(headers, model_id,username)
+            timeline_posts_dicts = process_timeline_posts( model_id,username)
     if ('Archived' in args.posts or 'All' in args.posts):
-            archived_posts_dicts = process_archived_posts(headers, model_id,username)
+            archived_posts_dicts = process_archived_posts( model_id,username)
     if 'Messages' in args.posts or 'All' in args.posts:
-            messages_dicts = process_messages(headers, model_id,username)
+            messages_dicts = process_messages( model_id,username)
     if "Purchased" in args.posts or "All" in args.posts:
             purchased_dict=process_paid_post(model_id,username)
     if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts):
-            highlights_tuple = process_highlights(headers, model_id,username)  
+            highlights_tuple = process_highlights( model_id,username)  
             if 'Highlights'  in args.posts:
                 highlights_dicts=highlights_tuple[0]
             if 'Stories'  in args.posts:

@@ -97,53 +97,52 @@ def process_download_cart():
 
 
 def post_checker():
-    headers = auth.make_headers(auth.read_auth())
     user_dict = {}
-    client = httpx.Client(http2=True, headers=headers)
-    links = list(url_helper())
-    for ele in links:
-        name_match = re.search(f"onlyfans.com/({constants.USERNAME_REGEX}+$)", ele)
-        name_match2 = re.search(f"^{constants.USERNAME_REGEX}+$", ele)
+    with httpx.Client(http2=True, headers=  auth.make_headers(auth.read_auth())) as c:
+        links = list(url_helper())
+        for ele in links:
+            name_match = re.search(f"onlyfans.com/({constants.USERNAME_REGEX}+$)", ele)
+            name_match2 = re.search(f"^{constants.USERNAME_REGEX}+$", ele)
 
-        if name_match:
-            user_name = name_match.group(1)
-            log.info(f"Getting Full Timeline for {user_name}")
-            model_id = profile.get_id(headers, user_name)
-        elif name_match2:
-            user_name = name_match2.group(0)
-            model_id = profile.get_id(headers, user_name)
-        else:
-            continue
-       
-        oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
-        if len(oldtimeline) > 0 and not args.force:
-            user_dict[user_name] = oldtimeline
-        elif not user_dict.get(user_name):
-            user_dict[user_name] = {}
-            user_dict[user_name] = user_dict[user_name] or []
-            user_dict[user_name].extend(asyncio.run(
-                timeline.get_timeline_post(headers, model_id)))
-            user_dict[user_name].extend(asyncio.run(
-                pinned.get_pinned_post(headers, model_id)))
-            user_dict[user_name].extend(asyncio.run(
-                archive.get_archived_post(headers, model_id)))
-            cache.set(
-                f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+            if name_match:
+                user_name = name_match.group(1)
+                log.info(f"Getting Full Timeline for {user_name}")
+                model_id = profile.get_id(c.headers, user_name)
+            elif name_match2:
+                user_name = name_match2.group(0)
+                model_id = profile.get_id(c.headers, user_name)
+            else:
+                continue
+        
+            oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+            if len(oldtimeline) > 0 and not args.force:
+                user_dict[user_name] = oldtimeline
+            elif not user_dict.get(user_name):
+                user_dict[user_name] = {}
+                user_dict[user_name] = user_dict[user_name] or []
+                user_dict[user_name].extend(asyncio.run(
+                    timeline.get_timeline_post( model_id)))
+                user_dict[user_name].extend(asyncio.run(
+                    pinned.get_pinned_post( model_id)))
+                user_dict[user_name].extend(asyncio.run(
+                    archive.get_archived_post( model_id)))
+                cache.set(
+                    f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
 
-    # individual links
-    for ele in list(filter(lambda x: re.search(f"onlyfans.com/{constants.NUMBER_REGEX}+/{constants.USERNAME_REGEX}+$", x), links)):
-        name_match = re.search(f"/({constants.USERNAME_REGEX}+$)", ele)
-        num_match = re.search(f"/({constants.NUMBER_REGEX}+)", ele)
-        if name_match and num_match:
-            user_name = name_match.group(1)
-            post_id=num_match.group(1)
-            model_id = profile.get_id(headers, user_name)
-            log.info(f"Getting Invidiual Link for {user_name}")
-            if not user_dict.get(user_name):
-                user_dict[name_match.group(1)] = {}
-            data = timeline.get_individual_post(post_id, client)
-            user_dict[user_name] = user_dict[user_name] or []
-            user_dict[user_name].append(data)
+        # individual links
+        for ele in list(filter(lambda x: re.search(f"onlyfans.com/{constants.NUMBER_REGEX}+/{constants.USERNAME_REGEX}+$", x), links)):
+            name_match = re.search(f"/({constants.USERNAME_REGEX}+$)", ele)
+            num_match = re.search(f"/({constants.NUMBER_REGEX}+)", ele)
+            if name_match and num_match:
+                user_name = name_match.group(1)
+                post_id=num_match.group(1)
+                model_id = profile.get_id(headers, user_name)
+                log.info(f"Getting Invidiual Link for {user_name}")
+                if not user_dict.get(user_name):
+                    user_dict[name_match.group(1)] = {}
+                data = timeline.get_individual_post(post_id, client)
+                user_dict[user_name] = user_dict[user_name] or []
+                user_dict[user_name].append(data)
 
     ROWS=[]
     for user_name in user_dict.keys():

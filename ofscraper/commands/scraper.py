@@ -132,10 +132,10 @@ def process_post_user_first():
                 if args.posts:
                     log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
-                    model_id = profile.get_id(headers, ele["name"])
+                    model_id = profile.get_id( ele["name"])
                     operations.create_tables(model_id,ele['name'])
                     operations.write_profile_table(model_id,ele['name'])
-                    output.extend(OF.process_areas(headers, ele, model_id)) 
+                    output.extend(OF.process_areas( ele, model_id)) 
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
                     log.traceback(traceback.format_exc())               
@@ -165,10 +165,10 @@ def normal_post_process():
             if args.posts:
                 log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
             try:
-                model_id = profile.get_id(headers, ele["name"])
+                model_id = profile.get_id( ele["name"])
                 operations.create_tables(model_id,ele['name'])
                 operations.write_profile_table(model_id,ele['name'])
-                combined_urls=OF.process_areas(headers, ele, model_id)
+                combined_urls=OF.process_areas( ele, model_id)
                 asyncio.run(download.process_dicts(
                 ele["name"],
                 model_id,
@@ -201,17 +201,18 @@ def process_like():
     with scrape_context_manager():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
+        init.print_sign_status(headers)
         userdata=userselector.getselected_usernames()
         with stdout.lowstdout():
             for ele in list(filter(lambda x: x["active"],userdata)):
-                    model_id = profile.get_id(headers, ele["name"])
-                    posts = like.get_posts(headers, model_id)
+                    model_id = profile.get_id( ele["name"])
+                    posts = like.get_posts(model_id)
                     unfavorited_posts = like.filter_for_unfavorited(posts)  
                     unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)   
                     log.debug(f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}")
                     post_ids = like.get_post_ids(unfavorited_posts)
                     log.debug(f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}")
-                    like.like(headers, model_id, ele["name"], post_ids)
+                    like.like( model_id, ele["name"], post_ids)
 
 def process_unlike():
     with scrape_context_manager(): 
@@ -221,14 +222,14 @@ def process_unlike():
         userdata=userselector.getselected_usernames()
         with stdout.lowstdout():
             for ele in list(filter(lambda x: x["active"],userdata)):
-                    model_id = profile.get_id(headers, ele["name"])
-                    posts = like.get_posts(headers, model_id)
+                    model_id = profile.get_id( ele["name"])
+                    posts = like.get_posts( model_id)
                     favorited_posts = like.filter_for_favorited(posts)
                     favorited_posts=filters.timeline_array_filter(favorited_posts) 
                     log.debug(f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}")
                     post_ids = like.get_post_ids(favorited_posts)
                     log.debug(f"[bold]Final Number of open and unlikable post[/bold] {len(post_ids)}")
-                    like.unlike(headers, model_id, ele["name"], post_ids)
+                    like.unlike( model_id, ele["name"], post_ids)
 #Adds a function to the job queue
 def set_schedule(*functs):
     [schedule.every(args.daemon).minutes.do(jobqueue.put,funct) for funct in functs]
