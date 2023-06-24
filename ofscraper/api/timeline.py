@@ -90,8 +90,8 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                             attempt.set(0)
                             tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
-                    log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
-                    log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+                    log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
+                    log.debug(f"[bold]timeline response:[/bold] {await r.text()}")
                     log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
 
                     progress.remove_task(task)
