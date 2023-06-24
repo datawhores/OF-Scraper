@@ -97,9 +97,9 @@ async def process_dicts(username, model_id, medialist):
                 data = 0
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
 
-                
-
-                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio()) as c: 
+              
+                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),timeout=aiohttp.ClientTimeout(total=None, connect=None,
+                      sock_connect=None, sock_read=None)) as c: 
                     for ele in medialist:
                         with paths.set_directory(paths.getmediadir(ele,username,model_id)):
                             aws.append(asyncio.create_task(download(c,ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
@@ -154,7 +154,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
     async with sem:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-            async with c.get(url) as r:
+            async with c.get(url,allow_redirects=True,verify_ssl=False) as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
@@ -236,8 +236,9 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                 url=f"{base_url}{item['origname']}"
                 log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as c: 
-                    async with c.get(url,params=params) as r:
+                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth()),timeout=  aiohttp.ClientTimeout(total=None, connect=None,
+                      sock_connect=None, sock_read=None)) as c: 
+                    async with c.get(url,params=params,verify_ssl=False,allow_redirects=True) as r:
                         if r.ok:
                             rheaders=r.headers
                             total = int(rheaders['Content-Length'])

@@ -14,6 +14,7 @@ def filterMedia(media):
     media=posts_date_filter(media)
     media=post_timed_filter(media)
     media=post_user_filter(media)
+    media=download_type_filter(media)
     media=sort_media(media)
     return media
 
@@ -85,3 +86,11 @@ def post_user_filter(media):
         return list(filter(lambda x:re.search(userfilter,x.text or "")!=None,media))
     else:
         return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)!=None,media))
+
+def download_type_filter(media):
+    if args_.getargs().download_type==None:
+        return media
+    elif args_.getargs().download_type=="protected":
+        return list(filter(lambda x:x.mpd!=None,media))  
+    elif args_.getargs().download_type=="normal":
+        return list(filter(lambda x:x.url!=None,media))
