@@ -306,8 +306,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
     return ele.mediatype,total
 
 async def key_helper(c,pssh,licence_url,id):
-    # out=cache.get(licence_url)
-    out=None
+    out=cache.get(licence_url)
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
     if not out:
