@@ -11,7 +11,7 @@ import asyncio
 import logging
 import contextvars
 import math
-import httpx
+import aiohttp
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -38,7 +38,7 @@ attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,required_ids=None) -> list:
+async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_ids=None) -> list:
     global tasks
     global sem
     posts=None
@@ -56,47 +56,46 @@ async def scrape_timeline_posts(headers, model_id,progress, timestamp=None,requi
     log.debug(url)
     async with sem:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
-        async with httpx.AsyncClient(http2=True, headers=headers) as c:
-            auth.add_cookies(c)
-            c.headers.update(auth.create_sign(url, headers))
-            r = await c.get(url , timeout=None)
-    if not r.is_error:
-        progress.remove_task(task)
-        posts = r.json()['list']
-        log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
-        if not posts:
-            posts= []
-        if len(posts)==0:
-            log.debug(f"{log_id} -> number of post found 0")
+        headers=auth.make_headers(auth.read_auth())
+        headers=auth.create_sign(url, headers)
+        async with c.request("get",url,cookies=auth.add_cookies_aio(),headers=headers) as r:
+            if r.ok:
+                progress.remove_task(task)
+                posts = (await r.json())['list']
+                log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
+                if not posts:
+                    posts= []
+                if len(posts)==0:
+                    log.debug(f"{log_id} -> number of post found 0")
 
 
-        elif len(posts)>0:
-            log.debug(f"{log_id} -> number of post found {len(posts)}")
-            log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
-            log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
-            log.debug(f"{log_id} -> first ID {posts[0]['id']}")
-            log.debug(f"{log_id} -> last ID {posts[-1]['id']}")
+                elif len(posts)>0:
+                    log.debug(f"{log_id} -> number of post found {len(posts)}")
+                    log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
+                    log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
+                    log.debug(f"{log_id} -> first ID {posts[0]['id']}")
+                    log.debug(f"{log_id} -> last ID {posts[-1]['id']}")
 
-            if required_ids==None:
-                attempt.set(0)
-                tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                    if required_ids==None:
+                        attempt.set(0)
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                    else:
+                        [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
+                        #try once more to get id if only 1 left
+                        if len(required_ids)==1:
+                            attempt.set(0)
+                            tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+
+                        elif len(required_ids)>0:
+                            attempt.set(0)
+                            tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
-                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
-                #try once more to get id if only 1 left
-                if len(required_ids)==1:
-                    attempt.set(0)
-                    tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+                    log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
+                    log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+                    log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
 
-                elif len(required_ids)>0:
-                    attempt.set(0)
-                    tasks.append(asyncio.create_task(scrape_timeline_posts(headers, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
-    else:
-            log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
-            log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
-            log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-
-            progress.remove_task(task)
-            r.raise_for_status()
+                    progress.remove_task(task)
+                    r.raise_for_status()
     return posts
 
 async def get_timeline_post(headers,model_id): 
@@ -111,39 +110,42 @@ async def get_timeline_post(headers,model_id):
     min_posts=50
     responseArray=[]
     page_count=0
+    
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
+                      sock_connect=None, sock_read=None)) as c: 
 
-        oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
-        oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
-        log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-        oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
-        postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-        filteredArray=list(filter(lambda x:x>=(args_.getargs().after or arrow.get(0)).float_timestamp,postedAtArray))
+            oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
+            oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
+            log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
+            oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
+            postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
+            filteredArray=list(filter(lambda x:x>=(args_.getargs().after or arrow.get(0)).float_timestamp,postedAtArray))
+            
         
-    
-       
-        if len(filteredArray)>min_posts:
-            splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
-            #use the previous split for timesamp
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= splitArrays[0][0]-20000)))
-            [tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
-            for i in range(1,len(splitArrays)-1)]
-            # keeping grabbing until nothign left
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=splitArrays[-2][-1])))
-        else:
-            tasks.append(asyncio.create_task(scrape_timeline_posts(headers,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
-    
+        
+            if len(filteredArray)>min_posts:
+                splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
+                #use the previous split for timesamp
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= splitArrays[0][0]-20000)))
+                [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
+                for i in range(1,len(splitArrays)-1)]
+                # keeping grabbing until nothign left
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
+            else:
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
+        
 
-        page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
-        while len(tasks)!=0:
-            for coro in asyncio.as_completed(tasks):
-                result=await coro or []
-                page_count=page_count+1
-                overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                responseArray.extend(result)
-            time.sleep(1)
-            tasks=list(filter(lambda x:x.done()==False,tasks))
-        overall_progress.remove_task(page_task)
+            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
+            while len(tasks)!=0:
+                for coro in asyncio.as_completed(tasks):
+                    result=await coro or []
+                    page_count=page_count+1
+                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                    responseArray.extend(result)
+                time.sleep(1)
+                tasks=list(filter(lambda x:x.done()==False,tasks))
+            overall_progress.remove_task(page_task)
     unduped=[]
     dupeSet=set()
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
