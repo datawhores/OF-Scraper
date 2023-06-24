@@ -97,7 +97,7 @@ async def process_dicts(username, model_id, medialist):
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
 
               
-                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),timeout=aiohttp.ClientTimeout(total=None, connect=None,
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
                       sock_connect=None, sock_read=None)) as c: 
                     for ele in medialist:
                         with paths.set_directory(paths.getmediadir(ele,username,model_id)):
@@ -140,7 +140,7 @@ async def download(c,ele,path,model_id,username,file_size_limit,progress):
         if ele.url:
            return await main_download_helper(c,ele,path,file_size_limit,username,model_id,progress)
         elif ele.mpd:
-            return await alt_download_helper(ele,path,file_size_limit,username,model_id,progress)
+            return await alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress)
         else:
             return None
     except Exception as e:
@@ -153,7 +153,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
     async with sem:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-            async with c.get(url,allow_redirects=True,verify_ssl=False) as r:
+            async with c.request("get",url,allow_redirects=True,verify_ssl=False,cookies=None) as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
@@ -196,7 +196,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
         set_cache_helper(ele)
         return ele.mediatype,total
 
-async def alt_download_helper(ele,path,file_size_limit,username,model_id,progress):
+async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     async with sem:
         log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
@@ -235,28 +235,26 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
                 url=f"{base_url}{item['origname']}"
                 log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth()),timeout=  aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
-                    async with c.get(url,params=params,verify_ssl=False,allow_redirects=True) as r:
-                        if r.ok:
-                            rheaders=r.headers
-                            total = int(rheaders['Content-Length'])
-                            item["total"]=total
-                            if file_size_limit>0 and total > int(file_size_limit): 
-                                    return 'skipped', 1       
-                            temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
-                            temp.unlink(missing_ok=True)
-                            item["path"]=temp
-                            pathstr=str(temp)
-                            task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                            with open(temp, 'wb') as f:                           
-                                progress.update(task1,visible=True )
-                                async for chunk in r.content.iter_chunked(1024):
-                                    f.write(chunk)
-                                    progress.update(task1, advance=len(chunk))
-                                progress.remove_task(task1) 
-                        else:
-                            r.raise_for_status()
+                async with c.request("get",url,params=params,allow_redirects=True,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
+                    if r.ok:
+                        rheaders=r.headers
+                        total = int(rheaders['Content-Length'])
+                        item["total"]=total
+                        if file_size_limit>0 and total > int(file_size_limit): 
+                                return 'skipped', 1       
+                        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+                        temp.unlink(missing_ok=True)
+                        item["path"]=temp
+                        pathstr=str(temp)
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        with open(temp, 'wb') as f:                           
+                            progress.update(task1,visible=True )
+                            async for chunk in r.content.iter_chunked(1024):
+                                f.write(chunk)
+                                progress.update(task1, advance=len(chunk))
+                            progress.remove_task(task1) 
+                    else:
+                        r.raise_for_status()
     log.debug(f"Media:{ele.id} Post:{ele.postid} video name:{video['name']}")
     log.debug(f"Media:{ele.id} Post:{ele.postid} audio name:{audio['name']}")
     for item in [audio,video]:
@@ -268,7 +266,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
             return "skipped",1 
                 
     for item in [audio,video]:
-        key=await key_helper(item["pssh"],ele.license,ele.id)
+        key=await key_helper(c,item["pssh"],ele.license,ele.id)
         if key==None:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
@@ -307,8 +305,9 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
     set_cache_helper(ele)
     return ele.mediatype,total
 
-async def key_helper(pssh,licence_url,id):
-    out=cache.get(licence_url)
+async def key_helper(c,pssh,licence_url,id):
+    # out=cache.get(licence_url)
+    out=None
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
     if not out:
@@ -326,15 +325,14 @@ async def key_helper(pssh,licence_url,id):
 
 
                  
-        async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),timeout=aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
-            async with c.post('https://cdrm-project.com/wv',json=json_data,verify_ssl=False,allow_redirects=True) as r:
-                httpcontent=await r.text()
-                log.debug(f"ID:{id} key_response: {httpcontent}")
-                soup = BeautifulSoup(httpcontent, 'html.parser')
-                out=soup.find("li").contents[0]
-                cache.set(licence_url,out, expire=2592000)
-                cache.close()
+
+        async with c.request("post",'https://cdrm-project.com/wv',json=json_data,verify_ssl=False,allow_redirects=True,cookies=None) as r:
+            httpcontent=await r.text()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, 'html.parser')
+            out=soup.find("li").contents[0]
+            cache.set(licence_url,out, expire=2592000)
+            cache.close()
     return out
         
 
