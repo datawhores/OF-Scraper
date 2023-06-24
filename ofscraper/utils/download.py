@@ -209,7 +209,7 @@ async def alt_download_helper(ele,path,file_size_limit,username,model_id,progres
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         mpd=await ele.parse_mpd
         path_to_file = paths.trunicate(pathlib.Path(path,f'{createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.trunicate(pathlib.Path(path,f"tem{ele.id or ele.filename}.mkv"))
+        temp_path=paths.trunicate(pathlib.Path(path,f"tem{ele.id or ele.filename}.mp4"))
 
         for period in mpd.periods:
             for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
