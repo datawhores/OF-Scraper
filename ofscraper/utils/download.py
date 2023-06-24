@@ -64,7 +64,6 @@ cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
-sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
 
 async def process_dicts(username, model_id, medialist):
@@ -85,7 +84,7 @@ async def process_dicts(username, model_id, medialist):
                 else:
                     log.info("forcing all downloads")
                 file_size_limit = config_.get_filesize()
-                global sem
+      
                   
                 aws=[]
                 photo_count = 0
@@ -97,6 +96,8 @@ async def process_dicts(username, model_id, medialist):
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
             
                 
+                global sem 
+                sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
 
                 
                 for ele in medialist:
