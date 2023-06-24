@@ -18,7 +18,6 @@ import traceback
 import re
 import logging
 import aiohttp
-import httpx
 import contextvars
 import json
 import subprocess
@@ -317,7 +316,7 @@ async def key_helper(pssh,licence_url,id):
         headers["cookie"]=auth.get_cookies()
         auth.create_sign(licence_url,headers)
         json_data = {
-            'license': str(httpx.URL(licence_url)),
+            'license': licence_url,
             'headers': json.dumps(headers),
             'pssh': pssh,
             'buildInfo': '',
@@ -326,14 +325,16 @@ async def key_helper(pssh,licence_url,id):
         }
 
 
-        
-        async with httpx.AsyncClient(http2=True, follow_redirects=True, timeout=None) as c: 
-            r=await c.post('https://cdrm-project.com/wv',json=json_data)
-            log.debug(f"ID:{id} key_response: {r.content.decode()}")
-            soup = BeautifulSoup(r.content, 'html.parser')
-            out=soup.find("li").contents[0]
-            cache.set(licence_url,out, expire=2592000)
-            cache.close()
+                 
+        async with aiohttp.ClientSession(cookies=auth.add_cookies_aio(),timeout=aiohttp.ClientTimeout(total=None, connect=None,
+                      sock_connect=None, sock_read=None)) as c: 
+            async with c.post('https://cdrm-project.com/wv',json=json_data,verify_ssl=False,allow_redirects=True) as r:
+                httpcontent=await r.text()
+                log.debug(f"ID:{id} key_response: {httpcontent}")
+                soup = BeautifulSoup(httpcontent, 'html.parser')
+                out=soup.find("li").contents[0]
+                cache.set(licence_url,out, expire=2592000)
+                cache.close()
     return out
         
 
