@@ -28,7 +28,7 @@ def getselected_usernames():
     global selectedusers
     scraper_bool=len(args.posts)>0 or args.action
     #always return with correct args
-    if "None" in args.posts:
+    if "Skip" in args.posts:
         return []
     if selectedusers and scraper_bool:
             return selectedusers

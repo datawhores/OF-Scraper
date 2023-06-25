@@ -565,7 +565,7 @@ class InputApp(App):
         index=self.row_names.index("Download_Cart")
         filter_keys=list(filter(lambda x:table.get_row(x)[index].plain=="[added]",keys))
         self.update_downloadcart_cell(filter_keys,"[downloading]")
-        log.info(f"Number of Downloads Set to queue {len(filter_keys)}")
+        log.info(f"Number of Downloads sent to queue {len(filter_keys)}")
         [self.row_queue.put(ele) for ele in map(lambda x:(table.get_row(x),x),filter_keys)]
     def get_current_added_rows(self):
         table=self.query_one(DataTable)

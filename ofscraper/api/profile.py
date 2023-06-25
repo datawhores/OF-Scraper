@@ -32,7 +32,7 @@ attempt = contextvars.ContextVar("attempt")
 # can get profile from username or id
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile(username:Union[int, str]) -> dict:
-    id=cache.get(f"model_id_{username}",None)
+    id=cache.get(f"username_{username}",None)
     if id:
         return id
     headers = auth.make_headers(auth.read_auth())
@@ -48,6 +48,7 @@ def scrape_profile(username:Union[int, str]) -> dict:
         r = c.get(profileEP.format(username), timeout=None)
         if not r.is_error:
             attempt.set(0)
+            cache.set(f"username_{username}",r.json(),int(DAILY_EXPIRY/2))
             return r.json()
         elif r.status_code==404:
             return {"username":"modeldeleted"}
@@ -92,13 +93,15 @@ def print_profile_info(info):
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def get_id( username):
+    
     headers = auth.make_headers(auth.read_auth())
     with httpx.Client(http2=True, headers=headers) as c:
         url = profileEP.format(username)
-
+        id=cache.get(f"model_id_{username}",None)
+        if id:
+            return id
         auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
-
         r = c.get(url, timeout=None)
         if not r.is_error:
             id=r.json()['id']

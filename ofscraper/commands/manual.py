@@ -38,26 +38,25 @@ def manual_download(urls=None):
 
 def get_media_from_urls(urls):
     args = args_.getargs()
-    headers = auth.make_headers(auth.read_auth())
     args.dupe=True
     args_.changeargs(args)
     user_name_dict={}
     id_dict={}
-    with httpx.Client(http2=True, headers=headers) as c:
+    with httpx.Client(http2=True) as c:
         for url in url_helper(urls):
             response=get_info(url)
             model=response[0]
             postid=response[1]
             type=response[2]
             if type=="post":
-                model_id=user_name_dict.get(model) or profile.get_id(headers, model)
+                model_id=user_name_dict.get(model) or profile.get_id( model)
                 user_name_dict[model]=model_id
                 id_dict[model_id]=id_dict.get(model_id,[])+[timeline.get_individual_post(postid,client=c)]
             elif type=="msg":
                 model_id=model
                 id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
             elif type=="msg2":
-                model_id=user_name_dict.get(model) or profile.get_id(headers, model)
+                model_id=user_name_dict.get(model) or profile.get_id( model)
                 id_dict[model_id]=id_dict.get(model_id,[])+[messages_.get_individual_post(model_id,postid,client=c)]
             elif type=="unknown":
                 data=unknown_type_helper(postid,c) or {}
@@ -91,11 +90,10 @@ def unknown_type_helper(postid,client):
 
 def get_all_media(id_dict,inputtype=None):
     media_dict={}
-    headers = auth.make_headers(auth.read_auth())
 
     for model_id,value in  id_dict.items():
         temp = []
-        user_name = profile.scrape_profile(headers, model_id)['username']
+        user_name = profile.scrape_profile( model_id)['username']
         posts_array=list(map(lambda x:posts_.Post(
         x, model_id, user_name,responsetype=inputtype), value))
         [temp.extend(ele.media) for ele in posts_array]

@@ -107,10 +107,10 @@ def post_checker():
             if name_match:
                 user_name = name_match.group(1)
                 log.info(f"Getting Full Timeline for {user_name}")
-                model_id = profile.get_id(c.headers, user_name)
+                model_id = profile.get_id( user_name)
             elif name_match2:
                 user_name = name_match2.group(0)
-                model_id = profile.get_id(c.headers, user_name)
+                model_id = profile.get_id( user_name)
             else:
                 continue
         
@@ -136,11 +136,11 @@ def post_checker():
             if name_match and num_match:
                 user_name = name_match.group(1)
                 post_id=num_match.group(1)
-                model_id = profile.get_id(headers, user_name)
+                model_id = profile.get_id( user_name)
                 log.info(f"Getting Invidiual Link for {user_name}")
                 if not user_dict.get(user_name):
                     user_dict[name_match.group(1)] = {}
-                data = timeline.get_individual_post(post_id, client)
+                data = timeline.get_individual_post(post_id, c)
                 user_dict[user_name] = user_dict[user_name] or []
                 user_dict[user_name].append(data)
 
@@ -182,10 +182,10 @@ def message_checker():
         headers = auth.make_headers(auth.read_auth())
         if num_match:
             model_id = num_match.group(1)
-            user_name = profile.scrape_profile(headers, model_id)['username']
+            user_name = profile.scrape_profile( model_id)['username']
         elif name_match:
             user_name = name_match.group(0)
-            model_id = profile.get_id(headers, user_name) 
+            model_id = profile.get_id(user_name) 
         else:
             continue    
         log.info(f"Getting Messages/Paid content for {user_name}")
@@ -230,9 +230,9 @@ def purchase_checker():
     headers = auth.make_headers(auth.read_auth())
     ROWS = []
     for user_name in args.username:
-        user_name=profile.scrape_profile(headers,user_name)["username"]
+        user_name=profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
-        model_id = profile.get_id(headers, user_name)
+        model_id = profile.get_id( user_name)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
         
@@ -252,13 +252,12 @@ def purchase_checker():
 
 def stories_checker():
     user_dict = {}
-    headers = auth.make_headers(auth.read_auth())
     ROWS=[]
     for user_name in args.username:
-        user_name=profile.scrape_profile(headers,user_name)["username"]
+        user_name=profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
-        model_id = profile.get_id(headers, user_name)    
-        highlights, stories = asyncio.run(highlights_.get_highlight_post(headers, model_id))
+        model_id = profile.get_id( user_name)    
+        highlights, stories = asyncio.run(highlights_.get_highlight_post( model_id))
         highlights=list(map(lambda x:posts_.Post(
         x, model_id, user_name,"highlights"), highlights))
         stories=list(map(lambda x:posts_.Post(
@@ -285,10 +284,9 @@ def url_helper():
 
 
 def get_all_found_media(user_name, posts):
-    headers = auth.make_headers(auth.read_auth())
 
     temp = []
-    model_id = profile.get_id(headers, user_name)
+    model_id = profile.get_id( user_name)
     posts_array=list(map(lambda x:posts_.Post(
         x, model_id, user_name), posts))
     [temp.extend(ele.all_media) for ele in posts_array]
