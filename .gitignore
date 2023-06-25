@@ -138,3 +138,6 @@ dupe.json
 doc*
 source
 sphinx
+/config*
+/profile*
+*.json

@@ -255,6 +255,8 @@ def test_user_data_dc_db_str(mocker):
     }
 
    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
+   mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
    assert(str(paths.databasePathHelper("1111","test")))==str(pathlib.Path(SAVE_PATH_DEFAULT,"test","metadata","user_data.db"))
    
 
@@ -282,6 +284,8 @@ def test_createfilename(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -302,6 +306,8 @@ def test_createfilename_allkeys(mocker):
     }
 
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     try:
@@ -324,6 +330,8 @@ def test_createfilename_invalid(mocker):
     }
 
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     with pytest.raises(Exception):
@@ -343,6 +351,8 @@ def test_create_txt(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -362,6 +372,8 @@ def test_create_postid_counter(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -381,6 +393,8 @@ def test_create_postid_name(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -401,6 +415,8 @@ def test_create_postid_name2(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -427,6 +443,8 @@ def test_create_text_counter(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -450,6 +468,8 @@ def test_create_text_name(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -470,6 +490,8 @@ def test_create_text_name2(mocker):
         "filter": FILTER_DEFAULT
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
@@ -512,6 +534,8 @@ def test_metadatesavelocation(mocker):
     }
         
     mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+
     username="test"
     id="111"
     assert(str(paths.databasePathHelper(id,username)))==str(pathlib.Path(SAVE_LOCATION_DC,"test","metadata","user_data.db"))

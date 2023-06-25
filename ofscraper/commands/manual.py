@@ -90,8 +90,11 @@ def unknown_type_helper(postid,client):
 
 def get_all_media(id_dict,inputtype=None):
     media_dict={}
+    
 
     for model_id,value in  id_dict.items():
+        if model_id==None:
+            continue
         temp = []
         user_name = profile.scrape_profile( model_id)['username']
         posts_array=list(map(lambda x:posts_.Post(
