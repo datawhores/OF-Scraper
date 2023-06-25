@@ -90,6 +90,7 @@ def getmediadir(ele,username,model_id):
     model_username=username
     responsetype=ele.responsetype
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
+    profile=profiles.get_active_profile()
     if config_.get_allow_code_execution(config_.read_config()):
         downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
     else:
@@ -105,6 +106,7 @@ def getmediadir(ele,username,model_id):
                 responsetype=responsetype,
                 mediatype=mediatype,
                 date=date,
+                profile=profile,
                 value=value)
         
     return root /downloadDir  
@@ -298,11 +300,26 @@ def createfilename(ele,username,model_id,ext):
     date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
     model_username=username
     responsetype=ele.responsetype
+    profile=profiles.get_active_profile(),
+
 
     if ele.responsetype_ =="profile":
         return f"{filename}.{ext}"
     elif config_.get_allow_code_execution(config_.read_config()):
         return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
     else:
-        return config_.get_fileformat(config_.read_config()).format(filename=filename,sitename=sitename,site_name=sitename,post_id=post_id,media_id=media_id,first_letter=first_letter,mediatype=mediatype,value=value,text=text,date=date,ext=ext,model_username=username,model_id=model_id,responsetype=responsetype) 
+        return config_.get_fileformat(config_.read_config()).format(filename=filename,
+                                                                    sitename=sitename,
+                                                                    site_name=sitename,post_id=post_id,
+                                                                    media_id=media_id,
+                                                                    first_letter=first_letter,
+                                                                    mediatype=mediatype,
+                                                                    value=value,
+                                                                    text=text,
+                                                                    date=date,
+                                                                    ext=ext,
+                                                                    model_username=username,
+                                                                    model_id=model_id,
+                                                                    responsetype=responsetype,
+                                                                    profile=profile) 
 
