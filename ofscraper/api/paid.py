@@ -81,6 +81,7 @@ async def get_paid_posts(username,model_id):
     log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(output)} found")
     # set purchash check values during scan
     cache.set(f"purchased_check_{model_id}",output,expire=constants.CHECK_EXPIRY)
+    cache.close()
     return output
 
 
@@ -173,6 +174,7 @@ async def get_all_paid_posts():
         unduped.append(post)
     log.debug(f"[bold]Paid Post count[/bold] {len(unduped)} found")
     cache.set(f"purchased_all",output,expire=constants.RESPONSE_EXPIRY)
+    cache.close()
     return unduped
 
 

@@ -21,7 +21,6 @@ import ofscraper.api.paid as paid
 import ofscraper.api.highlights as highlights
 import ofscraper.api.timeline as timeline
 import ofscraper.api.profile as profile
-import ofscraper.utils.auth as auth
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout

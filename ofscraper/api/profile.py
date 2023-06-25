@@ -14,7 +14,7 @@ from typing import Union
 import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
-from ..constants import profileEP,NUM_TRIES,DAILY_EXPIRY
+from ..constants import profileEP,NUM_TRIES,HOURLY_EXPIRY,DAILY_EXPIRY
 from ..utils import auth, encoding
 from xxhash import xxh128
 from diskcache import Cache
@@ -48,7 +48,8 @@ def scrape_profile(username:Union[int, str]) -> dict:
         r = c.get(profileEP.format(username), timeout=None)
         if not r.is_error:
             attempt.set(0)
-            cache.set(f"username_{username}",r.json(),int(DAILY_EXPIRY/2))
+            cache.set(f"username_{username}",r.json(),int(HOURLY_EXPIRY*2))
+            cache.close()
             return r.json()
         elif r.status_code==404:
             return {"username":"modeldeleted"}
@@ -106,6 +107,7 @@ def get_id( username):
         if not r.is_error:
             id=r.json()['id']
             cache.set(f"model_id_{username}",id,DAILY_EXPIRY)
+            cache.close()
             return id
         
         r.raise_for_status()

@@ -128,6 +128,8 @@ def post_checker():
                     archive.get_archived_post( model_id)))
                 cache.set(
                     f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+                cache.close()
+                
 
         # individual links
         for ele in list(filter(lambda x: re.search(f"onlyfans.com/{constants.NUMBER_REGEX}+/{constants.USERNAME_REGEX}+$", x), links)):
@@ -219,6 +221,7 @@ def message_checker():
                 id_set.add(ele.id)
         downloaded = get_downloaded(user_name, model_id,True)
         ROWS.extend(row_gather(unduped, downloaded, user_name))
+    
     reset_url()
     set_count(ROWS)
     thread_starters(ROWS)

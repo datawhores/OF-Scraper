@@ -14,7 +14,6 @@ import logging
 import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts 
 import ofscraper.utils.binaries as binaries
-import ofscraper.utils.args as args_
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
 

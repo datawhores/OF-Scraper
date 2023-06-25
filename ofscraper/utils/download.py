@@ -58,7 +58,7 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 from diskcache import Cache
-
+import ofscraper.api.me as me
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
@@ -76,6 +76,7 @@ async def process_dicts(username, model_id, medialist):
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         global sem
         sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
+     
 
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
                 if not args_.getargs().dupe:
@@ -99,9 +100,9 @@ async def process_dicts(username, model_id, medialist):
               
                 async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
                       sock_connect=None, sock_read=None)) as c: 
+                    i=0
                     for ele in medialist:
-                        with paths.set_directory(paths.getmediadir(ele,username,model_id)):
-                            aws.append(asyncio.create_task(download(c,ele,pathlib.Path(".").absolute() ,model_id, username,file_size_limit,job_progress)))
+                        aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit,job_progress)))
                     task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(aws),visible=True)
                     # progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
                     for coro in asyncio.as_completed(aws):
@@ -133,16 +134,16 @@ def retry_required(value):
     return value == ('skipped', 1)
 
 @retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def download(c,ele,path,model_id,username,file_size_limit,progress):
-    attempt.set(attempt.get(0) + 1)
-    
+async def download(c,ele,model_id,username,file_size_limit,progress):
+    attempt.set(attempt.get(0) + 1)  
     try:
-        if ele.url:
-           return await main_download_helper(c,ele,path,file_size_limit,username,model_id,progress)
-        elif ele.mpd:
-            return await alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress)
-        else:
-            return None
+            with paths.set_directory(paths.getmediadir(ele,username,model_id)):
+                if ele.url:
+                    return await main_download_helper(c,ele,pathlib.Path(".").absolute(),file_size_limit,username,model_id,progress)
+                elif ele.mpd:
+                    return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),file_size_limit,username,model_id,progress)
+                else:
+                    return None
     except Exception as e:
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   

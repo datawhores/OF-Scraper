@@ -9,6 +9,8 @@ r"""
 """
 
 import logging
+from functools import lru_cache
+import json
 import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
@@ -16,25 +18,39 @@ import ofscraper.constants as constants
 import ofscraper.utils.auth as auth
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.stdout as stdout
-from ofscraper.utils.logger import updateSenstiveDict
+import ofscraper.utils.logger as logger
+import ofscraper.constants as constants
+import ofscraper.utils.paths as paths
 log=logging.getLogger(__package__)
 console=Console()
 
+from diskcache import Cache
+
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),reraise=True,after=lambda retry_state:print(f"Trying to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}")) 
 def scrape_user(headers):
-    with httpx.Client(http2=True, headers=headers) as c:
-        url = constants.meEP
+    return _scraper_user_helper(json.dumps(headers))
 
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            updateSenstiveDict(r.json()["id"],"userid")
-            updateSenstiveDict(r.json()["username"],"username")
-            updateSenstiveDict(r.json()["name"],"name")
-            return r.json()
-        r.raise_for_status()
 
+@lru_cache(maxsize=None)
+def _scraper_user_helper(headers):
+    headers = json.loads(headers)
+    cache = Cache(paths.getcachepath())
+    data=cache.get(f"myinfo_{headers['user-id']}",None)
+    if not data:
+        with httpx.Client(http2=True, headers=headers) as c:
+            url = constants.meEP
+            auth.add_cookies(c)
+            c.headers.update(auth.create_sign(url, headers))
+            r = c.get(url, timeout=None)
+            if not r.is_error:
+                data=r.json()
+            r.raise_for_status()
+    cache.set(f"myinfo_{headers['user-id']}",data,constants.HOURLY_EXPIRY)
+    cache.close()
+    logger.updateSenstiveDict(data["id"],"userid")
+    logger.updateSenstiveDict(data["username"],"username")
+    logger.updateSenstiveDict(data["name"],"name")
+    return data
 
 def parse_user(profile):
     name = encoding.encode_utf_16(profile['name'])

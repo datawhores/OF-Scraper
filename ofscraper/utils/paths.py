@@ -16,11 +16,15 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.console as console_
 from .profiles import get_current_config_profile
+import ofscraper.api.me as me
+
 
 
 console=console_.shared_console
 homeDir=pathlib.Path.home()
 log=logging.getLogger(__package__)
+
+
 
 
 @contextmanager
@@ -54,12 +58,14 @@ def databasePathHelper(model_id,username):
     model_username=username
     username=username
     modelusername=username
-    modelusername=username
     model_id=model_id
     sitename="Onlyfans"
     site_name="Onlyfans"
     first_letter=username[0]
+
     save_location=config_.get_save_location(config_.read_config())
+    my_profile = profiles.get_my_info()
+    my_id, my_username =me.parse_user(my_profile)
     if config_.get_allow_code_execution(config_.read_config()):
         formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
     else:
@@ -71,7 +77,9 @@ def databasePathHelper(model_id,username):
                          sitename=site_name,
                          site_name=site_name,
                          first_letter=first_letter,
-                         save_location=save_location,
+                        save_location=save_location,
+                                        my_id=my_id, 
+                        my_username=my_username,
                          configpath=configpath)
 
 
@@ -91,6 +99,8 @@ def getmediadir(ele,username,model_id):
     responsetype=ele.responsetype
     root= pathlib.Path((config_.get_save_location(config_.read_config())))
     profile=profiles.get_active_profile()
+    my_profile = profiles.get_my_info()
+    my_id, my_username =me.parse_user(my_profile)
     if config_.get_allow_code_execution(config_.read_config()):
         downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
     else:
@@ -106,11 +116,55 @@ def getmediadir(ele,username,model_id):
                 responsetype=responsetype,
                 mediatype=mediatype,
                 date=date,
+                      my_id=my_id, 
+                        my_username=my_username,
                 profile=profile,
                 value=value)
         
     return root /downloadDir  
 
+
+
+def createfilename(ele,username,model_id,ext):
+    filename=ele.filename_
+    sitename="Onlyfans"
+    site_name="Onlyfans"
+    user=me
+    post_id=ele.postid_
+    media_id=ele.id
+    first_letter=username[0]
+    mediatype=ele.mediatype
+    value=ele.value
+    text=ele.text_
+    date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
+    model_username=username
+    responsetype=ele.responsetype
+    profile=profiles.get_active_profile()
+    my_profile = profiles.get_my_info()
+    my_id, my_username =me.parse_user(my_profile)
+   
+
+    if ele.responsetype_ =="profile":
+        return f"{filename}.{ext}"
+    elif config_.get_allow_code_execution(config_.read_config()):
+        return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
+    else:
+        return config_.get_fileformat(config_.read_config()).format(filename=filename,
+                                                                    sitename=sitename,
+                                                                    site_name=sitename,post_id=post_id,
+                                                                    media_id=media_id,
+                                                                    first_letter=first_letter,
+                                                                    mediatype=mediatype,
+                                                                    value=value,
+                                                                    text=text,
+                                                                    date=date,
+                                                                    ext=ext,
+                                                                    model_username=username,
+                                                                    model_id=model_id,
+                                                                    responsetype=responsetype,
+                                                                          my_id=my_id, 
+                                                                my_username=my_username,
+                                                                    profile=profile) 
 
 
 
@@ -286,40 +340,3 @@ def get_auth_file():
 
     
    
-
-def createfilename(ele,username,model_id,ext):
-    filename=ele.filename_
-    sitename="Onlyfans"
-    site_name="Onlyfans"
-    post_id=ele.postid_
-    media_id=ele.id
-    first_letter=username[0]
-    mediatype=ele.mediatype
-    value=ele.value
-    text=ele.text_
-    date=arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
-    model_username=username
-    responsetype=ele.responsetype
-    profile=profiles.get_active_profile(),
-
-
-    if ele.responsetype_ =="profile":
-        return f"{filename}.{ext}"
-    elif config_.get_allow_code_execution(config_.read_config()):
-        return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
-    else:
-        return config_.get_fileformat(config_.read_config()).format(filename=filename,
-                                                                    sitename=sitename,
-                                                                    site_name=sitename,post_id=post_id,
-                                                                    media_id=media_id,
-                                                                    first_letter=first_letter,
-                                                                    mediatype=mediatype,
-                                                                    value=value,
-                                                                    text=text,
-                                                                    date=date,
-                                                                    ext=ext,
-                                                                    model_username=username,
-                                                                    model_id=model_id,
-                                                                    responsetype=responsetype,
-                                                                    profile=profile) 
-

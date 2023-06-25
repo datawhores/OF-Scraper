@@ -18,10 +18,26 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.constants as constants
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.args as args_
+
+
 log=logging.getLogger(__package__)
 console=Console()
+currentData=None
+currentProfile=None
 
+       
 
+def get_my_info():
+    global currentData
+    global currentProfile
+    if currentProfile==get_active_profile():
+        return currentData
+    else:
+        import ofscraper.utils.auth as auth_
+        import ofscraper.api.me as me
+        currentProfile=get_active_profile()
+        currentData= me.scrape_user(  auth_.make_headers(auth_.read_auth()))
+    return currentData
 
 
 
