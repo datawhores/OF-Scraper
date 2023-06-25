@@ -97,7 +97,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
     headers=auth.make_headers(auth.read_auth())
     headers=auth.create_sign(url, headers)
-    async with c.request("get",url,cookies=auth.add_cookies_aio(),headers=headers) as r:
+    async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
         sem.release()
         if r.ok:
             data=await r.json()
@@ -189,7 +189,7 @@ async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} offset={offset}",visible=True)
     headers=auth.make_headers(auth.read_auth())
     headers=auth.create_sign(url, headers)
-    async with c.request("get",url,cookies=auth.add_cookies_aio(),headers=headers) as r:
+    async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
         sem.release()
         if r.ok:
             attempt.set(0) 

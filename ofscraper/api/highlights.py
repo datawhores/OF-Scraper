@@ -73,8 +73,8 @@ async def scrape_highlights( c,user_id,job_progress) -> list:
 
     url_stories = constants.highlightsWithStoriesEP.format(user_id)
     url_story = constants.highlightsWithAStoryEP.format(user_id)
-    r_one=await c.request("get",url_story ,cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_story , headers))
-    r_multiple=await c.request("get",url_stories ,cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_stories , headers))
+    r_one=await c.request("get",url_story ,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_story , headers))
+    r_multiple=await c.request("get",url_stories ,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_stories , headers))
     
     # highlights_, stories
     sem.release()

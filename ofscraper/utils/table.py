@@ -172,7 +172,6 @@ class PriceField(Horizontal):
             else:
                 super().insert_text_at_cursor(text)
 
-
 class TimeField(Horizontal):
     def __init__(self, name: str) -> None:
         super().__init__(id=name)
@@ -441,6 +440,17 @@ class InputApp(App):
         added= self.get_current_added_rows()
         self.sort_helper(event.label.plain)
         self.restore_added_rows(added)
+      
+        # set reverse
+        # use native python sorting until textual has key support
+
+    def on_data_table_cell_selected(self, event):
+        table = self.query_one(DataTable) 
+        cursor_coordinate = table.cursor_coordinate
+        if cursor_coordinate[1]==self.row_names.index("Download_Cart"):
+            self.change_download_cart(event.coordinate)
+        
+
       
         # set reverse
         # use native python sorting until textual has key support

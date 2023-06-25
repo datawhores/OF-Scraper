@@ -58,7 +58,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
         headers=auth.make_headers(auth.read_auth())
         headers=auth.create_sign(url, headers)
-        async with c.request("get",url,cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
             if r.ok:
                 progress.remove_task(task)
                 posts = (await r.json())['list']
