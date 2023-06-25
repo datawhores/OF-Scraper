@@ -1,6 +1,6 @@
 import re
 import logging
-import httpx
+import aiohttp
 import arrow
 from ..constants import LICENCE_URL
 import ofscraper.utils.args as args_
@@ -368,15 +368,15 @@ class Media():
     async def parse_mpd(self): 
         if not self.mpd:
             return
-        headers = auth.make_headers(auth.read_auth())
+      
         params={"Policy":self.policy,"Key-Pair-Id":self.keypair,"Signature":self.signature}
-        async with httpx.AsyncClient(http2=True, headers=headers,params=params) as c:
-            auth.add_cookies(c)
-            c.headers.update(auth.create_sign(self.mpd, headers))
-            r = await c.get(self.mpd, timeout=None)
-            if r.status_code!=200:
-                return None
-            return MPEGDASHParser.parse(r.content.decode())
+        async with aiohttp.ClientSession() as session:
+            headers=auth.make_headers(auth.read_auth())
+            headers=auth.create_sign(self.mpd, headers) 
+            async with session.request("get",self.mpd,headers=headers,params=params) as r:
+                if not r.ok:
+                    return None
+                return MPEGDASHParser.parse(await r.text())
     @property
     def license(self):
         if not self.mpd:
