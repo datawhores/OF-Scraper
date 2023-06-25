@@ -13,7 +13,7 @@ import time
 import logging
 from typing import Union
 import asyncio
-import httpx
+import aiohttp
 
 from tenacity import retry,stop_after_attempt,wait_random
 
@@ -99,41 +99,39 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
     global sem
     sem.delay=3
     with Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}"),BarColumn(),MofNCompleteColumn(),console=console.shared_console) as overall_progress:
-        tasks=[]
-        task1=overall_progress.add_task(f"{title} posts...\n",total=len(ids))
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
+                      sock_connect=None, sock_read=None)) as c: 
+            tasks=[]
+            task1=overall_progress.add_task(f"{title} posts...\n",total=len(ids))
 
-        [tasks.append(asyncio.create_task(_like_request(headers,id,model_id,username)))
-            for id in ids]
-        for count,coro in enumerate(asyncio.as_completed(tasks)):
-                id=await coro
-                log.debug(f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action")
-                if count+1%60==0 and count+1%50==0:
-                    sem.delay=15
-                elif count+1%60==0:
-                    sem.delay=3
-                elif count+1%50==0:
-                    sem.delay=30  
-                 
-                overall_progress.update(task1,advance=1,refresh=True)
+            [tasks.append(asyncio.create_task(_like_request(c,id,model_id)))
+                for id in ids]
+            for count,coro in enumerate(asyncio.as_completed(tasks)):
+                    id=await coro
+                    log.debug(f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action")
+                    if count+1%60==0 and count+1%50==0:
+                        sem.delay=15
+                    elif count+1%60==0:
+                        sem.delay=3
+                    elif count+1%50==0:
+                        sem.delay=30  
+                    
+                    overall_progress.update(task1,advance=1,refresh=True)
 
         
         
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def _like_request(headers,id,model_id,username):
+async def _like_request(c,id,model_id):
     async with sem:
-        with httpx.Client(http2=True, headers=headers) as c:
-            url = favoriteEP.format(id, model_id)
-            auth.add_cookies(c)
-            c.headers.update(auth.create_sign(url, headers))
-            r = c.post(url)
-    
-            if not r.is_error or r.status_code == 400:
-                return id
-                     
-            
-            log.debug(f"[bold]timeline request status code:[/bold]{r.status_code}")
-            log.debug(f"[bold]timeline response:[/bold] {r.content.decode()}")
+        url = favoriteEP.format(id, model_id)
+        headers=auth.make_headers(auth.read_auth())
+        headers=auth.create_sign(url, headers)
+        async with c.request("post",url,cookies=auth.add_cookies_aio(),headers=headers) as r:
+            if r.ok:
+                return id                  
+            log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
+            log.debug(f"[bold]timeline response:[/bold] {await r.text()}")
             log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
             r.raise_for_status()
 
