@@ -6,6 +6,7 @@ from ..constants import LICENCE_URL
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
+import ofscraper.constants as constants
 import ofscraper.utils.config as config
 
 
@@ -370,7 +371,8 @@ class Media():
             return
       
         params={"Policy":self.policy,"Key-Pair-Id":self.keypair,"Signature":self.signature}
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
+                                    sock_connect=None, sock_read=None)) as session:
             headers=auth.make_headers(auth.read_auth())
             headers=auth.create_sign(self.mpd, headers) 
             async with session.request("get",self.mpd,headers=headers,params=params) as r:
