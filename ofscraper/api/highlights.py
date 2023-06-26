@@ -45,7 +45,7 @@ async def get_highlight_post(model_id):
     global tasks
     tasks=[]
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None)) as c: 
             tasks.append(asyncio.create_task(scrape_highlights(c,model_id,job_progress)))
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
