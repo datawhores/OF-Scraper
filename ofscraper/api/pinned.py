@@ -96,7 +96,7 @@ async def get_pinned_post(model_id):
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                                    sock_connect=None, sock_read=None)) as c: 
+                                    sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
             tasks.append(asyncio.create_task(scrape_pinned_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
         
 

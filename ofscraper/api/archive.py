@@ -109,8 +109,9 @@ async def get_archived_post(model_id):
     responseArray=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+        
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                            sock_connect=None, sock_read=None)) as c: 
+                            sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.AlT_SEM)) as c: 
 
             oldarchived=cache.get(f"archived_{model_id}",default=[])
             oldtimeset=set(map(lambda x:x.get("id"),oldarchived))

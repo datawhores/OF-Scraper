@@ -372,7 +372,7 @@ class Media():
       
         params={"Policy":self.policy,"Key-Pair-Id":self.keypair,"Signature":self.signature}
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                                    sock_connect=None, sock_read=None)) as session:
+                                    sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as session:
             headers=auth.make_headers(auth.read_auth())
             headers=auth.create_sign(self.mpd, headers) 
             async with session.request("get",self.mpd,headers=headers,params=params) as r:

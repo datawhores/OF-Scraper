@@ -60,7 +60,7 @@ async def get_messages(model_id):
     min_posts=50
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
+                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
             oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
             oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
             log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
