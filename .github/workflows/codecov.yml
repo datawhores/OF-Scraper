@@ -22,7 +22,7 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install dependencies
-        run: poetry install --with test
+        run: pip install .
       - name: install coverage
         run: poetry add coverage
       - name: install coverage    
