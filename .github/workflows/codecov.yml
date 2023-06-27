@@ -23,8 +23,10 @@ jobs:
           poetry-version: 1.4.1
       - name: Install dependencies
         run: poetry install --with test
-      - name: Run tests and collect coverage
+      - name: install coverage
         run: poetry add coverage
+      - name: install coverage
+    
         run: pip install coverage
       - name:  run coverage  
         run: coverage run -m pytest
