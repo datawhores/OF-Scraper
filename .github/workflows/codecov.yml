@@ -31,7 +31,9 @@ jobs:
     
         run: pip install pytest
       - name: install dunamai   
-        run: pip install dunamai       
+        run: pip install dunamai
+      - name: install pytest-check 
+        run: pip install pytest-check    
       - name:  run coverage  
         run: coverage run -m pytest
       - name: Upload coverage to Codecov
