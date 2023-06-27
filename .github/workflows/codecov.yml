@@ -25,12 +25,13 @@ jobs:
         run: poetry install --with test
       - name: install coverage
         run: poetry add coverage
-      - name: install coverage
-    
+      - name: install coverage    
         run: pip install coverage
       - name: install pytest
     
-        run: pip install pytest      
+        run: pip install pytest
+      - name: install dunamai   
+        run: pip install dunamai       
       - name:  run coverage  
         run: coverage run -m pytest
       - name: Upload coverage to Codecov
