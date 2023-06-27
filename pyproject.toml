@@ -53,6 +53,10 @@ random-emoji = "^1.0.15"
 [tool.poetry.group.docs.dependencies]
 sphinx-argparse = "^0.4.0"
 
+
+[tool.poetry.group.testing.dependencies]
+coverage = "^7.2.7"
+
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
