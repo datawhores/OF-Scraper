@@ -28,6 +28,9 @@ jobs:
       - name: install coverage
     
         run: pip install coverage
+      - name: install pytest
+    
+        run: pip install pytest      
       - name:  run coverage  
         run: coverage run -m pytest
       - name: Upload coverage to Codecov
