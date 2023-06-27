@@ -25,6 +25,7 @@ jobs:
         run: poetry install --with test
       - name: Run tests and collect coverage
         run: poetry add coverage
+        run: pip install coverage
       - name:  run coverage  
         run: coverage run -m pytest
       - name: Upload coverage to Codecov
