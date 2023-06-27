@@ -108,7 +108,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
             log.debug(f"offset:{offset} -> hasmore value in json {data.get('hasMore','undefined') }")
             if  data.get("hasMore"):
                 offset += len(media)
-                tasks.append(asyncio.create_task(scrape_paid(username,job_progress,offset=offset)))
+                tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress,offset=offset)))
             job_progress.remove_task(task)
 
         else:

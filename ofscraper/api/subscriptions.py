@@ -11,7 +11,7 @@ r"""
 import asyncio
 from itertools import chain
 import logging
-import httpx
+import aiohttp
 from rich.console import Console
 import arrow
 console=Console()
@@ -30,17 +30,16 @@ async def get_subscriptions(headers, subscribe_count):
 
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_subscriptions(headers, offset=500) -> list:
-    async with httpx.AsyncClient(http2=True, headers=headers) as c:
+async def scrape_subscriptions(headers, offset=0) -> list:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,sock_connect=None, sock_read=None)) as c: 
         url = subscriptionsEP.format(offset)
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-
-        r = await c.get(subscriptionsEP.format(offset), timeout=None)
-        if not r.is_error:
-            subscriptions = r.json()
-            return subscriptions
-        r.raise_for_status()
+        headers=auth.make_headers(auth.read_auth())
+        headers=auth.create_sign(url, headers)
+        async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
+            if r.ok:
+                subscriptions = await r.json()
+                return subscriptions
+            r.raise_for_status()
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()
