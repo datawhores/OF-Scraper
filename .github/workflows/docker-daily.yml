@@ -48,7 +48,7 @@ jobs:
       
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata
+      - name: Extract Docker metadata for Docker Hub
         id: meta
         uses: docker/metadata-action@v4
         with:
@@ -60,7 +60,7 @@ jobs:
 
       
       
-      - name: push to image
+      - name: push to image Docker Hub
         id: build-and-push
         uses: docker/build-push-action@v4
         with:
@@ -71,16 +71,16 @@ jobs:
           push: true
           
           
-      - name: cosign-installer
+      - name: cosign-installer Docker Hub
         uses: sigstore/cosign-installer@v3.0.5
         
-      - name: Write signing key to disk
+      - name: Write signing key to disk Docker Hub
         run: 'echo "$KEY" > cosign.key'
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
       
-      - name: Sign the published Docker image
+      - name: Sign the published Docker image Docker Hub
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
@@ -108,7 +108,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN}}
           # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
-      - name: Extract Docker metadata
+      - name: Extract Docker metadata ghrc.io
         id: meta2
         uses: docker/metadata-action@v4
         with:
@@ -118,7 +118,7 @@ jobs:
             type=raw,value={{branch}}
             type=raw,value={{branch}}-{{sha}}
 
-      - name: push to image
+      - name: push to image ghrc.io
         id: build-and-push2
         uses: docker/build-push-action@v4
         with:
