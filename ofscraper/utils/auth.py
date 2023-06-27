@@ -99,7 +99,7 @@ def make_auth( auth=None):
     browserSelect=browser_prompt()
 
     auth= auth or defaultAuth
-    if  browserSelect!="Enter Each Field Manually" and browserSelect!="Paste From Cookie Helper":
+    if  browserSelect!="Enter Each Field Manually" and browserSelect!="Paste From M-rcus\' OnlyFans-Cookie-Helper":
         temp=requests.utils.dict_from_cookiejar(getattr(browser_cookie3, browserSelect.lower())(domain_name="onlyfans"))
         auth=auth or  defaultAuth
         for key in ["sess","auth_id","auth_uid_"]:
@@ -111,7 +111,7 @@ def make_auth( auth=None):
 
 
  
-    elif browserSelect=="Paste From Cookie Helper":
+    elif browserSelect=="Paste From M-rcus\' OnlyFans-Cookie-Helper":
         auth=auth_full_paste()
         auth["auth"]["app-token"]="33d57ade8c02dbc5a333db99ff9ae26a"
         for key in ["username","support_2fa","active","email","password","hashed"]:

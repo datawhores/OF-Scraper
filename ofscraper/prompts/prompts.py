@@ -185,11 +185,12 @@ def browser_prompt()->str:
             {
                 'type': 'list',
                 'message':msg ,
-                'choices':["Enter Each Field Manually","Paste From Cookie Helper", Separator(line="-----------\nBrowser Extractions"),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
+                'choices':["Enter Each Field Manually","Paste From M-rcus\' OnlyFans-Cookie-Helper", Separator(line="-----------\nBrowser Extractions"),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
                 "default":"Enter Each Field Manually",
 
             }
         ]
+        
 
     else:
         console.print("\nNote:To enable automatic extraction install ofscraper with python 3.9 or 3.10\n\n")
