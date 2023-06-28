@@ -10,6 +10,8 @@ r"""
 import asyncio
 import aiohttp
 import logging
+import ssl
+import certifi
 import contextvars
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
@@ -136,7 +138,7 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
     async with sem:
         headers=auth.make_headers(auth.read_auth())
         headers=auth.create_sign(url, headers)
-        async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
             task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Message ID-> {message_id if message_id else 'initial'}")
             
             if r.ok:

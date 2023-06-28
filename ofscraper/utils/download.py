@@ -14,6 +14,8 @@ import pathlib
 from random import randint
 import platform
 import shutil
+import ssl
+import certifi
 import traceback
 import re
 import logging
@@ -154,7 +156,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
     async with sem:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-            async with c.request("get",url,allow_redirects=True,verify_ssl=False,cookies=None) as r:
+            async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None) as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
@@ -236,7 +238,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
                 url=f"{base_url}{item['origname']}"
                 log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                async with c.request("get",url,params=params,allow_redirects=True,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
+                async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
                     if r.ok:
                         rheaders=r.headers
                         total = int(rheaders['Content-Length'])
@@ -326,7 +328,7 @@ async def key_helper(c,pssh,licence_url,id):
 
                  
 
-        async with c.request("post",'https://cdrm-project.com/wv',json=json_data,verify_ssl=False,allow_redirects=True,cookies=None) as r:
+        async with c.request("post",'https://cdrm-project.com/wv',json=json_data,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True,cookies=None) as r:
             httpcontent=await r.text()
             log.debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')

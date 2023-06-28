@@ -10,6 +10,8 @@ r"""
 
 import asyncio
 from itertools import chain
+import ssl
+import certifi
 import logging
 import aiohttp
 from rich.console import Console
@@ -35,7 +37,7 @@ async def scrape_subscriptions(headers, offset=0) -> list:
         url = subscriptionsEP.format(offset)
         headers=auth.make_headers(auth.read_auth())
         headers=auth.create_sign(url, headers)
-        async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
             if r.ok:
                 subscriptions = await r.json()
                 return subscriptions

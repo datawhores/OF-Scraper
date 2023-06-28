@@ -12,6 +12,8 @@ import asyncio
 import logging
 import contextvars
 import aiohttp
+import ssl
+import certifi
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -73,8 +75,8 @@ async def scrape_highlights( c,user_id,job_progress) -> list:
 
     url_stories = constants.highlightsWithStoriesEP.format(user_id)
     url_story = constants.highlightsWithAStoryEP.format(user_id)
-    r_one=await c.request("get",url_story ,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_story , headers))
-    r_multiple=await c.request("get",url_stories ,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_stories , headers))
+    r_one=await c.request("get",url_story ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_story , headers))
+    r_multiple=await c.request("get",url_stories ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_stories , headers))
     
     # highlights_, stories
     sem.release()

@@ -11,6 +11,8 @@ r"""
 import random
 import time
 import logging
+import ssl
+import certifi
 from typing import Union
 import asyncio
 import aiohttp
@@ -127,7 +129,7 @@ async def _like_request(c,id,model_id):
         url = favoriteEP.format(id, model_id)
         headers=auth.make_headers(auth.read_auth())
         headers=auth.create_sign(url, headers)
-        async with c.request("post",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with c.request("post",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
             if r.ok:
                 return id                  
             log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
