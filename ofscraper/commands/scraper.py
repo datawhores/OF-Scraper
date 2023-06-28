@@ -161,8 +161,8 @@ def normal_post_process():
         userdata=userselector.getselected_usernames() if "None" not in args.posts else []
         length=len(userdata)
         for count,ele in enumerate(userdata):
-            log.debug(f"Getting content+downloading {count+1}/{length} model")
             if args.posts:
+                log.info(f"Progress {count+1}/{length} model")
                 log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
             try:
                 model_id = profile.get_id( ele["name"])
