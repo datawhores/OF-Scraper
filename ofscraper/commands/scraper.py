@@ -56,16 +56,21 @@ def process_prompts():
         if result_main_prompt == 0:
             check_auth()
             check_config()
-            process_post()     
+            run(process_post)
+
 
         # like a user's posts
         elif result_main_prompt == 1:
-            check_auth()
-            process_like()
+            check_auth()  
+            check_config()
+            run(process_like)
+
         # Unlike a user's posts
         elif result_main_prompt == 2:
-            check_auth()
-            process_unlike()
+            check_auth()  
+            check_config()
+            run(process_unlike)
+
         
         elif result_main_prompt == 3:
             # Edit `auth.json` file
@@ -125,7 +130,7 @@ def process_post_user_first():
         init.print_sign_status(headers)
         if args.users_first:
             output=[]
-            userdata=userselector.getselected_usernames()
+            userdata=userselector.getselected_usernames(rescan=False)
             length=len(userdata)
             for count,ele in enumerate(userdata):
                 log.debug(f"getting content for {count+1}/{length} model")
@@ -158,7 +163,7 @@ def normal_post_process():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        userdata=userselector.getselected_usernames() if "None" not in args.posts else []
+        userdata=userselector.getselected_usernames(rescan=False)
         length=len(userdata)
         for count,ele in enumerate(userdata):
             if args.posts:
@@ -202,7 +207,7 @@ def process_like():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        userdata=userselector.getselected_usernames()
+        userdata=userselector.getselected_usernames(rescan=False)
         with stdout.lowstdout():
             for ele in list(filter(lambda x: x["active"],userdata)):
                     model_id = profile.get_id( ele["name"])
@@ -219,7 +224,7 @@ def process_unlike():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        userdata=userselector.getselected_usernames()
+        userdata=userselector.getselected_usernames(rescan=False)
         with stdout.lowstdout():
             for ele in list(filter(lambda x: x["active"],userdata)):
                     model_id = profile.get_id( ele["name"])
@@ -243,8 +248,6 @@ def set_schedule(*functs):
 def run(*functs):
     # get usernames prior to potentially supressing output
     check_auth()
-    userselector.getselected_usernames()
-   
     if args.output=="PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")    
     if args.daemon:
@@ -254,18 +257,25 @@ def run(*functs):
 
 def run_helper(*functs):
     # run each function once
-    [funct() for funct in functs]    
-    if args.daemon:
-        global jobqueue
-        jobqueue=queue.Queue()
+    global jobqueue
+    jobqueue=queue.Queue()
+    [jobqueue.put(funct) for funct in functs]
+    if args.daemon:   
         worker_thread = threading.Thread(target=set_schedule,args=[*functs])
         worker_thread.start()
         # Check if jobqueue has function
         while True:
+            log.debug(schedule.jobs)
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
-            log.debug(schedule.jobs)
+            userselector.getselected_usernames(rescan=True)
+            
+            #update selected user
+    else:
+        userselector.getselected_usernames(rescan=True,reset=True)
+        [(jobqueue.get())() for funct in functs]
+            
                 
 def check_auth():
     status=None

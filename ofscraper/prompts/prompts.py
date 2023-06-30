@@ -585,7 +585,7 @@ def reset_username_prompt() -> bool:
         {
             'type': 'list',
             'name': name,
-            'message': "Do you want to reset username option",
+            'message': "Do you want to reset username selection",
             'choices':["Yes","No"]
         }
     ]
@@ -736,7 +736,7 @@ def model_selector(models,selected=None) -> bool:
     )
         
     answers=p.execute()
-    return answers,p
+    return list(map(lambda x:x["name"],answers)),p
         
 
 def model_selectorHelper(count,x):

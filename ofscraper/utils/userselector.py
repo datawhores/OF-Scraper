@@ -18,56 +18,49 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.stdout as stdout
 
 
-selectedusers=None
+parsed_subscriptions=None
 log=logging.getLogger(__package__)
 args=args_.getargs()
 
-def getselected_usernames():
-    #username list will be retrived once per daemon run
-    # manual prompt will need to recertify options every call
-    global selectedusers
-    scraper_bool=len(args.posts)>0 or args.action
-    #always return with correct args
+def getselected_usernames(rescan=False,reset=False):
+    #username list will be retrived every time reset==True
+    global parsed_subscriptions
     if "Skip" in args.posts:
         return []
-    if selectedusers and scraper_bool:
-            return selectedusers
-    if scraper_bool:
-        selectedusers=selectuserhelper()
-    #create in these situations
-    #set at least once
-    elif args.username and not selectedusers:
-        selectedusers=selectuserhelper()
-    elif not selectedusers and not scraper_bool:
-        selectedusers=selectuserhelper()
-    elif selectedusers and not scraper_bool:
-        if prompts.reset_username_prompt()=="Yes":  
-            selectedusers=selectuserhelper()
-    return selectedusers
+    if reset==True and args.username and parsed_subscriptions:
+        if prompts.reset_username_prompt()=="Yes":
+           parsed_subscriptions=None
+           args.username=None
+           args_.changeargs(args)
+    if rescan==True:
+        parsed_subscriptions=None
+    if not parsed_subscriptions or not args.username:
+        selectuserhelper()
 
+    usernameset=set(args.username)
+    return list(filter(lambda x:x["name"] in usernameset,parsed_subscriptions)) if args.username!="ALL" else parsed_subscriptions
+    
 def selectuserhelper():
     headers = auth.make_headers(auth.read_auth())
     subscribe_count = process_me(headers)
-    parsed_subscriptions = get_models(headers, subscribe_count)
-    if args.username and "ALL" in args.username:
-        filter_subscriptions=filterNSort(parsed_subscriptions )
-        selectedusers=filter_subscriptions
-        
-    elif args.username:
-        selectedusers=list(filter(lambda x:x["name"] in args.username,parsed_subscriptions))
-    #manually select usernames
-    else:
+    global parsed_subscriptions
+    all_subs = get_models(headers, subscribe_count)
+    if not args.username: 
         selected=None
         while True:
-            filter_subscriptions=filterNSort(parsed_subscriptions)
-            selectedusers,p= get_model(filter_subscriptions,selected)
+            parsed_subscriptions=filterNSort( all_subs )
+            selectedusers,p= get_model(parsed_subscriptions ,selected)
             if selectedusers!=None:
+                args.username=selectedusers
+                args_.changeargs(args)
                 break
-
             setfilter()
             setsort()
             selected=p.selected_choices
-    return selectedusers or []
+    else:
+        parsed_subscriptions=filterNSort( all_subs )
+
+   
 
 
 
