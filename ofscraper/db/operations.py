@@ -184,6 +184,26 @@ def write_profile_table(model_id,username) -> list:
                 cur.execute(queries.profileUpdate,insertData)
             conn.commit()
 
+def create_labels_table(model_id, username):
+    datebase_path = databasePathHelper(model_id, username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path, check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            cur.execute(queries.labelsCreate)
+            conn.commit()
+
+@operation_wrapper
+def write_labels_table(label: dict, model_id, username):
+    datebase_path =databasePathHelper(model_id, username)
+    createDir(datebase_path.parent)
+    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
+        with contextlib.closing(conn.cursor()) as cur:
+            for post_id in label.post_ids:
+                if len(cur.execute(queries.labelDupeCheck,(label.label_id, post_id)).fetchall())==0:
+                    insertData=(label.label_id, label.name,label.type, post_id)
+                    cur.execute(queries.labelInsert,insertData)
+                    conn.commit()
+
 
 def create_tables(model_id,username):
     create_post_table(model_id,username)
@@ -193,3 +213,4 @@ def create_tables(model_id,username):
     create_others_table(model_id,username)
     create_profile_table(model_id,username)
     create_stories_table(model_id,username)
+    create_labels_table(model_id, username)
