@@ -153,9 +153,9 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
     path_to_file=None
     async with sem:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-            total ,temp,path_to_file=main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress)
+            total ,temp,path_to_file=await main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress)
             if int(file_size_limit)>0 and total > int(file_size_limit): 
-                        return "skipped",1
+                return "skipped",1
 
     
 
