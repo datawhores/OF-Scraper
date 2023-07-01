@@ -112,7 +112,7 @@ async def get_messages(model_id):
         oldmsgset.discard(message["id"])       
         unduped.append(message)
     if len(oldmsgset)==0 and not (args_.getargs().before or args_.getargs().after):
-        cache.set(f"messages_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"messages_{model_id}",list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped)),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
 
         cache.close()

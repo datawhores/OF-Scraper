@@ -176,7 +176,7 @@ async def get_all_paid_posts():
         dupeSet.add(post["id"])
         unduped.append(post)
     log.debug(f"[bold]Paid Post count[/bold] {len(unduped)} found")
-    cache.set(f"purchased_all",output,expire=constants.RESPONSE_EXPIRY)
+    cache.set(f"purchased_all",list(map(lambda x:x.get("id"),unduped)),expire=constants.RESPONSE_EXPIRY)
     cache.close()
     return unduped
 
