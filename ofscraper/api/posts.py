@@ -2,12 +2,14 @@ import re
 import logging
 import aiohttp
 import arrow
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
 from ..constants import LICENCE_URL
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
 import ofscraper.constants as constants
 import ofscraper.utils.config as config
+
 
 
 log=logging.getLogger(__package__)
@@ -366,6 +368,7 @@ class Media():
     def media(self):
         return self._media
     @property
+    @retry(stop=stop_after_attempt(constants.NUM_TRIES_CDN),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     async def parse_mpd(self): 
         if not self.mpd:
             return
