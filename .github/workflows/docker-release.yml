@@ -107,8 +107,8 @@ jobs:
         with:
           context: .
           tags: |
-            datawhores/of-scraper:${{ env.release }}
-            datawhores/of-scraper:latest
+            ghcr.io/datawhores/of-scraper:${{ env.release }}
+            ghcr.io/datawhores/of-scraper:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
