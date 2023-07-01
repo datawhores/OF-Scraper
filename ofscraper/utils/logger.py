@@ -156,6 +156,7 @@ def getLevel(input):
             "DEBUG":"DEBUG"}.get(input,100)
 
 def init_logger(log):
+    format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
     addtrackback()
     # # #log file
@@ -166,11 +167,11 @@ def init_logger(log):
     #console
     sh=RichHandler(rich_tracebacks=True,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False,console=console.shared_console)
     sh.setLevel(getLevel(args.getargs().output))
-    sh.setFormatter(SensitiveFormatter('%(message)s'))
+    sh.setFormatter(SensitiveFormatter(format))
     sh.addFilter(NoDebug())
     tx=TextHandler()
     tx.setLevel(getLevel(args.getargs().output))
-    tx.setFormatter(SensitiveFormatter('%(message)s'))
+    tx.setFormatter(SensitiveFormatter(format))
     log.addHandler(cord)
     log.addHandler(sh)
     log.addHandler(tx)
@@ -186,7 +187,7 @@ def init_logger(log):
     if args.getargs().output=="DEBUG":
         sh2=RichHandler(rich_tracebacks=True, console=console.shared_console,markup=True,tracebacks_show_locals=True,show_time=False)
         sh2.setLevel(args.getargs().output)
-        sh2.setFormatter(SensitiveFormatter('%(message)s'))
+        sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(DebugOnly())
         log.addHandler(sh2)
     if args.getargs().log=="DEBUG":
