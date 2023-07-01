@@ -159,7 +159,7 @@ async def get_timeline_post(model_id):
         unduped.append(post)
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
-        cache.set(f"timeline_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"timeline_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")}),unduped),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"timeline_check_{model_id}",unduped,expire=constants.CHECK_EXPIRY)
         cache.close()
     elif len(oldtimeset)>0 and not (args_.getargs().before or args_.getargs().after):
