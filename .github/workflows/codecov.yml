@@ -22,23 +22,8 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install dependencies
-        run: pip install .
-      - name: install coverage
-        run: poetry add coverage
-      - name: install coverage    
-        run: pip install coverage
-      - name: install pytest
-    
-        run: pip install pytest
-      - name: install dunamai   
-        run: pip install dunamai
-      - name: install pytest-check 
-        run: pip install pytest-check 
-      - name: install emoji
-        run: pip install random_unicode_emoji
-      - name: install mocker
-        run: pip install pytest-mock          
-      - name:  run coverage  
-        run: coverage run -m pytest
+        run: poetry install --with test
+      - name: Run tests and collect coverage
+        run: poetry run pytest --cov-report term --cov-report xml:coverage.xml --cov=src
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
