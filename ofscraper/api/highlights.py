@@ -82,9 +82,9 @@ async def scrape_highlights( c,user_id,job_progress) -> list:
     sem.release()
     if  r_multiple.ok and r_one.ok:
         attempt.set(0)
-        log.debug(f"[bold]Highlight Post Count without Dupes[/bold] {len(await r_multiple.json())} found")
-        log.debug(f"[bold]Story Post Count without Dupes[/bold] {len(await r_one.json())} found")
         highlights_, stories =get_highlightList(await r_multiple.json()),await r_one.json()
+        log.debug(f"highlights: -> found highlights ids {list(map(lambda x:x.get('id'),highlights_))}")
+        log.debug(f"highlights: -> found stories ids {list(map(lambda x:x.get('id'),stories))}") 
         job_progress.remove_task(task)
 
     else:

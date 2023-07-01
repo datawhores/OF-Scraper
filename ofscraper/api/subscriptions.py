@@ -40,8 +40,7 @@ async def scrape_subscriptions(headers, offset=0) -> list:
         async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
             if r.ok:
                 subscriptions = await r.json()
-                log.debug(f"usernames {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")
-                
+                log.debug(f"usernames {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 return subscriptions
             r.raise_for_status()
 
