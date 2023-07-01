@@ -368,7 +368,7 @@ class Media():
     def media(self):
         return self._media
     @property
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES_CDN),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     async def parse_mpd(self): 
         if not self.mpd:
             return
@@ -382,6 +382,8 @@ class Media():
                 if not r.ok:
                     return None
                 return MPEGDASHParser.parse(await r.text())
+ 
+    
     @property
     def license(self):
         if not self.mpd:

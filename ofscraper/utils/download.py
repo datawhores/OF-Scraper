@@ -135,7 +135,6 @@ async def process_dicts(username, model_id, medialist):
 def retry_required(value):
     return value == ('skipped', 1)
 
-@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def download(c,ele,model_id,username,file_size_limit,progress):
     attempt.set(attempt.get(0) + 1)  
     try:
@@ -150,6 +149,7 @@ async def download(c,ele,model_id,username,file_size_limit,progress):
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
+@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def main_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     url=ele.url
     path_to_file=None
@@ -199,73 +199,33 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
         set_cache_helper(ele)
         return ele.mediatype,total
 
+
+
+
+
+
+
 async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     async with sem:
         log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
-        video = None
-        audio = None
-        base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
-        mpd=await ele.parse_mpd
         path_to_file = paths.truncate(pathlib.Path(path,f'{paths.createfilename(ele,username,model_id,"mp4")}'))
         temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
-        for period in mpd.periods:
-            for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
-                kId=None
-                for prot in adapt_set.content_protections:
-                    if prot.value==None:
-                        kId = prot.pssh[0].pssh 
-                        break
-                maxquality=max(map(lambda x:x.height,adapt_set.representations))
-                for repr in adapt_set.representations:
-                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
-                    if repr.height==maxquality:
-                        video={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video","name":name}
-                        break
-            for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
-                kId=None
-                name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
-                for prot in adapt_set.content_protections:
-                    if prot.value==None:
-                        kId = prot.pssh[0].pssh 
-                        logger.updateSenstiveDict(kId,"pssh_code")
-                        break
-                for repr in adapt_set.representations:
-                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
-                    audio={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio","name":name}
-                    break
-            for item in [audio,video]:
-                url=f"{base_url}{item['origname']}"
-                log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
-                params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
-                    if r.ok:
-                        rheaders=r.headers
-                        total = int(rheaders['Content-Length'])
-                        item["total"]=total
-                        if file_size_limit>0 and total > int(file_size_limit): 
-                                return 'skipped', 1       
-                        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
-                        temp.unlink(missing_ok=True)
-                        item["path"]=temp
-                        pathstr=str(temp)
-                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                        with open(temp, 'wb') as f:                           
-                            progress.update(task1,visible=True )
-                            async for chunk in r.content.iter_chunked(1024):
-                                f.write(chunk)
-                                progress.update(task1, advance=len(chunk))
-                            progress.remove_task(task1) 
-                    else:
-                        r.raise_for_status()
-    log.debug(f"Media:{ele.id} Post:{ele.postid} video name:{video['name']}")
-    log.debug(f"Media:{ele.id} Post:{ele.postid} audio name:{audio['name']}")
+        audio,video=await alt_download_preparer(ele)
+        audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
+        if file_size_limit>0 and audio["total"] > int(file_size_limit): 
+            return 'skipped', 1
+        video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
+        if file_size_limit>0 and video["total"] > int(file_size_limit): 
+            return 'skipped', 1       
+          
+        
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
                 log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
                 return "skipped",1
         elif abs(item["total"]-pathlib.Path(item['path']).absolute().stat().st_size)>500:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {total} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
+            log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {item['total']} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
             return "skipped",1 
                 
     for item in [audio,video]:
@@ -305,10 +265,69 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
         log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         operations.write_media_table(ele,path_to_file,model_id,username)
-    set_cache_helper(ele)
-    return ele.mediatype,total
+    return ele.mediatype,audio["total"]+video["total"]
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES_CDN),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def alt_download_preparer(ele):
+    mpd=await ele.parse_mpd
+
+
+    for period in mpd.periods:
+                for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
+                    kId=None
+                    for prot in adapt_set.content_protections:
+                        if prot.value==None:
+                            kId = prot.pssh[0].pssh 
+                            break
+                    maxquality=max(map(lambda x:x.height,adapt_set.representations))
+                    for repr in adapt_set.representations:
+                        name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
+                        if repr.height==maxquality:
+                            video={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video","name":name}
+                            break
+                for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
+                    kId=None
+                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
+                    for prot in adapt_set.content_protections:
+                        if prot.value==None:
+                            kId = prot.pssh[0].pssh 
+                            logger.updateSenstiveDict(kId,"pssh_code")
+                            break
+                    for repr in adapt_set.representations:
+                        name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
+                        audio={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio","name":name}
+                        break
+    return audio,video
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
+    base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
+    url=f"{base_url}{item['origname']}"
+    log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
+    params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+    async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
+        if r.ok:
+            rheaders=r.headers
+            total = int(rheaders['Content-Length'])
+            item["total"]=total
+            temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+            temp.unlink(missing_ok=True)
+            item["path"]=temp
+            if file_size_limit>0 and total > int(file_size_limit): 
+                    return  item
+            pathstr=str(temp)
+            task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+            with open(temp, 'wb') as f:                           
+                progress.update(task1,visible=True )
+                async for chunk in r.content.iter_chunked(1024):
+                    f.write(chunk)
+                    progress.update(task1, advance=len(chunk))
+                progress.remove_task(task1)
+                return item
+        else:
+            r.raise_for_status()
+
+
+
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
     out=cache.get(licence_url)
     log.debug(f"ID:{id} pssh: {pssh!=None}")
