@@ -18,8 +18,8 @@ def main():
 
     if vars(args).get("help"):
         quit()
-    log.debug(f"config path: {str(paths_.get_config_path())}")
-    log.debug(f"profile path: {str(paths_.get_profile_path())}")
+    log.info(f"config path: {str(paths_.get_config_path())}")
+    log.info(f"profile path: {str(paths_.get_profile_path())}")
     make_folders()
     if args.command=="post_check":
         check.post_checker()
