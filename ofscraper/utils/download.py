@@ -308,6 +308,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
     set_cache_helper(ele)
     return ele.mediatype,total
 
+@retry(stop=stop_after_attempt(constants.NUM_TRIES_CDN),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
     out=cache.get(licence_url)
     log.debug(f"ID:{id} pssh: {pssh!=None}")
