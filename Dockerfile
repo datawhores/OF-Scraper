@@ -14,6 +14,6 @@ RUN python3.10 -m venv .venv
 RUN pip install dunamai
 RUN /root/.local/bin/poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
 RUN /root/.local/bin/poetry install
-ENV PATH="$PATH:/root/ofscraper/.venv/bin/ofscraper"
+ENV PATH="$PATH:/root/ofscraper/.venv/bin/"
 WORKDIR /root
 ENTRYPOINT ["/root/ofscraper/.venv/bin/ofscraper"]
