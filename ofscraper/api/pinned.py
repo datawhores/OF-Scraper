@@ -70,8 +70,9 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=
                     log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
                     log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
-                    log.debug(f"{log_id} -> first ID {posts[0]['id']}")
-                    log.debug(f"{log_id} -> last ID {posts[-1]['id']}")
+                    log.debug(f"{log_id} -> found post IDs {list(map(lambda x:x.get('id'),posts))}")
+
+  
                 #post infinite loops            
                 # elif required_ids==None:
                 #     attempt.set(0)

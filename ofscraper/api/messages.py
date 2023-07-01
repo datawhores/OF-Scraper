@@ -152,9 +152,10 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
                 elif len(messages)>0:
                     log.debug(f"{log_id} -> number of messages found {len(messages)}")
                     log.debug(f"{log_id} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
-                    log.debug(f"{log_id} -> first ID {messages[0]['id']}")
                     log.debug(f"{log_id} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
-                    log.debug(f"{log_id} -> last ID {messages[-1]['id']}")    
+                    log.debug(f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}")
+
+
                     if (arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
                         attempt.set(0)
                     elif required_ids==None:

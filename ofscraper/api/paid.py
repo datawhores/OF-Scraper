@@ -108,6 +108,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
             media=list(filter(lambda x:isinstance(x,list),data.values()))[0]
             log.debug(f"offset:{offset} -> media found {len(media)}")
             log.debug(f"offset:{offset} -> hasmore value in json {data.get('hasMore','undefined') }")
+            log.debug(f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}")
             if  data.get("hasMore"):
                 offset += len(media)
                 tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress,offset=offset)))
@@ -211,8 +212,8 @@ async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
                 log.debug(f"{log_id} -> number of post found {len(media)}")
                 log.debug(f"{log_id} -> first date {media[0].get('createdAt') or media[0].get('postedAt')}")
                 log.debug(f"{log_id} -> last date {media[-1].get('createdAt') or media[-1].get('postedAt')}")
-                log.debug(f"{log_id} -> first ID {media[0]['id']}")
-                log.debug(f"{log_id} -> last ID {media[-1]['id']}")
+                log.debug(f"{log_id} -> found paid content ids {list(map(lambda x:x.get('id'),media))}")
+
                 if required==0:
                     attempt.set(0)
                     tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=offset+len(media))))
