@@ -133,7 +133,7 @@ def process_post_user_first():
             userdata=userselector.getselected_usernames(rescan=False)
             length=len(userdata)
             for count,ele in enumerate(userdata):
-                log.debug(f"getting content for {count+1}/{length} model")
+                log.info(f"Progress {count+1}/{length} model")
                 if args.posts:
                     log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
