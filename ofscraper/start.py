@@ -20,6 +20,8 @@ def main():
         quit()
     log.info(f"config path: {str(paths_.get_config_path())}")
     log.info(f"profile path: {str(paths_.get_profile_path())}")
+    log.info(f"log folder: {str(paths_.get_config_home()/'logging')}")
+
     make_folders()
     if args.command=="post_check":
         check.post_checker()
