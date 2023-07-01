@@ -54,7 +54,7 @@ jobs:
       
 
       
-      - name: push to image
+      - name: push image to Docker Hub
         id: build-and-push
         uses: docker/build-push-action@v4
         with:
@@ -101,7 +101,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN}}
           # Extract metadata (tags, labels) for Docker
-      - name: push to image
+      - name: push image to ghcr
         id: build-and-push2
         uses: docker/build-push-action@v4
         with:
