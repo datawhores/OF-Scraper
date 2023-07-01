@@ -33,7 +33,9 @@ jobs:
       - name: install dunamai   
         run: pip install dunamai
       - name: install pytest-check 
-        run: pip install pytest-check    
+        run: pip install pytest-check 
+      - name: install emoji
+        run: pip install random_unicode_emoji         
       - name:  run coverage  
         run: coverage run -m pytest
       - name: Upload coverage to Codecov
