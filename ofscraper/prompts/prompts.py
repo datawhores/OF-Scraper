@@ -736,7 +736,7 @@ def model_selector(models,selected=None) -> bool:
     )
         
     answers=p.execute()
-    return list(map(lambda x:x["name"],answers)),p
+    return list(map(lambda x:x["name"],answers or [])),p
         
 
 def model_selectorHelper(count,x):

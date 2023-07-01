@@ -50,7 +50,7 @@ def selectuserhelper():
         while True:
             parsed_subscriptions=filterNSort( all_subs )
             selectedusers,p= get_model(parsed_subscriptions ,selected)
-            if selectedusers!=None:
+            if len(selectedusers)!=0:
                 args.username=selectedusers
                 args_.changeargs(args)
                 break
