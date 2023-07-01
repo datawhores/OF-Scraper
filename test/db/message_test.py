@@ -7,7 +7,8 @@ from ofscraper.api.posts import Post,Media
 def test_message_create(mocker):
     with tempfile.NamedTemporaryFile() as p:
         try:
-            mocker.patch("ofscraper.utils.paths.databasePathHelper",return_value=p.name)
+            mocker.patch("ofscraper.db.operations.databasePathHelper",return_value=pathlib.Path(p.name))
+
             create_message_table("11111","test")
         except:
             raise Exception
@@ -24,7 +25,7 @@ def test_message_failure(mocker):
 def test_message_insert(mocker):
     with tempfile.NamedTemporaryFile() as p:
         try:
-            mocker.patch("ofscraper.utils.paths.databasePathHelper",return_value=p.name)
+            mocker.patch("ofscraper.db.operations.databasePathHelper",return_value=pathlib.Path(p.name))
             create_message_table("11111","test")
             write_messages_table(Post(MESSAGES_DICT,"11111","test"))
         except Exception as E:

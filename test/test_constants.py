@@ -83,3 +83,14 @@ CONFIG_KEYS=["main_profile","save_location","file_size_limit",
     ]
 
 ME={"name":"test","username":"test"}
+
+auth_example={
+    "auth": {
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/547.38 (KHTML, like Gecko) Chrome/201.0.0.0 Safari/547.39",
+        "app-token": "33333333333333333333333333333a",
+        "x-bc": "33333333333333333333333333333",
+        "auth_id": "3333333333333",
+        "sess": "hxhxhxhxhxhxhxhxh",
+        "auth_uid_": "333333333333333333333333333"
+    }
+}
