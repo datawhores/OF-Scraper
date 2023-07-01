@@ -49,7 +49,6 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
     if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.now()).float_timestamp):
         return []
     if timestamp:
-        log.debug(arrow.get(math.trunc(float(timestamp))))
         timestamp=str(timestamp)
         ep = constants.archivedNextEP
         url = ep.format(model_id, timestamp)
@@ -158,7 +157,7 @@ async def get_archived_post(model_id):
         unduped.append(post)
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
-        cache.set(f"archived_{model_id}",unduped,expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"archived_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped)),expire=constants.RESPONSE_EXPIRY)
         cache.close()
     elif len(oldtimeset)>0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"archived_{model_id}",[],expire=constants.RESPONSE_EXPIRY)
