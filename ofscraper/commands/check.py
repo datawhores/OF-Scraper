@@ -113,22 +113,32 @@ def post_checker():
                 model_id = profile.get_id( user_name)
             else:
                 continue
+            if user_dict.get(user_name):
+                continue
         
             oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+            user_dict[user_name] = {}
+            user_dict[user_name] = user_dict[user_name] or []
             if len(oldtimeline) > 0 and not args.force:
-                user_dict[user_name] = oldtimeline
-            elif not user_dict.get(user_name):
+                user_dict[user_name].extend(oldtimeline)
+            else:
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
                 user_dict[user_name].extend(asyncio.run(
                     timeline.get_timeline_post( model_id)))
-                user_dict[user_name].extend(asyncio.run(
-                    pinned.get_pinned_post( model_id)))
-                user_dict[user_name].extend(asyncio.run(
-                    archive.get_archived_post( model_id)))
                 cache.set(
                     f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
                 cache.close()
+            oldarchive = cache.get(f"archived_check_{model_id}", default=[])
+            if len( oldarchive) > 0 and not args.force:
+                user_dict[user_name].extend(oldarchive)
+            else:
+                user_dict[user_name].extend(asyncio.run(
+                    archive.get_archived_post( model_id)))
+                cache.set(
+                    f"archived_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+                cache.close()
+            
                 
 
         # individual links
