@@ -200,7 +200,7 @@ def message_checker():
             messages = oldmessages
         else:
             messages = asyncio.run(
-                messages_.get_messages(model_id))
+                messages_.get_messages( model_id))
             cache.set(f"message_check_{model_id}",
                         messages, expire=constants.CHECK_EXPIRY)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
