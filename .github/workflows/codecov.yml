@@ -35,7 +35,9 @@ jobs:
       - name: install pytest-check 
         run: pip install pytest-check 
       - name: install emoji
-        run: pip install random_unicode_emoji         
+        run: pip install random_unicode_emoji
+      - name: install mocker
+        run: pip install pytest-mock          
       - name:  run coverage  
         run: coverage run -m pytest
       - name: Upload coverage to Codecov
