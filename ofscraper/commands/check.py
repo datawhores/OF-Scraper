@@ -124,19 +124,22 @@ def post_checker():
             else:
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
-                user_dict[user_name].extend(asyncio.run(
-                    timeline.get_timeline_post( model_id)))
+                data=asyncio.run(
+                    timeline.get_timeline_post( model_id))
+                user_dict[user_name].extend(data)
                 cache.set(
-                    f"timeline_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+                    f"timeline_check_{model_id}", data, expire=constants.CHECK_EXPIRY)
                 cache.close()
+            
             oldarchive = cache.get(f"archived_check_{model_id}", default=[])
             if len( oldarchive) > 0 and not args.force:
                 user_dict[user_name].extend(oldarchive)
             else:
-                user_dict[user_name].extend(asyncio.run(
-                    archive.get_archived_post( model_id)))
+                data=asyncio.run(
+                    archive.get_archived_post( model_id))
+                user_dict[user_name].extend(data)
                 cache.set(
-                    f"archived_check_{model_id}", user_dict[user_name], expire=constants.CHECK_EXPIRY)
+                    f"archived_check_{model_id}", data, expire=constants.CHECK_EXPIRY)
                 cache.close()
             
                 
