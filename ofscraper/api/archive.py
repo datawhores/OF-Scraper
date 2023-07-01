@@ -75,7 +75,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                     log.debug(f"{log_id} -> number of archived post found {len(posts)}")
                     log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
-                    log.debug(f"{log_id} -> found post IDs {list(map(lambda x:x.get('id'),posts))}")
+                    log.debug(f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}")
        
                     if required_ids==None:
                         attempt.set(0)

@@ -63,7 +63,7 @@ class Post():
     def responsetype(self):
         if self.archived:
             if config.get_archived_responsetype(config.read_config()) == "":
-                return "achived"
+                return "archived"
             return config.get_archived_responsetype(config.read_config())
 
         else:
