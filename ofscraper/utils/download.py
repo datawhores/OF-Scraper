@@ -149,35 +149,16 @@ async def download(c,ele,model_id,username,file_size_limit,progress):
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
-@retry(retry=retry_if_result(retry_required),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def main_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
-    url=ele.url
     path_to_file=None
     async with sem:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
             log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-            async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None) as r:
-                if r.ok:
-                    rheaders=r.headers
-                    total = int(rheaders['Content-Length'])
-                    if file_size_limit>0 and total > int(file_size_limit): 
-                            return 'skipped', 1       
-                    content_type = rheaders.get("content-type").split('/')[-1]
-                    filename=paths.createfilename(ele,username,model_id,content_type)
-                    path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))                 
-                    pathstr=str(path_to_file)
-                    temp=paths.truncate(f"{path_to_file}.part")
-                    pathlib.Path(temp).unlink(missing_ok=True)
-                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                    with open(temp, 'wb') as f:                           
-                        progress.update(task1,visible=True )
-                        async for chunk in r.content.iter_chunked(1024):
-                            f.write(chunk)
-                            progress.update(task1, advance=len(chunk))
-                        progress.remove_task(task1) 
+            total ,temp,path_to_file=main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress)
+            if int(file_size_limit)>0 and total > int(file_size_limit): 
+                        return "skipped",1
+
     
-                else:
-                    r.raise_for_status()
+
     if not pathlib.Path(temp).exists():
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
@@ -199,8 +180,31 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
         set_cache_helper(ele)
         return ele.mediatype,total
 
-
-
+async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress):
+    url=ele.url
+    log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
+    async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None) as r:
+            if r.ok:
+                rheaders=r.headers
+                total = int(rheaders['Content-Length'])
+                if file_size_limit>0 and total > int(file_size_limit): 
+                        return total ,None,None    
+                content_type = rheaders.get("content-type").split('/')[-1]
+                filename=paths.createfilename(ele,username,model_id,content_type)
+                path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))                 
+                pathstr=str(path_to_file)
+                temp=paths.truncate(f"{path_to_file}.part")
+                pathlib.Path(temp).unlink(missing_ok=True)
+                task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                with open(temp, 'wb') as f:                           
+                    progress.update(task1,visible=True )
+                    async for chunk in r.content.iter_chunked(1024):
+                        f.write(chunk)
+                        progress.update(task1, advance=len(chunk))
+                    progress.remove_task(task1)  
+                return total ,temp,path_to_file
+            else:
+                r.raise_for_status()  
 
 
 
@@ -213,13 +217,12 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
         temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
         audio,video=await alt_download_preparer(ele)
         audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
-        if file_size_limit>0 and audio["total"] > int(file_size_limit): 
+        if file_size_limit>0 and int(audio["total"]) > int(file_size_limit): 
             return 'skipped', 1
         video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
-        if file_size_limit>0 and video["total"] > int(file_size_limit): 
+        if int(file_size_limit)>0 and int(video["total"]) > int(file_size_limit): 
             return 'skipped', 1       
           
-        
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
                 log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
@@ -269,8 +272,6 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
 
 async def alt_download_preparer(ele):
     mpd=await ele.parse_mpd
-
-
     for period in mpd.periods:
                 for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                     kId=None
@@ -321,7 +322,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                     f.write(chunk)
                     progress.update(task1, advance=len(chunk))
                 progress.remove_task(task1)
-                return item
+            return item
         else:
             r.raise_for_status()
 
