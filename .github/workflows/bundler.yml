@@ -116,12 +116,12 @@ jobs:
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
-#       - name: upload package
-#         uses: ncipollo/release-action@v1
-#         with:
-#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
-#           tag: ${{env.name}}
-#         env:
-#           name: "package_${{ steps.commit.outputs.short}}"
+      - name: upload package
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
+          tag: ${{env.name}}
+        env:
+          name: "package_${{ steps.commit.outputs.short}}"
 
  
