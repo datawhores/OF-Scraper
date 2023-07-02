@@ -49,8 +49,6 @@ jobs:
           poetry-version: 1.4.1 
       - name: create virtualenv
         run: python3 -m venv .venv
-      - name: show venv
-        run: ls .venv/Scripts      
       - name: active env
         run: poetry env use  .venv/Scripts/python3        
       - name: Install package
@@ -59,9 +57,7 @@ jobs:
         run: pip install pyinstaller
      
       - name: build package
-        run: pyinstaller .venv/Scripts/ofscraper --onefile --name ofscraper_windows
-      - name: show files
-        run: ls D:\a\OF-Scraper\OF-Scraper\dist\       
+        run: pyinstaller .venv/Scripts/ofscraper --onefile --name ofscraper_windows  
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
@@ -116,6 +112,8 @@ jobs:
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
+      - name: show files
+        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
