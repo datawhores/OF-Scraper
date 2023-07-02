@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     name: create linux release
     steps:
-      -  name: commit
-         id: commit
-         uses: pr-mpt/actions-commit-hash@v2Checkout
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Python 3.10.6
@@ -40,9 +37,6 @@ jobs:
 #     runs-on: windows-latest
 #     name: create windows release
 #     steps:
-#       -  name: commit
-#          id: commit
-#          uses: pr-mpt/actions-commit-hash@v2
 #       - name: Checkout
 #         uses: actions/checkout@v3
 #       - name: Set up Python 3.10.6
@@ -70,9 +64,6 @@ jobs:
 #     runs-on: macos-latest 
 #     name: create mac release
 #     steps:
-#       -  name: commit
-#          id: commit
-#          uses: pr-mpt/actions-commit-hash@v2
 #       - name: Checkout
 #         uses: actions/checkout@v3
 #       - name: Set up Python 3.10.6
