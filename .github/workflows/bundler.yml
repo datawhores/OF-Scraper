@@ -30,7 +30,7 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
+        run: pyinstaller C:\Users\runneradmin\AppData\Local\pypoetry\Cache\virtualenvs\bin\ofscraper --onefile --name ofscraper_linux
   windows:
     runs-on: windows-latest
     name: create windows release
