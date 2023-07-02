@@ -59,6 +59,8 @@ jobs:
         run: poetry install
       - name: Install dunamai
         run: poetry add dunamai
+      - name: Install dunamai
+        run: pip install dunamai    
       - name: set version
         run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder       
