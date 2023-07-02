@@ -90,8 +90,8 @@ jobs:
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
         with:
-          name: ofscraper_mac
-          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_mac
+          name: ofscraper_macos
+          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos
   publish_release:
     runs-on: ubuntu-latest
     name: publish
@@ -107,9 +107,9 @@ jobs:
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_mac"
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
           tag: ${{env.name}}
         env:
-          name: "daily_${{ steps.commit.outputs.short}}"
+          name: "package_${{ steps.commit.outputs.short}}"
 
  
