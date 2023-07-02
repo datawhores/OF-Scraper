@@ -89,16 +89,16 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-#     env:
-#       name: daily_${{ steps.commit.outputs.short }}
 # #     needs: [windows,linux,mac]
     permissions:
       contents: write 
     steps:
+
     - uses: ncipollo/release-action@v1
       with:
         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
         tag: env.name
+      env:
+        name: daily_${{ steps.commit.outputs.short }}
 
-    
  
