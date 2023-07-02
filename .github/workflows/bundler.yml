@@ -79,6 +79,8 @@ jobs:
         run: poetry install
       - name: Install builder
         run: pip install pyinstaller
+      - name: list files
+        run: ls .venv
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
   publish_release:
