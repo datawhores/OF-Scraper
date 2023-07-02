@@ -106,7 +106,7 @@ jobs:
       - name: Download mac
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_mac          
+          name: ofscraper_macos          
       - name: Download windows
         uses: actions/download-artifact@v3
         with:
