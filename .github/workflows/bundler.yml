@@ -62,7 +62,6 @@ jobs:
       - name: set version
         run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder       
-      - name: Install builder
         run: poetry add pyinstaller
      
       - name: build package
@@ -95,7 +94,6 @@ jobs:
         run: poetry add dunamai
       - name: set version
         run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
-      - name: Install builder       
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
