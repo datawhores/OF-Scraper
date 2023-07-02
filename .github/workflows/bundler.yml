@@ -26,11 +26,10 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
-        run:  pyinstaller ofscraper --workpath package --onefile
-      - uses: actions/checkout@v3
+        run:  pyinstaller ofscraper --onefile
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "dist/ofscaper"
+          artifacts: "./dist/ofscaper"
           tag: $GITHUB_REF_NAME
 
       
