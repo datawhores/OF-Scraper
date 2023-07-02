@@ -58,10 +58,6 @@ jobs:
         run: pip install pyinstaller
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_windows
-      - uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
-          tag: ${{ steps.commit.outputs.short }}
   mac:
     runs-on: macos-latest 
     name: create mac release
@@ -87,10 +83,6 @@ jobs:
         run: pip install pyinstaller
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
-      - uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
-          tag: ${{ steps.commit.outputs.short }} 
   publish_release:
     runs-on: ubuntu-latest
     name: publish
