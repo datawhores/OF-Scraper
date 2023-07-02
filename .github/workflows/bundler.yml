@@ -94,7 +94,7 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-# #     needs: [windows,linux,mac]
+    needs: linux
     permissions:
       contents: write 
     steps:
