@@ -93,6 +93,8 @@ jobs:
     permissions:
       contents: write 
     steps:
+    - name: test
+      run: ls
 
 #     - uses: ncipollo/release-action@v1
 #       with:
