@@ -21,8 +21,10 @@ jobs:
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: 1.4.1
-      - name: Install dependencies
-        run: poetry install pyinstaller
+      - name: Install package
+        run: poetry install
+      - name: Install builder
+        run: pip install pyinstaller
       - name: build package
         run:  pyinstaller ofscraper --workpath package --onefile
       - uses: actions/checkout@v3
