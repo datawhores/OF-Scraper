@@ -103,7 +103,7 @@ jobs:
         with:
           name: ofscraper_linux
       - name: commit
-        uses: pr-mpt/actions-commit-hash@v2Checkout
+        uses: pr-mpt/actions-commit-hash@v2
         id: commit
 #     - uses: ncipollo/release-action@v1
 #       with:
