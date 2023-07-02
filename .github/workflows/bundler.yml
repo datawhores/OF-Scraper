@@ -1,0 +1,34 @@
+name: linux package
+on:
+  push:
+    branches: "main"
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+  pull_request:
+      branches: "main"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install dependencies
+        run: poetry install --with build
+      - name: build package
+        run:  pyinstaller ofscraper --workpath package --onefile
+      - uses: actions/checkout@v3
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/ofscaper"
+          tag: $GITHUB_REF_NAME
+
+      
