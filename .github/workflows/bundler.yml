@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows  
+          path: D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows.exe.notanexecutable 
   mac:
     runs-on: macos-latest 
     name: create mac release
