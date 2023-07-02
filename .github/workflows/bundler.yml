@@ -49,12 +49,10 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: moveout
-        run: cd D:\a\
-      - name: mkdir
+        working-directory: cd D:\a\
         run: mkdir test
-      - name: move
-        run: cd test
       - name: build package
+        working-directory: D:\a\test
         run: pyinstaller ofscraper --onefile --name ofscraper_windows
   mac:
     runs-on: macos-latest 
