@@ -49,7 +49,7 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: whereis
-        run: where ofscraper
+        run: ofscraper -h
       - name: build package
         run: pyinstaller ofscraper --onefile --name ofscraper_windows
   mac:
