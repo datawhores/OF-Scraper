@@ -100,10 +100,10 @@ jobs:
     steps:
     - name: Download a single artifact
       uses: actions/download-artifact@v3
+      with:
+        name: ofscraper_linux
     - name: Checkout
       uses: actions/checkout@v3
-      with:
-        name: my-artifact
 #     - uses: ncipollo/release-action@v1
 #       with:
 #         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
