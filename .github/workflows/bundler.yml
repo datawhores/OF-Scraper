@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos
+          path: /Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos
   publish_release:
     runs-on: ubuntu-latest
     name: publish
