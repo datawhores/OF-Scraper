@@ -48,13 +48,6 @@ jobs:
         run: poetry install
       - name: Install builder
         run: pip install pyinstaller
-#       - name: moveout
-#         working-directory: D:\a\
-#         run: mkdir test
-      - name: ls
-        run: .ls -la .venv/
-      - name: ls2
-        run: .ls -la .venv/bin 
       - name: build package
 #         working-directory: D:\a\test
         run: pyinstaller ofscraper --onefile --name ofscraper_windows
