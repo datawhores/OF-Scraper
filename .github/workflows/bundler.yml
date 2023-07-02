@@ -51,12 +51,13 @@ jobs:
           poetry-version: 1.4.1 
       - name: create virtualenv
         run: python3.10 -m venv .venv
+      - name: active env
+        run: poetry env use  .venv/bin/python3        
       - name: Install package
         run: poetry install
       - name: Install builder
         run: pip install pyinstaller
-      - name: active env
-        run: poetry env use  .venv/bin/python3
+     
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_windows
   mac:
