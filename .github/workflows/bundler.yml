@@ -48,8 +48,12 @@ jobs:
         run: pip install .
       - name: Install builder
         run: pip install pyinstaller
-      - name: whereis
-        run: ofscraper -h
+      - name: moveout
+        run: cd ..
+      - name: mkdir
+        run: mkdir test
+      - name: move
+        run: cd test
       - name: build package
         run: pyinstaller ofscraper --onefile --name ofscraper_windows
   mac:
