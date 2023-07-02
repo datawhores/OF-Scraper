@@ -89,9 +89,9 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    env:
-      name: daily_${{ steps.commit.outputs.short }}
-#     needs: [windows,linux,mac]
+#     env:
+#       name: daily_${{ steps.commit.outputs.short }}
+# #     needs: [windows,linux,mac]
     permissions:
       contents: write 
     steps:
