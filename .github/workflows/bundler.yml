@@ -94,11 +94,11 @@ jobs:
       contents: write 
     steps:
 
-    - uses: ncipollo/release-action@v1
-      with:
-        artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
-        tag: $env.name
+#     - uses: ncipollo/release-action@v1
+#       with:
+#         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
+#         tag: $env.name
       env:
-        name: daily_${{ steps.commit.outputs.short }}
+        name: ${{ steps.commit.outputs.short}}
 
  
