@@ -52,8 +52,10 @@ jobs:
         run: poetry install
       - name: Install builder
         run: pip install pyinstaller
+      - name: active env
+        run: poetry env use  .venv/bin/python3
       - name: build package
-        run: pyinstaller C:\Users\runneradmin\AppData\Local\pypoetry\Cache\virtualenvs\ofscraper --onefile --name ofscraper_windows
+        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_windows
   mac:
     runs-on: macos-latest 
     name: create mac release
