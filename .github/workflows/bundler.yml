@@ -50,7 +50,7 @@ jobs:
         with:
           poetry-version: 1.4.1 
       - name: create virtualenv
-        run: python3.10 -m venv .venv
+        run: python3 -m venv .venv
       - name: active env
         run: poetry env use  .venv/bin/python3        
       - name: Install package
