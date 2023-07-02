@@ -103,6 +103,6 @@ jobs:
       - name: ls 
         run: ls
         env:
-          name: ${{ steps.commit.outputs.short}}
+          name: "daily_${{ steps.commit.outputs.short}}"
 
  
