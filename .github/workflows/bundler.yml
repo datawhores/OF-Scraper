@@ -22,7 +22,7 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install dependencies
-        run: poetry install --with build
+        run: poetry install pyinstaller
       - name: build package
         run:  pyinstaller ofscraper --workpath package --onefile
       - uses: actions/checkout@v3
