@@ -8,11 +8,9 @@ on:
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
 jobs:
-  my_first_job:
+  linux:
     runs-on: ubuntu-latest
     name: create linux release
-    permissions:
-      contents: write
     steps:
       -  name: commit
          id: commit
@@ -35,15 +33,9 @@ jobs:
         run: pip install pyinstaller
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
-      - uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux"
-          tag: ${{ steps.commit.outputs.short }}
-  my_second_job:
+  windows:
     runs-on: windows-latest
     name: create windows release
-    permissions:
-      contents: write
     steps:
       -  name: commit
          id: commit
@@ -70,6 +62,45 @@ jobs:
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
           tag: ${{ steps.commit.outputs.short }}
+  mac:
+    runs-on: macos-latest 
+    name: create mac release
+    steps:
+      -  name: commit
+         id: commit
+         uses: pr-mpt/actions-commit-hash@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: create virtualenv
+        run: python3.10 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: poetry install
+      - name: Install builder
+        run: pip install pyinstaller
+      - name: build package
+        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
+          tag: ${{ steps.commit.outputs.short }} 
+  publish_release:
+    runs-on: ubuntu-latest
+    name: publish
+    permissions:
+      contents: write 
+    steps:
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
+        tag: "daily_${{ steps.commit.outputs.short }}"
 
     
  
