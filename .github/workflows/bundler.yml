@@ -49,7 +49,7 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: moveout
-        run: cd ..
+        run: cd D:\a\
       - name: mkdir
         run: mkdir test
       - name: move
