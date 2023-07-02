@@ -6,7 +6,7 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.7.0,<4"
+python = ">=3.7.0,<3.13"
 httpx = {extras = ["http2"], version = "^0.23.3"}
 inquirerpy = "^0.3.4"
 setuptools = "^67.6.0"
@@ -56,6 +56,10 @@ sphinx-argparse = "^0.4.0"
 
 [tool.poetry.group.testing.dependencies]
 coverage = "^7.2.7"
+
+
+[tool.poetry.group.build.dependencies]
+pyinstaller = "^5.13.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
