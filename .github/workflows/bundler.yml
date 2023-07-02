@@ -28,7 +28,7 @@ jobs:
         run: pip install pyinstaller
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
-      - name: Archive code coverage results
+      - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
@@ -60,11 +60,13 @@ jobs:
      
       - name: build package
         run: pyinstaller .venv/Scripts/ofscraper --onefile --name ofscraper_windows
-      - name: Archive code coverage results
+      - name: show files
+        run: ls D:\a\OF-Scraper\OF-Scraper\dist\       
+      - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows.exe.notanexecutable 
+          path: D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows.exe
   mac:
     runs-on: macos-latest 
     name: create mac release
@@ -87,7 +89,7 @@ jobs:
         run: pip install pyinstaller
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
-      - name: Archive code coverage results
+      - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
