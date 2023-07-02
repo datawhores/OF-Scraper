@@ -6,97 +6,99 @@ on:
   push:
     branches: "main"
 jobs:
-  linux:
-    runs-on: ubuntu-latest
-    name: create linux release
-    steps:
-      -  name: commit
-         id: commit
-         uses: pr-mpt/actions-commit-hash@v2
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set up Python 3.10.6
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10.6'
-      - name: create virtualenv
-        run: python3.10 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: pip install pyinstaller
-      - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
-  windows:
-    runs-on: windows-latest
-    name: create windows release
-    steps:
-      -  name: commit
-         id: commit
-         uses: pr-mpt/actions-commit-hash@v2
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set up Python 3.10.6
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10.6'
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1 
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: show venv
-        run: ls .venv/Scripts      
-      - name: active env
-        run: poetry env use  .venv/Scripts/python3        
-      - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: pip install pyinstaller
+#   linux:
+#     runs-on: ubuntu-latest
+#     name: create linux release
+#     steps:
+#       -  name: commit
+#          id: commit
+#          uses: pr-mpt/actions-commit-hash@v2
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#       - name: Set up Python 3.10.6
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.10.6'
+#       - name: create virtualenv
+#         run: python3.10 -m venv .venv
+#       - name: install poetry
+#         uses: abatilo/actions-poetry@v2
+#         with:
+#           poetry-version: 1.4.1
+#       - name: Install package
+#         run: poetry install
+#       - name: Install builder
+#         run: pip install pyinstaller
+#       - name: build package
+#         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
+#   windows:
+#     runs-on: windows-latest
+#     name: create windows release
+#     steps:
+#       -  name: commit
+#          id: commit
+#          uses: pr-mpt/actions-commit-hash@v2
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#       - name: Set up Python 3.10.6
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.10.6'
+#       - name: install poetry
+#         uses: abatilo/actions-poetry@v2
+#         with:
+#           poetry-version: 1.4.1 
+#       - name: create virtualenv
+#         run: python3 -m venv .venv
+#       - name: show venv
+#         run: ls .venv/Scripts      
+#       - name: active env
+#         run: poetry env use  .venv/Scripts/python3        
+#       - name: Install package
+#         run: poetry install
+#       - name: Install builder
+#         run: pip install pyinstaller
      
-      - name: build package
-        run: pyinstaller .venv/Scripts/ofscraper --onefile --name ofscraper_windows
-  mac:
-    runs-on: macos-latest 
-    name: create mac release
-    steps:
-      -  name: commit
-         id: commit
-         uses: pr-mpt/actions-commit-hash@v2
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set up Python 3.10.6
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10.6'
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: pip install pyinstaller
-      - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
+#       - name: build package
+#         run: pyinstaller .venv/Scripts/ofscraper --onefile --name ofscraper_windows
+#   mac:
+#     runs-on: macos-latest 
+#     name: create mac release
+#     steps:
+#       -  name: commit
+#          id: commit
+#          uses: pr-mpt/actions-commit-hash@v2
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#       - name: Set up Python 3.10.6
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.10.6'
+#       - name: create virtualenv
+#         run: python3 -m venv .venv
+#       - name: install poetry
+#         uses: abatilo/actions-poetry@v2
+#         with:
+#           poetry-version: 1.4.1
+#       - name: Install package
+#         run: poetry install
+#       - name: Install builder
+#         run: pip install pyinstaller
+#       - name: build package
+#         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [windows,linux,mac]
+    env:
+      name: "daily_${{ steps.commit.outputs.short }}"
+#     needs: [windows,linux,mac]
     permissions:
       contents: write 
     steps:
     - uses: ncipollo/release-action@v1
       with:
         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
-        tag: "daily_${{ steps.commit.outputs.short }}"
+        tag: env.name
 
     
  
