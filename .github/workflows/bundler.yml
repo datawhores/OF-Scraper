@@ -35,7 +35,7 @@ jobs:
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper"
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux"
           tag: $GITHUB_REF_NAME
 
       
