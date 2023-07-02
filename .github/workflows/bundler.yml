@@ -32,10 +32,10 @@ jobs:
       - name: build package
         run: ls -la
       - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile
+        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "./dist/ofscaper"
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper"
           tag: $GITHUB_REF_NAME
 
       
