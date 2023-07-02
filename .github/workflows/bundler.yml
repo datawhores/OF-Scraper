@@ -27,7 +27,7 @@ jobs:
       - name: Install package
         run: poetry install
       - name: Install dunamai
-        run: poetry add dunamai
+        run: pip install dunamai
       - name: set version
         run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder
@@ -61,8 +61,6 @@ jobs:
         run: poetry env use  .venv/Scripts/python3        
       - name: Install package
         run: poetry install
-      - name: Install dunamai
-        run: poetry add dunamai
       - name: Install dunamai
         run: pip install dunamai    
       - name: set version
@@ -99,7 +97,7 @@ jobs:
       - name: Install package
         run: poetry install
       - name: Install dunamai
-        run: poetry add dunamai
+        run: pip install dunamai
       - name: set version
         run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder
