@@ -19,12 +19,18 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10.6'
-      - name: install package
-        run: pip install .
+      - name: create virtualenv
+        run: python3.10 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: poetry install
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
-        run: pyinstaller ofscraper --onefile --name ofscraper_linux
+        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
   windows:
     runs-on: windows-latest
     name: create windows release
@@ -38,18 +44,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10.6'
-      - name: create virtualenv
-        run: python3 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
       - name: Install package
-        run: poetry install
+        run: pip install .
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_windows
+        run: pyinstaller ofscraper --onefile --name ofscraper_windows
   mac:
     runs-on: macos-latest 
     name: create mac release
@@ -73,8 +73,6 @@ jobs:
         run: poetry install
       - name: Install builder
         run: pip install pyinstaller
-      - name: list files
-        run: ls .venv
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos
   publish_release:
@@ -91,4 +89,3 @@ jobs:
 
     
  
-
