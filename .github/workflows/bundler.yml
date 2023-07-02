@@ -10,6 +10,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      -  name: commit
+         id: commit
+         uses: pr-mpt/actions-commit-hash@v2
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Python 3.10.6
@@ -31,6 +34,5 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux"
-          tag: ${GITHUB_SHA::6}
-
+          tag: ${{ steps.commit.outputs.short }}
       
