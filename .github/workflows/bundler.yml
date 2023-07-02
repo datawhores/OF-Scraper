@@ -6,31 +6,36 @@ on:
   push:
     branches: "main"
 jobs:
-#   linux:
-#     runs-on: ubuntu-latest
-#     name: create linux release
-#     steps:
-#       -  name: commit
-#          id: commit
-#          uses: pr-mpt/actions-commit-hash@v2
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#       - name: Set up Python 3.10.6
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.10.6'
-#       - name: create virtualenv
-#         run: python3.10 -m venv .venv
-#       - name: install poetry
-#         uses: abatilo/actions-poetry@v2
-#         with:
-#           poetry-version: 1.4.1
-#       - name: Install package
-#         run: poetry install
-#       - name: Install builder
-#         run: pip install pyinstaller
-#       - name: build package
-#         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
+  linux:
+    runs-on: ubuntu-latest
+    name: create linux release
+    steps:
+      -  name: commit
+         id: commit
+         uses: pr-mpt/actions-commit-hash@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: create virtualenv
+        run: python3.10 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: poetry install
+      - name: Install builder
+        run: pip install pyinstaller
+      - name: build package
+        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_linux
+          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux
 #   windows:
 #     runs-on: windows-latest
 #     name: create windows release
@@ -93,9 +98,12 @@ jobs:
     permissions:
       contents: write 
     steps:
-    - name: test
-      run: ls
-
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        name: my-artifact
 #     - uses: ncipollo/release-action@v1
 #       with:
 #         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
