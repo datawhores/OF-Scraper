@@ -12,7 +12,7 @@ jobs:
     steps:
       -  name: commit
          id: commit
-         uses: pr-mpt/actions-commit-hash@v2
+         uses: pr-mpt/actions-commit-hash@v2Checkout
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Python 3.10.6
@@ -98,17 +98,20 @@ jobs:
     permissions:
       contents: write 
     steps:
-    - name: Download a single artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: ofscraper_linux
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2Checkout
+        id: commit
 #     - uses: ncipollo/release-action@v1
 #       with:
-#         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
-#         tag: $env.name
-      env:
-        name: ${{ steps.commit.outputs.short}}
+# #         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
+# #         tag: $env.name
+      - name: ls 
+        run: ls
+        env:
+          name: ${{ steps.commit.outputs.short}}
 
  
