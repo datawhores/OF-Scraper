@@ -21,6 +21,7 @@ jobs:
           python-version: '3.10.6'
       - name: create virtualenv
         run: python3.10 -m venv .venv
+
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -47,7 +48,9 @@ jobs:
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1         
+          poetry-version: 1.4.1 
+      - name: create virtualenv
+        run: python3.10 -m venv .venv
       - name: Install package
         run: poetry install
       - name: Install builder
