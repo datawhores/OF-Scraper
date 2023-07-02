@@ -33,6 +33,8 @@ jobs:
         run: ls -la
       - name: build package
         run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_linux
+      - name: show files
+        run: ls -la /home/runner/work/OF-Scraper/OF-Scraper/dist/
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux"
