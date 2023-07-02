@@ -96,7 +96,7 @@ jobs:
     - uses: ncipollo/release-action@v1
       with:
         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows"
-        tag: daily_${{ steps.commit.outputs.short }}
+        tag: "daily_${{ steps.commit.outputs.short }}"
 
     
  
