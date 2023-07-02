@@ -84,7 +84,7 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos --add-data 'ofscraper:.' --add-data 'OF-Scraper/ofscraper:.'
+        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_macos --add-data 'ofscraper:.'
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
