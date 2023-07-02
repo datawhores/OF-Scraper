@@ -1,12 +1,10 @@
 
 
 
-name: linux package
+name: package builder
 on:
   push:
     branches: "main"
-    # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
 jobs:
   linux:
     runs-on: ubuntu-latest
