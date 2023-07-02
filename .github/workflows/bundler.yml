@@ -51,16 +51,16 @@ jobs:
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: show venv
-        run: ls .venv      
+        run: ls .venv/Scripts      
       - name: active env
-        run: poetry env use  .venv/bin/python3        
+        run: poetry env use  .venv/Scripts/python3        
       - name: Install package
         run: poetry install
       - name: Install builder
         run: pip install pyinstaller
      
       - name: build package
-        run: pyinstaller .venv/bin/ofscraper --onefile --name ofscraper_windows
+        run: pyinstaller .venv/Scripts/ofscraper --onefile --name ofscraper_windows
   mac:
     runs-on: macos-latest 
     name: create mac release
