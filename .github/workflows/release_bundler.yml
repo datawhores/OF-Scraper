@@ -87,118 +87,118 @@ jobs:
         with:
           name: ofscraper_linux
           path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}"
-#   windows:
-#     needs: [create_version]
-#     runs-on: windows-latest
-#     name: create windows release
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#         with:
-#             fetch-depth: 0
-#             ref: ${{inputs.version}}
-#       - name: replace version.py
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_version 
-#           path: ofscraper
-#       - name: update line
-#         run: 
-#           sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml     
-#       - name: Set up Python 3.10.6
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.10.6'
-#       - name: install poetry
-#         uses: abatilo/actions-poetry@v2
-#         with:
-#           poetry-version: 1.4.1 
-#       - name: create virtualenv
-#         run: python3 -m venv .venv
-#       - name: active env
-#         run: poetry env use  .venv/Scripts/python3        
-#       - name: Install package
-#         run: poetry install
-#       - name: install builder
-#         run: poetry add pyinstaller   
-#       - name: build package
+  windows:
+    needs: [create_version]
+    runs-on: windows-latest
+    name: create windows release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+            ref: ${{inputs.version}}
+      - name: replace version.py
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_version 
+          path: ofscraper
+      - name: update line
+        run: 
+          sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml     
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1 
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: active env
+        run: poetry env use  .venv/Scripts/python3        
+      - name: Install package
+        run: poetry install
+      - name: install builder
+        run: poetry add pyinstaller   
+      - name: build package
        
-#         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows__{{inputs.version}}"
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_windows
-#           path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows__{{inputs.version}}.exe'
-#   mac:
-#     needs: [create_version]
-#     runs-on: macos-latest 
-#     name: create mac release
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#         with:
-#             fetch-depth: 0
-#             ref: ${{inputs.version}}
-#       - name: replace version.py
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_version     
-#           path: ofscraper
-#       - name: update line
-#         run: 
-#           sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml      
-#       - name: Set up Python 3.10.6
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.10.6'
-#       - name: create virtualenv
-#         run: python3 -m venv .venv
-#       - name: install poetry
-#         uses: abatilo/actions-poetry@v2
-#         with:
-#           poetry-version: 1.4.1
-#       - name: Install package
-#         run: poetry install
-#       - name: install builder
-#         run: poetry add pyinstaller        
-#       - name: build package
-#         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_{{inputs.version}}"
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_macos
-#           path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_{{inputs.version}}"
-#   publish_release:
-#     runs-on: ubuntu-latest
-#     name: publish
-#     needs: [linux,windows,mac]
-#     permissions:
-#       contents: write 
-#     steps:
-#       - name: Download linux
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_linux  
-#       - name: Download mac
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_macos          
-#       - name: Download windows
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_windows        
-#       - name: commit
-#         uses: pr-mpt/actions-commit-hash@v2
-#         id: commit
-#       - name: show files
-#         run: ls /home/runner/work/OF-Scraper/OF-Scraper 
-#       - name: upload package
-#         uses: ncipollo/release-action@v1
-#         with:
-#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_{{inputs.version}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_{{inputs.version}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_{{inputs.version}}"
-#           tag: ${{inputs.version}}
-#           allowUpdates: True
-#           omitBodyDuringUpdate: True
-#           omitDraftDuringUpdate: True
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{inputs.version}}"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows
+          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_#{{inputs.version}}.exe'
+  mac:
+    needs: [create_version]
+    runs-on: macos-latest 
+    name: create mac release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+            ref: ${{inputs.version}}
+      - name: replace version.py
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_version     
+          path: ofscraper
+      - name: update line
+        run: 
+          sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml      
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: poetry install
+      - name: install builder
+        run: poetry add pyinstaller        
+      - name: build package
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_macos
+          path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{inputs.version}}"
+  publish_release:
+    runs-on: ubuntu-latest
+    name: publish
+    needs: [linux,windows,mac]
+    permissions:
+      contents: write 
+    steps:
+      - name: Download linux
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux  
+      - name: Download mac
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos          
+      - name: Download windows
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows        
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
+      - name: show files
+        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+      - name: upload package
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{inputs.version}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{inputs.version}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{inputs.version}}"
+          tag: ${{inputs.version}}
+          allowUpdates: True
+          omitBodyDuringUpdate: True
+          omitDraftDuringUpdate: True
 
  
