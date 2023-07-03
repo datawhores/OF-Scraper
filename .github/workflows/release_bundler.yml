@@ -12,7 +12,12 @@ on:
           files:
               required: true
               type: boolean
-      
+          pip:
+              required: true
+              type: boolean
+          docker:
+              required: true
+              type: boolean      
 jobs:
   create_version:
     runs-on: ubuntu-20.04
@@ -33,7 +38,7 @@ jobs:
       - name: replace_version 
         run: | 
           sed -i -e s/'from dunamai import Version,Pattern'// ofscraper/__version__.py 
-          sed -i -e  s/' Version.from_git(pattern=Pattern.DefaultUnprefixed).serialize(format="{base}",metadata=False)'/\""$(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)"\"/ ofscraper/__version__.py
+          sed -i -e  s/' Version.from_git(pattern=Pattern.DefaultUnprefixed).serialize(format="{base}",metadata=False)'/\""$(dunamai from git --format "{base}" --pattern default-unprefixed)"\"/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py 
       - name: upload file
