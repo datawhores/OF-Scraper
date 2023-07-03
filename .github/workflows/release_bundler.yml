@@ -11,6 +11,7 @@ on:
             required: true
           files:
               required: true
+              type: boolean
       
 jobs:
   create_version:
