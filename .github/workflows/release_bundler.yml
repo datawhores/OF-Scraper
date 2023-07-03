@@ -6,11 +6,9 @@ name: package builder release
 on:
   workflow_dispatch: 
     inputs:
-          logLevel:
+          version:
             description: 'version'
             required: true  
-env:
-    version: 2.6.4
 jobs:
   create_version:
     runs-on: ubuntu-20.04
