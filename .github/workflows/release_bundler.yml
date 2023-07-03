@@ -128,7 +128,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_#{{inputs.version}}.exe'
+          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_${{inputs.version}}.exe'
   mac:
     needs: [create_version]
     runs-on: macos-latest 
