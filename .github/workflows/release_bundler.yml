@@ -81,7 +81,7 @@ jobs:
       - name: install builder
         run: poetry add pyinstaller   
       - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_linux_{{inputs.version}}
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
