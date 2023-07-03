@@ -1,7 +1,7 @@
 
 
 
-name: package builder
+name: package builder commit
 on:
   push:
     branches: "main"
