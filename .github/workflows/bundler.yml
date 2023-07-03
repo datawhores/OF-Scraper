@@ -43,7 +43,8 @@ jobs:
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_version        
+          name: ofscraper_version 
+          path: ofscraper
       - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
@@ -81,7 +82,8 @@ jobs:
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_version             
+          name: ofscraper_version 
+          path: ofscraper
       - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
@@ -123,7 +125,8 @@ jobs:
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_version                   
+          name: ofscraper_version     
+          path: ofscraper
       - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
