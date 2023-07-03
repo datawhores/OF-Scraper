@@ -175,5 +175,7 @@ jobs:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
           tag: ${{env.version}}
           allowUpdates: True
+          omitBodyDuringUpdate: True
+          omitDraftDuringUpdate: True
 
  
