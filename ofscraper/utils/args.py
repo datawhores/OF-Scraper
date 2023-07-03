@@ -215,7 +215,7 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Skip"])
+    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Labels","Skip"])
     if isinstance(x,str):
         x=x.split(',')
         x=list(map(lambda x:x.capitalize() ,x))

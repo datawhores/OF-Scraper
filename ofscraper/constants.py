@@ -59,6 +59,10 @@ highlightSPECIFIC="https://onlyfans.com/api2/v2/stories/highlights/{}"
 storiesSPECIFIC="https://onlyfans.com/api2/v2/stories/{}"
 messageSPECIFIC= "https://onlyfans.com/api2/v2/chats/{}/messages?limit=10&order=desc&skip_users=all&firstId={}"
 
+labelsEP = "https://onlyfans.com/api2/v2/users/{}/labels?limit=100&offset={}&order=desc&non-empty=1"
+labelledPostsEP = "https://onlyfans.com/api2/v2/users/{}/posts?limit=100&offset={}&order=publish_date_desc&skip_users=all&counters=0&format=infinite&label={}"
+
+
 mainPromptChoices = {
     'Download content from a user': 0,
     'Like all of a user\'s posts': 1,

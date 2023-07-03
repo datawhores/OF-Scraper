@@ -70,7 +70,8 @@ def areas_prompt() -> list:
                 Choice('Highlights'),
                 Choice('Stories'),
                 Choice('Messages'),
-                Choice("Purchased")
+                Choice("Purchased"),
+                Choice("Labels")
             ]
             ,"instruction":prompt_strings.CHECKLISTINSTRUCTIONS,
 

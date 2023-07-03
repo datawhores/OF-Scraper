@@ -182,4 +182,25 @@ SET
 user_id=?,username=?
 WHERE user_id=(?);"""
 
+labelsCreate=\
+"""
+CREATE TABLE IF NOT EXISTS labels (
+	id INTEGER NOT NULL, 
+	name VARCHAR, 
+	type VARCHAR, 
+	post_id INTEGER, 
+	PRIMARY KEY (id, post_id)
+)
+"""
+
+labelDupeCheck=\
+"""
+SELECT * FROM labels WHERE id=? AND post_id=?
+"""
+
+labelInsert=\
+f"""INSERT INTO 'labels'(
+id, name, type, post_id)
+VALUES (?, ?,?,?);"""
+
 
