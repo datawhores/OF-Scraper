@@ -56,6 +56,8 @@ jobs:
         with:
             fetch-depth: 0
             ref: ${{inputs.version}}
+      - name: show files
+        run: ls -la
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
