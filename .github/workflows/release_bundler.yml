@@ -15,6 +15,7 @@ on:
 jobs:
   create_version:
     runs-on: ubuntu-20.04
+    if: ${{ inputs.files}}
     name: create version doc
     steps:
       - name: Checkout
