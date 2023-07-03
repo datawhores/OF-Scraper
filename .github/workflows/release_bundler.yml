@@ -201,4 +201,33 @@ jobs:
           omitBodyDuringUpdate: True
           omitDraftDuringUpdate: True
 
- 
+  pypi:
+    if: ${{ inputs.pip}}
+    runs-on: ubuntu-latest
+    name: create pypi
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{inputs.version}}
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: 🐍 Install dependencies
+        run: |
+          pip install poetry-dynamic-versioning
+          pip install dunamai 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Build
+        run: |
+          poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
+          poetry build
+      - name: Push to pypi 
+        env:
+          PYPI_TOKEN: ${{ secrets.pypi }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish
