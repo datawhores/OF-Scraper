@@ -60,9 +60,7 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: poetry add pyinstaller    
+        run: poetry install  
       - name: build package
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_linux
       - name: upload file
@@ -99,8 +97,6 @@ jobs:
         run: poetry env use  .venv/Scripts/python3        
       - name: Install package
         run: poetry install
-      - name: Install builder       
-        run: poetry add pyinstaller
      
       - name: build package
        
@@ -137,8 +133,6 @@ jobs:
           poetry-version: 1.4.1
       - name: Install package
         run: poetry install
-      - name: Install builder
-        run: pip install pyinstaller
       - name: build package
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_macos
       - name: upload file
