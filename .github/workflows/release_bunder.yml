@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v3
         with:
             fetch-depth: 0
-            ref: $version
+            ref: ${{env.version}}
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@v3
         with:
             fetch-depth: 0
-            ref: $version
+            ref: ${{env.version}}
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
@@ -127,7 +127,7 @@ jobs:
         uses: actions/checkout@v3
         with:
             fetch-depth: 0
-            ref: $version
+            ref: ${{env.version}}
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
@@ -186,7 +186,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
-          tag: $version
+          tag: ${{env.version}}
           allowUpdates: True
 
  
