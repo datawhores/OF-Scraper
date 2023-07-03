@@ -81,12 +81,12 @@ jobs:
       - name: install builder
         run: poetry add pyinstaller   
       - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_linux
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_{{inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_{{inputs.version}}"
   windows:
     needs: [create_version]
     runs-on: windows-latest
@@ -123,12 +123,12 @@ jobs:
         run: poetry add pyinstaller   
       - name: build package
        
-        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name ofscraper_windows
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows__{{inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows.exe
+          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows__{{inputs.version}}.exe'
   mac:
     needs: [create_version]
     runs-on: macos-latest 
@@ -162,12 +162,12 @@ jobs:
       - name: install builder
         run: poetry add pyinstaller        
       - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_macos
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_{{inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: /Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos
+          path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_{{inputs.version}}"
   publish_release:
     runs-on: ubuntu-latest
     name: publish
@@ -195,7 +195,7 @@ jobs:
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_{{inputs.version}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_{{inputs.version}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_{{inputs.version}}"
           tag: ${{inputs.version}}
           allowUpdates: True
           omitBodyDuringUpdate: True
