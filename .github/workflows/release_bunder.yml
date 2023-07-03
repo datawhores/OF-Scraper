@@ -61,8 +61,6 @@ jobs:
           poetry-version: 1.4.1
       - name: Install package
         run: poetry install
-      - name: Install dunamai
-        run: pip install dunamai
       - name: Install builder
         run: poetry add pyinstaller    
       - name: build package
