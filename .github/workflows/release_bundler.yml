@@ -86,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_{{inputs.version}}"
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}"
 #   windows:
 #     needs: [create_version]
 #     runs-on: windows-latest
