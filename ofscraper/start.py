@@ -7,7 +7,9 @@ import ofscraper.commands.manual as manual
 import ofscraper.utils.config as config_
 import ofscraper.utils.profiles as profiles_
 import ofscraper.utils.paths as paths_
-
+import ssl
+import platform
+import certifi
 
 
 def main():
@@ -21,6 +23,9 @@ def main():
     log.info(f"config path: {str(paths_.get_config_path())}")
     log.info(f"profile path: {str(paths_.get_profile_path())}")
     log.info(f"log folder: {str(paths_.get_config_home()/'logging')}")
+    log.debug(f"ssl {ssl.get_default_verify_paths()}")
+    log.debug(f"python version {platform. python_version()}" )
+    log.debug(f"certifi {certifi.where()}")
 
     make_folders()
     if args.command=="post_check":

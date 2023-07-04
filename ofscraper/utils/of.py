@@ -15,7 +15,7 @@ from itertools import chain
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
 import ofscraper.db.operations as operations
-import ofscraper.api.posts as posts_
+import ofscraper.classes.posts as posts_
 import ofscraper.utils.args as args_
 import ofscraper.api.paid as paid
 import ofscraper.api.highlights as highlights
@@ -26,6 +26,8 @@ import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
 import ofscraper.api.archive as archive
 import ofscraper.api.pinned as pinned
+import ofscraper.api.labels as labels_api
+import ofscraper.classes.labels as labels
 
 log=logging.getLogger(__package__)
 args=args_.getargs()
@@ -160,6 +162,18 @@ def process_all_paid():
         [output.extend(post.media) for post in post_array]
         return output
 
+def process_labels(model_id, username):
+    with stdout.lowstdout():
+        labels_ = asyncio.run(labels_api.get_labels(model_id))
+
+        labels_=labels_ if not args_.getargs().label else list(filter(lambda x:x.get("name").lower() in args_.getargs().label ,labels_))
+        labelled_posts_ = asyncio.run(labels_api.get_labelled_posts(labels_, model_id))
+        labelled_posts_= list(map(lambda x:labels.Label(x,model_id,username),labelled_posts_))
+        for labelled_post in labelled_posts_:
+            operations.write_labels_table(labelled_post, model_id, username)
+
+        output = [post.media for labelled_post in labelled_posts_ for post in labelled_post.posts]
+        return [item for sublist in output for item in sublist]
 
 def select_areas():
     if not args.scrape_paid and len( args.posts or [])==0:
@@ -180,7 +194,7 @@ def process_areas(ele, model_id) -> list:
     purchased_dict=[]
     pinned_post_dict=[]
     profile_dicts=[]
-
+    labels_dicts=[]
 
     username=ele['name']
     if "Skip" in args.posts:
@@ -206,9 +220,11 @@ def process_areas(ele, model_id) -> list:
                 stories_dicts=highlights_tuple[1]   
             if 'All' in args.posts:
                 highlights_dicts=highlights_tuple[0]
-                stories_dicts=highlights_tuple[1]               
+                stories_dicts=highlights_tuple[1]   
+    if "Labels" in args.posts or "All" in args.posts:
+        labels_dicts = process_labels(model_id,username)            
     return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
-            archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts]))
+            archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts, labels_dicts]))
 
 )
 

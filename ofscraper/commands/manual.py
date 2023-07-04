@@ -7,7 +7,7 @@ import ofscraper.api.timeline as timeline
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.utils.auth as auth
-import ofscraper.api.posts as posts_
+import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.utils.download as download
 import ofscraper.api.messages as messages_

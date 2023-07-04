@@ -18,7 +18,8 @@ import ofscraper.utils.paths as paths
 from random_unicode_emoji import random_emoji
 
 from test.test_constants import *
-from ofscraper.api.posts import Post,Media
+from ofscraper.classes.posts import Post
+from ofscraper.classes.media import Media
 from ofscraper.utils.dates import convert_local_time
 
 
@@ -420,7 +421,7 @@ def test_create_postid_name2(mocker):
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    mocker.patch('ofscraper.api.posts.Post.post_media', new=[t.post_media[0]])
+    mocker.patch('ofscraper.classes.posts.Post.post_media', new=[t.post_media[0]])
     assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
 
 
@@ -495,7 +496,7 @@ def test_create_text_name2(mocker):
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    mocker.patch('ofscraper.api.posts.Post.post_media', new=[t.post_media[0]])
+    mocker.patch('ofscraper.classes.posts.Post.post_media', new=[t.post_media[0]])
     assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
 
 

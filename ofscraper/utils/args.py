@@ -72,6 +72,10 @@ def create_parser(input=None):
     post.add_argument(
         '-dt', '--download-type', help = 'Filter to what type of download you want None==Both, protected=Files that need mp4decrpyt',default=None,required=False,type=str.lower,choices=["protected","normal"]
     )
+
+    post.add_argument(
+        '-lb', '--label', help = 'Filter by label',default=None,required=False,type=label_helper,action="extend"
+    )
    
 
      #Filters for accounts
@@ -189,6 +193,8 @@ def getargs(input=None):
     args.posts=list(set(args.posts or []))
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
+    args.label=set(args.label) if args.label else args.label
+
 
     if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
@@ -215,12 +221,12 @@ def check_filehelper(x):
    
     
 def posttype_helper(x):
-    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Skip"])
+    choices=set(["Highlights","All","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Labels","Skip"])
     if isinstance(x,str):
         x=x.split(',')
         x=list(map(lambda x:x.capitalize() ,x))
     if len(list(filter(lambda y: y not in choices,x)))>0:
-        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile')")
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')")
     return x
 
 def changeargs(newargs):
@@ -235,6 +241,13 @@ def username_helper(x):
     elif isinstance(x,str):
         temp=x.split(",")
     return temp
+def label_helper(x):
+    temp=None
+    if isinstance(x,list):
+        temp=x
+    elif isinstance(x,str):
+        temp=x.split(",")
+    return list(map(lambda x:x.lower(),temp))
 
 def arrow_helper(x):
     print(x)

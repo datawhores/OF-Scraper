@@ -2,7 +2,8 @@ import tempfile
 from ofscraper.db.operations import *
 import pytest
 from test.test_constants import *
-from ofscraper.api.posts import Post,Media
+from ofscraper.classes.posts import Post
+from ofscraper.classes.media import Media
 import pathlib
 
 def test_archive_create(mocker):

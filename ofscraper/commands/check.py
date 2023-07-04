@@ -13,7 +13,7 @@ import ofscraper.api.profile as profile
 import ofscraper.utils.auth as auth
 import ofscraper.api.timeline as timeline
 import ofscraper.api.messages as messages_
-import ofscraper.api.posts as posts_
+import ofscraper.classes.posts as posts_
 import ofscraper.constants as constants
 import ofscraper.api.paid as paid_
 import ofscraper.api.archive as archive
