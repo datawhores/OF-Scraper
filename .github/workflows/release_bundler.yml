@@ -89,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}"
+          path: "dist/ofscraper_linux_${{inputs.version}}"
       - name: build package dir
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
@@ -100,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}.zip"          
+          path: "dist/ofscraper_linux_${{inputs.version}}.zip"          
   windows:
     needs: [create_version]
     runs-on: windows-latest
@@ -142,7 +142,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_${{inputs.version}}.exe'
+          path: 'dist\ofscraper_windows_${{inputs.version}}.exe'
       - name: build package dir
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
@@ -192,7 +192,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{inputs.version}}"
+          path: "dist/ofscraper_macos_${{inputs.version}}"
       - name: build package dir
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
@@ -203,7 +203,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{inputs.version}}.zip"               
+          path: "dist/ofscraper_macos_${{inputs.version}}.zip"               
           
   publish_release:
     runs-on: ubuntu-latest
