@@ -165,7 +165,8 @@ def process_all_paid():
 def process_labels(model_id, username):
     with stdout.lowstdout():
         labels_ = asyncio.run(labels_api.get_labels(model_id))
-        labels=labels if not args_.getargs.labels else labels in args_.getargs.labels
+
+        labels_=labels_ if not args_.getargs().label else list(filter(lambda x:x.get("name").lower() in args_.getargs().label ,labels_))
         labelled_posts_ = asyncio.run(labels_api.get_labelled_posts(labels_, model_id))
         labelled_posts_= list(map(lambda x:labels.Label(x,model_id,username),labelled_posts_))
         for labelled_post in labelled_posts_:

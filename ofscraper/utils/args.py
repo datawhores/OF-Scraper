@@ -74,7 +74,7 @@ def create_parser(input=None):
     )
 
     post.add_argument(
-        '-lb', '--label', help = 'Filter by label',default=None,required=False
+        '-lb', '--label', help = 'Filter by label',default=None,required=False,type=label_helper,action="extend"
     )
    
 
@@ -193,6 +193,8 @@ def getargs(input=None):
     args.posts=list(set(args.posts or []))
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
+    args.label=set(args.label) if args.label else args.label
+
 
     if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
@@ -239,6 +241,13 @@ def username_helper(x):
     elif isinstance(x,str):
         temp=x.split(",")
     return temp
+def label_helper(x):
+    temp=None
+    if isinstance(x,list):
+        temp=x
+    elif isinstance(x,str):
+        temp=x.split(",")
+    return list(map(lambda x:x.lower(),temp))
 
 def arrow_helper(x):
     print(x)

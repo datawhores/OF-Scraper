@@ -28,6 +28,7 @@ poetry-dynamic-versioning = "^0.22.0"
 textual = "^0.27.0"
 aiohttp = {extras = ["speedups"], version = "^3.8.4"}
 faust-cchardet = "^2.1.18"
+certifi = "^2023.5.7"
 
 
 [tool.poetry.group.dev.dependencies]
