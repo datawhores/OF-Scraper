@@ -153,7 +153,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows_zip
-          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows_${{inputs.version}}.zip"          
+          path: "dist/ofscraper_windows_${{inputs.version}}.zip"          
   mac:
     needs: [create_version]
     runs-on: macos-latest 
