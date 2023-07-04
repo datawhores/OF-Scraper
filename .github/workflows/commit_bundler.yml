@@ -222,7 +222,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-          tag: ${{env.name}}
+          tag: ${{steps.commit.outputs.short}}
         env:
           name: "package_${{ steps.commit.outputs.short}}"
           body: "This is a generated release created from commit ${{ steps.commit.outputs.hash}}"
