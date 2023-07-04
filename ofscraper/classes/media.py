@@ -77,6 +77,10 @@ class Media():
     @property
     def label(self):
         return self._post.label
+    # used for placeholder
+    @property
+    def label_(self):
+        return self._post.label_
   
    
     @property

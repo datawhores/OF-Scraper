@@ -5,7 +5,7 @@ class Label:
         self._label_id = label.get("id")
         self._name = label.get("name")
         self._type = label.get("type")
-        self._posts = list(map(lambda x:posts_.Post(x,model_id,username,label=None),label.get("posts")))
+        self._posts = list(map(lambda x:posts_.Post(x,model_id,username,label=self._name),label.get("posts")))
         self._model_id = int(model_id)
         self._username = username
 

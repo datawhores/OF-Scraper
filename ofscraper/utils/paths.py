@@ -101,6 +101,7 @@ def getmediadir(ele,username,model_id):
     profile=profiles.get_active_profile()
     my_profile = profiles.get_my_info()
     my_id, my_username =me.parse_user(my_profile)
+    label=ele.label_
     if config_.get_allow_code_execution(config_.read_config()):
         downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
     else:
@@ -119,6 +120,7 @@ def getmediadir(ele,username,model_id):
                       my_id=my_id, 
                         my_username=my_username,
                 profile=profile,
+                label=label,
                 value=value)
         
     return root /downloadDir  
@@ -142,6 +144,7 @@ def createfilename(ele,username,model_id,ext):
     profile=profiles.get_active_profile()
     my_profile = profiles.get_my_info()
     my_id, my_username =me.parse_user(my_profile)
+    label=ele.label_
    
 
     if ele.responsetype_ =="profile":
@@ -164,6 +167,7 @@ def createfilename(ele,username,model_id,ext):
                                                                     responsetype=responsetype,
                                                                           my_id=my_id, 
                                                                 my_username=my_username,
+                                                                label=label,
                                                                     profile=profile) 
 
 

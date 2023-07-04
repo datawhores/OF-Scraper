@@ -11,7 +11,7 @@ class Post():
         self._model_id = int(model_id)
         self._username = username
         self._responsetype_ = responsetype or post.get("responseType")
-        self._label=None
+        self._label=label
 
     #All media return from API dict
     @property
@@ -23,6 +23,10 @@ class Post():
     @property
     def label(self):
         return self._label
+    #use for placeholder
+    @property
+    def label_(self):
+        return self._label if self._label else "None"
     @property
     def post(self):
         return self._post
