@@ -4,7 +4,7 @@
 name: package builder commit
 on:
   push:
-    branches: "main23"
+    branches: "main"
 jobs:
   create_version:
     runs-on: ubuntu-20.04
@@ -40,6 +40,9 @@ jobs:
         uses: actions/checkout@v3
         with:
             fetch-depth: 0
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
@@ -64,12 +67,12 @@ jobs:
       - name: Install builder
         run: poetry add pyinstaller    
       - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_linux
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: /home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
   windows:
     needs: [create_version]
     runs-on: windows-latest
@@ -107,12 +110,12 @@ jobs:
      
       - name: build package
        
-        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name ofscraper_windows
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows.exe
+          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
   mac:
     needs: [create_version]
     runs-on: macos-latest 
@@ -121,7 +124,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0        
+            fetch-depth: 0      
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit            
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
@@ -146,12 +152,12 @@ jobs:
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name ofscraper_macos
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: /Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos
+          path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
   publish_release:
     runs-on: ubuntu-latest
     name: publish
@@ -176,12 +182,12 @@ jobs:
         id: commit
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper 
-      - name: upload package
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos"
-          tag: ${{env.name}}
-        env:
-          name: "package_${{ steps.commit.outputs.short}}"
+#       - name: upload package
+#         uses: ncipollo/release-action@v1
+#         with:
+#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{ steps.commit.outputs.short}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{ steps.commit.outputs.short}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{ steps.commit.outputs.short}}"
+#           tag: ${{env.name}}
+#         env:
+#           name: "package_${{ steps.commit.outputs.short}}"
 
  
