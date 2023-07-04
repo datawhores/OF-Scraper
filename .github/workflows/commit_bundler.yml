@@ -60,10 +60,6 @@ jobs:
           poetry-version: 1.4.1
       - name: Install package
         run: poetry install
-      - name: Install dunamai
-        run: pip install dunamai
-      - name: set version
-        run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder
         run: poetry add pyinstaller    
       - name: build package
@@ -101,10 +97,6 @@ jobs:
         run: poetry env use  .venv/Scripts/python3        
       - name: Install package
         run: poetry install
-      - name: Install dunamai
-        run: pip install dunamai    
-      - name: set version
-        run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder       
         run: poetry add pyinstaller
      
@@ -145,10 +137,6 @@ jobs:
           poetry-version: 1.4.1
       - name: Install package
         run: poetry install
-      - name: Install dunamai
-        run: pip install dunamai
-      - name: set version
-        run: poetry version $(dunamai from git --format "{base}+{branch}.{commit}" --pattern default-unprefixed)
       - name: Install builder
         run: pip install pyinstaller
       - name: build package
@@ -182,12 +170,12 @@ jobs:
         id: commit
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper 
-#       - name: upload package
-#         uses: ncipollo/release-action@v1
-#         with:
-#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{ steps.commit.outputs.short}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{ steps.commit.outputs.short}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{ steps.commit.outputs.short}}"
-#           tag: ${{env.name}}
-#         env:
-#           name: "package_${{ steps.commit.outputs.short}}"
+      - name: upload package
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{ steps.commit.outputs.short}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{ steps.commit.outputs.short}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          tag: ${{env.name}}
+        env:
+          name: "package_${{ steps.commit.outputs.short}}"
 
  
