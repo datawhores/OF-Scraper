@@ -16,6 +16,7 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
 import ofscraper.db.operations as operations
 import ofscraper.classes.posts as posts_
+import ofscraper.classes.media as media
 import ofscraper.utils.args as args_
 import ofscraper.api.paid as paid
 import ofscraper.api.highlights as highlights
@@ -43,7 +44,7 @@ def process_messages(model_id,username):
             operations.write_messages_table(message)
         output=[]
         [ output.extend(message.media) for message in messages_]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
 def process_paid_post(model_id,username):
     with stdout.lowstdout():
@@ -55,7 +56,7 @@ def process_paid_post(model_id,username):
             operations.write_post_table(post,model_id,username)
         output=[]
         [output.extend(post.media) for post in paid_content]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
          
 
@@ -73,7 +74,7 @@ def process_highlights( model_id,username):
         output2=[]
         [ output.extend(highlight.media) for highlight in highlights_]
         [ output2.extend(stories.media) for stories in stories]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output)),list(filter(lambda x:isinstance(x,posts_.Media),output2))
+        return list(filter(lambda x:isinstance(x,media.Media),output)),list(filter(lambda x:isinstance(x,media.Media),output2))
 
         
 
@@ -92,7 +93,7 @@ def process_timeline_posts(model_id,username):
             operations.write_post_table(post,model_id,username)
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
 def process_archived_posts( model_id,username):
     with stdout.lowstdout():
@@ -105,7 +106,7 @@ def process_archived_posts( model_id,username):
             operations.write_post_table(post,model_id,username)
         output=[]
         [ output.extend(post.media) for post in archived_posts ]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
 
 
@@ -120,7 +121,7 @@ def process_pinned_posts( model_id,username):
             operations.write_post_table(post,model_id,username)
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
-        return list(filter(lambda x:isinstance(x,posts_.Media),output))
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
 def process_profile( username) -> list:
     with stdout.lowstdout():
@@ -131,7 +132,7 @@ def process_profile( username) -> list:
         for ele in enumerate(urls):
             count=ele[0]
             data=ele[1]
-            output.append(posts_.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
+            output.append(media.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
         avatars=list(filter(lambda x:x.filename.find('avatar')!=-1,output))
         if len(avatars)>0:
             log.warning(f"Avatar : {avatars[0].url}")

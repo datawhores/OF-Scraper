@@ -79,12 +79,11 @@ def get_current_config_schema(config:dict=None) -> dict:
             "metadata": get_metadata(config),
             "filter":get_filter(config),
             "threads":get_threads(config),
-                "code-execution":get_allow_code_execution(config),
-
+            "code-execution":get_allow_code_execution(config),
+            "overides":get_overides(),
             "mp4decrypt":get_mp4decrypt(config),
             "ffmpeg":get_ffmpeg(config),
              "discord":get_discord(config),
-
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -307,3 +306,8 @@ def get_spacereplacer(config=None):
     if config==None:
         return " "      
     return config.get('space-replacer'," ") or " "
+
+def get_overides(config=None):
+    if config==None:
+        return {}  
+    return config.get('overides'," ") or {}

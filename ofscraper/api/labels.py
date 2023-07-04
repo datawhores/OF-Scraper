@@ -126,7 +126,6 @@ async def get_labelled_posts(labels, username):
             while len(tasks)!=0:
                 for coro in asyncio.as_completed(tasks):
                     label, posts = await coro
-                    log.debug(label)
                     page_count=page_count+1
                     overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                     
