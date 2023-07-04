@@ -83,13 +83,20 @@ jobs:
         run: poetry install  
       - name: install builder
         run: poetry add pyinstaller   
-      - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{inputs.version}}"
+      - name: build package single
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{inputs.version}}" 
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
           path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}"
+      - name: build package dir
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}_dir" 
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_linux_dir
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}_dir"          
   windows:
     needs: [create_version]
     runs-on: windows-latest
