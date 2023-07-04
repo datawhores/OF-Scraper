@@ -143,6 +143,17 @@ jobs:
         with:
           name: ofscraper_windows
           path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_${{inputs.version}}.exe'
+      - name: build package dir
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_windows_${{inputs.version}}"
+          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows_zip
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_windows_${{inputs.version}}.zip"          
   mac:
     needs: [create_version]
     runs-on: macos-latest 
@@ -213,11 +224,20 @@ jobs:
       - name: Download mac
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_macos          
+          name: ofscraper_macos   
+      - name: Download mac zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_mac_zip         
       - name: Download windows
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_windows        
+      - name: Download windows zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows_zip  
+      
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
