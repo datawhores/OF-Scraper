@@ -95,7 +95,7 @@ jobs:
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_linux_${{inputs.version}}"
-          dest: "ofscraper_linux_${{inputs.version}}.zip"
+          dest: "dist/ofscraper_linux_${{inputs.version}}.zip"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
@@ -181,7 +181,18 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{inputs.version}}"
+      - name: build package dir
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_macos_${{inputs.version}}"
+          dest: "dist/ofscraper_macos_${{inputs.version}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_linux_zip
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{inputs.version}}.zip"                 path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{inputs.version}}"
+          
   publish_release:
     runs-on: ubuntu-latest
     name: publish
