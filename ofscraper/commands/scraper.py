@@ -133,7 +133,7 @@ def process_post_user_first():
             userdata=userselector.getselected_usernames(rescan=False)
             length=len(userdata)
             for count,ele in enumerate(userdata):
-                log.debug(f"getting content for {count+1}/{length} model")
+                log.info(f"Progress {count+1}/{length} model")
                 if args.posts:
                     log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
@@ -166,8 +166,8 @@ def normal_post_process():
         userdata=userselector.getselected_usernames(rescan=False)
         length=len(userdata)
         for count,ele in enumerate(userdata):
+            log.info(f"Progress {count+1}/{length} model")
             if args.posts:
-                log.info(f"Progress {count+1}/{length} model")
                 log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
             try:
                 model_id = profile.get_id( ele["name"])
@@ -208,8 +208,11 @@ def process_like():
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
         userdata=userselector.getselected_usernames(rescan=False)
+        active=list(filter(lambda x: x["active"],userdata))
+        length=len(active)
         with stdout.lowstdout():
-            for ele in list(filter(lambda x: x["active"],userdata)):
+            for count,ele in enumerate(active):
+                    log.info(f"Progress {count+1}/{length} model")
                     model_id = profile.get_id( ele["name"])
                     posts = like.get_posts(model_id)
                     unfavorited_posts = like.filter_for_unfavorited(posts)  
@@ -225,8 +228,11 @@ def process_unlike():
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
         userdata=userselector.getselected_usernames(rescan=False)
+        active=list(filter(lambda x: x["active"],userdata))
+        length=len(active)
         with stdout.lowstdout():
-            for ele in list(filter(lambda x: x["active"],userdata)):
+            for count,ele in enumerate(active):
+                    log.info(f"Progress {count+1}/{length} model")
                     model_id = profile.get_id( ele["name"])
                     posts = like.get_posts( model_id)
                     favorited_posts = like.filter_for_favorited(posts)

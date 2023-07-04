@@ -141,3 +141,4 @@ sphinx
 /config*
 /profile*
 *.json
+package

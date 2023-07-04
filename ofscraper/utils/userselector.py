@@ -38,9 +38,9 @@ def getselected_usernames(rescan=False,reset=False):
         selectuserhelper()
 
     usernameset=set(args.username)
-    return list(filter(lambda x:x["name"] in usernameset,parsed_subscriptions)) if args.username!="ALL" else parsed_subscriptions
+    return list(filter(lambda x:x["name"] in usernameset,parsed_subscriptions)) if "ALL" not in args.username else parsed_subscriptions
     
-def selectuserhelper():
+def selectuserhelper(): 
     headers = auth.make_headers(auth.read_auth())
     subscribe_count = process_me(headers)
     global parsed_subscriptions
