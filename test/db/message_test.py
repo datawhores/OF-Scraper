@@ -2,7 +2,7 @@ import tempfile
 from ofscraper.db.operations import *
 import pytest
 from test.test_constants import *
-from ofscraper.api.posts import Post,Media
+from ofscraper.classes.posts import Post,Media
 
 def test_message_create(mocker):
     with tempfile.NamedTemporaryFile() as p:

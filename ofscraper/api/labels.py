@@ -52,13 +52,8 @@ async def get_labels(model_id):
     tasks=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-<<<<<<< HEAD
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
-=======
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
->>>>>>> f94c75b7e5dbb11ad70a2e63abe77caf35b61ac4
 
             tasks.append(asyncio.create_task(scrape_labels(c,model_id,job_progress)))
 
@@ -121,13 +116,8 @@ async def get_labelled_posts(labels, username):
     tasks=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-<<<<<<< HEAD
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
-=======
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
->>>>>>> f94c75b7e5dbb11ad70a2e63abe77caf35b61ac4
 
             [tasks.append(asyncio.create_task(scrape_labelled_posts(c,label,username,job_progress)))
                 for label in labels]
@@ -183,42 +173,4 @@ async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
             job_progress.remove_task(task)
             r.raise_for_status()
 
-<<<<<<< HEAD
     return label, posts
-
-
-class Label:
-    def __init__(self, label, model_id, username):
-        self._label_id = label.get("id")
-        self._name = label.get("name")
-        self._type = label.get("type")
-        self._post_ids = [post['id'] for post in label.get("posts")]
-        self._model_id = int(model_id)
-        self._username = username
-
-    @property
-    def model_id(self):
-        return self._model_id
-
-    @property
-    def username(self):
-        return self._username
-
-    @property
-    def label_id(self):
-        return self._label_id
-
-    @property
-    def name(self):
-        return self._name
-    
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def post_ids(self):
-        return self._post_ids
-=======
-    return label, posts
->>>>>>> f94c75b7e5dbb11ad70a2e63abe77caf35b61ac4

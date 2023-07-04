@@ -1,5 +1,5 @@
 from test.test_constants import *
-from ofscraper.api.posts import Post,Media
+from ofscraper.classes.posts import Post,Media
 import re
 import ofscraper.utils.args as args_
 from pytest_check import check

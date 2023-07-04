@@ -1,7 +1,7 @@
 from test.test_constants import *
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
-from ofscraper.api.posts import Post
+from ofscraper.classes.posts import Post
 from pytest_check import check
 
 import arrow

@@ -15,11 +15,12 @@ import ofscraper.utils.config as config
 log=logging.getLogger(__package__)
 
 class Post():
-    def __init__(self, post, model_id, username, responsetype=None):
+    def __init__(self, post, model_id, username, responsetype=None,label=None):
         self._post = post
         self._model_id = int(model_id)
         self._username = username
         self._responsetype_ = responsetype or post.get("responseType")
+        self._label=None
 
     #All media return from API dict
     @property
@@ -28,6 +29,9 @@ class Post():
             return [{"url": self.post["cover"], "type":"photo"}]
         return self._post.get("media") or []
 
+    @property
+    def label(self):
+        return self._label
     @property
     def post(self):
         return self._post
@@ -199,7 +203,11 @@ class Media():
         if self.responsetype_ == "highlights":
             return True
         return self._media.get("canView") or True if (self.url or self.mpd)!=None else False
-
+    @property
+    def label(self):
+        return self._post.label
+  
+   
     @property
     def responsetype(self):
         return self._post.responsetype

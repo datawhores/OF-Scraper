@@ -15,7 +15,7 @@ from itertools import chain
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
 import ofscraper.db.operations as operations
-import ofscraper.api.posts as posts_
+import ofscraper.classes.posts as posts_
 import ofscraper.utils.args as args_
 import ofscraper.api.paid as paid
 import ofscraper.api.highlights as highlights

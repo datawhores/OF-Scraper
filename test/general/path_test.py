@@ -18,7 +18,7 @@ import ofscraper.utils.paths as paths
 from random_unicode_emoji import random_emoji
 
 from test.test_constants import *
-from ofscraper.api.posts import Post,Media
+from ofscraper.classes.posts import Post,Media
 from ofscraper.utils.dates import convert_local_time
 
 

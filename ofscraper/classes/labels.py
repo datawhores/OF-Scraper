@@ -1,11 +1,11 @@
-import ofscraper.api.posts as posts_
+import ofscraper.classes.posts as posts_
 
 class Label:
     def __init__(self, label, model_id, username):
         self._label_id = label.get("id")
         self._name = label.get("name")
         self._type = label.get("type")
-        self._posts = list(map(lambda x:posts_.Post(x,model_id,username),label.get("posts")))
+        self._posts = list(map(lambda x:posts_.Post(x,model_id,username,label=None),label.get("posts")))
         self._model_id = int(model_id)
         self._username = username
 
