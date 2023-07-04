@@ -8,7 +8,7 @@ import ofscraper.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
 import ofscraper.constants as constants
 import ofscraper.utils.config as config
-
+import certifi
 class Media():
     def __init__(self, media, count, post):
         self._media = media
@@ -261,7 +261,7 @@ class Media():
                                     sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as session:
             headers=auth.make_headers(auth.read_auth())
             headers=auth.create_sign(self.mpd, headers) 
-            async with session.request("get",self.mpd,headers=headers,params=params) as r:
+            async with session.request("get",self.mpd,headers=headers,params=params,ssl=ssl.create_default_context(cafile=certifi.where())) as r:
                 if not r.ok:
                     return None
                 return MPEGDASHParser.parse(await r.text())
