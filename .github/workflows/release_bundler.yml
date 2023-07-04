@@ -202,7 +202,7 @@ jobs:
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
-          name: ofscraper_linux_zip
+          name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{inputs.version}}.zip"               
           
   publish_release:
@@ -228,7 +228,7 @@ jobs:
       - name: Download mac zip
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_mac_zip         
+          name: ofscraper_macos_zip         
       - name: Download windows
         uses: actions/download-artifact@v3
         with:
