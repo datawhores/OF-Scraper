@@ -74,11 +74,7 @@ jobs:
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
-          dest: "ofscraper_linux_${{steps.commit.outputs.short}}.zip"
-      - name: show file
-        run: ls dist
-      - name: show file2
-        run: ls  
+          dest: "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
