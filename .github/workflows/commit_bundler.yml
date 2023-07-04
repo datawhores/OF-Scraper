@@ -181,7 +181,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.version}}.zip"    
+          path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"    
   
   publish_release:
     runs-on: ubuntu-latest
