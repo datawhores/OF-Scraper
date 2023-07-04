@@ -4,7 +4,7 @@
 name: package builder commit
 on:
   push:
-    branches: "mainwe"
+    branches: "main"
 jobs:
   create_version:
     runs-on: ubuntu-20.04
@@ -68,7 +68,18 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+      - name: build package dir
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{steps.commit.outputs.short}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_linux_${{steps.commit.outputs.short}}_dir"
+          dest: "ofscraper_linux_${{steps.commit.outputs.short}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_linux_zip
+          path: "/home/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_linux_${{inputs.version}}.zip"            
   windows:
     needs: [create_version]
     runs-on: windows-latest
@@ -110,7 +121,18 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: 'D:\a\OF-Scraper\OF-Scraper\dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
+          path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
+      - name: build package dir
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
+          dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows_zip
+          path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"               
   mac:
     needs: [create_version]
     runs-on: macos-latest 
@@ -148,7 +170,19 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: "/Users/runner/work/OF-Scraper/OF-Scraper/dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+      - name: build package dir
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ steps.commit.outputs.short}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_macos_zip
+          path: "dist/ofscraper_macos_${{inputs.version}}.zip"    
+  
   publish_release:
     runs-on: ubuntu-latest
     name: publish
@@ -160,19 +194,27 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_linux  
+      - name: Download linux zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux_zip 
+
       - name: Download mac
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_macos          
+          name: ofscraper_macos   
+      - name: Download mac zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos_zip         
       - name: Download windows
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_windows        
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
-      - name: show files
-        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+      - name: Download windows zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows_zip  
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
