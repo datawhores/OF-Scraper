@@ -215,10 +215,13 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_windows_zip  
-      - name: upload package
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit       
+      - name: create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{ steps.commit.outputs.short}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{ steps.commit.outputs.short}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
           tag: ${{env.name}}
         env:
           name: "package_${{ steps.commit.outputs.short}}"
