@@ -170,13 +170,13 @@ jobs:
         id: commit
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper 
-      - name: upload package
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{ steps.commit.outputs.short}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{ steps.commit.outputs.short}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{ steps.commit.outputs.short}}"
-          tag: ${{env.name}}
-        env:
-          name: "package_${{ steps.commit.outputs.short}}"
-          body: "This is a generated release created from commit ${{ steps.commit.outputs.hash}}"
+#       - name: upload package
+#         uses: ncipollo/release-action@v1
+#         with:
+#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_linux_${{ steps.commit.outputs.short}},/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_windows_${{ steps.commit.outputs.short}}.exe,/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_macos_${{ steps.commit.outputs.short}}"
+#           tag: ${{env.name}}
+#         env:
+#           name: "package_${{ steps.commit.outputs.short}}"
+#           body: "This is a generated release created from commit ${{ steps.commit.outputs.hash}}"
 
  
