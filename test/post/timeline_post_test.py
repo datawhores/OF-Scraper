@@ -1,5 +1,6 @@
 from test.test_constants import *
-from ofscraper.classes.posts import Post,Media
+from ofscraper.classes.posts import Post
+from ofscraper.classes.media import Media
 import re
 import ofscraper.utils.args as args_
 from pytest_check import check
@@ -233,7 +234,7 @@ def test_timeline_text_wordtruncate(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -259,7 +260,7 @@ def test_timeline_text_wordtruncate2(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -285,7 +286,7 @@ def test_timeline_text_wordtruncate3(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -310,7 +311,7 @@ def test_timeline_text_wordtruncate4(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -336,7 +337,7 @@ def test_timeline_text_wordtruncate5(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -362,7 +363,7 @@ def test_timeline_text_wordtruncate6(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -385,7 +386,7 @@ def test_timeline_text_lettertruncate(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -409,7 +410,7 @@ def test_timeline_text_lettertruncate2(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -431,7 +432,7 @@ def test_timeline_text_lettertruncate3(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -456,7 +457,7 @@ def test_timeline_text_lettertruncate4(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -479,7 +480,7 @@ def test_timeline_text_lettertruncate5(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -501,7 +502,7 @@ def test_timeline_text_lettertruncate6(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.api.posts.config.read_config', return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=[]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")

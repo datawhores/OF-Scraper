@@ -1,16 +1,7 @@
-import re
 import logging
-import aiohttp
 import arrow
-from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
-from ..constants import LICENCE_URL
-import ofscraper.utils.args as args_
-import ofscraper.utils.auth as auth
-from mpegdash.parser import MPEGDASHParser
-import ofscraper.constants as constants
 import ofscraper.utils.config as config
-
-
+import ofscraper.classes.media as Media
 
 log=logging.getLogger(__package__)
 
@@ -127,13 +118,13 @@ class Post():
         if (int(self.fromuser) != int(self.model_id)):
             return []
         else:
-            media = map(lambda x: Media(
+            media = map(lambda x: Media.Media(
                 x[1], x[0], self), enumerate(self.post_media))
             return list(filter(lambda x: x.canview == True, media))
     #media object array for all media
     @property
     def all_media(self):
-        return list(map(lambda x: Media(
+        return list(map(lambda x: Media.Media(
             x[1], x[0], self), enumerate(self.post_media)))
     @property
     def expires(self):

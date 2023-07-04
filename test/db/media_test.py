@@ -2,7 +2,8 @@ import tempfile
 from ofscraper.db.operations import *
 import pytest
 from test.test_constants import *
-from ofscraper.classes.posts import Post,Media
+from ofscraper.classes.posts import Post
+from ofscraper.classes.media import Media
 from pathlib import Path
 from unittest.mock import patch
 import traceback
