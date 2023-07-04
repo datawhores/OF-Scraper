@@ -223,6 +223,8 @@ jobs:
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
           tag: ${{steps.commit.outputs.short}}
+          name: ${{env.name}}
+          body: ${{env.body}}
         env:
           name: "package_${{ steps.commit.outputs.short}}"
           body: "This is a generated release created from commit ${{ steps.commit.outputs.hash}}"
