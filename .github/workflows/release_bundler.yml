@@ -94,7 +94,7 @@ jobs:
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_linux_${{inputs.version}}_dir"
+          files: "dist/ofscraper_linux_${{inputs.version}}"
           dest: "ofscraper_linux_${{inputs.version}}.zip"
       - name: upload file
         uses: actions/upload-artifact@v3
