@@ -176,7 +176,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
             log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
         if ele.id:
-            operations.write_media_table(ele,path_to_file,model_id,username)
+            await operations.write_media_table(ele,path_to_file,model_id,username)
         set_cache_helper(ele)
         return ele.mediatype,total
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
@@ -274,7 +274,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
         set_time(path_to_file,newDate )
         log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
-        operations.write_media_table(ele,path_to_file,model_id,username)
+        await operations.write_media_table(ele,path_to_file,model_id,username)
     return ele.mediatype,audio["total"]+video["total"]
 
 async def alt_download_preparer(ele):

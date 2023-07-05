@@ -11,6 +11,7 @@ r"""
 import contextlib
 import pathlib
 import sqlite3
+import aiosqlite
 import traceback
 import math
 import logging
@@ -130,21 +131,21 @@ def get_profile_info(model_id,username) -> list:
 
 
 @operation_wrapper
-def write_media_table(media,filename,model_id,username) -> list:
+async def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =databasePathHelper(model_id,username)
-    with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
-        with contextlib.closing(conn.cursor()) as cur:
-            insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
-            math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
-            media.preview,media.linked, 1,media.date]
-            if len(cur.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
-                cur.execute(queries.mediaInsert,insertData)
-            else:
-                insertData.append(media.id)
-                cur.execute(queries.mediaUpdate,insertData)
-            conn.commit()
+    async with aiosqlite.connect(datebase_path) as conn:
+        insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
+        math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+        media.preview,media.linked, 1,media.date]
+        if len((await (await conn.execute(queries.mediaDupeCheck,(media.id,))).fetchall()))==0:
+            await conn.execute(queries.mediaInsert,insertData)
+        else:
+            insertData.append(media.id)
+            await conn.execute(queries.mediaUpdate,insertData)
+        await conn.commit()
 
-            
+
+   
    
 @operation_wrapper
 def create_products_table(model_id,username):
