@@ -207,7 +207,9 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                 else:
                     r.raise_for_status()  
     except Exception as E:
+        log.traceback(traceback.format_exc())
         log.traceback(E)
+        raise E
 
 
 
@@ -330,7 +332,9 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
             else:
                 r.raise_for_status()
     except Exception as E:
+        log.traceback(traceback.format_exc())
         log.traceback(E)
+        raise E
 
 
 
@@ -367,6 +371,7 @@ async def key_helper(c,pssh,licence_url,id):
         return out
     except Exception as E:
         log.traceback(E)
+        log.traceback(traceback.format_exc())
         raise E
         
 

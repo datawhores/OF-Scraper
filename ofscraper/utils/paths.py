@@ -67,6 +67,7 @@ def databasePathHelper(model_id,username):
     my_profile = profiles.get_my_info()
     my_id, my_username =me.parse_user(my_profile)
     if config_.get_allow_code_execution(config_.read_config()):
+        custom=config_.get_custom(config_.read_config()) 
         formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
     else:
         formatStr=config_.get_metadata(config_.read_config()).format(
@@ -103,6 +104,7 @@ def getmediadir(ele,username,model_id):
     my_id, my_username =me.parse_user(my_profile)
     label=ele.label_
     if config_.get_allow_code_execution(config_.read_config()):
+        custom=config_.get_custom(config_.read_config()) 
         downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
     else:
         downloadDir=config_.get_dirformat(config_.read_config())\
@@ -150,6 +152,7 @@ def createfilename(ele,username,model_id,ext):
     if ele.responsetype_ =="profile":
         return f"{filename}.{ext}"
     elif config_.get_allow_code_execution(config_.read_config()):
+        custom=config_.get_custom(config_.read_config()) 
         return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
     else:
         return config_.get_fileformat(config_.read_config()).format(filename=filename,

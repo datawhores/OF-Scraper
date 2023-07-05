@@ -11,6 +11,7 @@ import ofscraper.utils.config as config
 import certifi
 import ssl
 import logging
+import traceback
 
 log=logging.getLogger(__package__)
 class Media():
@@ -270,7 +271,9 @@ class Media():
                         return None
                     return MPEGDASHParser.parse(await r.text())
         except Exception as E:
+            log.traceback(traceback.format_exc())
             log.traceback(E)
+            raise E
  
     
     @property
