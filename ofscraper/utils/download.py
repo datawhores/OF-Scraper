@@ -151,11 +151,11 @@ async def download(c,ele,model_id,username,file_size_limit,progress):
         return 'skipped', 1
 async def main_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     path_to_file=None
-    async with sem:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
-            total ,temp,path_to_file=await main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress)
-            if int(file_size_limit)>0 and total > int(file_size_limit): 
-                return "skipped",1
+
+    log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
+    total ,temp,path_to_file=await main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress)
+    if int(file_size_limit)>0 and total > int(file_size_limit): 
+        return "skipped",1
 
     
 
@@ -184,6 +184,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
     try:
         url=ele.url
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
+        await sem.acquire()
         async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None) as r:
                 if r.ok:
                     rheaders=r.headers
@@ -210,24 +211,25 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         log.traceback(traceback.format_exc())
         log.traceback(E)
         raise E
+    finally:
+        sem.release()
 
 
 
 
 async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
-    async with sem:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
-        path_to_file = paths.truncate(pathlib.Path(path,f'{paths.createfilename(ele,username,model_id,"mp4")}'))
-        temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
-        audio,video=await alt_download_preparer(ele)
-        audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
-        if file_size_limit>0 and int(audio["total"]) > int(file_size_limit): 
-            return 'skipped', 1
-        video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
-        if int(file_size_limit)>0 and int(video["total"]) > int(file_size_limit): 
-            return 'skipped', 1       
-          
+    log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
+    log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
+    path_to_file = paths.truncate(pathlib.Path(path,f'{paths.createfilename(ele,username,model_id,"mp4")}'))
+    temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
+    audio,video=await alt_download_preparer(ele)
+    audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
+    if file_size_limit>0 and int(audio["total"]) > int(file_size_limit): 
+        return 'skipped', 1
+    video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
+    if int(file_size_limit)>0 and int(video["total"]) > int(file_size_limit): 
+        return 'skipped', 1       
+        
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
                 log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
@@ -310,6 +312,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         url=f"{base_url}{item['origname']}"
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
         params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+        await sem.acquire()
         async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
             if r.ok:
                 rheaders=r.headers
@@ -335,6 +338,8 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         log.traceback(traceback.format_exc())
         log.traceback(E)
         raise E
+    finally:
+        sem.release()
 
 
 
