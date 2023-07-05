@@ -66,8 +66,12 @@ def databasePathHelper(model_id,username):
     save_location=config_.get_save_location(config_.read_config())
     my_profile = profiles.get_my_info()
     my_id, my_username =me.parse_user(my_profile)
+    custom=config_.get_custom(config_.read_config()) 
+    debugstring=list(filter(lambda x:x[0] in {'custom','modelusername','model_username','sitename',
+                                              'site_name','first_leter','save_location','profile'},list(locals().items())))
+    log.debug(f"modelid:{model_id}  database placeholders {debugstring}")
+
     if config_.get_allow_code_execution(config_.read_config()):
-        custom=config_.get_custom(config_.read_config()) 
         formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
     else:
         formatStr=config_.get_metadata(config_.read_config()).format(
@@ -102,9 +106,13 @@ def getmediadir(ele,username,model_id):
     profile=profiles.get_active_profile()
     my_profile = profiles.get_my_info()
     my_id, my_username =me.parse_user(my_profile)
-    label=ele.label_
+    label=ele.label
+    custom=config_.get_custom(config_.read_config())
+    debugstring=list(filter(lambda x:x[0] in {'custom','modelusername','model_username','sitename','site_name',
+                                              'first_leter','save_location','profile','media_id','mediatype','value','date',
+                                              'model_username','responsetype','root','label','post_id','media_id'},list(locals().items()))) 
+    log.debug(f"modelid:{model_id}  mediadir placeholders {debugstring}")
     if config_.get_allow_code_execution(config_.read_config()):
-        custom=config_.get_custom(config_.read_config()) 
         downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
     else:
         downloadDir=config_.get_dirformat(config_.read_config())\
@@ -118,6 +126,7 @@ def getmediadir(ele,username,model_id):
                 model_username=username,
                 responsetype=responsetype,
                 mediatype=mediatype,
+                media_id=media_id,
                 date=date,
                       my_id=my_id, 
                         my_username=my_username,
@@ -133,7 +142,6 @@ def createfilename(ele,username,model_id,ext):
     filename=ele.filename_
     sitename="Onlyfans"
     site_name="Onlyfans"
-    user=me
     post_id=ele.postid_
     media_id=ele.id
     first_letter=username[0]
@@ -147,12 +155,14 @@ def createfilename(ele,username,model_id,ext):
     my_profile = profiles.get_my_info()
     my_id, my_username =me.parse_user(my_profile)
     label=ele.label_
-   
-
+    custom=config_.get_custom(config_.read_config())
+    debugstring=list(filter(lambda x:x[0] in {'custom','modelusername','model_username','sitename','site_name','first_leter','save_location',
+                                              'profile','media_id','mediatype','value','date',
+                                              'model_username','responsetype','root','label','post_id','media_id','ext'},list(locals().items())))
+    log.debug(f"modelid:{model_id}  filename placeholders {debugstring}")
     if ele.responsetype_ =="profile":
         return f"{filename}.{ext}"
     elif config_.get_allow_code_execution(config_.read_config()):
-        custom=config_.get_custom(config_.read_config()) 
         return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
     else:
         return config_.get_fileformat(config_.read_config()).format(filename=filename,

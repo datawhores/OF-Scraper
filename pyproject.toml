@@ -29,6 +29,7 @@ textual = "^0.27.0"
 aiohttp = {extras = ["speedups"], version = "^3.8.4"}
 faust-cchardet = "^2.1.18"
 certifi = "^2023.5.7"
+aiosqlite = "^0.19.0"
 
 
 [tool.poetry.group.dev.dependencies]

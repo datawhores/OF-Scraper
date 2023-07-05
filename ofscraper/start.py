@@ -13,19 +13,11 @@ import certifi
 
 
 def main():
-    log=logger.init_logger(logging.getLogger(__package__))
+    startvalues()
     args=args_.getargs()
-    #print info
-    log.debug(args)
-
     if vars(args).get("help"):
         quit()
-    log.info(f"config path: {str(paths_.get_config_path())}")
-    log.info(f"profile path: {str(paths_.get_profile_path())}")
-    log.info(f"log folder: {str(paths_.get_config_home()/'logging')}")
-    log.debug(f"ssl {ssl.get_default_verify_paths()}")
-    log.debug(f"python version {platform. python_version()}" )
-    log.debug(f"certifi {certifi.where()}")
+  
 
     make_folders()
     if args.command=="post_check":
@@ -44,4 +36,18 @@ def main():
 def make_folders():
     config_.get_config_folder()
     profiles_.create_profile_path()
+
+def startvalues():
+    args=args_.getargs()
+    log=logger.init_logger(logging.getLogger(__package__))
+    #print info
+    log.debug(args)
+    log.debug(config_.read_config())
+    log=logger.init_logger(logging.getLogger(__package__))
+    log.info(f"config path: {str(paths_.get_config_path())}")
+    log.info(f"profile path: {str(paths_.get_profile_path())}")
+    log.info(f"log folder: {str(paths_.get_config_home()/'logging')}")
+    log.debug(f"ssl {ssl.get_default_verify_paths()}")
+    log.debug(f"python version {platform. python_version()}" )
+    log.debug(f"certifi {certifi.where()}")
     

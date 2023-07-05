@@ -125,7 +125,7 @@ def get_profile_info(model_id,username) -> list:
         return None
     with contextlib.closing(sqlite3.connect(datebase_path,check_same_thread=False)) as conn:
         with contextlib.closing(conn.cursor()) as cur:
-            modelinfo=cur.execute(queries.profileDupeCheck,(model_id,)).fetchall() or [(None,)]
+            modelinfo=cur.execute(queries.prorfileDupeCheck,(model_id,)).fetchall() or [(None,)]
             conn.commit()
             return modelinfo[0][-1]
 
