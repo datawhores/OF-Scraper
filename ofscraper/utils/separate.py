@@ -25,10 +25,6 @@ def seperate_avatar_helper(ele):
         value=cache.get(ele.postid ,False)
         cache.close()
         return value
-    elif  ele.filename and ele.responsetype_=="highlights":
-        value=cache.get(ele.filename,False)
-        cache.close()
-        return value
     return False
 
     

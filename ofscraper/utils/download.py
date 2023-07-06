@@ -411,9 +411,4 @@ def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
         cache.close()
-    elif  ele.filename_ and ele.responsetype_=="highlights":
-        cache.set(ele.filename_,True)
-        cache.close()
-
-
    
