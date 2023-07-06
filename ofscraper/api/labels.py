@@ -11,6 +11,8 @@ import asyncio
 import aiohttp
 import logging
 import contextvars
+import certifi
+import ssl
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -33,8 +35,6 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_
 
 
-from diskcache import Cache
-cache = Cache(paths.getcachepath())
 log=logging.getLogger(__package__)
 attempt = contextvars.ContextVar("attempt")
 
@@ -81,7 +81,7 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
     headers=auth.make_headers(auth.read_auth())
     headers=auth.create_sign(url, headers)
-    async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
+    async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:  
         sem.release()
         if r.ok:
             data=await r.json()
@@ -100,8 +100,6 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
             log.debug(f"[bold]labels headers:[/bold] {r.headers}")
             job_progress.remove_task(task)
             r.raise_for_status()
-
-    return labels
 
 
 async def get_labelled_posts(labels, username):
@@ -153,7 +151,7 @@ async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
     headers=auth.make_headers(auth.read_auth())
     headers=auth.create_sign(url, headers)
-    async with c.request("get",url,verify_ssl=False,cookies=auth.add_cookies_aio(),headers=headers) as r:
+    async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:  
         if r.ok:
             data=await r.json()
             attempt.set(0)

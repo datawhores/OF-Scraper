@@ -185,8 +185,9 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         url=ele.url
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
         await sem.acquire()
-        temp=paths.truncate(f"{ele.filename}_{ele.id}.part")
+        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+        log.debug(f"Media:{ele.id} Post:{ele.postid} resume size {resume_size}")
         async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers={"Range":f"bytes={resume_size}"}) as r:
                 if r.ok:
                     rheaders=r.headers
@@ -198,13 +199,13 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                     path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))                 
                     pathstr=str(path_to_file)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                    with open(temp, 'wb') as f:                           
+                    with open(temp, 'wb') as f:                         
                         progress.update(task1,visible=True )
                         async for chunk in r.content.iter_chunked(1024):
                             f.write(chunk)
                             progress.update(task1, advance=len(chunk))
                         progress.remove_task(task1)  
-                    return total+resume_size ,temp,path_to_file
+                    return total ,temp,path_to_file
                 else:
                     r.raise_for_status()  
     except Exception as E:

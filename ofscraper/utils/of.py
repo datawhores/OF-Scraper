@@ -222,8 +222,8 @@ def process_areas(ele, model_id) -> list:
             if 'All' in args.posts:
                 highlights_dicts=highlights_tuple[0]
                 stories_dicts=highlights_tuple[1]   
-    if "Labels" in args.posts or "All" in args.posts:
-        labels_dicts = process_labels(model_id,username)            
+    if ("Labels" in args.posts or "All" in args.posts) and ele["active"]:
+        labels_dicts = process_labels(model_id,username)             
     return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts, labels_dicts]))
 
