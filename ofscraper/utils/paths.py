@@ -69,7 +69,7 @@ def databasePathHelper(model_id,username):
     custom=config_.get_custom(config_.read_config()) 
     debugstring=list(filter(lambda x:x[0] in {'custom','modelusername','model_username','sitename',
                                               'site_name','first_leter','save_location','profile'},list(locals().items())))
-    log.debug(f"modelid:{model_id}  database placeholders {debugstring}")
+    log.trace(f"modelid:{model_id}  database placeholders {debugstring}")
 
     if config_.get_allow_code_execution(config_.read_config()):
         formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
@@ -111,7 +111,7 @@ def getmediadir(ele,username,model_id):
     debugstring=list(filter(lambda x:x[0] in {'custom','modelusername','model_username','sitename','site_name',
                                               'first_leter','save_location','profile','media_id','mediatype','value','date',
                                               'model_username','responsetype','root','label','post_id','media_id'},list(locals().items()))) 
-    log.debug(f"modelid:{model_id}  mediadir placeholders {debugstring}")
+    log.trace(f"modelid:{model_id}  mediadir placeholders {debugstring}")
     if config_.get_allow_code_execution(config_.read_config()):
         downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
     else:
@@ -159,7 +159,7 @@ def createfilename(ele,username,model_id,ext):
     debugstring=list(filter(lambda x:x[0] in {'custom','modelusername','model_username','sitename','site_name','first_leter','save_location',
                                               'profile','media_id','mediatype','value','date',
                                               'model_username','responsetype','root','label','post_id','media_id','ext'},list(locals().items())))
-    log.debug(f"modelid:{model_id}  filename placeholders {debugstring}")
+    log.trace(f"modelid:{model_id}  filename placeholders {debugstring}")
     if ele.responsetype_ =="profile":
         return f"{filename}.{ext}"
     elif config_.get_allow_code_execution(config_.read_config()):

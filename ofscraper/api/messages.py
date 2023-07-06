@@ -64,6 +64,8 @@ async def get_messages(model_id):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
             oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
+            log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))
+
             oldmsgset=set(map(lambda x:x.get("id"),oldmessages))
             log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
             oldmessages=list(filter(lambda x:(x.get("createdAt") or x.get("postedAt"))!=None,oldmessages))
@@ -111,6 +113,8 @@ async def get_messages(model_id):
         dupeSet.add(message["id"])
         oldmsgset.discard(message["id"])       
         unduped.append(message)
+    log.trace(f"messages dupeset {dupeSet}")
+    log.trace("messages raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo message: {str(x)}",unduped)))))
     if len(oldmsgset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"messages_{model_id}",list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped)),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
@@ -154,6 +158,7 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
                     log.debug(f"{log_id} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
                     log.debug(f"{log_id} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}")
                     log.debug(f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}")
+                    log.trace("{log_id} -> messages raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f" messages scrapeinfo: {str(x)}",messages)))))
 
 
                     if (arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
@@ -191,6 +196,7 @@ def get_individual_post(model_id,postid,client=None):
     client.headers.update(auth.create_sign(url, headers))
     r=client.get(url)
     if not r.is_error:
+        log.trace(f"message raw individual {r.json()}")
         return r.json()['list'][0]
     log.debug(f"{r.status_code}")
     log.debug(f"{r.content.decode()}")

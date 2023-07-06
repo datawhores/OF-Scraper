@@ -66,8 +66,8 @@ async def get_labels(model_id):
                     output.extend(result)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)  
-    log.debug(f"[bold]Labels count without Dupes[/bold] {len(output)} found")
-
+    log.trace("post label names unduped {posts}".format(posts= "\n\n".join(map(lambda x:f" label name unduped:{x}",output))))
+    log.debug(f"[bold]Labels name count without Dupes[/bold] {len(output)} found")
     return output    
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
@@ -87,12 +87,15 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
             data=await r.json()
             attempt.set(0)
             labels=list(filter(lambda x:isinstance(x,list),data.values()))[0]
-            log.debug(f"offset:{offset} -> labels found {len(labels)}")
+            log.debug(f"offset:{offset} -> labels names found {len(labels)}")
             log.debug(f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }")
+            log.trace("offset:{offset} -> label names raw: {posts}".format(offset=offset,posts=data))  
+
             if data.get("hasMore"):
                 offset = data.get("nextOffset")
                 tasks.append(asyncio.create_task(scrape_labels(c, model_id,job_progress,offset=offset)))
             job_progress.remove_task(task)
+            return data.get("list")
 
         else:
             log.debug(f"[bold]labels request status code:[/bold]{r.status}")
@@ -137,6 +140,7 @@ async def get_labelled_posts(labels, username):
 
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)  
+    log.trace("post label joined {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"label post joined: {str(x)}",list(output.values()))))))
     log.debug(f"[bold]Labels count without Dupes[/bold] {len(output)} found")
 
     return list(output.values())
@@ -158,15 +162,17 @@ async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
             posts=list(filter(lambda x:isinstance(x,list),data.values()))[0]
             log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
             log.debug(f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }")
+            log.trace("{offset} -> {posts}".format(offset=offset,posts= "\n\n".join(list(map(lambda x:f"scrapeinfo label {str(x)}",posts)))))  
             if data.get("hasMore"):
                 offset += len(posts)
                 tasks.append(asyncio.create_task(scrape_labelled_posts(c, label, model_id,job_progress,offset=offset)))
             job_progress.remove_task(task)
-
+ 
         else:
             log.debug(f"[bold]labelled posts request status code:[/bold]{r.status}")
             log.debug(f"[bold]labelled posts response:[/bold] {await r.text()}")
             log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
+
             job_progress.remove_task(task)
             r.raise_for_status()
 

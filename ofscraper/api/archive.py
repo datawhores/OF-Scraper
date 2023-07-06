@@ -75,6 +75,8 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                     log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}")
+                    log.trace("{log_id} -> archive raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo archive: {str(x)}",posts)))))
+
        
                     if required_ids==None:
                         attempt.set(0)
@@ -116,6 +118,7 @@ async def get_archived_post(model_id):
                             sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.AlT_SEM)) as c: 
 
             oldarchived=cache.get(f"archived_{model_id}",default=[])
+            log.trace("oldarchive {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldarchive: {str(x)}",oldarchived)))))
             oldtimeset=set(map(lambda x:x.get("id"),oldarchived))
             log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
             oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
@@ -155,6 +158,8 @@ async def get_archived_post(model_id):
         dupeSet.add(post["id"])
         oldtimeset.discard(post["id"])
         unduped.append(post)
+    log.trace(f"archive dupeset {dupeSet}")
+    log.trace("archived raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo archive: {str(x)}",unduped)))))
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"archived_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped)),expire=constants.RESPONSE_EXPIRY)

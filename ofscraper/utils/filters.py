@@ -8,14 +8,24 @@ import ofscraper.utils.args as args_
 args=args_.getargs()
 log=logging.getLogger(__package__)
 def filterMedia(media):
+    logformater="data: {} id: {} postid: {}"
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 1-> all media no filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=dupefilter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f" filter 2-> all media dupe filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=post_datesorter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 3-> all media datesort: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=posts_type_filter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 4-> all media post media type filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=posts_date_filter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 5-> all media post date filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=post_timed_filter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 6->  all media post timed post filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=post_user_filter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 7-> all media post text filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=download_type_filter(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 8->  all download type filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
     media=sort_media(media)
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 9-> final and sorted: {logformater.format(x.media,x.id,x.postid)}",media)))))
     return media
 
 def sort_media(media):
@@ -94,3 +104,4 @@ def download_type_filter(media):
         return list(filter(lambda x:x.mpd!=None,media))  
     elif args_.getargs().download_type=="normal":
         return list(filter(lambda x:x.url!=None,media))
+

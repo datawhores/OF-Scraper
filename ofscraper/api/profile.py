@@ -33,6 +33,7 @@ attempt = contextvars.ContextVar("attempt")
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile(username:Union[int, str]) -> dict:
     id=cache.get(f"username_{username}",None)
+    log.trace(f"username date: {id}")
     if id:
         return id
     headers = auth.make_headers(auth.read_auth())
@@ -50,6 +51,7 @@ def scrape_profile(username:Union[int, str]) -> dict:
             attempt.set(0)
             cache.set(f"username_{username}",r.json(),int(HOURLY_EXPIRY*2))
             cache.close()
+            log.trace(f"username date: {r.json()}")
             return r.json()
         elif r.status_code==404:
             return {"username":"modeldeleted"}

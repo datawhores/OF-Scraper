@@ -71,6 +71,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=
                     log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}")
+                    log.trace("{log_id} -> pinned raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo pinned: {str(x)}",posts)))))
 
   
                 #post infinite loops            
@@ -121,5 +122,7 @@ async def get_pinned_post(model_id):
             continue
         dupeSet.add(post["id"])
         unduped.append(post)
+    log.trace(f"pinned dupeset {dupeSet}")
+    log.trace("pinned raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo pinned: {str(x)}",unduped)))))
     log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(unduped)} found")
     return unduped                                

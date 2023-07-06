@@ -75,9 +75,9 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                     log.debug(f"{log_id} -> number of post found {len(posts)}")
                     log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
-
                     log.debug(f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}")
-
+                    log.trace("{log_id} -> post raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo timeline: {str(x)}",posts)))))
+                               
                     if required_ids==None:
                         attempt.set(0)
                         tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
@@ -118,6 +118,8 @@ async def get_timeline_post(model_id):
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
 
             oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
+            log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
+
             oldtimeset=set(map(lambda x:x.get("id"),oldtimeline))
             log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
             oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
@@ -157,6 +159,8 @@ async def get_timeline_post(model_id):
         dupeSet.add(post["id"])
         oldtimeset.discard(post["id"])
         unduped.append(post)
+    log.trace(f"timeline dupeset {dupeSet}")
+    log.trace("post raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo timeline: {str(x)}",unduped)))))
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"timeline_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped)),expire=constants.RESPONSE_EXPIRY)
@@ -178,7 +182,9 @@ def get_individual_post(id,client=None):
     client.headers.update(auth.create_sign(url, headers))
     r=client.get(url)
     if not r.is_error:
+        log.trace(f"post raw individual {r.json()}")
         return r.json()
     log.debug(f"{r.status_code}")
     log.debug(f"{r.content.decode()}")
+    
 

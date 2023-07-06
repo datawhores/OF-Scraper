@@ -20,12 +20,20 @@ discord_queue=queue.Queue()
 
 class DebugOnly(logging.Filter):
     def filter(self, record):
-        if record.levelname=="DEBUG" or record.levelname=="TRACEBACK":
+
+        if record.levelno==10 or record.levelno==11:
             return True
         return False
+
+class TraceOnly(logging.Filter):
+    def filter(self, record):
+        if record.levelno<=11:
+            return True
+        return False
+
 class NoDebug(logging.Filter):
     def filter(self, record):
-        if record.levelname=="DEBUG" or record.levelname=="TRACEBACK":
+        if record.levelno<=11:
             return False
         return True
 class DiscordHandler(logging.Handler):
@@ -99,9 +107,9 @@ class SensitiveFormatter(logging.Formatter):
         if s.find("Avatar :")!=-1:
             None
         else:
-            s=re.sub("&Policy=[^&\"]+", "&Policy={hidden}", s)
-            s=re.sub("&Signature=[^&\"]+", "&Signature={hidden}", s)
-            s=re.sub("&Key-Pair-Id=[^&\"]+", "&Key-Pair-Id={hidden}", s)
+            s=re.sub("&Policy=[^&\"\']+", "&Policy={hidden}", s)
+            s=re.sub("&Signature=[^&\"\']+", "&Signature={hidden}", s)
+            s=re.sub("&Key-Pair-Id=[^&\"\']+", "&Key-Pair-Id={hidden}", s)
             for ele in senstiveDict.items():
                 s=re.sub(re.escape(str(ele[0])),str(ele[1]),s)
         return s
@@ -122,18 +130,36 @@ class LogFileFormatter(SensitiveFormatter):
     
 
 
-def logForLevel(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.DEBUG+5):
-            self._log(logging.DEBUG+5, message, args, **kwargs)
-def logToRoot(message, *args, **kwargs):
-        logging.log(logging.DEBUG+5, message, *args, **kwargs)   
+def logForLevel(level):
+    def inner(self, message, *args, **kwargs):
+        if self.isEnabledFor(level):
+            self._log(level, message, args, **kwargs)
+    return inner
 
-def addtrackback():
+def  logToRoot(level):
+    def inner(message, *args, **kwargs):
+            logging.log(level, message, *args, **kwargs)  
+    return inner 
 
-    logging.addLevelName(logging.DEBUG+5, "TRACEBACK")
-    logging.TRACEBACK = logging.DEBUG+5
-    setattr(logging.getLoggerClass(),"traceback", logForLevel)
-    setattr(logging, "traceback",logToRoot)
+def addtraceback():
+    level=logging.DEBUG+1
+
+    logging.addLevelName(level ,"TRACEBACK")
+    logging.TRACEBACK = level
+    setattr(logging, "TRACEBACK", level)
+    setattr(logging.getLoggerClass(),"traceback", logForLevel(level))
+    setattr(logging, "traceback",logToRoot(level))
+
+def addtrace():
+    level=logging.DEBUG-5
+
+    logging.addLevelName( level,"TRACE")
+    logging.TRACE = level
+    setattr(logging, "TRACE", level)
+    setattr(logging.getLoggerClass(),"trace", logForLevel(level))
+    setattr(logging, "trace",logToRoot(level))
+
+
 
 def updateSenstiveDict(word,replacement):
      global senstiveDict
@@ -147,18 +173,23 @@ def getLevel(input):
     WARNING 30
     INFO 20
     DEBUG 10
+    TRACE 5 
     """
     return {"OFF":100,
             "PROMPT":"CRITICAL",
             "STATS":"ERROR",
             "LOW":"WARNING",
             "NORMAL":"INFO",
-            "DEBUG":"DEBUG"}.get(input,100)
+            "DEBUG":"DEBUG",
+            "TRACE":"TRACE"
+            
+            }.get(input,100)
 
 def init_logger(log):
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
-    addtrackback()
+    addtraceback()
+    addtrace()
     # # #log file
       # #discord
     cord=DiscordHandler()
@@ -184,20 +215,20 @@ def init_logger(log):
         log.addHandler(fh)
 
     
-    if args.getargs().output=="DEBUG":
+    if args.getargs().output in {"TRACE","DEBUG"}:
+        funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
         sh2=RichHandler(rich_tracebacks=True, console=console.shared_console,markup=True,tracebacks_show_locals=True,show_time=False)
         sh2.setLevel(args.getargs().output)
         sh2.setFormatter(SensitiveFormatter(format))
-        sh2.addFilter(DebugOnly())
+        sh2.addFilter(funct())
         log.addHandler(sh2)
-    if args.getargs().log=="DEBUG":
+    if args.getargs().log=={"TRACE","DEBUG"}:
+        funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
         fh2=logging.StreamHandler(stream)
         fh2.setLevel(getLevel(args.getargs().log))
         fh2.setFormatter(LogFileFormatter('%(asctime)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-        fh2.addFilter(DebugOnly())
+        fh2.addFilter(funct())
         log.addHandler(fh2)
-    
-
     return log
 
 

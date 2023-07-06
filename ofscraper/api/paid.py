@@ -82,6 +82,8 @@ async def get_paid_posts(username,model_id):
             overall_progress.remove_task(page_task)  
     log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(output)} found")
     # set purchash check values during scan
+    log.trace("paid raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo paid: {str(x)}",output)))))
+
     cache.set(f"purchased_check_{model_id}",output,expire=constants.CHECK_EXPIRY)
     cache.close()
     return output
@@ -104,6 +106,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
         sem.release()
         if r.ok:
             data=await r.json()
+            log.trace("paid raw {posts}".format(posts=  data))
             attempt.set(0)
             media=list(filter(lambda x:isinstance(x,list),data.values()))[0]
             log.debug(f"offset:{offset} -> media found {len(media)}")

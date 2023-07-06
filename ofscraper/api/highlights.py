@@ -59,6 +59,8 @@ async def get_highlight_post(model_id):
                     output.extend(result)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)  
+    log.trace("stories+highlight raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories+highlight: {str(x)}",output)))))
+    log.debug(f"[bold]stories+highlight Count without Dupes[/bold] {len(output)} found")
     return output
 
 
@@ -85,6 +87,8 @@ async def scrape_highlights( c,user_id,job_progress) -> list:
         highlights_, stories =get_highlightList(await r_multiple.json()),await r_one.json()
         log.debug(f"highlights: -> found highlights ids {list(map(lambda x:x.get('id'),highlights_))}")
         log.debug(f"highlights: -> found stories ids {list(map(lambda x:x.get('id'),stories))}") 
+        log.trace("highlights: -> highlight+stories raw {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo: {str(x)}",highlights_+stories)))))
+
         job_progress.remove_task(task)
 
     else:
