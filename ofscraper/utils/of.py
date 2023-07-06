@@ -62,14 +62,15 @@ def process_paid_post(model_id,username):
 
 def process_highlights( model_id,username):
     with stdout.lowstdout():
-        highlights_, stories = asyncio.run(highlights.get_highlight_post( model_id))
-        highlights_, stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_)),\
-        list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
-        log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
+        stories = asyncio.run(highlights.get_stories_post( model_id))
+        highlights_=asyncio.run(highlights.get_highlight_post( model_id))
+        highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
+        stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
         for post in highlights_:
             operations.write_stories_table(post,model_id,username)
         for post in stories:
             operations.write_stories_table(post,model_id,username)   
+        log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
         output=[]
         output2=[]
         [ output.extend(highlight.media) for highlight in highlights_]

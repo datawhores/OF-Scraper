@@ -26,8 +26,6 @@ class Media():
 
     @property
     def mediatype(self):
-        if self.responsetype_ == "highlights":
-            return "images"
         if self._media["type"] == "gif" or self._media["type"] == "photo":
             return "images"
         else:
@@ -47,10 +45,8 @@ class Media():
 
     @property
     def url(self):
-        if self.responsetype_ == "stories":
+        if self.responsetype_ == "stories" or self.responsetype_ =="highlights":
             return self._media.get("files", {}).get("source", {}).get("url")
-        elif self.responsetype_ == "highlights":
-            return self._media.get("url")
         elif self.responsetype_ == "profile":
             return self._media.get("url")
         else:
@@ -76,8 +72,6 @@ class Media():
 
     @property
     def canview(self):
-        if self.responsetype_ == "highlights":
-            return True
         return self._media.get("canView") or True if (self.url or self.mpd)!=None else False
     @property
     def label(self):

@@ -35,8 +35,8 @@ log=logging.getLogger(__package__)
 sem = semaphoreDelayed(1)
 attempt = contextvars.ContextVar("attempt")
 
-async def get_highlight_post(model_id):
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting highlight media...\n{task.description}"))
+async def get_stories_post(model_id):
+    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting story media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
@@ -49,7 +49,7 @@ async def get_highlight_post(model_id):
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=1)) as c: 
-            tasks.append(asyncio.create_task(scrape_highlights(c,model_id,job_progress)))
+            tasks.append(asyncio.create_task(scrape_stories(c,model_id,job_progress)))
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
             while len(tasks)!=0:
                 for coro in asyncio.as_completed(tasks):
@@ -59,48 +59,168 @@ async def get_highlight_post(model_id):
                     output.extend(result)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)  
-    log.trace("stories+highlight raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories+highlight: {str(x)}",output)))))
+    log.trace("stories raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories: {str(x)}",output)))))
     log.debug(f"[bold]stories+highlight Count without Dupes[/bold] {len(output)} found")
     return output
 
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_highlights( c,user_id,job_progress) -> list:
+async def scrape_stories( c,user_id,job_progress) -> list:
     global sem
     global tasks
     attempt.set(attempt.get(0) + 1)
-    highlights_=None; stories=None
+    stories=None
     await sem.acquire()
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
     headers=auth.make_headers(auth.read_auth())
   
 
-    url_stories = constants.highlightsWithStoriesEP.format(user_id)
-    url_story = constants.highlightsWithAStoryEP.format(user_id)
-    r_one=await c.request("get",url_story ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_story , headers))
-    r_multiple=await c.request("get",url_stories ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url_stories , headers))
+    url= constants.highlightsWithAStoryEP.format(user_id)
+    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url, headers))
     
-    # highlights_, stories
     sem.release()
-    if  r_multiple.ok and r_one.ok:
+    if  r.ok:
         attempt.set(0)
-        highlights_, stories =get_highlightList(await r_multiple.json()),await r_one.json()
-        log.debug(f"highlights: -> found highlights ids {list(map(lambda x:x.get('id'),highlights_))}")
-        log.debug(f"highlights: -> found stories ids {list(map(lambda x:x.get('id'),stories))}") 
-        log.trace("highlights: -> highlight+stories raw {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo: {str(x)}",highlights_+stories)))))
-
+        stories =await r.json()
+        log.debug(f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}") 
+        log.trace("stories: -> stories raw {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo stories: {str(x)}",stories)))))
         job_progress.remove_task(task)
 
     else:
         job_progress.remove_task(task)
-        r_multiple.raise_for_status()
-        r_one.raise_for_status()
-    return  highlights_, stories 
+        r.raise_for_status()
+    return   stories 
+
+
+
+
+
+
+async def get_highlight_post(model_id):
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
+                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=1)) as c: 
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting highlight list...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
+
+        output=[]
+
+        page_count=0
+        global tasks
+        tasks=[]    
+        with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+        
+                tasks.append(asyncio.create_task(scrape_highlight_list(c,model_id,job_progress)))
+                page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
+                while len(tasks)!=0:
+                    for coro in asyncio.as_completed(tasks):
+                        result=await coro or []
+                        page_count=page_count+1
+                        overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                        output.extend(result)
+                    tasks=list(filter(lambda x:x.done()==False,tasks))
+                
+          
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting highlight...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
+        with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+
+
+            output2=[]
+            page_count=0
+            tasks=[]
+                
+            [tasks.append(asyncio.create_task(scrape_highlights(c,i,job_progress))) for i in output]
+            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
+            while len(tasks)!=0:
+                for coro in asyncio.as_completed(tasks):
+                    result=await coro or []
+                    page_count=page_count+1
+                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                    output2.extend(result)
+                tasks=list(filter(lambda x:x.done()==False,tasks))
+
+    # log.trace("stories+highlight raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories+highlight: {str(x)}",output)))))
+    # log.debug(f"[bold]stories+highlight Count without Dupes[/bold] {len(output)} found")
+    return output2
+
+
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
+    global sem
+    global tasks
+    attempt.set(attempt.get(0) + 1)
+    await sem.acquire()
+    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
+    headers=auth.make_headers(auth.read_auth())
+  
+
+    url= constants.highlightsWithStoriesEP.format(user_id,offset)
+
+    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url , headers))
+    
+    # highlights_, stories
+    sem.release()
+    if  r.ok:
+        attempt.set(0)
+        resp_data=(await r.json())
+        log.trace(f"highlights list: -> found highlights list data {resp_data}")
+        data=get_highlightList(resp_data)
+        log.debug(f"highlights list: -> found list ids {data}")
+    
+        job_progress.remove_task(task)
+        if resp_data.get("hasMore"):
+            tasks.append(asyncio.create_task(scrape_highlight_list(c,user_id,job_progress,offset+len(data))))
+
+
+
+    else:
+        job_progress.remove_task(task)
+        r.raise_for_status()
+    return  data
+
+
+
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+async def scrape_highlights( c,id,job_progress) -> list:
+    global sem
+    global tasks
+    attempt.set(attempt.get(0) + 1)
+    await sem.acquire()
+    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
+    headers=auth.make_headers(auth.read_auth())
+  
+
+    url= constants.storyEP.format(id)
+
+    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url , headers))
+    
+    # highlights_, stories
+    sem.release()
+    if  r.ok:
+        attempt.set(0)
+        resp_data=(await r.json())
+        log.trace(f"highlights: -> found highlights data {resp_data}")
+        log.debug(f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}")
+        job_progress.remove_task(task)
+    else:
+        job_progress.remove_task(task)
+        r.raise_for_status()
+    return resp_data['stories']
+
+
+
 
 def get_highlightList(data):
     for ele in list(filter(lambda x:isinstance(x,list),data.values())):
         if len(list(filter(lambda x:isinstance(x.get("id"),int) and data.get("hasMore")!=None,ele)))>0:
-               return ele
+               return list(map(lambda x:x.get("id"),ele))
     return []
 
 

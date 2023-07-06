@@ -16,8 +16,6 @@ class Post():
     #All media return from API dict
     @property
     def post_media(self):
-        if self._responsetype_ == "highlights":
-            return [{"url": self.post["cover"], "type":"photo"}]
         return self._post.get("media") or []
 
     @property
@@ -47,8 +45,6 @@ class Post():
 
     @property
     def text(self):
-        if self._responsetype_ == "highlights":
-            return self.post.get("title") 
         return self._post.get("text")
 
     @property
