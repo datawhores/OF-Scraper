@@ -6,7 +6,7 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.7.0,<3.13"
+python = ">=3.7.0,<3.12"
 httpx = {extras = ["http2"], version = "^0.23.3"}
 inquirerpy = "^0.3.4"
 setuptools = "^67.6.0"
@@ -30,6 +30,8 @@ aiohttp = {extras = ["speedups"], version = "^3.8.4"}
 faust-cchardet = "^2.1.18"
 certifi = "^2023.5.7"
 aiosqlite = "^0.19.0"
+pycryptodome = "^3.18.0"
+pywidevine = "^1.6.0"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -85,6 +85,8 @@ def get_current_config_schema(config:dict=None) -> dict:
             "ffmpeg":get_ffmpeg(config),
              "discord":get_discord(config),
              "custom":None,
+             "private-key":get_private_key(config),
+             "client-id":get_client_id(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -312,3 +314,12 @@ def get_custom(config=None):
     if config==None:
         return None 
     return config.get('custom')
+def get_private_key(config=None):
+    if config==None:
+        return None 
+    return config.get('private-key')
+
+def get_client_id(config=None):
+    if config==None:
+        return None 
+    return config.get('client-id')

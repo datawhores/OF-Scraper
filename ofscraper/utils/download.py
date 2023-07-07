@@ -7,7 +7,6 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-
 import asyncio
 import math
 import pathlib
@@ -38,13 +37,16 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.console import Group
 from rich.table import Column
+from pywidevine.cdm import Cdm
+from pywidevine.device import Device
+from pywidevine.pssh import PSSH
 import arrow
 from bs4 import BeautifulSoup
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
-from tenacity import retry,stop_after_attempt,wait_random,retry_if_result
+from tenacity import retry,stop_after_attempt,wait_random
 
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
@@ -222,7 +224,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
     log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
     log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
     path_to_file = paths.truncate(pathlib.Path(path,f'{paths.createfilename(ele,username,model_id,"mp4")}'))
-    temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}_{randint(100,999)}.mp4"))
+    temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     audio,video=await alt_download_preparer(ele)
     audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
     if file_size_limit>0 and int(audio["total"]) > int(file_size_limit): 
@@ -240,7 +242,8 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
             return "skipped",1 
                 
     for item in [audio,video]:
-        key=await key_helper(c,item["pssh"],ele.license,ele.id)
+        # key=await key_helper(c,item["pssh"],ele.license,ele.id)
+        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)
         if key==None:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
@@ -289,21 +292,20 @@ async def alt_download_preparer(ele):
                             break
                     maxquality=max(map(lambda x:x.height,adapt_set.representations))
                     for repr in adapt_set.representations:
-                        name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
+                        origname=f"{repr.base_urls[0].base_url_value}"
                         if repr.height==maxquality:
-                            video={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"video","name":name}
+                            video={"origname":origname,"pssh":kId,"type":"video","name":f"tempvid_{origname}"}
                             break
                 for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
                     kId=None
-                    name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
                     for prot in adapt_set.content_protections:
                         if prot.value==None:
                             kId = prot.pssh[0].pssh 
                             logger.updateSenstiveDict(kId,"pssh_code")
                             break
                     for repr in adapt_set.representations:
-                        name=f"{repr.base_urls[0].base_url_value}_{randint(100,999)}"
-                        audio={"origname":repr.base_urls[0].base_url_value,"pssh":kId,"type":"audio","name":name}
+                        origname=f"{repr.base_urls[0].base_url_value}"
+                        audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                         break
     return audio,video
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
@@ -312,29 +314,42 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         url=f"{base_url}{item['origname']}"
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
-        params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
         await sem.acquire()
-        async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.make_headers(auth.read_auth())) as r:
-            if r.ok:
-                rheaders=r.headers
-                total = int(rheaders['Content-Length'])
-                item["total"]=total
-                temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
-                temp.unlink(missing_ok=True)
-                item["path"]=temp
-                if file_size_limit>0 and total > int(file_size_limit): 
-                        return  item
-                pathstr=str(temp)
-                task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                with open(temp, 'wb') as f:                           
-                    progress.update(task1,visible=True )
-                    async for chunk in r.content.iter_chunked(1024):
-                        f.write(chunk)
-                        progress.update(task1, advance=len(chunk))
-                    progress.remove_task(task1)
-                return item
-            else:
-                r.raise_for_status()
+        params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+        headers=auth.make_headers(auth.read_auth())
+        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+        total=cache.get(f'size_{item["origname"]}')
+        cache.close()
+        if total and resume_size:
+            headers.update({"Range":f"bytes={resume_size}-{total}"})
+        if not total or (resume_size!=total):
+            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+                if r.ok:
+                    rheaders=r.headers
+                    total = total or (int(rheaders['Content-Length'])+resume_size)
+                    cache.set(f'size_{item["origname"]}',total,expire=constants.SIZE_TIMEOUT)
+                    cache.close()
+                    if file_size_limit>0 and  item["total"] > int(file_size_limit): 
+                            return  item
+                    pathstr=str(temp)
+                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                    size=0
+                    progress.update(task1, advance=resume_size)
+                    with open(temp, 'wb') as f:                           
+                        progress.update(task1,visible=True )
+                        async for chunk in r.content.iter_chunked(1024):
+                            size=size+len(chunk)
+                            f.write(chunk)
+                            progress.update(task1, advance=len(chunk))
+                        progress.remove_task(task1)
+                else:
+                    r.raise_for_status()
+                    return item
+        item["total"]=total
+        item["path"]=temp
+        return item
+              
     except Exception as E:
         log.traceback(traceback.format_exc())
         log.traceback(E)
@@ -365,14 +380,12 @@ async def key_helper(c,pssh,licence_url,id):
             }
 
 
-                    
-
             async with c.request("post",'https://cdrm-project.com/wv',json=json_data,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True,cookies=None) as r:
                 httpcontent=await r.text()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
                 out=soup.find("li").contents[0]
-                cache.set(licence_url,out, expire=2592000)
+                cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
                 cache.close()
         return out
     except Exception as E:
@@ -381,8 +394,49 @@ async def key_helper(c,pssh,licence_url,id):
         raise E
         
 
+async def key_helper_manual(c,pssh,licence_url,id):
+    out=cache.get(licence_url)
+    log.debug(f"ID:{id} pssh: {pssh!=None}")
+    log.debug(f"ID:{id} licence: {licence_url}")
 
-  
+    # prepare pssh
+    pssh = PSSH(pssh)
+
+
+    # load device
+    private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
+    client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
+    device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
+
+
+    # load cdm
+    cdm = Cdm.from_device(device)
+
+    # open cdm session
+    session_id = cdm.open()
+
+    
+    
+    
+    # get license challenge
+    challenge = cdm.get_license_challenge(session_id, pssh)
+    headers=auth.make_headers(auth.read_auth())
+    headers=auth.create_sign(licence_url, headers)
+    keys=None
+    async with c.request("post",licence_url,data=challenge,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True, headers=headers,cookies=auth.add_cookies_aio()) as r:
+        cdm.parse_license(session_id, await r.content.read())
+        keys = cdm.get_keys(session_id)
+        cdm.close(session_id)
+    keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
+    key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
+    cache.set(licence_url,key, expire=constants.KEY_EXPIRY)
+    return key
+
+                
+
+    
+
+
 def convert_num_bytes(num_bytes: int) -> str:
     if num_bytes == 0:
       return '0 B'
@@ -411,4 +465,5 @@ def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
         cache.close()
-   
+
+
