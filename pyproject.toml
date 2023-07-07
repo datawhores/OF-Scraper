@@ -91,4 +91,4 @@ enable = true
 vcs="git"
 metadata=true
 format="{base}"
-pattern = "(?P<base>\d+\.\d+\.\d+)"
+pattern = "(?P<base>\\d+\\.\\d+\\.\\d+)"
