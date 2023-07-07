@@ -220,7 +220,7 @@ jobs:
         id: commit
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d:mm:hh_%M.%H')"
 
       - name: create release
         uses: ncipollo/release-action@v1
@@ -231,7 +231,7 @@ jobs:
           body: ${{env.body}}
           makeLatest: true
         env:
-          name: "package_${{ steps.commit.outputs.short}}-${{steps.date.outputs.date}}"
+          name: "${{steps.date.outputs.date}}_${{ steps.commit.outputs.short}}_package"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
 
  
