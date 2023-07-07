@@ -220,7 +220,8 @@ jobs:
         id: commit
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d:_%H:%M')"
+        run: echo "date=$(date +'%Y-%m-%d:%H.%M')" >> $GITHUB_OUTPUT
+
 
       - name: create release
         uses: ncipollo/release-action@v1
