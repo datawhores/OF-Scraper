@@ -212,7 +212,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
                         task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                        with open(temp, 'wb') as f:                         
+                        with open(temp, 'ab') as f:                         
                             progress.update(task1,visible=True )
                             async for chunk in r.content.iter_chunked(1024):
                                 f.write(chunk)
@@ -347,7 +347,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                     progress.update(task1, advance=resume_size)
-                    with open(temp, 'wb') as f:                           
+                    with open(temp, 'ab') as f:                           
                         progress.update(task1,visible=True )
                         async for chunk in l.content.iter_chunked(1024):
                             f.write(chunk)
