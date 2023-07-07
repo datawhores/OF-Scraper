@@ -16,7 +16,7 @@ def test_postcreate_highlights():
 def test_media_highlights():
     username="test"
     model_id=TEST_ID
-    t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
+    t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
     assert(len(t.post_media))==1
 
 def test_post_highlights():
@@ -48,8 +48,8 @@ def test_archived_highlights():
 def test_text_highlights():
     username="test"
     model_id=TEST_ID
-    t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
-    assert(t.text)==(HIGHLIGHT_EXAMPLE.get("text") or 'Date me 🥺')
+    t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
+    assert(t.text)==(HIGHLIGHT_EXAMPLE["stories"][0].get("text"))
 
 def test_title_highlights():
     username="test"
@@ -92,7 +92,7 @@ def test_price_highlights():
 def test_paid_highlights():
     username="test"
     model_id=TEST_ID
-    t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
+    t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
     assert(t.paid)==True
 
 
@@ -128,7 +128,7 @@ def test_mediaclass_highlights():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
+    t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
     try:
         media=Media(t.media[index],index,t)
     except:
@@ -150,10 +150,8 @@ def test_mediaurl_highlights():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
-    mediaDict={"url":HIGHLIGHT_EXAMPLE["cover"]}
-    media=Media(mediaDict,index,t)
-    assert(re.search("http",media.url))!=None
+    t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
+    assert(re.search("http",t.media[0].url))!=None
 
 def test_mediapost_highlights():
     username="test"
@@ -177,7 +175,7 @@ def test_medialen_highlights():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(HIGHLIGHT_EXAMPLE,model_id,username,"highlights")
+    t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
     mediaDict={"url":HIGHLIGHT_EXAMPLE["cover"]}
     media=Media(mediaDict,index,t)
     assert(len(media.post.post_media))==1

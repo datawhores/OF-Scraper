@@ -21,6 +21,9 @@ from test.test_constants import *
 from ofscraper.classes.posts import Post
 from ofscraper.classes.media import Media
 from ofscraper.utils.dates import convert_local_time
+import ofscraper.utils.logger as logger
+
+
 
 
 
@@ -254,6 +257,8 @@ def test_user_data_dc_db_str(mocker):
         "metadata": METADATA_DC,
         "filter": FILTER_DEFAULT
     }
+   logger.init_logger(logging.getLogger(__package__))
+   
 
    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
@@ -286,6 +291,7 @@ def test_createfilename(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
 
     username="test"
     model_id=TEST_ID
@@ -308,6 +314,8 @@ def test_createfilename_allkeys(mocker):
 
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
+
 
     username="test"
     model_id=TEST_ID
@@ -353,6 +361,7 @@ def test_create_txt(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
 
     username="test"
     model_id=TEST_ID
@@ -378,6 +387,7 @@ def test_create_postid_counter(mocker):
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
+    logger.init_logger(logging.getLogger(__package__))
     assert(len(t.media))>1
 
 
@@ -395,6 +405,7 @@ def test_create_postid_name(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
 
     username="test"
     model_id=TEST_ID
@@ -417,6 +428,7 @@ def test_create_postid_name2(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
 
     username="test"
     model_id=TEST_ID
@@ -470,6 +482,7 @@ def test_create_text_name(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
 
     username="test"
     model_id=TEST_ID
@@ -492,6 +505,8 @@ def test_create_text_name2(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
+    logger.init_logger(logging.getLogger(__package__))
+
 
     username="test"
     model_id=TEST_ID
@@ -533,6 +548,8 @@ def test_metadatesavelocation(mocker):
         "filter": FILTER_DEFAULT,
         "mp4decrypt":MP4DECRYPT_DEFAULT  
     }
+    logger.init_logger(logging.getLogger(__package__))
+
         
     mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)

@@ -328,5 +328,5 @@ def get_client_id(config=None):
 def get_key_mode(config=None):
     if config==None:
         return "auto" 
-    value=config.get("key-mode-default").lower()
-    return value if value in set(["auto","manual"]) else "auto"
+    value=config.get("key-mode-default")
+    return value.lower() if value and value.lower() in set(["auto","manual"]) else "auto"
