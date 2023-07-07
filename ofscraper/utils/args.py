@@ -99,7 +99,7 @@ def create_parser(input=None):
     
     sort=parser.add_argument_group("sort",description="Options on how to sort list")
     sort.add_argument(
-        '-st', '--sort', help = 'What to sort the model list by',default="Name",choices=["Name","Subscribed","Expiring","Price"],type=str.lower)
+        '-st', '--sort', help = 'What to sort the model list by',default="Name",choices=["name","subscribed","expiring","price"],type=str.lower)
     sort.add_argument(
         '-ds', '--desc', help = 'Sort the model list in descending order',action="store_true",default=False) 
     
@@ -110,6 +110,8 @@ def create_parser(input=None):
     advanced.add_argument(
         '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
     )
+    advanced.add_argument(
+        '-k', '--key-mode', help = 'key mode override',default=None,required=False,choices=["auto","manual"],type=str.lower)
 
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Display a generated table of data with information about models post(s)\nCache lasts for 24 hours",parents=[parent_parser])

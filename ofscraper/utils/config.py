@@ -87,6 +87,7 @@ def get_current_config_schema(config:dict=None) -> dict:
              "custom":None,
              "private-key":get_private_key(config),
              "client-id":get_client_id(config),
+            "key-mode-default":get_key_mode(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -323,3 +324,9 @@ def get_client_id(config=None):
     if config==None:
         return None 
     return config.get('client-id')
+
+def get_key_mode(config=None):
+    if config==None:
+        return "auto" 
+    value=config.get("key-mode-default").lower()
+    return value if value in set(["auto","manual"]) else "auto"

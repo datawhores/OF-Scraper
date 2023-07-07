@@ -242,8 +242,9 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
             return "skipped",1 
                 
     for item in [audio,video]:
-        # key=await key_helper(c,item["pssh"],ele.license,ele.id)
-        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)
+
+        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") is "manual" \
+        else await key_helper(c,item["pssh"],ele.license,ele.id)
         if key==None:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
@@ -356,7 +357,6 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         raise E
     finally:
         sem.release()
-
 
 
 
