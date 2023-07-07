@@ -186,7 +186,7 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [linux]
+    needs: [linux,windows,mac]
     permissions:
       contents: write 
     steps:
@@ -199,40 +199,37 @@ jobs:
         with:
           name: ofscraper_linux_zip 
 
-#       - name: Download mac
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_macos   
-#       - name: Download mac zip
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_macos_zip         
-#       - name: Download windows
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_windows        
-#       - name: Download windows zip
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_windows_zip  
+      - name: Download mac
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos   
+      - name: Download mac zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos_zip         
+      - name: Download windows
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows        
+      - name: Download windows zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows_zip  
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-#         run: echo "date=$(date +'%Y-%m-%d') >> $GITHUB_OUTPUT
 
-#       - name: create release
-#         uses: ncipollo/release-action@v1
-#         with:
-#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-#           tag: ${{steps.commit.outputs.short}}
-#           name: ${{env.name}}
-#           body: ${{env.body}}
-#           makeLatest: true
-      - name: Test with environment variables
-        run: echo ${{env.name}}
+      - name: create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+          tag: ${{steps.commit.outputs.short}}
+          name: ${{env.name}}
+          body: ${{env.body}}
+          makeLatest: true
         env:
           name: "package_${{ steps.commit.outputs.short}}-${{steps.date.outputs.date}}"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
