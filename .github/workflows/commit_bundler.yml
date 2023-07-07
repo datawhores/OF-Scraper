@@ -231,7 +231,7 @@ jobs:
           makeLatest: true
           
         env:
-          name: "package_${{ steps.commit.outputs.short}}-{steps.date.output.date}"
+          name: "package_${{ steps.commit.outputs.short}}-{{steps.date.outputs.date}}"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
 
  
