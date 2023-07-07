@@ -240,10 +240,8 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     audio,video=await alt_download_preparer(ele)
     audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
-    if file_size_limit>0 and int(audio["total"]) > int(file_size_limit): 
-        return 'skipped', 1
     video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
-    if int(file_size_limit)>0 and int(video["total"]) > int(file_size_limit): 
+    if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
         return 'skipped', 1       
         
     for item in [audio,video]:
@@ -256,7 +254,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
                 
     for item in [audio,video]:
 
-        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") is "manual" \
+        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") == "manual" \
         else await key_helper(c,item["pssh"],ele.license,ele.id)
         if key==None:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
@@ -342,28 +340,21 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                 if file_size_limit>0 and total > int(file_size_limit): 
                         return total ,None,None 
                 r.raise_for_status()  
-
         if total!=resume_size:
             headers={"Range":f"bytes={resume_size}-{total}"}  
-            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
-                if r.ok:
-                    rheaders=r.headers
-                    total = total or (int(rheaders['Content-Length'])+resume_size)
-                    cache.set(f'size_{item["origname"]}',total,expire=constants.SIZE_TIMEOUT)
-                    cache.close()
-                    if file_size_limit>0 and  item["total"] > int(file_size_limit): 
-                            return  item
+            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as l:
+                if l.ok:
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                     progress.update(task1, advance=resume_size)
                     with open(temp, 'wb') as f:                           
                         progress.update(task1,visible=True )
-                        async for chunk in r.content.iter_chunked(1024):
+                        async for chunk in l.content.iter_chunked(1024):
                             f.write(chunk)
                             progress.update(task1, advance=len(chunk))
                         progress.remove_task(task1)
                 else:
-                    r.raise_for_status()
+                    l.raise_for_status()
                     return item
         item["total"]=total
         item["path"]=temp
