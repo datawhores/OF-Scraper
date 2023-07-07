@@ -225,6 +225,8 @@ jobs:
           tag: ${{steps.commit.outputs.short}}
           name: ${{env.name}}
           body: ${{env.body}}
+          makeLatest: true
+          
         env:
           name: "package_${{ steps.commit.outputs.short}}"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
