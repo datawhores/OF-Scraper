@@ -220,7 +220,7 @@ jobs:
         id: commit
       - name: Get current date
         id: date
-        run: echo "date=fffdfffd" >> $GITHUB_OUTPUT
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
 #         run: echo "{name}={value}" >> $GITHUB_OUTPUT
 
 #       - name: create release
