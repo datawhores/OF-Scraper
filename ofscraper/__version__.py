@@ -16,8 +16,10 @@ __license__ = 'GNU General Public License v3 or later (GPLv3+)'
 __copyright__ = 'Copyright 2023'
 
 try:
+      
       from dunamai import Version,Pattern
-      __version__ = Version.from_git(pattern=Pattern.DefaultUnprefixed).serialize(format="{base}+{branch}.{commit}",metadata=False)
+      __version__ = Version.from_git(pattern="(?P<base>\d+\.\d+\.\d+)").serialize(format="{base}+{branch}.{commit}",metadata=False)
 except:
       import pkg_resources
       __version__= pkg_resources.get_distribution('ofscraper').version
+
