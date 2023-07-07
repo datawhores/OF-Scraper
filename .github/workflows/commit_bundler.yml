@@ -220,7 +220,9 @@ jobs:
         id: commit
       - name: Get current date
         id: date
-        run: echo "date=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
+        run: echo "date=fffdfffd" >> $GITHUB_OUTPUT
+#         run: echo "{name}={value}" >> $GITHUB_OUTPUT
+
 #       - name: create release
 #         uses: ncipollo/release-action@v1
 #         with:
@@ -230,7 +232,7 @@ jobs:
 #           body: ${{env.body}}
 #           makeLatest: true
       - name: Test with environment variables
-        run: echo $TAG_NAME - $RELEASE_NAME
+        run: echo ${{env.name}}
         env:
           name: "package_${{ steps.commit.outputs.short}}-{{steps.date.outputs.date}}"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
