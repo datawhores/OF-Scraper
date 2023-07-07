@@ -217,7 +217,10 @@ jobs:
           name: ofscraper_windows_zip  
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
-        id: commit       
+        id: commit
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: create release
         uses: ncipollo/release-action@v1
         with:
@@ -228,7 +231,7 @@ jobs:
           makeLatest: true
           
         env:
-          name: "package_${{ steps.commit.outputs.short}}"
+          name: "package_${{ steps.commit.outputs.short}}-{steps.date.output}"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
 
  
