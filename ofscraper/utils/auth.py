@@ -262,13 +262,32 @@ def make_request_auth():
             f.write(json.dumps(request_auth, indent=4))
 
 
+
+
+
 def get_request_auth():
+    get_request_digital()
+
+def get_request_auth_deviint():
     with httpx.Client(http2=True) as c:
         r = c.get(DYNAMIC)
     if not r.is_error:
         content = r.json()
         static_param = content['static_param']
         fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
+        checksum_indexes = content['checksum_indexes']
+        checksum_constant = content['checksum_constant']
+        return (static_param, fmt, checksum_indexes, checksum_constant)
+    else:
+        return []
+    
+def get_request_digital():
+    with httpx.Client(http2=True) as c:
+        r = c.get(DYNAMIC)
+    if not r.is_error:
+        content = r.json()
+        static_param = content['static_param']
+        fmt = content['format']
         checksum_indexes = content['checksum_indexes']
         checksum_constant = content['checksum_constant']
         return (static_param, fmt, checksum_indexes, checksum_constant)

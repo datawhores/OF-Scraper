@@ -156,10 +156,6 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
 
     log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
     total ,temp,path_to_file=await main_download_downloader(c,ele,path,file_size_limit,username,model_id,progress)
-    if int(file_size_limit)>0 and total > int(file_size_limit): 
-        return "skipped",1
-
-    
 
     if not pathlib.Path(temp).exists():
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
@@ -189,27 +185,44 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         await sem.acquire()
         temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-        log.debug(f"Media:{ele.id} Post:{ele.postid} resume size {resume_size}")
-        async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers={"Range":f"bytes={resume_size}"}) as r:
+        cache.close()
+        headers=None
+        total=None
+        path_to_file=None
+       
+
+      
+        async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers=None) as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
                     if file_size_limit>0 and total > int(file_size_limit): 
-                            return total ,None,None    
+                            return total ,"skipped",None 
+                       
                     content_type = rheaders.get("content-type").split('/')[-1]
                     filename=paths.createfilename(ele,username,model_id,content_type)
-                    path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))                 
-                    pathstr=str(path_to_file)
-                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                    with open(temp, 'wb') as f:                         
-                        progress.update(task1,visible=True )
-                        async for chunk in r.content.iter_chunked(1024):
-                            f.write(chunk)
-                            progress.update(task1, advance=len(chunk))
-                        progress.remove_task(task1)  
-                    return total ,temp,path_to_file
+                    path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
                 else:
-                    r.raise_for_status()  
+                    r.raise_for_status()          
+                                   
+        if total!=resume_size:
+            headers={"Range":f"bytes={resume_size}-{total}"}
+            async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers=headers) as r:
+                if r.ok:
+                    pathstr=str(path_to_file)
+                    if not total or (resume_size!=total):
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        with open(temp, 'wb') as f:                         
+                            progress.update(task1,visible=True )
+                            async for chunk in r.content.iter_chunked(1024):
+                                f.write(chunk)
+                                progress.update(task1, advance=len(chunk))
+                            progress.remove_task(task1)  
+                else:
+                    r.raise_for_status() 
+                                  
+        return total ,temp,path_to_file
+
     except Exception as E:
         log.traceback(traceback.format_exc())
         log.traceback(E)
@@ -320,11 +333,18 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         headers=auth.make_headers(auth.read_auth())
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-        total=cache.get(f'size_{item["origname"]}')
-        cache.close()
-        if total and resume_size:
-            headers.update({"Range":f"bytes={resume_size}-{total}"})
-        if not total or (resume_size!=total):
+        total=None
+        
+        async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+            if r.ok:
+                rheaders=r.headers
+                total = int(rheaders['Content-Length'])
+                if file_size_limit>0 and total > int(file_size_limit): 
+                        return total ,None,None 
+                r.raise_for_status()  
+
+        if total!=resume_size:
+            headers={"Range":f"bytes={resume_size}-{total}"}  
             async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
                 if r.ok:
                     rheaders=r.headers
@@ -335,12 +355,10 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                             return  item
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                    size=0
                     progress.update(task1, advance=resume_size)
                     with open(temp, 'wb') as f:                           
                         progress.update(task1,visible=True )
                         async for chunk in r.content.iter_chunked(1024):
-                            size=size+len(chunk)
                             f.write(chunk)
                             progress.update(task1, advance=len(chunk))
                         progress.remove_task(task1)
@@ -396,6 +414,8 @@ async def key_helper(c,pssh,licence_url,id):
 
 async def key_helper_manual(c,pssh,licence_url,id):
     out=cache.get(licence_url)
+    if out!=None:
+        return out
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
 

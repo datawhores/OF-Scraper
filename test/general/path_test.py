@@ -1,8 +1,5 @@
 
 from unittest.mock import patch,MagicMock
-from unittest import mock
-import platform
-import shutil
 import re
 import pathlib
 import os
