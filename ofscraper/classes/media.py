@@ -79,7 +79,10 @@ class Media():
     # used for placeholder
     @property
     def label_(self):
-        return self._post.label_
+        return self._post.label_ or ""
+    @property
+    def downloadtype(self):
+        return "Protected" if self.mpd else "Normal"
   
    
     @property

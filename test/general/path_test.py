@@ -12,6 +12,7 @@ import random
 import string
 import ofscraper.utils.download as download
 import ofscraper.utils.paths as paths
+import ofscraper.classes.placeholder as placeholder
 from random_unicode_emoji import random_emoji
 
 from test.test_constants import *
@@ -260,7 +261,7 @@ def test_user_data_dc_db_str(mocker):
    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
 
-   assert(str(paths.databasePathHelper("1111","test")))==str(pathlib.Path(SAVE_PATH_DEFAULT,"test","metadata","user_data.db"))
+   assert(str(placeholder.Placeholders.databasePathHelper("1111","test")))==str(pathlib.Path(SAVE_PATH_DEFAULT,"test","metadata","user_data.db"))
    
 
 def test_context_provider(mocker):
@@ -553,6 +554,6 @@ def test_metadatesavelocation(mocker):
 
     username="test"
     id="111"
-    assert(str(paths.databasePathHelper(id,username)))==str(pathlib.Path(SAVE_LOCATION_DC,"test","metadata","user_data.db"))
+    assert(str(placeholder.Placeholders.databasePathHelper(id,username)))==str(pathlib.Path(SAVE_LOCATION_DC,"test","metadata","user_data.db"))
 
     

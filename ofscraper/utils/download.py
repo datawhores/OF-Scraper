@@ -10,7 +10,6 @@ r"""
 import asyncio
 import math
 import pathlib
-from random import randint
 import platform
 import shutil
 import ssl
@@ -61,11 +60,13 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+import ofscraper.classes.placeholder as placeholder
 from diskcache import Cache
-import ofscraper.api.me as me
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
+log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
+
 
 
 async def process_dicts(username, model_id, medialist):
@@ -80,6 +81,7 @@ async def process_dicts(username, model_id, medialist):
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         global sem
         sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
+        medialist=medialist[:10]
      
 
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
@@ -140,7 +142,7 @@ def retry_required(value):
 async def download(c,ele,model_id,username,file_size_limit,progress):
     attempt.set(attempt.get(0) + 1)  
     try:
-            with paths.set_directory(paths.getmediadir(ele,username,model_id)):
+            with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
                 if ele.url:
                     return await main_download_helper(c,ele,pathlib.Path(".").absolute(),file_size_limit,username,model_id,progress)
                 elif ele.mpd:
@@ -200,7 +202,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                             return total ,"skipped",None 
                        
                     content_type = rheaders.get("content-type").split('/')[-1]
-                    filename=paths.createfilename(ele,username,model_id,content_type)
+                    filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
                     path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
                 else:
                     r.raise_for_status()          
@@ -212,9 +214,12 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
                         task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                        with open(temp, 'ab') as f:                         
+                        size=0
+                        with open(temp, 'ab') as f: 
                             progress.update(task1,visible=True )
                             async for chunk in r.content.iter_chunked(1024):
+                                size=size+len(chunk) if log_trace else size
+                                log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
                                 progress.update(task1, advance=len(chunk))
                             progress.remove_task(task1)  
@@ -349,7 +354,10 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                     progress.update(task1, advance=resume_size)
                     with open(temp, 'ab') as f:                           
                         progress.update(task1,visible=True )
+                        size=0
                         async for chunk in l.content.iter_chunked(1024):
+                            size=size+len(chunk) if log_trace else size
+                            log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
                             progress.update(task1, advance=len(chunk))
                         progress.remove_task(task1)
