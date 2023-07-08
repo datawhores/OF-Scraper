@@ -222,7 +222,7 @@ def init_logger(log):
         sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(funct())
         log.addHandler(sh2)
-    if args.getargs().log=={"TRACE","DEBUG"}:
+    if args.getargs().log in {"TRACE","DEBUG"}:
         funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
         fh2=logging.StreamHandler(stream)
         fh2.setLevel(getLevel(args.getargs().log))
