@@ -381,6 +381,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
+    log.debug("using auto key helper")
     try:
         out=cache.get(licence_url)
         log.debug(f"ID:{id} pssh: {pssh!=None}")
@@ -414,6 +415,7 @@ async def key_helper(c,pssh,licence_url,id):
         
 
 async def key_helper_manual(c,pssh,licence_url,id):
+    log.debug("using manual keyhelper")
     out=cache.get(licence_url)
     if out!=None:
         return out
