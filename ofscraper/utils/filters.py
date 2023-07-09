@@ -10,22 +10,32 @@ log=logging.getLogger(__package__)
 def filterMedia(media):
     logformater="data: {} id: {} postid: {}"
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 1-> all media no filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 1-> all media no filter count: {len(media)}")
     media=dupefilter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f" filter 2-> all media dupe filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 2-> all media dupe filter count: {len(media)}")
     media=post_datesorter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 3-> all media datesort: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 3-> all media datesort count: {len(media)}")
     media=posts_type_filter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 4-> all media post media type filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 4-> all media post media type filter count: {len(media)}")
     media=posts_date_filter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 5-> all media post date filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 5-> all media post date filter: {len(media)}")
+
     media=post_timed_filter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 6->  all media post timed post filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 6->  all media post timed post filter count: {len(media)}")
     media=post_user_filter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 7-> all media post text filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 7->  all media post text filter count: {len(media)}")
     media=download_type_filter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 8->  all download type filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 8->  all download type filter count: {len(media)}")
     media=sort_media(media)
-    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 9-> final and sorted: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 9-> final media  from retrived post: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    log.debug(f"filter 0->  final media count from retrived post: {len(media)}")
     return media
 
 def sort_media(media):
@@ -38,12 +48,10 @@ def dupefilter(media):
     output=[]
     ids=set()
     log.info("Removing duplicate media")
-    log.debug(f"[bold]Combined Media Count with dupes[/bold]  {len(media)}")
     for item in media:
         if not item.id or item.id not in ids:
             output.append(item)
             ids.add(item.id)
-    log.debug(f"[bold]Combined Media Count without dupes[/bold] {len(output)}")
     return output
 def post_datesorter(output):
     return list(sorted(output,key=lambda x:x.date,reverse=True))
