@@ -4,7 +4,7 @@
 name: package builder commit
 on:
   push:
-    branches: "main"
+    branches: "main2"
 jobs:
   create_version:
     runs-on: ubuntu-20.04
