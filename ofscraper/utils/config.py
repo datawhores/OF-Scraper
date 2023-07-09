@@ -89,6 +89,7 @@ def get_current_config_schema(config:dict=None) -> dict:
              "client-id":get_client_id(config),
             "key-mode-default":get_key_mode(config),
             "dynamic-mode-default":get_dynamic(config),
+            "partfileclean":get_part_file_clean(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -334,6 +335,10 @@ def get_key_mode(config=None):
 
 def get_dynamic(config=None):
     if config==None:
-        return "deviint" 
+        return constants.DYNAMIC_DEFAULT
     value=config.get("dynamic-mode-default")
     return value.lower() if value and value.lower() in set(["deviint","dc"]) else "deviint"
+def get_part_file_clean(config=None):
+    if config==None:
+        return False
+    config.get("partfileclean",False) or False
