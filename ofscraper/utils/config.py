@@ -340,4 +340,4 @@ def get_dynamic(config=None):
 def get_part_file_clean(config=None):
     if config==None:
         return False
-    config.get("partfileclean",False) or False
+    return config.get("partfileclean",False) or False
