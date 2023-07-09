@@ -274,7 +274,7 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Build
         run: |
-          poetry version $(dunamai from git --format "{base}" --pattern default-unprefixed)
+          poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+\.\d+)")
           poetry build
       - name: Push to pypi 
         env:
