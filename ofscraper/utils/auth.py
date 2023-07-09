@@ -267,9 +267,9 @@ def make_request_auth():
 
 def get_request_auth():
     if (args_.getargs().dynamic_rules or config.get_dynamic(config.read_config()) or "deviint")=="deviint":
-        get_request_auth_deviint()
+        return get_request_auth_deviint()
     else:
-        get_request_digitalcriminals()
+        return get_request_digitalcriminals()
 
 def get_request_auth_deviint():
     with httpx.Client(http2=True) as c:
