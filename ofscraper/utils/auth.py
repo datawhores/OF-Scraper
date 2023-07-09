@@ -266,7 +266,10 @@ def make_request_auth():
 
 
 def get_request_auth():
-    get_request_digital()
+    if (args_.getargs().dynamic_rules or config.get_dynamic(config.read_config()) or "deviint")=="deviint":
+        get_request_auth_deviint()
+    else:
+        get_request_digitalcriminals()
 
 def get_request_auth_deviint():
     with httpx.Client(http2=True) as c:
@@ -274,14 +277,15 @@ def get_request_auth_deviint():
     if not r.is_error:
         content = r.json()
         static_param = content['static_param']
-        fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
+        # fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
+        fmt = content['format']
         checksum_indexes = content['checksum_indexes']
         checksum_constant = content['checksum_constant']
         return (static_param, fmt, checksum_indexes, checksum_constant)
     else:
         return []
     
-def get_request_digital():
+def get_request_digitalcriminals():
     with httpx.Client(http2=True) as c:
         r = c.get(DYNAMIC)
     if not r.is_error:

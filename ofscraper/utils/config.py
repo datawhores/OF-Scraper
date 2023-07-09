@@ -88,6 +88,7 @@ def get_current_config_schema(config:dict=None) -> dict:
              "private-key":get_private_key(config),
              "client-id":get_client_id(config),
             "key-mode-default":get_key_mode(config),
+            "dynamic-mode-default":get_dynamic(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -330,3 +331,9 @@ def get_key_mode(config=None):
         return "auto" 
     value=config.get("key-mode-default")
     return value.lower() if value and value.lower() in set(["auto","manual"]) else "auto"
+
+def get_dynamic(config=None):
+    if config==None:
+        return "deviint" 
+    value=config.get("dynamic-mode-default")
+    return value.lower() if value and value.lower() in set(["deviint","dc"]) else "deviint"

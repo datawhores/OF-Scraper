@@ -112,7 +112,13 @@ def create_parser(input=None):
     )
     advanced.add_argument(
         '-k', '--key-mode', help = 'key mode override',default=None,required=False,choices=["auto","manual"],type=str.lower)
+    advanced.add_argument(
+        '-dr', '--dynamic-rules', help = 'Dynamic signing',default=None,required=False,choices=["dc","deviint"],type=str.lower)
 
+    
+    
+    
+    
     subparser=parser.add_subparsers(help="commands",dest="command")
     post_check=subparser.add_parser("post_check",help="Display a generated table of data with information about models post(s)\nCache lasts for 24 hours",parents=[parent_parser])
 
