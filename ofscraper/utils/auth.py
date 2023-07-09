@@ -19,7 +19,7 @@ import httpx
 import browser_cookie3
 from .profiles import get_active_profile
 from ..prompts.prompts import *
-from ..constants import configPath, DYNAMIC, requestAuth,DEVIINT
+from ..constants import configPath, DIGITALCRIMINALS, requestAuth,DEVIINT
 import ofscraper.utils.paths as paths
 
 
@@ -286,7 +286,7 @@ def get_request_auth_deviint():
     
 def get_request_digitalcriminals():
     with httpx.Client(http2=True) as c:
-        r = c.get(DYNAMIC)
+        r = c.get(DIGITALCRIMINALS)
     if not r.is_error:
         content = r.json()
         static_param = content['static_param']

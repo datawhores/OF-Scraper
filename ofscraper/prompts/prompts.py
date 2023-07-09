@@ -341,6 +341,60 @@ def get_profile_prompt(profiles: list) -> str:
     return profile
 
 
+def config_prompt_advanced(config_) -> dict:
+    questions = [
+        {
+            'type': 'list',
+            'name': 'dynamic-mode-default',
+            'message': 'What would you like to use for dynamic rules',
+            'default': config.get_dynamic(config_),
+            'choices':["deviint","digitalcriminals"],
+        },
+        {
+            'type': 'list',
+            'name': 'key-mode-default',
+            'message': 'Make selection for how to retrive keys',
+            'default': config.get_key_mode(config_),
+            'choices':["auto","manual"],
+
+        },
+
+        {
+            'type': 'filepath',
+            'name': 'client-id',
+            'message': 'Enter path to client id file',
+            'default': config.get_client_id(config_),
+            "validate":prompt_validators.MultiValidator(EmptyInputValidator(),PathValidator(is_file=True)),
+        },
+         {
+            'type': 'filepath',
+            'name': 'private-key',
+            'message': 'Enter path to private-key',
+            'default': config.get_client_id(config_),
+            "validate":prompt_validators.MultiValidator(EmptyInputValidator(),PathValidator(is_file=True)),
+        },
+        {
+            'type': 'list',
+            'name': 'partfileclean',
+            'message': 'auto clean .part files',
+            "long_instruction":"You won't be able to resume downloads if you select 'Yes'",
+            'default': config.get_part_file_clean(config_),
+            'choices':[Choice(True,"Yes"),Choice(False,"No")],
+        },
+            {
+            'type': 'input',
+            'name': 'custom',
+            'message': 'edit custom value:\n',
+            "long_instruction":"This is a helper value for remapping placeholder values",
+            'default': config.get_custom(config_) or "",
+        },
+    ]
+
+    new_settings=prompt(questions)
+    config_.update(new_settings)
+    return config_
+    
+
 def config_prompt(config_) -> dict:
 
     questions = [
@@ -579,7 +633,8 @@ Empty string is consider to be 'profile'
     answers = prompt(questions)
     console.print("Set mapping for {responsetype} placeholder\n\n")
     answers["responsetype"]=prompt(questions2)
-    return answers
+    config_.update(answers)
+    return config_
 def reset_username_prompt() -> bool:
     name = 'reset username'
     questions = [

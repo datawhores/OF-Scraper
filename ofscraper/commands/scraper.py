@@ -80,9 +80,13 @@ def process_prompts():
             # Edit `config.json` file
             config.edit_config()
 
+        elif result_main_prompt == 5:
+            # Edit `config.json` file
+            config.edit_config_advanced()
+
         
     
-        elif result_main_prompt == 5:
+        elif result_main_prompt == 6:
             # Display  `Profiles` menu
             result_profiles_prompt = prompts.profiles_prompt()
 

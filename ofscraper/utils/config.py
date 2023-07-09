@@ -168,6 +168,39 @@ def edit_config():
                 except:
                     continue
 
+def edit_config_advanced():
+    try:
+        p = paths_.get_config_path()
+        log.info(f"config path: {p}")
+        with open(p, 'r') as f:
+            configText=f.read()
+            config = json.loads(configText)
+
+        updated_config = {
+            'config': prompts.config_prompt_advanced(config['config'])
+        }
+
+        with open(p, 'w') as f:
+            f.write(json.dumps(updated_config, indent=4))
+
+        console.print('`config.json` has been successfully edited.')
+    except FileNotFoundError:
+        make_config(p)
+    except json.JSONDecodeError as e:
+            while True:
+                try:
+                    print("You config.json has a syntax error")
+                    print(f"{e}\n\n")
+                    with open(p,"w") as f:
+                        f.write(prompts.manual_config_prompt(configText))
+                    with open(p, 'r') as f:
+                        configText=f.read()
+                        config = json.loads(configText)
+                    break
+                except:
+                    continue
+
+
 def update_mp4decrypt():
     config={"config":read_config()}
     if prompts.auto_download_mp4_decrypt()=="Yes":
