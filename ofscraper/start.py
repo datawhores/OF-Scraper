@@ -40,6 +40,7 @@ def make_folders():
 def startvalues():
     args=args_.getargs()
     log=logger.init_logger(logging.getLogger(__package__))
+    logger.updateSenstiveDict(paths_.get_username(),"your_username")
     #print info
     log.debug(args)
     log.debug(config_.read_config())

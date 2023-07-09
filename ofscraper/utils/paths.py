@@ -236,5 +236,5 @@ def get_config_home():
 def get_auth_file():
     return get_profile_path() /constants.authFile
 
-    
-   
+def get_username():
+    return pathlib.Path.home().name
