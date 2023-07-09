@@ -363,14 +363,14 @@ def config_prompt_advanced(config_) -> dict:
             'type': 'filepath',
             'name': 'client-id',
             'message': 'Enter path to client id file',
-            'default': config.get_client_id(config_),
+            'default': config.get_client_id(config_) or "",
             "validate":prompt_validators.MultiValidator(EmptyInputValidator(),PathValidator(is_file=True)),
         },
          {
             'type': 'filepath',
             'name': 'private-key',
             'message': 'Enter path to private-key',
-            'default': config.get_client_id(config_),
+            'default': config.get_private_key(config_)  or "",
             "validate":prompt_validators.MultiValidator(EmptyInputValidator(),PathValidator(is_file=True)),
         },
         {
