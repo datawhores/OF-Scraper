@@ -241,7 +241,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
 async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
     log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
-    path_to_file = paths.truncate(pathlib.Path(path,f'{paths.createfilename(ele,username,model_id,"mp4")}'))
+    path_to_file = paths.truncate(pathlib.Path(path,f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'))
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     audio,video=await alt_download_preparer(ele)
     audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
