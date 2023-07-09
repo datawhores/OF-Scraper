@@ -88,7 +88,7 @@ def get_current_config_schema(config:dict=None) -> dict:
              "client-id":get_client_id(config),
             "key-mode-default":get_key_mode(config),
             "dynamic-mode-default":get_dynamic(config),
-            "pathlib.Path(temp).absolute().stat()":get_part_file_clean(config),
+            "partfileclean":get_part_file_clean(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),

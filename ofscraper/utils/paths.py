@@ -68,11 +68,11 @@ def createDir(path):
 
 
 def cleanup():
-    # log.info("Cleaning up temp files\n\n")
-    # root= pathlib.Path((config_.get_save_location(config_.read_config())))
-    # # for file in list(filter(lambda x:re.search("\.part$|^temp_",str(x))!=None,root.glob("**/*"))):
-    #     file.unlink(missing_ok=True)
-    None
+    if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False):
+        log.info("Cleaning up temp files\n\n")
+        root= pathlib.Path((config_.get_save_location(config_.read_config())))
+        for file in list(filter(lambda x:re.search("\.part$|^temp_",str(x))!=None,root.glob("**/*"))):
+            file.unlink(missing_ok=True)
 
 
 
