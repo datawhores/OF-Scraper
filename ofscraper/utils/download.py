@@ -185,6 +185,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         url=ele.url
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
         await sem.acquire()
+        pathlib.Path(temp).unlink() if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
         temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         cache.close()
@@ -335,6 +336,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
         temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         headers=auth.make_headers(auth.read_auth())
+        pathlib.Path(temp).unlink() if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         total=None
         
