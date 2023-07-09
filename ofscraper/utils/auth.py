@@ -19,7 +19,7 @@ import httpx
 import browser_cookie3
 from .profiles import get_active_profile
 from ..prompts.prompts import *
-from ..constants import configPath, DYNAMIC, requestAuth
+from ..constants import configPath, DYNAMIC, requestAuth,DEVIINT
 import ofscraper.utils.paths as paths
 
 
@@ -273,12 +273,11 @@ def get_request_auth():
 
 def get_request_auth_deviint():
     with httpx.Client(http2=True) as c:
-        r = c.get(DYNAMIC)
+        r = c.get(DEVIINT)
     if not r.is_error:
         content = r.json()
         static_param = content['static_param']
-        # fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
-        fmt = content['format']
+        fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
         checksum_indexes = content['checksum_indexes']
         checksum_constant = content['checksum_constant']
         return (static_param, fmt, checksum_indexes, checksum_constant)
