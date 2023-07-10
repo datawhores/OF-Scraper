@@ -8,8 +8,10 @@ import ofscraper.utils.args as args_
 args=args_.getargs()
 log=logging.getLogger(__package__)
 def filterMedia(media):
-    logformater="data: {} id: {} postid: {}"
-    log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f"filter 1-> all media no filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
+    logformater="{} data: {} id: {} postid: {}"
+    log.trace("\n\n".join(list(map(lambda x: logformater.format("filter 1-> all media no filter:",x.media,x.id,x.postid)))))
+    
+    
     log.debug(f"filter 1-> all media no filter count: {len(media)}")
     media=dupefilter(media)
     log.trace("{posts}".format(posts=  "\n\n".join(list(map(lambda x:f" filter 2-> all media dupe filter: {logformater.format(x.media,x.id,x.postid)}",media)))))
