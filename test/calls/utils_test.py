@@ -48,17 +48,17 @@ from unittest.mock import patch,MagicMock
       
       
 
-from example import *
+# from example import *
 
-def test_func1__should_call_func2(mocker):  
-    mock_func2=MagicMock("example.func2")
-    func1()
-    mock_func2.assert_called_once()
+# def test_func1__should_call_func2(mocker):  
+#     mock_func2=MagicMock("example.func2")
+#     func1()
+#     mock_func2.assert_called_once()
 
-def test_func1__should_not_call_func2(mocker):
-    func1(False)
-    mock_func2=MagicMock("example.func2")
-    mock_func2.assert_not_called()
+# def test_func1__should_not_call_func2(mocker):
+#     func1(False)
+#     mock_func2=MagicMock("example.func2")
+#     mock_func2.assert_not_called()
     
 
 

@@ -12,6 +12,7 @@ import random
 import string
 import ofscraper.utils.download as download
 import ofscraper.utils.paths as paths
+import ofscraper.classes.placeholder
 import ofscraper.classes.placeholder as placeholder
 from random_unicode_emoji import random_emoji
 
@@ -261,7 +262,7 @@ def test_user_data_dc_db_str(mocker):
    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
    mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
 
-   assert(str(placeholder.Placeholders.databasePathHelper("1111","test")))==str(pathlib.Path(SAVE_PATH_DEFAULT,"test","metadata","user_data.db"))
+   assert(str(placeholder.Placeholders().databasePathHelper("1111","test")))==str(pathlib.Path(SAVE_PATH_DEFAULT,"test","metadata","user_data.db"))
    
 
 def test_context_provider(mocker):
@@ -295,7 +296,7 @@ def test_createfilename(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     print(t.media[0].filename)
-    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].filename}.mkv"
+    assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].filename}.mkv"
 
 def test_createfilename_allkeys(mocker):
     migrationConfig={
@@ -319,7 +320,7 @@ def test_createfilename_allkeys(mocker):
     model_id=TEST_ID
     try:
         t=Post(TIMELINE_EXAMPLE,model_id,username)
-        assert(paths.createfilename(t.media[0],username,model_id,"mkv"))
+        assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))
     except:
         raise Exception
 
@@ -343,7 +344,7 @@ def test_createfilename_invalid(mocker):
     model_id=TEST_ID
     with pytest.raises(Exception):
         t=Post(TIMELINE_EXAMPLE,model_id,username)
-        assert(paths.createfilename(t.media[0],username,model_id,"mkv"))
+        assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))
 
 def test_create_txt(mocker):
     migrationConfig={
@@ -365,7 +366,7 @@ def test_create_txt(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     print(t.media[0].filename)
-    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
+    assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
 #Test postid counter
 def test_create_postid_counter(mocker):
     migrationConfig={
@@ -409,7 +410,7 @@ def test_create_postid_name(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
 
-    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}_1.mkv"
+    assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}_1.mkv"
 
 
 def test_create_postid_name2(mocker):
@@ -432,7 +433,7 @@ def test_create_postid_name2(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('ofscraper.classes.posts.Post.post_media', new=[t.post_media[0]])
-    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
+    assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].id}.mkv"
 
 
 
@@ -486,7 +487,7 @@ def test_create_text_name(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
 
-    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
+    assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}_1.mkv"
 
 
 def test_create_text_name2(mocker):
@@ -510,7 +511,7 @@ def test_create_text_name2(mocker):
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
     mocker.patch('ofscraper.classes.posts.Post.post_media', new=[t.post_media[0]])
-    assert(paths.createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
+    assert(placeholder.Placeholders().createfilename(t.media[0],username,model_id,"mkv"))==f"{t.media[0].text}.mkv"
 
 
 
@@ -554,6 +555,6 @@ def test_metadatesavelocation(mocker):
 
     username="test"
     id="111"
-    assert(str(placeholder.Placeholders.databasePathHelper(id,username)))==str(pathlib.Path(SAVE_LOCATION_DC,"test","metadata","user_data.db"))
+    assert(str(placeholder.Placeholders().databasePathHelper(id,username)))==str(pathlib.Path(SAVE_LOCATION_DC,"test","metadata","user_data.db"))
 
     
