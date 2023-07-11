@@ -12,6 +12,7 @@ import asyncio
 from itertools import chain
 import ssl
 import certifi
+import httpx
 import logging
 import aiohttp
 from rich.console import Console
@@ -24,25 +25,25 @@ import ofscraper.constants as constants
 log=logging.getLogger(__package__)
 
 
+
 async def get_subscriptions(headers, subscribe_count):
     offsets = range(0, subscribe_count, 10)
     tasks = [scrape_subscriptions(headers, offset) for offset in offsets]
     subscriptions = await asyncio.gather(*tasks)
     return list(chain.from_iterable(subscriptions))
 
-
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_subscriptions(headers, offset=0) -> list:
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,sock_connect=None, sock_read=None)) as c: 
+    async with httpx.AsyncClient(http2=True, headers=headers) as c:
         url = subscriptionsEP.format(offset)
-        headers=auth.make_headers(auth.read_auth())
-        headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
-            if r.ok:
-                subscriptions = await r.json()
-                log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
-                return subscriptions
-            r.raise_for_status()
+        auth.add_cookies(c)
+        c.headers.update(auth.create_sign(url, headers))
+
+        r = await c.get(subscriptionsEP.format(offset), timeout=None)
+        if not r.is_error:
+            subscriptions = r.json()
+            return subscriptions
+        r.raise_for_status()
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()
