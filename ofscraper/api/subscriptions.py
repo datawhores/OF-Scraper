@@ -28,7 +28,7 @@ log=logging.getLogger(__package__)
 
 async def get_subscriptions(headers, subscribe_count):
     offsets = range(0, subscribe_count, 10)
-    # log.debug(f"offsets for usernames {offsets}")
+    ## log.debug(f"offsets for usernames {offsets}")
     tasks = [scrape_subscriptions(headers, offset) for offset in offsets]
     subscriptions = await asyncio.gather(*tasks)
     return list(chain.from_iterable(subscriptions))
