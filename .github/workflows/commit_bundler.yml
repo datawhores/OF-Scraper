@@ -231,7 +231,7 @@ jobs:
           body: ${{env.body}}
           makeLatest: true
         env:
-          name: "${{steps.date.outputs.date}}_${{GITHUB_REF##*/}}_${{ steps.commit.outputs.short}}_package"
+          name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }} _${{ steps.commit.outputs.short}}_package"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
 
  
