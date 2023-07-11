@@ -155,20 +155,8 @@ def make_headers(auth):
     return headers
 
 
-def add_cookies(client):
-    authFile=paths.get_auth_file()
-    with open(authFile, 'r') as f:
-        auth = json.load(f)
 
-    domain = 'onlyfans.com'
-
-    auth_uid = 'auth_uid_{}'.format(auth['auth']['auth_id'])
-
-    client.cookies.set('sess', auth['auth']['sess'], domain=domain)
-    client.cookies.set('auth_id', auth['auth']['auth_id'], domain=domain)
-    if auth['auth']['auth_uid_']:
-        client.cookies.set(auth_uid, auth['auth']['auth_uid_'], domain=domain)
-def add_cookies_aio():
+def add_cookies():
 
     authFile=paths.get_auth_file()
     with open(authFile, 'r') as f:

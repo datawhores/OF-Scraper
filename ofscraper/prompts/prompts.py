@@ -375,6 +375,13 @@ def config_prompt_advanced(config_) -> dict:
         },
         {
             'type': 'list',
+            'name': 'backend',
+            'choices':[Choice("aio","aiohttp"),Choice("httpx","httpx")],
+            'message': 'Select Which Backend you want:\n',
+            'default': config.get_backend(config_) or "",
+        },
+        {
+            'type': 'list',
             'name': 'partfileclean',
             'message': 'auto clean .part files',
             "long_instruction":"You won't be able to resume downloads if you select 'Yes'",

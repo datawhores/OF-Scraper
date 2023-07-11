@@ -42,7 +42,7 @@ def get_media_from_urls(urls):
     args_.changeargs(args)
     user_name_dict={}
     id_dict={}
-    with httpx.Client(http2=True) as c:
+    with httpx.Client(http2=True,cookies=auth.add_cookies()) as c:
         for url in url_helper(urls):
             response=get_info(url)
             model=response[0]

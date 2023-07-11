@@ -11,7 +11,6 @@ r"""
 import logging
 from functools import lru_cache
 import json
-import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
 import ofscraper.constants as constants
@@ -21,6 +20,8 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.logger as logger
 import ofscraper.constants as constants
 import ofscraper.utils.paths as paths
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 log=logging.getLogger(__package__)
 console=Console()
 
@@ -37,9 +38,8 @@ def _scraper_user_helper(headers):
     cache = Cache(paths.getcachepath())
     data=cache.get(f"myinfo_{headers['user-id']}",None)
     if not data:
-        with httpx.Client(http2=True, headers=headers) as c:
+        with httpx.Client(http2=True, headers=headers,cookies=auth.add_cookies()) as c:
             url = constants.meEP
-            auth.add_cookies(c)
             c.headers.update(auth.create_sign(url, headers))
             r = c.get(url, timeout=None)
             if not r.is_error:
@@ -62,15 +62,15 @@ def parse_user(profile):
 def print_user(name, username):
     with stdout.lowstdout():
         console.print(f'Welcome, {name} | {username}')
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-def parse_subscriber_count(headers):
-    with httpx.Client(http2=True, headers=headers) as c:
-        url = constants.subscribeCountEP
-        auth.add_cookies(c)
-        c.headers.update(auth.create_sign(url, headers))
-        r = c.get(url, timeout=None)
-        if not r.is_error:
-            data=r.json()
-            return data["subscriptions"]["all"]
-        r.raise_for_status()
+@retry(stop=stop_after_attempt(constants.MAX_SEMAPHORE),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+def parse_subscriber_count():
+    with sessionbuilder.sessionBuilder(backend="httpx",async_param=False) as c:
+        with c.requests(constants.subscribeCountEP)() as r:
+            if r.ok:
+                data=r.json_()
+                return data["subscriptions"]["all"]
+            else:
+                log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+                log.debug(f"[bold]archived response:[/bold] {r.text_()}")
+                log.debug(f"[bold]archived headers:[/bold] {r.headers}")
 

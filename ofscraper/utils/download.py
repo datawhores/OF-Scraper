@@ -342,7 +342,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         total=None
         
-        async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:
             if r.ok:
                 rheaders=r.headers
                 total = int(rheaders['Content-Length'])
@@ -351,7 +351,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                 r.raise_for_status()  
         if total!=resume_size:
             headers={"Range":f"bytes={resume_size}-{total}"}  
-            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as l:
+            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as l:
                 if l.ok:
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
@@ -448,7 +448,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
     headers=auth.make_headers(auth.read_auth())
     headers=auth.create_sign(licence_url, headers)
     keys=None
-    async with c.request("post",licence_url,data=challenge,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True, headers=headers,cookies=auth.add_cookies_aio()) as r:
+    async with c.request("post",licence_url,data=challenge,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True, headers=headers,cookies=auth.add_cookies()) as r:
         cdm.parse_license(session_id, await r.content.read())
         keys = cdm.get_keys(session_id)
         cdm.close(session_id)

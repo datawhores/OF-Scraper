@@ -76,7 +76,7 @@ async def scrape_stories( c,user_id,job_progress) -> list:
   
 
     url= constants.highlightsWithAStoryEP.format(user_id)
-    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url, headers))
+    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=auth.create_sign(url, headers))
     
     sem.release()
     if  r.ok:
@@ -163,7 +163,7 @@ async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
 
     url= constants.highlightsWithStoriesEP.format(user_id,offset)
 
-    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url , headers))
+    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=auth.create_sign(url , headers))
     
     # highlights_, stories
     sem.release()
@@ -199,7 +199,7 @@ async def scrape_highlights( c,id,job_progress) -> list:
 
     url= constants.storyEP.format(id)
 
-    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url , headers))
+    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=auth.create_sign(url , headers))
     
     # highlights_, stories
     sem.release()
@@ -231,7 +231,6 @@ def get_highlightList(data):
 def get_individual_highlight(id,client=None):
     headers = auth.make_headers(auth.read_auth())
     url=constants.highlightSPECIFIC.format(id)
-    auth.add_cookies(client)
     client.headers.update(auth.create_sign(url, headers))
     r=client.get(url)
     if not r.is_error:
@@ -242,7 +241,6 @@ def get_individual_highlight(id,client=None):
 def get_individual_stories(id,client=None):
     headers = auth.make_headers(auth.read_auth())
     url=constants.storiesSPECIFIC.format(id)
-    auth.add_cookies(client)
     client.headers.update(auth.create_sign(url, headers))
     r=client.get(url)
     if not r.is_error:

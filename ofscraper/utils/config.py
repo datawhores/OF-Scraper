@@ -89,6 +89,8 @@ def get_current_config_schema(config:dict=None) -> dict:
             "key-mode-default":get_key_mode(config),
             "dynamic-mode-default":get_dynamic(config),
             "partfileclean":get_part_file_clean(config),
+            "backend":get_backend(config),
+
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -374,3 +376,9 @@ def get_part_file_clean(config=None):
     if config==None:
         return False
     return config.get("partfileclean",False) or False
+
+
+def get_backend(config=None):
+    if config==None:
+        return "aio"
+    return config.get("backend",constants.BACKEND_DEFAULT) or constants.BACKEND_DEFAULT

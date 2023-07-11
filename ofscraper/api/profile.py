@@ -40,10 +40,8 @@ def scrape_profile(username:Union[int, str]) -> dict:
 
     attempt.set(attempt.get(0) + 1)
     log.info(f"Attempt {attempt.get()}/{constants.NUM_TRIES} to get profile {username}")
-    with httpx.Client(http2=True, headers=headers) as c:
+    with httpx.Client(http2=True, headers=headers,cookies=auth.add_cookies()) as c:
         url = profileEP.format(username)
-
-        auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
 
         r = c.get(profileEP.format(username), timeout=None)
@@ -98,12 +96,11 @@ def print_profile_info(info):
 def get_id( username):
     
     headers = auth.make_headers(auth.read_auth())
-    with httpx.Client(http2=True, headers=headers) as c:
+    with httpx.Client(http2=True, headers=headers,cookies=auth.add_cookies()) as c:
         url = profileEP.format(username)
         id=cache.get(f"model_id_{username}",None)
         if id:
             return id
-        auth.add_cookies(c)
         c.headers.update(auth.create_sign(url, headers))
         r = c.get(url, timeout=None)
         if not r.is_error:

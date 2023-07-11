@@ -106,8 +106,11 @@ PREMIUM_DEFAULT="Premium"
 MP4DECRYPT_DEFAULT=""
 FFMPEG_DEFAULT =""
 DISCORD_DEFAULT =""
+BACKEND_DEFAULT ="aio"
+
 DYNAMIC_DEFAULT="deviint"
 SUPPRESS_LOG_LEVEL=21
+
 RESPONSE_TYPE_DEFAULT= {
             "message":"Messages",
             "timeline":"Posts",
