@@ -229,7 +229,6 @@ jobs:
           tag: ${{steps.commit.outputs.short}}
           name: ${{env.name}}
           body: ${{env.body}}
-          makeLatest: true
         env:
           name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }} _${{ steps.commit.outputs.short}}_package"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
