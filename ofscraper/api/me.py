@@ -27,29 +27,33 @@ console=Console()
 
 from diskcache import Cache
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),reraise=True,after=lambda retry_state:print(f"Trying to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}")) 
 def scrape_user(headers):
-    return _scraper_user_helper(json.dumps(headers))
+    with sessionbuilder.sessionBuilder(backend="httpx",async_param=False) as c:
+        return _scraper_user_helper(c,json.dumps(headers))
 
 
 @lru_cache(maxsize=None)
-def _scraper_user_helper(headers):
+@retry(stop=stop_after_attempt(0),wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),reraise=True,after=lambda retry_state:print(f"Trying to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}")) 
+def _scraper_user_helper(c,headers):
     headers = json.loads(headers)
     cache = Cache(paths.getcachepath())
     data=cache.get(f"myinfo_{headers['user-id']}",None)
     if not data:
-        with httpx.Client(http2=True, headers=headers,cookies=auth.add_cookies()) as c:
-            url = constants.meEP
-            c.headers.update(auth.create_sign(url, headers))
-            r = c.get(url, timeout=None)
-            if not r.is_error:
-                data=r.json()
-            r.raise_for_status()
-    cache.set(f"myinfo_{headers['user-id']}",data,constants.HOURLY_EXPIRY)
-    cache.close()
-    logger.updateSenstiveDict(data["id"],"userid")
-    logger.updateSenstiveDict(data["username"],"username")
-    logger.updateSenstiveDict(data["name"],"name")
+            with c.requests(constants.meEP)() as r:
+                if r.ok:
+                    data=r.json_()
+                    cache.set(f"myinfo_{headers['user-id']}",data,constants.HOURLY_EXPIRY)
+                    cache.close()
+                    logger.updateSenstiveDict(data["id"],"userid")
+                    logger.updateSenstiveDict(data["username"],"username")
+                    logger.updateSenstiveDict(data["name"],"name")
+                else:
+                    log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+                    log.debug(f"[bold]archived response:[/bold] {r.text_()}")
+                    log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+                    r.raise_for_status()
+                
+           
     return data
 
 def parse_user(profile):
