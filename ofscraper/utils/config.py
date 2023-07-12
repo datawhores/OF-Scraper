@@ -306,6 +306,13 @@ def get_timeline_responsetype(config=None):
         return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return config.get('responsetype',{}).get("timeline") or config.get('responsetype',{}).get("post") or constants.RESPONSE_TYPE_DEFAULT["timeline"]
 
+def get_post_responsetype(config=None):
+    if config==None:
+        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
+    return  config.get('responsetype',{}).get("post") or config.get('responsetype',{}).get("timeline") or constants.RESPONSE_TYPE_DEFAULT["timeline"]
+
+
+
 def get_archived_responsetype(config=None):
     if config==None:
         return constants.RESPONSE_TYPE_DEFAULT["archived"]

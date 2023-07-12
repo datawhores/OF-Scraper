@@ -64,11 +64,15 @@ class Post():
             return config.get_archived_responsetype(config.read_config())
 
         else:
-            response=config.read_config().get("responsetype", {}).get(self._responsetype_) 
+            responseType=self._responsetype_
+            #remap some values
+            responseType="timeline" if responseType=="post" else responseType
+            response=config.read_config().get("responsetype", {}).get(responseType) 
+
             if  response == "":
-                return self._responsetype_.capitalize()
+                return responseType.capitalize()
             elif  response == None:
-                return self._responsetype_.capitalize()
+                return responseType.capitalize()
             elif  response != "":
                 return  response.capitalize()
 
