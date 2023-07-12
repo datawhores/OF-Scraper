@@ -437,9 +437,9 @@ class InputApp(App):
 
     # Events
     def on_data_table_header_selected(self, event):
-        added= self.get_current_added_rows()
+        self._current_added= self.get_current_added_rows()
         self.sort_helper(event.label.plain)
-        self.restore_added_rows(added)
+        self.restore_added_rows()
       
         # set reverse
         # use native python sorting until textual has key support
@@ -460,11 +460,11 @@ class InputApp(App):
    
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "submit":
-            added=self.get_current_added_rows()
+            self._current_added=self.get_current_added_rows()
             self.set_filtered_rows()
             self.sort_helper()
             self.make_table()
-            self.restore_added_rows(added)
+            self.restore_added_rows()
         elif event.button.id == "reset":
             self.set_filtered_rows(reset=True)
             self.reset_all_inputs()
@@ -494,11 +494,11 @@ class InputApp(App):
             )
             row_name = self.row_names[event.coordinate[1]]
             if row_name!="Download_Cart":
-                added=self.get_current_added_rows()
+                self._current_added=self.get_current_added_rows()
                 self.update_input(row_name, event.value.plain)
                 self.set_filtered_rows()
                 self.make_table()
-                self.restore_added_rows(added)
+                self.restore_added_rows()
             else:
                 self.change_download_cart(event.coordinate)
     #Main
@@ -550,10 +550,6 @@ class InputApp(App):
         for ele in self.query(Horizontal)[:-1]:
             ele.styles.height = "10vh"
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
-        log.info("test")
-        log.info("test")
-        log.info("test")
-        log.info("test")
 
     # Cart
     def change_download_cart(self,coord):
@@ -585,10 +581,10 @@ class InputApp(App):
         index=self.row_names.index("Download_Cart")
         filter_keys=list(filter(lambda x:table.get_row(x)[index].plain=="[added]",keys))
         return filter_keys
-    def restore_added_rows(self,added):
+    def restore_added_rows(self):
         table=self.query_one(DataTable)
         currentkeys=set(map(lambda x:x.value,table.rows.keys()))
-        [table.update_cell(key,"Download_Cart",Text("[added]")) for key in filter(lambda x:x in currentkeys,added)]
+        [table.update_cell(key,"Download_Cart",Text("[added]")) for key in filter(lambda x:x in currentkeys,self._current_added)]
 
 
     def reset_cart(self):
@@ -646,83 +642,85 @@ class InputApp(App):
         # to allow sorting after submit
         if label == None:
             return
-        index=self.row_names.index(re.sub(" ","_",label))
-        if label=="Download Cart":
+        
+        elif label=="Download Cart":
+            index=self.row_names.index(re.sub(" ","_",label))
             filtered_status=["[downloading]","Not Unlocked","[downloaded]"]
             table=self.query_one(DataTable)
             self.set_cart_toggle()
             keys=[str(ele[0]) for ele in self._filtered_rows]
             filter_keys=list(filter(lambda x:table.get_row(x)[index].plain not in filtered_status,keys))
-            log.debug(f"set cart toggle to {self.cart_toggle}")
+            log.debug(f"set cart toggle to {self.cart_toggle.plain}")
             [table.update_cell(key,"Download_Cart",self.cart_toggle) for key in filter_keys]
+
+            # [table.update_cell(key,"Download_Cart",self.cart_toggle) for key in filter_keys]
+                    
+        elif label!="Download Cart":
+            index=self.row_names.index(re.sub(" ","_",label))
+
+            self.set_reverse(label=label)
             
+            if label == "Number":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
+                self.make_table()
+            elif label == "UserName":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
+                self.make_table()
+            elif label == "Downloaded":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
+                self.make_table()
 
-           
-           
-            return
-        self.set_reverse(label=label)
-        
-        if label == "Number":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
-            self.make_table()
-        elif label == "UserName":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
-            self.make_table()
-        elif label == "Downloaded":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
-            self.make_table()
+            elif label == "Unlocked":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
+                self.make_table()
+            elif label == "Times Detected":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
+                self.make_table()
+            elif label == "Length":
+                helperNode = self.query_one("#Length")
+                self._filtered_rows = sorted(self._filtered_rows, key=lambda x: helperNode.convertString(
+                    x[index]) if x[index] != "N/A" else 0, reverse=self.reverse)
+                self.make_table()
+            elif label == "Mediatype":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index] , reverse=self.reverse)
+                self.make_table()
+            elif label == "Post Date":
+                helperNode = self.query_one("#Post_Date")
+                self._filtered_rows = sorted(self._filtered_rows, key=lambda x: helperNode.convertString(
+                    x[index]) if x[index] != "N/A" else 0, reverse=self.reverse)
+                self.make_table()
+            elif label == "Post Media Count":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
+                self.make_table()
 
-        elif label == "Unlocked":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
-            self.make_table()
-        elif label == "Times Detected":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: 1 if x[index] == True else 0, reverse=self.reverse)
-            self.make_table()
-        elif label == "Length":
-            helperNode = self.query_one("#Length")
-            self._filtered_rows = sorted(self._filtered_rows, key=lambda x: helperNode.convertString(
-                x[index]) if x[index] != "N/A" else 0, reverse=self.reverse)
-            self.make_table()
-        elif label == "Mediatype":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index] , reverse=self.reverse)
-            self.make_table()
-        elif label == "Post Date":
-            helperNode = self.query_one("#Post_Date")
-            self._filtered_rows = sorted(self._filtered_rows, key=lambda x: helperNode.convertString(
-                x[index]) if x[index] != "N/A" else 0, reverse=self.reverse)
-            self.make_table()
-        elif label == "Post Media Count":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
-            self.make_table()
+            elif label == "Responsetype":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
+                self.make_table()
+            elif label == "Price":
+                self._filtered_rows = sorted(self._filtered_rows, key=lambda x: int(
+                    float(x[index])) if x[index] != "Free" else 0, reverse=self.reverse)
+                self.make_table()
 
-        elif label == "Responsetype":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index], reverse=self.reverse)
-            self.make_table()
-        elif label == "Price":
-            self._filtered_rows = sorted(self._filtered_rows, key=lambda x: int(
-                float(x[index])) if x[index] != "Free" else 0, reverse=self.reverse)
-            self.make_table()
-
-        elif label == "Post ID":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index] if  x[index] else 0, reverse=self.reverse)
-            self.make_table()
-        elif label == "Media ID":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index] if  x[index] else 0, reverse=self.reverse)
-            self.make_table()
-        elif label == "Text":
-            self._filtered_rows = sorted(
-                self._filtered_rows, key=lambda x: x[index] , reverse=self.reverse)
-            self.make_table()
+            elif label == "Post ID":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index] if  x[index] else 0, reverse=self.reverse)
+                self.make_table()
+            elif label == "Media ID":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index] if  x[index] else 0, reverse=self.reverse)
+                self.make_table()
+            elif label == "Text":
+                self._filtered_rows = sorted(
+                    self._filtered_rows, key=lambda x: x[index] , reverse=self.reverse)
+                self.make_table()
 
     def set_reverse(self, label=None, init=False):
         if init:
@@ -745,6 +743,7 @@ class InputApp(App):
         if init:
             self.cart_toggle = Text("[]")
         elif self.cart_toggle.plain == "[added]":
+            self._current_added=[]
             self.cart_toggle = Text("[]")
         elif self.cart_toggle.plain == "[]":
             self.cart_toggle = Text("[added]")
