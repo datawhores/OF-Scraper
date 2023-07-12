@@ -70,7 +70,7 @@ class NumField(Horizontal):
         self.filter_name = name
 
     def compose(self):
-        yield self.IntegerInput(placeholder=self.filter_name.capitalize(), id=f"{self.filter_name}_search")
+        yield self.IntegerInput(placeholder=self.filter_name.capitalize().replace("_"," "), id=f"{self.filter_name}_search")
 
     def on_mount(self):
         self.styles.height = "auto"

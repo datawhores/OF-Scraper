@@ -18,7 +18,7 @@ import ofscraper.api.paid as paid_
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
 import ofscraper.utils.console as console_
-import ofscraper.utils.table as table
+import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
 import ofscraper.utils.download as download
 import ofscraper.db.operations as operations
