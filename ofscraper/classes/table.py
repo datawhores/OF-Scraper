@@ -20,7 +20,7 @@ log = logging.getLogger(__package__)
 
 
 
-console=console_.shared_console
+# console=console_.shared_console
 class OutConsole(TextLog):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -550,8 +550,10 @@ class InputApp(App):
         for ele in self.query(Horizontal)[:-1]:
             ele.styles.height = "10vh"
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
-       
-
+        log.info("test")
+        log.info("test")
+        log.info("test")
+        log.info("test")
 
     # Cart
     def change_download_cart(self,coord):
@@ -651,6 +653,7 @@ class InputApp(App):
             self.set_cart_toggle()
             keys=[str(ele[0]) for ele in self._filtered_rows]
             filter_keys=list(filter(lambda x:table.get_row(x)[index].plain not in filtered_status,keys))
+            log.debug(f"set cart toggle to {self.cart_toggle}")
             [table.update_cell(key,"Download_Cart",self.cart_toggle) for key in filter_keys]
             
 
@@ -740,8 +743,8 @@ class InputApp(App):
 
     def set_cart_toggle(self,init=False):
         if init:
-            self.cart_toggle = Text("[added]")
-        if self.cart_toggle.plain == "[added]":
+            self.cart_toggle = Text("[]")
+        elif self.cart_toggle.plain == "[added]":
             self.cart_toggle = Text("[]")
         elif self.cart_toggle.plain == "[]":
             self.cart_toggle = Text("[added]")
