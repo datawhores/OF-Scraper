@@ -435,7 +435,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
 
     
     keys=None
-    async with c.requests(url=licence_url,method="post")() as r:
+    async with c.requests(url=licence_url,method="post",data=challenge)() as r:
         cdm.parse_license(session_id, (await r.content.read()))
         keys = cdm.get_keys(session_id)
         cdm.close(session_id)
