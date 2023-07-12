@@ -14,7 +14,6 @@ import json
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
 import ofscraper.constants as constants
-import ofscraper.utils.auth as auth
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.logger as logger
@@ -28,7 +27,7 @@ console=Console()
 from diskcache import Cache
 
 def scrape_user(headers):
-    with sessionbuilder.sessionBuilder(backend="httpx",async_param=False) as c:
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
         return _scraper_user_helper(c,json.dumps(headers))
 
 
@@ -68,7 +67,7 @@ def print_user(name, username):
         console.print(f'Welcome, {name} | {username}')
 @retry(stop=stop_after_attempt(constants.MAX_SEMAPHORE),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def parse_subscriber_count():
-    with sessionbuilder.sessionBuilder(backend="httpx",async_param=False) as c:
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
         with c.requests(constants.subscribeCountEP)() as r:
             if r.ok:
                 data=r.json_()

@@ -15,12 +15,13 @@ import logging
 from urllib.parse import urlparse
 import requests
 from rich.console import Console
-import httpx
+
 import browser_cookie3
 from .profiles import get_active_profile
 from ..prompts.prompts import *
 from ..constants import configPath, DIGITALCRIMINALS, requestAuth,DEVIINT
 import ofscraper.utils.paths as paths
+import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
 console=Console()
@@ -260,27 +261,27 @@ def get_request_auth():
         return get_request_digitalcriminals()
 
 def get_request_auth_deviint():
-    with httpx.Client(http2=True) as c:
-        r = c.get(DEVIINT)
-    if not r.is_error:
-        content = r.json()
-        static_param = content['static_param']
-        fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
-        checksum_indexes = content['checksum_indexes']
-        checksum_constant = content['checksum_constant']
-        return (static_param, fmt, checksum_indexes, checksum_constant)
-    else:
-        return []
-    
+    with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
+        with c.requests(DEVIINT)() as r:
+            if r.ok:
+                content = r.json_()
+                static_param = content['static_param']
+                fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}" 
+                checksum_indexes = content['checksum_indexes']
+                checksum_constant = content['checksum_constant']
+                return (static_param, fmt, checksum_indexes, checksum_constant)
+            else:
+                return []
+        
 def get_request_digitalcriminals():
-    with httpx.Client(http2=True) as c:
-        r = c.get(DIGITALCRIMINALS)
-    if not r.is_error:
-        content = r.json()
-        static_param = content['static_param']
-        fmt = content['format']
-        checksum_indexes = content['checksum_indexes']
-        checksum_constant = content['checksum_constant']
-        return (static_param, fmt, checksum_indexes, checksum_constant)
-    else:
-        return []
+   with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
+        with c.requests(DIGITALCRIMINALS)() as r:
+            if r.ok:
+                content = r.json_()
+                static_param = content['static_param']
+                fmt = content['format']
+                checksum_indexes = content['checksum_indexes']
+                checksum_constant = content['checksum_constant']
+                return (static_param, fmt, checksum_indexes, checksum_constant)
+            else:
+                return []

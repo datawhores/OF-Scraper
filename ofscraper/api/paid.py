@@ -7,11 +7,8 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-import asyncio
-import ssl
-import certifi
-import aiohttp
 import logging
+import asyncio
 import contextvars
 from rich.progress import Progress
 from rich.progress import (
@@ -34,7 +31,9 @@ import ofscraper.api.profile as profile
 from diskcache import Cache
 from ..utils.paths import getcachepath
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
-import ofscraper.utils.args as args_
+import ofscraper.utils.args as args_ 
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 cache = Cache(getcachepath())
 
@@ -65,9 +64,8 @@ async def get_paid_posts(username,model_id):
     tasks=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
-
+        async with sessionbuilder.sessionBuilder() as c:
+ 
             tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress)))
 
             
@@ -97,15 +95,12 @@ async def scrape_paid(c,username,job_progress,offset=0):
     global tasks
     media = None
     attempt.set(attempt.get(0) + 1)
-    url = constants.purchased_contentEP.format(offset,username)
     await sem.acquire()
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-    headers=auth.create_sign(url, headers)
-    async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:
+    async with c.requests(url=constants.purchased_contentEP.format(offset,username))() as r:
         sem.release()
         if r.ok:
-            data=await r.json()
+            data=await r.json_()
             log.trace("paid raw {posts}".format(posts=  data))
             attempt.set(0)
             media=list(filter(lambda x:isinstance(x,list),data.values()))[0]
@@ -119,7 +114,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
 
         else:
             log.debug(f"[bold]paid request status code:[/bold]{r.status}")
-            log.debug(f"[bold]paid response:[/bold] {await r.text()}")
+            log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
             log.debug(f"[bold]paid headers:[/bold] {r.headers}")
             job_progress.remove_task(task)
             r.raise_for_status()
@@ -142,8 +137,7 @@ async def get_all_paid_posts():
     tasks=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
+        async with sessionbuilder.sessionBuilder() as c:
             allpaid=cache.get(f"purchased_all",default=[]) if not args_.getargs().no_cache else []
             log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
             
@@ -193,16 +187,13 @@ async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
     media = None
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
-    url = constants.purchased_contentALL.format(offset)
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} offset={offset}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-    headers=auth.create_sign(url, headers)
-    async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:
+    async with c.requests(url= constants.purchased_contentALL.format(offset))() as r:
         sem.release()
         if r.ok:
             attempt.set(0) 
             log_id=f"offset {offset or 0}:"
-            data=await r.json()   
+            data=await r.json_()   
             job_progress.remove_task(task)
             media=list(filter(lambda x:isinstance(x,list),data.values()))[0]
             if not data.get("hasMore"):
@@ -229,7 +220,7 @@ async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
 
         else:
             log.debug(f"[bold]paid request status code:[/bold]{r.status}")
-            log.debug(f"[bold]paid response:[/bold] {await r.text()}")
+            log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
             log.debug(f"[bold]paid headers:[/bold] {r.headers}")
             job_progress.remove_task(task)
             r.raise_for_status()

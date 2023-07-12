@@ -19,17 +19,17 @@ import ofscraper.utils.config as config_
 
 
 class sessionBuilder:
-    def __init__(self,backend=None, set_header=True,set_sign=True,async_param=True,set_cookies=True):
+    def __init__(self,backend=None, set_header=True,set_sign=True,set_cookies=True):
         self._backend=backend or config_.get_backend(config_.read_config())
         self._set_cookies=set_cookies
         self._set_header=set_header
         self._set_sign=set_sign
-        self._async=async_param
+        
         
      
 
     async def __aenter__(self):
-
+        self._async=True
         if self._backend=="aio":
             self._obj= aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE))
@@ -46,6 +46,7 @@ class sessionBuilder:
     
 
     def __enter__(self):
+        self._async=False
         if self._backend=="httpx" and not self._async:
             self._obj= httpx.Client(http2=True,timeout=None)
         elif self._backend=="aio":
@@ -74,21 +75,23 @@ class sessionBuilder:
         return self._cookies
 
 
-    def requests(self,url,req_type="get"):
+    def requests(self,url,req_type="get",headers=None,cookies=None,json=None,params=None):
         self._url=url
-        headers=self._create_headers()
-        cookies=self._create_cookies()
+        headers=headers or self._create_headers()
+        cookies=cookies or self._create_cookies()
+        json=json or None
+        params=params or None
         if self._backend=="aio":
-            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers)
+            self._innerfunct=functools.partial(self._obj.request,req_type,params=params,url=self._url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json)
             self._funct=functools.partial(self._aio_funct_async)
 
      
             
         elif self._backend=="httpx" and self._async:
-            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,cookies=cookies,headers=headers)
+            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,cookies=cookies,headers=headers,json=json,params=params)
             self._funct=functools.partial(self._httpx_funct_async)
         elif self._backend=="httpx" and not self._async:
-            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,cookies=cookies,headers=headers)
+            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,cookies=cookies,headers=headers,json=json,params=params)
             self._funct=functools.partial(self._httpx_funct)
         
         return self._funct
