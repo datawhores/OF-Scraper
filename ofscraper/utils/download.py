@@ -12,12 +12,9 @@ import math
 import pathlib
 import platform
 import shutil
-import ssl
-import certifi
 import traceback
 import re
 import logging
-import aiohttp
 import contextvars
 import json
 import subprocess
@@ -61,6 +58,8 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
@@ -107,8 +106,7 @@ async def process_dicts(username, model_id, medialist):
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
 
               
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
+                async with sessionbuilder.sessionBuilder() as c:
                     i=0
                     for ele in medialist:
                         aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit,job_progress)))
@@ -193,12 +191,11 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         cache.close()
         headers=None
-        total=None
+        
         path_to_file=None
        
 
-      
-        async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers=None) as r:
+        async with c.requests(url=url)() as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
@@ -212,8 +209,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                     r.raise_for_status()          
                                    
         if total!=resume_size:
-            headers={"Range":f"bytes={resume_size}-{total}"}
-            async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers=headers) as r:
+            async with c.requests(url=url,headers={"Range":f"bytes={resume_size}-{total}"})() as r:
                 if r.ok:
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
@@ -339,11 +335,9 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
         temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
-        headers=auth.make_headers(auth.read_auth())
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         total=None
-        
-        async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:
+        async with c.requests(url=url)() as r:
             if r.ok:
                 rheaders=r.headers
                 total = int(rheaders['Content-Length'])
@@ -352,7 +346,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                 r.raise_for_status()  
         if total!=resume_size:
             headers={"Range":f"bytes={resume_size}-{total}"}  
-            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as l:
+            async with c.requests(url=url,headers=headers)() as l:                
                 if l.ok:
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
@@ -401,10 +395,8 @@ async def key_helper(c,pssh,licence_url,id):
                 'proxy': '',
                 'cache': True,
             }
-
-
-            async with c.request("post",'https://cdrm-project.com/wv',json=json_data,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True,cookies=None) as r:
-                httpcontent=await r.text()
+            async with c.requests(url='https://cdrm-project.com/wv',req_method="post",json=json_data)() as r:
+                httpcontent=await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
                 out=soup.find("li").contents[0]
@@ -420,8 +412,8 @@ async def key_helper(c,pssh,licence_url,id):
 async def key_helper_manual(c,pssh,licence_url,id):
     log.debug("using manual keyhelper")
     out=cache.get(licence_url)
-    if out!=None:
-        return out
+    # if out!=None:
+    #     return out
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
 
@@ -442,15 +434,9 @@ async def key_helper_manual(c,pssh,licence_url,id):
     session_id = cdm.open()
 
     
-    
-    
-    # get license challenge
-    challenge = cdm.get_license_challenge(session_id, pssh)
-    headers=auth.make_headers(auth.read_auth())
-    headers=auth.create_sign(licence_url, headers)
     keys=None
-    async with c.request("post",licence_url,data=challenge,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True, headers=headers,cookies=auth.add_cookies()) as r:
-        cdm.parse_license(session_id, await r.content.read())
+    async with c.requests(url=licence_url,req_method="post")() as r:
+        cdm.parse_license(session_id, (await r.content.read()))
         keys = cdm.get_keys(session_id)
         cdm.close(session_id)
     keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]

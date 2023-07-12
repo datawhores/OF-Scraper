@@ -31,24 +31,24 @@ class sessionBuilder:
     async def __aenter__(self):
         self._async=True
         if self._backend=="aio":
-            self._obj= aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
+            self._session= aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE))
         
         
-        elif self._backend=="httpx" and self._async:
-            self._obj= httpx.AsyncClient(http2=True,timeout=None)
+        elif self._backend=="httpx":
+            self._session= httpx.AsyncClient(http2=True,timeout=None)
     
         return self
     
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._obj.__aexit__(exc_type, exc_val, exc_tb)
+        await self._session.__aexit__(exc_type, exc_val, exc_tb)
     
 
     def __enter__(self):
         self._async=False
-        if self._backend=="httpx" and not self._async:
-            self._obj= httpx.Client(http2=True,timeout=None)
+        if self._backend=="httpx":
+            self._session= httpx.Client(http2=True,timeout=None)
         elif self._backend=="aio":
             raise Exception("aiohttp is async only")
         return self
@@ -56,51 +56,47 @@ class sessionBuilder:
         
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._obj.__exit__(exc_type, exc_val, exc_tb)
+        self._session.__exit__(exc_type, exc_val, exc_tb)
    
 
-    def _create_headers(self):
-        self._headers= auth.make_headers(auth.read_auth()) if self._set_header else None
-        self._create_sign() if self._set_header and self._set_sign else self._headers
-        return self._headers
-
-    def _create_sign(self) : 
-            if not self._headers:
-                 return
-            self._headers=auth.create_sign(self._url,self._headers)
-            return self._headers   
+    def _create_headers(self,headers,url):
+        headers=headers or {}
+        headers.update(auth.make_headers(auth.read_auth())) if self._set_header else None
+        headers=self._create_sign(headers,url)
+        return headers
+    def _create_sign(self,headers,url) : 
+            auth.create_sign(url,headers) if self._set_sign else None
+            return headers  
       
     def _create_cookies(self):
-        self._cookies=auth.add_cookies() if self._set_cookies else None
-        return self._cookies
+        return auth.add_cookies() 
 
 
-    def requests(self,url,req_type="get",headers=None,cookies=None,json=None,params=None):
-        self._url=url
-        headers=headers or self._create_headers()
+    def requests(self,url,req_type="get",headers=None,cookies=None,json=None,params=None,redirects=True):
+        headers=self._create_headers(headers,url)
         cookies=cookies or self._create_cookies()
         json=json or None
         params=params or None
         if self._backend=="aio":
-            self._innerfunct=functools.partial(self._obj.request,req_type,params=params,url=self._url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json)
-            self._funct=functools.partial(self._aio_funct_async)
+            inner_func=functools.partial(self._session.request,req_type,url=url,allow_redirects=redirects,params=params,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json)
+            funct=functools.partial(self._aio_funct_async,inner_func)
 
      
             
         elif self._backend=="httpx" and self._async:
-            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,cookies=cookies,headers=headers,json=json,params=params)
-            self._funct=functools.partial(self._httpx_funct_async)
+            inner_func=functools.partial(self._session.request,req_type,follow_redirects=redirects,url=url,cookies=cookies,headers=headers,json=json,params=params)
+            funct=functools.partial(self._httpx_funct_async,inner_func)
         elif self._backend=="httpx" and not self._async:
-            self._innerfunct=functools.partial(self._obj.request,req_type,url=self._url,cookies=cookies,headers=headers,json=json,params=params)
-            self._funct=functools.partial(self._httpx_funct)
+            inner_func=functools.partial(self._session.request,req_type,follow_redirects=redirects,url=url,cookies=cookies,headers=headers,json=json,params=params)
+            funct=functools.partial(self._httpx_funct,inner_func)
         
-        return self._funct
+        return funct
             
             
     # context providers are used to provide access to object before exit
     @contextlib.asynccontextmanager
-    async def _httpx_funct_async(self):
-        t=await self._innerfunct()
+    async def _httpx_funct_async(self,funct):
+        t=await funct()
         t.ok=not t.is_error
         t.json_=lambda: self.factoryasync(t.json)
         t.text_=lambda: self.factoryasync(t.text)
@@ -111,8 +107,8 @@ class sessionBuilder:
     
     # context providers are used to provide access to object before exit
     @contextlib.contextmanager
-    def _httpx_funct(self):
-        t=self._innerfunct()
+    def _httpx_funct(self,funct):
+        t=funct()
         t.ok=not t.is_error
         t.json_=t.json
         t.text_=lambda: t.text
@@ -134,8 +130,8 @@ class sessionBuilder:
         
     # context providers are used to provide access to object before exit
     @contextlib.asynccontextmanager
-    async def _aio_funct_async(self):
-        async with self._innerfunct() as r:
+    async def _aio_funct_async(self,funct):
+        async with funct() as r:
             r.text_=r.text
             r.json_=r.json
             yield r
