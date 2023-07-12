@@ -185,18 +185,18 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [mac]
+    needs: [mac,windows,linux]
     permissions:
       contents: write 
     steps:
-      # - name: Download linux
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: ofscraper_linux  
-      # - name: Download linux zip
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: ofscraper_linux_zip 
+      - name: Download linux
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux  
+      - name: Download linux zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux_zip 
 
       - name: Download mac
         uses: actions/download-artifact@v3
@@ -206,14 +206,14 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_macos_zip         
-      # - name: Download windows
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: ofscraper_windows        
-      # - name: Download windows zip
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: ofscraper_windows_zip  
+      - name: Download windows
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows        
+      - name: Download windows zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows_zip  
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
