@@ -217,7 +217,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                         size=0
                         with open(temp, 'ab') as f: 
                             progress.update(task1,visible=True )
-                            async for chunk in r.content.iter_chunked(1024):
+                            async for chunk in r.iter_chunked(1024):
                                 size=size+len(chunk) if log_trace else size
                                 log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
@@ -354,7 +354,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                     with open(temp, 'ab') as f:                           
                         progress.update(task1,visible=True )
                         size=0
-                        async for chunk in l.content.iter_chunked(1024):
+                        async for chunk in l.iter_chunked(1024):
                             size=size+len(chunk) if log_trace else size
                             log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
@@ -378,30 +378,32 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
-    log.debug("using auto key helper")
+    log.debug(f"ID:{id} using auto key helper")
     try:
         out=cache.get(licence_url)
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
-        if not out:
-            headers=auth.make_headers(auth.read_auth())
-            headers["cookie"]=auth.get_cookies()
-            auth.create_sign(licence_url,headers)
-            json_data = {
-                'license': licence_url,
-                'headers': json.dumps(headers),
-                'pssh': pssh,
-                'buildInfo': '',
-                'proxy': '',
-                'cache': True,
-            }
-            async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
-                httpcontent=await r.text_()
-                log.debug(f"ID:{id} key_response: {httpcontent}")
-                soup = BeautifulSoup(httpcontent, 'html.parser')
-                out=soup.find("li").contents[0]
-                cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
-                cache.close()
+        if out!=None:
+            log.debug(f"ID:{id} auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': '',
+            'proxy': '',
+            'cache': True,
+        }
+        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+            httpcontent=await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, 'html.parser')
+            out=soup.find("li").contents[0]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
         return out
     except Exception as E:
         log.traceback(E)
@@ -410,10 +412,11 @@ async def key_helper(c,pssh,licence_url,id):
         
 
 async def key_helper_manual(c,pssh,licence_url,id):
-    log.debug("using manual keyhelper")
+    log.debug(f"ID:{id} using manual key helper")
     out=cache.get(licence_url)
-    # if out!=None:
-    #     return out
+    if out!=None:
+        log.debug(f"ID:{id} manual key helper got key from cache")
+        return out
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
 
@@ -435,6 +438,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
 
     
     keys=None
+    challenge = cdm.get_license_challenge(session_id, pssh)
     async with c.requests(url=licence_url,method="post",data=challenge)() as r:
         cdm.parse_license(session_id, (await r.content.read()))
         keys = cdm.get_keys(session_id)

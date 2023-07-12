@@ -264,7 +264,7 @@ class Media():
                 async with c.requests(url=self.mpd,params=params)() as r:
                     if not r.ok:
                         return None
-                    return MPEGDASHParser.parse(await r.text())
+                    return MPEGDASHParser.parse(await r.text_())
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)

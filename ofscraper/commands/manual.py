@@ -12,6 +12,7 @@ import ofscraper.api.messages as messages_
 import ofscraper.api.highlights as highlights_
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.of as of
 
 
 log = logging.getLogger(__package__)
@@ -100,10 +101,18 @@ def get_all_media(id_dict,inputtype=None):
         posts_array=list(map(lambda x:posts_.Post(
         x, model_id, user_name,responsetype=inputtype), value))
         [temp.extend(ele.media) for ele in posts_array]
-        media_dict[model_id]=temp
-   
-   
+        if len(temp)==0:
+            temp.extend(paid_failback(model_id,user_name))
+        media_dict[model_id]=temp   
     return media_dict
+
+def paid_failback(id,username):
+    log.debug("Using failback search because query return 0 media")
+    return of.process_paid_post(id,username) 
+    
+
+
+
 
     
 

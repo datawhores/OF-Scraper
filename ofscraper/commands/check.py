@@ -66,7 +66,7 @@ def process_download_cart():
                     media_dict= manual.get_media_from_urls(urls=[url])
                     # None for stories and highlights
                     medialist=list(filter(lambda x: x.id==(int(row[media_id].plain) if x.id else None) ,list(media_dict.values())[0]))
-                    media=medialist[0]
+                    media=medialist[0] if len(medialist)>0 else []
                     model_id =media.post.model_id
                     username=media.post.username
                     log.info(f"Downloading Invidual media for {username} {media.filename}")

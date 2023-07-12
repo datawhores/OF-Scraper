@@ -72,13 +72,13 @@ class sessionBuilder:
         return auth.add_cookies() 
 
 
-    def requests(self,url=None,method="get",headers=None,cookies=None,json=None,params=None,redirects=True):
+    def requests(self,url=None,method="get",headers=None,cookies=None,json=None,params=None,redirects=True,data=None):
         headers=self._create_headers(headers,url)
         cookies=cookies or self._create_cookies()
         json=json or None
         params=params or None
         if self._backend=="aio":
-            inner_func=functools.partial(self._session.request,method,url=url,allow_redirects=redirects,params=params,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json)
+            inner_func=functools.partial(self._session.request,method,url=url,allow_redirects=redirects,params=params,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json,data=data)
             funct=functools.partial(self._aio_funct_async,inner_func)
 
      
@@ -101,6 +101,7 @@ class sessionBuilder:
         t.json_=lambda: self.factoryasync(t.json)
         t.text_=lambda: self.factoryasync(t.text)
         t.status=t.status_code
+        t.iter_chunked=t.aiter_bytes
         yield t
         None
 
@@ -113,6 +114,7 @@ class sessionBuilder:
         t.json_=t.json
         t.text_=lambda: t.text
         t.status=t.status_code
+        t.iter_chunked=t.iter_bytes
         yield t
         None
 
@@ -134,6 +136,7 @@ class sessionBuilder:
         async with funct() as r:
             r.text_=r.text
             r.json_=r.json
+            r.iter_chunked=r.content.iter_chunked
             yield r
         
     
