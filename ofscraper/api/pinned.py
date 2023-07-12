@@ -8,13 +8,10 @@ r"""
 """
 import time
 import asyncio
-import ssl
-import certifi
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
-import aiohttp
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -31,6 +28,8 @@ import ofscraper.constants as constants
 from ..utils import auth
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 log=logging.getLogger(__package__)
 attempt = contextvars.ContextVar("attempt")
@@ -57,7 +56,8 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
         headers=auth.make_headers(auth.read_auth())
         headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:         
+        async with c.requests(url=url)() as r:
+    
             if r.ok:
                 progress.remove_task(task)
                 posts =( await r.json())['list']
@@ -72,19 +72,8 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}")
                     log.trace("{log_id} -> pinned raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo pinned: {str(x)}",posts)))))
-
-  
-                #post infinite loops            
-                # elif required_ids==None:
-                #     attempt.set(0)
-                    # tasks.append(asyncio.create_task(scrape_pinned_posts(headers, model_id,progress,timestamp=posts[0]['postedAtPrecise'])))
-            else:
-                    log.debug(f"[bold]pinned request status code:[/bold]{r.status}")
-                    log.debug(f"[bold]pinned response:[/bold] {await r.text()}")
-                    log.debug(f"[bold]pinned headers:[/bold] {r.headers}")
-                    progress.remove_task(task)
-                    r.raise_for_status()
-    return posts
+       
+        return posts
 
 async def get_pinned_post(model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting pinned media...\n{task.description}"))
@@ -99,8 +88,7 @@ async def get_pinned_post(model_id):
     responseArray=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                                    sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
+       async with sessionbuilder.sessionBuilder() as c: 
             tasks.append(asyncio.create_task(scrape_pinned_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
         
 
@@ -122,7 +110,7 @@ async def get_pinned_post(model_id):
             continue
         dupeSet.add(post["id"])
         unduped.append(post)
-    log.trace(f"pinned dupeset {dupeSet}")
+    log.trace(f"pinned dupeset postids {dupeSet}")
     log.trace("pinned raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo pinned: {str(x)}",unduped)))))
     log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(unduped)} found")
     return unduped                                

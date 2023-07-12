@@ -24,6 +24,7 @@ of_posts_list_name = 'list'
 
 initEP = 'https://onlyfans.com/api2/v2/init'
 
+INDVIDUAL_TIMELINE="https://onlyfans.com/api2/v2/posts/{}?skip_users=all"
 meEP = 'https://onlyfans.com/api2/v2/users/me'
 
 subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&type=all&sort=asc&field=expire_date&limit=10'

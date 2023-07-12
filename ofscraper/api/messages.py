@@ -8,10 +8,8 @@ r"""
                  \/     \/           \/            \/         
 """
 import asyncio
-import aiohttp
 import logging
 import ssl
-import certifi
 import contextvars
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
@@ -33,6 +31,8 @@ from ..utils import auth
 import ofscraper.utils.console as console
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 
 from diskcache import Cache
@@ -61,8 +61,7 @@ async def get_messages(model_id):
     #require a min num of posts to be returned
     min_posts=50
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
+        async with sessionbuilder.sessionBuilder() as c: 
             oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
             log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))
 
@@ -113,7 +112,7 @@ async def get_messages(model_id):
         dupeSet.add(message["id"])
         oldmsgset.discard(message["id"])       
         unduped.append(message)
-    log.trace(f"messages dupeset {dupeSet}")
+    log.trace(f"messages dupeset messageids {dupeSet}")
     log.trace("messages raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo message: {str(x)}",unduped)))))
     if len(oldmsgset)==0 and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"messages_{model_id}",list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped)),expire=constants.RESPONSE_EXPIRY)
@@ -138,16 +137,11 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'}{url}")
 
-
     async with sem:
-        headers=auth.make_headers(auth.read_auth())
-        headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:
+        async with c.requests(url=url)() as r:
             task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Message ID-> {message_id if message_id else 'initial'}")
-            
             if r.ok:
-
-                messages = (await r.json())['list']
+                messages = (await r.json_())['list']
                 log_id=f"offset messageid:{message_id if message_id else 'init id'}"
                 if not messages:
                     messages=[]
@@ -180,7 +174,7 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
 
             else:
                 log.debug(f"[bold]message request status code:[/bold]{r.status}")
-                log.debug(f"[bold]message response:[/bold] {await r.text()}")
+                log.debug(f"[bold]message response:[/bold] {await r.text_()}")
                 log.debug(f"[bold]message headers:[/bold] {r.headers}")
 
                 progress.remove_task(task)
@@ -188,16 +182,13 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
 
     return messages
 
-def get_individual_post(model_id,postid,client=None):
-    headers = auth.make_headers(auth.read_auth())
-    url=constants.messageSPECIFIC.format(model_id,postid)
-    client.headers.update(auth.create_sign(url, headers))
-    r=client.get(url)
-    if not r.is_error:
-        log.trace(f"message raw individual {r.json()}")
-        return r.json()['list'][0]
-    log.debug(f"{r.status_code}")
-    log.debug(f"{r.content.decode()}")
-
-
+def get_individual_post(model_id,postid,c=None):
+    with c.requests(url=constants.messageSPECIFIC.format(model_id,postid))() as r:
+        if r.ok:
+            log.trace(f"message raw individual {r.json()}")
+            return r.json()['list'][0]
+        else:
+            log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+            log.debug(f"[bold]archived response:[/bold] {r.text_()}")
+            log.debug(f"[bold]archived headers:[/bold] {r.headers}")
 

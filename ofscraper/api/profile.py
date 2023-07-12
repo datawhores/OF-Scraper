@@ -11,7 +11,6 @@ import logging
 import contextvars
 
 from typing import Union
-import httpx
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import profileEP,NUM_TRIES,HOURLY_EXPIRY,DAILY_EXPIRY
@@ -20,6 +19,8 @@ from xxhash import xxh128
 from diskcache import Cache
 from ..utils.paths import getcachepath
 import ofscraper.constants as constants
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 cache = Cache(getcachepath())
 
 
@@ -29,31 +30,39 @@ attempt = contextvars.ContextVar("attempt")
 
 
 
+
 # can get profile from username or id
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile(username:Union[int, str]) -> dict:
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        return scrape_profile_helper(c,username)
+
+
+  
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+def scrape_profile_helper(c,username:Union[int, str]):
     id=cache.get(f"username_{username}",None)
     log.trace(f"username date: {id}")
     if id:
         return id
     headers = auth.make_headers(auth.read_auth())
-
     attempt.set(attempt.get(0) + 1)
     log.info(f"Attempt {attempt.get()}/{constants.NUM_TRIES} to get profile {username}")
-    with httpx.Client(http2=True, headers=headers,cookies=auth.add_cookies()) as c:
-        url = profileEP.format(username)
-        c.headers.update(auth.create_sign(url, headers))
-
-        r = c.get(profileEP.format(username), timeout=None)
-        if not r.is_error:
+    with c.requests(profileEP.format(username))() as r:
+        if r.ok:
             attempt.set(0)
             cache.set(f"username_{username}",r.json(),int(HOURLY_EXPIRY*2))
             cache.close()
             log.trace(f"username date: {r.json()}")
             return r.json()
-        elif r.status_code==404:
+        elif r.status==404:
             return {"username":"modeldeleted"}
-        r.raise_for_status()
+        else:
+              log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+              log.debug(f"[bold]archived response:[/bold] {r.text_()}")
+              log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+              r.raise_for_status()
+
+
 
 
 def parse_profile(profile: dict) -> tuple:
@@ -92,24 +101,27 @@ def print_profile_info(info):
     log.info(final_fmt.format(*info))
 
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def get_id( username):
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        return get_id_helper(c,username)
+
     
-    headers = auth.make_headers(auth.read_auth())
-    with httpx.Client(http2=True, headers=headers,cookies=auth.add_cookies()) as c:
-        url = profileEP.format(username)
-        id=cache.get(f"model_id_{username}",None)
-        if id:
-            return id
-        c.headers.update(auth.create_sign(url, headers))
-        r = c.get(url, timeout=None)
-        if not r.is_error:
+        
+        
+
+@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+def get_id_helper(c,username):
+    id=cache.get(f"model_id_{username}",None)
+    if id:
+        return id
+    with c.requests(profileEP.format(username))() as r:
+        if r.ok:
             id=r.json()['id']
             cache.set(f"model_id_{username}",id,DAILY_EXPIRY)
             cache.close()
             return id
-        
-        r.raise_for_status()
-
-
-        
+        else:
+            log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+            log.debug(f"[bold]archived response:[/bold] {r.text_()}")
+            log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+            r.raise_for_status()

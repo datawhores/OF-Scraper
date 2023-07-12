@@ -88,9 +88,10 @@ async def process_dicts(username, model_id, medialist):
                     media_ids = set(operations.get_media_ids(model_id,username))
                     log.debug(f"number of unique media ids in database for {username}: {len(media_ids)}")
                     medialist = seperate.separate_by_id(medialist, media_ids)
-                    log.debug(f"Number of new mediaids to download: {len(medialist)}")  
+                    log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")  
                     medialist=seperate.seperate_avatars(medialist)
-                    log.debug(f"Remove avatar and return final number of new mediaids to download: {len(medialist)}")
+                    log.debug(f"Remove avatar")
+                    log.debug(f"Final Number of media to downlaod {len(medialist)}")
 
                 else:
                     log.info(f"forcing all downloads media count {len(medialist)}")
