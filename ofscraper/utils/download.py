@@ -68,6 +68,8 @@ log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,arg
 
 
 
+
+
 async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
         overall_progress=Progress(  TextColumn("{task.description}"),
@@ -80,6 +82,9 @@ async def process_dicts(username, model_id, medialist):
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         global sem
         sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
+
+        global dirSet
+        dirSet=set()
      
 
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
@@ -135,6 +140,7 @@ async def process_dicts(username, model_id, medialist):
                             overall_progress.update(task1,description=desc.format(
                                         p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)
         overall_progress.remove_task(task1)
+    setDirectoriesDate()
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
     return photo_count+video_count+audio_count,skipped
 def retry_required(value):
@@ -170,6 +176,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
+        addGlobalDir(path)
         if ele.postdate:
             newDate=dates.convert_local_time(ele.postdate)
             log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -289,6 +296,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
     audio["path"].unlink(missing_ok=True)
     log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")
     shutil.move(temp_path,path_to_file)
+    addGlobalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -483,3 +491,19 @@ def set_cache_helper(ele):
         cache.close()
 
 
+def addGlobalDir(path):
+    dirSet.add(path.parent)
+
+
+def setDirectoriesDate():
+    log.info("Setting Date for modified directories")
+    output=set()
+    rootDir=pathlib.Path(config_.get_save_location(config_.read_config()))
+    for ele in dirSet:
+        output.add(ele)
+        while ele!=rootDir and ele.parent!=rootDir:
+            output.add(ele.parent)
+            ele=ele.parent
+    log.debug(f"Directories list {rootDir}")
+    for ele in output:
+        set_time(ele,dates.get_current_time())

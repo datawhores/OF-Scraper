@@ -68,7 +68,7 @@ def create_parser(input=None):
 
 
     post.add_argument(
-        '-rft', '--reverse-filter', help = 'Filter post by provide regex\nNote if you include any uppercase characters the search will be case-sensitive',default=None,required=False,type = str
+        '-nf', '--neg-filter', help = 'Filter post by provide regex is False\nNote if you include any uppercase characters the search will be case-sensitive',default=None,required=False,type = str
     )
     post.add_argument(
         '-sp', '--scrape-paid', help = 'scrape the entire paid page for content. This can take a very long time',default=False,required=False,action="store_true"

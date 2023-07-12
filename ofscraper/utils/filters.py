@@ -108,7 +108,7 @@ def post_user_filter(media):
         return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)!=None,media))
 
 def anti_post_user_filter(media):
-    userfilter=args.reverse_filter
+    userfilter=args.neg_filter
     if not userfilter.islower():
         return list(filter(lambda x:re.search(userfilter,x.text or "")==None,media)) if userfilter else media
     else:
