@@ -28,3 +28,6 @@ def convert_date_to_timestamp(date: str):
 def convert_local_time(date:str):
     return arrow.get(date,tzinfo='UTC').to('local').float_timestamp
 
+
+def get_current_time():
+    return arrow.get(tzinfo='UTC').to('local').float_timestamp

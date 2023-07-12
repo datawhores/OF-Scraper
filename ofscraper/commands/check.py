@@ -5,7 +5,6 @@ import asyncio
 import threading
 import queue
 import textwrap
-import httpx
 import arrow
 import ofscraper.utils.args as args_
 import ofscraper.db.operations as operations
@@ -17,14 +16,15 @@ import ofscraper.classes.posts as posts_
 import ofscraper.constants as constants
 import ofscraper.api.paid as paid_
 import ofscraper.api.archive as archive
-import ofscraper.api.pinned as pinned
-import ofscraper.api.highlights as highlights_
+import ofscraper.api.highlights as highlights
 import ofscraper.utils.console as console_
-import ofscraper.utils.table as table
+import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
 import ofscraper.utils.download as download
 import ofscraper.db.operations as operations
 import ofscraper.constants as constants
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 from diskcache import Cache
 from ..utils.paths import getcachepath
@@ -55,7 +55,7 @@ def process_download_cart():
                     elif row[restype].plain=="post":
                         url=f"{row[post_id]}"
                     elif row[restype].plain=="highlights":
-                        url=constants.highlightsWithStoriesEP.format(row[post_id].plain)
+                        url=constants.storyEP.format(row[post_id].plain)
                     elif row[restype].plain=="stories":
                         url=constants.highlightsWithAStoryEP.format(row[post_id].plain)
                     else:
@@ -66,7 +66,7 @@ def process_download_cart():
                     media_dict= manual.get_media_from_urls(urls=[url])
                     # None for stories and highlights
                     medialist=list(filter(lambda x: x.id==(int(row[media_id].plain) if x.id else None) ,list(media_dict.values())[0]))
-                    media=medialist[0]
+                    media=medialist[0] if len(medialist)>0 else []
                     model_id =media.post.model_id
                     username=media.post.username
                     log.info(f"Downloading Invidual media for {username} {media.filename}")
@@ -98,7 +98,7 @@ def process_download_cart():
 
 def post_checker():
     user_dict = {}
-    with httpx.Client(http2=True, headers=  auth.make_headers(auth.read_auth())) as c:
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
         links = list(url_helper())
         for ele in links:
             name_match = re.search(f"onlyfans.com/({constants.USERNAME_REGEX}+$)", ele)
@@ -273,9 +273,10 @@ def stories_checker():
         user_name=profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id( user_name)    
-        highlights, stories = asyncio.run(highlights_.get_highlight_post( model_id))
-        highlights=list(map(lambda x:posts_.Post(
-        x, model_id, user_name,"highlights"), highlights))
+        stories = asyncio.run(highlights.get_stories_post( model_id))
+        highlights_=asyncio.run(highlights.get_highlight_post( model_id))
+        highlights_=list(map(lambda x:posts_.Post(
+        x, model_id, user_name,"highlights"), highlights_))
         stories=list(map(lambda x:posts_.Post(
         x, model_id, user_name,"stories"), stories))
             
@@ -283,7 +284,7 @@ def stories_checker():
      
         downloaded = get_downloaded(user_name, model_id)
         media=[]
-        [media.extend(ele.all_media) for ele in stories+highlights]
+        [media.extend(ele.all_media) for ele in stories+highlights_]
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)

@@ -8,11 +8,8 @@ r"""
                  \/     \/           \/            \/         
 """
 import asyncio
-import aiohttp
 import logging
 import contextvars
-import certifi
-import ssl
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -24,15 +21,10 @@ from rich.panel import Panel
 from rich.console import Group
 from rich.live import Live
 from rich.style import Style
-import arrow
-import arrow
 import ofscraper.constants as constants
-import ofscraper.utils.auth as auth
-import ofscraper.utils.paths as paths
-from ..utils import auth
 import ofscraper.utils.console as console
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
-import ofscraper.utils.args as args_
+import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
 log=logging.getLogger(__package__)
@@ -52,8 +44,7 @@ async def get_labels(model_id):
     tasks=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
+       async with sessionbuilder.sessionBuilder() as c: 
 
             tasks.append(asyncio.create_task(scrape_labels(c,model_id,job_progress)))
 
@@ -76,15 +67,13 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
     global tasks
     labels = None
     attempt.set(attempt.get(0) + 1)
-    url = constants.labelsEP.format(model_id, offset)
+    
     await sem.acquire()
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-    headers=auth.create_sign(url, headers)
-    async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:  
+    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} {offset}",visible=True)
+    async with c.requests(url=constants.labelsEP.format(model_id, offset))() as r:
         sem.release()
         if r.ok:
-            data=await r.json()
+            data=await r.json_()
             attempt.set(0)
             labels=list(filter(lambda x:isinstance(x,list),data.values()))[0]
             log.debug(f"offset:{offset} -> labels names found {len(labels)}")
@@ -99,7 +88,7 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
 
         else:
             log.debug(f"[bold]labels request status code:[/bold]{r.status}")
-            log.debug(f"[bold]labels response:[/bold] {await r.text()}")
+            log.debug(f"[bold]labels response:[/bold] {await r.text_()}")
             log.debug(f"[bold]labels headers:[/bold] {r.headers}")
             job_progress.remove_task(task)
             r.raise_for_status()
@@ -117,8 +106,7 @@ async def get_labelled_posts(labels, username):
     tasks=[]
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
+        async with sessionbuilder.sessionBuilder() as c:
 
             [tasks.append(asyncio.create_task(scrape_labelled_posts(c,label,username,job_progress)))
                 for label in labels]
@@ -151,13 +139,10 @@ async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
     global tasks
     posts = None
     attempt.set(attempt.get(0) + 1)
-    url = constants.labelledPostsEP.format(model_id, offset, label['id'])
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-    headers=auth.create_sign(url, headers)
-    async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:  
+    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} : offset -> {offset} + label -> {label.get('name')}",visible=True)
+    async with c.requests(url=constants.labelledPostsEP.format(model_id, offset, label['id']))() as r:
         if r.ok:
-            data=await r.json()
+            data=await r.json_()
             attempt.set(0)
             posts=list(filter(lambda x:isinstance(x,list),data.values()))[0]
             log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
@@ -170,7 +155,7 @@ async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
  
         else:
             log.debug(f"[bold]labelled posts request status code:[/bold]{r.status}")
-            log.debug(f"[bold]labelled posts response:[/bold] {await r.text()}")
+            log.debug(f"[bold]labelled posts response:[/bold] {await r.text_()}")
             log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
 
             job_progress.remove_task(task)

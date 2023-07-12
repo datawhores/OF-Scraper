@@ -11,10 +11,7 @@ import asyncio
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
-import ssl
-import certifi
 import math
-import aiohttp
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -31,8 +28,9 @@ import ofscraper.constants as constants
 from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
-import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 from diskcache import Cache
 cache = Cache(getcachepath())
@@ -59,12 +57,10 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
     async with sem:
         
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
-        headers=auth.make_headers(auth.read_auth())
-        headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:  
+        async with c.requests(url)() as r:  
             if r.ok:
                 progress.remove_task(task)
-                posts =( await r.json())['list']
+                posts =(await r.json_())['list']
                 log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
                 if not posts:
                     posts= []
@@ -95,7 +91,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                             tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
                     log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-                    log.debug(f"[bold]archived response:[/bold] {await r.text()}")
+                    log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
                     log.debug(f"[bold]archived headers:[/bold] {r.headers}")
                     progress.remove_task(task)
                     r.raise_for_status()
@@ -114,8 +110,7 @@ async def get_archived_post(model_id):
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
         
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                            sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.AlT_SEM)) as c: 
+        async with sessionbuilder.sessionBuilder()  as c: 
 
             oldarchived=cache.get(f"archived_{model_id}",default=[])
             log.trace("oldarchive {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldarchive: {str(x)}",oldarchived)))))
@@ -158,7 +153,7 @@ async def get_archived_post(model_id):
         dupeSet.add(post["id"])
         oldtimeset.discard(post["id"])
         unduped.append(post)
-    log.trace(f"archive dupeset {dupeSet}")
+    log.trace(f"archive dupeset postids {dupeSet}")
     log.trace("archived raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo archive: {str(x)}",unduped)))))
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):

@@ -107,6 +107,15 @@ def post_user_filter(media):
     else:
         return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)!=None,media))
 
+def anti_post_user_filter(media):
+    userfilter=args.neg_filter
+    if not userfilter.islower():
+        return list(filter(lambda x:re.search(userfilter,x.text or "")==None,media)) if userfilter else media
+    else:
+        return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)==None,media)) if userfilter else media
+
+
+
 def download_type_filter(media):
     if args_.getargs().download_type==None:
         return media

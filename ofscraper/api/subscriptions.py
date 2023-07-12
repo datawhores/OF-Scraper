@@ -10,39 +10,40 @@ r"""
 
 import asyncio
 from itertools import chain
-import ssl
-import certifi
 import logging
-import aiohttp
 from rich.console import Console
 import arrow
 console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import subscriptionsEP,NUM_TRIES
-from ..utils import auth, dates
 import ofscraper.constants as constants
 log=logging.getLogger(__package__)
+import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-async def get_subscriptions(headers, subscribe_count):
+async def get_subscriptions(subscribe_count):
     offsets = range(0, subscribe_count, 10)
-    tasks = [scrape_subscriptions(headers, offset) for offset in offsets]
-    subscriptions = await asyncio.gather(*tasks)
-    return list(chain.from_iterable(subscriptions))
+    async with sessionbuilder.sessionBuilder() as c: 
+        tasks = [scrape_subscriptions(c,offset) for offset in offsets]
+        subscriptions = await asyncio.gather(*tasks)
+        return list(chain.from_iterable(subscriptions))
 
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_subscriptions(headers, offset=0) -> list:
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,sock_connect=None, sock_read=None)) as c: 
-        url = subscriptionsEP.format(offset)
-        headers=auth.make_headers(auth.read_auth())
-        headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+
+
+
+@retry(stop=stop_after_attempt(constants.MAX_SEMAPHORE),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+async def scrape_subscriptions(c,offset=0) -> list:
+
+        async with c.requests( subscriptionsEP.format(offset))() as r:
             if r.ok:
-                subscriptions = await r.json()
+                subscriptions = await r.json_()
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 return subscriptions
-            r.raise_for_status()
+            else:
+                log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+                log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]archived headers:[/bold] {r.headers}")
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()

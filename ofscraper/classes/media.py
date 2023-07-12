@@ -1,5 +1,4 @@
 import re
-import aiohttp
 import arrow
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import LICENCE_URL
@@ -12,6 +11,8 @@ import certifi
 import ssl
 import logging
 import traceback
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 log=logging.getLogger(__package__)
 class Media():
@@ -259,14 +260,11 @@ class Media():
             return
         try:
             params={"Policy":self.policy,"Key-Pair-Id":self.keypair,"Signature":self.signature}
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                                        sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as session:
-                headers=auth.make_headers(auth.read_auth())
-                headers=auth.create_sign(self.mpd, headers) 
-                async with session.request("get",self.mpd,headers=headers,params=params,ssl=ssl.create_default_context(cafile=certifi.where())) as r:
+            async with sessionbuilder.sessionBuilder() as c:
+                async with c.requests(url=self.mpd,params=params)() as r:
                     if not r.ok:
                         return None
-                    return MPEGDASHParser.parse(await r.text())
+                    return MPEGDASHParser.parse(await r.text_())
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)

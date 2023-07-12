@@ -11,9 +11,6 @@ r"""
 import asyncio
 import logging
 import contextvars
-import aiohttp
-import ssl
-import certifi
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -30,6 +27,7 @@ import ofscraper.constants as constants
 import ofscraper.utils.auth as auth
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.console as console
+import ofscraper.classes.sessionbuilder as sessionbuilder
 
 log=logging.getLogger(__package__)
 sem = semaphoreDelayed(1)
@@ -47,18 +45,17 @@ async def get_stories_post(model_id):
     global tasks
     tasks=[]
     with Live(progress_group, refresh_per_second=5,console=console.shared_console):
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=1)) as c: 
-            tasks.append(asyncio.create_task(scrape_stories(c,model_id,job_progress)))
-            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
-            while len(tasks)!=0:
-                for coro in asyncio.as_completed(tasks):
-                    result=await coro or []
-                    page_count=page_count+1
-                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                    output.extend(result)
-                tasks=list(filter(lambda x:x.done()==False,tasks))
-            overall_progress.remove_task(page_task)  
+            async with sessionbuilder.sessionBuilder() as c:
+                tasks.append(asyncio.create_task(scrape_stories(c,model_id,job_progress)))
+                page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
+                while len(tasks)!=0:
+                    for coro in asyncio.as_completed(tasks):
+                        result=await coro or []
+                        page_count=page_count+1
+                        overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                        output.extend(result)
+                    tasks=list(filter(lambda x:x.done()==False,tasks))
+                overall_progress.remove_task(page_task)  
     log.trace("stories raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories: {str(x)}",output)))))
     log.debug(f"[bold]stories+highlight Count without Dupes[/bold] {len(output)} found")
     return output
@@ -71,25 +68,25 @@ async def scrape_stories( c,user_id,job_progress) -> list:
     attempt.set(attempt.get(0) + 1)
     stories=None
     await sem.acquire()
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-  
-
-    url= constants.highlightsWithAStoryEP.format(user_id)
-    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url, headers))
+    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} : user id -> {user_id}",visible=True)
+    async with c.requests(url=constants.highlightsWithAStoryEP.format(user_id))() as r:
+        sem.release()
+        if r.ok:
+            attempt.set(0)
+            stories =await r.json_()
+            log.debug(f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}") 
+            log.trace("stories: -> stories raw {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo stories: {str(x)}",stories)))))
+            job_progress.remove_task(task)
+        else:
+            log.debug(f"[bold]stories request status code:[/bold]{r.status}")
+            log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]stories headers:[/bold] {r.headers}")
+            r.raise_for_status()
+        return   stories 
+        
     
-    sem.release()
-    if  r.ok:
-        attempt.set(0)
-        stories =await r.json()
-        log.debug(f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}") 
-        log.trace("stories: -> stories raw {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo stories: {str(x)}",stories)))))
-        job_progress.remove_task(task)
-
-    else:
-        job_progress.remove_task(task)
-        r.raise_for_status()
-    return   stories 
+  
+    r
 
 
 
@@ -98,8 +95,7 @@ async def scrape_stories( c,user_id,job_progress) -> list:
 
 async def get_highlight_post(model_id):
 
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=1)) as c: 
+    async with sessionbuilder.sessionBuilder() as c:
         overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting highlight list...\n{task.description}"))
         job_progress=Progress("{task.description}")
         progress_group = Group(
@@ -158,31 +154,19 @@ async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-  
-
-    url= constants.highlightsWithStoriesEP.format(user_id,offset)
-
-    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url , headers))
+    async with c.requests(url=constants.highlightsWithStoriesEP.format(user_id,offset))() as r:
+        sem.release()
+        if r.ok:
+            attempt.set(0)
+            resp_data=(await r.json_())
+            log.trace(f"highlights list: -> found highlights list data {resp_data}")
+            data=get_highlightList(resp_data)
+            log.debug(f"highlights list: -> found list ids {data}")
     
-    # highlights_, stories
-    sem.release()
-    if  r.ok:
-        attempt.set(0)
-        resp_data=(await r.json())
-        log.trace(f"highlights list: -> found highlights list data {resp_data}")
-        data=get_highlightList(resp_data)
-        log.debug(f"highlights list: -> found list ids {data}")
-    
-        job_progress.remove_task(task)
-        if resp_data.get("hasMore"):
-            tasks.append(asyncio.create_task(scrape_highlight_list(c,user_id,job_progress,offset+len(data))))
-
-
-
-    else:
-        job_progress.remove_task(task)
-        r.raise_for_status()
+        else:
+            log.debug(f"[bold]highlight list request status code:[/bold]{r.status}")
+            log.debug(f"[bold]highlight list response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
     return  data
 
 
@@ -193,25 +177,19 @@ async def scrape_highlights( c,id,job_progress) -> list:
     global tasks
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    headers=auth.make_headers(auth.read_auth())
-  
-
-    url= constants.storyEP.format(id)
-
-    r=await c.request("get",url ,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=auth.create_sign(url , headers))
-    
-    # highlights_, stories
-    sem.release()
-    if  r.ok:
-        attempt.set(0)
-        resp_data=(await r.json())
-        log.trace(f"highlights: -> found highlights data {resp_data}")
-        log.debug(f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}")
-        job_progress.remove_task(task)
-    else:
-        job_progress.remove_task(task)
-        r.raise_for_status()
+    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} highlights id -> {id}",visible=True)
+    async with c.requests(url=constants.storyEP.format(id))() as r:
+        sem.release()
+        if r.ok:
+            attempt.set(0)
+            resp_data=(await r.json_())
+            log.trace(f"highlights: -> found highlights data {resp_data}")
+            log.debug(f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}")
+            job_progress.remove_task(task)
+        else:
+            log.debug(f"[bold]highlight status code:[/bold]{r.status}")
+            log.debug(f"[bold]highlight response:[/bold] {r.text_()}")
+            log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
     return resp_data['stories']
 
 
@@ -228,27 +206,34 @@ def get_highlightList(data):
 
 
 
-def get_individual_highlight(id,client=None):
-    headers = auth.make_headers(auth.read_auth())
-    url=constants.highlightSPECIFIC.format(id)
-    auth.add_cookies(client)
-    client.headers.update(auth.create_sign(url, headers))
-    r=client.get(url)
-    if not r.is_error:
-        return r.json()
-    log.debug(f"{r.status_code}")
-    log.debug(f"{r.content.decode()}")
 
-def get_individual_stories(id,client=None):
-    headers = auth.make_headers(auth.read_auth())
-    url=constants.storiesSPECIFIC.format(id)
-    auth.add_cookies(client)
-    client.headers.update(auth.create_sign(url, headers))
-    r=client.get(url)
-    if not r.is_error:
-        return r.json()
-    log.debug(f"{r.status_code}")
-    log.debug(f"{r.content.decode()}")
 
+
+
+def get_individual_highlights(id,c=None):
+    return get_individual_stories(id,c)
+    # with c.requests(constants.highlightSPECIFIC.format(id))() as r:
+    #     if r.ok:
+    #         log.trace(f"highlight raw highlight individua; {r.json()}")
+    #         return r.json()
+    #     else:
+    #         log.debug(f"[bold]highlight request status code:[/bold]{r.status}")
+    #         log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
+    #         log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
+
+
+
+
+
+
+def get_individual_stories(id,c=None):
+    with c.requests(constants.storiesSPECIFIC.format(id))() as r:
+        if r.ok:
+            log.trace(f"highlight raw highlight individua; {r.json_()}")
+            return r.json()
+        else:
+            log.debug(f"[bold]highlight request status code:[/bold]{r.status}")
+            log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
+            log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
 
 

@@ -1,6 +1,5 @@
 import logging
 import re
-import httpx
 import logging
 import threading
 import time
@@ -14,6 +13,7 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
+import ofscraper.classes.sessionbuilder as sessionbuilder
 senstiveDict={}
 discord_queue=queue.Queue()
 
@@ -72,30 +72,30 @@ class TextHandler(logging.Handler):
 
 
 def discord_messenger():
-    with httpx.Client() as c:
+    with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
         while True:
             url,message=discord_queue.get()   
             if url=="exit":
                 return
             try:
                 discord_pusher(url,message,c)
-            except httpx.HTTPError as E:
+            except Exception as E:
                 console.shared_console.print("Discord Error")
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(constants.DISCORDWAIT),reraise=True) 
 def discord_pusher(url,message,c):
-    c.post(url, headers={"Content-type": "application/json"},json={"content":message})
+    with c.requests(url,"post",headers={"Content-type": "application/json"},json={"content":message})() as r:
+        None
 
 
 
 def discord_cleanup():
     logging.getLogger("ofscraper").info("Pushing Discord Queue")
-    with httpx.Client() as c:
-        while True:
-            if discord_queue.empty:
-                discord_queue.put(("exit",None))
-                break
-            time.sleep(.5)
+    while True:
+        if discord_queue.empty:
+            discord_queue.put(("exit",None))
+            break
+        time.sleep(.5)
              
 def start_discord_queue():
     worker_thread = threading.Thread(target=discord_messenger)

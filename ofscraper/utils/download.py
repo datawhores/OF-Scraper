@@ -12,12 +12,9 @@ import math
 import pathlib
 import platform
 import shutil
-import ssl
-import certifi
 import traceback
 import re
 import logging
-import aiohttp
 import contextvars
 import json
 import subprocess
@@ -61,11 +58,15 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 log=logging.getLogger(__package__)
 log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
+
+
 
 
 
@@ -81,6 +82,9 @@ async def process_dicts(username, model_id, medialist):
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         global sem
         sem = semaphoreDelayed(config_.get_threads(config_.read_config()))
+
+        global dirSet
+        dirSet=set()
      
 
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
@@ -88,9 +92,10 @@ async def process_dicts(username, model_id, medialist):
                     media_ids = set(operations.get_media_ids(model_id,username))
                     log.debug(f"number of unique media ids in database for {username}: {len(media_ids)}")
                     medialist = seperate.separate_by_id(medialist, media_ids)
-                    log.debug(f"Number of new mediaids to download: {len(medialist)}")  
+                    log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")  
                     medialist=seperate.seperate_avatars(medialist)
-                    log.debug(f"Remove avatar and return final number of new mediaids to download: {len(medialist)}")
+                    log.debug(f"Remove avatar")
+                    log.debug(f"Final Number of media to downlaod {len(medialist)}")
 
                 else:
                     log.info(f"forcing all downloads media count {len(medialist)}")
@@ -106,8 +111,7 @@ async def process_dicts(username, model_id, medialist):
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'    
 
               
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
+                async with sessionbuilder.sessionBuilder() as c:
                     i=0
                     for ele in medialist:
                         aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit,job_progress)))
@@ -136,6 +140,7 @@ async def process_dicts(username, model_id, medialist):
                             overall_progress.update(task1,description=desc.format(
                                         p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)
         overall_progress.remove_task(task1)
+    setDirectoriesDate()
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
     return photo_count+video_count+audio_count,skipped
 def retry_required(value):
@@ -171,6 +176,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id,prog
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
+        addGlobalDir(path)
         if ele.postdate:
             newDate=dates.convert_local_time(ele.postdate)
             log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -192,12 +198,11 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         cache.close()
         headers=None
-        total=None
+        
         path_to_file=None
        
 
-      
-        async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers=None) as r:
+        async with c.requests(url=url)() as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
@@ -211,8 +216,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                     r.raise_for_status()          
                                    
         if total!=resume_size:
-            headers={"Range":f"bytes={resume_size}-{total}"}
-            async with c.request("get",url,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=None,headers=headers) as r:
+            async with c.requests(url=url,headers={"Range":f"bytes={resume_size}-{total}"})() as r:
                 if r.ok:
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
@@ -220,7 +224,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                         size=0
                         with open(temp, 'ab') as f: 
                             progress.update(task1,visible=True )
-                            async for chunk in r.content.iter_chunked(1024):
+                            async for chunk in r.iter_chunked(1024):
                                 size=size+len(chunk) if log_trace else size
                                 log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
@@ -292,6 +296,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
     audio["path"].unlink(missing_ok=True)
     log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")
     shutil.move(temp_path,path_to_file)
+    addGlobalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
         log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -338,11 +343,9 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
         temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
-        headers=auth.make_headers(auth.read_auth())
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         total=None
-        
-        async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with c.requests(url=url,params=params)() as r:
             if r.ok:
                 rheaders=r.headers
                 total = int(rheaders['Content-Length'])
@@ -351,7 +354,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                 r.raise_for_status()  
         if total!=resume_size:
             headers={"Range":f"bytes={resume_size}-{total}"}  
-            async with c.request("get",url,params=params,allow_redirects=True,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as l:
+            async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
@@ -359,7 +362,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                     with open(temp, 'ab') as f:                           
                         progress.update(task1,visible=True )
                         size=0
-                        async for chunk in l.content.iter_chunked(1024):
+                        async for chunk in l.iter_chunked(1024):
                             size=size+len(chunk) if log_trace else size
                             log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
@@ -383,32 +386,32 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
-    log.debug("using auto key helper")
+    log.debug(f"ID:{id} using auto key helper")
     try:
         out=cache.get(licence_url)
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
-        if not out:
-            headers=auth.make_headers(auth.read_auth())
-            headers["cookie"]=auth.get_cookies()
-            auth.create_sign(licence_url,headers)
-            json_data = {
-                'license': licence_url,
-                'headers': json.dumps(headers),
-                'pssh': pssh,
-                'buildInfo': '',
-                'proxy': '',
-                'cache': True,
-            }
-
-
-            async with c.request("post",'https://cdrm-project.com/wv',json=json_data,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True,cookies=None) as r:
-                httpcontent=await r.text()
-                log.debug(f"ID:{id} key_response: {httpcontent}")
-                soup = BeautifulSoup(httpcontent, 'html.parser')
-                out=soup.find("li").contents[0]
-                cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
-                cache.close()
+        if out!=None:
+            log.debug(f"ID:{id} auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': '',
+            'proxy': '',
+            'cache': True,
+        }
+        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+            httpcontent=await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, 'html.parser')
+            out=soup.find("li").contents[0]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
         return out
     except Exception as E:
         log.traceback(E)
@@ -417,9 +420,10 @@ async def key_helper(c,pssh,licence_url,id):
         
 
 async def key_helper_manual(c,pssh,licence_url,id):
-    log.debug("using manual keyhelper")
+    log.debug(f"ID:{id} using manual key helper")
     out=cache.get(licence_url)
     if out!=None:
+        log.debug(f"ID:{id} manual key helper got key from cache")
         return out
     log.debug(f"ID:{id} pssh: {pssh!=None}")
     log.debug(f"ID:{id} licence: {licence_url}")
@@ -441,15 +445,10 @@ async def key_helper_manual(c,pssh,licence_url,id):
     session_id = cdm.open()
 
     
-    
-    
-    # get license challenge
-    challenge = cdm.get_license_challenge(session_id, pssh)
-    headers=auth.make_headers(auth.read_auth())
-    headers=auth.create_sign(licence_url, headers)
     keys=None
-    async with c.request("post",licence_url,data=challenge,ssl=ssl.create_default_context(cafile=certifi.where()),allow_redirects=True, headers=headers,cookies=auth.add_cookies_aio()) as r:
-        cdm.parse_license(session_id, await r.content.read())
+    challenge = cdm.get_license_challenge(session_id, pssh)
+    async with c.requests(url=licence_url,method="post",data=challenge)() as r:
+        cdm.parse_license(session_id, (await r.content.read()))
         keys = cdm.get_keys(session_id)
         cdm.close(session_id)
     keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
@@ -492,3 +491,19 @@ def set_cache_helper(ele):
         cache.close()
 
 
+def addGlobalDir(path):
+    dirSet.add(path.parent)
+
+
+def setDirectoriesDate():
+    log.info("Setting Date for modified directories")
+    output=set()
+    rootDir=pathlib.Path(config_.get_save_location(config_.read_config()))
+    for ele in dirSet:
+        output.add(ele)
+        while ele!=rootDir and ele.parent!=rootDir:
+            output.add(ele.parent)
+            ele=ele.parent
+    log.debug(f"Directories list {rootDir}")
+    for ele in output:
+        set_time(ele,dates.get_current_time())

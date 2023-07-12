@@ -89,6 +89,8 @@ def get_current_config_schema(config:dict=None) -> dict:
             "key-mode-default":get_key_mode(config),
             "dynamic-mode-default":get_dynamic(config),
             "partfileclean":get_part_file_clean(config),
+            "backend":get_backend(config),
+
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -304,6 +306,13 @@ def get_timeline_responsetype(config=None):
         return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return config.get('responsetype',{}).get("timeline") or config.get('responsetype',{}).get("post") or constants.RESPONSE_TYPE_DEFAULT["timeline"]
 
+def get_post_responsetype(config=None):
+    if config==None:
+        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
+    return  config.get('responsetype',{}).get("post") or config.get('responsetype',{}).get("timeline") or constants.RESPONSE_TYPE_DEFAULT["timeline"]
+
+
+
 def get_archived_responsetype(config=None):
     if config==None:
         return constants.RESPONSE_TYPE_DEFAULT["archived"]
@@ -374,3 +383,9 @@ def get_part_file_clean(config=None):
     if config==None:
         return False
     return config.get("partfileclean",False) or False
+
+
+def get_backend(config=None):
+    if config==None:
+        return "aio"
+    return config.get("backend",constants.BACKEND_DEFAULT) or constants.BACKEND_DEFAULT

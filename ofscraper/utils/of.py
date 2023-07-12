@@ -84,9 +84,9 @@ def process_highlights( model_id,username):
 
 
 
-def process_timeline_posts(model_id,username):
+def process_timeline_posts(model_id,username,individual=False):
     with stdout.lowstdout():
-        timeline_posts = asyncio.run(timeline.get_timeline_post( model_id))
+        timeline_posts = asyncio.run(timeline.get_timeline_post( model_id)) if not individual else timeline.get_individual_post(id)
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")

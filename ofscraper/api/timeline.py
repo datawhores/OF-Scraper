@@ -13,7 +13,6 @@ import ssl
 import certifi
 import contextvars
 import math
-import aiohttp
 from tenacity import retry,stop_after_attempt,wait_random
 from rich.progress import Progress
 from rich.progress import (
@@ -32,6 +31,8 @@ from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
+import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 from diskcache import Cache
 cache = Cache(getcachepath())
@@ -58,12 +59,10 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
     log.debug(url)
     async with sem:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
-        headers=auth.make_headers(auth.read_auth())
-        headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+        async with  c.requests(url=url)() as r:
             if r.ok:
                 progress.remove_task(task)
-                posts = (await r.json())['list']
+                posts = (await r.json_())['list']
                 log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
                 if not posts:
                     posts= []
@@ -93,7 +92,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                             tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
                     log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
-                    log.debug(f"[bold]timeline response:[/bold] {await r.text()}")
+                    log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
                     log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
 
                     progress.remove_task(task)
@@ -114,8 +113,7 @@ async def get_timeline_post(model_id):
     page_count=0
     
     with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE)) as c: 
+        async with sessionbuilder.sessionBuilder() as c:
 
             oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
             log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
@@ -159,7 +157,7 @@ async def get_timeline_post(model_id):
         dupeSet.add(post["id"])
         oldtimeset.discard(post["id"])
         unduped.append(post)
-    log.trace(f"timeline dupeset {dupeSet}")
+    log.trace(f"timeline dupeset postids {dupeSet}")
     log.trace("post raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo timeline: {str(x)}",unduped)))))
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
     if len(oldtimeset)==0 and not (args_.getargs().before or args_.getargs().after):
@@ -175,16 +173,14 @@ async def get_timeline_post(model_id):
     return unduped                                
 
 
-def get_individual_post(id,client=None):
-    headers = auth.make_headers(auth.read_auth())
-    url=f"https://onlyfans.com/api2/v2/posts/{id}?skip_users=all"
-    auth.add_cookies(client)
-    client.headers.update(auth.create_sign(url, headers))
-    r=client.get(url)
-    if not r.is_error:
-        log.trace(f"post raw individual {r.json()}")
-        return r.json()
-    log.debug(f"{r.status_code}")
-    log.debug(f"{r.content.decode()}")
-    
+def get_individual_post(id,c=None):
+    with c.requests(constants.INDVIDUAL_TIMELINE.format(id))() as r:
+        if r.ok:
+            log.trace(f"message raw individual {r.json()}")
+            return r.json()
+        else:
+            log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+            log.debug(f"[bold]archived response:[/bold] {r.text_()}")
+            log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+
 

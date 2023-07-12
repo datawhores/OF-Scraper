@@ -44,7 +44,7 @@ def selectuserhelper():
     headers = auth.make_headers(auth.read_auth())
     subscribe_count = process_me(headers)
     global parsed_subscriptions
-    all_subs = get_models(headers, subscribe_count)
+    all_subs = get_models( subscribe_count)
     if not args.username: 
         selected=None
         while True:
@@ -136,11 +136,11 @@ def sort_models_helper(models):
 def process_me(headers):
     my_profile = me.scrape_user(headers)
     name, username = me.parse_user(my_profile)
-    subscribe_count=me.parse_subscriber_count(headers)
+    subscribe_count=me.parse_subscriber_count()
     me.print_user(name, username)
     return subscribe_count
 
-def get_models(headers, subscribe_count) -> list:
+def get_models(subscribe_count) -> list:
     """
     Get user's subscriptions in form of a list.
     """
@@ -148,7 +148,7 @@ def get_models(headers, subscribe_count) -> list:
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
             list_subscriptions = asyncio.run(
-                subscriptions.get_subscriptions(headers, subscribe_count))
+                subscriptions.get_subscriptions(subscribe_count))
             parsed_subscriptions = subscriptions.parse_subscriptions(
                 list_subscriptions)
             progress.remove_task(task1)

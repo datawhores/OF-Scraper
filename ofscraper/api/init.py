@@ -29,7 +29,7 @@ def print_sign_status(headers):
 
 def getstatus(headers):
     try:
-        resp = me.scrape_user(headers)
+        me.scrape_user(headers)
         return "UP"
     except Exception as e:
         log.traceback(e)
