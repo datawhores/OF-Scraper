@@ -337,7 +337,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         total=None
-        async with c.requests(url=url)() as r:
+        async with c.requests(url=url,params=params)() as r:
             if r.ok:
                 rheaders=r.headers
                 total = int(rheaders['Content-Length'])
@@ -346,7 +346,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
                 r.raise_for_status()  
         if total!=resume_size:
             headers={"Range":f"bytes={resume_size}-{total}"}  
-            async with c.requests(url=url,headers=headers)() as l:                
+            async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     pathstr=str(temp)
                     task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
@@ -395,7 +395,7 @@ async def key_helper(c,pssh,licence_url,id):
                 'proxy': '',
                 'cache': True,
             }
-            async with c.requests(url='https://cdrm-project.com/wv',req_method="post",json=json_data)() as r:
+            async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
                 httpcontent=await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
@@ -435,7 +435,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
 
     
     keys=None
-    async with c.requests(url=licence_url,req_method="post")() as r:
+    async with c.requests(url=licence_url,method="post")() as r:
         cdm.parse_license(session_id, (await r.content.read()))
         keys = cdm.get_keys(session_id)
         cdm.close(session_id)

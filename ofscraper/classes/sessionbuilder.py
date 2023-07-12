@@ -72,22 +72,22 @@ class sessionBuilder:
         return auth.add_cookies() 
 
 
-    def requests(self,url,req_type="get",headers=None,cookies=None,json=None,params=None,redirects=True):
+    def requests(self,url=None,method="get",headers=None,cookies=None,json=None,params=None,redirects=True):
         headers=self._create_headers(headers,url)
         cookies=cookies or self._create_cookies()
         json=json or None
         params=params or None
         if self._backend=="aio":
-            inner_func=functools.partial(self._session.request,req_type,url=url,allow_redirects=redirects,params=params,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json)
+            inner_func=functools.partial(self._session.request,method,url=url,allow_redirects=redirects,params=params,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json)
             funct=functools.partial(self._aio_funct_async,inner_func)
 
      
             
         elif self._backend=="httpx" and self._async:
-            inner_func=functools.partial(self._session.request,req_type,follow_redirects=redirects,url=url,cookies=cookies,headers=headers,json=json,params=params)
+            inner_func=functools.partial(self._session.request,method,follow_redirects=redirects,url=url,cookies=cookies,headers=headers,json=json,params=params)
             funct=functools.partial(self._httpx_funct_async,inner_func)
         elif self._backend=="httpx" and not self._async:
-            inner_func=functools.partial(self._session.request,req_type,follow_redirects=redirects,url=url,cookies=cookies,headers=headers,json=json,params=params)
+            inner_func=functools.partial(self._session.request,method,follow_redirects=redirects,url=url,cookies=cookies,headers=headers,json=json,params=params)
             funct=functools.partial(self._httpx_funct,inner_func)
         
         return funct
