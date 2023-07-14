@@ -13,7 +13,6 @@ import pathlib
 import re
 import arrow
 from InquirerPy.resolver import prompt
-from InquirerPy import inquirer
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
 from InquirerPy import get_style
@@ -23,39 +22,22 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
-
+import ofscraper.prompts.promptConvert as promptClasses
 console=Console()
 def main_prompt() -> int:
     main_prompt_choices = [*constants.mainPromptChoices]
     main_prompt_choices.insert(3, Separator())
+    answer=promptClasses.getMultiSection(           
+            message= 'What would you like to do?',
+            choices = [*main_prompt_choices]
 
-    name = 'action'
-
-    questions = [
-        {
-            'type': 'list',
-            'name': name,
-            'message': 'What would you like to do?',
-            'choices': [*main_prompt_choices],
-        }
-    ]
-
-    answer = prompt(questions)
-    return constants.mainPromptChoices[answer[name]]
-
-
-
-
-
-
-
-
-
+    
+    ).execute()
+    return constants.mainPromptChoices[answer]
 
 def areas_prompt() -> list:
-    name = 'areas'
-
-    questions = [
+    name="value"
+    answers=promptClasses.batchConverter(* [
         {
             'type': 'checkbox',
             'qmark': '[?]',
@@ -76,15 +58,14 @@ def areas_prompt() -> list:
             ,"instruction":prompt_strings.CHECKLISTINSTRUCTIONS,
 
         }
-    ]
-    answers = prompt(questions)
+    ])
     return answers[name]
 
 
 def like_areas_prompt() -> list:
     name = 'areas'
 
-    questions = [
+    answers=promptClasses.batchConverter(*[
         {
             'type': 'checkbox',
             'qmark': '[?]',
@@ -99,14 +80,16 @@ def like_areas_prompt() -> list:
             ,"instruction":prompt_strings.CHECKLISTINSTRUCTIONS,
 
         }
-    ]
-    answers = prompt(questions)
+    ])
     return answers[name]
 
 def scrape_paid_prompt():
-    questions = [
+    name="value"
+    answer=promptClasses.batchConverter(*[
+      
         {
             'type': 'list',
+            "name":name,
             'message': "Scrape entire paid page [WARNING ONLY USE IF NEEDED i.e for DELETED MODELS]",
             'choices':[Choice(True,"True"),Choice(False,"False",enabled=True)],
             'long_instruction': prompt_strings.SCRAPE_PAID,
@@ -114,13 +97,12 @@ def scrape_paid_prompt():
 
         },
 
-    ]
+    ])
 
-    answer = prompt(questions)
-    return answer[0]
+    return answer[name]
 
 def auth_prompt(auth) -> dict:
-    questions = [
+    answers = promptClasses.batchConverter(*[
         {
             'type': 'input',
             'name': 'sess',
@@ -156,47 +138,48 @@ def auth_prompt(auth) -> dict:
             'default': auth['x-bc']
             ,'validate':EmptyInputValidator()
         }
-    ]
+    ])
 
-    answers = prompt(questions)
     return answers
 
 
 def ask_make_auth_prompt() -> bool:
     name = 'make_auth'
 
-    questions = [
+    questions = promptClasses.batchConverter(*[
         {
             'type': 'confirm',
             'name': name,
             'message': "You don't seem to have an `auth.json` file. Would you like to make one?",
         }
-    ]
+    ])
 
-    answer = prompt(questions)
-    return answer[name]
+    return questions[name]
 
 def browser_prompt()->str:
     pythonver=float(f"{sys.version_info[0]}.{sys.version_info[1]}")
-    msg="Select how to retrive auth information"
+    name="browser"
+    answer=None
 
     if pythonver<3.9 or pythonver>=3.11:
+        msg="Select how to retrive auth information"
         console.print("\nNote: Browser Extractions only works with default browser profile\n\n")
-        questions = [
+        answer=promptClasses.batchConverter(*[
             {
                 'type': 'list',
                 'message':msg ,
+                "name":name,
                 'choices':["Enter Each Field Manually","Paste From M-rcus\' OnlyFans-Cookie-Helper", Separator(line="-----------\nBrowser Extractions"),"Chrome","Chromium","Firefox","Opera","Opera GX","Edge","Chromium","Brave","Vivaldi","Safari"],
                 "default":"Enter Each Field Manually",
 
             }
-        ]
+        ])
         
 
     else:
         console.print("\nNote:To enable automatic extraction install ofscraper with python 3.9 or 3.10\n\n")
         msg="Select how to retrive auth information"
-        questions = [
+        answer= promptClasses.batchConverter(*[
         {
             'type': 'list',
             'message': msg,
@@ -204,40 +187,46 @@ def browser_prompt()->str:
             "default":"Enter Each Field Manually"
 
         }
-    ]  
+    ]  )
       
-    return prompt(questions)[0]
+    return answer[name]
 def user_agent_prompt(current):
-    questions = [
+    name="input"
+    questions = promptClasses.batchConverter(*[
         {
             'type': 'input',
+            "name":name,
             'message':'Enter User_Agent from browser',
             'default':current,
             'validate':EmptyInputValidator(),
             'filter':lambda x:prompt_validators.cleanTextInput(x)
         }
-    ]
-    return  prompt(questions)[0]
+    ])
+    return  questions[name]
 
 def xbc_prompt():
-    questions = [
+    name="input"
+    questions = promptClasses.batchConverter(*[
         {
             'type': 'input',
+            "name":name,
             'message':'Enter x-bc request header',
             'instruction':f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/datawhores/ofscraper\n\n"
             ,'validate':EmptyInputValidator(),
             'filter':lambda x:prompt_validators.cleanTextInput(x)
         }
-    ]
-    return  prompt(questions)[0]
+    ])
+    return questions[name]
 
 
 
 
 def auth_full_paste():
-    questions = [
+    name="input"
+    questions = promptClasses.batchConverter(*[
         {
             'type': 'input',
+            "name":name,
             'message':'Paste Text from Extension',
             "validate": prompt_validators.jsonValidator(),
             "filter":prompt_validators.jsonloader,
@@ -248,23 +237,22 @@ Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
              
 
         }
-    ]
-    return prompt(questions)[0]
+    ])
+    return questions[name]
     
 def profiles_prompt() -> int:
     name = 'profile'
 
-    questions = [
+    questions = promptClasses.batchConverter(*[
         {
             'type': 'list',
             'name': name,
             'message': 'Select one of the following:',
             'choices': [*constants.profilesPromptChoices]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
-    return constants.profilesPromptChoices[answer[name]]
+    return constants.profilesPromptChoices.get(questions[name])
 
 
 def edit_profiles_prompt(profiles) -> str:
@@ -272,17 +260,16 @@ def edit_profiles_prompt(profiles) -> str:
 
     profile_names = [profile.stem for profile in profiles]
 
-    questions = [
+    questions =promptClasses.batchConverter(* [
         {
             'type': 'list',
             'name': name,
             'message': 'Which profile would you like to edit?',
             'choices': [*profile_names]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
-    return answer[name]
+    return questions[name]
 
 
 def new_name_edit_profiles_prompt(old_profile_name) -> str:
@@ -766,8 +753,8 @@ def model_selector(models,selected=None) -> bool:
     "spinner_text": "",
 })
 
-    p=inquirer.fuzzy(
-        long_instruction=prompt_strings.FUZZY_INSTRUCTION.format(sort=args_.getargs().sort.capitalize(),
+    p=promptClasses.getMultiSection(fuzzy=True,
+                                    long_instruction=prompt_strings.FUZZY_INSTRUCTION.format(sort=args_.getargs().sort.capitalize(),
                                                                  desc=args_.getargs().desc,
                                                                  type=(args_.getargs().account_type or "All").capitalize(),
                                                                 status=(args_.getargs().sub_status or "Both").capitalize(),
@@ -782,20 +769,14 @@ def model_selector(models,selected=None) -> bool:
         multiselect=True,
         validate=prompt_validators.emptyListValidator(),
         prompt='Filter: ',
-        marker="\u25c9 ",
-        marker_pl="\u25cb ",
         message= "Which models do you want to scrape\n:",
         mandatory=False,
-        style=style,
-        keybindings=  {
-                                "toggle": [{"key": "s-right"},{"key": ["pagedown","right"]},{"key": ["home","right"]}],
-
-                                
-                        }
-                            
+        style=style,)
     
-    )
-        
+    
+    
+    
+    
     answers=p.execute()
     return list(map(lambda x:x["name"],answers or [])),p
         
@@ -920,11 +901,7 @@ def manual_config_prompt(configText) -> str:
         
         
         {
-               "keybindings":{
-                             "answer": [{"key": ["pagedown","enter"]},{"key": ["home","enter"]}],
-
-                              
-                         },
+              
             'type': 'input',
             'multiline':True,
             'default':configText,

@@ -28,8 +28,6 @@ console=Console()
 log=logging.getLogger(__package__)
 
 def read_auth():
-    make_request_auth()
-
     authFile=paths.get_auth_file()
    
     while True:
