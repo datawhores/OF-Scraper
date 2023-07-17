@@ -44,7 +44,7 @@ def getselected_usernames(rescan=False,reset=False):
 
 
     usernameset=set(args.username)
-    return list(filter(lambda x:x["name"] in usernameset,parsed_subscriptions)) if "ALL" not in args.username else parsed_subscriptions
+    return list(filter(lambda x:x["name"] in usernameset,PARSED_SUBS)) if "ALL" not in args.username else PARSED_SUBS
     
 def all_subs_helper(): 
     headers = auth.make_headers(auth.read_auth())
