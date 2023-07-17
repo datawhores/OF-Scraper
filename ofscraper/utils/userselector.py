@@ -18,13 +18,17 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.stdout as stdout
 
 
-parsed_subscriptions=None
+
+
+ALL_SUBS=None
+PARSED_SUBS=None
 log=logging.getLogger(__package__)
 args=args_.getargs()
 
 def getselected_usernames(rescan=False,reset=False):
     #username list will be retrived every time reset==True
-    global parsed_subscriptions
+    global ALL_SUBS
+    global PARSED_SUBS
     if "Skip" in args.posts:
         return []
     if reset==True and args.username and parsed_subscriptions:
@@ -35,33 +39,51 @@ def getselected_usernames(rescan=False,reset=False):
     if rescan==True:
         parsed_subscriptions=None
     if not parsed_subscriptions or not args.username:
-        selectuserhelper()
+        all_subs_helper()
+        parsed_subscriptions_helper()
+
 
     usernameset=set(args.username)
     return list(filter(lambda x:x["name"] in usernameset,parsed_subscriptions)) if "ALL" not in args.username else parsed_subscriptions
     
-def selectuserhelper(): 
+def all_subs_helper(): 
     headers = auth.make_headers(auth.read_auth())
     subscribe_count = process_me(headers)
-    global parsed_subscriptions
-    all_subs = get_models( subscribe_count)
-    if not args.username: 
+    global ALL_SUBS
+    ALL_SUBS= get_models( subscribe_count)
+
+
+def parsed_subscriptions_helper(force=False):
+    global ALL_SUBS
+    global PARSED_SUBS
+    if force:
+        PARSED_SUBS=filterNSort( PARSED_SUBS )
+    elif not args.username: 
         selected=None
-        while True:
-            parsed_subscriptions=filterNSort( all_subs )
-            selectedusers,p= get_model(parsed_subscriptions ,selected)
-            if len(selectedusers)!=0:
-                args.username=selectedusers
-                args_.changeargs(args)
-                break
-            setfilter()
-            setsort()
-            selected=p.selected_choices
+        PARSED_SUBS=filterNSort( ALL_SUBS )
+        selectedusers=get_model(PARSED_SUBS,selected)
+        args.username=selectedusers
+        args_.changeargs(args)
     else:
-        parsed_subscriptions=filterNSort( all_subs )
+        PARSED_SUBS=filterNSort( PARSED_SUBS )
+    return PARSED_SUBS
 
-   
+def selecteduserhelper(subs):
+    if not args.username:
+        selected=None
+        selectedusers=get_model(parsed_subscriptions ,selected)
+        args.username=selectedusers
+        args_.changeargs(args)
+    else:
+        parsed_subscriptions=filterNSort( )
+    
 
+
+
+
+
+
+    
 
 
         

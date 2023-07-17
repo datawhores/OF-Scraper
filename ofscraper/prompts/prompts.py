@@ -9,13 +9,12 @@ r"""
 """
 import sys
 from rich.console import Console
-import pathlib
+import asyncio
 import re
 import arrow
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
-from InquirerPy import get_style
 from InquirerPy.validator import EmptyInputValidator,PathValidator
 import ofscraper.constants as constants
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -23,16 +22,18 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
 import ofscraper.prompts.promptConvert as promptClasses
+import nest_asyncio
+from unsync import unsync
+
+
 console=Console()
 def main_prompt() -> int:
     main_prompt_choices = [*constants.mainPromptChoices]
     main_prompt_choices.insert(3, Separator())
-    answer=promptClasses.getMultiSection(           
+    answer=promptClasses.getChecklistSelection(           
             message= 'What would you like to do?',
             choices = [*main_prompt_choices]
-
-    
-    ).execute()
+    )
     return constants.mainPromptChoices[answer]
 
 def areas_prompt() -> list:
@@ -42,7 +43,7 @@ def areas_prompt() -> list:
             'type': 'checkbox',
             'qmark': '[?]',
             'name': name,
-            'message': 'Which area(s) would you like to scrape? (Press ENTER to continue)',
+            'message': 'Which area(s) would you like to scrape?',
              "validate":prompt_validators.emptyListValidator(),
             'choices': [
                 Choice("Profile"),
@@ -55,7 +56,6 @@ def areas_prompt() -> list:
                 Choice("Purchased"),
                 Choice("Labels")
             ]
-            ,"instruction":prompt_strings.CHECKLISTINSTRUCTIONS,
 
         }
     ])
@@ -77,7 +77,6 @@ def like_areas_prompt() -> list:
                 Choice('Pinned'),
                 Choice('Archived'),
             ]
-            ,"instruction":prompt_strings.CHECKLISTINSTRUCTIONS,
 
         }
     ])
@@ -275,22 +274,21 @@ def edit_profiles_prompt(profiles) -> str:
 def new_name_edit_profiles_prompt(old_profile_name) -> str:
     name = 'new_name'
 
-    questions = [
+    answer = promptClasses.batchConverter(* [
         {
             'type': 'input',
             'name': name,
             'message': f'What would you like to rename {old_profile_name} to?',
             'validate':prompt_validators.MultiValidator(EmptyInputValidator(),prompt_validators.currentProfilesValidator())
         }
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer[name]
 
 def create_profiles_prompt() -> str:
     name = 'create'
 
-    questions = [
+    answer =promptClasses.batchConverter(*  [
         {
             'type': 'input',
             'name': name,
@@ -303,33 +301,31 @@ only letters, numbers, and underscores are allowed
 )
 
         }
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer[name]
 
 
 def get_profile_prompt(profiles: list) -> str:
     name = 'get_profile'
 
-    questions = [
+    answer =promptClasses.batchConverter(*  [
         {
             'type': 'list',
             'name': name,
             'message': 'Select Profile',
             'choices':profiles
-            ,"validate":prompt_validators.MultiValidator(  prompt_validators.emptyListValidator(),prompt_validators.currentProfileDeleteValidator())
+            ,"validate":prompt_validators.MultiValidator(  prompt_validators.emptyListValidator())
             
           
         }
-    ]
-    answer = prompt(questions)
+    ])
     profile = answer[name]
     return profile
 
 
 def config_prompt_advanced(config_) -> dict:
-    questions = [
+    new_settings =promptClasses.batchConverter(* [
         {
             'type': 'list',
             'name': 'dynamic-mode-default',
@@ -353,7 +349,7 @@ def config_prompt_advanced(config_) -> dict:
             'default': config.get_client_id(config_) or "",
         },
          {
-            'type': 'filepath',
+            'type': 'filepath'  ,
             'name': 'private-key',
             'message': 'Enter path to private-key',
             'default': config.get_private_key(config_)  or "",
@@ -381,15 +377,14 @@ def config_prompt_advanced(config_) -> dict:
             'default': config.get_custom(config_) or "",
         },
     ]
-
-    new_settings=prompt(questions)
+    )
     config_.update(new_settings)
     return config_
     
 
 def config_prompt(config_) -> dict:
 
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'input',
             'name': 'main_profile',
@@ -529,9 +524,10 @@ Certain content requires decryption to process please provide the full path to f
              "default":config.get_discord(config_)
         },
   
-    ]
+    ])
+    console.print("Set mapping for {responsetype} placeholder\n\n")
 
-    questions2 = [
+    answer2 = promptClasses.batchConverter(*[
         {
             'type': 'input',
             'name': 'timeline',
@@ -621,27 +617,24 @@ Empty string is consider to be 'profile'
             'default': config.get_profile_responsetype(config_),
             'message':"profile responsetype mapping: "
         }
-     ]
-    answers = prompt(questions)
-    console.print("Set mapping for {responsetype} placeholder\n\n")
-    answers["responsetype"]=prompt(questions2)
-    config_.update(answers)
+     ])
+    answer["responsetype"]=answer2
+    config_.update(answer)
     return config_
 def reset_username_prompt() -> bool:
     name = 'reset username'
-    questions = [
+    answer =promptClasses.batchConverter(* [
         {
             'type': 'list',
             'name': name,
             'message': "Do you want to reset username selection",
             'choices':["Yes","No"]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer[name]
 def mp4_prompt(config_):
-    questions = [
+    answer =promptClasses.batchConverter(* [
          {
             'type': 'filepath',
             'name': 'mp4decrypt',
@@ -656,13 +649,12 @@ https://www.bento4.com/documentation/mp4decrypt/
 """,
 "default":config.get_mp4decrypt(config_)
         },
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer["mp4decrypt"]
 
 def ffmpeg_prompt(config_):
-    questions = [
+    answer = promptClasses.batchConverter(*[
          {
             'type': 'filepath',
             'name': 'ffmpeg',
@@ -677,109 +669,103 @@ https://ffmpeg.org/download.html
 """,
 "default":config.get_ffmpeg(config_)
         },
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer["ffmpeg"] 
 def auto_download_mp4_decrypt()-> bool:
     name = 'manual download'
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'list',
             'name': name,
             'message': "mp4decrypt not found would you like to auto install?",
             'choices':["Yes","No"]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer[name]
 
 def auto_download_ffmpeg()-> bool:
     name = 'manual download'
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'list',
             'name': name,
             'message': "ffmpeg not found would you like to auto install?",
             'choices':["Yes","No"]
         }
-    ]
-
-    answer = prompt(questions)
+    ])
     return answer[name]
 
 def continue_prompt() -> bool:
-    name = 'reset username'
-    questions = [
+    name = 'continue'
+    answer =promptClasses.batchConverter(* [
         {
             'type': 'list',
             'name': name,
             'message': "Do you want to continue with script",
             'choices':["Yes","No"]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer[name]
 def model_selector(models,selected=None) -> bool:
+    import ofscraper.utils.userselector as userselector
+
     choices=list(map(lambda x:model_selectorHelper(x[0],x[1])  ,enumerate(models)))
     selectedSet=set(map(lambda x:re.search("^[0-9]+: ([^ ]+)",x["name"]).group(1),selected or []))
     for model in choices:
         name=re.search("^[0-9]+: ([^ ]+)",model.name).group(1)
         if name in selectedSet:
             model.enabled=True
+    def funct(prompt):
+        userselector.setfilter()
+        userselector.setsort()
+        models=userselector.parsed_subscriptions_helper(force=True)
+        choices=list(map(lambda x:model_selectorHelper(x[0],x[1])  ,enumerate(models)))
+        selectedSet=set(map(lambda x:re.search("^[0-9]+: ([^ ]+)",x["name"]).group(1),prompt.selected_choices or []))
+        for model in choices:
+            name=re.search("^[0-9]+: ([^ ]+)",model.name).group(1)
+            if name in selectedSet:
+                model.enabled=True
+        prompt.content_control._raw_choices=choices
+        prompt.content_control.choices=prompt.content_control._get_choices(prompt.content_control._raw_choices, prompt.content_control._default)
+        prompt.content_control._format_choices()
+        return prompt
+       
+        
+
     
-    style=get_style({
-     "questionmark": "fg:#e5c07b bg:#ffffff",
-    "answermark": "#e5c07b",
-    "answer": "#61afef",
-    "input": "#98c379",
-    "question": "",
-    "answered_question": "",
-    "instruction": "#abb2bf",
-    "long_instruction": "#abb2bf",
-    "pointer": "#61afef",
-    "checkbox": "#98c379",
-    "separator": "",
-    "skipped": "#5c6370",
-    "validator": "",
-    "marker": "#e5c07b",
-    "fuzzy_prompt": "#c678dd",
-    "fuzzy_info": "#abb2bf",
-    "fuzzy_border": "#4b5263",
-    "fuzzy_match": "#c678dd bold",
-    "spinner_pattern": "#e5c07b",
-    "spinner_text": "",
-})
+        
+        
 
-    p=promptClasses.getMultiSection(fuzzy=True,
-                                    long_instruction=prompt_strings.FUZZY_INSTRUCTION.format(sort=args_.getargs().sort.capitalize(),
-                                                                 desc=args_.getargs().desc,
-                                                                 type=(args_.getargs().account_type or "All").capitalize(),
-                                                                status=(args_.getargs().sub_status or "Both").capitalize(),
-                                                                renewal=(args_.getargs().renewal or "Both").capitalize()
 
-                                                                
-                                                                ),
+        
+        
+        
 
-                                                                 
+    
+
+
+    p=promptClasses.getFuzzySelection(
+                                                            
         choices=choices,
         transformer=lambda result:",".join(map(lambda x:x.split(" ")[1],result)),
         multiselect=True,
+        long_instruction=prompt_strings.MODEL_SELECT,
+        long_message=prompt_strings.MODEL_FUZZY,
+        altx=funct,
         validate=prompt_validators.emptyListValidator(),
         prompt='Filter: ',
         message= "Which models do you want to scrape\n:",
-        mandatory=False,
-        style=style,)
+
+        )
     
     
     
     
     
-    answers=p.execute()
-    return list(map(lambda x:x["name"],answers or [])),p
-        
+    return list(map(lambda x:x["name"],p or []))
 
 def model_selectorHelper(count,x):
     format='YYYY-MM-DD'
@@ -793,109 +779,128 @@ def model_selectorHelper(count,x):
     return Choice(x,name=f"{count+1}: {name}  renewed={renewed}  subdate={subscribed}  exprdate={expired} subprice={price} active={active}")
     
 
-
-
 def decide_filters_prompt():
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'list',
+            "name":"input",
+            "default":"No",
             'message': "Modify filters for your accounts list?\nSome usage examples are scraping free accounts only or paid accounts without renewal",
             'choices':["Yes","No"]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
-    return answer[0]
+    return answer["input"]
 def modify_filters_prompt(args):
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'list',
+            "name":"renewal",
+             "default":False,
             'message': "Filter account by whether it has a renewal date",
-            'choices':[Choice("active","Active Only"),Choice("disabled","Disabled Only"),Choice(None,"Both")]
+            'choices':[Choice("active","Active Only"),Choice("disabled","Disabled Only"),Choice(False,"Both")]
         },
         {
             'type': 'list',
+            "name":"expire",
+             "default":False,
             'message': "Filter accounts based on access to content via a subscription",
-            'choices':[Choice("active","Active Only"),Choice("expired","Expired Only"),Choice(None,"Both")]
+            'choices':[Choice("active","Active Only"),Choice("expired","Expired Only"),Choice(False,"Both")]
         },
 
      
             {
             'type': 'list',
+            "name":"subscription",
             'message': "Filter accounts by the type of subscription",
-            'choices':[Choice("paid","Paid Subscription Only"),Choice("free","Free Subscription Only"),Choice(None,"Both")]
+             "default":False,
+            'choices':[Choice("paid","Paid Subscription Only"),Choice("free","Free Subscription Only"),Choice(False,"Both")]
         }
-    ]
-    answer = prompt(questions)
-    args.renewal=answer[0]
-    args.sub_status=answer[1]
-    args.account_type=answer[2]
+    ])
+    args.renewal=answer["renewal"]
+    args.sub_status=answer["expire"]
+    args.account_type=answer["subscription"]
     return args
 
 
 def decide_sort_prompt():
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'list',
+            "name":"input",
             'message': f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {'Ascending' if not args_.getargs().desc else 'Descending'} in {args_.getargs().sort.capitalize()} order",
+             "default":"No",
             'choices':["Yes","No"]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
-    return answer[0]
+    return answer["input"]
 def modify_sort_prompt(args):
-    questions = [
+    answer =promptClasses.batchConverter(* [
         {
             'type': 'list',
+            "name":"type",
             'message': "Sort Accounts by..",
+            "default":args.desc==False,
             'choices':[Choice("name","By Name"),Choice("subscribed","Subscribed Date"),Choice("expired","Expiring Date"),Choice("price","Price")],
         },
         {
             'type': 'list',
+              "name":"order",
             'message': "Sort Direction",
             'choices':[Choice(True,"Ascending"),Choice(False,"Descending",enabled=True)],
             "default":True
 
         },
 
-    ]
+    ])
 
-    answer = prompt(questions)
-    args.sort=answer[0]
-    args.desc=answer[1]==False
+    args.sort=answer["type"]
+    args.desc=answer["order"]==False
     return args
 
 def change_default_profile() -> bool:
     name = 'reset username'
-    questions = [
+    answer = promptClasses.batchConverter(*[
         {
             'type': 'list',
             'name': name,
             'message': "Set this as the new default profile",
             'choices':["Yes","No"]
         }
-    ]
+    ])
 
-    answer = prompt(questions)
     return answer[name]
 
 def reset_config_prompt() -> bool:
-    questions = [
+    name="input"
+    questions = promptClasses.batchConverter(*[
         {
             'type': 'list',
+            "name":name,
             'message': "How do you want to fix this issue",
             'choices':["Reset Default","Manually Edit Config"]
         }
-    ]
+    ])
+    return questions[name]
 
-    answer = prompt(questions)
-    return answer[0]
+
+def reset_auth_prompt() -> bool:
+    name="input"
+    questions = promptClasses.batchConverter(*[
+        {
+            'type': 'list',
+            "name":name,
+            'message': "How do you want to fix this issue",
+            'choices':[Choice(False,"Reset Default"),Choice(True,"Manually Auth Config")]
+        }
+    ])
+    return questions[name]
 
 def manual_config_prompt(configText) -> str:
+    name="input"
     
-    
-    questions = [
+    questions = promptClasses.batchConverter(*[
         
      
         
@@ -904,51 +909,34 @@ def manual_config_prompt(configText) -> str:
               
             'type': 'input',
             'multiline':True,
+            "name":name,
             'default':configText,
-            'message': "Edit config text",
-            "instruction":"\nKeyBindings\nSubmit: esc+Enter or Home+Enter or pageDown +Enter",
+            "keys":prompt_strings.CONFIG_MULTI,
+            'message': "Edit config text\n===========\n",
         }
-    ]
+    ])
 
-
-    answer = prompt(questions)
-    return answer[0]
+    return questions[name]
 def manual_auth_prompt(authText) -> str:
+    name="input"
+        
     
+    questions = promptClasses.batchConverter(*[
+        
+        
     
-    questions = [
-        
-     
-        
-        
         {
-               "keybindings":{
-                             "answer": [{"key": ["pagedown","enter"]},{"key": ["home","enter"]}],
-
-                              
-                         },
+               
+            "name":name,
             'type': 'input',
             'multiline':True,
             'default':authText,
-            'message': "Edit auth text",
-            "instruction":"\nKeyBindings\nSubmit: esc+Enter or Home+Enter or pageDown +Enter",
+            'message': "Edit auth text\n===========\n",
+            "keys":prompt_strings.AUTH_MULTI,
+            "validate":EmptyInputValidator()
         }
-    ]
+    ])
 
 
-    answer = prompt(questions)
-    return answer[0]
+    return questions[name]
 
-def relative_config_path_prompt(curr,file) -> bool:
-    name = 'path'
-    questions = [
-        {
-            'type': 'list',
-            'name': name,
-            'message': "Where do you want to make the config folder",
-            'choices':[Choice(True,str(pathlib.Path(curr,file))),Choice(False,str(pathlib.Path(file)))]
-        }
-    ]
-
-    answer = prompt(questions)
-    return answer[name]

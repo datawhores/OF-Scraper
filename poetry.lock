@@ -1622,6 +1622,18 @@ files = [
 ]
 
 [[package]]
+name = "nest-asyncio"
+version = "1.5.6"
+description = "Patch asyncio to allow nested event loops"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "nest_asyncio-1.5.6-py3-none-any.whl", hash = "sha256:b9a953fb40dceaa587d109609098db21900182b16440652454a146cffb06e8b8"},
+    {file = "nest_asyncio-1.5.6.tar.gz", hash = "sha256:d267cc1ff794403f7df692964d1d2a3fa9418ffea2a3f6859a439ff482fef290"},
+]
+
+[[package]]
 name = "packaging"
 version = "23.1"
 description = "Core utilities for Python packages"
@@ -2557,6 +2569,17 @@ files = [
 ]
 
 [[package]]
+name = "unsync"
+version = "1.4.0"
+description = "Unsynchronize asyncio"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "unsync-1.4.0.tar.gz", hash = "sha256:a29e0f8952ffb0b3a0453ce436819a5a1ba2febbb5caa707c319f6f98d35f3c5"},
+]
+
+[[package]]
 name = "urllib3"
 version = "2.0.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -2817,4 +2840,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.0,<3.12"
-content-hash = "3e5be6ade5cb52f0866046ec5325b505dcf255cf00452be8bb47e56b25b56e3f"
+content-hash = "a28976944078e105b983e4b4dec31068aac1268d52c91af5af4d2b49db9452e2"

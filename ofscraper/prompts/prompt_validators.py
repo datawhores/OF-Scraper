@@ -90,7 +90,14 @@ def jsonValidator():
                 move_cursor_to_end=True,
             )
 def jsonloader(x):
-    return json.loads(x)
+    try:
+        return json.loads(x)
+    except TypeError:
+        return None
+    except json.JSONDecodeError:
+        return None
+    except Exception as E:
+        raise E
 
 def namevalitator():
     def callable(x):

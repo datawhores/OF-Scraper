@@ -48,9 +48,28 @@ def read_auth():
         except json.JSONDecodeError as e:
             print("You auth.json has a syntax error")
             print(f"{e}\n\n")
-            with open( authFile, 'w') as f:
-                f.write(manual_auth_prompt(authText))
+            if reset_auth_prompt():
+                with open( authFile, 'w') as f:
+                    f.write(manual_auth_prompt(authText))
+            else:
+                with open(authFile,"w") as f: 
+                    f.write(json.dumps(get_empty()))
+
+
+                
     return auth
+
+def get_empty():
+    return{
+            'auth': {
+                'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
+                'sess': '',
+                'auth_id': '',
+                'auth_uid_': '',
+                'user_agent': '',
+                'x-bc': ''
+            }
+        }
 
 
 def edit_auth():
@@ -73,8 +92,12 @@ def edit_auth():
                 try:
                     print("You auth.json has a syntax error")
                     print(f"{e}\n\n")
-                    with open(authFile, 'w') as f:
-                        f.write(manual_auth_prompt(authText))
+                    if reset_auth_prompt():
+                        with open( authFile, 'w') as f:
+                            f.write(manual_auth_prompt(authText))
+                    else:
+                         with open(authFile,"w"): 
+                            f.write(auth_prompt(get_empty()))
                     with open(authFile, 'r') as f:
                         authText=f.read()
                         auth = json.loads(authText)
@@ -84,16 +107,7 @@ def edit_auth():
 
 def make_auth( auth=None):
     authFile=paths.get_auth_file()
-    defaultAuth=  {
-            'auth': {
-                'app-token': '33d57ade8c02dbc5a333db99ff9ae26a',
-                'sess': '',
-                'auth_id': '',
-                'auth_uid_': '',
-                'user_agent': '',
-                'x-bc': ''
-            }
-        }
+    defaultAuth=  get_empty()
 
     browserSelect=browser_prompt()
 

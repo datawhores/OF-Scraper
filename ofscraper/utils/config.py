@@ -50,6 +50,7 @@ def read_config():
             console.print(file_not_found_message)
         except json.JSONDecodeError as e:
             print("You config.json has a syntax error")
+            print(f"{e}\n\n")
             if prompts.reset_config_prompt()=="Reset Default":
                 make_config(p)
             else:
