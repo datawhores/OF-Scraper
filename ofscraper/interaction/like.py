@@ -127,15 +127,16 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def _like_request(c,id,model_id):
-    
-   async with c.requests( favoriteEP.format(id, model_id),"post")() as r:
-        if r.ok:
-            return id                  
-        else:
-                log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                r.raise_for_status()
+    global sem
+    async with sem:
+        async with c.requests( favoriteEP.format(id, model_id),"post")() as r:
+                if r.ok:
+                    return id                  
+                else:
+                        log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
+                        log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                        r.raise_for_status()
 
 
 
