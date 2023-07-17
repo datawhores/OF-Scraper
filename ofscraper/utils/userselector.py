@@ -31,14 +31,14 @@ def getselected_usernames(rescan=False,reset=False):
     global PARSED_SUBS
     if "Skip" in args.posts:
         return []
-    if reset==True and args.username and parsed_subscriptions:
+    if reset==True and args.username and PARSED_SUBS:
         if prompts.reset_username_prompt()=="Yes":
            parsed_subscriptions=None
            args.username=None
            args_.changeargs(args)
     if rescan==True:
-        parsed_subscriptions=None
-    if not parsed_subscriptions or not args.username:
+        PARSED_SUBS=None
+    if not PARSED_SUBS or not args.username:
         all_subs_helper()
         parsed_subscriptions_helper()
 
