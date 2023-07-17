@@ -36,7 +36,9 @@ import ofscraper.api.pinned as pinned
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.prompts.prompts as prompts
+
 
 sem = semaphoreDelayed(1)
 log=logging.getLogger(__package__)
@@ -101,8 +103,7 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
     global sem
     sem.delay=3
     with Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}"),BarColumn(),MofNCompleteColumn(),console=console.shared_console) as overall_progress:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=None,
-                      sock_connect=None, sock_read=None)) as c: 
+        async with sessionbuilder.sessionBuilder() as c:
             tasks=[]
             task1=overall_progress.add_task(f"{title} posts...\n",total=len(ids))
 
@@ -111,6 +112,7 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
             for count,coro in enumerate(asyncio.as_completed(tasks)):
                     id=await coro
                     log.debug(f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action")
+                    
                     if count+1%60==0 and count+1%50==0:
                         sem.delay=15
                     elif count+1%60==0:
@@ -125,17 +127,15 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def _like_request(c,id,model_id):
-    async with sem:
-        url = favoriteEP.format(id, model_id)
-        headers=auth.make_headers(auth.read_auth())
-        headers=auth.create_sign(url, headers)
-        async with c.request("post",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies(),headers=headers) as r:
-            if r.ok:
-                return id                  
-            log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
-            log.debug(f"[bold]timeline response:[/bold] {await r.text()}")
-            log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-            r.raise_for_status()
+    
+   async with c.requests( favoriteEP.format(id, model_id),"post")() as r:
+        if r.ok:
+            return id                  
+        else:
+                log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
+                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                r.raise_for_status()
 
 
 

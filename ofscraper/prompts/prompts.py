@@ -22,8 +22,7 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
 import ofscraper.prompts.promptConvert as promptClasses
-import nest_asyncio
-from unsync import unsync
+
 
 
 console=Console()
