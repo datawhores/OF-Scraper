@@ -36,7 +36,7 @@ attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.AlT_SEM)
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=None) -> list:
+async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
     global tasks
     global sem
     posts=None
@@ -72,7 +72,8 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,required_ids=
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}")
                     log.trace("{log_id} -> pinned raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo pinned: {str(x)}",posts)))))
-       
+                    tasks.append(asyncio.create_task(scrape_pinned_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+
         return posts
 
 async def get_pinned_post(model_id): 

@@ -708,19 +708,13 @@ def continue_prompt() -> bool:
     ])
 
     return answer[name]
-def model_selector(models,selected=None) -> bool:
+def model_selector(models) -> bool:
     import ofscraper.utils.userselector as userselector
-
     choices=list(map(lambda x:model_selectorHelper(x[0],x[1])  ,enumerate(models)))
-    selectedSet=set(map(lambda x:re.search("^[0-9]+: ([^ ]+)",x["name"]).group(1),selected or []))
-    for model in choices:
-        name=re.search("^[0-9]+: ([^ ]+)",model.name).group(1)
-        if name in selectedSet:
-            model.enabled=True
     def funct(prompt):
         userselector.setfilter()
         userselector.setsort()
-        models=userselector.parsed_subscriptions_helper(force=True)
+        models=userselector.filterNSort(userselector.ALL_SUBS)
         choices=list(map(lambda x:model_selectorHelper(x[0],x[1])  ,enumerate(models)))
         selectedSet=set(map(lambda x:re.search("^[0-9]+: ([^ ]+)",x["name"]).group(1),prompt.selected_choices or []))
         for model in choices:
@@ -764,7 +758,7 @@ def model_selector(models,selected=None) -> bool:
     
     
     
-    return list(map(lambda x:x["name"],p or []))
+    return p
 
 def model_selectorHelper(count,x):
     format='YYYY-MM-DD'

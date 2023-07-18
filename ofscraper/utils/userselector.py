@@ -31,9 +31,9 @@ def getselected_usernames(rescan=False,reset=False):
     global PARSED_SUBS
     if "Skip" in args.posts:
         return []
-    if reset==True and args.username and PARSED_SUBS:
+    if reset==True and PARSED_SUBS:
         if prompts.reset_username_prompt()=="Yes":
-           parsed_subscriptions=None
+           PARSED_SUBS=None
            args.username=None
            args_.changeargs(args)
     if rescan==True:
@@ -41,10 +41,10 @@ def getselected_usernames(rescan=False,reset=False):
     if not PARSED_SUBS or not args.username:
         all_subs_helper()
         parsed_subscriptions_helper()
+    return PARSED_SUBS
 
 
-    usernameset=set(args.username)
-    return list(filter(lambda x:x["name"] in usernameset,PARSED_SUBS)) if "ALL" not in args.username else PARSED_SUBS
+ 
     
 def all_subs_helper(): 
     headers = auth.make_headers(auth.read_auth())
@@ -56,41 +56,20 @@ def all_subs_helper():
 def parsed_subscriptions_helper(force=False):
     global ALL_SUBS
     global PARSED_SUBS
-    if force:
-        PARSED_SUBS=filterNSort( PARSED_SUBS )
-    elif not args.username: 
-        selected=None
-        PARSED_SUBS=filterNSort( ALL_SUBS )
-        selectedusers=get_model(PARSED_SUBS,selected)
-        args.username=selectedusers
-        args_.changeargs(args)
-    else:
-        PARSED_SUBS=filterNSort( PARSED_SUBS )
-    return PARSED_SUBS
-
-def selecteduserhelper(subs):
     if not args.username:
-        selected=None
-        selectedusers=get_model(parsed_subscriptions ,selected)
-        args.username=selectedusers
-        args_.changeargs(args)
-    else:
-        parsed_subscriptions=filterNSort( )
-    
-
-
-
-
-
-
-    
-
-
+        selectedusers=get_model(ALL_SUBS)
+        args.username=list(map(lambda x:x["name"],selectedusers))
+        PARSED_SUBS=selectedusers
+        args_.changeargs(args)  
+    elif "ALL" in args.username:
+        PARSED_SUBS=ALL_SUBS
+    elif args.username:
+        usernameset=set(args.username)
+        PARSED_SUBS=list(filter(lambda x:x["name"] in usernameset,ALL_SUBS))
+    return PARSED_SUBS
         
+       
 
-        
-
- 
 def setfilter():
     if prompts.decide_filters_prompt()=="Yes":
         global args
@@ -177,9 +156,9 @@ def get_models(subscribe_count) -> list:
             return parsed_subscriptions
 
 
-def get_model(parsed_subscriptions: list,selected) -> tuple:
+def get_model(parsed_subscriptions: list) -> tuple:
     """
     Prints user's subscriptions to console and accepts input from user corresponding 
     to the model(s) whose content they would like to scrape.
     """
-    return prompts.model_selector(parsed_subscriptions,selected)        
+    return prompts.model_selector(parsed_subscriptions)        
