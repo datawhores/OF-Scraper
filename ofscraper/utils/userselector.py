@@ -62,7 +62,7 @@ def parsed_subscriptions_helper(force=False):
         PARSED_SUBS=selectedusers
         args_.changeargs(args)  
     elif "ALL" in args.username:
-        PARSED_SUBS=ALL_SUBS
+        PARSED_SUBS=filterNSort(ALL_SUBS)
     elif args.username:
         usernameset=set(args.username)
         PARSED_SUBS=list(filter(lambda x:x["name"] in usernameset,ALL_SUBS))
