@@ -19,6 +19,7 @@ from rich.console import Console
 from ..db import queries
 from ..utils.paths import createDir
 import ofscraper.classes.placeholder as placeholder
+from ofscraper.constants import DATABASE_TIMEOUT
 
 console=Console()
 log=logging.getLogger(__package__)
@@ -134,7 +135,7 @@ def get_profile_info(model_id,username) -> list:
 @operation_wrapper
 async def write_media_table(media,filename,model_id,username) -> list:
     datebase_path =placeholder.Placeholders().databasePathHelper(model_id,username)
-    async with aiosqlite.connect(datebase_path) as conn:
+    async with aiosqlite.connect(datebase_path,timeout=DATABASE_TIMEOUT) as conn:
         insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
         math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
         media.preview,media.linked, 1,media.date]

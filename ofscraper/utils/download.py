@@ -73,6 +73,7 @@ log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,arg
 async def process_dicts(username,model_id,medialist):
 
     queue = aioprocessing.AioQueue()
+    
     thread_count=config_.get_threads(config_.read_config())
     mediasplits=more_itertools.divide(thread_count, medialist)
     overall_progress=Progress(  TextColumn("{task.description}"),
