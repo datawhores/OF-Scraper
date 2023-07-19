@@ -130,6 +130,18 @@ yarl = ">=1.0,<2.0"
 speedups = ["Brotli", "aiodns", "cchardet"]
 
 [[package]]
+name = "aiomultiprocess"
+version = "0.9.0"
+description = "AsyncIO version of the standard multiprocessing module"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "aiomultiprocess-0.9.0-py3-none-any.whl", hash = "sha256:3036c4c881cfbc63674686e036097f22309017c6bf96b04722a542ac9cac7423"},
+    {file = "aiomultiprocess-0.9.0.tar.gz", hash = "sha256:07e7d5657697678d9d2825d4732dfd7655139762dee665167380797c02c68848"},
+]
+
+[[package]]
 name = "aiosignal"
 version = "1.3.1"
 description = "aiosignal: a list of registered asynchronous callbacks"
@@ -2817,4 +2829,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.0,<3.12"
-content-hash = "3e5be6ade5cb52f0866046ec5325b505dcf255cf00452be8bb47e56b25b56e3f"
+content-hash = "cdc8193de58b64bbcdf70b9b0889ead190d77b77c1f23599059bc54075f17d45"

@@ -60,26 +60,31 @@ def process_paid_post(model_id,username):
 
          
 
-def process_highlights( model_id,username):
+def process_stories( model_id,username):
     with stdout.lowstdout():
         stories = asyncio.run(highlights.get_stories_post( model_id))
-        highlights_=asyncio.run(highlights.get_highlight_post( model_id))
-        highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
-        stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))
-        for post in highlights_:
-            operations.write_stories_table(post,model_id,username)
+        stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))  
         for post in stories:
             operations.write_stories_table(post,model_id,username)   
-        log.debug(f"[bold]Combined Story and Highlight Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))+sum(map(lambda x:len(x.post_media), stories))}")
+        log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
         output=[]
-        output2=[]
-        [ output.extend(highlight.media) for highlight in highlights_]
-        [ output2.extend(stories.media) for stories in stories]
-        return list(filter(lambda x:isinstance(x,media.Media),output)),list(filter(lambda x:isinstance(x,media.Media),output2))
+        [ output.extend(stories.media) for stories in stories]
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
         
 
+def process_highlights( model_id,username):
+     with stdout.lowstdout():
+        highlights_=asyncio.run(highlights.get_highlight_post( model_id))
+        highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
+        for post in highlights_:
+            operations.write_stories_table(post,model_id,username)
+        log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
+        output=[]
+        [ output.extend(stories.media) for stories in highlights_]
+        return list(filter(lambda x:isinstance(x,media.Media),output))
 
+          
 
 
 
@@ -214,15 +219,13 @@ def process_areas(ele, model_id) -> list:
             messages_dicts = process_messages( model_id,username)
     if "Purchased" in args.posts or "All" in args.posts:
             purchased_dict=process_paid_post(model_id,username)
-    if ('Highlights'  in args.posts or 'Stories'  in args.posts or 'All' in args.posts):
-            highlights_tuple = process_highlights( model_id,username)  
-            if 'Highlights'  in args.posts:
-                highlights_dicts=highlights_tuple[0]
-            if 'Stories'  in args.posts:
-                stories_dicts=highlights_tuple[1]   
-            if 'All' in args.posts:
-                highlights_dicts=highlights_tuple[0]
-                stories_dicts=highlights_tuple[1]   
+    if 'Highlights'  in args.posts or 'All' in args.posts:
+            highlights_dicts = process_highlights( model_id,username)  
+    if 'Stories'  in args.posts or 'All' in args.posts:
+            stories_dicts = process_stories( model_id,username)         
+            
+            
+
     if ("Labels" in args.posts or "All" in args.posts) and ele["active"]:
         labels_dicts = process_labels(model_id,username)             
     return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,

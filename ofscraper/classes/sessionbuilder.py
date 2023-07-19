@@ -31,7 +31,7 @@ class sessionBuilder:
     async def __aenter__(self):
         self._async=True
         if self._backend=="aio":
-            self._session= aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
+            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
                       sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE))
         
         

@@ -59,6 +59,7 @@ import ofscraper.utils.args as args_
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import concurrent
 
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
@@ -85,6 +86,8 @@ async def process_dicts(username, model_id, medialist):
 
         global dirSet
         dirSet=set()
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+        asyncio.get_event_loop().set_default_executor(executor)
      
 
         with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):    
