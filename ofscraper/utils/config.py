@@ -91,6 +91,7 @@ def get_current_config_schema(config:dict=None) -> dict:
             "dynamic-mode-default":get_dynamic(config),
             "partfileclean":get_part_file_clean(config),
             "backend":get_backend(config),
+            "download-sems":get_download_semaphores(config),
 
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
@@ -275,7 +276,7 @@ def get_metadata(config=None):
     return config.get('metadata', constants.METADATA_DEFAULT)
 def get_threads(config=None):
     if config==None:
-        return constants.MP4DECRYPT_DEFAULT    
+        return constants.THREADS_DEFAULT  
     return int(config.get('threads', constants.THREADS_DEFAULT) or constants.THREADS_DEFAULT)
 
 def get_mp4decrypt(config=None):
@@ -390,3 +391,12 @@ def get_backend(config=None):
     if config==None:
         return "aio"
     return config.get("backend",constants.BACKEND_DEFAULT) or constants.BACKEND_DEFAULT
+
+def get_download_semaphores(config=None):
+    if config==None:
+        return constants.DOWNLOAD_SEM_DEFAULT
+    try:
+        return int(config.get('download_sem', constants.DOWNLOAD_SEM_DEFAULT))
+    except:
+        return constants.DOWNLOAD_SEM_DEFAULT
+    

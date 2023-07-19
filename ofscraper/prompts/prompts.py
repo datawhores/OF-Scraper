@@ -326,12 +326,33 @@ def get_profile_prompt(profiles: list) -> str:
 def config_prompt_advanced(config_) -> dict:
     new_settings =promptClasses.batchConverter(* [
         {
+            'type': 'number',
+            'name': 'threads',
+            "message":"Number of Download processes/threads: ",
+            'min_allowed':1,
+            'max_allowed':10,
+             "validate":EmptyInputValidator(),
+             'long_instruction':"Value can be 1-10",
+             'default':config.get_threads(config_),
+        },
+        {
+            'type': 'number',
+            'name': 'download_sem',
+            "message":"Number of semaphores per thread: ",
+            'min_allowed':1,
+            'max_allowed':10,
+             "validate":EmptyInputValidator(),
+             'long_instruction':"Value can be 1-2",
+             'default':config.get_download_semaphores(config_),
+        },
+        {
             'type': 'list',
             'name': 'dynamic-mode-default',
             'message': 'What would you like to use for dynamic rules',
             'default': config.get_dynamic(config_),
             'choices':["deviint","digitalcriminals"],
         },
+        
         {
             'type': 'list',
             'name': 'key-mode-default',
@@ -468,16 +489,6 @@ Enter 0 for no limit
             "message":"filter: ",
             'choices':list(map(lambda x:Choice(name=x,value=x, enabled=x.capitalize() in set(config.get_filter(config_))),constants.FILTER_DEFAULT)),
              "validate":prompt_validators.emptyListValidator()
-        },
-        {
-            'type': 'number',
-            'name': 'threads',
-            "message":"Number of Download Theads: ",
-            'min_allowed':1,
-            'max_allowed':10,
-             "validate":EmptyInputValidator(),
-             'long_instruction':"Value can be 1-10",
-             'default':config.get_threads(config_),
         },
           {
             'type': 'list',
