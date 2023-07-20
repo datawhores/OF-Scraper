@@ -75,8 +75,7 @@ async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
         overall_progress=Progress(  TextColumn("{task.description}"),
         BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-        job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())
+        job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)))
         progress_group = Group(
         overall_progress
         , Panel(Group(job_progress,fit=True)))
@@ -505,6 +504,7 @@ def setDirectoriesDate():
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:
+            log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent
     log.debug(f"Directories list {rootDir}")
