@@ -37,7 +37,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
@@ -60,7 +60,7 @@ async def get_messages(model_id):
     page_count=0
     #require a min num of posts to be returned
     min_posts=50
-    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c: 
             oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
             log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))

@@ -4,11 +4,12 @@ import os
 import sys
 import ofscraper.constants as constants
 import logging
-import multiprocessing
+import ofscraper.utils.args as args_
+
 
 @contextlib.contextmanager
 def lowstdout():
-    if logging.getLogger("ofscraper").handlers[1].level>constants.SUPPRESS_LOG_LEVEL:
+    if args_.getargs().output in constants.SUPRESS_OUTPUTS:
         save_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
         yield

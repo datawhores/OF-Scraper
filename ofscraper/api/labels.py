@@ -27,7 +27,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
@@ -43,7 +43,7 @@ async def get_labels(model_id):
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
        async with sessionbuilder.sessionBuilder() as c: 
 
             tasks.append(asyncio.create_task(scrape_labels(c,model_id,job_progress)))
@@ -105,7 +105,7 @@ async def get_labelled_posts(labels, username):
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
 
             [tasks.append(asyncio.create_task(scrape_labelled_posts(c,label,username,job_progress)))

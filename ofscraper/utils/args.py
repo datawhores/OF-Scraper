@@ -7,7 +7,7 @@ import pathlib
 from ofscraper.__version__ import __version__ 
 
 args=None
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 def create_parser(input=None):
     parent_parser=argparse.ArgumentParser(add_help=False)
     general=parent_parser.add_argument_group("Program",description="Program Args")  

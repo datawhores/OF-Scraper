@@ -24,7 +24,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 cache = Cache(getcachepath())
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 console=Console()
 attempt = contextvars.ContextVar("attempt")
 

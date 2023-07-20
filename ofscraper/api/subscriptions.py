@@ -17,7 +17,7 @@ console=Console()
 from tenacity import retry,stop_after_attempt,wait_random
 from ..constants import subscriptionsEP,NUM_TRIES
 import ofscraper.constants as constants
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 

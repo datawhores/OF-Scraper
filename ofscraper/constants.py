@@ -139,7 +139,7 @@ logname="ofscraper"
 PATH_STR_MAX=200
 TABLE_STR_MAX=100
 
-refreshScreen=20
+refreshScreen=50
 
 MP4DECRYPT_LINUX="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-unknown-linux.zip"
 MP4DECRYPT_WINDOWS="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-microsoft-win32.zip"
@@ -158,3 +158,4 @@ NUMBER_REGEX="[0-9]"
 USERNAME_REGEX="[^/]"
 
 API_REEQUEST_TIMEOUT=90
+SUPRESS_OUTPUTS={"CRITICAL","ERROR","WARNING"}

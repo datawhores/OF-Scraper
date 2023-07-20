@@ -20,7 +20,7 @@ import ofscraper.utils.paths as paths_
 import ofscraper.utils.args as args_
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 console=Console()
 currentData=None
 currentProfile=None

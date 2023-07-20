@@ -9,6 +9,7 @@ r"""
 """
 import asyncio
 import math
+import os
 import pathlib
 import platform
 import shutil
@@ -18,7 +19,6 @@ import logging
 import contextvars
 import json
 import subprocess
-from rich.progress import Progress
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -29,6 +29,7 @@ from rich.progress import (
     BarColumn,
     TimeRemainingColumn
 )
+
 from rich.live import Live
 from rich.panel import Panel
 from rich.console import Group
@@ -45,6 +46,7 @@ except ModuleNotFoundError:
 from tenacity import retry,stop_after_attempt,wait_random
 import more_itertools
 import aioprocessing
+
 
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
@@ -66,22 +68,22 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
-log=logging.getLogger(__package__)
-log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
 
 
 async def process_dicts(username,model_id,medialist):
 
     queue = aioprocessing.AioQueue()
+    log=logging.getLogger("shared")
+ 
     
     thread_count=config_.get_threads(config_.read_config())
-    mediasplits=more_itertools.divide(thread_count, medialist)
-    overall_progress=Progress(  TextColumn("{task.description}"),
-    BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+    mediasplits=more_itertools.divide(min(thread_count,len(os.sched_getaffinity(0))), medialist)
     job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
     TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())
+    overall_progress=Progress(  TextColumn("{task.description}"),
+    BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
     progress_group = Group(
-    overall_progress, Panel(Group(job_progress,fit=True)))
+    overall_progress, Panel(job_progress))
     photo_count = 0
     video_count = 0
     audio_count=0
@@ -90,10 +92,13 @@ async def process_dicts(username,model_id,medialist):
     data = 0
     desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'   
     task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(medialist),visible=True)
-    progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2) 
+    progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) 
     total_bytes_downloaded=0
-    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):   
-        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,ele,job_progress,queue)) for ele in mediasplits]
+   
+
+    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
+        
+        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],queue)) for i in range(len(mediasplits))]
         [process.start() for process in processes]
         count=0
         while True:
@@ -102,9 +107,7 @@ async def process_dicts(username,model_id,medialist):
             result = await queue.coro_get()
             if result is None:
                 count=count+1
-                continue
-   
-     
+                continue 
             media_type, num_bytes_downloaded = result
             total_bytes_downloaded += num_bytes_downloaded
             data = convert_num_bytes(total_bytes_downloaded)
@@ -126,13 +129,15 @@ async def process_dicts(username,model_id,medialist):
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
 
     
-def process_dict_starter(username,model_id,ele,job_progress,queue):
-    asyncio.run(process_dicts_split(username,model_id,ele,job_progress,queue))
+def process_dict_starter(username,model_id,ele,queue):
+    asyncio.run(process_dicts_split(username,model_id,ele,queue))
    
 
-  
 
-async def process_dicts_split(username, model_id, medialist,job_progress,queue):
+def get_job_progress_helper(live_progress,i):
+    return live_progress.renderable.renderables[1].renderable.renderables[i]
+
+async def process_dicts_split(username, model_id, medialist,queue):
     with stdout.lowstdout():
         medialist=list(medialist)
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
@@ -140,7 +145,12 @@ async def process_dicts_split(username, model_id, medialist,job_progress,queue):
         sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
         global dirSet
         dirSet=set()
-     
+        global log
+        log=logging.getLogger("shared")
+        global log_trace
+        log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
+       
+        
 
         if not args_.getargs().dupe:
             media_ids = set(operations.get_media_ids(model_id,username))
@@ -252,16 +262,16 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                 if r.ok:
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
-                        # task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                         size=0
                         with open(temp, 'ab') as f: 
-                            # progress.update(task1,visible=True )
+                            progress.update(task1,visible=True )
                             async for chunk in r.iter_chunked(1024):
                                 size=size+len(chunk) if log_trace else size
                                 log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
-                                # progress.update(task1, advance=len(chunk))
-                            # progress.remove_task(task1)  
+                                progress.update(task1, advance=len(chunk))
+                            progress.remove_task(task1)  
                 else:
                     r.raise_for_status() 
                                   
@@ -389,17 +399,17 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     pathstr=str(temp)
-                    # task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                    # progress.update(task1, advance=resume_size)
+                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                    progress.update(task1, advance=resume_size)
                     with open(temp, 'ab') as f:                           
-                        # progress.update(task1,visible=True )
+                        progress.update(task1,visible=True )
                         size=0
                         async for chunk in l.iter_chunked(1024):
                             size=size+len(chunk) if log_trace else size
                             log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
-                        #     progress.update(task1, advance=len(chunk))
-                        # progress.remove_task(task1)
+                            progress.update(task1, advance=len(chunk))
+                        progress.remove_task(task1)
                 else:
                     l.raise_for_status()
                     return item

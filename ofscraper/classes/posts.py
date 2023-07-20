@@ -3,7 +3,7 @@ import arrow
 import ofscraper.utils.config as config
 import ofscraper.classes.media as Media
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 class Post():
     def __init__(self, post, model_id, username, responsetype=None,label=None):

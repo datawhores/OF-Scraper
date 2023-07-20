@@ -36,7 +36,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 from diskcache import Cache
 cache = Cache(getcachepath())
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
@@ -114,7 +114,7 @@ async def get_timeline_post(model_id):
     responseArray=[]
     page_count=0
     
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c:
 
             oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []

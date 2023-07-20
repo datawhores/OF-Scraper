@@ -22,7 +22,7 @@ import ofscraper.classes.placeholder as placeholder
 from ofscraper.constants import DATABASE_TIMEOUT
 
 console=Console()
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 #print error 
 def operation_wrapper(func): 
     def inner(*args,**kwargs): 

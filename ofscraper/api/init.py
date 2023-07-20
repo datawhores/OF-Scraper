@@ -14,7 +14,7 @@ from rich.console import Console
 import ofscraper.utils.stdout as stdout
 import logging
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 
 console=Console()

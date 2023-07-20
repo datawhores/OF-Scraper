@@ -22,7 +22,7 @@ import ofscraper.utils.stdout as stdout
 
 ALL_SUBS=None
 PARSED_SUBS=None
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 args=args_.getargs()
 
 def getselected_usernames(rescan=False,reset=False):

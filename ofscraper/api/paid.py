@@ -38,7 +38,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 cache = Cache(getcachepath())
 
 paid_content_list_name = 'list'
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
@@ -63,7 +63,7 @@ async def get_paid_posts(username,model_id):
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
  
             tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress)))
@@ -136,7 +136,7 @@ async def get_all_paid_posts():
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
             allpaid=cache.get(f"purchased_all",default=[]) if not args_.getargs().no_cache else []
             log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")

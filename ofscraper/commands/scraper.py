@@ -42,7 +42,7 @@ import ofscraper.utils.userselector as userselector
 import ofscraper.utils.console as console
 import ofscraper.utils.of as OF
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 args=args_.getargs()
 log.debug(args)
 
@@ -302,11 +302,11 @@ def check_auth():
 
 def check_config():
     while not  paths.mp4decryptchecker(config.get_mp4decrypt(config.read_config())):
-        console.shared_console.print("You need to select path for mp4decrypt\n\n")
+        console.get_shared_console().print("You need to select path for mp4decrypt\n\n")
         log.debug(f"[bold]current mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")
         config.update_mp4decrypt()
     while not  paths.ffmpegchecker(config.get_ffmpeg(config.read_config())):
-        console.shared_console.print("You need to select path for ffmpeg\n\n")
+        console.get_shared_console().print("You need to select path for ffmpeg\n\n")
         log.debug(f"[bold]current ffmpeg path[/bold] {config.get_ffmpeg(config.read_config())}")
         config.update_ffmpeg()
     log.debug(f"[bold]final mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}")
@@ -339,22 +339,22 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 """)
 def print_start():
     with stdout.lowstdout():
-        console.shared_console.print(
+        console.get_shared_console().print(
             f"[bold green]Welcome to OF-Scraper Version {args.version}[/bold green]"
         )                
 def main():
  
         try:
             print_start()
-            logger.start_discord_queue()
+            # logger.start_discord_queue()
             scrapper()
             paths.cleanup()
-            logger.discord_cleanup()
+            # logger.discord_cleanup()
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
-                    logger.discord_cleanup()
+                    # logger.discord_cleanup()
                     sys.exit(0)
             except KeyboardInterrupt:
                     sys.exit(0)
@@ -364,7 +364,7 @@ def main():
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
-                    logger.discord_cleanup()
+                    # logger.discord_cleanup()
                     log.traceback(E)
                     log.traceback(traceback.format_exc())
                     sys.exit(0)

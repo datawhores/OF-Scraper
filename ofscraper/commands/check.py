@@ -30,9 +30,9 @@ from diskcache import Cache
 from ..utils.paths import getcachepath
 cache = Cache(getcachepath())
 
-log = logging.getLogger(__package__)
+log = logging.getLogger("shared")
 args = args_.getargs()
-console=console_.shared_console
+console=console_.get_shared_console()
 ROW_NAMES = "Number","Download_Cart", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
 app=None

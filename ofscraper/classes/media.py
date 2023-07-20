@@ -14,7 +14,7 @@ import traceback
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 class Media():
     def __init__(self, media, count, post):
         self._media = media

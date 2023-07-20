@@ -4,19 +4,23 @@ import logging
 import threading
 import time
 import queue
+from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
-from tenacity import retry,stop_after_attempt,wait_fixed
 
+from tenacity import retry,stop_after_attempt,wait_fixed
+import aioprocessing
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
-senstiveDict={}
-discord_queue=queue.Queue()
+import ofscraper.utils.console as console_
 
+queue_=aioprocessing.AioQueue()
+sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
+senstiveDict={}
 
 class DebugOnly(logging.Filter):
     def filter(self, record):
@@ -45,9 +49,9 @@ class DiscordHandler(logging.Handler):
         log_entry=f"{log_entry}\n\n"
         if url==None or url=="":
             return
-        #convert markup
-        log_entry=re.sub("\[bold\]|\[/bold\]","**",log_entry)
-        discord_queue.put((url,log_entry))
+        with sess:
+            with sess.requests(url,"post",headers={"Content-type": "application/json"},json={"content":log_entry})() as r:
+                None
 
 
 
@@ -71,35 +75,35 @@ class TextHandler(logging.Handler):
         self._widget=widget
 
 
-def discord_messenger():
-    with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
-        while True:
-            url,message=discord_queue.get()   
-            if url=="exit":
-                return
-            try:
-                discord_pusher(url,message,c)
-            except Exception as E:
-                console.shared_console.print("Discord Error")
+# def discord_messenger():
+#     with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
+#         while True:
+#             url,message=discord_queue.get()   
+#             if url=="exit":
+#                 return
+#             try:
+#                 discord_pusher(url,message,c)
+#             except Exception as E:
+#                 console.get_shared_console().print("Discord Error")
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(constants.DISCORDWAIT),reraise=True) 
-def discord_pusher(url,message,c):
-    with c.requests(url,"post",headers={"Content-type": "application/json"},json={"content":message})() as r:
-        None
+# @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(constants.DISCORDWAIT),reraise=True) 
+# def discord_pusher(url,message,c):
+#     with c.requests(url,"post",headers={"Content-type": "application/json"},json={"content":message})() as r:
+#         None
 
 
 
-def discord_cleanup():
-    logging.getLogger("ofscraper").info("Pushing Discord Queue")
-    while True:
-        if discord_queue.empty:
-            discord_queue.put(("exit",None))
-            break
-        time.sleep(.5)
+# def discord_cleanup():
+#     logging.getLogger("ofscraper").info("Pushing Discord Queue")
+#     while True:
+#         if discord_queue.empty:
+#             discord_queue.put(("exit",None))
+#             break
+#         time.sleep(.5)
              
-def start_discord_queue():
-    worker_thread = threading.Thread(target=discord_messenger)
-    worker_thread.start()
+# def start_discord_queue():
+#     worker_thread = threading.Thread(target=discord_messenger)
+#     worker_thread.start()
 class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
     @staticmethod
@@ -185,7 +189,8 @@ def getLevel(input):
             
             }.get(input,100)
 
-def init_logger(log):
+def init_main_logger():
+    log=logging.getLogger("ofscraper")
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
     addtraceback()
@@ -196,7 +201,7 @@ def init_logger(log):
     cord.setLevel(getLevel(args.getargs().discord))
     cord.setFormatter(SensitiveFormatter('%(message)s'))
     #console
-    sh=RichHandler(rich_tracebacks=True,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False,console=console.shared_console)
+    sh=RichHandler(rich_tracebacks=True,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False,console=console.get_shared_console())
     sh.setLevel(getLevel(args.getargs().output))
     sh.setFormatter(SensitiveFormatter(format))
     sh.addFilter(NoDebug())
@@ -217,7 +222,7 @@ def init_logger(log):
     
     if args.getargs().output in {"TRACE","DEBUG"}:
         funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
-        sh2=RichHandler(rich_tracebacks=True, console=console.shared_console,markup=True,tracebacks_show_locals=True,show_time=False)
+        sh2=RichHandler(rich_tracebacks=True, console=console.get_shared_console(),markup=True,tracebacks_show_locals=True,show_time=False)
         sh2.setLevel(args.getargs().output)
         sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(funct())
@@ -234,3 +239,45 @@ def init_logger(log):
 
 def add_widget(widget):
     [setattr(ele,"widget",widget) for ele in list(filter(lambda x:isinstance(x,TextHandler),logging.getLogger("ofscraper").handlers))]
+
+
+
+def logger_process_helper(console):
+    console_.update_shared(console)
+    logger_process()
+
+
+
+#mulitprocess
+# executed in a process that performs logging
+def logger_process():
+    # create a logger
+    log=init_main_logger()
+    while True:
+        # consume a log message, block until one arrives
+        message = queue_.get()
+        # check for shutdown
+        if message is None:
+            break
+        # log the message
+        log.handle(message)
+        
+# some inherantence from main process
+def start_proc():
+    log_proc=threading.Thread(target=logger_process_helper,args=(console_.get_shared_console(),))
+    log_proc.start()
+
+
+def get_shared_logger():
+    # create a logger
+    logger = logging.getLogger('shared')
+    # add a handler that uses the shared queue
+    logger.addHandler(QueueHandler(queue_))
+    # log all messages, debug and up
+    logger.setLevel(1)
+    addtraceback()
+    addtrace()
+    # get the current process
+    # report initial message
+    return logger
+    

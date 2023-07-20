@@ -29,7 +29,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.console as console
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 sem = semaphoreDelayed(1)
 attempt = contextvars.ContextVar("attempt")
 
@@ -44,7 +44,7 @@ async def get_stories_post(model_id):
     page_count=0
     global tasks
     tasks=[]
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
             async with sessionbuilder.sessionBuilder() as c:
                 tasks.append(asyncio.create_task(scrape_stories(c,model_id,job_progress)))
                 page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
@@ -107,7 +107,7 @@ async def get_highlight_post(model_id):
         page_count=0
         global tasks
         tasks=[]    
-        with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         
                 tasks.append(asyncio.create_task(scrape_highlight_list(c,model_id,job_progress)))
                 page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
@@ -125,7 +125,7 @@ async def get_highlight_post(model_id):
         progress_group = Group(
         overall_progress,
         Panel(Group(job_progress)))
-        with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
 
 
             output2=[]

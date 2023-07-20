@@ -21,7 +21,7 @@ import ofscraper.constants as constants
 import ofscraper.utils.paths as paths
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 console=Console()
 
 from diskcache import Cache

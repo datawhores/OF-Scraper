@@ -17,8 +17,8 @@ import ofscraper.utils.binaries as binaries
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
 
-console=console_.shared_console
-log=logging.getLogger(__package__)
+console=console_.get_shared_console()
+log=logging.getLogger("shared")
 
 def get_config_folder():
     out=paths_.get_config_path().parent
@@ -380,7 +380,7 @@ def get_dynamic(config=None):
     if config==None:
         return constants.DYNAMIC_DEFAULT
     value=config.get("dynamic-mode-default")
-    return value.lower() if value and value.lower() in set(["deviint","dc"]) else "deviint"
+    return value.lower() if value and value.lower() in set(["deviint","digitalcriminals"]) else "deviint"
 def get_part_file_clean(config=None):
     if config==None:
         return False

@@ -34,7 +34,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 from diskcache import Cache
 cache = Cache(getcachepath())
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.AlT_SEM)
@@ -108,7 +108,7 @@ async def get_archived_post(model_id):
     min_posts=50
     responseArray=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         
         async with sessionbuilder.sessionBuilder()  as c: 
 
