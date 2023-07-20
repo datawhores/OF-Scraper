@@ -78,12 +78,11 @@ async def process_dicts(username,model_id,medialist):
     
     thread_count=config_.get_threads(config_.read_config())
     mediasplits=more_itertools.divide(min(thread_count,len(os.sched_getaffinity(0))), medialist)
-    job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-    TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())
+
     overall_progress=Progress(  TextColumn("{task.description}"),
     BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
     progress_group = Group(
-    overall_progress, Panel(job_progress))
+    overall_progress)
     photo_count = 0
     video_count = 0
     audio_count=0
@@ -92,7 +91,7 @@ async def process_dicts(username,model_id,medialist):
     data = 0
     desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'   
     task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(medialist),visible=True)
-    progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) 
+    # progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) 
     total_bytes_downloaded=0
    
 
@@ -172,7 +171,7 @@ async def process_dicts_split(username, model_id, medialist,queue):
         async with sessionbuilder.sessionBuilder() as c:
             i=0
             for ele in medialist:
-                aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit,job_progress)))
+                aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit)))
 
             for coro in asyncio.as_completed(aws):
                     try:
@@ -189,7 +188,7 @@ async def process_dicts_split(username, model_id, medialist,queue):
 def retry_required(value):
     return value == ('skipped', 1)
 
-async def download(c,ele,model_id,username,file_size_limit,progress):
+async def download(c,ele,model_id,username,file_size_limit):
     attempt.set(attempt.get(0) + 1)  
     try:
             with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
@@ -262,16 +261,16 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                 if r.ok:
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
-                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        # task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                         size=0
                         with open(temp, 'ab') as f: 
-                            progress.update(task1,visible=True )
+                            # progress.update(task1,visible=True )
                             async for chunk in r.iter_chunked(1024):
                                 size=size+len(chunk) if log_trace else size
                                 log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
-                                progress.update(task1, advance=len(chunk))
-                            progress.remove_task(task1)  
+                            #     progress.update(task1, advance=len(chunk))
+                            # progress.remove_task(task1)  
                 else:
                     r.raise_for_status() 
                                   
@@ -287,14 +286,14 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
 
 
 
-async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
+async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
     log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
     log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
     path_to_file = paths.truncate(pathlib.Path(path,f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'))
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     audio,video=await alt_download_preparer(ele)
-    audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
-    video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
+    audio=await alt_download_downloader(audio,c,ele,path,file_size_limit)
+    video=await alt_download_downloader(video,c,ele,path,file_size_limit)
     if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
         return 'skipped', 1       
         
@@ -376,7 +375,7 @@ async def alt_download_preparer(ele):
                         break
     return audio,video
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
+async def alt_download_downloader(item,c,ele,path,file_size_limit):
     try:
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         url=f"{base_url}{item['origname']}"
@@ -399,17 +398,17 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit,progress):
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     pathstr=str(temp)
-                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
-                    progress.update(task1, advance=resume_size)
+                    # task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                    # progress.update(task1, advance=resume_size)
                     with open(temp, 'ab') as f:                           
-                        progress.update(task1,visible=True )
+                        # progress.update(task1,visible=True )
                         size=0
                         async for chunk in l.iter_chunked(1024):
                             size=size+len(chunk) if log_trace else size
                             log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
-                            progress.update(task1, advance=len(chunk))
-                        progress.remove_task(task1)
+                        #     progress.update(task1, advance=len(chunk))
+                        # progress.remove_task(task1)
                 else:
                     l.raise_for_status()
                     return item
