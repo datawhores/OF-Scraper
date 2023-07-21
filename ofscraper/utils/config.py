@@ -92,6 +92,7 @@ def get_current_config_schema(config:dict=None) -> dict:
             "partfileclean":get_part_file_clean(config),
             "backend":get_backend(config),
             "download-sems":get_download_semaphores(config),
+            "downloadbars":get_show_downloadprogress(config),
 
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
@@ -400,3 +401,7 @@ def get_download_semaphores(config=None):
     except:
         return constants.DOWNLOAD_SEM_DEFAULT
     
+def get_show_downloadprogress(config):
+    if config==None:
+        return False
+    return config.get("downloadbars",False) or False

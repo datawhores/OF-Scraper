@@ -81,6 +81,12 @@ def create_parser(input=None):
     post.add_argument(
         '-lb', '--label', help = 'Filter by label',default=None,required=False,type=label_helper,action="extend"
     )
+    post.add_argument(
+        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts',type=arrow_helper)
+    post.add_argument(
+        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow_helper)
+    post.add_argument(
+        '-mt', '--mediatype', help = 'Filter by media',default=[],required=False,type = posttype_helper,action='extend')
    
 
      #Filters for accounts
@@ -95,11 +101,7 @@ def create_parser(input=None):
     filters.add_argument(
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
-    filters.add_argument(
-        '-be', '--before', help = 'Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts',type=arrow_helper)
- 
-    filters.add_argument(
-        '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow_helper)
+
     
     
     sort=parser.add_argument_group("sort",description="Options on how to sort list")
@@ -122,8 +124,12 @@ def create_parser(input=None):
     advanced.add_argument(
         '-pc', '--part-cleanup', help = 'Cleanup temp .part files\nNote this removes the ability to resume from downloads',default=False,action="store_true")
 
-    
-    
+    advanced.add_argument(
+        '-db', '--downloadbars', help = 'show individual download progress bars',default=False,action="store_true")
+
+    advanced.add_argument('-sd', '--downloadsems', help = 'Number of sems or concurrent downloads per thread',default=None,type=int)
+
+    advanced.add_argument('-dp', '--downloadthreads', help = 'Number threads to use minimum will always be 1, Maximmum will never be higher then max availible-1',default=None,type=int)
     
     
     
@@ -245,6 +251,14 @@ def posttype_helper(x):
         raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')")
     return x
 
+def mediatype_helper():
+    choices=set(["Videos","Music","Audio"])
+    if isinstance(x,str):
+        x=x.split(',')
+        x=list(map(lambda x:x.capitalize() ,x))
+    if len(list(filter(lambda y: y not in choices,x)))>0:
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')")
+    return x
 def changeargs(newargs):
     global args
     args=newargs

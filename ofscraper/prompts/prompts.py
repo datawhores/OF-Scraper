@@ -396,6 +396,16 @@ def config_prompt_advanced(config_) -> dict:
             "long_instruction":"This is a helper value for remapping placeholder values",
             'default': config.get_custom(config_) or "",
         },
+        {
+            "type":"list",
+            "name":"downloadbars",
+            "message":"show download progress bars\nThis can have a negative effect on performance with lower threads",
+            "default":config.get_show_downloadprogress(config_) ,
+            'choices':[Choice(True,"Yes"),Choice(False,"No")]
+
+
+
+        }
     ]
     )
     config_.update(new_settings)
