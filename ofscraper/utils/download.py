@@ -77,6 +77,10 @@ async def process_dicts(username,model_id,medialist):
     queue_ = aioprocessing.AioQueue()
     log=logging.getLogger("shared")
     mediasplits=get_mediasplits(medialist)
+    
+    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],queue_)) for i in range(len(mediasplits))]
+    [process.start() for process in processes]
+    
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
     job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
         TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
@@ -93,13 +97,13 @@ async def process_dicts(username,model_id,medialist):
     task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(medialist),visible=True)
     progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
     total_bytes_downloaded=0
-   
+
+  
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],queue_)) for i in range(len(mediasplits))]
-        [process.start() for process in processes]
+   
         count=0
         while True:
-            if count==len(mediasplits):
+            if count==len(mediasplits) or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
                 break
             result = await queue_.coro_get()
             if result is None:
@@ -126,12 +130,9 @@ async def process_dicts(username,model_id,medialist):
                 skipped += 1
             overall_progress.update(task1,description=desc.format(
                         p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)            
-        for process in processes:
-            process.join()
     overall_progress.remove_task(task1)
-  
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
-
+    [process.join() for process in processes]
 def get_mediasplits(medialist):
     thread_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads) if len(medialist)//2>config_.get_threads(config_.read_config()) else 1
     return more_itertools.divide(min(thread_count,len(os.sched_getaffinity(0))), medialist   )
@@ -156,7 +157,6 @@ async def process_dicts_split(username, model_id, medialist,queue_):
         global sem
         sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
         global dirSet
-
         dirSet=set()
         global log
         log=logging.getLogger("shared")
@@ -164,8 +164,6 @@ async def process_dicts_split(username, model_id, medialist,queue_):
         log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
         global queuecopy
         queuecopy=queue_
-        global downloadprogress 
-        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
        
         
 
@@ -201,6 +199,7 @@ async def process_dicts_split(username, model_id, medialist,queue_):
                         queue_.put(  (media_type, num_bytes_downloaded))
             setDirectoriesDate()
             queue_.put(None)
+    return
 def retry_required(value):
     return value == ('skipped', 1)
 
@@ -289,7 +288,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
                                 size=size+len(chunk)
                                 log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
-                                if count==25 and downloadprogress:queuecopy.put({"type":"update","args":(ele.id,),"completed":size});count=0
+                                if count==25:queuecopy.put({"type":"update","args":(ele.id,),"completed":size});count=0
                             queuecopy.put({"type":"remove_task","args":(ele.id,)})
                 else:
                     r.raise_for_status() 
@@ -430,7 +429,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
                             size=size+len(chunk)
                             log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
-                            if count==25 and downloadprogress:queuecopy.put({"type":"update","args":(ele.id,),"completed":size});count=0
+                            if count==25:queuecopy.put({"type":"update","args":(ele.id,),"completed":size});count=0
                     queuecopy.put({"type":"remove_task","args":(ele.id,)})
                 else:
                     l.raise_for_status()
@@ -556,13 +555,11 @@ def set_cache_helper(ele):
 
 
 def addGlobalDir(path):
-    dirSet.add(path.parent)
-
-
+    dirSet.add(path.resolve().parent)
 def setDirectoriesDate():
     log.info("Setting Date for modified directories")
     output=set()
-    rootDir=pathlib.Path(config_.get_save_location(config_.read_config()))
+    rootDir=pathlib.Path(config_.get_save_location(config_.read_config())).resolve()
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:

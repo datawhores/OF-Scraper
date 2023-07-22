@@ -19,7 +19,8 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.console as console_
 
 queue_=aioprocessing.AioQueue()
-sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
+queue2_=aioprocessing.AioQueue()
+
 senstiveDict={}
 
 class DebugOnly(logging.Filter):
@@ -43,13 +44,14 @@ class NoDebug(logging.Filter):
 class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
+        self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
     def emit(self, record):
         log_entry = self.format(record)
         url=config_.get_discord(config_.read_config())
         log_entry=f"{log_entry}\n\n"
         if url==None or url=="":
             return
-        with sess:
+        with self.sess as sess:
             with sess.requests(url,"post",headers={"Content-type": "application/json"},json={"content":log_entry})() as r:
                 None
 
@@ -74,36 +76,6 @@ class TextHandler(logging.Handler):
     def widget(self,widget):
         self._widget=widget
 
-
-# def discord_messenger():
-#     with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
-#         while True:
-#             url,message=discord_queue.get()   
-#             if url=="exit":
-#                 return
-#             try:
-#                 discord_pusher(url,message,c)
-#             except Exception as E:
-#                 console.get_shared_console().print("Discord Error")
-
-# @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(constants.DISCORDWAIT),reraise=True) 
-# def discord_pusher(url,message,c):
-#     with c.requests(url,"post",headers={"Content-type": "application/json"},json={"content":message})() as r:
-#         None
-
-
-
-# def discord_cleanup():
-#     logging.getLogger("ofscraper").info("Pushing Discord Queue")
-#     while True:
-#         if discord_queue.empty:
-#             discord_queue.put(("exit",None))
-#             break
-#         time.sleep(.5)
-             
-# def start_discord_queue():
-#     worker_thread = threading.Thread(target=discord_messenger)
-#     worker_thread.start()
 class SensitiveFormatter(logging.Formatter):
     """Formatter that removes sensitive information in logs."""
     @staticmethod
@@ -197,9 +169,6 @@ def init_main_logger():
     addtrace()
     # # #log file
       # #discord
-    cord=DiscordHandler()
-    cord.setLevel(getLevel(args.getargs().discord))
-    cord.setFormatter(SensitiveFormatter('%(message)s'))
     #console
     sh=RichHandler(rich_tracebacks=True,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False,console=console.get_shared_console())
     sh.setLevel(getLevel(args.getargs().output))
@@ -208,7 +177,6 @@ def init_main_logger():
     tx=TextHandler()
     tx.setLevel(getLevel(args.getargs().output))
     tx.setFormatter(SensitiveFormatter(format))
-    log.addHandler(cord)
     log.addHandler(sh)
     log.addHandler(tx)
     if args.getargs().log!="OFF":
@@ -236,6 +204,20 @@ def init_main_logger():
         log.addHandler(fh2)
     return log
 
+def init_discord_logger():
+    log=logging.getLogger("discord")
+    format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
+    log.setLevel(1)
+    addtraceback()
+    addtrace()
+    # # #log file
+      # #discord
+    cord=DiscordHandler()
+    cord.setLevel(getLevel(args.getargs().discord))
+    cord.setFormatter(SensitiveFormatter('%(message)s'))
+    #console
+    log.addHandler(cord)
+    return log
 
 def add_widget(widget):
     [setattr(ele,"widget",widget) for ele in list(filter(lambda x:isinstance(x,TextHandler),logging.getLogger("ofscraper").handlers))]
@@ -252,20 +234,41 @@ def logger_process_helper(console):
 # executed in a process that performs logging
 def logger_process():
     # create a logger
+    import time
     log=init_main_logger()
     while True:
         # consume a log message, block until one arrives
         message = queue_.get()
         # check for shutdown
-        if message is None:
+        if message.message=="None":
             break
         # log the message
         log.handle(message)
-        
+
+#mulitprocess
+# executed in a process that performs logging
+def logger_discord():
+    # create a logger
+    log=init_discord_logger()
+    while True:
+        # consume a log message, block until one arrives
+        message = queue2_.get()
+        # check for shutdown
+        if message.message=="None":
+            break
+        # log the message
+        log.handle(message)       
+
+
+
 # some inherantence from main process
 def start_proc():
-    log_proc=threading.Thread(target=logger_process_helper,args=(console_.get_shared_console(),))
-    log_proc.start()
+    threads=[threading.Thread(target=logger_process_helper,args=(console_.get_shared_console(),)),threading.Thread(target=logger_discord)]
+    [thread.start() for thread in threads]
+
+  
+    
+
 
 
 def get_shared_logger():
@@ -273,6 +276,7 @@ def get_shared_logger():
     logger = logging.getLogger('shared')
     # add a handler that uses the shared queue
     logger.addHandler(QueueHandler(queue_))
+    logger.addHandler(QueueHandler(queue2_))
     # log all messages, debug and up
     logger.setLevel(1)
     addtraceback()

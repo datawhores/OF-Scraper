@@ -19,11 +19,13 @@ import ofscraper.utils.config as config_
 
 
 class sessionBuilder:
-    def __init__(self,backend=None, set_header=True,set_sign=True,set_cookies=True):
+    def __init__(self,backend=None, set_header=True,set_sign=True,set_cookies=True,connect_timeout=None,total_timeout=None):
         self._backend=backend or config_.get_backend(config_.read_config())
         self._set_cookies=set_cookies
         self._set_header=set_header
         self._set_sign=set_sign
+        self._connect_timeout=connect_timeout or 10
+        self._total_timeout=None
         
         
      
@@ -31,8 +33,8 @@ class sessionBuilder:
     async def __aenter__(self):
         self._async=True
         if self._backend=="aio":
-            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,
-                      sock_connect=None, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE))
+            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self._total_timeout, connect=self._connect_timeout,
+                      sock_connect=self._connect_timeout, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE*3))
         
         
         elif self._backend=="httpx":

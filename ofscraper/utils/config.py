@@ -397,7 +397,7 @@ def get_download_semaphores(config=None):
     if config==None:
         return constants.DOWNLOAD_SEM_DEFAULT
     try:
-        return int(config.get('download_sem', constants.DOWNLOAD_SEM_DEFAULT))
+        return int(config.get('download-sems', constants.DOWNLOAD_SEM_DEFAULT))
     except:
         return constants.DOWNLOAD_SEM_DEFAULT
     

@@ -7,6 +7,7 @@ import ofscraper.commands.manual as manual
 import ofscraper.utils.config as config_
 import ofscraper.utils.profiles as profiles_
 import ofscraper.utils.paths as paths_
+import ofscraper.utils.console as console_
 import ssl
 import platform
 import certifi
@@ -14,6 +15,9 @@ import certifi
 
 def main():
     startvalues()
+    discord_warning()
+    logger.start_proc()
+
     args=args_.getargs()
     if vars(args).get("help"):
         quit()
@@ -32,6 +36,8 @@ def main():
         manual.manual_download()
     else:
         scraper.main()
+    logger.get_shared_logger().info(None)
+    
 
 def make_folders():
     config_.get_config_folder()
@@ -39,9 +45,10 @@ def make_folders():
 
 def startvalues():
     args=args_.getargs()
-    logger.start_proc()
     log=logger.get_shared_logger()
-    logger.updateSenstiveDict(paths_.get_username(),"your_username")
+    logger.updateSenstiveDict(f"/{paths_.get_username()}/","/your_username/")
+    logger.updateSenstiveDict(f"\\{paths_.get_username()}\\","\\\\your_username\\\\")
+
     #print info
     log.debug(args)
     log.debug(config_.read_config())
@@ -51,4 +58,7 @@ def startvalues():
     log.debug(f"ssl {ssl.get_default_verify_paths()}")
     log.debug(f"python version {platform. python_version()}" )
     log.debug(f"certifi {certifi.where()}")
-    
+
+def discord_warning():
+    if args_.getargs().discord=="DEBUG":
+        console_.get_shared_console().print("[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]")

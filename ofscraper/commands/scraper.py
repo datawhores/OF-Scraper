@@ -355,11 +355,9 @@ def main():
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
                     # logger.discord_cleanup()
-                    sys.exit(0)
+                    return
             except KeyboardInterrupt:
-                    sys.exit(0)
-
-
+                    return
         except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -367,9 +365,9 @@ def main():
                     # logger.discord_cleanup()
                     log.traceback(E)
                     log.traceback(traceback.format_exc())
-                    sys.exit(0)
+                    return
             except KeyboardInterrupt:
-                sys.exit(0)
+                return
 def scrapper():
     if platform.system == 'Windows':
         os.system('color')
