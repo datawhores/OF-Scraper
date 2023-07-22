@@ -77,8 +77,9 @@ async def process_dicts(username,model_id,medialist):
     queue_ = aioprocessing.AioQueue()
     log=logging.getLogger("shared")
     mediasplits=get_mediasplits(medialist)
+    num_proc=len(mediasplits)
     
-    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],queue_)) for i in range(len(mediasplits))]
+    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],queue_)) for i in range(num_proc)]
     [process.start() for process in processes]
     
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -103,7 +104,7 @@ async def process_dicts(username,model_id,medialist):
    
         count=0
         while True:
-            if count==len(mediasplits) or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
+            if count==num_proc or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
                 break
             result = await queue_.coro_get()
             if result is None:
