@@ -403,5 +403,5 @@ def get_download_semaphores(config=None):
     
 def get_show_downloadprogress(config):
     if config==None:
-        return False
-    return config.get("downloadbars",False) or False
+        return constants.PROGRESS_DEFAULT
+    return config.get("downloadbars",constants.PROGRESS_DEFAULT) or constants.PROGRESS_DEFAULT

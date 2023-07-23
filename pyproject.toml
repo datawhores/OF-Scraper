@@ -34,6 +34,7 @@ pycryptodome = "^3.18.0"
 pywidevine = "^1.6.0"
 aioprocessing = "^2.0.1"
 more-itertools = "^9.1.0"
+faster-fifo = {version = "^1.4.5", platform = "linux"}
 
 
 [tool.poetry.group.dev.dependencies]

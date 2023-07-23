@@ -15,6 +15,7 @@ import platform
 import shutil
 import traceback
 import re
+import threading
 import logging
 import contextvars
 import json
@@ -39,10 +40,8 @@ from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 import arrow
 from bs4 import BeautifulSoup
-try:
-    from win32_setctime import setctime  # pylint: disable=import-error
-except ModuleNotFoundError:
-    pass
+
+
 from tenacity import retry,stop_after_attempt,wait_random
 import more_itertools
 import aioprocessing
@@ -64,22 +63,39 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessProgress import multiprocessProgress as progress
+# if platform.system() == 'Windows':
+#     from win32_setctime import setctime 
+#     from aioprocessing import AioQueue as Queue
+#  # pylint: disable=import-error
+
+# else:
+#     from faster_fifo import Queue
+#     Queue.get=Queue.get_many
+from aioprocessing import AioPipe
+
 
 
 
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
+lock=aioprocessing.AioLock()
+
+#progress globals
+total_bytes_downloaded = 0
+photo_count = 0
+video_count = 0
+audio_count=0
+skipped = 0
+data=0
 
 
 async def process_dicts(username,model_id,medialist):
-
-    queue_ = aioprocessing.AioQueue()
     log=logging.getLogger("shared")
     mediasplits=get_mediasplits(medialist)
     num_proc=len(mediasplits)
-    
-    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],queue_)) for i in range(num_proc)]
+    connect_tuple=[AioPipe() for i in range(num_proc)]
+    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],connect_tuple[i][1])) for i in range(num_proc)]
     [process.start() for process in processes]
     
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -88,25 +104,38 @@ async def process_dicts(username,model_id,medialist):
     overall_progress=Progress(  TextColumn("{task.description}"),
     BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
     progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-    photo_count = 0
-    video_count = 0
-    audio_count=0
-    skipped = 0
-    total_bytes_downloaded = 0
-    data = 0
     desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'   
     task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(medialist),visible=True)
     progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
-    total_bytes_downloaded=0
 
-  
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-   
-        count=0
-        while True:
-            if count==num_proc or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
-                break
-            result = await queue_.coro_get()
+        threads=[threading.Thread(target=queue_process,args=(connect_tuple[i][0],overall_progress,job_progress,task1,len(medialist))) for i in range(num_proc)]
+        [threads.start() for threads in threads]
+        [threads.join() for threads in threads]
+          
+    overall_progress.remove_task(task1)
+    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    [process.join() for process in processes]
+
+def queue_process(queue_,overall_progress,job_progress,task1,total):
+    count=0
+    downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'
+    #shared globals
+    global total_bytes_downloaded
+    global video_count
+    global audio_count
+    global photo_count
+    global skipped
+    global data
+
+    while True:
+        if count==1 or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
+            break
+        results = queue_.recv()
+        if not isinstance(results,list):
+            results=[results]
+        for result in results:
             if result is None:
                 count=count+1
                 continue 
@@ -114,33 +143,33 @@ async def process_dicts(username,model_id,medialist):
                 continue
             
             if isinstance(result,dict):
-                job_progress_helper(job_progress,result)
+                job_progress_helper(job_progress,result,lock)
                 continue
-            
-            media_type, num_bytes_downloaded = result
-            total_bytes_downloaded += num_bytes_downloaded
-            data = convert_num_bytes(total_bytes_downloaded)
-            if media_type == 'images':
-                photo_count += 1 
 
-            elif media_type == 'videos':
-                video_count += 1
-            elif media_type == 'audios':
-                audio_count += 1
-            elif media_type == 'skipped':
-                skipped += 1
-            overall_progress.update(task1,description=desc.format(
-                        p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)            
-    overall_progress.remove_task(task1)
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
-    [process.join() for process in processes]
+            media_type, num_bytes_downloaded = result
+            with lock:
+                total_bytes_downloaded=total_bytes_downloaded+num_bytes_downloaded
+                data = convert_num_bytes(total_bytes_downloaded)
+                if media_type == 'images':
+                    photo_count += 1 
+
+                elif media_type == 'videos':
+                    video_count += 1
+                elif media_type == 'audios':
+                    audio_count += 1
+                elif media_type == 'skipped':
+                    skipped += 1
+                overall_progress.update(task1,description=desc.format(
+                            p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=total, sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)     
+
+
 def get_mediasplits(medialist):
     thread_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads) if len(medialist)//2>config_.get_threads(config_.read_config()) else 1
     return more_itertools.divide(min(thread_count,len(os.sched_getaffinity(0))), medialist   )
 def process_dict_starter(username,model_id,ele,queue_):
     asyncio.run(process_dicts_split(username,model_id,ele,queue_))
 
-def job_progress_helper(job_progress,result):
+def job_progress_helper(job_progress,result,lock):
     funct={
       "add_task"  :job_progress.add_task,
       "update":job_progress.update,
@@ -148,10 +177,11 @@ def job_progress_helper(job_progress,result):
      }.get(result.pop("type"))
     if funct:
         try:
-            funct(*result.pop("args"),**result)
+            with lock:
+                funct(*result.pop("args"),**result)
         except Exception as E:
             log.debug(E)
-async def process_dicts_split(username, model_id, medialist,queue_):
+async def process_dicts_split(username, model_id, medialist,queuecopy):
     with stdout.lowstdout():
         medialist=list(medialist)
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
@@ -163,8 +193,8 @@ async def process_dicts_split(username, model_id, medialist,queue_):
         log=logging.getLogger("shared")
         global log_trace
         log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
-        global queuecopy
-        queuecopy=queue_
+        global queue_
+        queue_=queuecopy
        
         
 
@@ -191,15 +221,15 @@ async def process_dicts_split(username, model_id, medialist,queue_):
             for coro in asyncio.as_completed(aws):
                     try:
                         media_type, num_bytes_downloaded = await coro
-                        queue_.put(  (media_type, num_bytes_downloaded))
+                        await queue_.coro_send(  (media_type, num_bytes_downloaded))
                     except Exception as e:
                         log.traceback(e)
                         log.traceback(traceback.format_exc())
                         media_type = "skipped"
                         num_bytes_downloaded = 0
-                        queue_.put(  (media_type, num_bytes_downloaded))
+                        await queue_.coro_send(  (media_type, num_bytes_downloaded))
             setDirectoriesDate()
-            queue_.put(None)
+            await queue_.coro_send(None)
     return
 def retry_required(value):
     return value == ('skipped', 1)
@@ -277,20 +307,20 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
                 if r.ok:
                     pathstr=str(path_to_file)
                     if not total or (resume_size!=total):
-                        queuecopy.put({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
+                        await queue_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
                                        "total":total,"visible":False})
-                        queuecopy.put({"type":"update","args":(ele.id,),"completed":resume_size})
+                        await queue_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size})
                         size=resume_size
                         count=0
                         with open(temp, 'ab') as f: 
-                            queuecopy.put({"type":"update","args":(ele.id,),"visible":False})
+                            await queue_.coro_send({"type":"update","args":(ele.id,),"visible":True})
                             async for chunk in r.iter_chunked(1024):
                                 count=count+1
                                 size=size+len(chunk)
                                 log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
-                                if count==25:queuecopy.put({"type":"update","args":(ele.id,),"completed":size});count=0
-                            queuecopy.put({"type":"remove_task","args":(ele.id,)})
+                                if count==constants.CHUNK_ITER:await queue_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
+                            await queue_.coro_send({"type":"remove_task","args":(ele.id,)})
                 else:
                     r.raise_for_status() 
                                   
@@ -418,20 +448,20 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     pathstr=str(temp)
-                    queuecopy.put({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
+                    await queue_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
                                        "total":total,"visible":False})
-                    queuecopy.put({"type":"update","args":(ele.id,),"completed":resume_size}) 
+                    await queue_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size}) 
                     count=0
                     size=resume_size                  
                     with open(temp, 'ab') as f:                           
-                        queuecopy.put({"type":"update","args":(ele.id,),"visible":False})
+                        await queue_.coro_send({"type":"update","args":(ele.id,),"visible":False})
                         async for chunk in l.iter_chunked(1024):
                             count=count+1
                             size=size+len(chunk)
                             log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
-                            if count==25:queuecopy.put({"type":"update","args":(ele.id,),"completed":size});count=0
-                    queuecopy.put({"type":"remove_task","args":(ele.id,)})
+                            if count==constants.CHUNK_ITER:await queue_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
+                    await queue_.coro_send({"type":"remove_task","args":(ele.id,)})
                 else:
                     l.raise_for_status()
                     return item
