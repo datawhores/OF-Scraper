@@ -8,7 +8,7 @@ from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
 
-from tenacity import retry,stop_after_attempt,wait_fixed
+from tenacity import retry,stop_after_attempt,wait_random
 import aioprocessing
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
@@ -45,6 +45,7 @@ class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
         self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
+    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX)) 
     def emit(self, record):
         log_entry = self.format(record)
         url=config_.get_discord(config_.read_config())
@@ -250,6 +251,8 @@ def logger_process():
 def logger_discord():
     # create a logger
     log=init_discord_logger()
+    if log.handlers[0].level==100:
+        return
     while True:
         # consume a log message, block until one arrives
         message = queue2_.get()
@@ -276,7 +279,8 @@ def get_shared_logger():
     logger = logging.getLogger('shared')
     # add a handler that uses the shared queue
     logger.addHandler(QueueHandler(queue_))
-    logger.addHandler(QueueHandler(queue2_))
+    if args.getargs().discord:
+        logger.addHandler(QueueHandler(queue2_))
     # log all messages, debug and up
     logger.setLevel(1)
     addtraceback()

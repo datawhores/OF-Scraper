@@ -8,6 +8,7 @@ r"""
                  \/     \/           \/            \/         
 """
 import pathlib
+import os
 preferences = 'pref_config.py'
 configPath = '.config/ofscraper'
 configFile = 'config.json'
@@ -109,7 +110,7 @@ FFMPEG_DEFAULT =""
 DISCORD_DEFAULT =""
 BACKEND_DEFAULT ="aio"
 DOWNLOAD_SEM_DEFAULT=8
-THREADS_DEFAULT=4
+THREADS_DEFAULT=int(os.cpu_count()*(2/3))
 DYNAMIC_DEFAULT="deviint"
 SUPPRESS_LOG_LEVEL=21
 PROGRESS_DEFAULT=False
@@ -160,4 +161,4 @@ USERNAME_REGEX="[^/]"
 
 API_REEQUEST_TIMEOUT=90
 SUPRESS_OUTPUTS={"CRITICAL","ERROR","WARNING"}
-CHUNK_ITER=50
+CHUNK_ITER=100

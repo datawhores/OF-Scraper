@@ -14,6 +14,7 @@ import pathlib
 import platform
 import shutil
 import traceback
+import random
 import re
 import threading
 import logging
@@ -45,6 +46,7 @@ from bs4 import BeautifulSoup
 from tenacity import retry,stop_after_attempt,wait_random
 import more_itertools
 import aioprocessing
+import psutil
 
 
 import ofscraper.utils.config as config_
@@ -92,6 +94,8 @@ data=0
 
 async def process_dicts(username,model_id,medialist):
     log=logging.getLogger("shared")
+    random.shuffle(medialist)
+
     mediasplits=get_mediasplits(medialist)
     num_proc=len(mediasplits)
     connect_tuple=[AioPipe() for i in range(num_proc)]
@@ -112,10 +116,9 @@ async def process_dicts(username,model_id,medialist):
         threads=[threading.Thread(target=queue_process,args=(connect_tuple[i][0],overall_progress,job_progress,task1,len(medialist))) for i in range(num_proc)]
         [threads.start() for threads in threads]
         [threads.join() for threads in threads]
-          
+        [process.join() for process in processes]     
     overall_progress.remove_task(task1)
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
-    [process.join() for process in processes]
 
 def queue_process(queue_,overall_progress,job_progress,task1,total):
     count=0
@@ -181,7 +184,21 @@ def job_progress_helper(job_progress,result,lock):
                 funct(*result.pop("args"),**result)
         except Exception as E:
             log.debug(E)
+def setpriority():
+    os_used = platform.system() 
+    process = psutil.Process(os.getpid())  # Set highest priority for the python script for the CPU
+    if os_used == "windows":  # Windows (either 32-bit or 64-bit)
+        process.nice(psutil.NORMAL_PRIORITY_CLASS)
+
+    elif os_used == "linux":  # linux
+        process.ionice(psutil.IOPRIO_NORMAL)
+        process.nice(5) 
+    else:  # MAC OS X or other
+        process.nice(10) 
+        process.ionice(ioclass=2)
+
 async def process_dicts_split(username, model_id, medialist,queuecopy):
+    setpriority()
     with stdout.lowstdout():
         medialist=list(medialist)
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
