@@ -349,12 +349,10 @@ def main():
             # logger.start_discord_queue()
             scrapper()
             paths.cleanup()
-            # logger.discord_cleanup()
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
-                    # logger.discord_cleanup()
                     return
             except KeyboardInterrupt:
                     return
@@ -362,7 +360,6 @@ def main():
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
-                    # logger.discord_cleanup()
                     log.traceback(E)
                     log.traceback(traceback.format_exc())
                     return

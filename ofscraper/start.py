@@ -16,7 +16,7 @@ import certifi
 def main():
     startvalues()
     discord_warning()
-    logger.start_proc()
+    thread=logger.start_main_proc()
 
     args=args_.getargs()
     if vars(args).get("help"):
@@ -37,6 +37,8 @@ def main():
     else:
         scraper.main()
     logger.get_shared_logger().info(None)
+    thread.join()
+
     
 
 def make_folders():

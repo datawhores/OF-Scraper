@@ -4,6 +4,8 @@ import logging
 import threading
 import time
 import queue
+import types
+
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
@@ -162,8 +164,8 @@ def getLevel(input):
             
             }.get(input,100)
 
-def init_main_logger():
-    log=logging.getLogger("ofscraper")
+def init_main_logger(name):
+    log=logging.getLogger(name or "ofscraper")
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
     addtraceback()
@@ -225,26 +227,31 @@ def add_widget(widget):
 
 
 
-def logger_process_helper(console):
-    console_.update_shared(console)
-    logger_process()
 
 
 
 #mulitprocess
 # executed in a process that performs logging
-def logger_process():
+def logger_process(input_,name=None,stop_count=1):
     # create a logger
-    import time
-    log=init_main_logger()
+    log=init_main_logger(name)
+    input_=input_ or queue_
+    count=0
     while True:
         # consume a log message, block until one arrives
-        message = queue_.get()
-        # check for shutdown
-        if message.message=="None":
-            break
-        # log the message
-        log.handle(message)
+        messages = input_.get()
+        if not isinstance(messages,list):
+            messages=[messages]
+        for message in messages:
+            # check for shutdown
+            if message.message=="None":
+                count=count+1
+                if count==stop_count:
+                    return
+                continue
+         
+            # log the message
+            log.handle(message)
 
 #mulitprocess
 # executed in a process that performs logging
@@ -265,22 +272,21 @@ def logger_discord():
 
 
 # some inherantence from main process
-def start_proc():
-    threads=[threading.Thread(target=logger_process_helper,args=(console_.get_shared_console(),)),threading.Thread(target=logger_discord)]
-    [thread.start() for thread in threads]
+def start_main_proc(input_=None,name=None,count=1):
+    input_=input_ or queue_
+    thread= threading.Thread(target=logger_process,args=(input_,name,count))
+    thread.start()
+    return thread
 
-  
     
 
 
 
-def get_shared_logger():
+def get_shared_logger(input_=None ,name=None):
     # create a logger
-    logger = logging.getLogger('shared')
+    logger = logging.getLogger(name or 'shared')
     # add a handler that uses the shared queue
-    logger.addHandler(QueueHandler(queue_))
-    if args.getargs().discord:
-        logger.addHandler(QueueHandler(queue2_))
+    logger.addHandler(QueueHandler(input_ or queue_))
     # log all messages, debug and up
     logger.setLevel(1)
     addtraceback()

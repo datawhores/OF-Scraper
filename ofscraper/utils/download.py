@@ -11,6 +11,7 @@ import asyncio
 import math
 import os
 import pathlib
+import time
 import platform
 import shutil
 import traceback
@@ -18,6 +19,7 @@ import random
 import re
 import threading
 import logging
+import logging.handlers
 import contextvars
 import json
 import subprocess
@@ -47,7 +49,7 @@ from tenacity import retry,stop_after_attempt,wait_random
 import more_itertools
 import aioprocessing
 import psutil
-
+import queue
 
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
@@ -65,15 +67,8 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessProgress import multiprocessProgress as progress
-# if platform.system() == 'Windows':
-#     from win32_setctime import setctime 
-#     from aioprocessing import AioQueue as Queue
-#  # pylint: disable=import-error
-
-# else:
-#     from faster_fifo import Queue
-#     Queue.get=Queue.get_many
 from aioprocessing import AioPipe
+
 
 
 
@@ -81,7 +76,11 @@ from aioprocessing import AioPipe
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
-lock=aioprocessing.AioLock()
+
+count_lock=aioprocessing.AioLock()
+dir_lock=aioprocessing.AioLock()
+chunk_lock=aioprocessing.AioLock()
+
 
 #progress globals
 total_bytes_downloaded = 0
@@ -90,6 +89,8 @@ video_count = 0
 audio_count=0
 skipped = 0
 data=0
+logqueue_=logger.queue_
+logqueue2_=logger.queue2_
 
 
 async def process_dicts(username,model_id,medialist):
@@ -98,28 +99,56 @@ async def process_dicts(username,model_id,medialist):
 
     mediasplits=get_mediasplits(medialist)
     num_proc=len(mediasplits)
+    split_val=min(4,num_proc)
+    log.debug(f"Number of process {num_proc}")
     connect_tuple=[AioPipe() for i in range(num_proc)]
-    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],connect_tuple[i][1])) for i in range(num_proc)]
-    [process.start() for process in processes]
-    
-    downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-    job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
-    overall_progress=Progress(  TextColumn("{task.description}"),
-    BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-    progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'   
-    task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(medialist),visible=True)
-    progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
 
-    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-        threads=[threading.Thread(target=queue_process,args=(connect_tuple[i][0],overall_progress,job_progress,task1,len(medialist))) for i in range(num_proc)]
-        [threads.start() for threads in threads]
-        [threads.join() for threads in threads]
-        [process.join() for process in processes]     
-    overall_progress.remove_task(task1)
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
 
+    logqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
+    logthreads=[logger.start_main_proc(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
+    logs=[logger.get_shared_logger(logqueues_[i//split_val],f"shared_{i}") for i in range(num_proc) ]
+    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logs[i],connect_tuple[i][1])) for i in range(num_proc)]
+    try:
+        [process.start() for process in processes]
+        
+        
+        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+        job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+            TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
+        overall_progress=Progress(  TextColumn("{task.description}"),
+        BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+        progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
+        desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data})'   
+        task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,data=data), total=len(medialist),visible=True)
+        progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+        with stdout.lowstdout():
+            with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
+                queue_threads=[threading.Thread(target=queue_process,args=(connect_tuple[i][0],overall_progress,job_progress,task1,len(medialist))) for i in range(num_proc)]
+                [thread.start() for thread in queue_threads]
+                [thread.join() for thread in queue_threads]
+                time.sleep(1)
+                [logthread.join() for logthread in logthreads]
+                [process.join(timeout=1) for process in processes]    
+                [process.terminate() for process in processes]    
+            overall_progress.remove_task(task1)
+            log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    except KeyboardInterrupt as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    paths.cleanup()
+                    return
+            except KeyboardInterrupt:
+                    return
+    except Exception as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    paths.cleanup()
+                    log.traceback(E)
+                    log.traceback(traceback.format_exc())
+                    return
+            except KeyboardInterrupt:
+                return   
 def queue_process(queue_,overall_progress,job_progress,task1,total):
     count=0
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -146,11 +175,11 @@ def queue_process(queue_,overall_progress,job_progress,task1,total):
                 continue
             
             if isinstance(result,dict):
-                job_progress_helper(job_progress,result,lock)
+                job_progress_helper(job_progress,result)
                 continue
 
             media_type, num_bytes_downloaded = result
-            with lock:
+            with count_lock:
                 total_bytes_downloaded=total_bytes_downloaded+num_bytes_downloaded
                 data = convert_num_bytes(total_bytes_downloaded)
                 if media_type == 'images':
@@ -167,12 +196,13 @@ def queue_process(queue_,overall_progress,job_progress,task1,total):
 
 
 def get_mediasplits(medialist):
-    thread_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads) if len(medialist)//2>config_.get_threads(config_.read_config()) else 1
-    return more_itertools.divide(min(thread_count,len(os.sched_getaffinity(0))), medialist   )
-def process_dict_starter(username,model_id,ele,queue_):
-    asyncio.run(process_dicts_split(username,model_id,ele,queue_))
+    user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
+    final_count=min(user_count,len(os.sched_getaffinity(0)), len(medialist)//5)
+    return more_itertools.divide(final_count, medialist   )
+def process_dict_starter(username,model_id,ele,log,queue_):
+    asyncio.run(process_dicts_split(username,model_id,ele,log,queue_))
 
-def job_progress_helper(job_progress,result,lock):
+def job_progress_helper(job_progress,result):
     funct={
       "add_task"  :job_progress.add_task,
       "update":job_progress.update,
@@ -180,10 +210,10 @@ def job_progress_helper(job_progress,result,lock):
      }.get(result.pop("type"))
     if funct:
         try:
-            with lock:
+            with chunk_lock:
                 funct(*result.pop("args"),**result)
         except Exception as E:
-            log.debug(E)
+            logging.getLogger("shared").debug(E)
 def setpriority():
     os_used = platform.system() 
     process = psutil.Process(os.getpid())  # Set highest priority for the python script for the CPU
@@ -197,61 +227,81 @@ def setpriority():
         process.nice(10) 
         process.ionice(ioclass=2)
 
-async def process_dicts_split(username, model_id, medialist,queuecopy):
+async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
+    global innerlog
+    innerlog = contextvars.ContextVar("innerlog")
+
     setpriority()
-    with stdout.lowstdout():
-        medialist=list(medialist)
-        # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-        global sem
-        sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
-        global dirSet
-        dirSet=set()
-        global log
-        log=logging.getLogger("shared")
-        global log_trace
-        log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
-        global queue_
-        queue_=queuecopy
-       
-        
 
-        if not args_.getargs().dupe:
-            media_ids = set(operations.get_media_ids(model_id,username))
-            log.debug(f"number of unique media ids in database for {username}: {len(media_ids)}")
-            medialist = seperate.separate_by_id(medialist, media_ids)
-            log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")  
-            medialist=seperate.seperate_avatars(medialist)
-            log.debug(f"Remove avatar")
-            log.debug(f"Final Number of media to downlaod {len(medialist)}")
-
-        else:
-            log.info(f"forcing all downloads media count {len(medialist)}")
-        file_size_limit = config_.get_filesize()
-            
-        aws=[]
+ 
+    medialist=list(medialist)
+    # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
+    global sem
+    sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+    global dirSet
+    dirSet=set()
+    global split_log
+    split_log=logCopy
+    global log_trace
+    log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
+    global queue_
+    queue_=queuecopy
     
-        async with sessionbuilder.sessionBuilder() as c:
-            i=0
-            for ele in medialist:
-                aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit)))
+    split_log.debug(f"{pid_log_helper()} starting process")
+    
+    
 
-            for coro in asyncio.as_completed(aws):
-                    try:
-                        media_type, num_bytes_downloaded = await coro
-                        await queue_.coro_send(  (media_type, num_bytes_downloaded))
-                    except Exception as e:
-                        log.traceback(e)
-                        log.traceback(traceback.format_exc())
-                        media_type = "skipped"
-                        num_bytes_downloaded = 0
-                        await queue_.coro_send(  (media_type, num_bytes_downloaded))
-            setDirectoriesDate()
-            await queue_.coro_send(None)
-    return
+    if not args_.getargs().dupe:
+        media_ids = set(operations.get_media_ids(model_id,username))
+        split_log.debug(f"{pid_log_helper()} number of unique media ids in database for {username}: {len(media_ids)}")
+        medialist = seperate.separate_by_id(medialist, media_ids)
+        split_log.debug(f"{pid_log_helper()} Number of new mediaids with dupe ids removed: {len(medialist)}")  
+        medialist=seperate.seperate_avatars(medialist)
+        split_log.debug(f"{pid_log_helper()} Remove avatar")
+        split_log.debug(f"{pid_log_helper()} Final Number of media to downlaod {len(medialist)}")
+
+    else:
+        split_log.info(f"{pid_log_helper()} forcing all downloads media count {len(medialist)}")
+    file_size_limit = config_.get_filesize()
+        
+    aws=[]
+
+    async with sessionbuilder.sessionBuilder() as c:
+        i=0
+        for ele in medialist:
+            aws.append(asyncio.create_task(download(c,ele ,model_id, username,file_size_limit)))
+
+        for coro in asyncio.as_completed(aws):
+                try:
+                    media_type, num_bytes_downloaded = await coro
+                    await queue_.coro_send(  (media_type, num_bytes_downloaded))
+                except Exception as e:
+                    innerlog.get().traceback(e)
+                    innerlog.get().traceback(traceback.format_exc())
+                    media_type = "skipped"
+                    num_bytes_downloaded = 0
+                    await queue_.coro_send(  (media_type, num_bytes_downloaded))
+            
+
+    setDirectoriesDate()
+    split_log.debug(f"{pid_log_helper()} download process thread closing")
+    split_log.critical(None)
+    await queue_.coro_send(None)
 def retry_required(value):
     return value == ('skipped', 1)
 
+def pid_log_helper():
+    return f"PID: {os.getpid()}"  
+
+
 async def download(c,ele,model_id,username,file_size_limit):
+    # reduce number of logs
+    log=logging.getLogger(f"{ele.id}")
+    log.setLevel(1)
+    innerqueue=queue.Queue()
+    log.addHandler(logging.handlers.QueueHandler(innerqueue))
+    innerlog.set(log)
+
     attempt.set(attempt.get(0) + 1)  
     try:
             with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
@@ -259,34 +309,35 @@ async def download(c,ele,model_id,username,file_size_limit):
                     return await main_download_helper(c,ele,pathlib.Path(".").absolute(),file_size_limit,username,model_id)
                 elif ele.mpd:
                     return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),file_size_limit,username,model_id)
-                else:
-                    return None
     except Exception as e:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
+    finally:
+        await logqueue_.coro_put(list(innerqueue.queue))
+        await logqueue2_.coro_put(list(innerqueue.queue))
 async def main_download_helper(c,ele,path,file_size_limit,username,model_id):
     path_to_file=None
 
-    log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
+    innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Downloading with normal downloader")
     total ,temp,path_to_file=await main_download_downloader(c,ele,path,file_size_limit,username,model_id)
 
     if not pathlib.Path(temp).exists():
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
     elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         return "skipped",1 
     else:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
         shutil.move(temp,path_to_file)
         addGlobalDir(path)
         if ele.postdate:
             newDate=dates.convert_local_time(ele.postdate)
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
             set_time(path_to_file,newDate )
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
         if ele.id:
             await operations.write_media_table(ele,path_to_file,model_id,username)
@@ -296,7 +347,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id):
 async def main_download_downloader(c,ele,path,file_size_limit,username,model_id):
     try:
         url=ele.url
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {url}")
         await sem.acquire()
         temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
@@ -334,7 +385,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
                             async for chunk in r.iter_chunked(1024):
                                 count=count+1
                                 size=size+len(chunk)
-                                log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
+                                innerlog.get().trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                                 f.write(chunk)
                                 if count==constants.CHUNK_ITER:await queue_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
                             await queue_.coro_send({"type":"remove_task","args":(ele.id,)})
@@ -344,8 +395,8 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
         return total ,temp,path_to_file
 
     except Exception as E:
-        log.traceback(traceback.format_exc())
-        log.traceback(E)
+        innerlog.get().traceback(traceback.format_exc())
+        innerlog.get().traceback(E)
         raise E
     finally:
         sem.release()
@@ -354,8 +405,8 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
 
 
 async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
-    log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
-    log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
+    innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
+    innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
     path_to_file = paths.truncate(pathlib.Path(path,f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'))
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     audio,video=await alt_download_preparer(ele)
@@ -366,10 +417,10 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
         
     for item in [audio,video]:
         if not pathlib.Path(item["path"]).exists():
-                log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
+                innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
                 return "skipped",1
         elif abs(item["total"]-pathlib.Path(item['path']).absolute().stat().st_size)>500:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {item['total']} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {item['total']} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
             return "skipped",1 
                 
     for item in [audio,video]:
@@ -377,18 +428,18 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
         key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") == "manual" \
         else await key_helper(c,item["pssh"],ele.license,ele.id)
         if key==None:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
-        log.debug(f"Media:{ele.id} Post:{ele.postid} got key")
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
-        log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
         r=subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if not pathlib.Path(newpath).exists():
-            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt failed")
-            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stderr.decode()}")
-            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stdout.decode()}")
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt failed")
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stderr.decode()}")
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt {r.stdout.decode()}")
         else:
-            log.debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt success {newpath}")    
+            innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} mp4decrypt success {newpath}")    
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     
@@ -396,20 +447,20 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
-        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg failed")
-        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stderr.decode()}")
-        log.debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stdout.decode()}")
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg failed")
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stderr.decode()}")
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} ffmpeg {t.stdout.decode()}")
 
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
-    log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")
+    innerlog.get().debug(f"Moving intermediate path {temp_path} to {path_to_file}")
     shutil.move(temp_path,path_to_file)
     addGlobalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
         set_time(path_to_file,newDate )
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         await operations.write_media_table(ele,path_to_file,model_id,username)
     return ele.mediatype,audio["total"]+video["total"]
@@ -446,7 +497,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
     try:
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         url=f"{base_url}{item['origname']}"
-        log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
+        innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {item['origname']} with {url}")
         await sem.acquire()
         params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
         temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
@@ -475,7 +526,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
                         async for chunk in l.iter_chunked(1024):
                             count=count+1
                             size=size+len(chunk)
-                            log.trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
+                            innerlog.get().trace(f"Media:{ele.id} Post:{ele.postid} Download:{size}/{total}")
                             f.write(chunk)
                             if count==constants.CHUNK_ITER:await queue_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
                     await queue_.coro_send({"type":"remove_task","args":(ele.id,)})
@@ -487,8 +538,8 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
         return item
               
     except Exception as E:
-        log.traceback(traceback.format_exc())
-        log.traceback(E)
+        innerlog.get().traceback(traceback.format_exc())
+        innerlog.get().traceback(E)
         raise E
     finally:
         sem.release()
@@ -497,13 +548,13 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
 
 @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
-    log.debug(f"ID:{id} using auto key helper")
+    innerlog.get().debug(f"ID:{id} using auto key helper")
     try:
         out=cache.get(licence_url)
-        log.debug(f"ID:{id} pssh: {pssh!=None}")
-        log.debug(f"ID:{id} licence: {licence_url}")
+        innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
+        innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
-            log.debug(f"ID:{id} auto key helper got key from cache")
+            innerlog.get().debug(f"ID:{id} auto key helper got key from cache")
             return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
@@ -518,26 +569,26 @@ async def key_helper(c,pssh,licence_url,id):
         }
         async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
             httpcontent=await r.text_()
-            log.debug(f"ID:{id} key_response: {httpcontent}")
+            innerlog.get().debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
             out=soup.find("li").contents[0]
             cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
             cache.close()
         return out
     except Exception as E:
-        log.traceback(E)
-        log.traceback(traceback.format_exc())
+        innerlog.get().traceback(E)
+        innerlog.get().traceback(traceback.format_exc())
         raise E
         
 
 async def key_helper_manual(c,pssh,licence_url,id):
-    log.debug(f"ID:{id} using manual key helper")
+    innerlog.get().debug(f"ID:{id} using manual key helper")
     out=cache.get(licence_url)
     if out!=None:
-        log.debug(f"ID:{id} manual key helper got key from cache")
+        innerlog.get().debug(f"ID:{id} manual key helper got key from cache")
         return out
-    log.debug(f"ID:{id} pssh: {pssh!=None}")
-    log.debug(f"ID:{id} licence: {licence_url}")
+    innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
+    innerlog.get().debug(f"ID:{id} licence: {licence_url}")
 
     # prepare pssh
     pssh = PSSH(pssh)
@@ -605,7 +656,7 @@ def set_cache_helper(ele):
 def addGlobalDir(path):
     dirSet.add(path.resolve().parent)
 def setDirectoriesDate():
-    log.info("Setting Date for modified directories")
+    split_log.info( f" {pid_log_helper()} Setting Date for modified directories")
     output=set()
     rootDir=pathlib.Path(config_.get_save_location(config_.read_config())).resolve()
     for ele in dirSet:
@@ -613,6 +664,7 @@ def setDirectoriesDate():
         while ele!=rootDir and ele.parent!=rootDir:
             output.add(ele.parent)
             ele=ele.parent
-    log.debug(f"Directories list {rootDir}")
+    split_log.debug(f"Directories list {rootDir}")
     for ele in output:
-        set_time(ele,dates.get_current_time())
+        with dir_lock:
+            set_time(ele,dates.get_current_time())
