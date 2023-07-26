@@ -293,7 +293,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     setDirectoriesDate()
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     split_log.critical(None)
-    await queue_.coro_send(None)
+    await queue_.coro_send("None")
     other_thread.join()
  
 

@@ -45,8 +45,6 @@ import ofscraper.utils.exit as exit
 
 log=logging.getLogger("shared")
 args=args_.getargs()
-log.debug(args)
-
 
 @exit.exit_wrapper
 def process_prompts():

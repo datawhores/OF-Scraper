@@ -48,7 +48,7 @@ class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
         self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
-    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX)) 
+    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES)) 
     def emit(self, record):
         log_entry = self.format(record)
         url=config_.get_discord(config_.read_config())
@@ -240,6 +240,7 @@ def logger_process(input_,name=None,stop_count=1,event=None):
     log=init_main_logger(name)
     input_=input_ or queue_
     count=0
+    close=False
     while True:
         # consume a log message, block until one arrives
         if event and event.is_set():
@@ -249,18 +250,25 @@ def logger_process(input_,name=None,stop_count=1,event=None):
             messages=[messages]
         for message in messages:
             # check for shutdown
-            if message==None:
-                return
             if event and event.is_set():
-                return
+                close=True
+            #set close value
+            if message=="None" :
+                close=True
+                continue    
             if message.message=="None":
                 count=count+1
-                if count==stop_count:
-                    return
-                continue
          
-            # log the message
-            log.handle(message)
+            if count==stop_count:
+                close=True
+            if message.message!="None":
+                # log the message
+                log.handle(message)
+        # check close and empty message
+        if close==True:
+            return
+
+
 
 #mulitprocess
 # executed in a process that performs logging
@@ -268,6 +276,7 @@ def logger_other(input_,name=None,stop_count=1):
     # create a logger
     log=init_other_logger(name)
     count=0
+    close=False
     if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
         return
     while True:
@@ -276,17 +285,21 @@ def logger_other(input_,name=None,stop_count=1):
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
-            # check for shutdown
-            if message==None:
-                return
+            #set close value
+            if message=="None":
+                close=True
+                continue    
             if message.message=="None":
                 count=count+1
-                if count==stop_count:
-                    return
-                continue
-            # log the message
-            log.handle(message)     
-
+         
+            if count==stop_count:
+                close=True
+            if message.message!="None":
+                # log the message
+                log.handle(message)
+        # check close and empty message
+        if close==True:
+            return
 
 
 # some inherantence from main process
@@ -307,6 +320,7 @@ def start_other_process(input_=None,name=None,count=1):
     def inner(input_=None,name=None,count=1):
         thread=start_other_thread(input_=None,name=None,count=1)
         thread.join()
+        time.sleep(10)
     process=aioprocessing.AioProcess(target=inner,args=(input_,name,count)) if (args.getargs().log or args.getargs().discord) else None
     process.start() if process else None
     return process 

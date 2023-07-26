@@ -1,4 +1,5 @@
 import sys
+import time
 from threading import Event
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
@@ -16,6 +17,7 @@ import certifi
 
 
 
+
 def main():
     process=None
     thread=None
@@ -27,7 +29,8 @@ def main():
         thread=logger.start_stdout_logthread(event=event)
         #start other log consumer
         process=logger.start_other_process()
-
+        #allow background processes to start
+        time.sleep(1.5)
 
         args=args_.getargs()
         if vars(args).get("help"):
