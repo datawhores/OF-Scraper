@@ -19,6 +19,7 @@ import certifi
 def main():
     process=None
     thread=None
+
     try:
         startvalues()
         discord_warning()

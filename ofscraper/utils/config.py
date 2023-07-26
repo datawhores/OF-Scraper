@@ -88,6 +88,7 @@ def get_current_config_schema(config:dict=None) -> dict:
              "private-key":get_private_key(config),
              "client-id":get_client_id(config),
             "key-mode-default":get_key_mode(config),
+            "keydb_api":get_keydb_api(config),
             "dynamic-mode-default":get_dynamic(config),
             "partfileclean":get_part_file_clean(config),
             "backend":get_backend(config),
@@ -373,10 +374,13 @@ def get_client_id(config=None):
 
 def get_key_mode(config=None):
     if config==None:
-        return "auto" 
+        return constants.KEY_DEFAULT
     value=config.get("key-mode-default")
-    return value.lower() if value and value.lower() in set(["auto","manual"]) else "auto"
-
+    return value.lower() if value and value.lower() in set(["auto","manual"]) else constants.KEY_DEFAULT
+def get_keydb_api(config=None):
+    if config==None:
+        return ""
+    return config.get("keydb_api","") or ""
 def get_dynamic(config=None):
     if config==None:
         return constants.DYNAMIC_DEFAULT

@@ -8,9 +8,10 @@ r"""
                  \/     \/           \/            \/         
 """
 import sys
-from rich.console import Console
-import asyncio
 import re
+import os
+from rich.console import Console
+
 import arrow
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
@@ -330,9 +331,9 @@ def config_prompt_advanced(config_) -> dict:
             'name': 'threads',
             "message":"Number of Download processes/threads: ",
             'min_allowed':1,
-            'max_allowed':10,
+            'max_allowed':os.cpu_count(),
              "validate":EmptyInputValidator(),
-             'long_instruction':"Value can be 1-10",
+            'long_instruction':f"Value can be 1-{os.cpu_count()}",
              'default':config.get_threads(config_),
         },
         {
@@ -358,8 +359,16 @@ def config_prompt_advanced(config_) -> dict:
             'name': 'key-mode-default',
             'message': 'Make selection for how to retrive keys',
             'default': config.get_key_mode(config_),
-            'choices':["auto","manual"],
+            'choices':["auto","cdrm","keydb"],
 
+        },
+
+     {
+            'type': 'input',
+            'name': 'keydb_api',
+            'message': 'keydb api key:\n',
+            "long_instruction":"Required if your using keydb for key-mode",
+            'default': config.get_keydb_api(config_) or "",
         },
 
         {
@@ -384,10 +393,10 @@ def config_prompt_advanced(config_) -> dict:
         {
             'type': 'list',
             'name': 'partfileclean',
-            'message': 'auto clean .part files',
-            "long_instruction":"You won't be able to resume downloads if you select 'Yes'",
+            'message': 'Enable auto file resume',
+            "long_instruction":"Enable this if you don't want to auto resume files, and want .part files auto cleaned",
             'default': config.get_part_file_clean(config_),
-            'choices':[Choice(True,"Yes"),Choice(False,"No")],
+            'choices':[Choice(False,"Yes"),Choice(True,"No")],
         },
             {
             'type': 'input',

@@ -434,9 +434,9 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
             return "skipped",1 
                 
     for item in [audio,video]:
-
-        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") == "manual" \
-        else await key_helper(c,item["pssh"],ele.license,ele.id)
+        key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)
+        # key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") == "manual" \
+        # else await key_helper_cdrm(c,item["pssh"],ele.license,ele.id)
         if key==None:
             innerlog.get().debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
@@ -557,7 +557,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def key_helper(c,pssh,licence_url,id):
+async def key_helper_cdrm(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using auto key helper")
     try:
         out=cache.get(licence_url)
@@ -589,7 +589,58 @@ async def key_helper(c,pssh,licence_url,id):
         innerlog.get().traceback(E)
         innerlog.get().traceback(traceback.format_exc())
         raise E
-        
+
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def key_helper_keydb(c,pssh,licence_url,id):
+    innerlog.get().debug(f"ID:{id} using auto key helper")
+    try:
+        out=cache.get(licence_url)
+        out=None
+        innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
+        innerlog.get().debug(f"ID:{id} licence: {licence_url}")
+        if out!=None:
+            innerlog.get().debug(f"ID:{id} auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license_url': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': '',
+            'proxy': '',
+            'cache': True,
+        }
+    #         import requests
+
+    # api_url = "https://keysdb.net/api"
+    # license_url = "https://cwip-shaka-proxy.appspot.com/no_auth"
+    # pssh = "AAAAp3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAAIcSEFF0U4YtQlb9i61PWEIgBNcSEPCTfpp3yFXwptQ4ZMXZ82USEE1LDKJawVjwucGYPFF+4rUSEJAqBRprNlaurBkm/A9dkjISECZHD0KW1F0Eqbq7RC4WmAAaDXdpZGV2aW5lX3Rlc3QiFnNoYWthX2NlYzViZmY1ZGM0MGRkYzlI49yVmwY="
+        headers = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Ktesttemp, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
+            "Content-Type": "application/json",
+            "X-API-Key": '2b8065ff06168c5fdac9c5f0a9effa4051a80ccc1784ac1b78248664ec3c982a',
+        }
+    # payload = {
+    #     "license_url": license_url,
+    #     "pssh": pssh,
+    # }
+    # r = requests.post(api_url, headers=headers, json=payload).text
+    # print(r)
+
+
+
+
+        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
+            out=(await r.json())["keys"][0]["key"]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
+        return out
+    except Exception as E:
+        innerlog.get().traceback(E)
+        innerlog.get().traceback(traceback.format_exc())
+        raise E       
 
 async def key_helper_manual(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using manual key helper")
