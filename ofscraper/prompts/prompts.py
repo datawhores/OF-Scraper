@@ -345,7 +345,7 @@ def config_prompt_advanced(config_) -> dict:
         
     new_settings =promptClasses.batchConverter(*   [{
             'type': 'number',
-            'name': 'download_sem',
+            'name': 'download-sem',
             "message":"Number of semaphores per thread: ",
             'min_allowed':1,
             'max_allowed':max(-(-(50//int(threads["threads"]))),6),
@@ -466,14 +466,12 @@ Enter 0 for no limit
             'message':"dir_format: ",
             'long_instruction': 'What format do you want for download directories',
             'default': config.get_dirformat(config_),
-             "validate":prompt_validators.dirformatvalidator()
         },
               {
             'type': 'input',
             'name': 'file_format',
             'message': 'What format do you want for downloaded files',
             'default':config.get_fileformat(config_),
-             "validate":prompt_validators.fileformatvalidator()
         },
                      {
             'type': 'number',
@@ -506,7 +504,6 @@ Enter 0 for no limit
             "message":"metadata: ",
             'long_instruction': 'Where should metadata files be saved',
             'default':config.get_metadata(config_),
-             "validate":prompt_validators.metadatavalidator()
         },
         {
             'type': 'checkbox',

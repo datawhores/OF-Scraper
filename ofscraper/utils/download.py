@@ -11,6 +11,7 @@ import asyncio
 import math
 import os
 import pathlib
+import string
 import time
 import platform
 import shutil
@@ -624,7 +625,11 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
 
         async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
-            out=(await r.json())["keys"][0]["key"]
+            data=await r.json()
+            innerlog.get().debug(f"keydb json {data}")
+            if isinstance(data,string): out=data["keys"][0]["key"]
+            else:out=data
+            out=(await r.json())
             cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
             cache.close()
         return out
