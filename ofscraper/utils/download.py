@@ -134,11 +134,12 @@ async def process_dicts(username,model_id,medialist):
                 [thread.start() for thread in queue_threads]
                 [thread.join() for thread in queue_threads]
                 time.sleep(1)
-                [logthread.join() for logthread in logthreads]
-                [process.join(timeout=1) for process in processes]    
-                [process.terminate() for process in processes]    
-            overall_progress.remove_task(task1)
-            log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+        [logthread.join() for logthread in logthreads]
+        [process.join(timeout=1) for process in processes]    
+        [process.terminate() for process in processes]    
+        overall_progress.remove_task(task1)
+        progress_group.renderables[1].height=0
+        log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
     except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -671,10 +672,10 @@ def setDirectoriesDate():
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:
-            log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
+            split_log.debug(f"{pid_log_helper()} Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent
-    split_log.debug(f"Directories list {rootDir}")
+    split_log.debug(f"{pid_log_helper()} Directories list {rootDir}")
     for ele in output:
         with dir_lock:
             set_time(ele,dates.get_current_time())

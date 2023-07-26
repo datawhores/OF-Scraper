@@ -52,6 +52,7 @@ class DiscordHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         url=config_.get_discord(config_.read_config())
+        log_entry=re.sub("\[bold\]|\[/bold\]","**",log_entry)
         log_entry=f"{log_entry}\n\n"
         if url==None or url=="":
             return
