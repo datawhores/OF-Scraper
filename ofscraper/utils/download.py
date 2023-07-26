@@ -612,22 +612,13 @@ async def key_helper_keydb(c,pssh,licence_url,id):
             'proxy': '',
             'cache': True,
         }
-    #         import requests
-
-    # api_url = "https://keysdb.net/api"
-    # license_url = "https://cwip-shaka-proxy.appspot.com/no_auth"
-    # pssh = "AAAAp3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAAIcSEFF0U4YtQlb9i61PWEIgBNcSEPCTfpp3yFXwptQ4ZMXZ82USEE1LDKJawVjwucGYPFF+4rUSEJAqBRprNlaurBkm/A9dkjISECZHD0KW1F0Eqbq7RC4WmAAaDXdpZGV2aW5lX3Rlc3QiFnNoYWthX2NlYzViZmY1ZGM0MGRkYzlI49yVmwY="
+  
         headers = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Ktesttemp, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
             "Content-Type": "application/json",
-            "X-API-Key": '2b8065ff06168c5fdac9c5f0a9effa4051a80ccc1784ac1b78248664ec3c982a',
+            "X-API-Key": config_.get_keydb_api(config_.read_config()),
         }
-    # payload = {
-    #     "license_url": license_url,
-    #     "pssh": pssh,
-    # }
-    # r = requests.post(api_url, headers=headers, json=payload).text
-    # print(r)
+   
 
 
 
