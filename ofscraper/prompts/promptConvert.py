@@ -80,14 +80,15 @@ def get_default_instructions(funct):
     elif funct.__name__=="input_prompt":
         return prompt_strings.SINGLE_LINE
     elif funct.__name__=="number_type":
-        return prompt_strings.SINGLE_LINE   
+        return prompt_strings.SINGLE_LINE
+    
     elif funct.__name__=="checkbox":
         return prompt_strings.FUZZY_INSTRUCTION
     elif funct.__name__=="checkbox":
         return prompt_strings.FUZZY_INSTRUCTION
 
 @wrapper
-def getChecklistSelection(*args,prev=None,**kwargs):
+def getChecklistSelection(*args,**kwargs):
  
     prompt=inquirer.select(
     *args,
@@ -112,7 +113,7 @@ def getChecklistSelection(*args,prev=None,**kwargs):
     return prompt
 
 @wrapper
-def getFuzzySelection(*args,prev=None,**kwargs):
+def getFuzzySelection(*args,**kwargs):
     prompt=inquirer.fuzzy(
         *args,
         marker="\u25c9 ",
@@ -155,7 +156,7 @@ def checkbox(*args,**kwargs):
     )
 
 @wrapper
-def input_prompt(*args,prev=None,**kwargs):
+def input_prompt(*args,**kwargs):
     prompt=inquirer.text(
     *args,
     mandatory=False,
@@ -166,7 +167,7 @@ def input_prompt(*args,prev=None,**kwargs):
       
 
 @wrapper
-def multiline_input_prompt(*args,prev=None,**kwargs):
+def multiline_input_prompt(*args,**kwargs):
     prompt=inquirer.text(
     *args,
     mandatory=False,
@@ -179,19 +180,19 @@ def multiline_input_prompt(*args,prev=None,**kwargs):
       
     return prompt         
 @wrapper
-def file_type(*args,prev=None,**kwargs):
+def file_type(*args,**kwargs):
     return inquirer.filepath(*args,
                                keybindings=keybindings.file,
        
                              **kwargs)
 @wrapper
-def number_type(*args,prev=None,**kwargs):
+def number_type(*args,**kwargs):
     return inquirer.number(*args,
                                     keybindings=keybindings.number,
 
                            **kwargs)
 @wrapper
-def confirm_prompt(*args,prev=None,**kwargs):
+def confirm_prompt(*args,**kwargs):
     return inquirer.confirm(
       *args,**kwargs
     )
@@ -215,27 +216,19 @@ def getType(input_type):
     elif input_type=="number":
         return number_type
 
-def batchConverterHelper(ele,prev=None):
+def batchConverterHelper(ele):
      ele_type=ele.pop("type")
      ele_type="multiline" if ele.get("multiline") else ele_type
      ele_type="fuzzy" if ele.get("fuzzy") else ele_type
      name=ele.pop("name")
-     ele["prev"]=prev
-    #  funct=getType(ele_type)
-    #  funct(prev=prev,**ele)
      return name,getType(ele_type)(**ele)
      
      
         
 def batchConverter(*args):
     outDict={}
-    for ele in args:
-        new=batchConverterHelper(ele,outDict)
-        outDict.update([new])
+    outDict.update(list(map(lambda x:batchConverterHelper(x),args)))
     return outDict
-
-
-
   
     
         
