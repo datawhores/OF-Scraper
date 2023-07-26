@@ -63,6 +63,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
+import ofscraper.utils.exit as exit
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -90,7 +91,7 @@ audio_count=0
 skipped = 0
 data=0
 logqueue_=logger.queue_
-logqueue2_=logger.queue2_
+logqueue2_=logger.otherqueue_
 
 
 async def process_dicts(username,model_id,medialist):
@@ -104,15 +105,18 @@ async def process_dicts(username,model_id,medialist):
     connect_tuple=[AioPipe() for i in range(num_proc)]
 
     shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
-
+    #ran by main process cause of stdout
     logqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
-    logthreads=[logger.start_main_proc(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
-    logs=[logger.get_shared_logger(logqueues_[i//split_val],f"shared_{i}") for i in range(num_proc) ]
+    #ran by other process
+    otherqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
+    
+    #start main queue consumers
+    logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
+    #start producers
+    logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i}") for i in range(num_proc) ]
     processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logs[i],connect_tuple[i][1])) for i in range(num_proc)]
     try:
-        [process.start() for process in processes]
-        
-        
+        [process.start() for process in processes]      
         downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
         job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
             TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
@@ -136,19 +140,17 @@ async def process_dicts(username,model_id,medialist):
     except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
-                    paths.cleanup()
-                    return
+                    [process.terminate() for process in processes]  
+                    raise KeyboardInterrupt
             except KeyboardInterrupt:
-                    return
+                    raise KeyboardInterrupt
     except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
-                    paths.cleanup()
-                    log.traceback(E)
-                    log.traceback(traceback.format_exc())
-                    return
+                    [process.terminate() for process in processes]  
+                    raise E
             except KeyboardInterrupt:
-                return   
+                  raise KeyboardInterrupt  
 def queue_process(queue_,overall_progress,job_progress,task1,total):
     count=0
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -230,7 +232,9 @@ def setpriority():
 async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")
-
+    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")
+    #start consumer for other
+    other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
 
  
@@ -287,6 +291,9 @@ async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     split_log.critical(None)
     await queue_.coro_send(None)
+    other_thread.join()
+ 
+
 def retry_required(value):
     return value == ('skipped', 1)
 

@@ -1,4 +1,4 @@
-import logging
+import sys
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.commands.scraper as scraper
@@ -8,36 +8,59 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.profiles as profiles_
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
+import ofscraper.utils.exit as exit
 import ssl
 import platform
 import certifi
 
 
+
 def main():
-    startvalues()
-    discord_warning()
-    thread=logger.start_main_proc()
+    process=None
+    thread=None
+    try:
+        startvalues()
+        discord_warning()
+        thread=logger.start_stdout_logthread()
+        #start other log consumer
+        process=logger.start_other_process()
 
-    args=args_.getargs()
-    if vars(args).get("help"):
-        quit()
-  
 
-    make_folders()
-    if args.command=="post_check":
-        check.post_checker()
-    elif args.command=="msg_check":
-        check.message_checker()
-    elif args.command=="paid_check":
-        check.purchase_checker()
-    elif args.command=="story_check":
-        check.stories_checker()
-    elif args.command=="manual":
-        manual.manual_download()
-    else:
-        scraper.main()
-    logger.get_shared_logger().info(None)
-    thread.join()
+        args=args_.getargs()
+        if vars(args).get("help"):
+            quit()
+    
+
+        make_folders()
+        if args.command=="post_check":
+            check.post_checker()
+        elif args.command=="msg_check":
+            check.message_checker()
+        elif args.command=="paid_check":
+            check.purchase_checker()
+        elif args.command=="story_check":
+            check.stories_checker()
+        elif args.command=="manual":
+            manual.manual_download()
+        else:
+            scraper.main()
+        logger.get_shared_logger().info(None)
+        thread.join()
+        if process:process.join()
+    except KeyboardInterrupt as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    if process:process.terminate()
+                    while not logger.queue_._obj.empty():logger.queue_._obj.get_nowait()
+                    logger.queue_.put(None)
+                sys.exit()
+            except KeyboardInterrupt:
+                    if process:process.terminate()
+                    logger.queue_.clear()
+                    logger.queue_.put(None)
+
+                    sys.exit()
+    
 
     
 

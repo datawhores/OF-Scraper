@@ -21,9 +21,10 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.console as console_
 
 queue_=aioprocessing.AioQueue()
-queue2_=aioprocessing.AioQueue()
+otherqueue_=aioprocessing.AioQueue()
 
 senstiveDict={}
+process=""
 
 class DebugOnly(logging.Filter):
     def filter(self, record):
@@ -182,15 +183,7 @@ def init_main_logger(name):
     tx.setFormatter(SensitiveFormatter(format))
     log.addHandler(sh)
     log.addHandler(tx)
-    if args.getargs().log!="OFF":
-        stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
-        fh=logging.StreamHandler(stream)
-        fh.setLevel(getLevel(args.getargs().log))
-        fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-        fh.addFilter(NoDebug())
-        log.addHandler(fh)
 
-    
     if args.getargs().output in {"TRACE","DEBUG"}:
         funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
         sh2=RichHandler(rich_tracebacks=True, console=console.get_shared_console(),markup=True,tracebacks_show_locals=True,show_time=False)
@@ -198,17 +191,12 @@ def init_main_logger(name):
         sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(funct())
         log.addHandler(sh2)
-    if args.getargs().log in {"TRACE","DEBUG"}:
-        funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
-        fh2=logging.StreamHandler(stream)
-        fh2.setLevel(getLevel(args.getargs().log))
-        fh2.setFormatter(LogFileFormatter('%(asctime)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
-        fh2.addFilter(funct())
-        log.addHandler(fh2)
+
     return log
 
-def init_discord_logger():
-    log=logging.getLogger("discord")
+def init_other_logger(name):
+    name=name or "other"
+    log=logging.getLogger(name)
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
     addtraceback()
@@ -220,6 +208,20 @@ def init_discord_logger():
     cord.setFormatter(SensitiveFormatter('%(message)s'))
     #console
     log.addHandler(cord)
+    if args.getargs().log!="OFF":
+        stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
+        fh=logging.StreamHandler(stream)
+        fh.setLevel(getLevel(args.getargs().log))
+        fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh.addFilter(NoDebug())
+        log.addHandler(fh)
+    if args.getargs().log in {"TRACE","DEBUG"}:
+        funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
+        fh2=logging.StreamHandler(stream)
+        fh2.setLevel(getLevel(args.getargs().log))
+        fh2.setFormatter(LogFileFormatter('%(asctime)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh2.addFilter(funct())
+        log.addHandler(fh2)
     return log
 
 def add_widget(widget):
@@ -244,6 +246,8 @@ def logger_process(input_,name=None,stop_count=1):
             messages=[messages]
         for message in messages:
             # check for shutdown
+            if message==None:
+                return
             if message.message=="None":
                 count=count+1
                 if count==stop_count:
@@ -255,38 +259,63 @@ def logger_process(input_,name=None,stop_count=1):
 
 #mulitprocess
 # executed in a process that performs logging
-def logger_discord():
+def logger_other(input_,name=None,stop_count=1):
     # create a logger
-    log=init_discord_logger()
+    log=init_other_logger(name)
     if log.handlers[0].level==100:
         return
     while True:
         # consume a log message, block until one arrives
-        message = queue2_.get()
-        # check for shutdown
-        if message.message=="None":
-            break
-        # log the message
-        log.handle(message)       
+        messages = input_.get()
+        if not isinstance(messages,list):
+            messages=[messages]
+        for message in messages:
+            # check for shutdown
+            if message==None:
+                return
+            if message.message=="None":
+                count=count+1
+                if count==stop_count:
+                    return
+                continue
+            # log the message
+            log.handle(message)     
 
 
 
 # some inherantence from main process
-def start_main_proc(input_=None,name=None,count=1):
+def start_stdout_logthread(input_=None,name=None,count=1):
     input_=input_ or queue_
     thread= threading.Thread(target=logger_process,args=(input_,name,count))
     thread.start()
     return thread
 
+
+def start_other_thread(input_=None,name=None,count=1):
+    input_=input_ or queue_
+    thread= threading.Thread(target=logger_other,args=(input_,name,count))
+    thread.start()
+    return thread
+    
+def start_other_process(input_=None,name=None,count=1):
+    def inner(input_=None,name=None,count=1):
+        thread=start_other_thread(input_=None,name=None,count=1)
+        thread.join()
+    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count)) if (args.getargs().log or args.getargs().discord) else None
+    process.start() if process else None
+    return process 
+
     
 
 
 
-def get_shared_logger(input_=None ,name=None):
+def get_shared_logger(main_=None ,other_=None,name=None):
     # create a logger
     logger = logging.getLogger(name or 'shared')
     # add a handler that uses the shared queue
-    logger.addHandler(QueueHandler(input_ or queue_))
+    logger.addHandler(QueueHandler(main_ or queue_))
+    if args.getargs().discord or args.getargs().log or other_:
+        logger.addHandler(QueueHandler((other_ or otherqueue_)))
     # log all messages, debug and up
     logger.setLevel(1)
     addtraceback()

@@ -41,6 +41,7 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.userselector as userselector
 import ofscraper.utils.console as console
 import ofscraper.utils.of as OF
+import ofscraper.utils.exit as exit
 
 log=logging.getLogger("shared")
 args=args_.getargs()
@@ -346,25 +347,25 @@ def main():
  
         try:
             print_start()
-            # logger.start_discord_queue()
+
             scrapper()
             paths.cleanup()
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
-                    return
+                    raise KeyboardInterrupt
             except KeyboardInterrupt:
-                    return
+                    raise KeyboardInterrupt
         except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
                     log.traceback(E)
                     log.traceback(traceback.format_exc())
-                    return
+                    raise E
             except KeyboardInterrupt:
-                return
+                raise KeyboardInterrupt
 def scrapper():
     if platform.system == 'Windows':
         os.system('color')
