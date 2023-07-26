@@ -12,7 +12,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -38,7 +38,7 @@ log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.AlT_SEM)
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_ids=None) -> list:
     global tasks
     global sem

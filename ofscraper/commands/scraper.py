@@ -47,6 +47,8 @@ log=logging.getLogger("shared")
 args=args_.getargs()
 log.debug(args)
 
+
+@exit.exit_wrapper
 def process_prompts():
     
     while  True:
@@ -122,12 +124,14 @@ def process_prompts():
 
 
 
+@exit.exit_wrapper
 def process_post():
     if args.users_first:
          process_post_user_first()
     else:
         normal_post_process()
-           
+
+@exit.exit_wrapper           
 def process_post_user_first():
      with scrape_context_manager():
         profiles.print_current_profile()
@@ -163,6 +167,8 @@ def process_post_user_first():
                 model_id,
                 value,
                 ))  
+
+@exit.exit_wrapper
 def normal_post_process():
     with scrape_context_manager():
         profiles.print_current_profile()
@@ -206,8 +212,8 @@ def normal_post_process():
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     
-            
 
+@exit.exit_wrapper
 def process_like():
     with scrape_context_manager():
         profiles.print_current_profile()
@@ -228,6 +234,7 @@ def process_like():
                     log.debug(f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}")
                     like.like( model_id, ele["name"], post_ids)
 
+@exit.exit_wrapper
 def process_unlike():
     with scrape_context_manager(): 
         profiles.print_current_profile()
@@ -250,7 +257,7 @@ def process_unlike():
 #Adds a function to the job queue
 def set_schedule(*functs):
     [schedule.every(args.daemon).minutes.do(jobqueue.put,funct) for funct in functs]
-    while True:
+    while len(schedule.jobs)>0:
         schedule.run_pending()
         time.sleep(30)
 
@@ -272,16 +279,35 @@ def run_helper(*functs):
     global jobqueue
     jobqueue=queue.Queue()
     [jobqueue.put(funct) for funct in functs]
-    if args.daemon:   
-        worker_thread = threading.Thread(target=set_schedule,args=[*functs])
-        worker_thread.start()
-        # Check if jobqueue has function
-        while True:
-            log.debug(schedule.jobs)
-            job_func = jobqueue.get()
-            job_func()
-            jobqueue.task_done()
-            userselector.getselected_usernames(rescan=True)
+    worker_thread=None
+          
+    try:
+        if args.daemon:
+                worker_thread = threading.Thread(target=set_schedule,args=[*functs])
+                worker_thread.start()
+                # Check if jobqueue has function
+                while True:
+                    log.debug(schedule.jobs)
+                    job_func = jobqueue.get()
+                    job_func()
+                    jobqueue.task_done()
+                    userselector.getselected_usernames(rescan=True)
+    except KeyboardInterrupt as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    schedule.clear()
+                raise KeyboardInterrupt
+            except KeyboardInterrupt:
+                schedule.clear()
+                raise KeyboardInterrupt
+    except Exception as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    schedule.clear()
+                raise E
+            except KeyboardInterrupt:
+                schedule.clear()
+                raise KeyboardInterrupt
             
             #update selected user
     else:

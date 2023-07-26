@@ -11,7 +11,7 @@ import asyncio
 import logging
 import ssl
 import contextvars
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -127,7 +127,7 @@ async def get_messages(model_id):
 
     return unduped    
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_messages(c, model_id, progress,message_id=None,required_ids=None) -> list:
     global sem
     global tasks

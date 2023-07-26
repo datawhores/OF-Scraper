@@ -75,3 +75,19 @@ class DelayedKeyboardInterrupt:
         print(f'!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; delaying KeyboardInterrupt')
 
 
+def exit_wrapper(func): 
+    def inner(*args,**kwargs): 
+        try:
+            func(*args,**kwargs)
+        except KeyboardInterrupt as E:
+            with DelayedKeyboardInterrupt():
+                raise KeyboardInterrupt
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+        except Exception as E:
+            try:
+                with DelayedKeyboardInterrupt():
+                    raise E
+            except KeyboardInterrupt:
+                  raise KeyboardInterrupt  
+    return inner

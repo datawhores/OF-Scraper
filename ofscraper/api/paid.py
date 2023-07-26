@@ -16,7 +16,7 @@ from rich.progress import (
     TextColumn,
     SpinnerColumn
 )
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.panel import Panel
 from rich.console import Group
 from rich.live import Live
@@ -87,7 +87,7 @@ async def get_paid_posts(username,model_id):
     return output
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_paid(c,username,job_progress,offset=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list."""
@@ -178,7 +178,7 @@ async def get_all_paid_posts():
     return unduped
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list."""

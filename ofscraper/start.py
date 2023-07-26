@@ -1,4 +1,5 @@
 import sys
+from threading import Event
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.commands.scraper as scraper
@@ -21,7 +22,8 @@ def main():
     try:
         startvalues()
         discord_warning()
-        thread=logger.start_stdout_logthread()
+        event = Event()
+        thread=logger.start_stdout_logthread(event=event)
         #start other log consumer
         process=logger.start_other_process()
 
@@ -48,17 +50,19 @@ def main():
         thread.join()
         if process:process.join()
     except KeyboardInterrupt as E:
+            print("Force closing script")
             try:
                 with exit.DelayedKeyboardInterrupt():
+                    event.set()
+                    if process:process.join(timeout=1)
                     if process:process.terminate()
-                    while not logger.queue_._obj.empty():logger.queue_._obj.get_nowait()
-                    logger.queue_.put(None)
+                   
                 sys.exit()
             except KeyboardInterrupt:
+                    event.set()
+                    if process:process.join(timeout=1)
                     if process:process.terminate()
-                    logger.queue_.clear()
-                    logger.queue_.put(None)
-
+                    event.set()
                     sys.exit()
     
 

@@ -10,7 +10,7 @@ r"""
 import asyncio
 import logging
 import contextvars
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -61,7 +61,7 @@ async def get_labels(model_id):
     log.debug(f"[bold]Labels name count without Dupes[/bold] {len(output)} found")
     return output    
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_labels(c,model_id,job_progress,offset=0):
     global sem
     global tasks
@@ -133,7 +133,7 @@ async def get_labelled_posts(labels, username):
 
     return list(output.values())
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
     global sem
     global tasks

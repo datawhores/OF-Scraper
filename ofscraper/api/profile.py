@@ -12,7 +12,7 @@ import contextvars
 
 from typing import Union
 from rich.console import Console
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from ..constants import profileEP,NUM_TRIES,HOURLY_EXPIRY,DAILY_EXPIRY
 from ..utils import auth, encoding
 from xxhash import xxh128
@@ -38,7 +38,7 @@ def scrape_profile(username:Union[int, str]) -> dict:
 
 
   
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile_helper(c,username:Union[int, str]):
     id=cache.get(f"username_{username}",None)
     log.trace(f"username date: {id}")
@@ -109,7 +109,7 @@ def get_id( username):
         
         
 
-@retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def get_id_helper(c,username):
     id=cache.get(f"model_id_{username}",None)
     if id:

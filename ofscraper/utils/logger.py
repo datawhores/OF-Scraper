@@ -10,7 +10,7 @@ from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
 
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 import aioprocessing
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
@@ -48,7 +48,7 @@ class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
         self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX)) 
+    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX)) 
     def emit(self, record):
         log_entry = self.format(record)
         url=config_.get_discord(config_.read_config())
@@ -234,19 +234,23 @@ def add_widget(widget):
 
 #mulitprocess
 # executed in a process that performs logging
-def logger_process(input_,name=None,stop_count=1):
+def logger_process(input_,name=None,stop_count=1,event=None):
     # create a logger
     log=init_main_logger(name)
     input_=input_ or queue_
     count=0
     while True:
         # consume a log message, block until one arrives
+        if event and event.is_set():
+            return
         messages = input_.get()
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
             # check for shutdown
             if message==None:
+                return
+            if event and event.is_set():
                 return
             if message.message=="None":
                 count=count+1
@@ -262,7 +266,7 @@ def logger_process(input_,name=None,stop_count=1):
 def logger_other(input_,name=None,stop_count=1):
     # create a logger
     log=init_other_logger(name)
-    if log.handlers[0].level==100:
+    if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
         return
     while True:
         # consume a log message, block until one arrives
@@ -284,9 +288,9 @@ def logger_other(input_,name=None,stop_count=1):
 
 
 # some inherantence from main process
-def start_stdout_logthread(input_=None,name=None,count=1):
+def start_stdout_logthread(input_=None,name=None,count=1,event=None):
     input_=input_ or queue_
-    thread= threading.Thread(target=logger_process,args=(input_,name,count))
+    thread= threading.Thread(target=logger_process,args=(input_,name,count,event),daemon=True)
     thread.start()
     return thread
 

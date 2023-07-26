@@ -45,7 +45,7 @@ import arrow
 from bs4 import BeautifulSoup
 
 
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 import more_itertools
 import aioprocessing
 import psutil
@@ -97,7 +97,9 @@ logqueue2_=logger.otherqueue_
 async def process_dicts(username,model_id,medialist):
     log=logging.getLogger("shared")
     random.shuffle(medialist)
-
+    if len(medialist)==0:
+        log.error("Media list empty")
+        return
     mediasplits=get_mediasplits(medialist)
     num_proc=len(mediasplits)
     split_val=min(4,num_proc)
@@ -350,7 +352,7 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id):
             await operations.write_media_table(ele,path_to_file,model_id,username)
         set_cache_helper(ele)
         return ele.mediatype,total
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def main_download_downloader(c,ele,path,file_size_limit,username,model_id):
     try:
         url=ele.url
@@ -499,7 +501,7 @@ async def alt_download_preparer(ele):
                         audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                         break
     return audio,video
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def alt_download_downloader(item,c,ele,path,file_size_limit):
     try:
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
@@ -553,7 +555,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
 
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using auto key helper")
     try:

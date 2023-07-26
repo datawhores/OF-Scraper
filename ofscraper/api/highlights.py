@@ -11,7 +11,7 @@ r"""
 import asyncio
 import logging
 import contextvars
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -61,7 +61,7 @@ async def get_stories_post(model_id):
     return output
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_stories( c,user_id,job_progress) -> list:
     global sem
     global tasks
@@ -147,7 +147,7 @@ async def get_highlight_post(model_id):
     return output2
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
     global sem
     global tasks
@@ -171,7 +171,7 @@ async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
 
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_highlights( c,id,job_progress) -> list:
     global sem
     global tasks
