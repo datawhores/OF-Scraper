@@ -1,6 +1,6 @@
 import re
 import arrow
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from ..constants import LICENCE_URL
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
@@ -14,7 +14,7 @@ import traceback
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 class Media():
     def __init__(self, media, count, post):
         self._media = media
@@ -254,7 +254,7 @@ class Media():
     def media(self):
         return self._media
     @property
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     async def parse_mpd(self): 
         if not self.mpd:
             return

@@ -14,10 +14,10 @@ import logging
 from rich.console import Console
 import arrow
 console=Console()
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from ..constants import subscriptionsEP,NUM_TRIES
 import ofscraper.constants as constants
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
@@ -32,7 +32,7 @@ async def get_subscriptions(subscribe_count):
 
 
 
-@retry(stop=stop_after_attempt(constants.MAX_SEMAPHORE),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.MAX_SEMAPHORE),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_subscriptions(c,offset=0) -> list:
 
         async with c.requests( subscriptionsEP.format(offset))() as r:

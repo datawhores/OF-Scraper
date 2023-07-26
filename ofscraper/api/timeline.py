@@ -13,7 +13,7 @@ import ssl
 import certifi
 import contextvars
 import math
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -36,11 +36,11 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 from diskcache import Cache
 cache = Cache(getcachepath())
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_ids=None) -> list:
     global tasks
     global sem
@@ -114,7 +114,7 @@ async def get_timeline_post(model_id):
     responseArray=[]
     page_count=0
     
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c:
 
             oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []

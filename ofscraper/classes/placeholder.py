@@ -7,7 +7,7 @@ import ofscraper.api.me as me
 import arrow
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 class Placeholders:
     def __init__(self) -> None:
         None

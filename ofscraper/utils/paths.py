@@ -20,9 +20,9 @@ import ofscraper.api.me as me
 
 
 
-console=console_.shared_console
+console=console_.get_shared_console()
 homeDir=pathlib.Path.home()
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 
 

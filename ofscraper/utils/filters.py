@@ -6,7 +6,7 @@ import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
 
 args=args_.getargs()
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 def filterMedia(media):
     logformater="{} data: {} id: {} postid: {}"
     []

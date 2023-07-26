@@ -8,6 +8,7 @@ r"""
                  \/     \/           \/            \/         
 """
 import pathlib
+import os
 preferences = 'pref_config.py'
 configPath = '.config/ofscraper'
 configFile = 'config.json'
@@ -108,9 +109,11 @@ MP4DECRYPT_DEFAULT=""
 FFMPEG_DEFAULT =""
 DISCORD_DEFAULT =""
 BACKEND_DEFAULT ="aio"
-
+DOWNLOAD_SEM_DEFAULT=8
+THREADS_DEFAULT=int(os.cpu_count()*(2/3))
 DYNAMIC_DEFAULT="deviint"
 SUPPRESS_LOG_LEVEL=21
+PROGRESS_DEFAULT=False
 
 RESPONSE_TYPE_DEFAULT= {
             "message":"Messages",
@@ -123,7 +126,7 @@ RESPONSE_TYPE_DEFAULT= {
             "pinned":"Posts"
         }
 NUM_TRIES=10
-
+DATABASE_TIMEOUT=300
 
 RESPONSE_EXPIRY=5000000
 CHECK_EXPIRY=86400
@@ -139,7 +142,7 @@ logname="ofscraper"
 PATH_STR_MAX=200
 TABLE_STR_MAX=100
 
-refreshScreen=20
+refreshScreen=50
 
 MP4DECRYPT_LINUX="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-unknown-linux.zip"
 MP4DECRYPT_WINDOWS="https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-640.x86_64-microsoft-win32.zip"
@@ -149,7 +152,6 @@ FFMPEG_WINDOWS="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/f
 FFMPEG_MAC="https://evermeet.cx/ffmpeg/ffmpeg-111111-gc44fe10160.zip"
 
 
-THREADS_DEFAULT=8
 MAX_SEMAPHORE=8
 AlT_SEM=4
 CODE_EXECUTION_DEFAULT =False
@@ -158,3 +160,5 @@ NUMBER_REGEX="[0-9]"
 USERNAME_REGEX="[^/]"
 
 API_REEQUEST_TIMEOUT=90
+SUPRESS_OUTPUTS={"CRITICAL","ERROR","WARNING"}
+CHUNK_ITER=100

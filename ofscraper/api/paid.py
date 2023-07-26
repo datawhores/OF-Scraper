@@ -16,7 +16,7 @@ from rich.progress import (
     TextColumn,
     SpinnerColumn
 )
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.panel import Panel
 from rich.console import Group
 from rich.live import Live
@@ -38,7 +38,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 cache = Cache(getcachepath())
 
 paid_content_list_name = 'list'
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
@@ -63,7 +63,7 @@ async def get_paid_posts(username,model_id):
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
  
             tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress)))
@@ -87,7 +87,7 @@ async def get_paid_posts(username,model_id):
     return output
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_paid(c,username,job_progress,offset=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list."""
@@ -136,7 +136,7 @@ async def get_all_paid_posts():
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
             allpaid=cache.get(f"purchased_all",default=[]) if not args_.getargs().no_cache else []
             log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
@@ -178,7 +178,7 @@ async def get_all_paid_posts():
     return unduped
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list."""

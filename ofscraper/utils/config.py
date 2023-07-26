@@ -17,8 +17,8 @@ import ofscraper.utils.binaries as binaries
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
 
-console=console_.shared_console
-log=logging.getLogger(__package__)
+console=console_.get_shared_console()
+log=logging.getLogger("shared")
 
 def get_config_folder():
     out=paths_.get_config_path().parent
@@ -91,6 +91,8 @@ def get_current_config_schema(config:dict=None) -> dict:
             "dynamic-mode-default":get_dynamic(config),
             "partfileclean":get_part_file_clean(config),
             "backend":get_backend(config),
+            "download-sems":get_download_semaphores(config),
+            "downloadbars":get_show_downloadprogress(config),
 
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
@@ -275,7 +277,7 @@ def get_metadata(config=None):
     return config.get('metadata', constants.METADATA_DEFAULT)
 def get_threads(config=None):
     if config==None:
-        return constants.MP4DECRYPT_DEFAULT    
+        return constants.THREADS_DEFAULT  
     return int(config.get('threads', constants.THREADS_DEFAULT) or constants.THREADS_DEFAULT)
 
 def get_mp4decrypt(config=None):
@@ -379,7 +381,7 @@ def get_dynamic(config=None):
     if config==None:
         return constants.DYNAMIC_DEFAULT
     value=config.get("dynamic-mode-default")
-    return value.lower() if value and value.lower() in set(["deviint","dc"]) else "deviint"
+    return value.lower() if value and value.lower() in set(["deviint","digitalcriminals"]) else "deviint"
 def get_part_file_clean(config=None):
     if config==None:
         return False
@@ -390,3 +392,16 @@ def get_backend(config=None):
     if config==None:
         return "aio"
     return config.get("backend",constants.BACKEND_DEFAULT) or constants.BACKEND_DEFAULT
+
+def get_download_semaphores(config=None):
+    if config==None:
+        return constants.DOWNLOAD_SEM_DEFAULT
+    try:
+        return int(config.get('download-sems', constants.DOWNLOAD_SEM_DEFAULT))
+    except:
+        return constants.DOWNLOAD_SEM_DEFAULT
+    
+def get_show_downloadprogress(config):
+    if config==None:
+        return constants.PROGRESS_DEFAULT
+    return config.get("downloadbars",constants.PROGRESS_DEFAULT) or constants.PROGRESS_DEFAULT

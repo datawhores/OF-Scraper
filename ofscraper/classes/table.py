@@ -11,7 +11,7 @@ from diskcache import Cache
 import ofscraper.utils.console as console_
 from ..utils.paths import getcachepath
 cache = Cache(getcachepath())
-log = logging.getLogger(__package__)
+log = logging.getLogger("shared")
 
 
 
@@ -20,7 +20,7 @@ log = logging.getLogger(__package__)
 
 
 
-# console=console_.shared_console
+# console=console_.get_shared_console()
 class OutConsole(TextLog):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

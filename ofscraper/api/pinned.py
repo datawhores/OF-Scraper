@@ -12,7 +12,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -31,11 +31,11 @@ import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.AlT_SEM)
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
     global tasks
     global sem
@@ -95,7 +95,7 @@ async def get_pinned_post(model_id):
     min_posts=50
     responseArray=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
        async with sessionbuilder.sessionBuilder() as c: 
             tasks.append(asyncio.create_task(scrape_pinned_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
         

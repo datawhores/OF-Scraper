@@ -30,7 +30,7 @@ import ofscraper.api.pinned as pinned
 import ofscraper.api.labels as labels_api
 import ofscraper.classes.labels as labels
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 args=args_.getargs()
 log.debug(args)
 

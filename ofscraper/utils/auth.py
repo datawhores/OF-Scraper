@@ -25,7 +25,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
 console=Console()
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 def read_auth():
     authFile=paths.get_auth_file()

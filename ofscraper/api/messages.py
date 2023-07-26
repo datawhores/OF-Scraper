@@ -11,7 +11,7 @@ import asyncio
 import logging
 import ssl
 import contextvars
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -37,7 +37,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 from diskcache import Cache
 cache = Cache(paths.getcachepath())
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
@@ -60,7 +60,7 @@ async def get_messages(model_id):
     page_count=0
     #require a min num of posts to be returned
     min_posts=50
-    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console): 
+    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c: 
             oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
             log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))
@@ -127,7 +127,7 @@ async def get_messages(model_id):
 
     return unduped    
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_messages(c, model_id, progress,message_id=None,required_ids=None) -> list:
     global sem
     global tasks

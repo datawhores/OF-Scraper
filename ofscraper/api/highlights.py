@@ -11,7 +11,7 @@ r"""
 import asyncio
 import logging
 import contextvars
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -29,7 +29,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.console as console
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 sem = semaphoreDelayed(1)
 attempt = contextvars.ContextVar("attempt")
 
@@ -44,7 +44,7 @@ async def get_stories_post(model_id):
     page_count=0
     global tasks
     tasks=[]
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
             async with sessionbuilder.sessionBuilder() as c:
                 tasks.append(asyncio.create_task(scrape_stories(c,model_id,job_progress)))
                 page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
@@ -61,7 +61,7 @@ async def get_stories_post(model_id):
     return output
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_stories( c,user_id,job_progress) -> list:
     global sem
     global tasks
@@ -107,7 +107,7 @@ async def get_highlight_post(model_id):
         page_count=0
         global tasks
         tasks=[]    
-        with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         
                 tasks.append(asyncio.create_task(scrape_highlight_list(c,model_id,job_progress)))
                 page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
@@ -125,7 +125,7 @@ async def get_highlight_post(model_id):
         progress_group = Group(
         overall_progress,
         Panel(Group(job_progress)))
-        with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
 
 
             output2=[]
@@ -147,7 +147,7 @@ async def get_highlight_post(model_id):
     return output2
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
     global sem
     global tasks
@@ -171,7 +171,7 @@ async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
 
 
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_highlights( c,id,job_progress) -> list:
     global sem
     global tasks

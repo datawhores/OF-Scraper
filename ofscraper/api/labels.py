@@ -10,7 +10,7 @@ r"""
 import asyncio
 import logging
 import contextvars
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -27,7 +27,7 @@ from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
@@ -43,7 +43,7 @@ async def get_labels(model_id):
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
        async with sessionbuilder.sessionBuilder() as c: 
 
             tasks.append(asyncio.create_task(scrape_labels(c,model_id,job_progress)))
@@ -61,7 +61,7 @@ async def get_labels(model_id):
     log.debug(f"[bold]Labels name count without Dupes[/bold] {len(output)} found")
     return output    
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_labels(c,model_id,job_progress,offset=0):
     global sem
     global tasks
@@ -105,7 +105,7 @@ async def get_labelled_posts(labels, username):
     global tasks
     tasks=[]
     page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.shared_console):
+    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
 
             [tasks.append(asyncio.create_task(scrape_labelled_posts(c,label,username,job_progress)))
@@ -133,7 +133,7 @@ async def get_labelled_posts(labels, username):
 
     return list(output.values())
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
     global sem
     global tasks

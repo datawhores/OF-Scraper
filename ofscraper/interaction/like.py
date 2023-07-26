@@ -17,7 +17,7 @@ from typing import Union
 import asyncio
 import aiohttp
 
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 
 from rich.progress import Progress
 from rich.progress import (
@@ -41,7 +41,7 @@ import ofscraper.prompts.prompts as prompts
 
 
 sem = semaphoreDelayed(1)
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 import ofscraper.utils.args as args_
 
 
@@ -102,7 +102,7 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
     global sem
     sem.delay=3
-    with Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}"),BarColumn(),MofNCompleteColumn(),console=console.shared_console) as overall_progress:
+    with Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}"),BarColumn(),MofNCompleteColumn(),console=console.get_shared_console()) as overall_progress:
         async with sessionbuilder.sessionBuilder() as c:
             tasks=[]
             task1=overall_progress.add_task(f"{title} posts...\n",total=len(ids))
@@ -125,7 +125,7 @@ async def _like(headers, model_id, username, ids: list, like_action: bool):
         
         
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def _like_request(c,id,model_id):
     global sem
     async with sem:

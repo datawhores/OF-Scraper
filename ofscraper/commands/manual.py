@@ -15,7 +15,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.of as of
 
 
-log = logging.getLogger(__package__)
+log = logging.getLogger("shared")
 
 
 def manual_download(urls=None):
