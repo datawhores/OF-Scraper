@@ -325,25 +325,32 @@ def get_profile_prompt(profiles: list) -> str:
 
 
 def config_prompt_advanced(config_) -> dict:
-    new_settings =promptClasses.batchConverter(* [
+    threads =promptClasses.batchConverter(* [
         {
             'type': 'number',
             'name': 'threads',
             "message":"Number of Download processes/threads: ",
             'min_allowed':1,
-            'max_allowed':os.cpu_count(),
+            'max_allowed':os.cpu_count()-1,
              "validate":EmptyInputValidator(),
-            'long_instruction':f"Value can be 1-{os.cpu_count()}",
+            'long_instruction':f"Value can be 1-{os.cpu_count()-1}",
              'default':config.get_threads(config_),
         },
-        {
+        
+    ])
+
+    config_.update(threads)
+        
+        
+        
+    new_settings =promptClasses.batchConverter(*   [{
             'type': 'number',
             'name': 'download_sem',
             "message":"Number of semaphores per thread: ",
             'min_allowed':1,
-            'max_allowed':10,
+            'max_allowed':max(-(-(50//int(threads["threads"]))),6),
              "validate":EmptyInputValidator(),
-             'long_instruction':"Value can be 1-2",
+             'long_instruction':"Value can be 1-20",
              'default':config.get_download_semaphores(config_),
         },
         {
@@ -415,8 +422,7 @@ def config_prompt_advanced(config_) -> dict:
 
 
         }
-    ]
-    )
+    ])
     config_.update(new_settings)
     return config_
     
