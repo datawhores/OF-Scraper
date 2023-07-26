@@ -266,6 +266,7 @@ def logger_process(input_,name=None,stop_count=1,event=None):
 def logger_other(input_,name=None,stop_count=1):
     # create a logger
     log=init_other_logger(name)
+    count=0
     if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
         return
     while True:
@@ -297,7 +298,7 @@ def start_stdout_logthread(input_=None,name=None,count=1,event=None):
 
 def start_other_thread(input_=None,name=None,count=1):
     input_=input_ or queue_
-    thread= threading.Thread(target=logger_other,args=(input_,name,count))
+    thread= threading.Thread(target=logger_other,args=(input_,name,count),daemon=True)
     thread.start()
     return thread
     

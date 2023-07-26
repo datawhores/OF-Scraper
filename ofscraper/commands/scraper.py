@@ -283,7 +283,7 @@ def run_helper(*functs):
           
     try:
         if args.daemon:
-                worker_thread = threading.Thread(target=set_schedule,args=[*functs])
+                worker_thread = threading.Thread(target=set_schedule,args=[*functs],daemon=True)
                 worker_thread.start()
                 # Check if jobqueue has function
                 while True:

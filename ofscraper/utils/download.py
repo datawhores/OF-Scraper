@@ -115,8 +115,8 @@ async def process_dicts(username,model_id,medialist):
     #start main queue consumers
     logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
     #start producers
-    logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i}") for i in range(num_proc) ]
-    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logs[i],connect_tuple[i][1])) for i in range(num_proc)]
+    stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i}") for i in range(num_proc) ]
+    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],stdout_logs[i],connect_tuple[i][1])) for i in range(num_proc)]
     try:
         [process.start() for process in processes]      
         downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -130,7 +130,7 @@ async def process_dicts(username,model_id,medialist):
         progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
         with stdout.lowstdout():
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-                queue_threads=[threading.Thread(target=queue_process,args=(connect_tuple[i][0],overall_progress,job_progress,task1,len(medialist))) for i in range(num_proc)]
+                queue_threads=[threading.Thread(target=queue_process,args=(connect_tuple[i][0],overall_progress,job_progress,task1,len(medialist)),daemon=True) for i in range(num_proc)]
                 [thread.start() for thread in queue_threads]
                 [thread.join() for thread in queue_threads]
                 time.sleep(1)
