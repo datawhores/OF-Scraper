@@ -595,7 +595,6 @@ async def key_helper_keydb(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using keydb auto key helper")
     try:
         out=cache.get(licence_url)
-        out=None
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
         innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
