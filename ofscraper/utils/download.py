@@ -11,7 +11,6 @@ import asyncio
 import math
 import os
 import pathlib
-import string
 import time
 import platform
 import shutil
@@ -559,13 +558,13 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
-    innerlog.get().debug(f"ID:{id} using auto key helper")
+    innerlog.get().debug(f"ID:{id} using cdrm auto key helper")
     try:
         out=cache.get(licence_url)
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
         innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
-            innerlog.get().debug(f"ID:{id} auto key helper got key from cache")
+            innerlog.get().debug(f"ID:{id} cdrm auto key helper got key from cache")
             return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
@@ -593,14 +592,14 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):
-    innerlog.get().debug(f"ID:{id} using auto key helper")
+    innerlog.get().debug(f"ID:{id} using keydb auto key helper")
     try:
         out=cache.get(licence_url)
         out=None
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
         innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
-            innerlog.get().debug(f"ID:{id} auto key helper got key from cache")
+            innerlog.get().debug(f"ID:{id} keydb auto key helper got key from cache")
             return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
@@ -627,9 +626,8 @@ async def key_helper_keydb(c,pssh,licence_url,id):
         async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
             data=await r.json()
             innerlog.get().debug(f"keydb json {data}")
-            if isinstance(data,string): out=data["keys"][0]["key"]
-            else:out=data
-            out=(await r.json())
+            if  isinstance(data,str): out=data
+            elif  isinstance(data,object): out=data["keys"][0]["key"]
             cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
             cache.close()
         return out
