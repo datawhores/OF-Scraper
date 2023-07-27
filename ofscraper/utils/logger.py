@@ -10,7 +10,7 @@ from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
 
-from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
+from tenacity import retry,stop_after_attempt,retry_if_not_exception_type,wait_fixed
 import aioprocessing
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
@@ -48,18 +48,22 @@ class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
         self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
-    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES)) 
     def emit(self, record):
+        @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(8))
+        def inner(sess):
+            with sess:
+                with sess.requests(url,"post",headers={"Content-type": "application/json"},json={"content":log_entry})() as r:
+                    if not r.status==204:
+                        raise Exception
+
         log_entry = self.format(record)
         url=config_.get_discord(config_.read_config())
         log_entry=re.sub("\[bold\]|\[/bold\]","**",log_entry)
         log_entry=f"{log_entry}\n\n"
         if url==None or url=="":
             return
-        with self.sess as sess:
-            with sess.requests(url,"post",headers={"Content-type": "application/json"},json={"content":log_entry})() as r:
-                None
-
+        inner(self.sess)
+    
 
 
 class TextHandler(logging.Handler):
@@ -303,15 +307,17 @@ def logger_other(input_,name=None,stop_count=1):
 
 
 # some inherantence from main process
-def start_stdout_logthread(input_=None,name=None,count=1,event=None):
+def start_stdout_logthread(input_=None,name=None,count=1,event=None,pipe=None):
     input_=input_ or queue_
     thread= threading.Thread(target=logger_process,args=(input_,name,count,event),daemon=True)
     thread.start()
+
+
     return thread
 
 
 def start_other_thread(input_=None,name=None,count=1):
-    input_=input_ or queue_
+    input_=input_ or otherqueue_
     thread= threading.Thread(target=logger_other,args=(input_,name,count),daemon=True)
     thread.start()
     return thread
@@ -332,15 +338,20 @@ def start_other_process(input_=None,name=None,count=1):
 def get_shared_logger(main_=None ,other_=None,name=None):
     # create a logger
     logger = logging.getLogger(name or 'shared')
-    # add a handler that uses the shared queue
-    logger.addHandler(QueueHandler(main_ or queue_))
-    if args.getargs().discord or args.getargs().log or other_:
-        logger.addHandler(QueueHandler((other_ or otherqueue_)))
-    # log all messages, debug and up
-    logger.setLevel(1)
     addtraceback()
     addtrace()
-    # get the current process
-    # report initial message
+    main_queue=QueueHandler(main_ or queue_)
+    main_queue.setLevel(getLevel(args.getargs().output))
+    # add a handler that uses the shared queue
+    logger.addHandler(main_queue)
+    discord_level=getLevel(args.getargs().discord); 
+    if isinstance(discord_level,str):discord_level=logging.getLevelName(discord_level)
+    file_level=getLevel(args.getargs().log); 
+    if isinstance(file_level,str):file_level=logging.getLevelName(file_level)
+    other_queue=QueueHandler((other_ or otherqueue_))
+    other_queue.setLevel(min(file_level,discord_level))
+    logger.addHandler(other_queue)  
+    # log all messages, debug and up
+    logger.setLevel(1)
     return logger
     

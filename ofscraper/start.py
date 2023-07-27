@@ -30,7 +30,7 @@ def main():
         #start other log consumer
         process=logger.start_other_process()
         #allow background processes to start
-        time.sleep(1.5)
+        time.sleep(3)
 
         args=args_.getargs()
         if vars(args).get("help"):
@@ -50,7 +50,7 @@ def main():
             manual.manual_download()
         else:
             scraper.main()
-        logger.get_shared_logger().info(None)
+        logger.get_shared_logger().critical(None)
         thread.join()
         if process:process.join()
     except KeyboardInterrupt as E:
