@@ -53,10 +53,14 @@ class Placeholders:
         return pathlib.Path(formatStr,"user_data.db")
 
 
- 
+  
+
 
     @wrapper
     def getmediadir(self,ele,username,model_id):
+
+        
+        root=config_.get_save_location(config_.read_config())
         self._variables.update({"username":username})
         self._variables.update({"model_id":model_id})
         user_name=username;self._variables.update({"user_name":username})
@@ -140,3 +144,13 @@ class Placeholders:
             return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
         else:
             return config_.get_fileformat(config_.read_config()).format(**self._variables) 
+
+
+# def all_placeholders():
+#       {"user_name","modelid","model_id","username","postid","postid","media_id",
+#        "mediaid","first_letter","firstletter","mediatype","media_type","value","date",
+#        "model_username","modelusername","response_type","responsetype","label","downloadtype","download_type"}
+   
+
+
+    

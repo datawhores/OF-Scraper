@@ -1,5 +1,6 @@
 import sys
 import time
+import multiprocessing
 from threading import Event
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
@@ -21,6 +22,7 @@ import certifi
 def main():
     process=None
     thread=None
+    multiprocessing.freeze_support()
 
     try:
         startvalues()

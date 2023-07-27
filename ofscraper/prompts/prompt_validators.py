@@ -9,6 +9,7 @@ import arrow
 import textwrap
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
+import ofscraper.classes.placeholder as placeholders
 
 
 
@@ -114,9 +115,9 @@ def namevalitator():
 def dirformatvalidator():
     def callable(x):
         try:
-            placeholders=list(filter(lambda x:x!=None,[v[1] for v in string.Formatter().parse(x)]))
-            validplaceholders=set(["date","responsetype","mediatype","value","model_id","first_letter","sitename","model_username"])
-            if len(list(filter(lambda x:x not in validplaceholders,placeholders)))>0:
+            testplaceholders=list(filter(lambda x:x!=None,[v[1] for v in string.Formatter().parse(x)]))
+            validplaceholders=placeholders.all_placeholders()
+            if len(list(filter(lambda x:x not in validplaceholders or not x.find('custom'),testplaceholders)))>0:
                 return False
             result={}
 
