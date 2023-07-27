@@ -60,7 +60,7 @@ class Placeholders:
     def getmediadir(self,ele,username,model_id):
 
         
-        root=config_.get_save_location(config_.read_config())
+        root=pathlib.Path(config_.get_save_location(config_.read_config()))
         self._variables.update({"username":username})
         self._variables.update({"model_id":model_id})
         user_name=username;self._variables.update({"user_name":username})
