@@ -91,14 +91,11 @@ audio_count=0
 skipped = 0
 data=0
 logqueue_=logger.queue_
-logqueue2_=logger.otherqueue_
+otherqueue_=logger.otherqueue_
 
 
-#remove quit
 #start other thread here
-#finally join in start.py
 async def process_dicts(username,model_id,medialist):
-    return
     log=logging.getLogger("shared")
     random.shuffle(medialist)
     if len(medialist)==0:
@@ -241,7 +238,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     innerlog = contextvars.ContextVar("innerlog")
     logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")
     #start consumer for other
-    # other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
+    other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
 
  
@@ -298,7 +295,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     split_log.critical(None)
     await queue_.coro_send("None")
-    # other_thread.join()
+    other_thread.join()
  
 
 def retry_required(value):
@@ -308,12 +305,11 @@ def pid_log_helper():
     return f"PID: {os.getpid()}"  
 
 
+
+
 async def download(c,ele,model_id,username,file_size_limit):
     # reduce number of logs
-    log=logging.getLogger(f"{ele.id}")
-    log.setLevel(1)
-    innerqueue=queue.Queue()
-    log.addHandler(logging.handlers.QueueHandler(innerqueue))
+    log=logger.get_shared_logger(name=str(ele.id),main_=queue.Queue(),other_=queue.Queue())
     innerlog.set(log)
 
     attempt.set(attempt.get(0) + 1)  
@@ -328,8 +324,9 @@ async def download(c,ele,model_id,username,file_size_limit):
         innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
         return 'skipped', 1
     finally:
-        await logqueue_.coro_put(list(innerqueue.queue))
-        await logqueue2_.coro_put(list(innerqueue.queue))
+        #dump logs
+        await logqueue_.coro_put(list(innerlog.get().handlers[0].queue))
+        await otherqueue_.coro_put(list(innerlog.get().handlers[1].queue))
 async def main_download_helper(c,ele,path,file_size_limit,username,model_id):
     path_to_file=None
 

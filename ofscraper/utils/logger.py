@@ -169,6 +169,10 @@ def getLevel(input):
             "TRACE":"TRACE"
             
             }.get(input,100)
+def getNumber(input_):
+    input_=getLevel(input_)
+    if isinstance(input_,str):return logging.getLevelName(input_)
+    return input_
 
 def init_main_logger(name):
     log=logging.getLogger(name or "ofscraper")
@@ -344,10 +348,8 @@ def get_shared_logger(main_=None ,other_=None,name=None):
     main_queue.setLevel(getLevel(args.getargs().output))
     # add a handler that uses the shared queue
     logger.addHandler(main_queue)
-    discord_level=getLevel(args.getargs().discord); 
-    if isinstance(discord_level,str):discord_level=logging.getLevelName(discord_level)
-    file_level=getLevel(args.getargs().log); 
-    if isinstance(file_level,str):file_level=logging.getLevelName(file_level)
+    discord_level=getNumber(args.getargs().discord); 
+    file_level=getNumber(args.getargs().log); 
     other_queue=QueueHandler((other_ or otherqueue_))
     other_queue.setLevel(min(file_level,discord_level))
     logger.addHandler(other_queue)  
