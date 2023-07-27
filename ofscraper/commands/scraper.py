@@ -392,7 +392,7 @@ def main():
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
 def scrapper():
-    if platform.system == 'Windows':
+    if platform.system() == 'Windows':
         os.system('color')
     global selectedusers
     selectedusers=None

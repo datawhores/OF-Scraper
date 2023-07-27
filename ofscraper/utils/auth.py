@@ -31,9 +31,8 @@ console=Console()
 log=logging.getLogger("shared")
 
 def read_auth():
-    make_request_auth()
     authFile=paths.get_auth_file()
-   
+
     while True:
         try:
             with open(authFile, 'r') as f:
@@ -60,7 +59,7 @@ def read_auth():
                     f.write(json.dumps(get_empty()))
 
 
-                
+    make_request_auth()       
     return auth
 
 def get_empty():
