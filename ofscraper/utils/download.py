@@ -183,7 +183,6 @@ def queue_process(queue_,overall_progress,job_progress,task1,total):
             if isinstance(result,dict):
                 job_progress_helper(job_progress,result)
                 continue
-
             media_type, num_bytes_downloaded = result
             with count_lock:
                 total_bytes_downloaded=total_bytes_downloaded+num_bytes_downloaded
@@ -195,7 +194,7 @@ def queue_process(queue_,overall_progress,job_progress,task1,total):
                     video_count += 1
                 elif media_type == 'audios':
                     audio_count += 1
-                elif media_type == 'skipped':
+                elif media_type == 'skipped' or media_type == 'forced_skipped':
                     skipped += 1
                 overall_progress.update(task1,description=desc.format(
                             p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, data=data,mediacount=total, sumcount=video_count+audio_count+photo_count+skipped), refresh=True, advance=1)     
@@ -294,7 +293,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     setDirectoriesDate()
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     split_log.critical(None)
-    await queue_.coro_send("None")
+    await queue_.coro_send(None)
     other_thread.join()
  
 
@@ -325,8 +324,8 @@ async def download(c,ele,model_id,username,file_size_limit):
         return 'skipped', 1
     finally:
         #dump logs
-        await logqueue_.coro_put(list(innerlog.get().handlers[0].queue))
-        await otherqueue_.coro_put(list(innerlog.get().handlers[1].queue))
+        await logqueue_.coro_put(list(innerlog.get().handlers[0].queue.queue))
+        await otherqueue_.coro_put(list(innerlog.get().handlers[1].queue.queue))
 async def main_download_helper(c,ele,path,file_size_limit,username,model_id):
     path_to_file=None
 
@@ -373,7 +372,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
                     if file_size_limit>0 and total > int(file_size_limit): 
-                            return total ,"skipped",None 
+                            return "forced_skippped",1 
                        
                     content_type = rheaders.get("content-type").split('/')[-1]
                     filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
