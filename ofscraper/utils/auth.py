@@ -17,11 +17,12 @@ import requests
 from rich.console import Console
 
 import browser_cookie3
-from .profiles import get_active_profile
+
 from ..prompts.prompts import *
 from ..constants import configPath, DIGITALCRIMINALS, requestAuth,DEVIINT
 import ofscraper.utils.paths as paths
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.profiles as profiles
 
 
 console=Console()
@@ -229,7 +230,7 @@ def create_sign(link, headers):
 
 
 def read_request_auth() -> dict:
-    profile = get_active_profile()
+    profile = profiles.get_active_profile()
     
 
     p = paths.get_config_home()/profile/ requestAuth

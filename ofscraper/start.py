@@ -63,13 +63,11 @@ def main():
                     if process:process.join(timeout=1)
                     if process:process.terminate()
                    
-                sys.exit()
             except KeyboardInterrupt:
                     event.set()
                     if process:process.join(timeout=1)
                     if process:process.terminate()
                     event.set()
-                    sys.exit()
     
 
     
