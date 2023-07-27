@@ -22,8 +22,6 @@ import certifi
 def main():
     process=None
     thread=None
-    multiprocessing.freeze_support()
-
     try:
         startvalues()
         discord_warning()

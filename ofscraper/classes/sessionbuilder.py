@@ -79,6 +79,8 @@ class sessionBuilder:
         cookies=cookies or self._create_cookies()
         json=json or None
         params=params or None
+        
+
         if self._backend=="aio":
             inner_func=functools.partial(self._session.request,method,url=url,allow_redirects=redirects,params=params,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=cookies,headers=headers,json=json,data=data)
             funct=functools.partial(self._aio_funct_async,inner_func)
