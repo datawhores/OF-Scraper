@@ -47,8 +47,8 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get install update -y
-                apt-get install upgrade -y
+                apt-get update -y
+                apt-get upgrade -y
                 apt install software-properties-common -y
                 add-apt-repository ppa:deadsnakes/ppa
                 apt-get install curl python3 pip git python3.10-venv -y
