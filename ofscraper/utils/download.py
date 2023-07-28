@@ -116,7 +116,7 @@ async def process_dicts(username,model_id,medialist):
     #start main queue consumers
     logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
     #start producers
-    stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i}") for i in range(num_proc) ]
+    stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i+1}") for i in range(num_proc) ]
     processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],stdout_logs[i],connect_tuple[i][1])) for i in range(num_proc)]
     try:
         [process.start() for process in processes]      
@@ -202,9 +202,10 @@ def queue_process(queue_,overall_progress,job_progress,task1,total):
 
 def get_mediasplits(medialist):
     user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
-    final_count=min(user_count,len(os.sched_getaffinity(0)), len(medialist)//5)
+    final_count=min(user_count,len(psutil.Process().cpu_affinity()), len(medialist)//5)
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,log,queue_):
+    log=logger.get_shared_logger(main_=logqueue_,other_=otherqueue_,name=f"shared_{os.getpid()}")
     asyncio.run(process_dicts_split(username,model_id,ele,log,queue_))
 
 def job_progress_helper(job_progress,result):
@@ -222,11 +223,12 @@ def job_progress_helper(job_progress,result):
 def setpriority():
     os_used = platform.system() 
     process = psutil.Process(os.getpid())  # Set highest priority for the python script for the CPU
-    if os_used == "windows":  # Windows (either 32-bit or 64-bit)
+    if os_used == "Windows":  # Windows (either 32-bit or 64-bit)
+        process.ionice(psutil.IOPRIO_NORMAL)
         process.nice(psutil.NORMAL_PRIORITY_CLASS)
 
-    elif os_used == "linux":  # linux
-        process.ionice(psutil.IOPRIO_NORMAL)
+    elif os_used == "Linux":  # linux
+        process.ionice(psutil.IOPRIO_CLASS_BE)
         process.nice(5) 
     else:  # MAC OS X or other
         process.nice(10) 
