@@ -99,7 +99,6 @@ logqueue_=logger.queue_
 #start other thread here
 async def process_dicts(username,model_id,medialist):
     log=logging.getLogger("shared")
-    medialist=medialist[0:3]
     random.shuffle(medialist)
     if len(medialist)==0:
         log.error("Media list empty")
