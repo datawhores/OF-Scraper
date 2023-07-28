@@ -209,7 +209,6 @@ def get_highlightList(data):
 
 
 
-
 def get_individual_highlights(id,c=None):
     return get_individual_stories(id,c)
     # with c.requests(constants.highlightSPECIFIC.format(id))() as r:
