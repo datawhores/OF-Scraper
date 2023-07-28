@@ -47,7 +47,7 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get install curl python3.10 pip git python3.10-venv -y"  
+                apt-get install curl python3.10 pip git python3.10-venv -y
                 curl -sSL https://install.python-poetry.org | python3 -
                 
 #       - name: commit
