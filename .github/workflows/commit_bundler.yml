@@ -51,8 +51,9 @@ jobs:
                 apt-get upgrade -y
                 apt install software-properties-common -y
                 add-apt-repository ppa:deadsnakes/ppa
-                apt-get install curl python3 pip git python3.10-venv -y
-                curl -sSL https://install.python-poetry.org | python3 -
+                apt-get update -y
+                apt-get install curl python3.10 pip git python3.10-venv -y
+                curl -sSL https://install.python-poetry.org | python3.10 -
                 python3.10 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onefiletemp
