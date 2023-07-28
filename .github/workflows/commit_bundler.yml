@@ -32,53 +32,67 @@ jobs:
           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
   linux:
     needs: [create_version]
-    runs-on: ubuntu-20.04
-    name: create linux release
-    steps:
+      steps:
+     
+       
+#     runs-on: ubuntu-20.04
+#     name: create linux release
+#     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
             fetch-depth: 0
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
-      - name: replace version.py
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_version 
-          path: ofscraper
-      - name: Set up Python 3.10.6
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10.6'
-      - name: create virtualenv
-        run: python3.10 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: poetry add pyinstaller    
-      - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
-      - name: upload file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
-      - name: build package dir
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{steps.commit.outputs.short}}" 
-      - uses: vimtor/action-zip@v1
-        with:
-          files: "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
-          dest: "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip"            
+      - uses: addnab/docker-run-action@v3
+          with:
+            registry: gcr.io
+            image: ubuntu:18.04
+            options: -v ${{ github.workspace }}:/work
+            shell: bash
+            run: |
+                "cd work"
+                "apt-get install curl python3.10 pip git python3.10-venv -y"   
+                "curl -sSL https://install.python-poetry.org | python3 -"
+                
+#       - name: commit
+#         uses: pr-mpt/actions-commit-hash@v2
+#         id: commit
+#       - name: replace version.py
+#         uses: actions/download-artifact@v3
+#         with:
+#           name: ofscraper_version 
+#           path: ofscraper
+#       - name: Set up Python 3.10.6
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.10.6'
+#       - name: create virtualenv
+#         run: python3.10 -m venv .venv
+#       - name: install poetry
+#         uses: abatilo/actions-poetry@v2
+#         with:
+#           poetry-version: 1.4.1
+#       - name: Install package
+#         run: poetry install
+#       - name: Install builder
+#         run: poetry add pyinstaller    
+#       - name: build package
+#         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
+#       - name: upload file
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: ofscraper_linux
+#           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+#       - name: build package dir
+#         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{steps.commit.outputs.short}}" 
+#       - uses: vimtor/action-zip@v1
+#         with:
+#           files: "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
+#           dest: "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip"
+#       - name: upload file
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: ofscraper_linux_zip
+#           path: "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip"            
   windows:
     needs: [create_version]
     runs-on: windows-latest
