@@ -116,8 +116,8 @@ async def process_dicts(username,model_id,medialist):
     #start main queue consumers
     logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
     #start producers
-    stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i+1}") for i in range(num_proc) ]
-    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],stdout_logs[i],connect_tuple[i][1])) for i in range(num_proc)]
+    # stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i+1}") for i in range(num_proc) ]
+    processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i],otherqueues_[i],connect_tuple[i][1])) for i in range(num_proc)]
     try:
         [process.start() for process in processes]      
         downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -204,7 +204,7 @@ def get_mediasplits(medialist):
     user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
     final_count=min(user_count,len(psutil.Process().cpu_affinity()), len(medialist)//5)
     return more_itertools.divide(final_count, medialist   )
-def process_dict_starter(username,model_id,ele,log,queue_):
+def process_dict_starter(username,model_id,ele,logqueue_,otherqueue_,queue_):
     log=logger.get_shared_logger(main_=logqueue_,other_=otherqueue_,name=f"shared_{os.getpid()}")
     asyncio.run(process_dicts_split(username,model_id,ele,log,queue_))
 
