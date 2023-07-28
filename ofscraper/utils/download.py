@@ -69,6 +69,9 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessProgress import multiprocessProgress as progress
 from aioprocessing import AioPipe
+if platform.system() == 'Windows':
+    from win32_setctime import setctime 
+ # pylint: disable=import-error
 
 
 
