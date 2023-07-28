@@ -49,7 +49,6 @@ from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception
 import more_itertools
 import aioprocessing
 import psutil
-import queue
 
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
@@ -100,6 +99,7 @@ logqueue_=logger.queue_
 #start other thread here
 async def process_dicts(username,model_id,medialist):
     log=logging.getLogger("shared")
+    medialist=medialist[0:3]
     random.shuffle(medialist)
     if len(medialist)==0:
         log.error("Media list empty")
@@ -207,6 +207,7 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
 def get_mediasplits(medialist):
     user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
     final_count=min(user_count,len(psutil.Process().cpu_affinity()), len(medialist)//5)
+    if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
@@ -241,7 +242,10 @@ def setpriority():
 async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")
+    global log 
+    log=logCopy
     logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")
+
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
@@ -314,8 +318,8 @@ def pid_log_helper():
 
 async def download(c,ele,model_id,username,file_size_limit):
     # reduce number of logs
-    log=logger.get_shared_logger(name=str(ele.id),main_=queue.Queue(),other_=queue.Queue())
-    innerlog.set(log)
+    templog_=logger.get_shared_logger(name=str(ele.id),main_=aioprocessing.Queue(),other_=aioprocessing.Queue())
+    innerlog.set(templog_)
 
     attempt.set(attempt.get(0) + 1)  
     try:
