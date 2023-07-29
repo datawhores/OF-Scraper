@@ -1,8 +1,4 @@
-
-
-
 name: package builder release
-
 on:
   workflow_dispatch: 
     inputs:
@@ -59,48 +55,54 @@ jobs:
         with:
             fetch-depth: 0
             ref: ${{inputs.version}}
-      - name: show files
-        run: ls -la
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit            
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_version 
-          path: ofscraper
-      - name: update line
-        run: 
-          sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml
-      - name: Set up Python 3.10.6
-        uses: actions/setup-python@v4
+          path: ofscraper      
+      
+      - name: create one file
+        uses: addnab/docker-run-action@v3
         with:
-          python-version: '3.10.6'
-      - name: create virtualenv
-        run: python3.10 -m venv .venv
-      - name: install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.4.1
-      - name: Install package
-        run: poetry install  
-      - name: install builder
-        run: poetry add pyinstaller   
-      - name: build package single
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_linux_${{inputs.version}}" 
-      - name: upload file
+            image: datawhores/ubuntu:latest
+            options: -v ${{ github.workspace }}:/root/work
+            shell: bash
+            run: |
+                cd work
+                python3.11 -m venv .venv
+                /root/.local/bin/poetry install --with build
+                /root/.local/bin/poetry install
+                echo "install run pyinstaller"
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+
+      - name: upload one file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{inputs.version}}"
-      - name: build package dir
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" 
-      - uses: vimtor/action-zip@v1
+          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+      - name: create zip
+        uses: addnab/docker-run-action@v3
         with:
-          files: "dist/ofscraper_linux_${{inputs.version}}"
-          dest: "dist/ofscraper_linux_${{inputs.version}}.zip"
-      - name: upload file
+            image: datawhores/ubuntu:latest
+            options: -v ${{ github.workspace }}:/root/work
+            shell: bash
+            run: |
+                cd work
+                apt-get install zip -y
+                python3.11 -m venv .venv
+                /root/.local/bin/poetry install --with build
+                /root/.local/bin/poetry install
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+                zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
+      - name: upload one file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{inputs.version}}.zip"          
+          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
+                      
   windows:
     needs: [create_version]
     runs-on: windows-latest
@@ -205,52 +207,52 @@ jobs:
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{inputs.version}}.zip"               
           
-  publish_release:
-    runs-on: ubuntu-latest
-    name: publish
-    needs: [linux,windows,mac]
-    permissions:
-      contents: write 
-    steps:
-      - name: Download linux
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_linux  
-      - name: Download linux zip
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_linux_zip 
+  # publish_release:
+  #   runs-on: ubuntu-latest
+  #   name: publish
+  #   needs: [linux,windows,mac]
+  #   permissions:
+  #     contents: write 
+  #   steps:
+  #     - name: Download linux
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: ofscraper_linux  
+  #     - name: Download linux zip
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: ofscraper_linux_zip 
 
-      - name: Download mac
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_macos   
-      - name: Download mac zip
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_macos_zip         
-      - name: Download windows
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_windows        
-      - name: Download windows zip
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_windows_zip  
+  #     - name: Download mac
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: ofscraper_macos   
+  #     - name: Download mac zip
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: ofscraper_macos_zip         
+  #     - name: Download windows
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: ofscraper_windows        
+  #     - name: Download windows zip
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: ofscraper_windows_zip  
       
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
-      - name: show files
-        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
-      - name: upload package
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-          tag: ${{inputs.version}}
-          allowUpdates: True
-          omitBodyDuringUpdate: True
-          omitDraftDuringUpdate: True
+  #     - name: commit
+  #       uses: pr-mpt/actions-commit-hash@v2
+  #       id: commit
+  #     - name: show files
+  #       run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+  #     - name: upload package
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+  #         tag: ${{inputs.version}}
+  #         allowUpdates: True
+  #         omitBodyDuringUpdate: True
+  #         omitDraftDuringUpdate: True
 
   pypi:
     if: ${{ inputs.pip}}
