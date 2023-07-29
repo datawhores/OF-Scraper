@@ -70,9 +70,8 @@ jobs:
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
-                echo "install run pyinstaller"
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
-                zip -r "dist/${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
+                zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
