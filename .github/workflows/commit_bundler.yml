@@ -49,15 +49,20 @@ jobs:
                 cd work
                 apt-get update -y
                 apt-get upgrade -y
-                apt install software-properties-common -y
-                add-apt-repository ppa:deadsnakes/ppa -y
-                apt-get update -y
-                apt-get install curl python3.10 pip git python3.10-venv -y
-                curl -sSL https://install.python-poetry.org | python3.10 -
-                python3.10 -m venv .venv
+                apt-get install curl git -y
+                apt install pkg-config build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev -y
+                wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tar.xz
+                tar -xf Python-3.11.4.tar.xz 
+                cd Python-3.11.4/ 
+                ./configure --enable-optimizations 
+                make -j $(nproc)
+                cd ..
+                ./Python-3.11.4/python -m venv .venv
                 /root/.local/bin/poetry install --with build
-                poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onefiletemp
-                poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onedirtemp 
+                 curl -sSL https://install.python-poetry.org | ./Python-3.11.4/python -
+                /root/.local/bin/poetry install
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onefiletemp
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onedirtemp 
 #       - name: commit
 #         uses: pr-mpt/actions-commit-hash@v2
 #         id: commit
