@@ -55,7 +55,7 @@ jobs:
                 tar -xf Python-3.11.4.tar.xz 
                 cd Python-3.11.4/ 
                 ./configure --enable-optimizations 
-                make -j $(nproc)
+                make -j $(nproc) --enable-shared
                 cd ..
                 ./Python-3.11.4/python -m venv .venv
                 /root/.local/bin/poetry install --with build
