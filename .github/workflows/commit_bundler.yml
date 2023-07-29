@@ -84,157 +84,157 @@ jobs:
           name: ofscraper_linux
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
         
-#   windows:
-#     needs: [create_version]
-#     runs-on: windows-latest
-#     name: create windows release
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#         with:
-#             fetch-depth: 0        
-#       - name: commit
-#         uses: pr-mpt/actions-commit-hash@v2
-#         id: commit   
-#       - name: replace version.py
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_version 
-#           path: ofscraper
-#       - name: Set up Python 3.10.6
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.10.6'
-#       - name: install poetry
-#         uses: abatilo/actions-poetry@v2
-#         with:
-#           poetry-version: 1.4.1 
-#       - name: create virtualenv
-#         run: python3 -m venv .venv
-#       - name: active env
-#         run: poetry env use  .venv/Scripts/python3        
-#       - name: Install package
-#         run: poetry install
-#       - name: Install builder       
-#         run: poetry add pyinstaller
+  windows:
+    needs: [create_version]
+    runs-on: windows-latest
+    name: create windows release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0        
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit   
+      - name: replace version.py
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_version 
+          path: ofscraper
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1 
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: active env
+        run: poetry env use  .venv/Scripts/python3        
+      - name: Install package
+        run: poetry install
+      - name: Install builder       
+        run: poetry add pyinstaller
      
-#       - name: build package
+      - name: build package
        
-#         run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_windows
-#           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
-#       - name: build package dir
-#         run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
-#       - uses: vimtor/action-zip@v1
-#         with:
-#           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
-#           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_windows_zip
-#           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"               
-#   mac:
-#     needs: [create_version]
-#     runs-on: macos-latest 
-#     name: create mac release
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v3
-#         with:
-#             fetch-depth: 0      
-#       - name: commit
-#         uses: pr-mpt/actions-commit-hash@v2
-#         id: commit            
-#       - name: replace version.py
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_version     
-#           path: ofscraper
-#       - name: Set up Python 3.10.6
-#         uses: actions/setup-python@v4
-#         with:
-#           python-version: '3.10.6'
-#       - name: create virtualenv
-#         run: python3 -m venv .venv
-#       - name: install poetry
-#         uses: abatilo/actions-poetry@v2
-#         with:
-#           poetry-version: 1.4.1
-#       - name: Install package
-#         run: poetry install
-#       - name: Install builder
-#         run: pip install pyinstaller
-#       - name: build package
-#         run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_macos
-#           path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
-#       - name: build package dir
-#         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ steps.commit.outputs.short}}" 
-#       - uses: vimtor/action-zip@v1
-#         with:
-#           files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
-#           dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_macos_zip
-#           path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"    
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows
+          path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
+      - name: build package dir
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
+          dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows_zip
+          path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"               
+  mac:
+    needs: [create_version]
+    runs-on: macos-latest 
+    name: create mac release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0      
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit            
+      - name: replace version.py
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_version     
+          path: ofscraper
+      - name: Set up Python 3.10.6
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.6'
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: poetry install
+      - name: Install builder
+        run: pip install pyinstaller
+      - name: build package
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_macos
+          path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+      - name: build package dir
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ steps.commit.outputs.short}}" 
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_macos_zip
+          path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"    
   
-#   publish_release:
-#     runs-on: ubuntu-latest
-#     name: publish
-#     needs: [mac,windows,linux]
-#     permissions:
-#     steps:
-#       - name: Download linux
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_linux  
-#       - name: Download linux zip
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_linux_zip 
+  publish_release:
+    runs-on: ubuntu-latest
+    name: publish
+    needs: [mac,windows,linux]
+    permissions:
+    steps:
+      - name: Download linux
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux  
+      - name: Download linux zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux_zip 
 
-#       - name: Download mac
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_macos   
-#       - name: Download mac zip
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_macos_zip         
-#       - name: Download windows
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_windows        
-#       - name: Download windows zip
-#         uses: actions/download-artifact@v3
-#         with:
-#           name: ofscraper_windows_zip  
-#       - name: commit
-#         uses: pr-mpt/actions-commit-hash@v2
-#         id: commit
-#       - name: Get current date
-#         id: date
-#         run: echo "date=$(date +'%Y.%m.%d_%H:%M')" >> $GITHUB_OUTPUT
+      - name: Download mac
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos   
+      - name: Download mac zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos_zip         
+      - name: Download windows
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows        
+      - name: Download windows zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows_zip  
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y.%m.%d_%H:%M')" >> $GITHUB_OUTPUT
 
 
-#       - name: create release
-#         uses: ncipollo/release-action@v1
-#         with:
-#           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-#           tag: ${{steps.commit.outputs.short}}
-#           name: ${{env.name}}
-#           body: ${{env.body}}
-#         env:
-#           name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }}_${{ steps.commit.outputs.short}}_package"
-#           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
+      - name: create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+          tag: ${{steps.commit.outputs.short}}
+          name: ${{env.name}}
+          body: ${{env.body}}
+        env:
+          name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }}_${{ steps.commit.outputs.short}}_package"
+          body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
 
  
