@@ -192,6 +192,7 @@ jobs:
     name: publish
     needs: [mac,windows,linux]
     permissions:
+      contents: write 
     steps:
       - name: Download linux
         uses: actions/download-artifact@v3
