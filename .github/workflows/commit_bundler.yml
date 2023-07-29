@@ -45,11 +45,11 @@ jobs:
       - name: run image and create binaries
         uses: addnab/docker-run-action@v3
         with:
-            image: test-image:latest
+            image: datawhores/ubuntu:latest
             options: -v ${{ github.workspace }}:/work
             shell: bash
             run: |
-               ./Python-3.11.4/python -m venv .venv
+                python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 echo "install run pyinstaller"
