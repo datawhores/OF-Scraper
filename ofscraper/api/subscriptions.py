@@ -41,9 +41,9 @@ async def scrape_subscriptions(c,offset=0) -> list:
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 return subscriptions
             else:
-                log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-                log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+                log.debug(f"[bold]subscriptions request status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()
