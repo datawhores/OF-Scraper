@@ -41,7 +41,6 @@ jobs:
             fetch-depth: 0
       - uses: addnab/docker-run-action@v3
         with:
-            registry: gcr.io
             image: ubuntu:18.04
             options: -v ${{ github.workspace }}:/work
             shell: bash
