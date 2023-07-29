@@ -41,7 +41,7 @@ jobs:
         with:
             tags: test-image:latest
             push: false
-            file: 'linux_docker.yml'
+            file: 'linux_docker'
       - name: run image and create binaries
         uses: addnab/docker-run-action@v3
         with:
