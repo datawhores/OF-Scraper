@@ -32,7 +32,7 @@ async def get_subscriptions(subscribe_count):
 
 
 
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.MAX_SEMAPHORE),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_subscriptions(c,offset=0) -> list:
 
         async with c.requests( subscriptionsEP.format(offset))() as r:
