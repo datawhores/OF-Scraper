@@ -66,7 +66,7 @@ import ofscraper.utils.exit as exit
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
-from   ofscraper.classes.multiprocessProgress import multiprocessProgress as progress
+from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress
 from aioprocessing import AioPipe
 if platform.system() == 'Windows':
     from win32_setctime import setctime 
