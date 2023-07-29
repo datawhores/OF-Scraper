@@ -107,6 +107,7 @@ def edit_auth():
                     break
                 except:
                     continue
+    make_request_auth() 
 
 def make_auth( auth=None):
     authFile=paths.get_auth_file()
