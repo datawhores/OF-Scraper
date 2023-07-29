@@ -51,6 +51,11 @@ jobs:
                 apt-get upgrade -y
                 apt-get install curl git -y
                 apt install python3-dev python-dev pkg-config build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev -y
+                apt install build-dep python3 -y
+                apt-get install build-essential gdb lcov pkg-config \
+                libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev \
+                libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev \
+                lzma lzma-dev tk-dev uuid-dev zlib1g-dev -y
                 wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tar.xz
                 tar -xf Python-3.11.4.tar.xz 
                 cd Python-3.11.4/ 
