@@ -61,9 +61,12 @@ jobs:
                 ./configure --enable-optimizations --enable-shared
                 make -j $(nproc)
                 cd ..
-                echo "install ofscraper"
-                ./Python-3.11.4/python -m venv .venv
+                echo "set enviroment variable"
+                export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work/Python-3.11.4/libpython3.11.a
+                echo "install poetry"
                  curl -sSL https://install.python-poetry.org | ./Python-3.11.4/python -
+                 "create virtenv and install ofscraper"
+                 ./Python-3.11.4/python -m venv .venv
                  /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 echo "install run pyinstaller"
