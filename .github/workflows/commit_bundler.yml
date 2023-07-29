@@ -54,8 +54,8 @@ jobs:
                 wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tar.xz
                 tar -xf Python-3.11.4.tar.xz 
                 cd Python-3.11.4/ 
-                ./configure --enable-optimizations 
-                make -j $(nproc) --enable-shared
+                ./configure --enable-optimizations --enable-shared
+                make -j $(nproc)
                 cd ..
                 ./Python-3.11.4/python -m venv .venv
                 /root/.local/bin/poetry install --with build
