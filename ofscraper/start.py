@@ -21,9 +21,11 @@ import psutil
 
 
 def main():
-    other_log_process=None
-    other_log_thread=None
     main_log_thread=None
+    other_log_process=None
+    #only use if <2 threads
+    other_log_thread=None
+   
     try:
         startvalues()
         discord_warning()

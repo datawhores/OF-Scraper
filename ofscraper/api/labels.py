@@ -139,8 +139,11 @@ async def scrape_labelled_posts(c,label,model_id,job_progress,offset=0):
     global tasks
     posts = None
     attempt.set(attempt.get(0) + 1)
+    await sem.acquire()
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} : offset -> {offset} + label -> {label.get('name')}",visible=True)
     async with c.requests(url=constants.labelledPostsEP.format(model_id, offset, label['id']))() as r:
+        sem.release()
+        
         if r.ok:
             data=await r.json_()
             attempt.set(0)
