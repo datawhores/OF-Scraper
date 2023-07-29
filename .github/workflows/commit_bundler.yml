@@ -1,6 +1,6 @@
 name: package builder commit
 on:
-  push:
+  push2:
 jobs:
   create_version:
     runs-on: ubuntu-20.04
