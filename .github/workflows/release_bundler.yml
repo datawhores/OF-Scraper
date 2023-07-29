@@ -73,7 +73,6 @@ jobs:
             run: |
                 cd work
                 python3.11 -m venv .venv
-                /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller
                 echo "install run pyinstaller"
@@ -94,7 +93,6 @@ jobs:
                 cd work
                 apt-get install zip -y
                 python3.11 -m venv .venv
-                /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
