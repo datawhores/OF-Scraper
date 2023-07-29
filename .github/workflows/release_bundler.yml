@@ -492,5 +492,4 @@ jobs:
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          push: true          
-Update release_bundler.yml · datawhores/OF-Scraper@5f15b5e
+          push: true  
