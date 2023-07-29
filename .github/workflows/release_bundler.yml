@@ -84,7 +84,6 @@ jobs:
                 /root/.local/bin/poetry add pyinstaller
                 echo "install run pyinstaller"
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
-
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -214,52 +213,52 @@ jobs:
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{inputs.version}}.zip"               
           
-  # publish_release:
-  #   runs-on: ubuntu-latest
-  #   name: publish
-  #   needs: [linux,windows,mac]
-  #   permissions:
-  #     contents: write 
-  #   steps:
-  #     - name: Download linux
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ofscraper_linux  
-  #     - name: Download linux zip
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ofscraper_linux_zip 
+  publish_release:
+    runs-on: ubuntu-latest
+    name: publish
+    needs: [linux,windows,mac]
+    permissions:
+      contents: write 
+    steps:
+      - name: Download linux
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux  
+      - name: Download linux zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_linux_zip 
 
-  #     - name: Download mac
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ofscraper_macos   
-  #     - name: Download mac zip
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ofscraper_macos_zip         
-  #     - name: Download windows
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ofscraper_windows        
-  #     - name: Download windows zip
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: ofscraper_windows_zip  
+      - name: Download mac
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos   
+      - name: Download mac zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_macos_zip         
+      - name: Download windows
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows        
+      - name: Download windows zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_windows_zip  
       
-  #     - name: commit
-  #       uses: pr-mpt/actions-commit-hash@v2
-  #       id: commit
-  #     - name: show files
-  #       run: ls /home/runner/work/OF-Scraper/OF-Scraper 
-  #     - name: upload package
-  #       uses: ncipollo/release-action@v1
-  #       with:
-  #         artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-  #         tag: ${{inputs.version}}
-  #         allowUpdates: True
-  #         omitBodyDuringUpdate: True
-  #         omitDraftDuringUpdate: True
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
+      - name: show files
+        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+      - name: upload package
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+          tag: ${{inputs.version}}
+          allowUpdates: True
+          omitBodyDuringUpdate: True
+          omitDraftDuringUpdate: True
 
   pypi:
     if: ${{ inputs.pip}}
@@ -493,4 +492,4 @@ jobs:
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          push: true          
+          push: true  
