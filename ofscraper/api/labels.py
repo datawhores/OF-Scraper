@@ -95,7 +95,7 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
 
 
 async def get_labelled_posts(labels, username):
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting labels...\n{task.description}"))
+    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting posts from labels...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,

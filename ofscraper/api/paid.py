@@ -125,7 +125,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
 
 
 async def get_all_paid_posts():
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting paid media...\n{task.description}"))
+    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting all paid media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
