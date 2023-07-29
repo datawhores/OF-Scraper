@@ -63,7 +63,9 @@ class sessionBuilder:
 
     def _create_headers(self,headers,url):
         headers=headers or {}
-        headers.update(auth.make_headers(auth.read_auth())) if self._set_header else None
+        if self._set_header:
+            new_headers=auth.make_headers(auth.read_auth())
+            headers.update(new_headers)
         headers=self._create_sign(headers,url)
         return headers
     def _create_sign(self,headers,url) : 
