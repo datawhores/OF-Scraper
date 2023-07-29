@@ -36,6 +36,9 @@ jobs:
         uses: actions/checkout@v3
         with:
             fetch-depth: 0
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit            
       - name: run image and create binaries
         uses: addnab/docker-run-action@v3
         with:
@@ -48,8 +51,8 @@ jobs:
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onefiletemp
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onedirtemp 
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
 #       - name: commit
 #         uses: pr-mpt/actions-commit-hash@v2
 #         id: commit
