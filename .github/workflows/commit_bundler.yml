@@ -81,7 +81,7 @@ jobs:
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
-          name: ofscraper_linux
+          name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
         
   windows:
