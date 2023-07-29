@@ -28,6 +28,9 @@ jobs:
         with:
             fetch-depth: 0
             ref: ${{inputs.version}}
+      - name: update line
+        run: 
+          sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml      
       - name: Set up Python 3.10.6
         uses: actions/setup-python@v4
         with:
