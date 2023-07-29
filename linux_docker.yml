@@ -1,0 +1,24 @@
+FROM ubuntu:18.04
+RUN echo "install requirements
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN apt-get install curl git -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install tzdata
+RUN apt-get install python3-dev python-dev pkg-config build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev -y
+RUN apt-get install build-dep python3 -y
+RUN apt-get install build-essential gdb lcov pkg-config -y
+RUN apt-get install libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev -y
+RUN apt-get install libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev -y
+RUN apt-get install lzma lzma-dev tk-dev uuid-dev zlib1g-dev -y
+RUN echo "get and extract python"
+RUN wget https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tar.xz
+RUN tar -xf Python-3.11.4.tar.xz     
+RUN echo "set enviroment variable"
+RUN export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work/Python-3.11.4/libpython3.11.aPython-3.11.4.tar.xz 
+RUN echo "install from source"
+WORKDIR Python-3.11.4
+RUN ./configure --enable-optimizations --enable-shared
+RUN make -j $(nproc)
+WORKDIR ..
+RUN echo "install poetry"
+RUN curl -sSL https://install.python-poetry.org | ./Python-3.11.4/python -
