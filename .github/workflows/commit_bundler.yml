@@ -58,8 +58,8 @@ jobs:
                 make -j $(nproc)
                 cd ..
                 ./Python-3.11.4/python -m venv .venv
-                /root/.local/bin/poetry install --with build
                  curl -sSL https://install.python-poetry.org | ./Python-3.11.4/python -
+                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onefiletemp
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name onedirtemp 
