@@ -1,5 +1,6 @@
+#not for public consumption
 FROM ubuntu:18.04
-RUN echo "install requirements
+RUN echo "install requirements"
 RUN apt-get update -y
 RUN apt-get upgrade -y
 RUN apt-get install curl git -y
