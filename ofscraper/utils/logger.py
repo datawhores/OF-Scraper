@@ -280,7 +280,7 @@ def logger_process(input_,name=None,stop_count=1,event=None):
 
 #mulitprocess
 # executed in a process that performs logging
-def logger_other(input_,name=None,stop_count=1):
+def logger_other(input_,name=None,stop_count=1,event=None):
     # create a logger
     log=init_other_logger(name)
     count=0
@@ -289,11 +289,15 @@ def logger_other(input_,name=None,stop_count=1):
         return
     while True:
         # consume a log message, block until one arrives
+        if event and event.is_set():
+           return True
         messages = input_.get()
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
             #set close value
+            if event and event.is_set():
+                close=True
             if message=="None":
                 close=True
                 continue    
@@ -311,7 +315,7 @@ def logger_other(input_,name=None,stop_count=1):
 
 
 # some inherantence from main process
-def start_stdout_logthread(input_=None,name=None,count=1,event=None,pipe=None):
+def start_stdout_logthread(input_=None,name=None,count=1,event=None):
     input_=input_ or queue_
     thread= threading.Thread(target=logger_process,args=(input_,name,count,event),daemon=True)
     thread.start()
@@ -320,9 +324,9 @@ def start_stdout_logthread(input_=None,name=None,count=1,event=None,pipe=None):
     return thread
 
 
-def start_other_thread(input_=None,name=None,count=1):
+def start_other_thread(input_=None,name=None,count=1,event=None):
     input_=input_ or otherqueue_
-    thread= threading.Thread(target=logger_other,args=(input_,name,count),daemon=True)
+    thread= threading.Thread(target=logger_other,args=(input_,name,count,event),daemon=True)
     thread.start()
     return thread
     

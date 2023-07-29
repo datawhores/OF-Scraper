@@ -15,20 +15,24 @@ import ofscraper.utils.exit as exit
 import ssl
 import platform
 import certifi
+import psutil
 
 
 
 
 def main():
-    process=None
-    thread=None
+    other_log_process=None
+    other_log_thread=None
+    main_log_thread=None
     try:
         startvalues()
         discord_warning()
-        event = Event()
-        thread=logger.start_stdout_logthread(event=event)
-        #start other log consumer
-        process=logger.start_other_process()
+        main_event = Event()
+        other_event = Event()
+        main_log_thread=logger.start_stdout_logthread(event=main_event)
+        #start other log consumer, only if more then 3 process
+        if len(psutil.Process().cpu_affinity())>2:other_log_process=logger.start_other_process()
+        else: other_log_thread=logger.start_other_thread(event=other_event)
         #allow background processes to start
         time.sleep(3)
 
@@ -51,22 +55,22 @@ def main():
         else:
             scraper.main()
         logger.get_shared_logger().critical(None)
-        thread.join()
-        if process:process.join()
+        main_log_thread.join()
+        if other_log_process:other_log_process.join()
+        if other_log_thread:other_log_thread.join()
     except KeyboardInterrupt as E:
             print("Force closing script")
             try:
                 with exit.DelayedKeyboardInterrupt():
-                    event.set()
-                    if process:process.join(timeout=1)
-                    if process:process.terminate()
+                    main_event.set()
+                    if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                    if other_log_thread:other_event.set();other_log_thread.join()
+
                    
             except KeyboardInterrupt:
-                    event.set()
-                    if process:process.join(timeout=1)
-                    if process:process.terminate()
-                    event.set()
-    
+                    main_event.set()
+                    if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                    if other_log_thread:other_event.set();other_log_thread.join()
 
     
 
