@@ -39,7 +39,7 @@ jobs:
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit            
-      - name: run image and create binaries
+      - name: create one file
         uses: addnab/docker-run-action@v3
         with:
             image: datawhores/ubuntu:latest
@@ -51,8 +51,35 @@ jobs:
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+
+      - name: upload one file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_linux
+          path: "{{ github.workspace }}/dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+      - name: create zip
+        uses: addnab/docker-run-action@v3
+        with:
+            image: datawhores/ubuntu:latest
+            options: -v ${{ github.workspace }}:/root/work
+            shell: bash
+            run: |
+                cd work
+                apt-get install zip
+                python3.11 -m venv .venv
+                /root/.local/bin/poetry install --with build
+                /root/.local/bin/poetry install
+                echo "install run pyinstaller"
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+                zip -r "dist/${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
+      - name: upload one file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_linux
+          path: "{{ github.workspace }}/dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
+                
+      #/root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
 #       - name: commit
 #         uses: pr-mpt/actions-commit-hash@v2
 #         id: commit
