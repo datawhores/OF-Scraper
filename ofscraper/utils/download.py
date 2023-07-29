@@ -66,7 +66,7 @@ import ofscraper.utils.exit as exit
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
-from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress
+from   ofscraper.classes.multiprocessProgress import multiprocessProgress as progress
 from aioprocessing import AioPipe
 if platform.system() == 'Windows':
     from win32_setctime import setctime 
@@ -210,7 +210,7 @@ def get_mediasplits(medialist):
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
-    asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
+    asyncio.run(process_dicts_split(username,model_id,ele,log,p_logqueue_,pipe_))
 
 def job_progress_helper(job_progress,result):
     funct={
@@ -238,13 +238,14 @@ def setpriority():
         process.nice(10) 
         process.ionice(ioclass=2)
 
-async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
+async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy,pipecopy):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")
     global log 
     log=logCopy
-    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")
-
+    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")   
+    global logqueue_
+    logqueue_=logqueueCopy
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
@@ -261,7 +262,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,queuecopy):
     global log_trace
     log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
     global pipe_
-    pipe_=queuecopy
+    pipe_=pipecopy
     
     split_log.debug(f"{pid_log_helper()} starting process")
     
