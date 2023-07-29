@@ -43,6 +43,7 @@ jobs:
             options: -v ${{ github.workspace }}:/work
             shell: bash
             run: |
+                cd work
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
