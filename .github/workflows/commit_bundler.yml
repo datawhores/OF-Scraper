@@ -28,7 +28,7 @@ jobs:
           name: ofscraper_version
           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
   linux:
-    needs: [create_version]    
+#     needs: [create_version]    
     runs-on: ubuntu-20.04
     name: create linux release
     steps:
@@ -41,7 +41,7 @@ jobs:
         with:
             tags: test-image:latest
             push: false
-            file: '{context}/linux_docker.yml'
+            file: 'linux_docker.yml'
       - name: run image and create binaries
         uses: addnab/docker-run-action@v3
         with:
