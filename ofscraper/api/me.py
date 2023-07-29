@@ -73,7 +73,7 @@ def parse_subscriber_count():
                 data=r.json_()
                 return data["subscriptions"]["all"]
             else:
-                log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-                log.debug(f"[bold]archived response:[/bold] {r.text_()}")
-                log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+                log.debug(f"[bold]subscriber count request status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")
+                log.debug(f"[bold]subscriber count headers:[/bold] {r.headers}")
 
