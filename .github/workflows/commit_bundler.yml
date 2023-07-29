@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "{{ github.workspace }}/dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -77,7 +77,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "{{ github.workspace }}/dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
+          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
                 
       #/root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
 #       - name: commit
