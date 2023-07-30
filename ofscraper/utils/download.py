@@ -265,6 +265,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     pipe_=pipecopy
     
     split_log.debug(f"{pid_log_helper()} starting process")
+    split_log.debug(f"{pid_log_helper()} process mediasplit from total {len(medialist)}")
+
     
     
 
