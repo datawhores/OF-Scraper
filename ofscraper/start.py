@@ -40,7 +40,7 @@ def main():
 
         args=args_.getargs()
         if vars(args).get("help"):
-            quit()
+            sys.exit()
     
 
         make_folders()

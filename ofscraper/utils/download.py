@@ -98,6 +98,7 @@ logqueue_=logger.queue_
 
 #start other thread here
 async def process_dicts(username,model_id,medialist):
+    aioprocessing.set_context()
     log=logging.getLogger("shared")
     random.shuffle(medialist)
     if len(medialist)==0:
