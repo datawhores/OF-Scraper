@@ -31,7 +31,6 @@ from ..utils.paths import getcachepath
 cache = Cache(getcachepath())
 
 log = logging.getLogger("shared")
-args = args_.getargs()
 console=console_.get_shared_console()
 ROW_NAMES = "Number","Download_Cart", "UserName", "Downloaded", "Unlocked", "Times_Detected", "Length", "Mediatype", "Post_Date", "Post_Media_Count", "Responsetype", "Price", "Post_ID", "Media_ID", "Text"
 ROWS = []
@@ -39,6 +38,7 @@ app=None
 
 
 def process_download_cart():
+        
         while True:
             global app
             while app and not app.row_queue.empty():
@@ -119,7 +119,7 @@ def post_checker():
             oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
             user_dict[user_name] = {}
             user_dict[user_name] = user_dict[user_name] or []
-            if len(oldtimeline) > 0 and not args.force:
+            if len(oldtimeline) > 0 and not args_.getargs().force:
                 user_dict[user_name].extend(oldtimeline)
             else:
                 user_dict[user_name] = {}
@@ -132,7 +132,7 @@ def post_checker():
                 cache.close()
             
             oldarchive = cache.get(f"archived_check_{model_id}", default=[])
-            if len( oldarchive) > 0 and not args.force:
+            if len( oldarchive) > 0 and not args_.getargs().force:
                 user_dict[user_name].extend(oldarchive)
             else:
                 data=asyncio.run(
@@ -173,11 +173,11 @@ def reset_url():
     args=args_.getargs()
     argdict=vars(args)
     if argdict.get("url"):
-        args.url=None
+        args_.getargs().url=None
     if argdict.get("file"):
-        args.file=None
+        args_.getargs().file=None
     if argdict.get("username"):
-        args.username=None
+        args_.getargs().username=None
     args_.changeargs(args)
     
 
@@ -209,7 +209,7 @@ def message_checker():
         oldmessages = cache.get(f"message_check_{model_id}", default=[])
         log.debug(f"Number of messages in cache {len(oldmessages)}")
         
-        if len(oldmessages) > 0 and not args.force:
+        if len(oldmessages) > 0 and not args_.getargs().force:
             messages = oldmessages
         else:
             messages = asyncio.run(
@@ -219,7 +219,7 @@ def message_checker():
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
         # paid content
-        if len(oldpaid) > 0 and not args.force:
+        if len(oldpaid) > 0 and not args_.getargs().force:
             paid = oldpaid
         else:
             paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
@@ -245,14 +245,14 @@ def purchase_checker():
     user_dict = {}
     headers = auth.make_headers(auth.read_auth())
     ROWS = []
-    for user_name in args.username:
+    for user_name in args_.getargs().username:
         user_name=profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id( user_name)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
         
-        if len(oldpaid) > 0 and not args.force:
+        if len(oldpaid) > 0 and not args_.getargs().force:
             paid = oldpaid
         else:
             paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
@@ -269,7 +269,7 @@ def purchase_checker():
 def stories_checker():
     user_dict = {}
     ROWS=[]
-    for user_name in args.username:
+    for user_name in args_.getargs().username:
         user_name=profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id( user_name)    
@@ -295,8 +295,8 @@ def stories_checker():
 
 def url_helper():
     out = []
-    out.extend(args.file or [])
-    out.extend(args.url or [])
+    out.extend(args_.getargs().file or [])
+    out.extend(args_.getargs().url or [])
     return map(lambda x: x.strip(), out)
 
 
@@ -324,7 +324,7 @@ def get_paid_ids(model_id,user_name):
     oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
     paid = None
         
-    if len(oldpaid) > 0 and not args.force:
+    if len(oldpaid) > 0 and not args_.getargs().force:
          paid = oldpaid
     else:
         paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
