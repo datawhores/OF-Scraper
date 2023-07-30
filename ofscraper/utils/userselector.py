@@ -23,22 +23,21 @@ import ofscraper.utils.stdout as stdout
 ALL_SUBS=None
 PARSED_SUBS=None
 log=logging.getLogger("shared")
-args=args_.getargs()
 
 def getselected_usernames(rescan=False,reset=False):
     #username list will be retrived every time reset==True
     global ALL_SUBS
     global PARSED_SUBS
-    if "Skip" in args.posts:
+    if "Skip" in args_.getargs().posts:
         return []
     if reset==True and PARSED_SUBS:
         if prompts.reset_username_prompt()=="Yes":
            PARSED_SUBS=None
-           args.username=None
+           args_.getargs().username=None
            args_.changeargs(args)
     if rescan==True:
         PARSED_SUBS=None
-    if not PARSED_SUBS or not args.username:
+    if not PARSED_SUBS or not args_.getargs().username:
         all_subs_helper()
         parsed_subscriptions_helper()
     return PARSED_SUBS
@@ -56,15 +55,15 @@ def all_subs_helper():
 def parsed_subscriptions_helper(force=False):
     global ALL_SUBS
     global PARSED_SUBS
-    if not args.username:
+    if not args_.getargs().username:
         selectedusers=get_model(ALL_SUBS)
-        args.username=list(map(lambda x:x["name"],selectedusers))
+        args_.getargs().username=list(map(lambda x:x["name"],selectedusers))
         PARSED_SUBS=selectedusers
         args_.changeargs(args)  
-    elif "ALL" in args.username:
+    elif "ALL" in args_.getargs().username:
         PARSED_SUBS=filterNSort(ALL_SUBS)
-    elif args.username:
-        usernameset=set(args.username)
+    elif args_.getargs().username:
+        usernameset=set(args_.getargs().username)
         PARSED_SUBS=list(filter(lambda x:x["name"] in usernameset,ALL_SUBS))
     return PARSED_SUBS
         
@@ -88,31 +87,31 @@ def filterNSort(usernames):
     filterusername=usernames
     log.debug(f"username count no filters: {len(filterusername)}")
     dateNow=arrow.now()
-    if args.account_type=="paid":
+    if args_.getargs().account_type=="paid":
         filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
         log.debug(f"+paid filter username count: {len(filterusername)}")
 
-    elif args.account_type=="free":
+    elif args_.getargs().account_type=="free":
         filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
         log.debug(f"+free filter username count: {len(filterusername)}")
     
-    if args.renewal=="active":
+    if args_.getargs().renewal=="active":
         filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
         log.debug(f"+active renewal filter username count: {len(filterusername)}")
 
-    elif args.renewal=="disabled":
+    elif args_.getargs().renewal=="disabled":
         filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
         log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
 
-    if args.sub_status=="active":
+    if args_.getargs().sub_status=="active":
         filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
         log.debug(f"+active subscribtion filter username count: {len(filterusername)}")
 
-    elif args.sub_status=="expired":
+    elif args_.getargs().sub_status=="expired":
         filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
         log.debug(f"+expired subscribtion filter username count: {len(filterusername)}")
 
-    filterusername=list(filter(lambda x:x["name"] not in args.excluded_username ,filterusername))
+    filterusername=list(filter(lambda x:x["name"] not in args_.getargs().excluded_username ,filterusername))
     log.debug(f"final username count with all filters: {len(filterusername)}")
     if len(filterusername)==0:
         raise Exception("You have filtered the user list to zero\nPlease Select less restrictive filters")
@@ -121,8 +120,8 @@ def filterNSort(usernames):
 
 
 def sort_models_helper(models):
-    sort=args.sort
-    reverse=args.desc
+    sort=args_.getargs().sort
+    reverse=args_.getargs().desc
     if sort=="name":
         return sorted(models,reverse=reverse, key=lambda x:x["name"])
     elif sort=="expired":

@@ -31,7 +31,6 @@ import ofscraper.api.labels as labels_api
 import ofscraper.classes.labels as labels
 
 log=logging.getLogger("shared")
-args=args_.getargs()
 log.debug(args)
 
 def process_messages(model_id,username):
@@ -183,9 +182,10 @@ def process_labels(model_id, username):
         return [item for sublist in output for item in sublist]
 
 def select_areas():
-    if not args.scrape_paid and len( args.posts or [])==0:
+    args=args_.getargs()
+    if not args_.getargs().scrape_paid and len( args_.getargs().posts or [])==0:
           args.scrape_paid=prompts.scrape_paid_prompt()
-    args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.areas_prompt())
+    args.posts = list(map(lambda x:x.capitalize(),(args_.getargs().posts or prompts.areas_prompt())
 ))
 
     args_.changeargs(args)
@@ -204,29 +204,29 @@ def process_areas(ele, model_id) -> list:
     labels_dicts=[]
 
     username=ele['name']
-    if "Skip" in args.posts:
+    if "Skip" in args_.getargs().posts:
         return []
   
-    if ('Profile' in args.posts or 'All' in args.posts):
+    if ('Profile' in args_.getargs().posts or 'All' in args_.getargs().posts):
         profile_dicts  = process_profile(username)
-    if ('Pinned' in args.posts or 'All' in args.posts):
+    if ('Pinned' in args_.getargs().posts or 'All' in args_.getargs().posts):
             pinned_post_dict = process_pinned_posts(model_id,username)
-    if ('Timeline' in args.posts or 'All' in args.posts):
+    if ('Timeline' in args_.getargs().posts or 'All' in args_.getargs().posts):
             timeline_posts_dicts = process_timeline_posts( model_id,username)
-    if ('Archived' in args.posts or 'All' in args.posts):
+    if ('Archived' in args_.getargs().posts or 'All' in args_.getargs().posts):
             archived_posts_dicts = process_archived_posts( model_id,username)
-    if 'Messages' in args.posts or 'All' in args.posts:
+    if 'Messages' in args_.getargs().posts or 'All' in args_.getargs().posts:
             messages_dicts = process_messages( model_id,username)
-    if "Purchased" in args.posts or "All" in args.posts:
+    if "Purchased" in args_.getargs().posts or "All" in args_.getargs().posts:
             purchased_dict=process_paid_post(model_id,username)
-    if 'Highlights'  in args.posts or 'All' in args.posts:
+    if 'Highlights'  in args_.getargs().posts or 'All' in args_.getargs().posts:
             highlights_dicts = process_highlights( model_id,username)  
-    if 'Stories'  in args.posts or 'All' in args.posts:
+    if 'Stories'  in args_.getargs().posts or 'All' in args_.getargs().posts:
             stories_dicts = process_stories( model_id,username)         
             
             
 
-    if ("Labels" in args.posts or "All" in args.posts) and ele["active"]:
+    if ("Labels" in args_.getargs().posts or "All" in args_.getargs().posts) and ele["active"]:
         labels_dicts = process_labels(model_id,username)             
     return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts, labels_dicts]))
