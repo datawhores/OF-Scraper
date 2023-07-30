@@ -44,13 +44,12 @@ import ofscraper.utils.of as OF
 import ofscraper.utils.exit as exit
 
 log=logging.getLogger("shared")
-args=args_.getargs()
 
 @exit.exit_wrapper
 def process_prompts():
     
     while  True:
-        args.posts=[]
+        args_.getargs().posts=[]
         result_main_prompt = prompts.main_prompt()
      
         #download
@@ -124,7 +123,7 @@ def process_prompts():
 
 @exit.exit_wrapper
 def process_post():
-    if args.users_first:
+    if args_.getargs().users_first:
          process_post_user_first()
     else:
         normal_post_process()
@@ -135,14 +134,14 @@ def process_post_user_first():
         profiles.print_current_profile()
         headers = auth.make_headers(auth.read_auth())
         init.print_sign_status(headers)
-        if args.users_first:
+        if args_.getargs().users_first:
             output=[]
             userdata=userselector.getselected_usernames(rescan=False)
             length=len(userdata)
             for count,ele in enumerate(userdata):
                 log.info(f"Progress {count+1}/{length} model")
-                if args.posts:
-                    log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+                if args_.getargs().posts:
+                    log.info(f"Getting {','.join(args_.getargs().posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
                     model_id = profile.get_id( ele["name"])
                     operations.create_tables(model_id,ele['name'])
@@ -151,7 +150,7 @@ def process_post_user_first():
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
                     log.traceback(traceback.format_exc())               
-            if args.scrape_paid:
+            if args_.getargs().scrape_paid:
                 output.extend(OF.process_all_paid())
             user_dict={}
             [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in output]
@@ -176,8 +175,8 @@ def normal_post_process():
         length=len(userdata)
         for count,ele in enumerate(userdata):
             log.info(f"Progress {count+1}/{length} model")
-            if args.posts:
-                log.info(f"Getting {','.join(args.posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
+            if args_.getargs().posts:
+                log.info(f"Getting {','.join(args_.getargs().posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
             try:
                 model_id = profile.get_id( ele["name"])
                 operations.create_tables(model_id,ele['name'])
@@ -192,7 +191,7 @@ def normal_post_process():
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
         
-        if args.scrape_paid:
+        if args_.getargs().scrape_paid:
             try:
                 user_dict={}
                 [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in OF.process_all_paid()]
@@ -254,7 +253,7 @@ def process_unlike():
                     like.unlike( model_id, ele["name"], post_ids)
 #Adds a function to the job queue
 def set_schedule(*functs):
-    [schedule.every(args.daemon).minutes.do(jobqueue.put,funct) for funct in functs]
+    [schedule.every(args_.getargs().daemon).minutes.do(jobqueue.put,funct) for funct in functs]
     while len(schedule.jobs)>0:
         schedule.run_pending()
         time.sleep(30)
@@ -265,9 +264,9 @@ def set_schedule(*functs):
 def run(*functs):
     # get usernames prior to potentially supressing output
     check_auth()
-    if args.output=="PROMPT":
+    if args_.getargs().output=="PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")    
-    if args.daemon:
+    if args_.getargs().daemon:
         log.info(f"[bold]daemon mode on[/bold]")   
     run_helper(*functs)
 
@@ -280,7 +279,7 @@ def run_helper(*functs):
     worker_thread=None
           
     try:
-        if args.daemon:
+        if args_.getargs().daemon:
                 worker_thread = threading.Thread(target=set_schedule,args=[*functs],daemon=True)
                 worker_thread.start()
                 # Check if jobqueue has function
@@ -366,7 +365,7 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green]Welcome to OF-Scraper Version {args.version}[/bold green]"
+            f"[bold green]Welcome to OF-Scraper Version {args_.getargs().version}[/bold green]"
         )                
 def main():
  
@@ -397,18 +396,18 @@ def scrapper():
     global selectedusers
     selectedusers=None
     functs=[]
-    if len(args.posts)==0 and not args.action and not args.scrape_paid:
-        if args.daemon:
+    if len(args_.getargs().posts)==0 and not args_.getargs().action and not args_.getargs().scrape_paid:
+        if args_.getargs().daemon:
                     log.error("You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu")
         process_prompts()
         return
     check_auth()
     check_config()
-    if len(args.posts)>0 or args.scrape_paid: 
+    if len(args_.getargs().posts)>0 or args_.getargs().scrape_paid: 
         functs.append(process_post)      
-    elif args.action=="like":
+    elif args_.getargs().action=="like":
         functs.append(process_like)
-    elif args.action=="unlike":
+    elif args_.getargs().action=="unlike":
         functs.append(process_unlike)
     run(*functs)  
   
