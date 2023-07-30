@@ -31,7 +31,6 @@ def scrape_user(headers):
         return _scraper_user_helper(c,json.dumps(headers))
 
 
-@lru_cache(maxsize=None)
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(0),wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),reraise=True,after=lambda retry_state:print(f"Trying to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}")) 
 def _scraper_user_helper(c,headers):
     headers = json.loads(headers)
@@ -74,6 +73,6 @@ def parse_subscriber_count():
                 return data["subscriptions"]["all"]
             else:
                 log.debug(f"[bold]subscriber count request status code:[/bold]{r.status}")
-                log.debug(f"[bold]subscriber count response:[/bold] {r.text_()}")
+                log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")
                 log.debug(f"[bold]subscriber count headers:[/bold] {r.headers}")
 
