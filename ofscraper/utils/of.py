@@ -31,7 +31,6 @@ import ofscraper.api.labels as labels_api
 import ofscraper.classes.labels as labels
 
 log=logging.getLogger("shared")
-log.debug(args)
 
 def process_messages(model_id,username):
     with stdout.lowstdout():
