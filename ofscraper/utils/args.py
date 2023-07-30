@@ -1,13 +1,12 @@
 import argparse
-import logging
 import sys
 import re
 import arrow
 import pathlib
 from ofscraper.__version__ import __version__ 
+import os
 
 args=None
-log=logging.getLogger("shared")
 def create_parser(input=None):
     parent_parser=argparse.ArgumentParser(add_help=False)
     general=parent_parser.add_argument_group("Program",description="Program Args")  
@@ -209,6 +208,8 @@ def getargs(input=None):
         input=[]
     elif input==None:
         input=sys.argv[1:]
+
+
     parser=create_parser(input)
     args=parser.parse_args(input)
     #deduplicate posts
