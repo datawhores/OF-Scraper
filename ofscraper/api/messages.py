@@ -188,7 +188,7 @@ def get_individual_post(model_id,postid,c=None):
             log.trace(f"message raw individual {r.json()}")
             return r.json()['list'][0]
         else:
-            log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-            log.debug(f"[bold]archived response:[/bold] {r.text_()}")
-            log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+            log.debug(f"[bold]invidual message request status code:[/bold]{r.status}")
+            log.debug(f"[bold]invidual message  response:[/bold] {r.text_()}")
+            log.debug(f"[bold]invidual message  headers:[/bold] {r.headers}")
 
