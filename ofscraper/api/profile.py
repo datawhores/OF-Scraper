@@ -57,9 +57,9 @@ def scrape_profile_helper(c,username:Union[int, str]):
         elif r.status==404:
             return {"username":"modeldeleted"}
         else:
-              log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-              log.debug(f"[bold]archived response:[/bold] {r.text_()}")
-              log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+              log.debug(f"[bold]profile request status code:[/bold]{r.status}")
+              log.debug(f"[bold]profile response:[/bold] {r.text_()}")
+              log.debug(f"[bold]profile headers:[/bold] {r.headers}")
               r.raise_for_status()
 
 
@@ -121,7 +121,7 @@ def get_id_helper(c,username):
             cache.close()
             return id
         else:
-            log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-            log.debug(f"[bold]archived response:[/bold] {r.text_()}")
-            log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+            log.debug(f"[bold]id request status code:[/bold]{r.status}")
+            log.debug(f"[bold]id response:[/bold] {r.text_()}")
+            log.debug(f"[bold]id headers:[/bold] {r.headers}")
             r.raise_for_status()
