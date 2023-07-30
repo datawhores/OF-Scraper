@@ -28,6 +28,7 @@ def getselected_usernames(rescan=False,reset=False):
     #username list will be retrived every time reset==True
     global ALL_SUBS
     global PARSED_SUBS
+
     if "Skip" in args_.getargs().posts:
         return []
     if reset==True and PARSED_SUBS:
@@ -55,6 +56,8 @@ def all_subs_helper():
 def parsed_subscriptions_helper(force=False):
     global ALL_SUBS
     global PARSED_SUBS
+    global args
+    args= args_.getargs()
     if not args_.getargs().username:
         selectedusers=get_model(ALL_SUBS)
         args_.getargs().username=list(map(lambda x:x["name"],selectedusers))
