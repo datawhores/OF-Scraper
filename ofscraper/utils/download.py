@@ -275,7 +275,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
         split_log.debug(f"{pid_log_helper()} Number of new mediaids with dupe ids removed: {len(medialist)}")  
         medialist=seperate.seperate_avatars(medialist)
         split_log.debug(f"{pid_log_helper()} Remove avatar")
-        split_log.debug(f"{pid_log_helper()} Final Number of media to downlaod {len(medialist)}")
+        split_log.debug(f"{pid_log_helper()} Final Number of media to download {len(medialist)}")
 
     else:
         split_log.info(f"{pid_log_helper()} forcing all downloads media count {len(medialist)}")
