@@ -47,9 +47,9 @@ def _scraper_user_helper(c,headers):
                     logger.updateSenstiveDict(data["username"],"username")
                     logger.updateSenstiveDict(data["name"],"name")
                 else:
-                    log.debug(f"[bold]archived request status code:[/bold]{r.status}")
-                    log.debug(f"[bold]archived response:[/bold] {r.text_()}")
-                    log.debug(f"[bold]archived headers:[/bold] {r.headers}")
+                    log.debug(f"[bold]user request request status code:[/bold]{r.status}")
+                    log.debug(f"[bold]user request response:[/bold] {r.text_()}")
+                    log.debug(f"[bold]user request headers:[/bold] {r.headers}")
                     r.raise_for_status()
                 
            
@@ -74,6 +74,6 @@ def parse_subscriber_count():
                 return data["subscriptions"]["all"]
             else:
                 log.debug(f"[bold]subscriber count request status code:[/bold]{r.status}")
-                log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")
+                log.debug(f"[bold]subscriber count response:[/bold] {r.text_()}")
                 log.debug(f"[bold]subscriber count headers:[/bold] {r.headers}")
 
