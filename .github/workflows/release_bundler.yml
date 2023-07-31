@@ -80,6 +80,7 @@ jobs:
             run: |
                 cd work
                 python3.11 -m venv .venv
+                /root/.local/bin/poetry add lxml
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller
                 echo "install run pyinstaller"
