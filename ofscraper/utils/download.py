@@ -42,7 +42,7 @@ try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
-from tenacity import retry,stop_after_attempt,wait_random
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
@@ -267,9 +267,11 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
             return "skipped",1 
                 
     for item in [audio,video]:
-
-        key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") == "manual" \
-        else await key_helper(c,item["pssh"],ele.license,ele.id)
+        key=None
+        keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto")
+        if  keymode== "manual": key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  
+        elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
+        else: key=key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
         if key==None:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
@@ -419,7 +421,85 @@ async def key_helper(c,pssh,licence_url,id):
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E
-        
+
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def key_helper_cdrm(c,pssh,licence_url,id):
+    log.debug(f"ID:{id} using cdrm auto key helper")
+    try:
+        out=cache.get(licence_url)
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
+        if out!=None:
+            log.debug(f"ID:{id} cdrm auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': '',
+            'proxy': '',
+            'cache': True,
+        }
+        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+            httpcontent=await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, 'html.parser')
+            out=soup.find("li").contents[0]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
+        return out
+    except Exception as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        raise E       
+
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def key_helper_keydb(c,pssh,licence_url,id):
+    log.debug(f"ID:{id} using keydb auto key helper")
+    try:
+        out=cache.get(licence_url)
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
+        if out!=None:
+            log.debug(f"ID:{id} keydb auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license_url': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': '',
+            'proxy': '',
+            'cache': True,
+        }
+  
+        headers = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Ktesttemp, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
+            "Content-Type": "application/json",
+            "X-API-Key": config_.get_keydb_api(config_.read_config()),
+        }
+   
+
+
+
+
+        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
+            data=await r.json()
+            log.debug(f"keydb json {data}")
+            if  isinstance(data,str): out=data
+            elif  isinstance(data,object): out=data["keys"][0]["key"]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
+        return out
+    except Exception as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        raise E  
 
 async def key_helper_manual(c,pssh,licence_url,id):
     log.debug(f"ID:{id} using manual key helper")

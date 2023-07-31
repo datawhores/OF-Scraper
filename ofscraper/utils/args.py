@@ -116,7 +116,7 @@ def create_parser(input=None):
         '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
     )
     advanced.add_argument(
-        '-k', '--key-mode', help = 'key mode override',default=None,required=False,choices=["auto","manual"],type=str.lower)
+        '-k', '--key-mode', help = 'key mode override',default=None,required=False,choices=["cdrm","manual","keydb"],type=str.lower)
     advanced.add_argument(
         '-dr', '--dynamic-rules', help = 'Dynamic signing',default=None,required=False,choices=["dc","deviint"],type=str.lower)
     advanced.add_argument(

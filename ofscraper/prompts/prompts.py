@@ -337,8 +337,15 @@ def config_prompt_advanced(config_) -> dict:
             'name': 'key-mode-default',
             'message': 'Make selection for how to retrive keys',
             'default': config.get_key_mode(config_),
-            'choices':["auto","manual"],
+            'choices':["auto","cdrm","keydb"],
 
+        },
+          {
+            'type': 'input',
+            'name': 'keydb_api',
+            'message': 'keydb api key:\n',
+            "long_instruction":"Required if your using keydb for key-mode",
+            'default': config.get_keydb_api(config_) or "",
         },
 
         {
