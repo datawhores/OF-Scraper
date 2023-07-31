@@ -449,9 +449,11 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
             return "skipped",1 
                 
     for item in [audio,video]:
-        key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)
-        # key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  if (args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto") == "manual" \
-        # else await key_helper_cdrm(c,item["pssh"],ele.license,ele.id)
+        key=None
+        keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto")
+        if  keymode== "manual": key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  
+        elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
+        else: key=key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
         if key==None:
             innerlog.get().debug(f"{get_medialog(ele)} Could not get key")
             return "skipped",1 
