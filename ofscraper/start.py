@@ -27,8 +27,6 @@ def main():
     other_log_thread=None
    
     try:
-        startvalues()
-        discord_warning()
         main_event = Event()
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
