@@ -17,19 +17,22 @@ import requests
 from rich.console import Console
 
 import browser_cookie3
-from .profiles import get_active_profile
-from ..prompts.prompts import *
+
+import ofscraper.prompts.prompts as prompts
 from ..constants import configPath, DIGITALCRIMINALS, requestAuth,DEVIINT
 import ofscraper.utils.paths as paths
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.profiles as profiles
+import ofscraper.utils.args as args_
+import ofscraper.utils.config as config
 
 
 console=Console()
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 
 def read_auth():
     authFile=paths.get_auth_file()
-   
+
     while True:
         try:
             with open(authFile, 'r') as f:
@@ -48,15 +51,15 @@ def read_auth():
         except json.JSONDecodeError as e:
             print("You auth.json has a syntax error")
             print(f"{e}\n\n")
-            if reset_auth_prompt():
+            if prompts.reset_auth_prompt():
                 with open( authFile, 'w') as f:
-                    f.write(manual_auth_prompt(authText))
+                    f.write(prompts.manual_auth_prompt(authText))
             else:
                 with open(authFile,"w") as f: 
                     f.write(json.dumps(get_empty()))
 
 
-                
+    make_request_auth()       
     return auth
 
 def get_empty():
@@ -85,31 +88,32 @@ def edit_auth():
         console.print('Your `auth.json` file has been edited.')
     except FileNotFoundError:
         
-        if ask_make_auth_prompt():
+        if prompts.ask_make_auth_prompt():
             make_auth()
     except json.JSONDecodeError as e:
             while True:
                 try:
                     print("You auth.json has a syntax error")
                     print(f"{e}\n\n")
-                    if reset_auth_prompt():
+                    if prompts.reset_auth_prompt():
                         with open( authFile, 'w') as f:
-                            f.write(manual_auth_prompt(authText))
+                            f.write(prompts.manual_auth_prompt(authText))
                     else:
                          with open(authFile,"w"): 
-                            f.write(auth_prompt(get_empty()))
+                            f.write(prompts.auth_prompt(get_empty()))
                     with open(authFile, 'r') as f:
                         authText=f.read()
                         auth = json.loads(authText)
                     break
                 except:
                     continue
+    make_request_auth() 
 
 def make_auth( auth=None):
     authFile=paths.get_auth_file()
     defaultAuth=  get_empty()
 
-    browserSelect=browser_prompt()
+    browserSelect=prompts.browser_prompt()
 
     auth= auth or defaultAuth
     if  browserSelect!="Enter Each Field Manually" and browserSelect!="Paste From M-rcus\' OnlyFans-Cookie-Helper":
@@ -119,13 +123,13 @@ def make_auth( auth=None):
             auth["auth"][key]=temp.get(key,"")
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nCookie information has been retived automatically\nSo You only need to retrive the x-bc header and the user-agent",style="yellow")
         if not auth["auth"].get("x-bc"):
-            auth["auth"]["x-bc"]=xbc_prompt()
-        auth["auth"]["user_agent"]= user_agent_prompt(auth["auth"].get("user_agent") or "")
+            auth["auth"]["x-bc"]=prompts.xbc_prompt()
+        auth["auth"]["user_agent"]= prompts.user_agent_prompt(auth["auth"].get("user_agent") or "")
 
 
  
     elif browserSelect=="Paste From M-rcus\' OnlyFans-Cookie-Helper":
-        auth=auth_full_paste()
+        auth=prompts.auth_full_paste()
         auth["auth"]["app-token"]="33d57ade8c02dbc5a333db99ff9ae26a"
         for key in ["username","support_2fa","active","email","password","hashed"]:
             auth["auth"].pop(key)
@@ -146,7 +150,7 @@ def make_auth( auth=None):
 
     else:
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
-        auth['auth'].update(auth_prompt(auth['auth']))
+        auth['auth'].update(prompts.auth_prompt(auth['auth']))
     
     console.print(f"{auth}\nWriting to {authFile}",style="yellow")
     with open(authFile, 'w') as f:
@@ -229,7 +233,7 @@ def create_sign(link, headers):
 
 
 def read_request_auth() -> dict:
-    profile = get_active_profile()
+    profile = profiles.get_active_profile()
     
 
     p = paths.get_config_home()/profile/ requestAuth
@@ -253,7 +257,7 @@ def make_request_auth():
 
         request_auth.update(zip(request_auth.keys(), values))
 
-        profile = get_active_profile()
+        profile = profiles.get_active_profile()
 
         p = paths.get_config_home()/profile
         if not p.is_dir():
