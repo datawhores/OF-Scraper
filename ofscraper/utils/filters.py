@@ -5,7 +5,6 @@ import arrow
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
 
-args=args_.getargs()
 log=logging.getLogger("shared")
 def filterMedia(media):
     logformater="{} data: {} id: {} postid: {}"
@@ -66,10 +65,10 @@ def timeline_array_filter(posts):
     undated=list(filter(lambda x:x.get("postedAt")==None,posts))
     dated=list(filter(lambda x:x.get("postedAt")!=None,posts))
     dated=sorted(dated,key=lambda x:arrow.get(x.get("postedAt")))
-    if args.before:
-        dated=list(filter(lambda x:arrow.get(x.get("postedAt"))<=args.before,dated))
-    if args.after:
-         dated=list(filter(lambda x:arrow.get(x.get("postedAt"))>=args.after,dated))
+    if args_.getargs().before:
+        dated=list(filter(lambda x:arrow.get(x.get("postedAt"))<=args_.getargs().before,dated))
+    if args_.getargs().after:
+         dateargsd=list(filter(lambda x:arrow.get(x.get("postedAt"))>=args_.getargs().after,dated))
     out.extend(undated)
     out.extend(dated)
     return out
@@ -90,25 +89,25 @@ def posts_type_filter(media):
     return media
 
 def posts_date_filter(media):
-    if args.before:
-        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)<=args.before,media))
-    if args.after:
-        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args.after,media))
+    if args_.getargs().before:
+        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)<=args_.getargs().before,media))
+    if args_.getargs().after:
+        media=list(filter(lambda x:x.postdate==None or arrow.get(x.postdate)>=args_.getargs().after,media))
     return media
 
 def post_timed_filter(media):
-    if args.skip_timed:
+    if args_.getargs().skip_timed:
         return list(filter(lambda x:not x.expires,media))
     return media
 def post_user_filter(media):
-    userfilter=args.filter
+    userfilter=args_.getargs().filter
     if not userfilter.islower():
         return list(filter(lambda x:re.search(userfilter,x.text or "")!=None,media))
     else:
         return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)!=None,media))
 
 def anti_post_user_filter(media):
-    userfilter=args.neg_filter
+    userfilter=args_.getargs().neg_filter
     if not userfilter.islower():
         return list(filter(lambda x:re.search(userfilter,x.text or "")==None,media)) if userfilter else media
     else:

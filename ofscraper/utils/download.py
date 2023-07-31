@@ -49,7 +49,7 @@ from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception
 import more_itertools
 import aioprocessing
 import psutil
-
+from diskcache import Cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
@@ -76,8 +76,6 @@ if platform.system() == 'Windows':
 
 
 
-from diskcache import Cache
-cache = Cache(paths.getcachepath())
 attempt = contextvars.ContextVar("attempt")
 
 count_lock=aioprocessing.AioLock()
@@ -595,6 +593,8 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
             'cache': True,
         }
         async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+            cache = Cache(paths.getcachepath())
+
             httpcontent=await r.text_()
             innerlog.get().debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
@@ -640,6 +640,8 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
 
         async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
+            cache = Cache(paths.getcachepath())
+
             data=await r.json()
             innerlog.get().debug(f"keydb json {data}")
             if  isinstance(data,str): out=data
@@ -681,6 +683,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
     keys=None
     challenge = cdm.get_license_challenge(session_id, pssh)
     async with c.requests(url=licence_url,method="post",data=challenge)() as r:
+        cache = Cache(paths.getcachepath())
         cdm.parse_license(session_id, (await r.content.read()))
         keys = cdm.get_keys(session_id)
         cdm.close(session_id)
@@ -719,6 +722,8 @@ def get_error_message(content):
 
 
 def set_cache_helper(ele):
+    cache = Cache(paths.getcachepath())
+
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
         cache.close()

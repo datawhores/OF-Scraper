@@ -12,6 +12,7 @@ import logging
 from functools import lru_cache
 import json
 from rich.console import Console
+from diskcache import Cache
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 import ofscraper.constants as constants
 import ofscraper.utils.encoding as encoding
@@ -24,7 +25,6 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 log=logging.getLogger("shared")
 console=Console()
 
-from diskcache import Cache
 
 def scrape_user(headers):
     with sessionbuilder.sessionBuilder(backend="httpx") as c:

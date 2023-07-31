@@ -13,6 +13,7 @@ import ssl
 import certifi
 import contextvars
 import math
+from diskcache import Cache
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
@@ -33,9 +34,6 @@ import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
-
-from diskcache import Cache
-cache = Cache(getcachepath())
 log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
@@ -102,6 +100,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
 
 
 async def get_timeline_post(model_id): 
+    
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

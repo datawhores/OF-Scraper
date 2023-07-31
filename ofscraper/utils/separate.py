@@ -9,7 +9,6 @@ r"""
 """
 from ..utils.paths import getcachepath
 from diskcache import Cache
-cache = Cache(getcachepath())
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
@@ -20,6 +19,7 @@ def seperate_avatars(data):
     return list(filter(lambda x:seperate_avatar_helper(x)==False,data))
 
 def seperate_avatar_helper(ele):
+    cache = Cache(getcachepath())
     #id for avatar comes from xxh32 of url
     if  ele.postid and ele.responsetype_=="profile":
         value=cache.get(ele.postid ,False)

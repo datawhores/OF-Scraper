@@ -10,7 +10,7 @@ import re
 from diskcache import Cache
 import ofscraper.utils.console as console_
 from ..utils.paths import getcachepath
-cache = Cache(getcachepath())
+
 log = logging.getLogger("shared")
 
 

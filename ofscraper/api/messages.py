@@ -23,7 +23,7 @@ from rich.console import Group
 from rich.live import Live
 from rich.style import Style
 import arrow
-import arrow
+from diskcache import Cache
 import ofscraper.constants as constants
 import ofscraper.utils.auth as auth
 import ofscraper.utils.paths as paths
@@ -34,9 +34,6 @@ import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-
-from diskcache import Cache
-cache = Cache(paths.getcachepath())
 log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
@@ -45,6 +42,7 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 async def get_messages(model_id):
+    cache = Cache(paths.getcachepath())
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting Messages...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

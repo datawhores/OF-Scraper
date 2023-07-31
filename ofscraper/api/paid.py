@@ -35,7 +35,7 @@ import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 
-cache = Cache(getcachepath())
+
 
 paid_content_list_name = 'list'
 log=logging.getLogger("shared")
@@ -53,6 +53,7 @@ attempt = contextvars.ContextVar("attempt")
 
 
 async def get_paid_posts(username,model_id):
+    cache = Cache(getcachepath())
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting paid media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -125,6 +126,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
 
 
 async def get_all_paid_posts():
+    cache = Cache(getcachepath())
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting all paid media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

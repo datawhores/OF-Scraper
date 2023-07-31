@@ -21,7 +21,6 @@ from ..utils.paths import getcachepath
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
-cache = Cache(getcachepath())
 
 
 log=logging.getLogger("shared")
@@ -40,6 +39,8 @@ def scrape_profile(username:Union[int, str]) -> dict:
   
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile_helper(c,username:Union[int, str]):
+
+    cache = Cache(getcachepath())
     id=cache.get(f"username_{username}",None)
     log.trace(f"username date: {id}")
     if id:
@@ -111,6 +112,7 @@ def get_id( username):
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def get_id_helper(c,username):
+    cache = Cache(getcachepath())   
     id=cache.get(f"model_id_{username}",None)
     if id:
         return id
