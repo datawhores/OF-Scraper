@@ -74,6 +74,8 @@ class TextHandler(logging.Handler):
 def discord_messenger():
     with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
         while True:
+            if args.getargs().discord==None:
+                break
             url,message=discord_queue.get()   
             if url=="exit":
                 return
