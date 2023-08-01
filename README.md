@@ -41,7 +41,9 @@ https://of-scraper.gitbook.io/of-scraper
 
 # Issues
 Open a issue in this repo, or you can mention your issue in the discord
-https://discord.gg/DV3aBeMu
+https://discord.gg/wN7uxEVHRK
+
+
     
 # Feature Requests
 
