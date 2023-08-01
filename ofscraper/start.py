@@ -64,13 +64,12 @@ def main():
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
                     if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
-                    if other_log_thread:other_event.set();other_log_thread.join()
-
+                    if other_log_thread:other_event.set()
                    
             except KeyboardInterrupt:
                     main_event.set()
                     if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
-                    if other_log_thread:other_event.set();other_log_thread.join()
+                    if other_log_thread:other_event.set()
 
     
 
