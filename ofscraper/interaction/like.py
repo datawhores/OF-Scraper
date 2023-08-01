@@ -87,18 +87,16 @@ def get_post_ids(posts: list) -> list:
 
 
 def like( model_id, username, ids: list):
-    headers = auth.make_headers(auth.read_auth())
-    asyncio.run(_like(headers, model_id, username, ids, True))
+    asyncio.run(_like(model_id, username, ids, True))
 
 
 def unlike( model_id, username, ids: list):
-    headers = auth.make_headers(auth.read_auth())
-    asyncio.run(_like(headers, model_id, username, ids, False))
+    asyncio.run(_like( model_id, username, ids, False))
 
 
 
 
-async def _like(headers, model_id, username, ids: list, like_action: bool):
+async def _like( model_id, username, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
     global sem
     sem.delay=3

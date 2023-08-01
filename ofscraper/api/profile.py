@@ -45,7 +45,6 @@ def scrape_profile_helper(c,username:Union[int, str]):
     log.trace(f"username date: {id}")
     if id:
         return id
-    headers = auth.make_headers(auth.read_auth())
     attempt.set(attempt.get(0) + 1)
     log.info(f"Attempt {attempt.get()}/{constants.NUM_TRIES} to get profile {username}")
     with c.requests(profileEP.format(username))() as r:

@@ -194,7 +194,6 @@ def message_checker():
     for item in links:
         num_match = re.search(f"({constants.NUMBER_REGEX}+)", item) or re.search(f"^({constants.NUMBER_REGEX}+)$", item)
         name_match = re.search(f"^{constants.USERNAME_REGEX}+$", item)
-        headers = auth.make_headers(auth.read_auth())
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile( model_id)['username']
