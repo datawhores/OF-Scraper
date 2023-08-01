@@ -374,7 +374,7 @@ def get_key_mode(config=None):
     if config==None:
         return constants.KEY_DEFAULT
     value=config.get("key-mode-default")
-    return value.lower() if value and value.lower() in set(["auto","manual"]) else constants.KEY_DEFAULT
+    return value.lower() if value and value.lower() in set(["keydb","manual","cdrm"]) else constants.KEY_DEFAULT
 def get_keydb_api(config=None):
     if config==None:
         return ""
