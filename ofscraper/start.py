@@ -97,3 +97,6 @@ def startvalues():
 def discord_warning():
     if args_.getargs().discord=="DEBUG":
         console_.get_shared_console().print("[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]")
+
+
+
