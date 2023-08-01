@@ -918,7 +918,7 @@ def reset_auth_prompt() -> bool:
             'type': 'list',
             "name":name,
             'message': "How do you want to fix this issue",
-            'choices':[Choice(False,"Reset Default"),Choice(True,"Manually Auth Config")]
+            'choices':[Choice(False,"Clearout Auth File"),Choice(True,"Manually Edit Auth File")]
         }
     ])
     return questions[name]
