@@ -293,8 +293,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
                     media_type, num_bytes_downloaded = await coro
                     await pipe_.coro_send(  (media_type, num_bytes_downloaded))
                 except Exception as e:
-                    innerlog.get().traceback(e)
-                    innerlog.get().traceback(traceback.format_exc())
+                    split_log.traceback(e)
+                    split_log.traceback(traceback.format_exc())
                     media_type = "skipped"
                     num_bytes_downloaded = 0
                     await pipe_.coro_send(  (media_type, num_bytes_downloaded))
@@ -372,9 +372,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
         await sem.acquire()
         temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
-        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-        cache.close()
-        
+        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size        
         path_to_file=None
        
 
