@@ -311,8 +311,7 @@ def run_helper(*functs):
 def check_auth():
     status=None
     while status!="UP":
-        headers = auth.make_headers(auth.read_auth())
-        status=init.getstatus(headers)
+        status=init.getstatus()
         if status=="DOWN":
             log.error("Auth Failed")
             auth.make_auth(auth=auth.read_auth())
