@@ -132,8 +132,7 @@ def process_post():
 def process_post_user_first():
      with scrape_context_manager():
         profiles.print_current_profile()
-        headers = auth.make_headers(auth.read_auth())
-        init.print_sign_status(headers)
+        init.print_sign_status()
         if args_.getargs().users_first:
             output=[]
             userdata=userselector.getselected_usernames(rescan=False)
@@ -169,8 +168,7 @@ def process_post_user_first():
 def normal_post_process():
     with scrape_context_manager():
         profiles.print_current_profile()
-        headers = auth.make_headers(auth.read_auth())
-        init.print_sign_status(headers)
+        init.print_sign_status()
         userdata=userselector.getselected_usernames(rescan=False)
         length=len(userdata)
         for count,ele in enumerate(userdata):
@@ -214,8 +212,7 @@ def normal_post_process():
 def process_like():
     with scrape_context_manager():
         profiles.print_current_profile()
-        headers = auth.make_headers(auth.read_auth())
-        init.print_sign_status(headers)
+        init.print_sign_status()
         userdata=userselector.getselected_usernames(rescan=False)
         active=list(filter(lambda x: x["active"],userdata))
         length=len(active)
@@ -235,8 +232,7 @@ def process_like():
 def process_unlike():
     with scrape_context_manager(): 
         profiles.print_current_profile()
-        headers = auth.make_headers(auth.read_auth())
-        init.print_sign_status(headers)
+        init.print_sign_status()
         userdata=userselector.getselected_usernames(rescan=False)
         active=list(filter(lambda x: x["active"],userdata))
         length=len(active)
