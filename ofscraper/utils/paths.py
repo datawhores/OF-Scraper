@@ -52,7 +52,6 @@ def createDir(path):
         path.mkdir(exist_ok=True,parents=True)
     except:
         log.info("Error creating directory, check the directory and make sure correct permissions have been issued.")
-        sys.exit()
 
        
 
