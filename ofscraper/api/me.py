@@ -38,7 +38,7 @@ def _scraper_user_helper(c):
             logger.updateSenstiveDict(data["username"],"username")
             logger.updateSenstiveDict(data["name"],"name")
         else:
-            log.debug(f"[bold]user request request status code:[/bold]{r.status}")
+            log.debug(f"[bold]user request response status code:[/bold]{r.status}")
             log.debug(f"[bold]user request response:[/bold] {r.text_()}")
             log.debug(f"[bold]user request headers:[/bold] {r.headers}")
             r.raise_for_status()
@@ -63,7 +63,7 @@ def parse_subscriber_count():
                 data=r.json_()
                 return data["subscriptions"]["all"]
             else:
-                log.debug(f"[bold]subscriber count request status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriber count response status code:[/bold]{r.status}")
                 log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")
                 log.debug(f"[bold]subscriber count headers:[/bold] {r.headers}")
 

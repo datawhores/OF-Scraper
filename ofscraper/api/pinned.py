@@ -75,7 +75,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
                     log.trace("{log_id} -> pinned raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo pinned: {str(x)}",posts)))))
                     tasks.append(asyncio.create_task(scrape_pinned_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
             else:
-                log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
+                log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
                 log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
                 log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                 progress.remove_task(task)

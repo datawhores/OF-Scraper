@@ -78,7 +78,7 @@ async def scrape_stories( c,user_id,job_progress) -> list:
             log.trace("stories: -> stories raw {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo stories: {str(x)}",stories)))))
             job_progress.remove_task(task)
         else:
-            log.debug(f"[bold]stories request status code:[/bold]{r.status}")
+            log.debug(f"[bold]stories response status code:[/bold]{r.status}")
             log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
             log.debug(f"[bold]stories headers:[/bold] {r.headers}")
             r.raise_for_status()
@@ -164,7 +164,7 @@ async def scrape_highlight_list( c,user_id,job_progress,offset=0) -> list:
             log.debug(f"highlights list: -> found list ids {data}")
     
         else:
-            log.debug(f"[bold]highlight list request status code:[/bold]{r.status}")
+            log.debug(f"[bold]highlight list response status code:[/bold]{r.status}")
             log.debug(f"[bold]highlight list response:[/bold] {await r.text_()}")
             log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
     return  data
@@ -216,7 +216,7 @@ def get_individual_highlights(id,c=None):
     #         log.trace(f"highlight raw highlight individua; {r.json()}")
     #         return r.json()
     #     else:
-    #         log.debug(f"[bold]highlight request status code:[/bold]{r.status}")
+    #         log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
     #         log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
     #         log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
 
@@ -231,7 +231,7 @@ def get_individual_stories(id,c=None):
             log.trace(f"highlight raw highlight individua; {r.json_()}")
             return r.json()
         else:
-            log.debug(f"[bold]highlight request status code:[/bold]{r.status}")
+            log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
             log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
             log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
 

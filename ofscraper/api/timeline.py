@@ -89,7 +89,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                             attempt.set(0)
                             tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
-                    log.debug(f"[bold]timeline request status code:[/bold]{r.status}")
+                    log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
                     log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
                     log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
 
@@ -115,7 +115,7 @@ async def get_timeline_post(model_id):
     
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c:
-
+            cache = Cache(getcachepath())
             oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
             log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
 
@@ -180,7 +180,7 @@ def get_individual_post(id,c=None):
             log.trace(f"message raw individual {r.json()}")
             return r.json()
         else:
-            log.debug(f"[bold]individual post request status code:[/bold]{r.status}")
+            log.debug(f"[bold]individual post response status code:[/bold]{r.status}")
             log.debug(f"[bold]individual post response:[/bold] {r.text_()}")
             log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 

@@ -47,8 +47,7 @@ def getselected_usernames(rescan=False,reset=False):
  
     
 def all_subs_helper(): 
-    headers = auth.make_headers(auth.read_auth())
-    subscribe_count = process_me(headers)
+    subscribe_count = process_me()
     global ALL_SUBS
     ALL_SUBS= get_models( subscribe_count)
 
@@ -136,8 +135,8 @@ def sort_models_helper(models):
     else:
         return sorted(models,reverse=reverse, key=lambda x:x["name"])
 #check if auth is valid
-def process_me(headers):
-    my_profile = me.scrape_user(headers)
+def process_me():
+    my_profile = me.scrape_user()
     name, username = me.parse_user(my_profile)
     subscribe_count=me.parse_subscriber_count()
     me.print_user(name, username)

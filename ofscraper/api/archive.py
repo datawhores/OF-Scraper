@@ -91,7 +91,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                             attempt.set(0)
                             tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
-                    log.debug(f"[bold]archived request status code:[/bold]{r.status}")
+                    log.debug(f"[bold]archived response status code:[/bold]{r.status}")
                     log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
                     log.debug(f"[bold]archived headers:[/bold] {r.headers}")
                     progress.remove_task(task)

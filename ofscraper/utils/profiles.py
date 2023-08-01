@@ -36,7 +36,7 @@ def get_my_info():
         import ofscraper.utils.auth as auth_
         import ofscraper.api.me as me
         currentProfile=get_active_profile()
-        currentData= me.scrape_user(  auth_.make_headers(auth_.read_auth()))
+        currentData= me.scrape_user()
     return currentData
 
 
