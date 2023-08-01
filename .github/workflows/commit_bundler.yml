@@ -19,7 +19,7 @@ jobs:
       - name: replace_version 
         run: | 
           sed -i -e s/'from dunamai import Version,Pattern'// ofscraper/__version__.py 
-          sed -i -e  s/'Version.from_git(pattern=.*'/\""$(dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.\w+|\d+\.\w+)")"\"/ ofscraper/__version__.py
+          sed -i -e  s/'Version.from_git(pattern=.*'/\""$(git  from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.\w+|\d+\.\w+)")"\"/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py 
       - name: upload file
@@ -120,14 +120,14 @@ jobs:
      
       - name: build package
        
-        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
       - name: build package dir
-        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules application --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
