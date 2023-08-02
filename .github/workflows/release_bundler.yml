@@ -97,12 +97,12 @@ jobs:
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+          path: "dist/ofscraper_linux_${{inputs.version}}"
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -115,13 +115,13 @@ jobs:
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
-                zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
-      - name: upload one file
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
+                zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
+      - name: upload zip
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"              
+          path: "dist/ofscraper_linux_${{inputs.version}}.zip"              
                       
   windows:
     needs: [create_version]
