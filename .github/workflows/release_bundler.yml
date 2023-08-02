@@ -163,6 +163,7 @@ jobs:
         run: poetry add pyinstaller   
       - name: create-one-file       
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{inputs.version}}"
+        continue-on-error: true
       - name: create-one-file2
         if: failure() && steps.create-one-file.outcome != 'success'
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{inputs.version}}" 
@@ -173,6 +174,7 @@ jobs:
           path: 'dist\ofscraper_windows_${{inputs.version}}.exe'
       - name: create-dir
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" 
+        continue-on-error: true
       - name: create-dir2
         if: failure() && steps.create-dir.outcome != 'success'
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}"      
