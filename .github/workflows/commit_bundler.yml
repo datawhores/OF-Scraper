@@ -149,7 +149,7 @@ jobs:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
       - name: create-dir
-        id: create-one-dir
+        id: create-dir
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
         continue-on-error: true
       - name: create-dir2
