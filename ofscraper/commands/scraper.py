@@ -384,6 +384,7 @@ def print_start():
 def main():
  
         try:
+            paths.cleanup()
             print_start()
 
             scrapper()

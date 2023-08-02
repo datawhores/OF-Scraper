@@ -268,7 +268,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     global sem
     sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
     global total_sem
-    total_sem= semaphoreDelayed(len(medialist))
+    total_sem= semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*2)
     global dirSet
     dirSet=set()
     global split_log
@@ -588,6 +588,7 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using cdrm auto key helper")
+    cache = Cache(paths.getcachepath())
     try:
         out=cache.get(licence_url)
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
@@ -624,8 +625,10 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using keydb auto key helper")
+    cache = Cache(paths.getcachepath())
     try:
-        out=cache.get(licence_url)
+        out=out=cache.get(licence_url)
+        out=None
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
         innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -635,7 +638,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
         headers["cookie"]=auth.get_cookies()
         auth.create_sign(licence_url,headers)
         json_data = {
-            'license_url': licence_url,
+            'license': licence_url,
             'headers': json.dumps(headers),
             'pssh': pssh,
             'buildInfo': '',
@@ -649,13 +652,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
             "X-API-Key": config_.get_keydb_api(config_.read_config()),
         }
    
-
-
-
-
-        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
-            cache = Cache(paths.getcachepath())
-
+        async with c.requests(url='http://172.106.17.134:8080/api',method="post",json=json_data,headers=headers)() as r:            
             data=await r.json()
             innerlog.get().debug(f"keydb json {data}")
             if  isinstance(data,str): out=data

@@ -366,7 +366,7 @@ def config_prompt_advanced(config_) -> dict:
             'name': 'key-mode-default',
             'message': 'Make selection for how to retrive keys',
             'default': config.get_key_mode(config_),
-            'choices':["auto","cdrm","keydb"],
+            'choices':["manual","cdrm","keydb"],
 
         },
 
