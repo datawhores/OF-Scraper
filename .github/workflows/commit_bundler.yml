@@ -134,16 +134,21 @@ jobs:
       - name: Install builder       
         run: poetry add pyinstaller
      
-      - name: build package
-       
+      - name: create-one-file
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
+      - name: create-one-file
+        if: failure() && create-one-file != 'success'
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
-      - name: build package dir
+      - name: create-dir
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" 
+      - name: create-one-file
+        if: failure() && create-dir != 'success'
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}"
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
