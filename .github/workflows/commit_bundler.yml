@@ -22,11 +22,11 @@ jobs:
           sed -i -e  s/'Version.from_git(pattern=.*'/\""$(git  from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.\w+|\d+\.\w+)")"\"/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py 
-#       - name: upload file
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: ofscraper_version
-#           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_version
+          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
 #       - name: list files 1
 #         run: ls /home/runner/work/
 #       - name: list files 2
