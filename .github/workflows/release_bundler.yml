@@ -165,7 +165,7 @@ jobs:
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{inputs.version}}"
         continue-on-error: true
       - name: create-one-file2
-        if: failure() && steps.create-one-file.outcome != 'success'
+        if: steps.create-one-file.outcome != 'success'
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{inputs.version}}" 
       - name: upload file
         uses: actions/upload-artifact@v3
@@ -176,7 +176,7 @@ jobs:
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" 
         continue-on-error: true
       - name: create-dir2
-        if: failure() && steps.create-dir.outcome != 'success'
+        if: steps.create-dir.outcome != 'success'
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}"      
       - uses: vimtor/action-zip@v1
         with:
@@ -227,7 +227,7 @@ jobs:
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}"
         continue-on-error: true
       - name: create-one-file2
-        if: failure() && steps.create-one-file.outcome != 'success'
+        if: steps.create-one-file.outcome != 'success'
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}" 
       - name: upload file
         uses: actions/upload-artifact@v3
@@ -238,7 +238,7 @@ jobs:
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
         continue-on-error: true
       - name: create-dir2
-        if: failure() && steps.create-dir.outcome != 'success'
+        if: steps.create-dir.outcome != 'success'
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
         with:
