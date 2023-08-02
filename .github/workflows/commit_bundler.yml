@@ -22,19 +22,19 @@ jobs:
           sed -i -e  s/'Version.from_git(pattern=.*'/\""$(git  from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.\w+|\d+\.\w+)")"\"/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py 
-      - name: upload file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_version
-          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
-      - name: list files 1
-        run: ls /home/runner/work/
-      - name: list files 2
-        run: ls /home/runner/work/OF-Scraper/
-      - name: list files 3
-        run: ls /home/runner/work/OF-Scraper/OF-Scraper
-      - name: list files 4
-        run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
+#       - name: upload file
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: ofscraper_version
+#           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
+#       - name: list files 1
+#         run: ls /home/runner/work/
+#       - name: list files 2
+#         run: ls /home/runner/work/OF-Scraper/
+#       - name: list files 3
+#         run: ls /home/runner/work/OF-Scraper/OF-Scraper
+#       - name: list files 4
+#         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
   linux:
     needs: [create_version]    
     runs-on: ubuntu-20.04
@@ -100,7 +100,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0        
+            fetch-depth: 0  
+      - name: list files
+        run:   ls .
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit   
@@ -153,7 +155,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0      
+            fetch-depth: 0   
+      - name: list files
+        run:   ls .      
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit            
