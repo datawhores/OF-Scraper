@@ -134,8 +134,9 @@ def process_dicts(username,model_id,medialist):
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                 queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(medialist)),daemon=True) for i in range(num_proc)]
                 [thread.start() for thread in queue_threads]
-                # [thread.join() for thread in queue_threads]
-                time.sleep(500000)
+                while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: [thread.join(5) for thread in queue_threads]
+              
+
         [logthread.join() for logthread in logthreads]
         [process.join(timeout=1) for process in processes]    
         [process.terminate() for process in processes]    
@@ -175,9 +176,11 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
         results = pipe_.recv()
         if not isinstance(results,list):
             results=[results]
+
         for result in results:
             if result is None:
                 count=count+1
+
                 continue 
             if isinstance(result,dict) and not downloadprogress:
                 continue

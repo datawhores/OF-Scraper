@@ -337,7 +337,7 @@ def get_paid_ids(model_id,user_name):
 
 
 def thread_starters(ROWS_): 
-    worker_thread = threading.Thread(target=process_download_cart)
+    worker_thread = threading.Thread(target=process_download_cart,daemon=True)
     worker_thread.start()
     start_table(ROWS_)
     
