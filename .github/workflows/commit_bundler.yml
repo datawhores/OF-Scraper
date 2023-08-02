@@ -158,6 +158,8 @@ jobs:
             fetch-depth: 0   
       - name: list files
         run:   ls -d $PWD/*    
+      - name: list files2
+        run:   ls -d $PWD/Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/*  
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit            
