@@ -4,8 +4,7 @@ import re
 import arrow
 import pathlib
 from ofscraper.__version__ import __version__ 
-import os
-
+import ofscraper.constants as constants
 args=None
 def create_parser(input=None):
     parent_parser=argparse.ArgumentParser(add_help=False)
@@ -117,7 +116,7 @@ def create_parser(input=None):
         '-nc', '--no-cache', help = 'disable cache',default=False,required=False,action="store_true"
     )
     advanced.add_argument(
-        '-k', '--key-mode', help = 'key mode override',default=None,required=False,choices=["cdrm","manual","keydb"],type=str.lower)
+        '-k', '--key-mode', help = 'key mode override',default=None,required=False,choices=constants.KEY_OPTIONS,type=str.lower)
     advanced.add_argument(
         '-dr', '--dynamic-rules', help = 'Dynamic signing',default=None,required=False,choices=["dc","deviint"],type=str.lower)
     advanced.add_argument(
