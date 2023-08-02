@@ -271,7 +271,8 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto")
         if  keymode== "manual": key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  
         elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
-        else: key=key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
+        elif keymode=="cdrm": key=await key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
+        elif keymode=="cdrm2": key=await key_helper_cdrm2(c,item["pssh"],ele.license,ele.id) 
         if key==None:
             log.debug(f"Media:{ele.id} Post:{ele.postid} Could not get key")
             return "skipped",1 
@@ -455,6 +456,41 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E       
+
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def key_helper_cdrm2(c,pssh,licence_url,id):
+    log.debug(f"ID:{id} using cdrm2 auto key helper")
+    try:
+        out=cache.get(licence_url)
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
+        if out!=None:
+            log.debug(f"ID:{id} cdrm2 auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': 'google/sdk_gphone_x86/generic_x86:8.1.0/OSM1.180201.037/6739391:userdebug/dev-keys',
+            'proxy': '',
+            'cache': True,
+        }
+        async with c.requests(url='http://172.106.17.134:8080/wv',method="post",json=json_data)() as r:
+            httpcontent=await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, 'html.parser')
+            out=soup.find("li").contents[0]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
+        return out
+    except Exception as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        raise E
+
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):

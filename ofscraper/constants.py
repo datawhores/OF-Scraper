@@ -158,3 +158,4 @@ NUMBER_REGEX="[0-9]"
 USERNAME_REGEX="[^/]"
 
 API_REEQUEST_TIMEOUT=90
+KEY_OPTIONS=["cdrm","cdrm2","manual","keydb"]
