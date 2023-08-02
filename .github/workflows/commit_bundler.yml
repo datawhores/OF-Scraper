@@ -102,7 +102,7 @@ jobs:
         with:
             fetch-depth: 0  
       - name: list files
-        run:   ls .
+        run:   ls -d $PWD/*
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit   
