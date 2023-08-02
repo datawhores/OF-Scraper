@@ -159,7 +159,7 @@ jobs:
       - name: list files
         run:   ls -d $PWD/*    
       - name: list files2
-        run:   ls -d $PWD/Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/*  
+        run:   ls -d $PWD/ofscraper/*  
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit            
