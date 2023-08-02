@@ -95,7 +95,7 @@ logqueue_=logger.queue_
 
 
 #start other thread here
-async def process_dicts(username,model_id,medialist):
+def process_dicts(username,model_id,medialist):
     log=logging.getLogger("shared")
     random.shuffle(medialist)
     if len(medialist)==0:
@@ -134,8 +134,8 @@ async def process_dicts(username,model_id,medialist):
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                 queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(medialist)),daemon=True) for i in range(num_proc)]
                 [thread.start() for thread in queue_threads]
-                [thread.join() for thread in queue_threads]
-                time.sleep(1)
+                # [thread.join() for thread in queue_threads]
+                time.sleep(500000)
         [logthread.join() for logthread in logthreads]
         [process.join(timeout=1) for process in processes]    
         [process.terminate() for process in processes]    
@@ -155,6 +155,7 @@ async def process_dicts(username,model_id,medialist):
                     [process.terminate() for process in processes]  
                     raise E
             except KeyboardInterrupt:
+               
                   raise KeyboardInterrupt  
 def queue_process(pipe_,overall_progress,job_progress,task1,total):
     count=0

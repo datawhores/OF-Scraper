@@ -158,11 +158,11 @@ def process_post_user_first():
                 username=value[0].post.username
                 operations.create_tables(model_id,username)
                 operations.write_profile_table(model_id,username)
-                asyncio.run(download.process_dicts(
+                download.process_dicts(
                 username,
                 model_id,
                 value,
-                ))  
+                )
 
 @exit.exit_wrapper
 def normal_post_process():
@@ -180,11 +180,11 @@ def normal_post_process():
                 operations.create_tables(model_id,ele['name'])
                 operations.write_profile_table(model_id,ele['name'])
                 combined_urls=OF.process_areas( ele, model_id)
-                asyncio.run(download.process_dicts(
+                download.process_dicts(
                 ele["name"],
                 model_id,
                 combined_urls,
-                ))
+                )
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
@@ -304,9 +304,28 @@ def run_helper(*functs):
             
             #update selected user
     else:
-        userselector.getselected_usernames(rescan=True,reset=True)
-        [(jobqueue.get())() for funct in functs]
-            
+        try:
+            userselector.getselected_usernames(rescan=True,reset=True)
+            for _ in functs:
+                job_func = jobqueue.get()
+                job_func()
+                jobqueue.task_done()
+        except KeyboardInterrupt as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    None
+                raise KeyboardInterrupt
+            except KeyboardInterrupt:
+                schedule.clear()
+                raise KeyboardInterrupt
+        except Exception as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    None
+                raise E
+            except KeyboardInterrupt:
+                None
+                raise KeyboardInterrupt     
                 
 def check_auth():
     status=None

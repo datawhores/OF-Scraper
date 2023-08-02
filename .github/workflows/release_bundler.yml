@@ -196,14 +196,14 @@ jobs:
       - name: install builder
         run: poetry add pyinstaller        
       - name: build package
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}"
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules ofscraper  --onefile --name "ofscraper_macos_${{inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
           path: "dist/ofscraper_macos_${{inputs.version}}"
       - name: build package dir
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
+        run: poetry run pyinstaller ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{inputs.version}}"
