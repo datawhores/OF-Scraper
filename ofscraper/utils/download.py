@@ -268,7 +268,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
                 
     for item in [audio,video]:
         key=None
-        keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "auto")
+        keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
         if  keymode== "manual": key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  
         elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
         else: key=key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
