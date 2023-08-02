@@ -27,6 +27,14 @@ jobs:
         with:
           name: ofscraper_version
           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
+      - name: list files 1
+        run: ls /home/runner/work/
+      - name: list files 2
+        run: ls /home/runner/work/OF-Scraper/
+      - name: list files 3
+        run: ls /home/runner/work/OF-Scraper/OF-Scraper
+      - name: list files 4
+        run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
   linux:
     needs: [create_version]    
     runs-on: ubuntu-20.04
