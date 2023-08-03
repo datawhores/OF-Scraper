@@ -1,5 +1,5 @@
 fuzzy={
-                             "toggle": [{"key": ["pagedown"]},{"key": ["home"]},{"key": ["end"]},{"key": ["pageup"]}],
+                             "toggle": [{"key": ["pagedown"]},{"key": ["home"]},{"key": ["end"]},{"key": ["pageup"]},{"key": ["c-right"]}],
                              "toggle-all": [{"key": ["c-a"]}],
                              "toggle-all-false": [{"key": ["c-d"]}],
                              "toggle-all-true": [{"key": ["c-s"]}]
@@ -7,7 +7,7 @@ fuzzy={
           
                          }
 
-select={"answer": [{"key": ["pagedown"]},{"key": ["home"]},{"key": ["end"]},{"key": ["space"]},{"key": ["enter"]},{"key": ["space"]},{"key": ["pageup","enter"]}]}
+select={"answer": [{"key": ["c-right"]},{"key": ["pagedown"]},{"key": ["home"]},{"key": ["end"]},{"key": ["space"]},{"key": ["enter"]},{"key": ["space"]},{"key": ["pageup","enter"]}]}
 
 input= select
 file=select

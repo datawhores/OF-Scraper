@@ -107,11 +107,14 @@ KEYS
  
  SELECT_KEYS
    ================================================
-   END  |  HOME | PAGEUP | PAGEDOWN | TAB | SHIFT+TAB
+   END  |  HOME | PAGEUP | PAGEDOWN | CTRL+RIGHT
    ================================================
 
- 
-
+ SPECIAL SELECT
+ Will select and move cursor
+ ================
+  TAB | SHIFT+TAB 
+ =================
 
 
   TOGGLE_ALL_FALSE
@@ -166,7 +169,7 @@ KEYS
 
    SUBMIT_KEYs
    ======================================================================
-   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER
+   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | CTRL+RIGHT
    ========================================================================
 
 ==============================================================================
