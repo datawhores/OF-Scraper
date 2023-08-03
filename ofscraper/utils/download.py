@@ -108,7 +108,6 @@ def process_dicts(username,model_id,medialist):
     #reset globals
     reset_globals()
     log=logging.getLogger("shared")
-    medialist=medialist[:40]
     random.shuffle(medialist)
     if len(medialist)==0:
         log.error("Media list empty")
