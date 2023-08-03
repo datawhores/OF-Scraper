@@ -39,13 +39,16 @@ attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_ids=None) -> list:
+async def scrape_timeline_posts(c, model_id,progress, timestamp=None,endstamp=None,required_ids=None) -> list:
     global tasks
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
     if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.now()).float_timestamp):
         return []
+    if (timestamp and endstamp) and (float(timestamp)>float(endstamp)):
+        return []
+
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
         timestamp=str(timestamp)
@@ -77,13 +80,13 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                                
                     if required_ids==None:
                         attempt.set(0)
-                        tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,endstamp=endstamp,timestamp=posts[-1]['postedAtPrecise'])))
                     else:
                         [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
                         #try once more to get id if only 1 left
                         if len(required_ids)==1:
                             attempt.set(0)
-                            tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
+                            tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,endstamp=endstamp,timestamp=posts[-1]['postedAtPrecise'],required_ids=set())))
 
                         elif len(required_ids)>0:
                             attempt.set(0)
@@ -130,13 +133,14 @@ async def get_timeline_post(model_id):
             if len(filteredArray)>min_posts:
                 splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
                 #use the previous split for timesamp
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= splitArrays[0][0]-20000)))
-                [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,endstamp=splitArrays[0][0]-20000,timestamp= None)))
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,endstamp=None,required_ids=set(splitArrays[0]),timestamp= splitArrays[0][0]-20000)))
+                [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,endstamp=None,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
                 for i in range(1,len(splitArrays)-1)]
                 # keeping grabbing until nothign left
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,endstamp=None,timestamp=splitArrays[-2][-1])))
             else:
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,endstamp=None,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
         
 
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
