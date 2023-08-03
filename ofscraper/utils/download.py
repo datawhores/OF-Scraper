@@ -213,7 +213,11 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
                        
                     content_type = rheaders.get("content-type").split('/')[-1]
                     filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                    log.debug(f"Media:{ele.id} Post:{ele.postid} filename from config {filename}")
+                    log.debug(f"Media:{ele.id} Post:{ele.postid} full path from config {pathlib.Path(path,f'{filename}')}")
                     path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+                    log.debug(f"Media:{ele.id} Post:{ele.postid} full path trunicated from config {filename}")
+
                 else:
                     r.raise_for_status()          
                                    
@@ -250,8 +254,16 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
 async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progress):
     log.debug(f"Media:{ele.id} Post:{ele.postid} Downloading with protected media downloader")      
     log.debug(f"Media:{ele.id} Post:{ele.postid} Attempting to download media {ele.filename_} with {ele.mpd}")
-    path_to_file = paths.truncate(pathlib.Path(path,f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'))
+    filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
+    log.debug(f"Media:{ele.id} Post:{ele.postid}  filename from config {filename}")
+    log.debug(f"Media:{ele.id} Post:{ele.postid} full filepath from config{pathlib.Path(path,filename)}")
+    path_to_file = paths.truncate(pathlib.Path(path,filename))
+    log.debug(f"Media:{ele.id} Post:{ele.postid}  fullpath trunicated from config {path_to_file}")
+
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
+    log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
+
+
     audio,video=await alt_download_preparer(ele)
     audio=await alt_download_downloader(audio,c,ele,path,file_size_limit,progress)
     video=await alt_download_downloader(video,c,ele,path,file_size_limit,progress)
@@ -259,6 +271,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id,progr
         return 'skipped', 1       
         
     for item in [audio,video]:
+        log.debug(f"temporary file name for protected media {item['path']}") 
         if not pathlib.Path(item["path"]).exists():
                 log.debug(f"Media:{ele.id} Post:{ele.postid} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
                 return "skipped",1

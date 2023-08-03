@@ -7,7 +7,7 @@ import ofscraper.api.me as me
 import arrow
 
 
-log=logging.getLogger(__package__)
+log=logging.getLogger("shared")
 class Placeholders:
     def __init__(self) -> None:
         None
@@ -46,17 +46,22 @@ class Placeholders:
         log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
             formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
+            
         else:
             formatStr=config_.get_metadata(config_.read_config()).format(       
                             **self._variables)
-
+        log.trace(f"final database path {pathlib.Path(formatStr,'user_data.db')}")
         return pathlib.Path(formatStr,"user_data.db")
 
 
- 
+  
+
 
     @wrapper
     def getmediadir(self,ele,username,model_id):
+
+        
+        root=pathlib.Path(config_.get_save_location(config_.read_config()))
         self._variables.update({"username":username})
         self._variables.update({"model_id":model_id})
         user_name=username;self._variables.update({"user_name":username})
@@ -90,7 +95,8 @@ class Placeholders:
             
             downloadDir=config_.get_dirformat(config_.read_config())\
             .format(**self._variables)
-            
+        log.trace(f"final mediadir path {root /downloadDir  }")
+
         return root /downloadDir  
     
     
@@ -135,8 +141,21 @@ class Placeholders:
 
        
         log.trace(f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
-      
+        filename=None
         if config_.get_allow_code_execution(config_.read_config()):
-            return eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
+            filename=eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
         else:
-            return config_.get_fileformat(config_.read_config()).format(**self._variables) 
+            filename=config_.get_fileformat(config_.read_config()).format(**self._variables) 
+        log.trace(f"final filename path {filename }")
+        
+
+
+
+# def all_placeholders():
+#       {"user_name","modelid","model_id","username","postid","postid","media_id",
+#        "mediaid","first_letter","firstletter","mediatype","media_type","value","date",
+#        "model_username","modelusername","response_type","responsetype","label","downloadtype","download_type"}
+   
+
+
+    
