@@ -250,7 +250,6 @@ def setpriority():
         process.nice(5) 
     else:  # MAC OS X or other
         process.nice(10) 
-        process.ionice(ioclass=2)
 
 async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy,pipecopy):
     global innerlog
