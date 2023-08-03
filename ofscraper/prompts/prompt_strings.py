@@ -15,7 +15,7 @@ KEYS
 
    SELECT_KEYS
    ======================================================================
-   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER
+   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | TAB | SHIFT+TAB
    ========================================================================
 
 ==============================================================
@@ -54,7 +54,7 @@ KEYS
  
  SELECT_KEYS
    ================================================
-   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE |
+   END  |  HOME | PAGEUP | PAGEDOWN | TAB | SHIFT+TAB
    ================================================
 
 
@@ -107,7 +107,7 @@ KEYS
  
  SELECT_KEYS
    ================================================
-   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE |
+   END  |  HOME | PAGEUP | PAGEDOWN | TAB | SHIFT+TAB
    ================================================
 
  
