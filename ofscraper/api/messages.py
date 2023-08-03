@@ -78,6 +78,7 @@ async def get_messages(model_id):
             if len(postedAtArray)>min_posts:
                 splitArrays=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
                 #use the previous split for message_id
+
                 tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if startdex==0 else splitArrays[0][0] ,required_ids=set(splitArrays[0]))))
                 [tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,required_ids=set(splitArrays[i]),message_id=splitArrays[i-1][-1])))
                 for i in range(1,len(splitArrays)-1)]

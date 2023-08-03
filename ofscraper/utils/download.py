@@ -73,36 +73,42 @@ if platform.system() == 'Windows':
     from win32_setctime import setctime 
  # pylint: disable=import-errorm
  
-
-
-
-
-
-attempt = contextvars.ContextVar("attempt")
-
-count_lock=aioprocessing.AioLock()
-dir_lock=aioprocessing.AioLock()
-chunk_lock=aioprocessing.AioLock()
-
-
-#progress globals
-total_bytes_downloaded = 0
-total_bytes=0
-photo_count = 0
-video_count = 0
-audio_count=0
-skipped = 0
-data=0
-total_data=0
-desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data}/{total})'   
-
 #main thread queues
 logqueue_=logger.queue_
 
-
+def reset_globals():
+    global total_bytes_downloaded
+    total_bytes_downloaded = 0
+    global total_bytes
+    total_bytes=0
+    global photo_count
+    photo_count = 0
+    global video_count
+    video_count = 0
+    global audio_count
+    audio_count=0
+    global skipped
+    skipped = 0
+    global data
+    data=0
+    global total_data
+    total_data=0
+    global desc
+    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data}/{total})'   
+    global attempt
+    attempt=contextvars.ContextVar("attempt")
+    global count_lock
+    count_lock=aioprocessing.AioLock()
+    global dir_lock
+    dir_lock=aioprocessing.AioLock()
+    global chunk_lock
+    chunk_lock=aioprocessing.AioLock()
 #start other thread here
 def process_dicts(username,model_id,medialist):
+    #reset globals
+    reset_globals()
     log=logging.getLogger("shared")
+    medialist=medialist[:40]
     random.shuffle(medialist)
     if len(medialist)==0:
         log.error("Media list empty")
@@ -116,13 +122,13 @@ def process_dicts(username,model_id,medialist):
     shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
     #ran by main process cause of stdout
     logqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
-    #ran by other process
+    #ran by other ofscraper_
     otherqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
     
     #start main queue consumers
-    logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
+    logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
     #start producers
-    stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{i+1}") for i in range(num_proc) ]
+    stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{model_id}_{i+1}") for i in range(num_proc) ]
     #For some reason windows loses queue when not passed seperatly
     processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],stdout_logs[i].handlers[0].queue,stdout_logs[i].handlers[1].queue,connect_tuples[i][1])) for i in range(num_proc)]
     try:
@@ -139,9 +145,10 @@ def process_dicts(username,model_id,medialist):
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                 queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(medialist)),daemon=True) for i in range(num_proc)]
                 [thread.start() for thread in queue_threads]
-                while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: [thread.join(5) for thread in queue_threads]
-              
-
+                while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
+                    for thread in queue_threads:
+                        thread.join(1)
+                        time.sleep(5)
         [logthread.join() for logthread in logthreads]
         [process.join(timeout=1) for process in processes]    
         [process.terminate() for process in processes]    
