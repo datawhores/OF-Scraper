@@ -15,7 +15,7 @@ KEYS
 
    SELECT_KEYS
    ======================================================================
-   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | CTRL+RIGHT
+   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | shift+right
    ========================================================================
 
    SPECIAL SELECT
@@ -61,7 +61,7 @@ KEYS
  
    SELECT_KEYS
    ================================================
-   END  |  HOME | PAGEUP | PAGEDOWN | CTRL+RIGHT
+   END  |  HOME | PAGEUP | PAGEDOWN | shift+right
    ================================================
    
    SPECIAL SELECT
@@ -120,7 +120,7 @@ KEYS
  
  SELECT_KEYS
    ================================================
-   END  |  HOME | PAGEUP | PAGEDOWN | CTRL+RIGHT
+   END  |  HOME | PAGEUP | PAGEDOWN | shift+right
    ================================================
 
  SPECIAL SELECT
@@ -182,7 +182,7 @@ KEYS
 
    SUBMIT_KEYs
    ======================================================================
-   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | CTRL+RIGHT
+   END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | shift+right
    ========================================================================
 
 ==============================================================================
