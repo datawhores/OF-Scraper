@@ -24,7 +24,7 @@ class sessionBuilder:
         self._set_cookies=set_cookies
         self._set_header=set_header
         self._set_sign=set_sign
-        self._connect_timeout=connect_timeout or 10
+        self._connect_timeout=connect_timeout
         self._total_timeout=None
         
         
