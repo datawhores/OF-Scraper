@@ -7,7 +7,7 @@ fuzzy={
           
                          }
 
-select={"answer": [{"key": ["s-right"]},{"key": ["pagedown"]},{"key": ["home"]},{"key": ["end"]},{"key": ["space"]},{"key": ["enter"]},{"key": ["space"]},{"key": ["pageup","enter"]}]}
+select={"answer": [{"key": ["s-right"]},{"key": ["pagedown"]},{"key": ["home"]},{"key": ["end"]},{"key": ["space"]},{"key": ["enter"]},{"key": ["pageup","enter"]}]}
 
 input= select
 file=select
