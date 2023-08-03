@@ -40,11 +40,19 @@ def wrapper(funct):
         def _handle_alt_x(event):
              action_set.add("altx")
              event.app.exit()
+        @prompt_.register_kb("c-b")
+        def _handle_alt_x(event):
+             action_set.add("altx")
+             event.app.exit()
+        
         @prompt_.register_kb("alt-v")
         def _handle_alt_v(event):
             action_set.add("altv")
             event.app.exit()
-    
+        @prompt_.register_kb("c-v")
+        def _handle_alt_v(event):
+            action_set.add("altv")
+            event.app.exit()
         while True:
             out=prompt_.execute()
             prompt_._default=get_default(funct,prompt_)

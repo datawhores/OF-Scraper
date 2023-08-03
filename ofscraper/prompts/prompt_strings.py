@@ -133,7 +133,7 @@ KEYS
 
    CHANGE_FILTER/SORT
    ========
-   ALT+X
+   ALT+X|CTRL+B
    ========
 ===================================================================
 PRESS ENTER TO CONTINUE
@@ -147,7 +147,7 @@ This can greatly increase the time needed for a single scrape
 
 It should not be needed to turn this on everytime, especially with  frequent scrapes
 
-SHOW INSTRUCTIONS: [ALT+V]
+SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
 
@@ -177,20 +177,20 @@ PRESS ENTER TO CONTINUE
 
 KEY_BOARD=\
 """
-SHOW INSTRUCTIONS: [ALT+V]
+SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
 
 NUMBER=\
 """
-SHOW INSTRUCTIONS: [ALT+V]
+SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
 
 MODEL_SELECT=\
 """
-SHOW INSTRUCTIONS: [ALT+V]
-CHANGE_SORT/CHANGE_FILTER: [ALT+X]
+SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+CHANGE_SORT/CHANGE_FILTER: [ALT+X] or [CTRL+B]
 """
 
 
