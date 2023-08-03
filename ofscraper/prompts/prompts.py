@@ -840,7 +840,7 @@ def modify_filters_prompt(args):
             "name":"subscription",
             'message': "Filter accounts by the type of subscription",
              "default":False,
-            'choices':[Choice("paid","Paid Subscription Only"),Choice("free","Free Subscription Only"),Choice(False,"Both")]
+            'choices':[Choice("paid","Paid Subscriptions Only"),Choice("free","Free Subscriptions Only"),Choice(False,"Both")]
         }
     ])
     args.renewal=answer["renewal"]

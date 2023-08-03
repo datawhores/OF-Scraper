@@ -175,7 +175,7 @@ class Media():
         # this is for removing html tags
         text = re.sub("<[^>]*>", "", text)
         # this for remove random special invalid special characters
-        text = re.sub('[\n<>:"/\|?*]+', '', text)
+        text = re.sub('[\n<>:"/\|?*:;]+', '', text)
         text = re.sub(" +", " ", text)
         text=re.sub(" ",config.get_spacereplacer(config.read_config()),text)
         length = int(config.get_textlength(config.read_config()))
