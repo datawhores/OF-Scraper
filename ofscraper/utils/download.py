@@ -407,10 +407,10 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
                         await pipe_.coro_send(  (None, 0,total))
                         content_type = rheaders.get("content-type").split('/')[-1]
                         filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-                        innerlog.get().trace(f"{get_medialog(ele)} filename from config {filename}")
+                        innerlog.get().debug(f"{get_medialog(ele)} filename from config {filename}")
                         path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-                        innerlog.get().trace(f"{get_medialog(ele)} full path from config {pathlib.Path(path,f'{filename}')}")
-                        innerlog.get().trace(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
+                        innerlog.get().debug(f"{get_medialog(ele)} full path from config {pathlib.Path(path,f'{filename}')}")
+                        innerlog.get().debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
 
                     else:
                         r.raise_for_status()   
@@ -451,12 +451,16 @@ def get_medialog(ele):
 
 
 async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
+
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {ele.filename_} with {ele.mpd}")
-    path_to_file = paths.truncate(pathlib.Path(path,f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'))
-    innerlog.get().trace(f"{get_medialog(ele)} fullpath from config {placeholder.Placeholders().createfilename(ele,username,model_id,'mp4')}")
-    innerlog.get().trace(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
+    filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
+    innerlog.get().debug(f"{get_medialog(ele)} filename from config {filename}")
+    innerlog.get().debug(f"{get_medialog(ele)} full filepath from config{pathlib.Path(path,filename)}")
+    path_to_file = paths.truncate(pathlib.Path(path,filename))
+    innerlog.get().debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
+    log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
     audio=await alt_download_downloader(audio,c,ele,path,file_size_limit)
     video=await alt_download_downloader(video,c,ele,path,file_size_limit)
