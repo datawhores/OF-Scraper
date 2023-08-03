@@ -1,227 +1,237 @@
-from test.test_constants import *
+from  test_.test_constants import *
 from ofscraper.classes.posts import Post
 from ofscraper.classes.media import Media
 import re
 import ofscraper.utils.args as args_
 from pytest_check import check
-
-def test_postcreate_archived():
+def test_postcreate_stories():
     username="test"
     model_id=TEST_ID
     try:
-        Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+        Post(STORIES_EXAMPLE,model_id,username,"stories")
     except Exception as E:
         raise Exception(f"Exception: {E}\nPost Creation Failed")
 
 
-def test_media_archived():
+def test_media_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(len(t.post_media))==len(ARCHIVED_POST_EXAMPLE["media"])
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(len(t.post_media))==len(STORIES_EXAMPLE["media"])
 
-def test_post_archived():
+def test_post_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.post)==t._post
 
 
-def test_modelid_archived():
+def test_modelid_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.model_id)==model_id
 
 
-def test_username_archived():
+def test_username_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.username)==username
 
-def test_archived_archived():
+def test_archived_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.archived)==True
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.archived)==False
 
-def test_text_archived():
+def test_text_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.text)==ARCHIVED_POST_EXAMPLE.get("text")
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.text)==None
 
-def test_title_archived():
+def test_text_stories2():
+
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.title)==ARCHIVED_POST_EXAMPLE.get("title")
+    index=0
 
-def test_ogresponse_archived():
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
+    media=Media(mediaDict,index,t)
+    assert(media.text_.find(media.filename))==0
+def test_title_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.responsetype_)==ARCHIVED_POST_EXAMPLE.get("responseType")
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.title)==STORIES_EXAMPLE.get("title")
 
-def test_id_archived():
+def test_ogresponse_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.id)==ARCHIVED_POST_EXAMPLE.get("id")
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.responsetype_)=="stories"
 
-def test_date_archived():
+def test_id_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.date)==ARCHIVED_POST_EXAMPLE.get("createdAt") or ARCHIVED_POST_EXAMPLE.get("postedAt")
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.id)==STORIES_EXAMPLE.get("id")
 
-
-def test_value_archived():
+def test_date_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.date)==STORIES_EXAMPLE.get("createdAt") or STORIES_EXAMPLE.get("postedAt")
+
+
+def test_value_stories():
+    username="test"
+    model_id=TEST_ID
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.value)=="free"
 
-def test_price_archived():
+def test_price_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.price)==0
 
 
-def test_paid_archived():
+def test_paid_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.paid)==True
 
 
-def test_fromuser_archived():
+def test_fromuser_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     assert(t.fromuser)==model_id
 
-def test_preview_archived():
+def test_preview_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    assert(t.preview)==ARCHIVED_POST_EXAMPLE["preview"] 
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    assert(t.preview)==STORIES_EXAMPLE.get("preview")
 
-def test_mediacanview_archived():
+def test_mediacanview_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     for ele in t.media:
         assert(ele.canview)==True
 
 
-def test_mediaclass_archived():
+def test_mediaclass_stories():
     username="test"
     model_id=TEST_ID
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     for ele in t.media:
         assert(isinstance(ele,Media))==True
  
  #Media Test
-def test_mediaclass_archived():
+def test_mediaclass_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     try:
         media=Media(t.media[index],index,t)
     except:
         raise Exception()
     
 
-def test_mediatype_archived():
+def test_mediatype_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(mediaDict["type"])=="video"
-    assert(media.mediatype)=="videos"
+    assert(mediaDict["type"])=="photo"
+    assert(media.mediatype)=="images"
 
 
-def test_mediaurl_archived():
+def test_mediaurl_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(re.search("http",media.url))!=None
 
-def test_mediapost_archived():
+def test_mediapost_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.post)==t
 
-def test_media_id_archived():
+def test_media_id_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.id)==mediaDict["id"]
 
-def test_medialen_archived():
+def test_medialen_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(len(media.post.post_media))==len(ARCHIVED_POST_EXAMPLE["media"])
+    assert(len(media.post.post_media))==len(STORIES_EXAMPLE["media"])
 
-def test_mediacount_archived():
+
+def test_mediacount_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.count)==index+1
 
-def test_mediapreview_archived():
+def test_mediapreview_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(ARCHIVED_POST_EXAMPLE["preview"])==[]
+    assert(STORIES_EXAMPLE.get("preview"))==None
     assert(media.preview)==0
 
-def test_medialinked_archived():
+def test_medialinked_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.linked)==None   
 
-def test_mediamedia_archived():
+def test_mediamedia_stories():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
-    mediaDict=ARCHIVED_POST_EXAMPLE["media"][index]
+    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    mediaDict=STORIES_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.media)==mediaDict
 
-
-def test_archived_text_wordtruncate(mocker):
+def test_stories_text_wordtruncate(mocker):
     length=TEXTLENGTH_ALT2
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -247,7 +257,7 @@ def test_archived_text_wordtruncate(mocker):
     with check:
         assert(len(wordarray))< length+1
 
-def test_archived_text_wordtruncate2(mocker):
+def test_stories_text_wordtruncate2(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -273,7 +283,7 @@ def test_archived_text_wordtruncate2(mocker):
     with check:
         assert(len(wordarray))<length+1
 
-def test_archived_text_wordtruncate3(mocker):
+def test_stories_text_wordtruncate3(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -287,7 +297,7 @@ def test_archived_text_wordtruncate3(mocker):
         "filter": FILTER_DEFAULT
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config',return_value=migrationConfig)
+    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
     post=mocker.PropertyMock()
     post.post_media=["",""]
     mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
@@ -299,7 +309,7 @@ def test_archived_text_wordtruncate3(mocker):
     with check:
         assert(len(wordarray))<=len(textarray)+2
 
-def test_archived_text_wordtruncate4(mocker):
+def test_stories_text_wordtruncate4(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
@@ -324,7 +334,7 @@ def test_archived_text_wordtruncate4(mocker):
     with check:
         assert(len(wordarray))<TEXTLENGTH_ALT2+1
 
-def test_archived_text_wordtruncate5(mocker):
+def test_stories_text_wordtruncate5(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -350,7 +360,7 @@ def test_archived_text_wordtruncate5(mocker):
     with check:
         assert(len(wordarray))<length+1
 
-def test_archived_text_wordtruncate6(mocker):
+def test_stories_text_wordtruncate6(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -373,7 +383,7 @@ def test_archived_text_wordtruncate6(mocker):
     assert(len(wordarray))>=len("{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
 
 
-def test_archived_text_lettertruncate(mocker):
+def test_stories_text_lettertruncate(mocker):
     length=TEXTLENGTH_ALT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -397,7 +407,7 @@ def test_archived_text_lettertruncate(mocker):
   
         
 
-def test_archived_text_lettertruncate2(mocker):
+def test_stories_text_lettertruncate2(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -419,7 +429,7 @@ def test_archived_text_lettertruncate2(mocker):
     wordarray=t.text_
     assert(len(wordarray))==length
 
-def test_archived_text_lettertruncate3(mocker):
+def test_stories_text_lettertruncate3(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -444,7 +454,7 @@ def test_archived_text_lettertruncate3(mocker):
 
 
 
-def test_archived_text_lettertruncate4(mocker):
+def test_stories_text_lettertruncate4(mocker):
     length=TEXTLENGTH_ALT2
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -467,7 +477,7 @@ def test_archived_text_lettertruncate4(mocker):
     assert(len(wordarray))==length
    
 
-def test_archived_text_lettertruncate5(mocker):
+def test_stories_text_lettertruncate5(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -489,7 +499,7 @@ def test_archived_text_lettertruncate5(mocker):
     wordarray=t.text_
     assert(len(wordarray))==length
 
-def test_archived_text_lettertruncate6(mocker):
+def test_stories_text_lettertruncate6(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,

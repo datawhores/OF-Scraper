@@ -1,224 +1,225 @@
-from test.test_constants import *
+from  test_.test_constants import *
 from ofscraper.classes.posts import Post
 from ofscraper.classes.media import Media
 import re
 import ofscraper.utils.args as args_
 from pytest_check import check
-def test_postcreate_pinned():
+def test_postcreate_paid():
     username="test"
     model_id=TEST_ID
     try:
-        Post(PINNED_POSTS_EXAMPLE,model_id,username)
+        Post(PAID_EXAMPLE,model_id,username)
     except Exception as E:
         raise Exception(f"Exception: {E}\nPost Creation Failed")
 
 
-def test_media_pinned():
+def test_media_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(len(t.post_media))==len(PINNED_POSTS_EXAMPLE["media"])
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(len(t.post_media))==len(PAID_EXAMPLE["media"])
 
-def test_post_pinned():
+def test_post_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     assert(t.post)==t._post
 
 
-def test_modelid_pinned():
+def test_modelid_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     assert(t.model_id)==model_id
 
 
-def test_username_pinned():
+def test_username_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     assert(t.username)==username
 
-def test_archived_pinned():
+def test_archived_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     assert(t.archived)==False
 
-def test_text_pinned():
+def test_text_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.text)==PINNED_POSTS_EXAMPLE.get("text")
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.text)==PAID_EXAMPLE.get("text")
 
-def test_title_pinned():
+def test_title_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.title)==PINNED_POSTS_EXAMPLE.get("title")
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.title)==PAID_EXAMPLE.get("title")
 
-def test_ogresponse_pinned():
+def test_ogresponse_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.responsetype_)==PINNED_POSTS_EXAMPLE.get("responseType")
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.responsetype_)==PAID_EXAMPLE.get("responseType")
 
-def test_id_pinned():
+def test_id_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.id)==PINNED_POSTS_EXAMPLE.get("id")
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.id)==PAID_EXAMPLE.get("id")
 
-def test_date_pinned():
+def test_date_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.date)==PINNED_POSTS_EXAMPLE.get("createdAt") or PINNED_POSTS_EXAMPLE.get("postedAt")
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.date)==PAID_EXAMPLE.get("createdAt") or PAID_EXAMPLE.get("postedAt")
 
 
-def test_value_pinned():
+def test_value_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.value)=="free"
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.value)=="paid"
 
-def test_price_pinned():
+def test_price_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.price)==0
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.price)==PAID_EXAMPLE["price"]
 
 
-def test_paid_pinned():
+def test_paid_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     assert(t.paid)==True
 
 
-def test_fromuser_pinned():
+def test_fromuser_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     assert(t.fromuser)==model_id
 
-def test_preview_pinned():
+def test_preview_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    assert(t.preview)==PINNED_POSTS_EXAMPLE["preview"] 
+    t=Post(PAID_EXAMPLE,model_id,username)
+    assert(t.preview)==PAID_EXAMPLE.get("preview")
 
-def test_mediacanview_pinned():
+def test_mediacanview_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     for ele in t.media:
         assert(ele.canview)==True
 
 
-def test_mediaclass_pinned():
+def test_mediaclass_paid():
     username="test"
     model_id=TEST_ID
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     for ele in t.media:
         assert(isinstance(ele,Media))==True
  
  #Media Test
-def test_mediaclass_pinned():
+def test_mediaclass_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
+    t=Post(PAID_EXAMPLE,model_id,username)
     try:
         media=Media(t.media[index],index,t)
     except:
         raise Exception()
     
 
-def test_mediatype_pinned():
+def test_mediatype_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(mediaDict["type"])=="photo"
-    assert(media.mediatype)=="images"
+    assert(mediaDict["type"])=="video"
+    assert(media.mediatype)=="videos"
 
 
-def test_mediaurl_pinned():
+def test_mediaurl_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(re.search("http",media.url))!=None
 
-def test_mediapost_pinned():
+def test_mediapost_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.post)==t
 
-def test_media_id_pinned():
+def test_media_id_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.id)==mediaDict["id"]
 
-def test_medialen_pinned():
+def test_medialen_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(len(media.post.post_media))==len(PINNED_POSTS_EXAMPLE["media"])
+    assert(len(media.post.post_media))==len(PAID_EXAMPLE["media"])
 
-def test_mediacount_pinned():
+
+def test_mediacount_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.count)==index+1
 
-def test_mediapreview_pinned():
+def test_mediapreview_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
-    assert(PINNED_POSTS_EXAMPLE["preview"])==[]
+    assert(PAID_EXAMPLE.get("preview"))==None
     assert(media.preview)==0
-
-def test_medialinked_pinned():
+def test_medialinked_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.linked)==None   
 
-def test_mediamedia_pinned():
+def test_mediamedia_paid():
     username="test"
     model_id=TEST_ID
     index=0
-    t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
-    mediaDict=PINNED_POSTS_EXAMPLE["media"][index]
+    t=Post(PAID_EXAMPLE,model_id,username)
+    mediaDict=PAID_EXAMPLE["media"][index]
     media=Media(mediaDict,index,t)
     assert(media.media)==mediaDict
-def test_pinned_text_wordtruncate(mocker):
+
+def test_paid_text_wordtruncate(mocker):
     length=TEXTLENGTH_ALT2
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -244,7 +245,7 @@ def test_pinned_text_wordtruncate(mocker):
     with check:
         assert(len(wordarray))< length+1
 
-def test_pinned_text_wordtruncate2(mocker):
+def test_paid_text_wordtruncate2(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -270,7 +271,7 @@ def test_pinned_text_wordtruncate2(mocker):
     with check:
         assert(len(wordarray))<length+1
 
-def test_pinned_text_wordtruncate3(mocker):
+def test_paid_text_wordtruncate3(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -296,7 +297,7 @@ def test_pinned_text_wordtruncate3(mocker):
     with check:
         assert(len(wordarray))<=len(textarray)+2
 
-def test_pinned_text_wordtruncate4(mocker):
+def test_paid_text_wordtruncate4(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
@@ -321,7 +322,7 @@ def test_pinned_text_wordtruncate4(mocker):
     with check:
         assert(len(wordarray))<TEXTLENGTH_ALT2+1
 
-def test_pinned_text_wordtruncate5(mocker):
+def test_paid_text_wordtruncate5(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -347,7 +348,7 @@ def test_pinned_text_wordtruncate5(mocker):
     with check:
         assert(len(wordarray))<length+1
 
-def test_pinned_text_wordtruncate6(mocker):
+def test_paid_text_wordtruncate6(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -370,7 +371,7 @@ def test_pinned_text_wordtruncate6(mocker):
     assert(len(wordarray))>=len("{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
 
 
-def test_pinned_text_lettertruncate(mocker):
+def test_paid_text_lettertruncate(mocker):
     length=TEXTLENGTH_ALT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -394,7 +395,7 @@ def test_pinned_text_lettertruncate(mocker):
   
         
 
-def test_pinned_text_lettertruncate2(mocker):
+def test_paid_text_lettertruncate2(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -416,7 +417,7 @@ def test_pinned_text_lettertruncate2(mocker):
     wordarray=t.text_
     assert(len(wordarray))==length
 
-def test_pinned_text_lettertruncate3(mocker):
+def test_paid_text_lettertruncate3(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -441,7 +442,7 @@ def test_pinned_text_lettertruncate3(mocker):
 
 
 
-def test_pinned_text_lettertruncate4(mocker):
+def test_paid_text_lettertruncate4(mocker):
     length=TEXTLENGTH_ALT2
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -464,7 +465,7 @@ def test_pinned_text_lettertruncate4(mocker):
     assert(len(wordarray))==length
    
 
-def test_pinned_text_lettertruncate5(mocker):
+def test_paid_text_lettertruncate5(mocker):
     length=int(TEXTLENGTH_ALT2/2)
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
@@ -486,7 +487,7 @@ def test_pinned_text_lettertruncate5(mocker):
     wordarray=t.text_
     assert(len(wordarray))==length
 
-def test_pinned_text_lettertruncate6(mocker):
+def test_paid_text_lettertruncate6(mocker):
     length=TEXTLENGTH_DEFAULT
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,

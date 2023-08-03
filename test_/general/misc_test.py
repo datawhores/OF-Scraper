@@ -1,4 +1,4 @@
-from test.test_constants import *
+from  test_.test_constants import *
 from ofscraper.utils.separate import separate_by_id
 import ofscraper.utils.args as args_
 from pytest_check import check

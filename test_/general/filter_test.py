@@ -1,4 +1,4 @@
-from test.test_constants import *
+from  test_.test_constants import *
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
 from ofscraper.classes.posts import Post

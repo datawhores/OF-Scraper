@@ -1,7 +1,7 @@
 import tempfile
 from ofscraper.db.operations import *
 import pytest
-from test.test_constants import *
+from  test_.test_constants import *
 from ofscraper.classes.posts import Post
 from ofscraper.classes.media import Media
 

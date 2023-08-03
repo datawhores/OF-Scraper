@@ -2,7 +2,7 @@
 import tempfile
 import json
 from pytest_check import check
-from test.test_constants import *
+from  test_.test_constants import *
 from ofscraper.utils.config import *
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths_

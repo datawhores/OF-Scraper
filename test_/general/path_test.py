@@ -16,7 +16,7 @@ import ofscraper.classes.placeholder
 import ofscraper.classes.placeholder as placeholder
 from random_unicode_emoji import random_emoji
 
-from test.test_constants import *
+from  test_.test_constants import *
 from ofscraper.classes.posts import Post
 from ofscraper.classes.media import Media
 from ofscraper.utils.dates import convert_local_time
