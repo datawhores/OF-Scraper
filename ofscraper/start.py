@@ -1,6 +1,8 @@
 import sys
 import time
-import multiprocessing
+import ssl
+import platform
+import certifi
 from threading import Event
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
@@ -12,11 +14,7 @@ import ofscraper.utils.profiles as profiles_
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
 import ofscraper.utils.exit as exit
-import ssl
-import platform
-import certifi
-import psutil
-
+import ofscraper.utils.misc as misc
 
 
 
@@ -31,7 +29,7 @@ def main():
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
         #start other log consumer, only if more then 3 process
-        if len(psutil.Process().cpu_affinity())>2:other_log_process=logger.start_other_process()
+        if misc.getcpu_count()>2:other_log_process=logger.start_other_process()
         else: other_log_thread=logger.start_other_thread(event=other_event)
         #allow background processes to start
         time.sleep(3)

@@ -66,11 +66,13 @@ import ofscraper.utils.exit as exit
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
-from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress
+from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
+import ofscraper.utils.misc as misc
 from aioprocessing import AioPipe
 if platform.system() == 'Windows':
     from win32_setctime import setctime 
- # pylint: disable=import-error
+ # pylint: disable=import-errorm
+ 
 
 
 
@@ -217,7 +219,7 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
 
 def get_mediasplits(medialist):
     user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
-    final_count=min(user_count,len(psutil.Process().cpu_affinity()), len(medialist)//5)
+    final_count=min(user_count,misc.getcpu_count(), len(medialist)//5)
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
