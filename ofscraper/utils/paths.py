@@ -48,6 +48,7 @@ def set_directory(path: Path):
     finally:
         os.chdir(origin)
 def createDir(path):
+    path=pathlib.Path(path)
     try:
         path.mkdir(exist_ok=True,parents=True)
     except:
@@ -78,9 +79,11 @@ def cleanup():
 def getcachepath():
     profile = get_profile_path()
     path= profile/"cache"
+    path=pathlib.Path(os.path.normpath(path))
     createDir(path.parent)
     return path
 def truncate(path):
+    path=pathlib.Path(os.path.normpath(path))
     if args_.getargs().original:
         return path
     if platform.system() == 'Windows':
@@ -92,6 +95,7 @@ def truncate(path):
     else:
         return pathlib.Path(path)
 def _windows_truncateHelper(path):
+    path=pathlib.Path(os.path.normpath(path))
     if len(str(path))<=256:
         return path
     path=pathlib.Path(path)
@@ -110,7 +114,7 @@ def _windows_truncateHelper(path):
     return pathlib.Path(dir,newFile)
 
 def _mac_truncateHelper(path):
-    path=pathlib.Path(path)
+    path=pathlib.Path(os.path.normpath(path))
     dir=path.parent
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
@@ -123,7 +127,7 @@ def _mac_truncateHelper(path):
     return pathlib.Path(dir,newFile)
 
 def _linux_truncateHelper(path):
-    path=pathlib.Path(path)
+    path=pathlib.Path(os.path.normpath(path))
     dir=path.parent
     match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
@@ -197,6 +201,7 @@ def ffmpegexecutecheck(x):
    
 def getlogpath():
     path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}.log'
+    path=pathlib.Path(os.path.normpath(path))
     createDir(path.parent)
     return path
 

@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
@@ -49,9 +50,11 @@ class Placeholders:
             
         else:
             formatStr=config_.get_metadata(config_.read_config()).format(       
-                            **self._variables)
-        log.trace(f"final database path {pathlib.Path(formatStr,'user_data.db')}")
-        return pathlib.Path(formatStr,"user_data.db")
+                          **self._variables)
+        data_path=pathlib.Path(formatStr,'user_data.db')
+        data_path=os.path.normpath(data_path )
+        log.trace(f"final database path {data_path}")
+        return pathlib.Path(data_path)
 
 
   
@@ -95,9 +98,9 @@ class Placeholders:
             
             downloadDir=config_.get_dirformat(config_.read_config())\
             .format(**self._variables)
-        log.trace(f"final mediadir path {root /downloadDir  }")
-
-        return root /downloadDir  
+        final_path=pathlib.Path(os.path.normpath(root /downloadDir ))
+        log.trace(f"final mediadir path {final_path}")
+        return final_path
     
     
     @wrapper
@@ -147,6 +150,8 @@ class Placeholders:
         else:
             filename=config_.get_fileformat(config_.read_config()).format(**self._variables) 
         log.trace(f"final filename path {filename }")
+        return filename
+        
         
 
 
