@@ -147,7 +147,7 @@ class Placeholders:
         else:
             filename=config_.get_fileformat(config_.read_config()).format(**self._variables) 
         log.trace(f"final filename path {filename }")
-        
+        return filename
 
 
 
