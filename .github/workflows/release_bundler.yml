@@ -161,10 +161,12 @@ jobs:
         run: poetry install
       - name: install builder
         run: poetry add pyinstaller   
-      - name: create-one-file       
+      - name: create-one-file   
+        id: create-one-file
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{inputs.version}}"
         continue-on-error: true
       - name: create-one-file2
+        id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{inputs.version}}" 
       - name: upload file
@@ -173,9 +175,11 @@ jobs:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{inputs.version}}.exe'
       - name: create-dir
+        id: create-dir
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" 
         continue-on-error: true
       - name: create-dir2
+        id: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}"      
       - uses: vimtor/action-zip@v1
@@ -224,9 +228,11 @@ jobs:
       - name: install builder
         run: poetry add pyinstaller        
       - name: create-one-file
+        id: create-one-file
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}"
         continue-on-error: true
       - name: create-one-file2
+        id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}" 
       - name: upload file
@@ -235,9 +241,11 @@ jobs:
           name: ofscraper_macos
           path: "dist/ofscraper_macos_${{inputs.version}}"
       - name: create-dir
+        id: create-dir
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
         continue-on-error: true
       - name: create-dir2
+        id: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{inputs.version}}" 
       - uses: vimtor/action-zip@v1
