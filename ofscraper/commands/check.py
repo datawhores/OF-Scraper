@@ -48,7 +48,7 @@ def process_download_cart():
                     media_id=app.row_names.index('Media_ID')
                     url=None
                     if row[restype].plain=="message":
-                        url=constants.messagesNextEP.format(row[username].plain,row[post_id].plain)
+                        url=constants.messageTableSPECIFIC.format(row[username].plain,row[post_id].plain)
                     elif row[restype].plain=="post":
                         url=f"{row[post_id]}"
                     elif row[restype].plain=="highlights":
@@ -69,12 +69,12 @@ def process_download_cart():
                     log.info(f"Downloading Invidual media for {username} {media.filename}")
                     operations.create_tables(model_id,username)
                     operations.write_profile_table(model_id,username)
-                    values=asyncio.run(download.process_dicts(
+                    values=download.process_dicts(
                     username,
                     model_id,
                     [media],
-                    ))
-                    if values==None or values[0]!=1:
+                    )
+                    if values==None or values[-1]!=1:
                         raise Exception("Download is marked as skipped")
                     log.info("Download Finished")
                     app.update_cell(key,"Download_Cart","[downloaded]")

@@ -122,7 +122,7 @@ def get_info(url):
     search3=re.search(f"/stories/highlights/({constants.NUMBER_REGEX}+)",url)
 
     search4=re.search(f"/({constants.NUMBER_REGEX}+)/stories",url)
-    search5=re.search(f"chats/({constants.USERNAME_REGEX}+)/.*?id=({constants.NUMBER_REGEX}+)",url)
+    search5=re.search(f"chats/({constants.USERNAME_REGEX}+)/.*?(id|firstId)=({constants.NUMBER_REGEX}+)",url)
     search6=re.search(f"/({constants.NUMBER_REGEX}+)/({constants.USERNAME_REGEX}+)",url)
     search7=re.search(f"^{constants.NUMBER_REGEX}+$",url)
   #model,postid,type
@@ -137,7 +137,7 @@ def get_info(url):
 
 
     elif search5:
-        return search5.group(1),search5.group(2),"msg2"
+        return search5.group(1),search5.group(3),"msg2"
 
     elif search6:
         return search6.group(2),search6.group(1),"post"

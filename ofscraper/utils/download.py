@@ -152,6 +152,7 @@ def process_dicts(username,model_id,medialist):
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
         log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+        return photo_count,video_count,audio_count,skipped
     except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
