@@ -1,17 +1,16 @@
 import re
+from bs4 import BeautifulSoup
 import arrow
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from ..constants import LICENCE_URL
 import ofscraper.utils.args as args_
-import ofscraper.utils.auth as auth
 from mpegdash.parser import MPEGDASHParser
 import ofscraper.constants as constants
 import ofscraper.utils.config as config
-import certifi
-import ssl
 import logging
 import traceback
 import ofscraper.classes.sessionbuilder as sessionbuilder
+
 
 
 log=logging.getLogger("shared")

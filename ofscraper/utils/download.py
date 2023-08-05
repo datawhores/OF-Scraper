@@ -494,8 +494,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
         innerlog.get().debug("removing download because content length was zero") 
         pathlib.Path(video["path"]).unlink(missing_ok=True)
         pathlib.Path(audio["path"]).unlink(missing_ok=True)
-        return ele.mediatype,audio["total"]+video["total"]
-        
+        return ele.mediatype,audio["total"]+video["total"]     
     for item in [audio,video]:
         innerlog.get().debug(f"temporary file name for protected media {item['path']}") 
         if not pathlib.Path(item["path"]).exists():
@@ -742,45 +741,49 @@ async def key_helper_keydb(c,pssh,licence_url,id):
         innerlog.get().traceback(E)
         innerlog.get().traceback(traceback.format_exc())
         raise E       
-
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_manual(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using manual key helper")
-    out=cache.get(licence_url)
-    if out!=None:
-        innerlog.get().debug(f"ID:{id} manual key helper got key from cache")
-        return out
-    innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-    innerlog.get().debug(f"ID:{id} licence: {licence_url}")
+    try:
+        out=cache.get(licence_url)
+        if out!=None:
+            innerlog.get().debug(f"ID:{id} manual key helper got key from cache")
+            return out
+        innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
+        innerlog.get().debug(f"ID:{id} licence: {licence_url}")
 
-    # prepare pssh
-    pssh = PSSH(pssh)
-
-
-    # load device
-    private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
-    client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
-    device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
+        # prepare pssh
+        pssh = PSSH(pssh)
 
 
-    # load cdm
-    cdm = Cdm.from_device(device)
+        # load device
+        private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
+        client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
+        device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
 
-    # open cdm session
-    session_id = cdm.open()
 
-    
-    keys=None
-    challenge = cdm.get_license_challenge(session_id, pssh)
-    async with c.requests(url=licence_url,method="post",data=challenge)() as r:
-        cache = Cache(paths.getcachepath())
-        cdm.parse_license(session_id, (await r.content.read()))
-        keys = cdm.get_keys(session_id)
-        cdm.close(session_id)
-    keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
-    key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-    cache.set(licence_url,key, expire=constants.KEY_EXPIRY)
-    return key
+        # load cdm
+        cdm = Cdm.from_device(device)
 
+        # open cdm session
+        session_id = cdm.open()
+
+        
+        keys=None
+        challenge = cdm.get_license_challenge(session_id, pssh)
+        async with c.requests(url=licence_url,method="post",data=challenge)() as r:
+            cache = Cache(paths.getcachepath())
+            cdm.parse_license(session_id, (await r.content.read()))
+            keys = cdm.get_keys(session_id)
+            cdm.close(session_id)
+        keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
+        key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
+        cache.set(licence_url,key, expire=constants.KEY_EXPIRY)
+        return key
+    except Exception as E:
+        innerlog.get().traceback(E)
+        innerlog.get().traceback(traceback.format_exc())
+        raise E   
                 
 
     
