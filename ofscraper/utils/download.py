@@ -489,7 +489,12 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
     video=await alt_download_downloader(video,c,ele,path,file_size_limit)
     if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
         innerlog.get().debug(f"{get_medialog(ele)} over size limit") 
-        return 'skipped', 1       
+        return 'skipped', 1 
+    if int(video["total"])==0 or int(audio["total"]):
+        innerlog.get().debug("removing download because content length was zero") 
+        pathlib.Path(video["path"]).unlink(missing_ok=True)
+        pathlib.Path(audio["path"]).unlink(missing_ok=True)
+        return ele.mediatype,audio["total"]+video["total"]
         
     for item in [audio,video]:
         innerlog.get().debug(f"temporary file name for protected media {item['path']}") 
