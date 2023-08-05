@@ -490,7 +490,7 @@ async def alt_download_helper(c,ele,path,file_size_limit,username,model_id):
     if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
         innerlog.get().debug(f"{get_medialog(ele)} over size limit") 
         return 'skipped', 1 
-    if int(video["total"])==0 or int(audio["total"]):
+    if int(video["total"])==0 or int(audio["total"])==0:
         innerlog.get().debug("removing download because content length was zero") 
         pathlib.Path(video["path"]).unlink(missing_ok=True)
         pathlib.Path(audio["path"]).unlink(missing_ok=True)
