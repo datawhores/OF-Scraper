@@ -74,7 +74,7 @@ def process_download_cart():
                     model_id,
                     [media],
                     )
-                    if values==None or values[-1]!=1:
+                    if values==None or values[-1]==1:
                         raise Exception("Download is marked as skipped")
                     log.info("Download Finished")
                     app.update_cell(key,"Download_Cart","[downloaded]")
