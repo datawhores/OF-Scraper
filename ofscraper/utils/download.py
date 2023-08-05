@@ -740,6 +740,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
 async def key_helper_manual(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using manual key helper")
+    cache = Cache(paths.getcachepath())
     out=cache.get(licence_url)
     if out!=None:
         innerlog.get().debug(f"ID:{id} manual key helper got key from cache")
