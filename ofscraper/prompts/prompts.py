@@ -229,6 +229,7 @@ def auth_full_paste():
             'message':'Paste Text from Extension',
             "validate": prompt_validators.jsonValidator(),
             "filter":prompt_validators.jsonloader,
+            "multiline":True,
              "instruction":\
 """
 Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
