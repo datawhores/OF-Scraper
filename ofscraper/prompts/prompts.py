@@ -365,7 +365,7 @@ def config_prompt_advanced(config_) -> dict:
         {
             'type': 'list',
             'name': 'key-mode-default',
-            'message': 'Make selection for how to retrive keys',
+            'message': 'Make selection for how to retrive long_message',
             'default': config.get_key_mode(config_),
             'choices':constants.KEY_OPTIONS,
 
@@ -919,7 +919,7 @@ def reset_auth_prompt() -> bool:
             'type': 'list',
             "name":name,
             'message': "How do you want to fix this issue",
-            'choices':[Choice(False,"Clearout Auth File"),Choice(True,"Manually Edit Auth File")]
+            'choices':[Choice("Reset Default","Reset Default"),Choice("Manually Edit Auth Config","Manually Edit Auth Config")]
         }
     ])
     return questions[name]
@@ -938,7 +938,7 @@ def manual_config_prompt(configText) -> str:
             'multiline':True,
             "name":name,
             'default':configText,
-            "keys":prompt_strings.CONFIG_MULTI,
+            "long_message":prompt_strings.CONFIG_MULTI,
             'message': "Edit config text\n===========\n",
         }
     ])
@@ -959,7 +959,7 @@ def manual_auth_prompt(authText) -> str:
             'multiline':True,
             'default':authText,
             'message': "Edit auth text\n===========\n",
-            "keys":prompt_strings.AUTH_MULTI,
+            "long_message":prompt_strings.AUTH_MULTI,
             "validate":EmptyInputValidator()
         }
     ])

@@ -49,7 +49,7 @@ def read_auth():
                 "You don't seem to have an `auth.json` file")
             make_auth()
         except json.JSONDecodeError as e:
-            print("You auth.json has a syntax error")
+            print("Your auth.json has a syntax error")
             print(f"{e}\n\n")
             if prompts.reset_auth_prompt():
                 with open( authFile, 'w') as f:
@@ -93,19 +93,18 @@ def edit_auth():
     except json.JSONDecodeError as e:
             while True:
                 try:
-                    print("You auth.json has a syntax error")
-                    print(f"{e}\n\n")
-                    if prompts.reset_auth_prompt():
+                    print("Your auth.json has a syntax error")
+                    if prompts.reset_auth_prompt()=="Reset Default":
+                        make_auth()
+                    else:
                         with open( authFile, 'w') as f:
                             f.write(prompts.manual_auth_prompt(authText))
-                    else:
-                         with open(authFile,"w"): 
-                            f.write(prompts.auth_prompt(get_empty()))
+
                     with open(authFile, 'r') as f:
                         authText=f.read()
                         auth = json.loads(authText)
                     break
-                except:
+                except Exception as E:
                     continue
     make_request_auth() 
 
@@ -142,17 +141,14 @@ def make_auth( auth=None):
                 auth["auth"]["sess"]=ele.replace("sess=","")
             elif ele.find("auth_uid")!=-1:
                 auth["auth"]["auth_uid_"]=ele.replace("auth_uid_","").replace("=","")
-        for ele in auth['auth'].items():
-            auth['auth'][ele[0]]=ele[1].strip()
-           
+
 
 
     else:
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
         auth['auth'].update(prompts.auth_prompt(auth['auth']))
-        for ele in auth['auth'].items():
-            auth['auth'][ele[0]]=ele[1].strip()
-    
+    for item in auth["auth"].items():
+        auth[item[0]]=item[1].strip()
     console.print(f"{auth}\nWriting to {authFile}",style="yellow")
     with open(authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))
