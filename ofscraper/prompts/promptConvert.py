@@ -84,7 +84,7 @@ def get_default_instructions(funct):
     elif funct.__name__=="getFuzzySelection":
         return prompt_strings.FUZZY_INSTRUCTION
     elif funct.__name__=="multiline_input_prompt":
-        return prompt_strings.MULT_LINE
+        return prompt_strings.MULTI_LINE
     elif funct.__name__=="input_prompt":
         return prompt_strings.SINGLE_LINE
     elif funct.__name__=="number_type":

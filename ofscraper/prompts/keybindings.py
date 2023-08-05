@@ -12,4 +12,4 @@ select={"answer": [{"key": ["s-right"]},{"key": ["pagedown"]},{"key": ["home"]},
 input= select
 file=select
 number=select
-multiline=  {"answer":[{"key": ["pagedown","enter"]},{"key": ["home","enter"]},{"key": ["end","enter"]},{"key": ["pageup","enter"]},{"key": ["space","enter"]}]}
+multiline=  {"answer":[{"key": ["pagedown","enter"]},{"key": ["home","enter"]},{"key": ["end","enter"]},{"key": ["pageup","enter"]},{"key": ["space","enter"]},{"key": ["esc"]}]}

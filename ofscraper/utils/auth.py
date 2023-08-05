@@ -133,24 +133,25 @@ def make_auth( auth=None):
         auth["auth"]["app-token"]="33d57ade8c02dbc5a333db99ff9ae26a"
         for key in ["username","support_2fa","active","email","password","hashed"]:
             auth["auth"].pop(key)
-        auth["auth"]["x-bc"]=auth["auth"].pop("x_bc")
+        auth["auth"]["x-bc"]=auth["auth"].pop("x_bc").strip()
         tempCookie=auth["auth"].pop("cookie")
         for ele in tempCookie.split(";"):
-            ele=ele.strip(
-                
-            )
             if ele.find("auth_id")!=-1:
                 auth["auth"]["auth_id"]=ele.replace("auth_id=","")
             elif ele.find("sess")!=-1:
                 auth["auth"]["sess"]=ele.replace("sess=","")
             elif ele.find("auth_uid")!=-1:
                 auth["auth"]["auth_uid_"]=ele.replace("auth_uid_","").replace("=","")
+        for ele in auth['auth'].items():
+            auth['auth'][ele[0]]=ele[1].strip()
            
 
 
     else:
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
         auth['auth'].update(prompts.auth_prompt(auth['auth']))
+        for ele in auth['auth'].items():
+            auth['auth'][ele[0]]=ele[1].strip()
     
     console.print(f"{auth}\nWriting to {authFile}",style="yellow")
     with open(authFile, 'w') as f:
