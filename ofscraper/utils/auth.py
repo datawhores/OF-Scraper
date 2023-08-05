@@ -49,14 +49,13 @@ def read_auth():
                 "You don't seem to have an `auth.json` file")
             make_auth()
         except json.JSONDecodeError as e:
-            print("You auth.json has a syntax error")
+            print("Your auth.json has a syntax error")
             print(f"{e}\n\n")
             if prompts.reset_auth_prompt():
+                make_auth()
+            else:
                 with open( authFile, 'w') as f:
                     f.write(prompts.manual_auth_prompt(authText))
-            else:
-                with open(authFile,"w") as f: 
-                    f.write(json.dumps(get_empty()))
 
 
     make_request_auth()       
@@ -93,19 +92,19 @@ def edit_auth():
     except json.JSONDecodeError as e:
             while True:
                 try:
-                    print("You auth.json has a syntax error")
+                    print("Your auth.json has a syntax error")
                     print(f"{e}\n\n")
-                    if prompts.reset_auth_prompt():
+                    if prompts.reset_auth_prompt()=="Reset Default":
+                        make_auth()
+                    else:
                         with open( authFile, 'w') as f:
                             f.write(prompts.manual_auth_prompt(authText))
-                    else:
-                         with open(authFile,"w"): 
-                            f.write(prompts.auth_prompt(get_empty()))
+
                     with open(authFile, 'r') as f:
                         authText=f.read()
                         auth = json.loads(authText)
                     break
-                except:
+                except Exception as E:
                     continue
     make_request_auth() 
 
@@ -125,9 +124,9 @@ def make_auth( auth=None):
         if not auth["auth"].get("x-bc"):
             auth["auth"]["x-bc"]=prompts.xbc_prompt()
         auth["auth"]["user_agent"]= prompts.user_agent_prompt(auth["auth"].get("user_agent") or "")
+        
 
 
- 
     elif browserSelect=="Paste From M-rcus\' OnlyFans-Cookie-Helper":
         auth=prompts.auth_full_paste()
         auth["auth"]["app-token"]="33d57ade8c02dbc5a333db99ff9ae26a"
@@ -151,7 +150,8 @@ def make_auth( auth=None):
     else:
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
         auth['auth'].update(prompts.auth_prompt(auth['auth']))
-    
+    for item in auth["auth"].items():
+        auth["auth"][item[0]]=item[1].strip()
     console.print(f"{auth}\nWriting to {authFile}",style="yellow")
     with open(authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))

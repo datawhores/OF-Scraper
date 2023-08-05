@@ -199,11 +199,8 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id,
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         cache.close()
-        headers=None
-        
         path_to_file=None
        
-
         async with c.requests(url=url)() as r:
                 if r.ok:
                     rheaders=r.headers
