@@ -220,8 +220,10 @@ def getargs(input=None):
 
     if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
-    if args.command in set(["story_check","paid_check"])and not (args.username or args.file):
+    elif args.command in set(["story_check","paid_check"])and not (args.username or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --username or --file must be specified )")
+    elif args.command in set(["manual"])and not (args.url or args.file):
+        raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
     return args
 
 

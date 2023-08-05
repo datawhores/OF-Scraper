@@ -95,8 +95,6 @@ def reset_globals():
     total_data=0
     global desc
     desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped || {sumcount}/{mediacount}||{data}/{total})'   
-    global attempt
-    attempt=contextvars.ContextVar("attempt")
     global count_lock
     count_lock=aioprocessing.AioLock()
     global dir_lock
@@ -268,6 +266,9 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
+    global attempt
+    attempt=contextvars.ContextVar("attempt")
+    
 
  
     medialist=list(medialist)
@@ -369,7 +370,10 @@ async def main_download_helper(c,ele,path,file_size_limit,username,model_id):
     if not pathlib.Path(temp).exists():
         innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
         return "skipped",1
-    elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
+    #some files have a total size of zero
+    elif total==0 and path_to_file.exists() and pathlib.Path(temp).absolute().stat().st_size<pathlib.Path(path_to_file).absolute().stat().st_size:
+        return "skipped",1 
+    elif total!=0 and abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
         innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
         return "skipped",1 
     else:
@@ -394,47 +398,47 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
         innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {ele.filename_} with {url}")
         temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
         pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
-        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size        
+        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size 
+        total=0       
         path_to_file=None
+        filename=None
        
         async with total_sem:
             async with c.requests(url=url)() as r:
                     if r.ok:
                         rheaders=r.headers
                         total = int(rheaders['Content-Length'])
-                        if file_size_limit>0 and total > int(file_size_limit): 
-                                return "forced_skippped",1           
-                        await pipe_.coro_send(  (None, 0,total))
                         content_type = rheaders.get("content-type").split('/')[-1]
                         filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
                         innerlog.get().debug(f"{get_medialog(ele)} filename from config {filename}")
-                        path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
                         innerlog.get().debug(f"{get_medialog(ele)} full path from config {pathlib.Path(path,f'{filename}')}")
+                        path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
                         innerlog.get().debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
-
+                        if file_size_limit>0 and total > int(file_size_limit): 
+                                return "forced_skippped",1  
+                        await pipe_.coro_send(  (None, 0,total))
                     else:
                         r.raise_for_status()   
                                    
-        if total!=resume_size:
+        if total!=resume_size or total==0:
             async with sem:
-                async with c.requests(url=url,headers={"Range":f"bytes={resume_size}-{total}"})() as r:
-                    if r.ok:
+                async with c.requests(url=url,headers={"Range":f"bytes={resume_size}"})() as r:
+.                    if r.ok:
                         pathstr=str(path_to_file)
-                        if not total or (resume_size!=total):
-                            await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
-                                        "total":total,"visible":False})
-                            await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size})
-                            size=resume_size
-                            count=0
-                            with open(temp, 'ab') as f: 
-                                await pipe_.coro_send({"type":"update","args":(ele.id,),"visible":True})
-                                async for chunk in r.iter_chunked(1024):
-                                    count=count+1
-                                    size=size+len(chunk)
-                                    innerlog.get().trace(f"{get_medialog(ele)} Download:{size}/{total}")
-                                    f.write(chunk)
-                                    if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
-                                await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
+                        await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
+                                    "total":total,"visible":False})
+                        await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size})
+                        size=resume_size
+                        count=0
+                        with open(temp, 'ab') as f: 
+                            await pipe_.coro_send({"type":"update","args":(ele.id,),"visible":True})
+                            async for chunk in r.iter_chunked(1024):
+                                count=count+1
+                                size=size+len(chunk)
+                                innerlog.get().trace(f"{get_medialog(ele)} Download:{size}/{total}")
+                                f.write(chunk)
+                                if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
+                            await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
                     else:
                         r.raise_for_status() 
                                   

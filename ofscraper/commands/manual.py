@@ -26,14 +26,14 @@ def manual_download(urls=None):
             continue
         model_id =value[0].post.model_id
         username=value[0].post.username
-        log.info(f"Downloading individual media for{username}")
+        log.info(f"Downloading individual media for {username}")
         operations.create_tables(model_id,username)
         operations.write_profile_table(model_id,username)
-        asyncio.run(download.process_dicts(
+        download.process_dicts(
         username,
         model_id,
         value,
-        )) 
+        )
     log.info(f"Finished")
 
 def get_media_from_urls(urls):
