@@ -1,5 +1,5 @@
 import re
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup,MarkupResemblesLocatorWarning
 import arrow
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from ..constants import LICENCE_URL
@@ -10,7 +10,9 @@ import ofscraper.utils.config as config
 import logging
 import traceback
 import ofscraper.classes.sessionbuilder as sessionbuilder
-
+#supress warnings
+import warnings
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 
 log=logging.getLogger("shared")
@@ -127,7 +129,8 @@ class Media():
 
     @property
     def text(self):
-        return self._post.text
+        return BeautifulSoup(self._post.text,'html.parser').text
+    
 
     
     @property
@@ -163,6 +166,7 @@ class Media():
 
     @property
     def text_(self):
+
         if self.responsetype_!="Profile":
             text = self.text or self.filename or arrow.get(self.date).format(config.get_date(config.read_config()))
         elif self.responsetype_=="Profile":
@@ -172,7 +176,7 @@ class Media():
         # this is for removing emojis
         # text=re.sub("[^\x00-\x7F]","",text)
         # this is for removing html tags
-        text = re.sub("<[^>]*>", "", text)
+        # text = re.sub("<[^>]*>", "", text)
         # this for remove random special invalid special characters
         text = re.sub('[\n<>:"/\|?*:;]+', '', text)
         text = re.sub(" +", " ", text)

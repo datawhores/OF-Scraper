@@ -744,6 +744,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_manual(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using manual key helper")
+    cache = Cache(paths.getcachepath())
     try:
         out=cache.get(licence_url)
         if out!=None:
