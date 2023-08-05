@@ -423,7 +423,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
         if total!=resume_size or total==0:
             async with sem:
                 async with c.requests(url=url,headers={"Range":f"bytes={resume_size}"})() as r:
-.                    if r.ok:
+                    if r.ok:
                         pathstr=str(path_to_file)
                         await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
                                     "total":total,"visible":False})
