@@ -414,6 +414,8 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
                         rheaders=r.headers
                         total = int(rheaders['Content-Length'])
                         content_type = rheaders.get("content-type").split('/')[-1]
+                        if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
+                        if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
                         filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
                         innerlog.get().debug(f"{get_medialog(ele)} filename from config {filename}")
                         innerlog.get().debug(f"{get_medialog(ele)} full path from config {pathlib.Path(path,f'{filename}')}")

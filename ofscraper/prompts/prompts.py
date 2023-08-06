@@ -108,6 +108,7 @@ def auth_prompt(auth) -> dict:
             'message': 'Enter your sess cookie:',
             'default': auth['sess']
             ,'validate':EmptyInputValidator()
+              ,'multiline':True
 
         },
         {
@@ -116,12 +117,14 @@ def auth_prompt(auth) -> dict:
             'message': 'Enter your auth_id cookie:',
             'default': auth['auth_id']
             ,'validate':EmptyInputValidator()
+              ,'multiline':True
         },
         {
             'type': 'input',
             'name': 'auth_uid_',
             'message': 'Enter your auth_uid cookie (leave blank if you don\'t use 2FA):',
             'default': auth['auth_uid_']
+              ,'multiline':True
         },
         {
             'type': 'input',
@@ -129,6 +132,7 @@ def auth_prompt(auth) -> dict:
             'message': 'Enter your `user agent`:',
             'default': auth['user_agent']
             ,'validate':EmptyInputValidator()
+              ,'multiline':True
         },
         {
             'type': 'input',
@@ -136,6 +140,7 @@ def auth_prompt(auth) -> dict:
             'message': 'Enter your `x-bc` token:',
             'default': auth['x-bc']
             ,'validate':EmptyInputValidator()
+            ,'multiline':True
         }
     ])
 

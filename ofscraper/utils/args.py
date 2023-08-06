@@ -210,7 +210,10 @@ def getargs(input=None):
 
 
     parser=create_parser(input)
+
     args=parser.parse_args(input)
+ 
+
     #deduplicate posts
     args.posts=list(set(args.posts or []))
     args.username=set(args.username or [])
