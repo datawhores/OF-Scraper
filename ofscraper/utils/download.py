@@ -462,9 +462,7 @@ async def main_download_downloader(c,ele,path,file_size_limit,username,model_id)
 
                             await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
                     else:
-                        r.raise_for_status() 
-        if resume_size!=0:
-            None                          
+                        r.raise_for_status()                   
         return total,temp,path_to_file
 
     except Exception as E:
