@@ -101,7 +101,7 @@ def _windows_truncateHelper(path):
     path=pathlib.Path(path)
     dir=path.parent
     file=path.name
-    match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
+    match=re.search("_[0-9]+\.[a-z4]*$",path.name,re.IGNORECASE) or re.search("\.[a-z4]*$",path.name,re.IGNORECASE)
     if match:
         ext=match.group(0)
     else:
@@ -116,7 +116,7 @@ def _windows_truncateHelper(path):
 def _mac_truncateHelper(path):
     path=pathlib.Path(os.path.normpath(path))
     dir=path.parent
-    match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
+    match=re.search("_[0-9]+\.[a-z4]*$",path.name,re.IGNORECASE) or re.search("\.[a-z4]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
     file=re.sub(ext,"",path.name)
     maxlength=255-len(ext)
@@ -129,7 +129,7 @@ def _mac_truncateHelper(path):
 def _linux_truncateHelper(path):
     path=pathlib.Path(os.path.normpath(path))
     dir=path.parent
-    match=re.search("_[0-9]+\.[a-z]*$",path.name,re.IGNORECASE) or re.search("\.[a-z]*$",path.name,re.IGNORECASE)
+    match=re.search("_[0-9]+\.[a-z4]*$",path.name,re.IGNORECASE) or re.search("\.[a-z4]*$",path.name,re.IGNORECASE)
     ext= match.group(0) if match else ""
     file=re.sub(ext,"",path.name)
     maxbytes=254-len(ext.encode('utf8'))
