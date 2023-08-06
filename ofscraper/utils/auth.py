@@ -17,6 +17,7 @@ import requests
 from rich.console import Console
 
 import browser_cookie3
+from tenacity import retry,stop_after_attempt,retry_if_not_exception_type,wait_fixed
 
 import ofscraper.prompts.prompts as prompts
 from ..constants import configPath, DIGITALCRIMINALS, requestAuth,DEVIINT
@@ -25,6 +26,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.profiles as profiles
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config
+import ofscraper.constants as constants
 
 
 console=Console()
@@ -273,6 +275,7 @@ def get_request_auth():
     else:
         return get_request_digitalcriminals()
 
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(8))
 def get_request_auth_deviint():
     with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
         with c.requests(DEVIINT)() as r:
@@ -284,8 +287,8 @@ def get_request_auth_deviint():
                 checksum_constant = content['checksum_constant']
                 return (static_param, fmt, checksum_indexes, checksum_constant)
             else:
-                return []
-        
+               r.raise_for_status()  
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(8))  
 def get_request_digitalcriminals():
    with sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False) as c:
         with c.requests(DIGITALCRIMINALS)() as r:
@@ -297,4 +300,4 @@ def get_request_digitalcriminals():
                 checksum_constant = content['checksum_constant']
                 return (static_param, fmt, checksum_indexes, checksum_constant)
             else:
-                return []
+                r.raise_for_status() 
