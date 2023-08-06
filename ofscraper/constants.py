@@ -135,7 +135,7 @@ HOURLY_EXPIRY=3600
 SIZE_TIMEOUT=1209600
 KEY_EXPIRY=None
 DISCORDWAIT=5
-OF_MIN=15
+OF_MIN=20
 OF_MAX=50
 LICENCE_URL="https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine"
 logname="ofscraper"

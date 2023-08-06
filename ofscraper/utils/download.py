@@ -622,7 +622,6 @@ async def alt_download_downloader(item,c,ele,path,file_size_limit):
                         await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
                     else:
                         l.raise_for_status()
-                        return item
         item["total"]=total
         item["path"]=temp
         return item

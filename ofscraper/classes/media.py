@@ -266,7 +266,7 @@ class Media():
             async with sessionbuilder.sessionBuilder() as c:
                 async with c.requests(url=self.mpd,params=params)() as r:
                     if not r.ok:
-                        return None
+                        r.raise_for_status()
                     return MPEGDASHParser.parse(await r.text_())
         except Exception as E:
             log.traceback(traceback.format_exc())
