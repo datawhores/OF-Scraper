@@ -453,17 +453,34 @@ def config_prompt(config_) -> dict:
             "validate": PathValidator(is_dir=True)
         },
         {
-            'type': 'number',
+            'type': 'input',
             'name': 'file_size_limit',
             'message':"file_size_limit: ",
             'long_instruction':
 """
-File size limit (enter a value in bytes)
+File size limit
+input can be int representing bytes
+or human readable such as 10mb
 Enter 0 for no limit
 """,
-            'default': config.get_filesize(config_),
+            'default': str(config.get_filesize_limit(config_)),
             'filter':int,
-             'min_allowed':0,
+      
+        },
+
+    {
+            'type': 'input',
+            'name': 'file_size_min',
+            'message':"file_size_min: ",
+            'long_instruction':
+"""
+File size min
+input can be int representing bytes
+or human readable such as 10mb
+Enter 0 for no minimum
+""",
+            'default': str(config.get_filesize_min(config_)),
+            'filter':int,
       
         },
            {
@@ -471,7 +488,7 @@ Enter 0 for no limit
             'name': 'dir_format',
             'message':"dir_format: ",
             'long_instruction': 'What format do you want for download directories',
-            'default': config.get_dirformat(config_),
+            'default': config.get_dirformat(config_)
         },
               {
             'type': 'input',

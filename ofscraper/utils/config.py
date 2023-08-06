@@ -16,6 +16,7 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.binaries as binaries
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
+from humanfriendly import parse_size
 
 console=console_.get_shared_console()
 log=logging.getLogger("shared")
@@ -71,7 +72,8 @@ def get_current_config_schema(config:dict=None) -> dict:
         'config': {
             constants.mainProfile: get_main_profile(config),
             'save_location':get_save_location(config) ,
-            'file_size_limit': get_filesize(config),
+            'file_size_limit': get_filesize_limit(config),
+            'file_size_min': get_filesize_min(config),
             'dir_format': get_dirformat(config),
             'file_format':get_fileformat(config),
             'textlength':get_textlength(config),
@@ -238,11 +240,20 @@ def get_main_profile(config=None):
         return constants.PROFILE_DEFAULT   
     return config.get('main_profile',constants.PROFILE_DEFAULT)
 
-def get_filesize(config=None):
+def get_filesize_limit(config=None):
     if config==None:
-        return constants.FILE_SIZE_DEFAULT      
+        return constants.FILE_SIZE_LIMIT_DEFAULT      
     try:
-        return int(config.get('file_size_limit', constants.FILE_SIZE_DEFAULT))
+        return parse_size(config.get('file_size_limit', constants.FILE_SIZE_LIMIT_DEFAULT  ))
+    except:
+        return 0
+
+
+def get_filesize_min(config=None):
+    if config==None:
+        return constants.FILE_SIZE_MIN_DEFAULT       
+    try:
+        return parse_size(config.get('file_size_limit', constants.FILE_SIZE_MIN_DEFAULT  ))
     except:
         return 0
 

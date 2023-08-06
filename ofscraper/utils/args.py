@@ -3,6 +3,7 @@ import sys
 import re
 import arrow
 import pathlib
+from humanfriendly import parse_size
 from ofscraper.__version__ import __version__ 
 import ofscraper.constants as constants
 args=None
@@ -86,7 +87,10 @@ def create_parser(input=None):
     post.add_argument(
         '-mt', '--mediatype', help = 'Filter by media',default=[],required=False,type = posttype_helper,action='extend')
    
-
+    post.add_argument(
+        '-sx', '--size-max', help = 'Filter out files greater then given size supported inputs include int in bytes or human-readable such as 10mb',required=False,type = parse_size)
+    post.add_argument(
+        '-sm', '--size-min', help = 'Filter out files greater smaller then the given size bytes or human-readable such as 10mb',required=False,type =parse_size)
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     

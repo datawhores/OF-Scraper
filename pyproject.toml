@@ -36,6 +36,7 @@ aioprocessing = {extras = ["dill"], version = "^2.0.1"}
 more-itertools = "^9.1.0"
 psutil = "^5.9.5"
 pytest = "^7.4.0"
+humanfriendly = "^10.0"
 
 
 [tool.poetry.group.dev.dependencies]
