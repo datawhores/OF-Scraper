@@ -608,6 +608,7 @@ async def alt_download_get_total(item,c,ele):
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
+                else:
                     r.raise_for_status()  
         item["total"]=total
         return item
