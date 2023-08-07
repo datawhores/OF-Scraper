@@ -150,11 +150,11 @@ def make_auth( auth=None):
     else:
         console.print("You'll need to go to onlyfans.com and retrive header information\nGo to https://github.com/datawhores/OF-Scraper and find the section named 'Getting Your Auth Info'\nYou only need to retrive the x-bc header,the user-agent, and cookie information",style="yellow")
         auth['auth'].update(prompts.auth_prompt(auth['auth']))
-    for item in auth["auth"].items():
-        newitem=item[1].strip()
-        newitem=re.search("^ +","",newitem)
-        newitem=re.search(" +$","",newitem)
-        auth["auth"][item[0]]=newitem
+    for key,item in auth["auth"].items():
+        newitem=item.strip()
+        newitem=re.sub("^ +","",newitem)
+        newitem=re.sub(" +$","",newitem)
+        auth["auth"][key]=newitem
     console.print(f"{auth}\nWriting to {authFile}",style="yellow")
     with open(authFile, 'w') as f:
         f.write(json.dumps(auth, indent=4))
