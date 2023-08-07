@@ -96,7 +96,7 @@ def reset_globals():
     global total_data
     total_data=0
     global desc
-    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} skipped, {forced_skipped} forced skipped || {sumcount}/{mediacount}||{data}/{total})'   
+    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios,  {skipped} failed, {forced_skipped} forced skipped || {sumcount}/{mediacount}||{data}/{total})'   
     global count_lock
     count_lock=aioprocessing.AioLock()
     global dir_lock
