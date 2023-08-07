@@ -280,7 +280,7 @@ def username_helper(x):
     elif isinstance(x,str):
         temp=x.split(",")
     
-    return list(map(lambda x:x.lower(),temp))
+    return list(map(lambda x: x.lower() if not x=="ALL" else x,temp))
 def label_helper(x):
     temp=None
     if isinstance(x,list):
