@@ -501,8 +501,8 @@ async def alt_download_helper(c,ele,path,username,model_id):
     log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
     #get total seperatly so we can check before download
-    audio=await alt_download_get_total(audio,c,ele,path)
-    video=await alt_download_get_total(video,c,ele,path)
+    audio=await alt_download_get_total(audio,c,ele)
+    video=await alt_download_get_total(video,c,ele)
     if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
         innerlog.get().debug(f"{get_medialog(ele)} over size limit") 
         return 'forced_skipped', 1 
@@ -597,7 +597,7 @@ async def alt_download_preparer(ele):
                         break
     return audio,video
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def alt_download_get_total(item,c,ele,path):
+async def alt_download_get_total(item,c,ele):
     try:
         base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
         url=f"{base_url}{item['origname']}"
