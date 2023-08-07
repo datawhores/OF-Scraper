@@ -129,7 +129,8 @@ class Media():
 
     @property
     def text(self):
-        return BeautifulSoup(self._post.text,'html.parser').text
+        if self._post.text: return BeautifulSoup(self._post.text,'html.parser').text
+        return self._post.text
     
 
     
