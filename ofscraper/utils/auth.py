@@ -154,6 +154,8 @@ def make_auth( auth=None):
         newitem=item.strip()
         newitem=re.sub("^ +","",newitem)
         newitem=re.sub(" +$","",newitem)
+        newitem=re.sub("\n+","",newitem)
+
         auth["auth"][key]=newitem
     console.print(f"{auth}\nWriting to {authFile}",style="yellow")
     with open(authFile, 'w') as f:
