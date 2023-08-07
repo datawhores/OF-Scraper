@@ -1,4 +1,6 @@
+
 import sys
+import os
 import time
 import ssl
 import platform
@@ -84,6 +86,7 @@ def startvalues():
 
     #print info
     log.debug(args)
+    log.debug(platform.platform())
     log.debug(config_.read_config())
     log.info(f"config path: {str(paths_.get_config_path())}")
     log.info(f"profile path: {str(paths_.get_profile_path())}")
@@ -101,5 +104,6 @@ def set_mulitproc_start_type():
     plat=platform.system()
     if plat == "Darwin" or plat=="Windows":
         multiprocessing.set_start_method('spawn')
+        os.environ['no_proxy'] = '*'
     else:
-        multiprocessing.set_start_method('fork')
+        multiprocessing.set_startDarwin_method('fork')
