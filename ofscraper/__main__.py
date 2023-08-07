@@ -2,6 +2,7 @@
 import multiprocessing
 import ofscraper.start as start
 def main():
+    start.set_mulitproc_start_type()
     start.startvalues()
     start.discord_warning()
     start.main()

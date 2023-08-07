@@ -3,6 +3,7 @@ import time
 import ssl
 import platform
 import certifi
+import multiprocessing
 from threading import Event
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
@@ -96,4 +97,9 @@ def discord_warning():
         console_.get_shared_console().print("[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]")
 
 
-
+def set_mulitproc_start_type():
+    plat=platform.system()
+    if plat == "Darwin" or plat=="Windows":
+        multiprocessing.set_start_method('spawn')
+    else:
+        multiprocessing.set_start_method('fork')
