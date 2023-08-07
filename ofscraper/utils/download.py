@@ -153,7 +153,7 @@ def process_dicts(username,model_id,medialist):
         [process.terminate() for process in processes]    
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
-        log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} skipped)' )
+        log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
         return photo_count,video_count,audio_count,forced_skipped,skipped
     except KeyboardInterrupt as E:
             try:
