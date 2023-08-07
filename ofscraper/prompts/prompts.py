@@ -109,6 +109,7 @@ def auth_prompt(auth) -> dict:
             'default': auth['sess']
             ,'validate':EmptyInputValidator()
               ,'multiline':True
+              
 
         },
         {
