@@ -107,4 +107,4 @@ def set_mulitproc_start_type():
         os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
         os.environ['no_proxy'] = '*'
     else:
-        multiprocessing.set_startDarwin_method('fork')
+        multiprocessing.set_start_method('fork')
