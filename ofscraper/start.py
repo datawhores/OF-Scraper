@@ -104,6 +104,7 @@ def set_mulitproc_start_type():
     plat=platform.system()
     if plat == "Darwin" or plat=="Windows":
         multiprocessing.set_start_method('spawn')
+        os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
         os.environ['no_proxy'] = '*'
     else:
         multiprocessing.set_startDarwin_method('fork')
