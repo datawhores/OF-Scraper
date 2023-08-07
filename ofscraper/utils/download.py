@@ -857,6 +857,7 @@ def set_cache_helper(ele):
 def addGlobalDir(path):
     dirSet.add(path.resolve().parent)
 def setDirectoriesDate():
+    global dir_lock
     split_log.info( f" {pid_log_helper()} Setting Date for modified directories")
     output=set()
     rootDir=pathlib.Path(config_.get_save_location(config_.read_config())).resolve()
