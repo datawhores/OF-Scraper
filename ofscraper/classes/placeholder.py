@@ -106,7 +106,7 @@ class Placeholders:
     @wrapper
     def createfilename(self,ele,username,model_id,ext):
         filename=ele.filename_;self._variables.update({"filename":filename})
-        file_name=ele.filename_;self._variables.update({"file_name":filename})
+        file_name=ele.filename_;self._variables.update({"file_name":file_name})
         if ele.responsetype_ =="profile":
             return f"{filename}.{ext}"
         self._variables.update({"username":username})
@@ -137,20 +137,16 @@ class Placeholders:
      
         text=ele.text_;self._variables.update({"text":text})
         downloadtype=ele.downloadtype;self._variables.update({"downloadtype":downloadtype})
-        download_type=ele.downloadtype;self._variables.update({"downloadtype":download_type})
+        download_type=ele.downloadtype;self._variables.update({"download_type":download_type})
 
-
-        
-
-       
         log.trace(f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
-        filename=None
+        out=None
         if config_.get_allow_code_execution(config_.read_config()):
-            filename=eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
+            out=eval("f'{}'".format(config_.get_fileformat(config_.read_config())))
         else:
-            filename=config_.get_fileformat(config_.read_config()).format(**self._variables) 
-        log.trace(f"final filename path {filename }")
-        return filename
+            out=config_.get_fileformat(config_.read_config()).format(**self._variables) 
+        log.trace(f"final filename path {out}")
+        return out
         
         
 
