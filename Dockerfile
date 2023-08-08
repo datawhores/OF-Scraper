@@ -1,4 +1,3 @@
-FROM ubuntu:latest
 RUN apt-get update -y \
     && apt-get upgrade -y \
     && apt-get install curl python3.11 pip git python3.11-venv -y
@@ -33,4 +32,3 @@ RUN ${POETRY_HOME}/bin/poetry version $(${POETRY_HOME}/bin/poetry run dunamai fr
 ENV PATH="$PATH:/home/ofscraper/app/.venv/bin/"
 WORKDIR /home/ofscraper/app
 ENTRYPOINT ["fixuid","-q"]
- 
