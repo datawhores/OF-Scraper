@@ -8,22 +8,22 @@ volumes:
 services:
   ofscraper:
     container_name: ofscraper
-    image: datawhores/of-scraper:main
-    restart: unless-stopped
+    image: datawhores/of-scraper:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
-      - bin:/ofscraper/bin
-      - config:/ofscraper/config
-      - data:/ofscraper/data
-    user: 1000:1000
-    stdin_open: true
-    tty: true
-    
+    # #change the host mountpoint
+      - /home/john/.config/ofscraper:/root/.config/ofscraper
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
     # use the following two lines if you want to interact with the script manually.
     # bring the container up with `docker compose up -d` and then run it with
     # `docker compose exec -it ofscraper ofscraper --config /ofscraper/config/config.json`
-    entrypoint: "/bin/bash"
-    command: "-c sleep infinity"
-
+    entrypoint: ["/bin/bash"]
+    command: ["-c","sleep infinity"]
+    
     # alternatively, if you want the script to run automatically with a set or arguments,
     # comment out the lines above and instead do something like:
-    # command: "--username ALL --posts all"
+    # command: "ofscraper --username ALL --posts all"

@@ -28,6 +28,16 @@ import ofscraper.utils.logger as logger
 
 
 #Word split
+def test_windows_trunicate_custom1(mocker):
+    with patch('platform.system', MagicMock(return_value="Windows")):
+        long_path="F:\vr vids\AAA other\A dLd cont\new OF\jeanhollywood\Posts\Videos\2021-09-24_Behind the scenes! Y’all gonna love this one. I was a porn addicted gooner for a shoot. My roommate left to go out and I immediately whipped out my laptop and my Handy. I got 4 hours deep before she came back and offered to join. Gooners are gonna go crazy for it when it comes out 😈😈😈_1.mp4"
+        truncated=paths.truncate(long_path)
+        with check:
+            assert(len(str(truncated)))<=256
+        with check:
+            assert(long_path.parent)==truncated.parent
+        with check:
+            assert(long_path.suffix)==truncated.suffix
 
 
 def test_windows_truncate(mocker):

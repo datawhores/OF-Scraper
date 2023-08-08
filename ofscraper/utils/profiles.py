@@ -125,8 +125,8 @@ def get_profile_names():
 
     
 def get_current_config_profile():
-    config = config_.read_config()
-    return config[constants.mainProfile]
+    return config_.get_main_profile(config_.read_config())
+    
 
 def get_active_profile():
     if args_.getargs().profile:
