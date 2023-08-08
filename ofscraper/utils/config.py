@@ -238,7 +238,7 @@ def get_save_location(config=None):
 def get_main_profile(config=None):
     if config==None:
         return constants.PROFILE_DEFAULT   
-    return config.get('main_profile',constants.PROFILE_DEFAULT) or constants.PROFILE_DEFAULT  
+    return config.get(constants.mainProfile,constants.PROFILE_DEFAULT) or constants.PROFILE_DEFAULT  
 
 def get_filesize_limit(config=None):
     if config==None:
