@@ -108,7 +108,7 @@ def _windows_truncateHelper(path):
         ext=""
     #-1 is for / between parentdirs and file
     fileLength=256-len(ext)-len(str(dir))-1
-    newFile=f"{re.sub(ext,'',file)[fileLength]}{ext}"
+    newFile=f"{re.sub(ext,'',file)[:fileLength]}{ext}"
     final=pathlib.Path(dir,newFile)
     log.debug(f"path: {final} path size: {len(str(final))}")
     return pathlib.Path(dir,newFile)
