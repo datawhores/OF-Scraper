@@ -386,13 +386,16 @@ def main():
         try:
             
             print_start()
-
+            paths.cleanup()
+            paths.cleanDB()
             scrapper()
             paths.cleanup()
+            paths.cleanDB()
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
+                    paths.cleanDB()
                     raise KeyboardInterrupt
             except KeyboardInterrupt:
                     raise KeyboardInterrupt
@@ -400,6 +403,7 @@ def main():
             try:
                 with exit.DelayedKeyboardInterrupt():
                     paths.cleanup()
+                    paths.cleanDB()
                     log.traceback(E)
                     log.traceback(traceback.format_exc())
                     raise E

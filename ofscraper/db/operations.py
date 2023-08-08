@@ -12,12 +12,12 @@ import contextlib
 import pathlib
 import sqlite3
 import aiosqlite
-import traceback
 import math
 import logging
+from filelock import Timeout, FileLock
 from rich.console import Console
 from ..db import queries
-from ..utils.paths import createDir
+from ..utils.paths import createDir,getDB
 import ofscraper.classes.placeholder as placeholder
 from ofscraper.constants import DATABASE_TIMEOUT
 
@@ -26,12 +26,14 @@ log=logging.getLogger("shared")
 #print error 
 def operation_wrapper(func): 
     def inner(*args,**kwargs): 
-        try:
-            return func(*args,**kwargs) 
-        except sqlite3.OperationalError as E:
-            log.info("DB may be locked") 
-            raise E    
-    return inner
+        with FileLock(getDB()):
+            try:
+                
+                return func(*args,**kwargs) 
+            except sqlite3.OperationalError as E:
+                log.info("DB may be locked") 
+                raise E    
+        return inner
 
 
 

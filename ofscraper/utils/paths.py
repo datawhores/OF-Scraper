@@ -242,3 +242,9 @@ def get_auth_file():
 
 def get_username():
     return pathlib.Path.home().name
+
+def getDB():
+    return get_profile_path()/"db.lock"
+
+def cleanDB():
+    pathlib.Path(get_profile_path()/"db.lock").unlink(missing_ok=True)
