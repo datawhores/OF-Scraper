@@ -139,10 +139,6 @@ class Placeholders:
         downloadtype=ele.downloadtype;self._variables.update({"downloadtype":downloadtype})
         download_type=ele.downloadtype;self._variables.update({"download_type":download_type})
 
-
-        
-
-       
         log.trace(f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         out=None
         if config_.get_allow_code_execution(config_.read_config()):
