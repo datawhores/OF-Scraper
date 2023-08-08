@@ -287,7 +287,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     global total_sem
     total_sem= semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*2)
     global maxfile_sem
-    maxfile_sem = semaphoreDelayed(config_.get_file_semaphores(config_.read_config()))
+    maxfile_sem = semaphoreDelayed(config_.get_maxfile_semaphores(config_.read_config()))
     global localdirSet
     localdirSet=set()
     global split_log
@@ -355,7 +355,7 @@ def pid_log_helper():
 
 async def download(c,ele,model_id,username):
     # reduce number of logs
-    with maxfile_sem:
+    async with maxfile_sem:
         templog_=logger.get_shared_logger(name=str(ele.id),main_=aioprocessing.Queue(),other_=aioprocessing.Queue())
         innerlog.set(templog_)
 

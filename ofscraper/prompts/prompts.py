@@ -360,6 +360,21 @@ def config_prompt_advanced(config_) -> dict:
              'long_instruction':"Value can be 1-20",
              'default':config.get_download_semaphores(config_),
         },
+
+        {
+            'type': 'number',
+            'name': 'maxfile-sem',
+            "message":"Max Number of open files per thread: ",
+            'min_allowed':0,
+             "validate":EmptyInputValidator(),
+             'long_instruction':
+             """
+             This should be set to 0 in most cases. 
+             This basically limits concurrency, and is only useful in very specific cases
+             Set to 0 for no limit
+             """,
+             'default':config.get_maxfile_semaphores(config_),
+        },
         {
             'type': 'list',
             'name': 'dynamic-mode-default',

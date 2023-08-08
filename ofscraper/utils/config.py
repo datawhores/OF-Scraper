@@ -95,7 +95,7 @@ def get_current_config_schema(config:dict=None) -> dict:
             "partfileclean":get_part_file_clean(config),
             "backend":get_backend(config),
             "download-sems":get_download_semaphores(config),
-            "maxfile-sems":get_maxfile_semaphores(config),
+            "maxfile-sem":get_maxfile_semaphores(config),
             "downloadbars":get_show_downloadprogress(config),
 
             "responsetype":{
@@ -421,7 +421,7 @@ def get_maxfile_semaphores(config=None):
     if config==None:
         return constants.MAXFILE_SEMAPHORE
     try:
-        return int(config.get('download-sems', constants.MAXFILE_SEMAPHORE))
+        return int(config.get('maxfile-sem', constants.MAXFILE_SEMAPHORE))
     except:
         return constants.MAXFILE_SEMAPHORE
 
