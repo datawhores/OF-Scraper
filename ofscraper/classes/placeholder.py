@@ -106,7 +106,7 @@ class Placeholders:
     @wrapper
     def createfilename(self,ele,username,model_id,ext):
         filename=ele.filename_;self._variables.update({"filename":filename})
-        file_name=ele.filename_;self._variables.update({"file_name":filename})
+        file_name=ele.filename_;self._variables.update({"file_name":file_name})
         if ele.responsetype_ =="profile":
             return f"{filename}.{ext}"
         self._variables.update({"username":username})
