@@ -204,6 +204,7 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
                 continue
             if isinstance(result,set):
                 addGlobalDir(result)
+                continue
             if isinstance(result,dict):
                 job_progress_helper(job_progress,result)
                 continue
