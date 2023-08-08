@@ -27,13 +27,12 @@ log=logging.getLogger("shared")
 def operation_wrapper(func): 
     def inner(*args,**kwargs): 
         with FileLock(getDB()):
-            try:
-                
+            try:  
                 return func(*args,**kwargs) 
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
                 raise E    
-        return inner
+    return inner
 
 
 
