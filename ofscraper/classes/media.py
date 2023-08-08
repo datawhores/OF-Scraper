@@ -28,8 +28,10 @@ class Media():
 
     @property
     def mediatype(self):
-        if self._media["type"] == "gif" or self._media["type"] == "photo":
+        if self._media["type"] == "photo":
             return "images"
+        elif self._media["type"] == "gif":
+            return "videos"
         else:
             return f"{self._media['type']}s"
     @property
