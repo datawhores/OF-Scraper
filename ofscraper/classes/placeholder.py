@@ -137,7 +137,7 @@ class Placeholders:
      
         text=ele.text_;self._variables.update({"text":text})
         downloadtype=ele.downloadtype;self._variables.update({"downloadtype":downloadtype})
-        download_type=ele.downloadtype;self._variables.update({"downloadtype":download_type})
+        download_type=ele.downloadtype;self._variables.update({"download_type":download_type})
 
 
         
