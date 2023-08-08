@@ -99,10 +99,13 @@ def reset_globals():
     desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})'   
     global count_lock
     count_lock=aioprocessing.AioLock()
-    global dir_lock
-    dir_lock=aioprocessing.AioLock()
     global chunk_lock
     chunk_lock=aioprocessing.AioLock()
+    global dirSet
+    dirSet=set()
+    global dir_lock
+    dir_lock=aioprocessing.AioLock()
+
 #start other thread here
 def process_dicts(username,model_id,medialist):
     #reset globals
@@ -150,9 +153,10 @@ def process_dicts(username,model_id,medialist):
                         time.sleep(5)
         [logthread.join() for logthread in logthreads]
         [process.join(timeout=1) for process in processes]    
-        [process.terminate() for process in processes]    
+        [process.terminate() for process in processes]
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
+        setDirectoriesDate()    
         log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
         return photo_count,video_count,audio_count,forced_skipped,skipped
     except KeyboardInterrupt as E:
@@ -173,7 +177,7 @@ def process_dicts(username,model_id,medialist):
 def queue_process(pipe_,overall_progress,job_progress,task1,total):
     count=0
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-    #shared globals
+        #shared globals
     global total_bytes_downloaded
     global total_bytes
     global video_count
@@ -185,8 +189,6 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
     global total_data
     global desc
 
-    
-
     while True:
         if count==1 or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
             break
@@ -197,11 +199,11 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
         for result in results:
             if result is None:
                 count=count+1
-
                 continue 
             if isinstance(result,dict) and not downloadprogress:
                 continue
-            
+            if isinstance(result,set):
+                addGlobalDir(result)
             if isinstance(result,dict):
                 job_progress_helper(job_progress,result)
                 continue
@@ -283,8 +285,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
     global total_sem
     total_sem= semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*2)
-    global dirSet
-    dirSet=set()
+    global localdirSet
+    localdirSet=set()
     global split_log
     split_log=logCopy
     global log_trace
@@ -332,10 +334,9 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
                     num_bytes_downloaded = 0
                     await pipe_.coro_send(  (media_type, num_bytes_downloaded,0))
             
-
-    setDirectoriesDate()
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     split_log.critical(None)
+    await pipe_.coro_send(localdirSet)
     await pipe_.coro_send(None)
     other_thread.join()
  
@@ -393,7 +394,7 @@ async def main_download_helper(c,ele,path,username,model_id):
             shutil.move(temp,path_to_file)
         elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
             shutil.move(temp,path_to_file)
-        addGlobalDir(path)
+        addLocalDir(path)
         if ele.postdate:
             newDate=dates.convert_local_time(ele.postdate)
             innerlog.get().debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -559,7 +560,7 @@ async def alt_download_helper(c,ele,path,username,model_id):
     audio["path"].unlink(missing_ok=True)
     innerlog.get().debug(f"Moving intermediate path {temp_path} to {path_to_file}")
     shutil.move(temp_path,path_to_file)
-    addGlobalDir(path_to_file)
+    addLocalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
         innerlog.get().debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
@@ -854,20 +855,25 @@ def set_cache_helper(ele):
         cache.close()
 
 
-def addGlobalDir(path):
-    dirSet.add(path.resolve().parent)
-def setDirectoriesDate():
+def addLocalDir(path):
+    localdirSet.add(path.resolve().parent)
+def addGlobalDir(newSet):
+    global dirSet
     global dir_lock
-    split_log.info( f" {pid_log_helper()} Setting Date for modified directories")
+    with dir_lock:
+        dirSet.update(newSet)
+def setDirectoriesDate():
+    global dirSet
+    log=logging.getLogger("shared")
+    log.info( f" {pid_log_helper()} Setting Date for modified directories")
     output=set()
     rootDir=pathlib.Path(config_.get_save_location(config_.read_config())).resolve()
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:
-            split_log.debug(f"{pid_log_helper()} Setting Dates ele:{ele} rootDir:{rootDir}")
+            log.debug(f"{pid_log_helper()} Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent
-    split_log.debug(f"{pid_log_helper()} Directories list {rootDir}")
+    log.debug(f"{pid_log_helper()} Directories list {rootDir}")
     for ele in output:
-        with dir_lock:
-            set_time(ele,dates.get_current_time())
+        set_time(ele,dates.get_current_time())
