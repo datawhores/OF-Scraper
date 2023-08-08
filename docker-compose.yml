@@ -3,15 +3,13 @@ services:
   datawhores:
     container_name: ofscraper
     image: datawhores/of-scraper:main
+    user: "${UID:-1000}:${GID:-1000}"
     #we have to docker exec
     entrypoint: ["/bin/bash"]
     volumes:
     #change the host mountpoint
       - /home/john/.config/ofscraper:/root/.config/ofscraper
     command: ["-c","sleep infinity"]
-    environment:
-      - PUID=1000
-      - PGID=1000
     stdin_open: true # docker run -i
     tty: true        # docker run -t
 
