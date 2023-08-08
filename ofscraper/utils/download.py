@@ -286,6 +286,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
     global total_sem
     total_sem= semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*2)
+    global maxfile_sem
+    maxfile_sem = semaphoreDelayed(config_.get_file_semaphores(config_.read_config()))
     global localdirSet
     localdirSet=set()
     global split_log
@@ -353,25 +355,26 @@ def pid_log_helper():
 
 async def download(c,ele,model_id,username):
     # reduce number of logs
-    templog_=logger.get_shared_logger(name=str(ele.id),main_=aioprocessing.Queue(),other_=aioprocessing.Queue())
-    innerlog.set(templog_)
+    with maxfile_sem:
+        templog_=logger.get_shared_logger(name=str(ele.id),main_=aioprocessing.Queue(),other_=aioprocessing.Queue())
+        innerlog.set(templog_)
 
-    attempt.set(attempt.get(0) + 1)  
-    try:
-            with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
-                if ele.url:
-                    return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
-                elif ele.mpd:
-                    return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
-    except Exception as e:
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
-        return 'skipped', 1
-    finally:
-        #dump logs
-        await logqueue_.coro_put(list(innerlog.get().handlers[0].queue.queue))
-        # we can put into seperate otherqueue_
-        await log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
+        attempt.set(attempt.get(0) + 1)  
+        try:
+                with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
+                    if ele.url:
+                        return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
+                    elif ele.mpd:
+                        return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
+        except Exception as e:
+            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
+            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
+            return 'skipped', 1
+        finally:
+            #dump logs
+            await logqueue_.coro_put(list(innerlog.get().handlers[0].queue.queue))
+            # we can put into seperate otherqueue_
+            await log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
 async def main_download_helper(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")

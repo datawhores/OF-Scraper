@@ -32,5 +32,5 @@ RUN ${POETRY_HOME}/bin/poetry version $(${POETRY_HOME}/bin/poetry run dunamai fr
 
 ENV PATH="$PATH:/home/ofscraper/app/.venv/bin/"
 WORKDIR /home/ofscraper/app
-ENTRYPOINT ["fixuid","-q"]
+ENTRYPOINT ["/bin/bash","-c","fixuid -q","&&","ofscraper"]
  

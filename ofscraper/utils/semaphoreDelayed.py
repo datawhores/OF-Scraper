@@ -3,6 +3,8 @@ import asyncio
 class semaphoreDelayed(asyncio.Semaphore):
     def __init__(self, value: int = 1) -> None:
         self._delay=0
+        if value==0:
+            value=float("inf")
         super().__init__(value)
     @property
     def delay(self):
