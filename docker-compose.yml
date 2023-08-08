@@ -1,6 +1,6 @@
 version: '3.3'
 services:
-  datawhores:
+  OF-Scraper:
     container_name: ofscraper
     image: datawhores/of-scraper:main
     user: "${UID:-1000}:${GID:-1000}"
