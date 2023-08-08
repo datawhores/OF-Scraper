@@ -1,17 +1,21 @@
 version: '3.3'
 services:
-  OF-Scraper:
+  ofscraper:
     container_name: ofscraper
-    image: datawhores/of-scraper:main
+    # image: datawhores/of-scraper:main
+    build:
+      context: .
+      dockerfile: Dockerfile
     user: "${UID:-1000}:${GID:-1000}"
-    #we have to docker exec
-    entrypoint: ["/bin/bash"]
     volumes:
-    #change the host mountpoint
+    # #change the host mountpoint
       - /home/john/.config/ofscraper:/root/.config/ofscraper
-    command: ["-c","sleep infinity"]
     stdin_open: true # docker run -i
     tty: true        # docker run -t
+    command: "ofscraper --username ALL --posts all"
+    #uncomment for docker exec
+    # entrypoint: ["/bin/bash"]
+    # command: ["-c","sleep infinity"]
 
 #docker exec ofscraper ofscraper 
 
