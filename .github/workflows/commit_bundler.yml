@@ -85,7 +85,7 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get zip libxml2-dev libxslt-dev -y
+                apt-get zip libxml2-dev libxslt-dev zip -y
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
