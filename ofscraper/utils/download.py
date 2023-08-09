@@ -396,6 +396,8 @@ async def main_download_helper(c,ele,path,username,model_id):
             shutil.move(temp,path_to_file)
         elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
             shutil.move(temp,path_to_file)
+        elif ele.responsetype_ == "profile":
+            shutil.move(temp, path_to_file)
         addLocalDir(path)
         if ele.postdate:
             newDate=dates.convert_local_time(ele.postdate)
