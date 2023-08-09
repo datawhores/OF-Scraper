@@ -123,7 +123,7 @@ def reset_globals():
 def process_dicts(username,model_id,medialist):
     #reset globals
     reset_globals()
-    filtered_medialist=medialist_filter(medialist)
+    filtered_medialist=medialist_filter(medialist,model_id,username)
     log=logging.getLogger("shared")
     random.shuffle(filtered_medialist)
     if len(filtered_medialist)>0:
