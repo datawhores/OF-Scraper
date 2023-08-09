@@ -65,7 +65,7 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get install zip libxml2 and libxslt -y
+                apt-get install zip libxml2-dev libxslt-dev python3.10-dev -y
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
@@ -85,7 +85,7 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get install zip libxml2 and libxslt -y
+                apt-get zip libxml2-dev libxslt-dev python3.10-dev -y
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
