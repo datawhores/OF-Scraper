@@ -853,7 +853,7 @@ def set_cache_helper(ele):
     cache = Cache(paths.getcachepath())
 
     if  ele.postid and ele.responsetype_=="profile":
-        cache.set(ele.postid ,True)
+        cache.set(ele.postid, True, expire=constants.PROFILE_EXPIRY)
         cache.close()
 
 
