@@ -877,4 +877,8 @@ def setDirectoriesDate():
             ele=ele.parent
     log.debug(f"{pid_log_helper()} Directories list {rootDir}")
     for ele in output:
-        set_time(ele,dates.get_current_time())
+        try:
+            set_time(ele,dates.get_current_time())
+        except PermissionError as E:
+            log.traceback(E)
+            log.traceback(traceback.format_exc())
