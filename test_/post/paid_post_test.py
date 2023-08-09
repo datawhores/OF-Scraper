@@ -224,7 +224,7 @@ def test_paid_text_wordtruncate(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_ALT2,
@@ -250,7 +250,7 @@ def test_paid_text_wordtruncate2(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -276,7 +276,7 @@ def test_paid_text_wordtruncate3(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -301,7 +301,7 @@ def test_paid_text_wordtruncate4(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_ALT2,
@@ -327,7 +327,7 @@ def test_paid_text_wordtruncate5(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -353,7 +353,7 @@ def test_paid_text_wordtruncate6(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -376,7 +376,7 @@ def test_paid_text_lettertruncate(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_ALT,
@@ -400,7 +400,7 @@ def test_paid_text_lettertruncate2(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -422,7 +422,7 @@ def test_paid_text_lettertruncate3(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -447,7 +447,7 @@ def test_paid_text_lettertruncate4(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -470,7 +470,7 @@ def test_paid_text_lettertruncate5(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,
@@ -492,7 +492,7 @@ def test_paid_text_lettertruncate6(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": length,

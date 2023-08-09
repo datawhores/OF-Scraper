@@ -25,7 +25,7 @@ from unittest.mock import patch,MagicMock
 #     migrationConfig={
 #         "main_profile": PROFILE_DEFAULT,
 #         "save_location": SAVE_PATH_DEFAULT,
-#         "file_size_limit": FILE_SIZE_DEFAULT,
+#         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
 #         "dir_format": DIR_FORMAT_DEFAULT,
 #         "file_format": FILE_FORMAT_DEFAULT,
 #         "textlength": TEXTLENGTH_DEFAULT,

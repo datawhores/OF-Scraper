@@ -30,7 +30,7 @@ import ofscraper.utils.logger as logger
 #Word split
 def test_windows_trunicate_custom1(mocker):
     with patch('platform.system', MagicMock(return_value="Windows")):
-        long_path="F:\vr vids\AAA other\A dLd cont\new OF\jeanhollywood\Posts\Videos\2021-09-24_Behind the scenes! Y’all gonna love this one. I was a porn addicted gooner for a shoot. My roommate left to go out and I immediately whipped out my laptop and my Handy. I got 4 hours deep before she came back and offered to join. Gooners are gonna go crazy for it when it comes out 😈😈😈_1.mp4"
+        long_path=pathlib.Path("F:\vr vids\AAA other\A dLd cont\new OF\jeanhollywood\Posts\Videos\2021-09-24_Behind the scenes! Y’all gonna love this one. I was a porn addicted gooner for a shoot. My roommate left to go out and I immediately whipped out my laptop and my Handy. I got 4 hours deep before she came back and offered to join. Gooners are gonna go crazy for it when it comes out 😈😈😈_1.mp4")
         truncated=paths.truncate(long_path)
         with check:
             assert(len(str(truncated)))<=256
@@ -258,7 +258,7 @@ def test_user_data_dc_db_str(mocker):
    migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILE_FORMAT_DEFAULT,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -266,7 +266,7 @@ def test_user_data_dc_db_str(mocker):
         "metadata": METADATA_DC,
         "filter": FILTER_DEFAULT
     }
-   logger.init_logger(logging.getLogger(__package__))
+   logger.init_main_logger()
    
 
    mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
@@ -290,7 +290,7 @@ def test_createfilename(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILE_FORMAT_DEFAULT,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -300,7 +300,7 @@ def test_createfilename(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
     username="test"
     model_id=TEST_ID
@@ -312,7 +312,7 @@ def test_createfilename_allkeys(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_VALID_ALL,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -323,7 +323,7 @@ def test_createfilename_allkeys(mocker):
 
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
 
     username="test"
@@ -338,7 +338,7 @@ def test_createfilename_invalid(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_ALLVALIDWTHINVALID,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -360,7 +360,7 @@ def test_create_txt(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -370,7 +370,7 @@ def test_create_txt(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
     username="test"
     model_id=TEST_ID
@@ -382,7 +382,7 @@ def test_create_postid_counter(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -396,7 +396,7 @@ def test_create_postid_counter(mocker):
     username="test"
     model_id=TEST_ID
     t=Post(TIMELINE_EXAMPLE,model_id,username)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
     assert(len(t.media))>1
 
 
@@ -404,7 +404,7 @@ def test_create_postid_name(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -414,7 +414,7 @@ def test_create_postid_name(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
     username="test"
     model_id=TEST_ID
@@ -427,7 +427,7 @@ def test_create_postid_name2(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -437,7 +437,7 @@ def test_create_postid_name2(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
     username="test"
     model_id=TEST_ID
@@ -456,7 +456,7 @@ def test_create_text_counter(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -481,7 +481,7 @@ def test_create_text_name(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -491,7 +491,7 @@ def test_create_text_name(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
     username="test"
     model_id=TEST_ID
@@ -504,7 +504,7 @@ def test_create_text_name2(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_TEXT,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -514,7 +514,7 @@ def test_create_text_name2(mocker):
     }
     mocker.patch('ofscraper.utils.download.config_.read_config', return_value=migrationConfig)
     mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
 
     username="test"
@@ -548,7 +548,7 @@ def test_metadatesavelocation(mocker):
     migrationConfig={
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_LOCATION_DC,
-        "file_size_limit": FILE_SIZE_DEFAULT,
+        "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
         "dir_format": DIR_FORMAT_DEFAULT,
         "file_format": FILEFORMAT_POSTID,
         "textlength": TEXTLENGTH_DEFAULT,
@@ -557,7 +557,7 @@ def test_metadatesavelocation(mocker):
         "filter": FILTER_DEFAULT,
         "mp4decrypt":MP4DECRYPT_DEFAULT  
     }
-    logger.init_logger(logging.getLogger(__package__))
+    logger.init_main_logger()
 
         
     mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)

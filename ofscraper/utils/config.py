@@ -245,7 +245,7 @@ def get_filesize_limit(config=None):
     if config==None:
         return constants.FILE_SIZE_LIMIT_DEFAULT      
     try:
-        return parse_size(config.get('file_size_limit', constants.FILE_SIZE_LIMIT_DEFAULT  ))
+        return parse_size(str(config.get('file_size_limit', constants.FILE_SIZE_LIMIT_DEFAULT  )))
     except:
         return 0
 
@@ -254,7 +254,7 @@ def get_filesize_min(config=None):
     if config==None:
         return constants.FILE_SIZE_MIN_DEFAULT       
     try:
-        return parse_size(config.get('file_size_limit', constants.FILE_SIZE_MIN_DEFAULT  ))
+        return parse_size(str(config.get('file_size_min', constants.FILE_SIZE_MIN_DEFAULT  )))
     except:
         return 0
 

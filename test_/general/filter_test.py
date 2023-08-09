@@ -12,7 +12,7 @@ def test_after(mocker):
     output=[]
     [ output.extend(ele.media) for ele in input]
     total=len(output)
-    mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--after","2023"]))
+    mocker.patch("ofscraper.utils.args.getargs",return_value=args_.getargs(["--after","2023"]))
     included=filters.posts_date_filter(output)
     excluded=list(filter(lambda x:arrow.get(x.date).year!=2023,output))
     
@@ -33,7 +33,7 @@ def test_after2(mocker):
     output=[]
     [ output.extend(ele.media) for ele in input]
     total=len(output)
-    mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--after","2023"]))
+    mocker.patch("ofscraper.utils.args.getargs",return_value=args_.getargs(["--after","2023"]))
     
     included=filters.posts_date_filter(output)
     excluded=list(filter(lambda x:arrow.get(x.date).year!=2023,output))
@@ -54,7 +54,7 @@ def test_before(mocker):
     output=[]
     [ output.extend(ele.media) for ele in input]
     total=len(output)
-    mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--before","2023"]))
+    mocker.patch("ofscraper.utils.args.getargs",return_value=args_.getargs(["--before","2023"]))
     included=filters.posts_date_filter(output)
     excluded=list(filter(lambda x:arrow.get(x.date).year==2023,output))
     
@@ -74,7 +74,7 @@ def test_before2(mocker):
     output=[]
     [ output.extend(ele.media) for ele in input]
     total=len(output)
-    mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--before","2023"]))
+    mocker.patch("ofscraper.utils.args.getargs",return_value=args_.getargs(["--before","2023"]))
     
     included=filters.posts_date_filter(output)
     excluded=list(filter(lambda x:arrow.get(x.date).year==2023,output))
@@ -90,7 +90,7 @@ def test_before2(mocker):
 
 
 def test_like_after(mocker):
-    mocker.patch("ofscraper.utils.filters.args",new=args_.getargs(["--after","2023"]))
+    mocker.patch("ofscraper.utils.args.getargs",return_value=args_.getargs(["--after","2023"]))
     total=len(POST_ARRAY)
     included=filters.timeline_array_filter(POST_ARRAY)
     excluded=list(filter(lambda x:arrow.get(x.get("postedAt")).year!=2023,POST_ARRAY))

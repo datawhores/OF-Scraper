@@ -174,7 +174,7 @@ def getNumber(input_):
     if isinstance(input_,str):return logging.getLevelName(input_)
     return input_
 
-def init_main_logger(name):
+def init_main_logger(name=None):
     log=logging.getLogger(name or "ofscraper")
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)

@@ -68,7 +68,7 @@ def timeline_array_filter(posts):
     if args_.getargs().before:
         dated=list(filter(lambda x:arrow.get(x.get("postedAt"))<=args_.getargs().before,dated))
     if args_.getargs().after:
-         dateargsd=list(filter(lambda x:arrow.get(x.get("postedAt"))>=args_.getargs().after,dated))
+         dated=list(filter(lambda x:arrow.get(x.get("postedAt"))>=args_.getargs().after,dated))
     out.extend(undated)
     out.extend(dated)
     return out

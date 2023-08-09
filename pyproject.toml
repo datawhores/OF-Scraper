@@ -51,9 +51,9 @@ optional = true
 pytest = "^7.3.1"
 coverage = "^7.2.3"
 pytest-cov = "^4.0.0"
-pytest-mock = "^3.10.0"
 random-unicode-emoji = "^2.8"
 random-emoji = "^1.0.15"
+pytest-mock = "^3.11.1"
 
 
 

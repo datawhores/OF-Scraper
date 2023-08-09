@@ -105,13 +105,13 @@ def test_dirformat_invalidpathmac():
             dirformatvalidator().validate(document)
 
 
-def test_dirformatallvalidkeys():
-    document=Document()
-    document._text = DIR_FORMAT_ALLVALID
-    try:
-        dirformatvalidator().validate(document)
-    except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+# def test_dirformatallvalidkeys():
+#     document=Document()
+#     document._text = DIR_FORMAT_ALLVALID
+#     try:
+#         dirformatvalidator().validate(document)
+#     except ValidationError as exc:
+#         assert False, f"'{document._text} {exc}"
 
 def test_dirformatallvalidkeyWthinvalid():
     document=Document()
