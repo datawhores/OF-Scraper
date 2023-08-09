@@ -35,8 +35,8 @@ def _scraper_user_helper(c):
         if r.ok:
             data=r.json_()
             logger.updateSenstiveDict(data["id"],"userid")
-            logger.updateSenstiveDict(data["username"],"username")
-            logger.updateSenstiveDict(data["name"],"name")
+            logger.updateSenstiveDict(f"{data['username']} | {data['username']}|\\b{data['username']}\\b","username")
+            logger.updateSenstiveDict(f"{data['name']} | {data['name']}|\\b{data['name']}\\b","name")
         else:
             log.debug(f"[bold]user request response status code:[/bold]{r.status}")
             log.debug(f"[bold]user request response:[/bold] {r.text_()}")
