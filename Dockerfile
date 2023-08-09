@@ -1,3 +1,4 @@
+FROM ubuntu:latest
 RUN apt-get update -y \
     && apt-get upgrade -y \
     && apt-get install curl python3.11 pip git python3.11-venv -y
