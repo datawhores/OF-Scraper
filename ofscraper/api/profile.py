@@ -68,6 +68,7 @@ def scrape_profile_helper(c,username:Union[int, str]):
 def parse_profile(profile: dict) -> tuple:
     media = []
     media.append(profile.get('avatar'))
+    media.append(profile.get('header'))
     media.append(profile.get('profile'))
     media=list(filter(lambda x:x!=None,media))
 
