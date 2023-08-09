@@ -152,13 +152,6 @@ def process_dicts(username,model_id,medialist):
                         thread.join(1)
                         time.sleep(5)
         [logthread.join() for logthread in logthreads]
-        [process.join(timeout=1) for process in processes]    
-        [process.terminate() for process in processes]
-        overall_progress.remove_task(task1)
-        progress_group.renderables[1].height=0
-        setDirectoriesDate()    
-        log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
-        return photo_count,video_count,audio_count,forced_skipped,skipped
     except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -174,6 +167,18 @@ def process_dicts(username,model_id,medialist):
             except KeyboardInterrupt:
                
                   raise KeyboardInterrupt  
+    finally:
+        try:
+            [process.join(timeout=1) for process in processes]    
+            [process.terminate() for process in processes]
+        except:
+            None
+    overall_progress.remove_task(task1)
+    progress_group.renderables[1].height=0
+    setDirectoriesDate()    
+    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
+    return photo_count,video_count,audio_count,forced_skipped,skipped
+
 def queue_process(pipe_,overall_progress,job_progress,task1,total):
     count=0
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
