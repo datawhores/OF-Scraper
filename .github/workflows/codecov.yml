@@ -23,6 +23,8 @@ jobs:
           poetry-version: 1.4.1
       - name: Install dependencies
         run: poetry install --with test
+      - name: create required folder
+        run: mkdir -p /home/runner/.config/ofscraper/main_profile
       - name: Run tests and collect coverage
         run: poetry run pytest --cov-report term --cov-report xml:coverage.xml --cov=src
       - name: Upload coverage to Codecov
