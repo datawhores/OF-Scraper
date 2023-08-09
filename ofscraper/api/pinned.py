@@ -59,7 +59,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
             if r.ok:
                 progress.remove_task(task)
 
-                posts =( await r.json())['list']
+                posts =( await r.json_())['list']
                 posts= list(sorted(posts,key=lambda x:float(x["postedAtPrecise"])))
                 posts=list(filter(lambda x:float(x["postedAtPrecise"])>float(timestamp or 0),posts))
                 log_id=f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
