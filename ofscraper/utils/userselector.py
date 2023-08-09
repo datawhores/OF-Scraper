@@ -144,10 +144,10 @@ def get_models(subscribe_count) -> list:
     with stdout.lowstdout():
     
         out=[]
-        # list_subscriptions = asyncio.run(
-        #     subscriptions.get_subscriptions(subscribe_count))
+        list_subscriptions = asyncio.run(
+            subscriptions.get_subscriptions(subscribe_count))
         other_subscriptions=asyncio.run(lists.get_otherlist())
-        # out.extend(list_subscriptions)
+        out.extend(list_subscriptions)
         out.extend(other_subscriptions)
         parsed_subscriptions = subscriptions.parse_subscriptions(
             out)
