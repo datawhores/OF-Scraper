@@ -75,6 +75,19 @@ if platform.system() == 'Windows':
  
 #main thread queues
 logqueue_=logger.queue_
+def medialist_filter(medialist,model_id,username):
+    if not args_.getargs().dupe:
+        media_ids = set(operations.get_media_ids(model_id,username))
+        log.debug(f"{pid_log_helper()} number of unique media ids in database for {username}: {len(media_ids)}")
+        medialist = seperate.separate_by_id(medialist, media_ids)
+        log.debug(f"{pid_log_helper()} Number of new mediaids with dupe ids removed: {len(medialist)}")  
+        medialist=seperate.seperate_avatars(medialist)
+        log.debug(f"{pid_log_helper()} Remove avatar")
+        log.debug(f"{pid_log_helper()} Final Number of media to download {len(medialist)}")
+
+    else:
+        log.info(f"{pid_log_helper()} forcing all downloads media count {len(medialist)}")
+    return medialist
 
 def reset_globals():
     global total_bytes_downloaded
@@ -110,12 +123,13 @@ def reset_globals():
 def process_dicts(username,model_id,medialist):
     #reset globals
     reset_globals()
+    filter_medialist=filter_medialist(medialist)
     log=logging.getLogger("shared")
-    random.shuffle(medialist)
-    if len(medialist)==0:
+    random.shuffle(filter_medialist)
+    if len(filter_medialist)==0:
         log.error("Media list empty")
         return
-    mediasplits=get_mediasplits(medialist)
+    mediasplits=get_mediasplits(filter_medialist)
     num_proc=len(mediasplits)
     split_val=min(4,num_proc)
     log.debug(f"Number of process {num_proc}")
@@ -141,17 +155,24 @@ def process_dicts(username,model_id,medialist):
         overall_progress=Progress(  TextColumn("{task.description}"),
         BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
         progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-        task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
+        task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filter_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
         progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
         with stdout.lowstdout():
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-                queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(medialist)),daemon=True) for i in range(num_proc)]
+                queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filter_medialist)),daemon=True) for i in range(num_proc)]
                 [thread.start() for thread in queue_threads]
                 while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
                     for thread in queue_threads:
                         thread.join(1)
                         time.sleep(5)
         [logthread.join() for logthread in logthreads]
+        [process.join(timeout=1) for process in processes]    
+        [process.terminate() for process in processes]
+        overall_progress.remove_task(task1)
+        progress_group.renderables[1].height=0
+        setDirectoriesDate()    
+        log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
+        return photo_count,video_count,audio_count,forced_skipped,skipped
     except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -167,18 +188,6 @@ def process_dicts(username,model_id,medialist):
             except KeyboardInterrupt:
                
                   raise KeyboardInterrupt  
-    finally:
-        try:
-            [process.join(timeout=1) for process in processes]    
-            [process.terminate() for process in processes]
-        except:
-            None
-    overall_progress.remove_task(task1)
-    progress_group.renderables[1].height=0
-    setDirectoriesDate()    
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
-    return photo_count,video_count,audio_count,forced_skipped,skipped
-
 def queue_process(pipe_,overall_progress,job_progress,task1,total):
     count=0
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -305,25 +314,6 @@ async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy
     split_log.debug(f"{pid_log_helper()} starting process")
     split_log.debug(f"{pid_log_helper()} process mediasplit from total {len(medialist)}")
 
-    
-    
-
-    if not args_.getargs().dupe:
-        media_ids = set(operations.get_media_ids(model_id,username))
-        split_log.debug(f"{pid_log_helper()} number of unique media ids in database for {username}: {len(media_ids)}")
-        medialist = seperate.separate_by_id(medialist, media_ids)
-        split_log.debug(f"{pid_log_helper()} Number of new mediaids with dupe ids removed: {len(medialist)}")  
-        medialist=seperate.seperate_avatars(medialist)
-        split_log.debug(f"{pid_log_helper()} Remove avatar")
-        split_log.debug(f"{pid_log_helper()} Final Number of media to download {len(medialist)}")
-
-    else:
-        split_log.info(f"{pid_log_helper()} forcing all downloads media count {len(medialist)}")
-    global file_size_limit
-    global file_size_min
-    file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(config_.read_config()) 
-    file_size_min = args_.getargs().size_min or config_.get_filesize_min(config_.read_config()) 
-        
     aws=[]
 
     async with sessionbuilder.sessionBuilder() as c:

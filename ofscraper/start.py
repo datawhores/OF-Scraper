@@ -106,5 +106,7 @@ def set_mulitproc_start_type():
         multiprocessing.set_start_method('spawn')
         os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
         os.environ['no_proxy'] = '*'
+    elif plat=="Windows":
+        multiprocessing.set_start_method('spawn')
     else:
         multiprocessing.set_start_method('forkserver')
