@@ -76,6 +76,7 @@ if platform.system() == 'Windows':
 #main thread queues
 logqueue_=logger.queue_
 def medialist_filter(medialist,model_id,username):
+    log=logging.getLogger("shared")
     if not args_.getargs().dupe:
         media_ids = set(operations.get_media_ids(model_id,username))
         log.debug(f"{pid_log_helper()} number of unique media ids in database for {username}: {len(media_ids)}")
