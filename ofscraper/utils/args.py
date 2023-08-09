@@ -104,6 +104,9 @@ def create_parser(input=None):
         '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
     )
 
+    filters.add_argument(
+        '-ul', '--user-list', help = 'Filter by userlist the list "ofscraper_main" is a reserved word and should not be the name of any list you have on OF',default=[],required=False,type = lambda x:x.split(","),action='extend'
+    )
     
     
     sort=parser.add_argument_group("sort",description="Options on how to sort list")
@@ -223,6 +226,7 @@ def getargs(input=None):
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
     args.label=set(args.label) if args.label else args.label
+    if len(args.user_list)==0:args.user_list=["ofscraper_main"]
 
 
     if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
