@@ -31,8 +31,11 @@ def main():
         main_event = Event()
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
-        #start other log consumer, only if more then 3 process
-        if misc.getcpu_count()>2:other_log_process=logger.start_other_process()
+        #start other log consumer, only if 3 or more process
+        #and if the the args are set
+        if not args_.getargs().log or args_.getargs().discord:
+            None
+        elif misc.getcpu_count()>=3 :other_log_process=logger.start_other_process()
         else: other_log_thread=logger.start_other_thread(event=other_event)
         #allow background processes to start
         time.sleep(3)

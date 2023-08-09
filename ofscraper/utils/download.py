@@ -123,11 +123,11 @@ def reset_globals():
 def process_dicts(username,model_id,medialist):
     #reset globals
     reset_globals()
-    filter_medialist=filter_medialist(medialist)
+    filtered_medialist=medialist_filter(medialist)
     log=logging.getLogger("shared")
-    random.shuffle(filter_medialist)
-    if len(filter_medialist)>0:
-        mediasplits=get_mediasplits(filter_medialist)
+    random.shuffle(filtered_medialist)
+    if len(filtered_medialist)>0:
+        mediasplits=get_mediasplits(filtered_medialist)
         num_proc=len(mediasplits)
         split_val=min(4,num_proc)
         log.debug(f"Number of process {num_proc}")
@@ -153,11 +153,11 @@ def process_dicts(username,model_id,medialist):
             overall_progress=Progress(  TextColumn("{task.description}"),
             BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
             progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-            task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filter_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
+            task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
             progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
             with stdout.lowstdout():
                 with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-                    queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filter_medialist)),daemon=True) for i in range(num_proc)]
+                    queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
                     [thread.start() for thread in queue_threads]
                     while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
                         for thread in queue_threads:
