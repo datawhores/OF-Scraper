@@ -65,7 +65,8 @@ messageTableSPECIFIC="https://onlyfans.com/my/chats/{}/?id={}"
 labelsEP = "https://onlyfans.com/api2/v2/users/{}/labels?limit=100&offset={}&order=desc&non-empty=1"
 labelledPostsEP = "https://onlyfans.com/api2/v2/users/{}/posts?limit=100&offset={}&order=publish_date_desc&skip_users=all&counters=0&format=infinite&label={}"
 
-
+listEP="https://onlyfans.com/api2/v2/lists?offset={}&skip_users=all&limit=100&format=infinite"
+listusersEP="https://onlyfans.com/api2/v2/lists/{}/users?offset={}&limit=100&format=infinite"
 mainPromptChoices = {
     'Download content from a user': 0,
     'Like all of a user\'s posts': 1,
@@ -166,3 +167,5 @@ SUPRESS_OUTPUTS={"CRITICAL","ERROR","WARNING","OFF","LOW","PROMPT"}
 CHUNK_ITER=10
 maxChunkSize=1024*1024
 KEY_OPTIONS=["cdrm","cdrm2","manual","keydb"]
+
+OFSCRAPER_RESERVED_LIST="ofscraper.main"

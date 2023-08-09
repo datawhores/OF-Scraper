@@ -105,7 +105,7 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
-        '-ul', '--user-list', help = 'Filter by userlist the list "ofscraper_main" is a reserved word and should not be the name of any list you have on OF',default=[],required=False,type = lambda x:x.split(","),action='extend'
+        '-ul', '--user-list', help = 'Filter by userlist the list "ofscraper.main" is a reserved word and should not be the name of any list you have on OF',default=[],required=False,type = lambda x:x.split(","),action='extend'
     )
     
     
@@ -226,7 +226,9 @@ def getargs(input=None):
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
     args.label=set(args.label) if args.label else args.label
-    if len(args.user_list)==0:args.user_list=["ofscraper_main"]
+    if len(args.user_list)==0:args.user_list={constants.OFSCRAPER_RESERVED_LIST}
+    else:args.user_list=set(list(map(lambda x:x.lower(),args.user_list)))
+    
 
 
     if args.command in set(["post_check","msg_check"])and not (args.url or args.file):

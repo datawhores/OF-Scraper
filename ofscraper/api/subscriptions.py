@@ -12,6 +12,13 @@ import asyncio
 from itertools import chain
 import logging
 from rich.console import Console
+from rich.progress import (
+    Progress,
+    TextColumn,
+    SpinnerColumn
+)
+from rich.style import Style
+
 import arrow
 console=Console()
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
@@ -19,14 +26,23 @@ from ..constants import subscriptionsEP,NUM_TRIES
 import ofscraper.constants as constants
 log=logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.args as args_
 
 
 async def get_subscriptions(subscribe_count):
-    offsets = range(0, subscribe_count, 10)
-    async with sessionbuilder.sessionBuilder() as c: 
-        tasks = [scrape_subscriptions(c,offset) for offset in offsets]
-        subscriptions = await asyncio.gather(*tasks)
-        return list(chain.from_iterable(subscriptions))
+    with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+        task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
+        out=[]
+        if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list:
+            offsets = range(0, subscribe_count, 10)
+            async with sessionbuilder.sessionBuilder() as c: 
+                tasks = [scrape_subscriptions(c,offset) for offset in offsets]
+                subscriptions = await asyncio.gather(*tasks)
+                out.extend(list(chain.from_iterable(subscriptions)))
+        progress.remove_task(task1)
+        return out
+
+
 
 
 

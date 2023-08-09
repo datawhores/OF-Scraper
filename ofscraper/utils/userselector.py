@@ -2,20 +2,15 @@ import asyncio
 import time
 import logging
 import arrow
-from rich.progress import (
-    Progress,
-    TextColumn,
-    SpinnerColumn
-)
-from rich.style import Style
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.api.subscriptions as subscriptions
+import ofscraper.api.lists as lists
 import ofscraper.api.me as me
-import ofscraper.utils.auth as auth
 import ofscraper.utils.args as args_
 import ofscraper.utils.stdout as stdout
+
 
 
 
@@ -147,14 +142,16 @@ def get_models(subscribe_count) -> list:
     Get user's subscriptions in form of a list.
     """
     with stdout.lowstdout():
-        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
-            task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
-            list_subscriptions = asyncio.run(
-                subscriptions.get_subscriptions(subscribe_count))
-            parsed_subscriptions = subscriptions.parse_subscriptions(
-                list_subscriptions)
-            progress.remove_task(task1)
-            return parsed_subscriptions
+    
+        out=[]
+        # list_subscriptions = asyncio.run(
+        #     subscriptions.get_subscriptions(subscribe_count))
+        other_subscriptions=asyncio.run(lists.get_otherlist())
+        # out.extend(list_subscriptions)
+        out.extend(other_subscriptions)
+        parsed_subscriptions = subscriptions.parse_subscriptions(
+            out)
+        return parsed_subscriptions
 
 
 def get_model(parsed_subscriptions: list) -> tuple:
