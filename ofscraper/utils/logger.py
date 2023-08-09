@@ -253,7 +253,10 @@ def logger_process(input_,name=None,stop_count=1,event=None):
         # consume a log message, block until one arrives
         if event and event.is_set():
             return
-        messages = input_.get()
+        try:
+            messages = input_.get()
+        except:
+            continue
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
@@ -291,7 +294,10 @@ def logger_other(input_,name=None,stop_count=1,event=None):
         # consume a log message, block until one arrives
         if event and event.is_set():
            return True
-        messages = input_.get()
+        try:
+            messages = input_.get()
+        except:
+            continue
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:

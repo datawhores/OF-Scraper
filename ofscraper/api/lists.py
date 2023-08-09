@@ -102,7 +102,7 @@ async def scrape_lists(c,job_progress,offset=0):
 
 
 async def get_list_users(lists):
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting users from lists...\n{task.description}"))
+    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting users from lists (this may take awhile)...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,

@@ -250,7 +250,7 @@ def get_mediasplits(medialist):
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
-    asyncio.run(process_dicts_split(username,model_id,ele,log,p_logqueue_,pipe_))
+    asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
 
 def job_progress_helper(job_progress,result):
     funct={
@@ -277,14 +277,14 @@ def setpriority():
     else:  # MAC OS X or other
         process.nice(10) 
 
-async def process_dicts_split(username, model_id, medialist,logCopy,logqueueCopy,pipecopy):
+async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")
     global log 
     log=logCopy
     logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")   
     global logqueue_
-    logqueue_=logqueueCopy
+    logqueue_=logCopy.handlers[0].queue
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
