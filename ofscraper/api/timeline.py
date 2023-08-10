@@ -78,7 +78,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                         tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
                     else:
                         [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
-                        if len(required_ids)>0 and (timestamp or 0)<=max(required_ids):
+                        if len(required_ids)>0 and (float(timestamp) or 0)<=max(required_ids):
                             attempt.set(0)
                             tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
