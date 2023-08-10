@@ -9,7 +9,6 @@ r"""
 """
 
 import logging
-from functools import lru_cache
 from rich.console import Console
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 import ofscraper.constants as constants

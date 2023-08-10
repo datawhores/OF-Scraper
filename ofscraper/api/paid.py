@@ -22,12 +22,9 @@ from rich.console import Group
 from rich.live import Live
 from rich.style import Style
 import ofscraper.constants as constants
-from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
-import ofscraper.utils.auth as auth
 import ofscraper.constants as constants
-import ofscraper.api.profile as profile
 from diskcache import Cache
 from ..utils.paths import getcachepath
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
@@ -66,10 +63,8 @@ async def get_paid_posts(username,model_id):
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
- 
             tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress)))
-
-            
+         
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
             while len(tasks)!=0:
                 for coro in asyncio.as_completed(tasks):
@@ -82,7 +77,6 @@ async def get_paid_posts(username,model_id):
     log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(output)} found")
     # set purchash check values during scan
     log.trace("paid raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo paid: {str(x)}",output)))))
-
     cache.set(f"purchased_check_{model_id}",output,expire=constants.CHECK_EXPIRY)
     cache.close()
     return output
