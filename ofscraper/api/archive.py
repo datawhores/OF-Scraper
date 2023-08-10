@@ -48,9 +48,8 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
     if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.now()).float_timestamp):
         return []
     if timestamp:
-        timestamp=str(timestamp)
         ep = constants.archivedNextEP
-        url = ep.format(model_id, timestamp)
+        url = ep.format(model_id, str(timestamp))
     else:
         ep=constants.archivedEP
         url=ep.format(model_id)

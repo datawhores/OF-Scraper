@@ -28,7 +28,6 @@ from rich.style import Style
 import arrow
 import ofscraper.constants as constants
 from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
-from ..utils import auth
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
@@ -48,9 +47,8 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
         return []
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
-        timestamp=str(timestamp)
         ep = constants.timelineNextEP
-        url = ep.format(model_id, timestamp)
+        url = ep.format(model_id, str(timestamp))
     else:
         ep=constants.timelineEP
         url=ep.format(model_id)
@@ -133,7 +131,7 @@ async def get_timeline_post(model_id):
                 for coro in asyncio.as_completed(tasks):
                     try:
                         result=await coro or []
-                    except:
+                    except Exception as E:
                         setcache=False
                         continue
                     page_count=page_count+1
