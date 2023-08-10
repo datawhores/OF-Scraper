@@ -98,7 +98,6 @@ class SensitiveFormatter(logging.Formatter):
             for ele in senstiveDict.items():
                 s=re.sub(re.escape(str(ele[0])),str(ele[1]),s)
         return s
-
     def format(self, record):
         original = logging.Formatter.format(self, record)  # call parent method
         return self._filter(original)
