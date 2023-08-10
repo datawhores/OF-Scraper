@@ -23,7 +23,7 @@ from rich.live import Live
 from rich.style import Style
 import ofscraper.constants as constants
 import ofscraper.utils.console as console
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
 
 

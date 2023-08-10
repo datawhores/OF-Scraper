@@ -63,7 +63,8 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.exit as exit
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+import ofscraper.classes.queues as queues_
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
@@ -136,13 +137,13 @@ def process_dicts(username,model_id,medialist):
 
         shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
         #ran by main process cause of stdout
-        logqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
+        logqueues_=[queues_.Queues()  for i in range(len(shared))]
         #ran by other ofscraper_
-        otherqueues_=[aioprocessing.AioQueue()  for i in range(len(shared))]
+        otherqueues_=[queues_.Queues()  for i in range(len(shared))]
         
-        #start main queue consumers
+        #start stdout queues consumers
         logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
-        #start producers
+        #create producers log
         stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{model_id}_{i+1}") for i in range(num_proc) ]
         #For some reason windows loses queue when not passed seperatly
         processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],stdout_logs[i].handlers[0].queue,stdout_logs[i].handlers[1].queue,connect_tuples[i][1])) for i in range(num_proc)]
@@ -283,8 +284,6 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     global log 
     log=logCopy
     logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")   
-    global logqueue_
-    logqueue_=logCopy.handlers[0].queue
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
@@ -370,9 +369,9 @@ async def download(c,ele,model_id,username):
             return 'skipped', 1
         finally:
             #dump logs
-            await logqueue_.coro_put(list(innerlog.get().handlers[0].queue.queue))
+            log.handlers[0].queue.coro_put(list(innerlog.get().handlers[0].queue.queue))
             # we can put into seperate otherqueue_
-            await log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
+            log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
 async def main_download_helper(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")

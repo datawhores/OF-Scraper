@@ -35,7 +35,7 @@ import ofscraper.api.archive as archive
 import ofscraper.api.pinned as pinned
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.prompts.prompts as prompts
 

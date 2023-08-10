@@ -27,7 +27,7 @@ import ofscraper.utils.console as console
 import ofscraper.constants as constants
 from diskcache import Cache
 from ..utils.paths import getcachepath
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_ 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 

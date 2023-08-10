@@ -25,7 +25,7 @@ from rich.style import Style
 import ofscraper.constants as c
 import ofscraper.constants as constants
 import ofscraper.utils.auth as auth
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.console as console
 import ofscraper.classes.sessionbuilder as sessionbuilder
 

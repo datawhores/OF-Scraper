@@ -85,7 +85,7 @@ def create_parser(input=None):
     post.add_argument(
         '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow_helper)
     post.add_argument(
-        '-mt', '--mediatype', help = 'Filter by media',default=[],required=False,type = posttype_helper,action='extend')
+        '-mt', '--mediatype', help = 'Filter by media',default=[],required=False,type = mediatype_helper,action='extend')
    
     post.add_argument(
         '-sx', '--size-max', help = 'Filter out files greater then given size supported inputs include int in bytes or human-readable such as 10mb',required=False,type = parse_size)
@@ -266,13 +266,13 @@ def posttype_helper(x):
         raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')")
     return x
 
-def mediatype_helper():
-    choices=set(["Videos","Music","Audio"])
+def mediatype_helper(x):
+    choices=set(["Videos","Audio","Images"])
     if isinstance(x,str):
         x=x.split(',')
         x=list(map(lambda x:x.capitalize() ,x))
     if len(list(filter(lambda y: y not in choices,x)))>0:
-        raise argparse.ArgumentTypeError("error: argument -o/--mediatype: invalid choice: (choose from 'music','audio','videos')")
+        raise argparse.ArgumentTypeError("error: argument -o/--mediatype: invalid choice: (choose from 'images','audio','videos')")
     return x
 def changeargs(newargs):
     global args

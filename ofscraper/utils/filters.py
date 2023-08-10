@@ -73,7 +73,7 @@ def timeline_array_filter(posts):
     out.extend(dated)
     return out
 def posts_type_filter(media): 
-    filtersettings=args_.ge().mediatype or config.get_filter(config.read_config())
+    filtersettings=args_.getargs().mediatype or config.get_filter(config.read_config())
     if isinstance(filtersettings,str):
         filtersettings=filtersettings.split(",")
     if isinstance(filtersettings,list):

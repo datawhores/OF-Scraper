@@ -8,7 +8,7 @@ r"""
 """
 import time
 import asyncio
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math

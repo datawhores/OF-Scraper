@@ -29,7 +29,7 @@ import ofscraper.utils.auth as auth
 import ofscraper.utils.paths as paths
 from ..utils import auth
 import ofscraper.utils.console as console
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 

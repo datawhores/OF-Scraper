@@ -260,6 +260,9 @@ def logger_process(input_,name=None,stop_count=1,event=None):
             if event and event.is_set():
                 close=True
             #set close value
+            if message==None:
+                close=True
+                continue
             if message=="None" :
                 close=True
                 continue    
@@ -297,6 +300,9 @@ def logger_other(input_,name=None,stop_count=1,event=None):
             #set close value
             if event and event.is_set():
                 close=True
+            if message==None:
+                close=True
+                continue
             if message=="None":
                 close=True
                 continue    

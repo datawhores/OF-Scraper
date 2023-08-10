@@ -27,7 +27,7 @@ from rich.live import Live
 from rich.style import Style
 import arrow
 import ofscraper.constants as constants
-from ofscraper.utils.semaphoreDelayed import semaphoreDelayed
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
