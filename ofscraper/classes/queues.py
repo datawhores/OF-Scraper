@@ -27,8 +27,8 @@ class Queues():
     def coro_put(self,ele):
         if isinstance(self.queue,aioprocessing.queues.AioQueue):
             async def inner(ele):
-                return await self.queue.coro_put(ele)        
-            return asyncio.create_task(inner(ele))
+                await self.queue.coro_put(ele)        
+            asyncio.create_task(inner(ele))
         else:
             self.queue.put(ele)
     def put_nowait(self,ele):

@@ -11,6 +11,7 @@ import asyncio
 import math
 import os
 import pathlib
+import multiprocessing
 import time
 import platform
 import shutil
@@ -63,13 +64,12 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.exit as exit
-import ofscraper.classes.queues as queues_
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
 import ofscraper.utils.misc as misc
-from aioprocessing import AioPipe
+from aioprocessing import AioQueue,AioPipe
 if platform.system() == 'Windows':
     from win32_setctime import setctime 
  # pylint: disable=import-errorm
@@ -125,6 +125,7 @@ def reset_globals():
 def process_dicts(username,model_id,medialist):
     #reset globals
     reset_globals()
+    manager=multiprocessing.Manager()   
     filtered_medialist=medialist_filter(medialist,model_id,username)
     log=logging.getLogger("shared")
     random.shuffle(filtered_medialist)
@@ -133,20 +134,18 @@ def process_dicts(username,model_id,medialist):
         num_proc=len(mediasplits)
         split_val=min(4,num_proc)
         log.debug(f"Number of process {num_proc}")
-        connect_tuples=[AioPipe() for i in range(num_proc)]
-
+        connect_tuples=[AioPipe() for _ in range(num_proc)]
         shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
+
+
         #ran by main process cause of stdout
-        logqueues_=[queues_.Queues()  for i in range(len(shared))]
+        logqueues_=[manager.Queue() for _ in range(len(shared))]
         #ran by other ofscraper_
-        otherqueues_=[queues_.Queues()  for i in range(len(shared))]
         
-        #start stdout queues consumers
-        logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(list(shared[i]))) for i in range(len(shared))]
-        #create producers log
-        stdout_logs=[logger.get_shared_logger(main_=logqueues_[i//split_val],other_=otherqueues_[i//split_val],name=f"shared_{model_id}_{i+1}") for i in range(num_proc) ]
+        #start stdout/main queues consumers
+        logthreads=[logger.start_stdout_logthread(input_=logqueues_[i//split_val],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
         #For some reason windows loses queue when not passed seperatly
-        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],stdout_logs[i].handlers[0].queue,stdout_logs[i].handlers[1].queue,connect_tuples[i][1])) for i in range(num_proc)]
+        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
         try:
             [process.start() for process in processes]      
             downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -168,6 +167,7 @@ def process_dicts(username,model_id,medialist):
             [logthread.join() for logthread in logthreads]
             [process.join(timeout=1) for process in processes]    
             [process.terminate() for process in processes]
+            manager.stop()
             overall_progress.remove_task(task1)
             progress_group.renderables[1].height=0
             setDirectoriesDate()    
@@ -175,13 +175,15 @@ def process_dicts(username,model_id,medialist):
                 try:
                     with exit.DelayedKeyboardInterrupt():
                         [process.terminate() for process in processes]  
+                        manager.stop()
                         raise KeyboardInterrupt
                 except KeyboardInterrupt:
                         raise KeyboardInterrupt
         except Exception as E:
                 try:
                     with exit.DelayedKeyboardInterrupt():
-                        [process.terminate() for process in processes]  
+                        [process.terminate() for process in processes]
+                        manager.stop()
                         raise E
                 except KeyboardInterrupt:
                 
@@ -249,8 +251,8 @@ def get_mediasplits(medialist):
     final_count=min(user_count,misc.getcpu_count(), len(medialist)//5)
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
-def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
-    log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
+def process_dict_starter(username,model_id,ele,p_logqueue_,pipe_):
+    log=logger.get_shared_logger(main_=p_logqueue_,other_=AioQueue(),name=f"shared_{os.getpid()}")
     asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
 
 def job_progress_helper(job_progress,result):
@@ -308,7 +310,6 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
     global pipe_
     pipe_=pipecopy
-    
     split_log.debug(f"{pid_log_helper()} starting process")
     split_log.debug(f"{pid_log_helper()} process mediasplit from total {len(medialist)}")
     global file_size_limit
@@ -368,10 +369,10 @@ async def download(c,ele,model_id,username):
             innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
             return 'skipped', 1
         finally:
-            #dump logs
-            log.handlers[0].queue.coro_put(list(innerlog.get().handlers[0].queue.queue))
+            #dump logs stdout
+            log.handlers[0].queue.put(list(innerlog.get().handlers[0].queue.queue))
             # we can put into seperate otherqueue_
-            log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
+            await log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
 async def main_download_helper(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")

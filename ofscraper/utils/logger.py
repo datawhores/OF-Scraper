@@ -3,9 +3,8 @@ import re
 import logging
 import threading
 import time
+import copy
 import queue
-import types
-
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
@@ -18,10 +17,78 @@ import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.console as console_
-
+from multiprocessing.managers import BaseProxy
 queue_=aioprocessing.AioQueue()
 otherqueue_=aioprocessing.AioQueue()
+
+class PipeHandler(logging.Handler):
+    """
+    This handler sends events to a queue. Typically, it would be used together
+    with a multiprocessing Queue to centralise logging to file in one process
+    (in a multi-process application), so as to avoid file write contention
+    between processes.
+
+    This code is new in Python 3.2, but this class can be copy pasted into
+    user code for use with earlier Python versions.
+    """
+
+    def __init__(self, pipe):
+        """
+        Initialise an instance, using the passed queue.
+        """
+        logging.Handler.__init__(self)
+        self.pipe = pipe
+
+
+    def prepare(self, record):
+        """
+        Prepare a record for queuing. The object returned by this method is
+        enqueued.
+
+        The base implementation formats the record to merge the message and
+        arguments, and removes unpickleable items from the record in-place.
+        Specifically, it overwrites the record's `msg` and
+        `message` attributes with the merged message (obtained by
+        calling the handler's `format` method), and sets the `args`,
+        `exc_info` and `exc_text` attributes to None.
+
+        You might want to override this method if you want to convert
+        the record to a dict or JSON string, or send a modified copy
+        of the record while leaving the original intact.
+        """
+        # The format operation gets traceback text into record.exc_text
+        # (if there's exception data), and also returns the formatted
+        # message. We can then use this to replace the original
+        # msg + args, as these might be unpickleable. We also zap the
+        # exc_info, exc_text and stack_info attributes, as they are no longer
+        # needed and, if not None, will typically not be pickleable.
+        msg = self.format(record)
+        # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
+        record = copy.copy(record)
+        record.message = msg
+        record.msg = msg
+        record.args = None
+        record.exc_info = None
+        record.exc_text = None
+        record.stack_info = None
+        return record
+
+    def emit(self, record):
+        """
+        Emit a record.
+
+        Writes the LogRecord to the queue, preparing it for pickling first.
+        """
+        try:
+            msg=self.prepare(record)
+            self.pipe[0].send(msg)
+        except Exception:
+            self.handleError(record)
+
+
+
+
+
 
 senstiveDict={}
 process=""
@@ -248,11 +315,14 @@ def logger_process(input_,name=None,stop_count=1,event=None):
     input_=input_ or queue_
     count=0
     close=False
+    funct=None
+    if isinstance(input_,aioprocessing.queues.AioQueue) or isinstance(input_,queue.Queue) or isinstance(input_,BaseProxy):funct=input_.get
+    else:funct=input_.recv
     while True:
         # consume a log message, block until one arrives
         if event and event.is_set():
             return
-        messages = input_.get()
+        messages = funct()
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
@@ -260,9 +330,9 @@ def logger_process(input_,name=None,stop_count=1,event=None):
             if event and event.is_set():
                 close=True
             #set close value
-            if message==None:
-                close=True
-                continue
+            # if message==None:
+            #     close=True
+            #     continue
             if message=="None" :
                 close=True
                 continue    
@@ -289,20 +359,23 @@ def logger_other(input_,name=None,stop_count=1,event=None):
     close=False
     if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
         return
+    funct=None
+    if isinstance(input_,aioprocessing.queues.AioQueue) or isinstance(input_,queue.Queue) or isinstance(input_,BaseProxy):funct=input_.get
+    else:funct=input_.recv
     while True:
         # consume a log message, block until one arrives
         if event and event.is_set():
            return True
-        messages = input_.get()
+        messages = funct()
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
             #set close value
             if event and event.is_set():
                 close=True
-            if message==None:
-                close=True
-                continue
+            # if message==None:
+            #     close=True
+            #     continue
             if message=="None":
                 close=True
                 continue    
@@ -353,16 +426,21 @@ def get_shared_logger(main_=None ,other_=None,name=None):
     logger = logging.getLogger(name or 'shared')
     addtraceback()
     addtrace()
-    main_queue=QueueHandler(main_ or queue_)
+    main_=main_ or queue_
+    if isinstance(main_,aioprocessing.queues.AioQueue) or isinstance(main_,queue.Queue) or isinstance(main_,BaseProxy):main_queue=QueueHandler(main_)
+    else:main_queue=PipeHandler(main_)
     main_queue.setLevel(getLevel(args.getargs().output))
     # add a handler that uses the shared queue
     logger.addHandler(main_queue)
     discord_level=getNumber(args.getargs().discord); 
     file_level=getNumber(args.getargs().log); 
-    other_queue=QueueHandler((other_ or otherqueue_))
+    other_=other_ or otherqueue_
+    if isinstance(other_,aioprocessing.queues.AioQueue) or isinstance(other_,queue.Queue) or isinstance(other_,BaseProxy):other_queue=QueueHandler(other_)
+    else:other_queue=PipeHandler(other_)
     other_queue.setLevel(min(file_level,discord_level))
     logger.addHandler(other_queue)  
     # log all messages, debug and up
     logger.setLevel(1)
     return logger
-    
+
+

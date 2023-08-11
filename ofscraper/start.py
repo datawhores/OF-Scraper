@@ -24,7 +24,6 @@ import ofscraper.utils.misc as misc
 def main():
     main_log_thread=None
     other_log_process=None
-    #only use if <2 threads
     other_log_thread=None
    
     try:
@@ -35,8 +34,8 @@ def main():
         #and if the the args are set
         if not args_.getargs().log and args_.getargs().discord:
             None
-        elif misc.getcpu_count()>=3 :other_log_process=logger.start_other_process()
-        else: other_log_thread=logger.start_other_thread(event=other_event)
+        # elif misc.getcpu_count()>=3 :other_log_process=logger.start_other_process()
+        # else: other_log_thread=logger.start_other_thread(event=other_event)
         #allow background processes to start
         time.sleep(3)
 
