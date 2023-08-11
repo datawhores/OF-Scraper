@@ -148,7 +148,7 @@ def process_dicts(username,model_id,medialist):
                 logthreads=[logger.start_stdout_logthread(input_=logqueues_[i//split_val],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
         #For some reason windows loses queue when not passed seperatly
     
-                processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
+                processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],connect_tuples[i][1],args_.getargs())) for i in range(num_proc)]
                 [process.start() for process in processes]
 
                 downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -170,7 +170,7 @@ def process_dicts(username,model_id,medialist):
                     [logthread.join() for logthread in logthreads]
                     [process.join(timeout=1) for process in processes]    
                     [process.terminate() for process in processes]
-                # overall_progress.remove_task(task1)
+                overall_progress.remove_task(task1)
                 progress_group.renderables[1].height=0
                 setDirectoriesDate()    
     except KeyboardInterrupt as E:
@@ -256,9 +256,9 @@ def get_mediasplits(medialist):
     final_count=min(user_count,misc.getcpu_count(), len(medialist)//5)
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
-def process_dict_starter(username,model_id,ele,p_logqueue_,pipe_):
+def process_dict_starter(username,model_id,ele,p_logqueue_,pipe_,args):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=AioQueue(),name=f"shared_{os.getpid()}")
-    asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
+    asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_,args))
 
 def job_progress_helper(job_progress,result):
     funct={
@@ -285,7 +285,7 @@ def setpriority():
     else:  # MAC OS X or other
         process.nice(10) 
 
-async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
+async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy,args):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")
     global log 
@@ -321,6 +321,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     global file_size_min
     file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(config_.read_config()) 
     file_size_min = args_.getargs().size_min or config_.get_filesize_min(config_.read_config()) 
+    args_.changeargs(args)
         
     aws=[]
 
