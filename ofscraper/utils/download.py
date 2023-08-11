@@ -11,6 +11,7 @@ import asyncio
 import math
 import os
 import pathlib
+import multiprocess
 import multiprocessing
 import time
 import platform
@@ -70,7 +71,8 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
 import ofscraper.utils.misc as misc
 from aioprocessing import AioQueue,AioPipe
-if platform.system() == 'Windows':
+platform_name=platform.system()
+if platform_name== 'Windows':
     from win32_setctime import setctime 
  # pylint: disable=import-errorm
  
@@ -124,70 +126,73 @@ def reset_globals():
 
 def process_dicts(username,model_id,medialist):
     #reset globals
-    reset_globals()
-    manager=multiprocessing.Manager()   
-    filtered_medialist=medialist_filter(medialist,model_id,username)
-    log=logging.getLogger("shared")
-    random.shuffle(filtered_medialist)
-    if len(filtered_medialist)>0:
-        mediasplits=get_mediasplits(filtered_medialist)
-        num_proc=len(mediasplits)
-        split_val=min(4,num_proc)
-        log.debug(f"Number of process {num_proc}")
-        connect_tuples=[AioPipe() for _ in range(num_proc)]
-        shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
-
-
-        #ran by main process cause of stdout
-        logqueues_=[manager.Queue() for _ in range(len(shared))]
-        #ran by other ofscraper_
-        
-        #start stdout/main queues consumers
-        logthreads=[logger.start_stdout_logthread(input_=logqueues_[i//split_val],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
-        #For some reason windows loses queue when not passed seperatly
-        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
-        try:
-            [process.start() for process in processes]      
-            downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-            job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-                TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
-            overall_progress=Progress(  TextColumn("{task.description}"),
-            BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-            progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-            task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
-            progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
-            with stdout.lowstdout():
-                with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-                    queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
-                    [thread.start() for thread in queue_threads]
-                    while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
-                        for thread in queue_threads:
-                            thread.join(1)
-                            time.sleep(5)
-            [logthread.join() for logthread in logthreads]
-            [process.join(timeout=1) for process in processes]    
-            [process.terminate() for process in processes]
-            manager.stop()
-            overall_progress.remove_task(task1)
-            progress_group.renderables[1].height=0
-            setDirectoriesDate()    
-        except KeyboardInterrupt as E:
-                try:
-                    with exit.DelayedKeyboardInterrupt():
-                        [process.terminate() for process in processes]  
-                        manager.stop()
-                        raise KeyboardInterrupt
-                except KeyboardInterrupt:
-                        raise KeyboardInterrupt
-        except Exception as E:
-                try:
-                    with exit.DelayedKeyboardInterrupt():
-                        [process.terminate() for process in processes]
-                        manager.stop()
-                        raise E
-                except KeyboardInterrupt:
+    try:
+        reset_globals()
+        filtered_medialist=medialist_filter(medialist,model_id,username)
+        log=logging.getLogger("shared")
+        random.shuffle(filtered_medialist)
+        if len(filtered_medialist)>0:
+            with multiprocess.Manager() as manager:
+                mediasplits=get_mediasplits(filtered_medialist)
+                num_proc=len(mediasplits)
+                split_val=min(4,num_proc)
+                log.debug(f"Number of process {num_proc}")
+                connect_tuples=[AioPipe() for _ in range(num_proc)]
+                shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
                 
+                #ran by main process cause of stdout
+                logqueues_=[manager.Queue() for _ in range(len(shared))]
+                #ran by other ofscraper_
+                
+                #start stdout/main queues consumers
+                logthreads=[logger.start_stdout_logthread(input_=logqueues_[i//split_val],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
+        #For some reason windows loses queue when not passed seperatly
+    
+                processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
+                [process.start() for process in processes]
+
+                downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+                job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+                    TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
+                overall_progress=Progress(  TextColumn("{task.description}"),
+                BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+                progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
+                task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
+                progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+                with stdout.lowstdout():
+                    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
+                        queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
+                        [thread.start() for thread in queue_threads]
+                        while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
+                            for thread in queue_threads:
+                                thread.join(1)
+                                time.sleep(5)
+                    [logthread.join() for logthread in logthreads]
+                    [process.join(timeout=1) for process in processes]    
+                    [process.terminate() for process in processes]
+                # overall_progress.remove_task(task1)
+                progress_group.renderables[1].height=0
+                setDirectoriesDate()    
+    except KeyboardInterrupt as E:
+            try:
+                with exit.DelayedKeyboardInterrupt():
+                    [process.terminate() for process in processes] 
+                    manager.shutdown()
                     raise KeyboardInterrupt
+            except KeyboardInterrupt:
+                    raise KeyboardInterrupt
+            except:
+                raise KeyboardInterrupt
+    except Exception as E:
+        try:
+            with exit.DelayedKeyboardInterrupt():
+                [process.terminate() for process in processes]
+                manager.shutdown()
+                raise E
+        except KeyboardInterrupt:
+                raise KeyboardInterrupt
+        except Exception:
+            raise KeyboardInterrupt
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
     return photo_count,video_count,audio_count,forced_skipped,skipped
 def queue_process(pipe_,overall_progress,job_progress,task1,total):
@@ -285,7 +290,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     innerlog = contextvars.ContextVar("innerlog")
     global log 
     log=logCopy
-    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")   
+    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")  
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()

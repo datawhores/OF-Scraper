@@ -316,8 +316,8 @@ def logger_process(input_,name=None,stop_count=1,event=None):
     count=0
     close=False
     funct=None
-    if isinstance(input_,aioprocessing.queues.AioQueue) or isinstance(input_,queue.Queue) or isinstance(input_,BaseProxy):funct=input_.get
-    else:funct=input_.recv
+    if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get
+    elif hasattr(input_,"send"):funct=input_.recv
     while True:
         # consume a log message, block until one arrives
         if event and event.is_set():
@@ -360,8 +360,8 @@ def logger_other(input_,name=None,stop_count=1,event=None):
     if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
         return
     funct=None
-    if isinstance(input_,aioprocessing.queues.AioQueue) or isinstance(input_,queue.Queue) or isinstance(input_,BaseProxy):funct=input_.get
-    else:funct=input_.recv
+    if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get
+    elif hasattr(input_,"send"):funct=input_.recv
     while True:
         # consume a log message, block until one arrives
         if event and event.is_set():
@@ -427,18 +427,18 @@ def get_shared_logger(main_=None ,other_=None,name=None):
     addtraceback()
     addtrace()
     main_=main_ or queue_
-    if isinstance(main_,aioprocessing.queues.AioQueue) or isinstance(main_,queue.Queue) or isinstance(main_,BaseProxy):main_queue=QueueHandler(main_)
-    else:main_queue=PipeHandler(main_)
-    main_queue.setLevel(getLevel(args.getargs().output))
+    if hasattr(main_,"get") and hasattr(main_,"put_nowait"):mainhandle=QueueHandler(main_)
+    elif hasattr(main_,"send"):mainhandle=PipeHandler(main_)
+    mainhandle.setLevel(getLevel(args.getargs().output))
     # add a handler that uses the shared queue
-    logger.addHandler(main_queue)
+    logger.addHandler(mainhandle)
     discord_level=getNumber(args.getargs().discord); 
     file_level=getNumber(args.getargs().log); 
     other_=other_ or otherqueue_
-    if isinstance(other_,aioprocessing.queues.AioQueue) or isinstance(other_,queue.Queue) or isinstance(other_,BaseProxy):other_queue=QueueHandler(other_)
-    else:other_queue=PipeHandler(other_)
-    other_queue.setLevel(min(file_level,discord_level))
-    logger.addHandler(other_queue)  
+    if hasattr(main_,"get") and hasattr(main_,"put_nowait"):otherhandle=QueueHandler(other_)
+    elif hasattr(main_,"send"):otherhandle=PipeHandler(main_)
+    otherhandle.setLevel(min(file_level,discord_level))
+    logger.addHandler(otherhandle)  
     # log all messages, debug and up
     logger.setLevel(1)
     return logger
