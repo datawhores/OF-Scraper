@@ -134,7 +134,7 @@ def process_profile( username) -> list:
         profile.print_profile_info(info)       
         output=[]
         for count,data in enumerate(urls):
-            output.append(media.Media({"url":data["url"],"type":data["mediatype"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
+            output.append(media.Media({"url":data["url"],"type":data["mediatype"],"id":data["mediaid"]},count,posts_.Post(data,info[2],username,responsetype="profile")))
         avatars=list(filter(lambda x:x.filename.find('avatar')!=-1,output))
         if len(avatars)>0:
             log.warning(f"Avatar : {avatars[0].url}")
