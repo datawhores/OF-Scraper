@@ -53,7 +53,7 @@ async def scrape_subscriptions(c,offset=0) -> list:
 
         async with c.requests( subscriptionsEP.format(offset))() as r:
             if r.ok:
-                subscriptions = await r.json_()
+                subscriptions = (await r.json_())["list"]
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 return subscriptions
             else:
