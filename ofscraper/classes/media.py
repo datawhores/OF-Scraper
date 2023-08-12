@@ -131,7 +131,7 @@ class Media():
 
     @property
     def text(self):
-        if re.sub("\n+"," ", BeautifulSoup(self._post.text,'html.parser').text)
+        if self._post.text: return re.sub("\n+"," ", BeautifulSoup(self._post.text,'html.parser').text)
         return self._post.text
     
 
