@@ -139,9 +139,9 @@ def process_dicts(username,model_id,medialist):
                 connect_tuples=[AioPipe() for _ in range(num_proc)]
                 shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
                 #shared with other process + main
-                logqueues_=[manager.Queue() for _ in range(len(shared))]
+                logqueues_=[ aioprocessing.AioQueueProxy()for _ in range(len(shared))]
                 #other logger queues
-                otherqueues_=[manager.Queue()   for _ in range(len(shared))]
+                otherqueues_=[aioprocessing.AioQueueProxy()  for _ in range(len(shared))]
 
                 
                 #start stdout/main queues consumers
@@ -172,7 +172,7 @@ def process_dicts(username,model_id,medialist):
             [process.terminate() for process in processes]
             overall_progress.remove_task(task1)
             progress_group.renderables[1].height=0
-            setDirectoriesDate()    
+            setDirectoriesDate()  
     except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -342,8 +342,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
             
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     #send message directly
-    log.handlers[0].queue.put("None")
-    log.handlers[1].queue.put("None")
+    await log.handlers[0].queue.coro_put("None")
+    await log.handlers[1].queue.coro_put("None")
     other_thread.join()
     await pipe_.coro_send(localdirSet)
     await pipe_.coro_send(None)
@@ -378,9 +378,9 @@ async def download(c,ele,model_id,username):
             return 'skipped', 1
         finally:
             #dump logs stdout
-            log.handlers[0].queue.put(list(innerlog.get().handlers[0].queue.queue))
+            await log.handlers[0].queue.coro_put(list(innerlog.get().handlers[0].queue.queue))
             # we can put into seperate otherqueue_
-            log.handlers[1].queue.put(list(innerlog.get().handlers[1].queue.queue))
+            await log.handlers[1].queue.coro_put(list(innerlog.get().handlers[1].queue.queue))
 async def main_download_helper(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")
