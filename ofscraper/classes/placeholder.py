@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import pathlib
 import ofscraper.utils.paths as paths
 import ofscraper.utils.config as config_
@@ -140,6 +141,7 @@ class Placeholders:
         log.trace(f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         out=None
         if config_.get_allow_code_execution(config_.read_config()):
+            custom= {key: eval(val) for key,val in custom.items()}
             out=eval('f"""{}"""'.format(config_.get_fileformat(config_.read_config())))
         else:
             if ele.responsetype_ =="profile":out=f"{filename}.{ext}"
