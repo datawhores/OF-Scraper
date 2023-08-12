@@ -107,8 +107,6 @@ class Placeholders:
     def createfilename(self,ele,username,model_id,ext):
         filename=ele.filename_;self._variables.update({"filename":filename})
         file_name=ele.filename_;self._variables.update({"file_name":file_name})
-        if ele.responsetype_ =="profile":
-            return f"{filename}.{ext}"
         self._variables.update({"username":username})
         self._variables.update({"model_id":model_id})
         self._variables.update({"ext":ext})
@@ -144,7 +142,8 @@ class Placeholders:
         if config_.get_allow_code_execution(config_.read_config()):
             out=eval('f"""{}"""'.format(config_.get_fileformat(config_.read_config())))
         else:
-            out=config_.get_fileformat(config_.read_config()).format(**self._variables) 
+            if ele.responsetype_ =="profile":out=f"{filename}.{ext}"
+            else:out=config_.get_fileformat(config_.read_config()).format(**self._variables) 
         log.trace(f"final filename path {out}")
         return out
         
