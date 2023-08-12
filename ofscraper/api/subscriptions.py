@@ -34,7 +34,7 @@ async def get_subscriptions(subscribe_count):
         task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
         out=[]
         if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list:
-            offsets = range(0, subscribe_count, 10)
+            offsets = range(420, subscribe_count, 10)
             async with sessionbuilder.sessionBuilder() as c: 
                 tasks = [scrape_subscriptions(c,offset) for offset in offsets]
                 subscriptions = await asyncio.gather(*tasks)

@@ -28,7 +28,7 @@ initEP = 'https://onlyfans.com/api2/v2/init'
 INDVIDUAL_TIMELINE="https://onlyfans.com/api2/v2/posts/{}?skip_users=all"
 meEP = 'https://onlyfans.com/api2/v2/users/me'
 
-subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&type=all&sort=asc&field=expire_date&limit=10'
+subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite'
 subscribeCountEP='https://onlyfans.com/api2/v2/subscriptions/count/all'
 profileEP = 'https://onlyfans.com/api2/v2/users/{}'
 
