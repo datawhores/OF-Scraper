@@ -263,7 +263,7 @@ def posttype_helper(x):
         x=x.split(',')
         x=list(map(lambda x:x.capitalize() ,x))
     if len(list(filter(lambda y: y not in choices,x)))>0:
-        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')")
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels','skip')")
     return x
 
 def mediatype_helper(x):

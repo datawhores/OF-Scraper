@@ -198,12 +198,12 @@ def normal_post_process():
                     username=value[0].post.username
                     operations.create_tables(model_id,username)
                     operations.write_profile_table(model_id,username)
-                    asyncio.run(download.process_dicts(
+                    download.process_dicts(
                         
                     username,
                     model_id,
                     value,
-                    ))
+                    )
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     
