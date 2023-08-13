@@ -31,7 +31,6 @@ class Placeholders:
                "my_id":my_id,
                "my_username":my_username,
                "root": pathlib.Path((config_.get_save_location(config_.read_config()))),
-
                "custom": config_.get_custom(config_.read_config()) }
         
         globals().update(self._variables)
@@ -47,8 +46,8 @@ class Placeholders:
 
         log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
-            if isinstance(custom,dict)==True: custom={key: eval(val) for key,val in custom.items()} 
-            else:eval(custom)
+            # if isinstance(custom,dict)==True: custom={key: eval(val) for key,val in custom.items()} 
+            # else:eval(custom)
             formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
             
         else:
