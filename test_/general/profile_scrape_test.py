@@ -21,7 +21,7 @@ def test_parse_profile2():
 def test_parse_profile3():
     profile_=USERPROFILE_EXAMPLE_DICT
     assert(set(profile.parse_profile
-    (profile_)[0][0].keys()))==set(["url","responsetype","mediatype","value","createdAt","text","id"])
+    (profile_)[0][0].keys()))==set(["url","responsetype","mediatype","value","createdAt","text","id","mediaid"])
 
 
 def test_parse_profile5():

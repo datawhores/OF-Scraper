@@ -96,7 +96,6 @@ class Placeholders:
 
         log.trace(f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
-            custom= {key: eval(val) for key,val in custom.items()}
             if isinstance(custom,dict)==True: custom={key: eval(val) for key,val in custom.items()} 
             else:eval(custom)
             downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
