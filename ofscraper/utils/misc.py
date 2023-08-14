@@ -34,9 +34,10 @@ def medialist_filter(medialist,model_id,username):
 
 def download_picker(username, model_id, medialist):
     medialist=medialist_filter(medialist,model_id,username)
+    log=logging.getLogger("shared")
     if len(medialist)==0:
-        return
-    elif len(medialist)>=config_.get_download_semaphores(config_.read_config())*200000 and getcpu_count()>1 and (args_.getargs().threads or config_.get_threads(config_.read_config()))>0:
+        log.error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped)' )
+    elif len(medialist)>=config_.get_download_semaphores(config_.read_config()) and getcpu_count()>1 and (args_.getargs().threads or config_.get_threads(config_.read_config()))>0:
         batchdownloader.process_dicts(username, model_id, medialist)
     else:
         asyncio.run(download.process_dicts(
