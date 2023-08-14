@@ -36,7 +36,7 @@ def download_picker(username, model_id, medialist):
     medialist=medialist_filter(medialist,model_id,username)
     if len(medialist)==0:
         return
-    elif len(medialist)>=config_.get_download_semaphores(config_.read_config())*2000 and getcpu_count()>1 and (args_.getargs().threads or config_.get_threads(config_.read_config()))>0:
+    elif len(medialist)>=config_.get_download_semaphores(config_.read_config()) and getcpu_count()>1 and (args_.getargs().threads or config_.get_threads(config_.read_config()))>0:
         batchdownloader.process_dicts(username, model_id, medialist)
     else:
         asyncio.run(download.process_dicts(

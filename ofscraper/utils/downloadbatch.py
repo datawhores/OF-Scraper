@@ -477,7 +477,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
 
     except Exception as E:
         innerlog.get().traceback(traceback.format_exc())
-        innerlog.geft().traceback(E)
+        innerlog.get().traceback(E)
         raise E
 
 
