@@ -269,6 +269,35 @@ def init_main_logger(name=None):
 
     return log
 
+def init_download_logger():
+    log=logging.getLogger("ofscraper-download")
+    format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
+    log.setLevel(1)
+    addtraceback()
+    addtrace()
+    # # #log file
+      # #discord
+    #console
+    sh=RichHandler(rich_tracebacks=True,markup=True,tracebacks_show_locals=True,show_time=False,show_level=False,console=console.get_shared_console())
+    sh.setLevel(getLevel(args.getargs().output))
+    sh.setFormatter(SensitiveFormatter(format))
+    sh.addFilter(NoDebug())
+    tx=TextHandler()
+    tx.setLevel(getLevel(args.getargs().output))
+    tx.setFormatter(SensitiveFormatter(format))
+    log.addHandler(sh)
+    log.addHandler(tx)
+
+    if args.getargs().output in {"TRACE","DEBUG"}:
+        funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
+        sh2=RichHandler(rich_tracebacks=True, console=console.get_shared_console(),markup=True,tracebacks_show_locals=True,show_time=False)
+        sh2.setLevel(args.getargs().output)
+        sh2.setFormatter(SensitiveFormatter(format))
+        sh2.addFilter(funct())
+        log.addHandler(sh2)
+    log.addHandler(QueueHandler(otherqueue_))
+    return log
+
 def init_other_logger(name):
     name=name or "other"
     log=logging.getLogger(name)

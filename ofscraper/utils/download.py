@@ -141,9 +141,8 @@ async def process_dicts(username, model_id, medialist):
         file_size_min=args_.getargs().size_min or config_.get_filesize_limit(config_.read_config()) 
       
         global log
-        log=logging.getLogger(__package__)
+        log=logging.getLogger("ofscraper-download")
         #log directly to stdout
-        log.addHandler(logger.QueueHandler(logger.otherqueue_))
         global log_trace
         log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
 

@@ -27,6 +27,7 @@ def main():
     other_log_thread=None
    
     try:
+        logger.init_download_logger()
         main_event = Event()
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
