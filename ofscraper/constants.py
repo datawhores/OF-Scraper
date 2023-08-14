@@ -169,3 +169,4 @@ maxChunkSize=1024*1024
 KEY_OPTIONS=["cdrm","cdrm2","manual","keydb"]
 
 OFSCRAPER_RESERVED_LIST="ofscraper.main"
+MULTIPROCESS_MIN=200

@@ -10,7 +10,7 @@ import arrow
 import logging
 import random
 import string
-import ofscraper.utils.download as download
+import ofscraper.utils.downloadbatch as downloadbatch
 import ofscraper.utils.paths as paths
 import ofscraper.classes.placeholder
 import ofscraper.classes.placeholder as placeholder
@@ -528,17 +528,17 @@ def test_create_text_name2(mocker):
 def test_settime():
     with tempfile.NamedTemporaryFile() as p:
         test_date=arrow.get("2021")
-        download.set_time(p.name,convert_local_time(test_date))
+        downloadbatch.set_time(p.name,convert_local_time(test_date))
         assert(arrow.get(os.path.getmtime(p.name)).year)==test_date.year
 
 def test_settime2():
     with tempfile.NamedTemporaryFile() as p:
         test_date=arrow.get("2021")
-        download.set_time(p.name,convert_local_time(test_date))
+        downloadbatch.set_time(p.name,convert_local_time(test_date))
         assert(arrow.get(os.path.getmtime(p.name)).float_timestamp)==test_date.float_timestamp
 def test_convert_byte_large():
     size=1*10**12
-    assert(download.convert_num_bytes(size))==f"{1*10**(12-9)}.0 GB"
+    assert(downloadbatch.convert_num_bytes(size))==f"{1*10**(12-9)}.0 GB"
 
 def test_test(mocker):
     return

@@ -34,7 +34,6 @@ import ofscraper.utils.profiles as profiles
 import ofscraper.api.init as init
 import ofscraper.utils.download as download
 import ofscraper.interaction.like as like
-import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
@@ -42,6 +41,7 @@ import ofscraper.utils.userselector as userselector
 import ofscraper.utils.console as console
 import ofscraper.utils.of as OF
 import ofscraper.utils.exit as exit
+import ofscraper.utils.misc as misc
 
 log=logging.getLogger("shared")
 
@@ -158,11 +158,11 @@ def process_post_user_first():
                 username=value[0].post.username
                 operations.create_tables(model_id,username)
                 operations.write_profile_table(model_id,username)
-                download.process_dicts(
-                username,
-                model_id,
-                value,
-                )
+                misc.download_picker(
+                    username,
+                    model_id,
+                    value,
+                    )
 
 @exit.exit_wrapper
 def normal_post_process():
@@ -180,11 +180,11 @@ def normal_post_process():
                 operations.create_tables(model_id,ele['name'])
                 operations.write_profile_table(model_id,ele['name'])
                 combined_urls=OF.process_areas( ele, model_id)
-                download.process_dicts(
-                ele["name"],
-                model_id,
-                combined_urls,
-                )
+                misc.download_picker(
+                    ele["name"],
+                    model_id,
+                    combined_urls
+                    )
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
@@ -198,12 +198,11 @@ def normal_post_process():
                     username=value[0].post.username
                     operations.create_tables(model_id,username)
                     operations.write_profile_table(model_id,username)
-                    download.process_dicts(
-                        
-                    username,
-                    model_id,
-                    value,
-                    )
+                    misc.download_picker(
+                        username,
+                        model_id,
+                        value,
+                        )
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     

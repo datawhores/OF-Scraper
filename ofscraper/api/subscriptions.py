@@ -60,6 +60,8 @@ async def scrape_subscriptions(c,offset=0) -> list:
                 log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
                 log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
                 log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                r.raise_for_status()
+            
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()

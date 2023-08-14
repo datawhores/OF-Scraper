@@ -7,23 +7,21 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+import sys
+from collections import abc
 import asyncio
 import math
-import os
 import pathlib
-import multiprocess
-import time
 import platform
 import shutil
 import traceback
-import random
 import re
-import threading
 import logging
-import logging.handlers
 import contextvars
 import json
 import subprocess
+from functools import singledispatch,partial
+from rich.progress import Progress
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -34,7 +32,6 @@ from rich.progress import (
     BarColumn,
     TimeRemainingColumn
 )
-
 from rich.live import Live
 from rich.panel import Panel
 from rich.console import Group
@@ -44,13 +41,12 @@ from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 import arrow
 from bs4 import BeautifulSoup
-
-
+try:
+    from win32_setctime import setctime  # pylint: disable=import-error
+except ModuleNotFoundError:
+    pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
-import more_itertools
-import aioprocessing
-import psutil
-from diskcache import Cache
+
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
@@ -63,498 +59,353 @@ import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
-import ofscraper.utils.exit as exit
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
-from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
-import ofscraper.utils.misc as misc
-from aioprocessing import AioPipe
-platform_name=platform.system()
-if platform_name== 'Windows':
-    from win32_setctime import setctime 
- # pylint: disable=import-errorm
- 
-#main thread queues
-logqueue_=logger.queue_
-def medialist_filter(medialist,model_id,username):
-    log=logging.getLogger("shared")
-    if not args_.getargs().dupe:
-        media_ids = set(operations.get_media_ids(model_id,username))
-        log.debug(f"{pid_log_helper()} number of unique media ids in database for {username}: {len(media_ids)}")
-        medialist = seperate.separate_by_id(medialist, media_ids)
-        log.debug(f"{pid_log_helper()} Number of new mediaids with dupe ids removed: {len(medialist)}")  
-        medialist=seperate.seperate_avatars(medialist)
-        log.debug(f"{pid_log_helper()} Remove avatar")
-        log.debug(f"{pid_log_helper()} Final Number of media to download {len(medialist)}")
-
-    else:
-        log.info(f"{pid_log_helper()} forcing all downloads media count {len(medialist)}")
-    return medialist
-
-def reset_globals():
-    global total_bytes_downloaded
-    total_bytes_downloaded = 0
-    global total_bytes
-    total_bytes=0
-    global photo_count
-    photo_count = 0
-    global video_count
-    video_count = 0
-    global audio_count
-    audio_count=0
-    global skipped
-    skipped = 0
-    global forced_skipped
-    forced_skipped=0
-    global data
-    data=0
-    global total_data
-    total_data=0
-    global desc
-    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})'   
-    global count_lock
-    count_lock=aioprocessing.AioLock()
-    global chunk_lock
-    chunk_lock=aioprocessing.AioLock()
-    global dirSet
-    dirSet=set()
-    global dir_lock
-    dir_lock=aioprocessing.AioLock()
-
-
-def process_dicts(username,model_id,medialist):
-    #reset globals
-    try:
-        reset_globals()
-        filtered_medialist=medialist_filter(medialist,model_id,username)
-        log=logging.getLogger("shared")
-        random.shuffle(filtered_medialist)
-        if len(filtered_medialist)>0:
-            with multiprocess.Manager() as manager:
-                mediasplits=get_mediasplits(filtered_medialist)
-                num_proc=len(mediasplits)
-                split_val=min(4,num_proc)
-                log.debug(f"Number of process {num_proc}")
-                connect_tuples=[AioPipe() for _ in range(num_proc)]
-                shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
-                #shared with other process + main
-                logqueues_=[ manager.Queue() for _ in range(len(shared))]
-                #other logger queues
-                otherqueues_=[manager.Queue()  for _ in range(len(shared))]
-
-                
-                #start stdout/main queues consumers
-                logthreads=[logger.start_stdout_logthread(input_=logqueues_[i//split_val],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
-        #For some reason windows loses queue when not passed seperatly
-    
-                processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
-                [process.start() for process in processes]
-
-                downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-                job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-                    TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
-                overall_progress=Progress(  TextColumn("{task.description}"),
-                BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-                progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-                task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(medialist),visible=True)
-                progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
-                with stdout.lowstdout():
-                    with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-                        queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
-                        [thread.start() for thread in queue_threads]
-                        while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
-                            for thread in queue_threads:
-                                thread.join(1)
-                                time.sleep(1)
-                    [logthread.join() for logthread in logthreads]
-            [process.join(timeout=1) for process in processes]    
-            [process.terminate() for process in processes]
-            overall_progress.remove_task(task1)
-            progress_group.renderables[1].height=0
-            setDirectoriesDate()  
-    except KeyboardInterrupt as E:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    [process.terminate() for process in processes] 
-                    manager.shutdown()
-                    raise KeyboardInterrupt
-            except KeyboardInterrupt:
-                    raise KeyboardInterrupt
-            except:
-                raise KeyboardInterrupt
-    except Exception as E:
-        try:
-            with exit.DelayedKeyboardInterrupt():
-                [process.terminate() for process in processes]
-                manager.shutdown()
-                raise E
-        except KeyboardInterrupt:
-                raise KeyboardInterrupt
-        except Exception:
-            raise KeyboardInterrupt
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
-    return photo_count,video_count,audio_count,forced_skipped,skipped
-def queue_process(pipe_,overall_progress,job_progress,task1,total):
-    count=0
-    downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-        #shared globals
-    global total_bytes_downloaded
-    global total_bytes
-    global video_count
-    global audio_count
-    global photo_count
-    global skipped
-    global forced_skipped
-    global data
-    global total_data
-    global desc
-
-    while True:
-        if count==1 or overall_progress.tasks[task1].total==overall_progress.tasks[task1].completed:
-            break
-        results = pipe_.recv()
-        if not isinstance(results,list):
-            results=[results]
-
-        for result in results:
-            if result is None:
-                count=count+1
-                continue 
-            if isinstance(result,dict) and not downloadprogress:
-                continue
-            if isinstance(result,set):
-                addGlobalDir(result)
-                continue
-            if isinstance(result,dict):
-                job_progress_helper(job_progress,result)
-                continue
-            media_type, num_bytes_downloaded,total_size = result
-            with count_lock:
-                total_bytes_downloaded=total_bytes_downloaded+num_bytes_downloaded
-                total_bytes=total_bytes+total_size
-                
-                data = convert_num_bytes(total_bytes_downloaded)
-                total_data=convert_num_bytes(total_bytes)
-                if media_type == 'images':
-                    photo_count += 1 
-
-                elif media_type == 'videos':
-                    video_count += 1
-                elif media_type == 'audios':
-                    audio_count += 1
-                elif media_type == 'skipped':
-                    skipped += 1
-                elif media_type =='forced_skipped':
-                    forced_skipped+=1
-                overall_progress.update(task1,description=desc.format(
-                            p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped,forced_skipped=forced_skipped, data=data,total=total_data,mediacount=total, sumcount=video_count+audio_count+photo_count+skipped+forced_skipped), refresh=True, completed=video_count+audio_count+photo_count+skipped+forced_skipped)     
-
-
-def get_mediasplits(medialist):
-    user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
-    final_count=min(user_count,misc.getcpu_count(), len(medialist)//5)
-    if final_count==0:final_count=1
-    return more_itertools.divide(final_count, medialist   )
-def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
-    log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
-    asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
-
-def job_progress_helper(job_progress,result):
-    funct={
-      "add_task"  :job_progress.add_task,
-      "update":job_progress.update,
-      "remove_task":job_progress.remove_task
-     }.get(result.pop("type"))
-    if funct:
-        try:
-            with chunk_lock:
-                funct(*result.pop("args"),**result)
-        except Exception as E:
-            logging.getLogger("shared").debug(E)
-def setpriority():
-    os_used = platform.system() 
-    process = psutil.Process(os.getpid())  # Set highest priority for the python script for the CPU
-    if os_used == "Windows":  # Windows (either 32-bit or 64-bit)
-        process.ionice(psutil.IOPRIO_NORMAL)
-        process.nice(psutil.NORMAL_PRIORITY_CLASS)
-
-    elif os_used == "Linux":  # linux
-        process.ionice(psutil.IOPRIO_CLASS_BE)
-        process.nice(5) 
-    else:  # MAC OS X or other
-        process.nice(10) 
-
-async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
-    global innerlog
-    innerlog = contextvars.ContextVar("innerlog")
-    global log 
-    log=logCopy
-    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")  
-    #start consumer for other
-    other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
-    setpriority()
-    global attempt
-    attempt=contextvars.ContextVar("attempt")
-    
-
- 
-    medialist=list(medialist)
-    # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-    global sem
-    sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
-    global total_sem
-    total_sem= semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*2)
-    global maxfile_sem
-    maxfile_sem = semaphoreDelayed(config_.get_maxfile_semaphores(config_.read_config()))
-    global localdirSet
-    localdirSet=set()
-    global split_log
-    split_log=logCopy
-    global log_trace
-    log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
-    global pipe_
-    pipe_=pipecopy
-    split_log.debug(f"{pid_log_helper()} starting process")
-    split_log.debug(f"{pid_log_helper()} process mediasplit from total {len(medialist)}")
-    global file_size_limit
-    global file_size_min
-    file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(config_.read_config()) 
-    file_size_min = args_.getargs().size_min or config_.get_filesize_min(config_.read_config()) 
-        
-    aws=[]
-
-    async with sessionbuilder.sessionBuilder() as c:
-        i=0
-        for ele in medialist:
-            aws.append(asyncio.create_task(download(c,ele ,model_id, username)))
-
-        for coro in asyncio.as_completed(aws):
-                try:
-                    media_type, num_bytes_downloaded = await coro
-                    await pipe_.coro_send(  (media_type, num_bytes_downloaded,0))
-                except Exception as e:
-                    split_log.traceback(e)
-                    split_log.traceback(traceback.format_exc())
-                    media_type = "skipped"
-                    num_bytes_downloaded = 0
-                    await pipe_.coro_send(  (media_type, num_bytes_downloaded,0))
-            
-    split_log.debug(f"{pid_log_helper()} download process thread closing")
-    #send message directly
-    log.handlers[0].queue.put("None")
-    log.handlers[1].queue.put("None")
-    other_thread.join()
-    await pipe_.coro_send(localdirSet)
-    await pipe_.coro_send(None)
-   
- 
-
-def retry_required(value):
-    return value == ('skipped', 1)
-
-def pid_log_helper():
-    return f"PID: {os.getpid()}"  
 
 
 
+from diskcache import Cache
+attempt = contextvars.ContextVar("attempt")
+attempt2 = contextvars.ContextVar("attempt")
+total_count = contextvars.ContextVar("total")
+total_count2 = contextvars.ContextVar("total")
 
-async def download(c,ele,model_id,username):
-    # reduce number of logs
-    async with maxfile_sem:
-        templog_=logger.get_shared_logger(name=str(ele.id),main_=aioprocessing.Queue(),other_=aioprocessing.Queue())
-        innerlog.set(templog_)
+mpd_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+total_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
 
-        attempt.set(attempt.get(0) + 1)  
-        try:
-                with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
-                    if ele.url:
-                        return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
-                    elif ele.mpd:
-                        return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
-        except Exception as e:
-            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {e}")   
-            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] exception {traceback.format_exc()}")   
-            return 'skipped', 1
-        finally:
-            #dump logs stdout
-            log.handlers[0].queue.put(list(innerlog.get().handlers[0].queue.queue))
-            # we can put into seperate otherqueue_
-            log.handlers[1].queue.put(list(innerlog.get().handlers[1].queue.queue))
-async def main_download_helper(c,ele,path,username,model_id): 
-    path_to_file=None
-    innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")
-    total ,temp,path_to_file=await main_download_downloader(c,ele,path,username,model_id)
-    if temp=="forced_skipped":
-        return 'forced_skipped',0
-    elif total==0:
-        return ele.mediatype,total
-    elif not pathlib.Path(temp).exists():
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {temp} was not created") 
-        return "skipped",0
-     
-    elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-        return "skipped",0 
-    else:
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
-        #move temp file
-        if not path_to_file.exists():
-            shutil.move(temp,path_to_file)
-        elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
-            shutil.move(temp,path_to_file)
-        addLocalDir(path)
-        if ele.postdate:
-            newDate=dates.convert_local_time(ele.postdate)
-            innerlog.get().debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
-            set_time(path_to_file,newDate )
-            innerlog.get().debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
-        if ele.id:
-            await operations.write_media_table(ele,path_to_file,model_id,username)
-        set_cache_helper(ele)
-        return ele.mediatype,total
-
-        
-
-
-
- 
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def main_download_downloader(c,ele,path,username,model_id):
-    try:
-        url=ele.url
-        innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {ele.filename_} with {url}")
-        total=None
-        headers=None
-        path_to_file=None
-        temp=None
-        async with total_sem:
-            async with c.requests(url=url)() as r:
-                    if r.ok:
-                        rheaders=r.headers
-                        total = int(rheaders['Content-Length'])
-                        content_type = rheaders.get("content-type").split('/')[-1]
-                        if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
-                        if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
-                        filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-                        innerlog.get().debug(f"{get_medialog(ele)} filename from config {filename}")
-                        innerlog.get().debug(f"{get_medialog(ele)} full path from config {pathlib.Path(path,f'{filename}')}")
-                        path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-                        innerlog.get().debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
-                        if file_size_limit>0 and total > int(file_size_limit): 
-                                return 0,"forced_skipped",1  
-                        elif file_size_min>0 and total < int(file_size_min): 
-                                return 0,"forced_skipped",1  
-                        innerlog.get().debug(f"{get_medialog(ele)} passed size check with size {total}")    
-                        await pipe_.coro_send(  (None, 0,total))
-                    else:
-                        r.raise_for_status()  
-        if total==0:
-            innerlog.get().debug(f"{get_medialog(ele)} not downloading because content length was zero")
-            return total,temp,path_to_file
-   
-            
-
-
-
-        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-        pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False or total==0) else None
-        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size 
-        size=resume_size
-        filename=None  
-                          
-        if total!=resume_size:
-            async with sem:
-                headers={"Range":f"bytes={resume_size}-{total}"}
-                async with c.requests(url=url,headers=headers)() as r:
-                    if r.ok:
-                        pathstr=str(path_to_file)
-                        await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
-                                    "total":total,"visible":False})
-                        await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size})
-                        count=0
-                        with open(temp, 'ab') as f: 
-                            await pipe_.coro_send({"type":"update","args":(ele.id,),"visible":True})             
-                            async for chunk in r.iter_chunked(constants.maxChunkSize):
-                                count=count+1
-                                size=size+len(chunk)
-                                innerlog.get().trace(f"{get_medialog(ele)} Download:{size}/{total}")
-                                f.write(chunk)
-                                if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
-                      
-
-                            await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
-                    else:
-                        r.raise_for_status()                   
-        return total,temp,path_to_file
-
-    except Exception as E:
-        innerlog.get().traceback(traceback.format_exc())
-        innerlog.geft().traceback(E)
-        raise E
 
 
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
 
-async def alt_download_helper(c,ele,path,username,model_id):
 
-    innerlog.get().debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
-    innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {ele.filename_} with {ele.mpd}")
+@singledispatch
+def sem_wrapper(*args, **kwargs):
+    if len(args) == 1 and callable(args[0]):
+         return sem_wrapper(args[0])
+    return sem_wrapper(**kwargs)
+
+@sem_wrapper.register
+def _(input_sem: semaphoreDelayed):
+    return partial(sem_wrapper,input_sem=input_sem)
+
+
+@sem_wrapper.register
+def _(func:abc.Callable,input_sem:None|semaphoreDelayed=None):
+    async def inner(*args,input_sem=input_sem,**kwargs):
+        if input_sem==None:input_sem=sem 
+        await input_sem.acquire()
+        try:  
+            return await func(*args,**kwargs) 
+        except Exception as E:
+            raise E  
+        finally:
+            input_sem.release()  
+    return inner
+
+
+
+
+
+async def update_total(update):
+    global total_data
+    global lock
+    async with lock:
+        total_data+=update
+        
+
+
+
+async def process_dicts(username, model_id, medialist):
+    with stdout.lowstdout():
+        overall_progress=Progress(  TextColumn("{task.description}"),
+        BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+        job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(), \
+        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn(),disable=(config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars)==False)
+        
+        progress_group = Group(
+        overall_progress
+        , Panel(Group(job_progress,fit=True)))
+        # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
+      
+
+
+        global dirSet
+        dirSet=set()
+        global file_size_limit
+        file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(config_.read_config()) 
+        global file_size_min
+        file_size_min=args_.getargs().size_min or config_.get_filesize_limit(config_.read_config()) 
+      
+        global log
+        log=logging.getLogger(__package__)
+        #log directly to stdout
+        log.addHandler(logger.QueueHandler(logger.otherqueue_))
+        global log_trace
+        log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
+
+        global maxfile_sem
+        maxfile_sem = semaphoreDelayed(config_.get_maxfile_semaphores(config_.read_config()))
+        global total_data
+        total_data=0
+        global lock
+        lock=asyncio.Lock()
+
+     
+
+        
+        with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):               
+                aws=[]
+                photo_count = 0
+                video_count = 0
+                audio_count=0
+                skipped = 0
+                forced_skipped=0
+                total_downloaded = 0
+                desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})'    
+
+                async with sessionbuilder.sessionBuilder() as c:
+                    for ele in medialist:
+                        aws.append(asyncio.create_task(download(c,ele ,model_id, username,job_progress)))
+                    task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist),forced_skipped=forced_skipped, sumcount=0,total_bytes_download=0,total_bytes=0), total=len(aws),visible=True)
+                    progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
+                    for coro in asyncio.as_completed(aws):
+                            try:
+                                media_type, num_bytes_downloaded = await coro
+                            except Exception as e:
+                                log.traceback(e)
+                                log.traceback(traceback.format_exc())
+                                media_type = "skipped"
+                                num_bytes_downloaded = 0
+
+                            total_downloaded += num_bytes_downloaded
+                            total_bytes_downloaded=convert_num_bytes(total_downloaded)
+                            total_bytes=convert_num_bytes(total_data)
+                            if media_type == 'images':
+                                photo_count += 1 
+
+                            elif media_type == 'videos':
+                                video_count += 1
+                            elif media_type == 'audios':
+                                audio_count += 1
+                            elif media_type == 'skipped':
+                                skipped += 1
+                            elif media_type== 'forced_skipped':
+                                 forced_skipped+=1
+                            overall_progress.update(task1,description=desc.format(
+                                        p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped+forced_skipped,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
+        overall_progress.remove_task(task1)
+    setDirectoriesDate()
+    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    return photo_count+video_count+audio_count,skipped
+def retry_required(value):
+    return value == ('skipped', 1)
+
+async def download(c,ele,model_id,username,progress):
+
+    async with maxfile_sem:
+        try:
+                with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
+                    if ele.url:
+                        return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                    elif ele.mpd:
+                        return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                    else:
+                        return None
+        except Exception as e:
+            log.debug(f"exception {e}")   
+            log.debug(f"exception {traceback.format_exc()}")   
+            return 'skipped', 1
+async def main_download_helper(c,ele,path,username,model_id,progress):
+    path_to_file=None
+
+    log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
+    #total may be none if no .part file
+    data=await main_download_data(c,path,ele)
+    total ,temp,path_to_file=await main_download_downloader(c,ele,path,username,model_id,progress,data)
+    if temp=="forced_skipped":
+        return "forced_skipped",0
+    elif total==0:
+        return ele.mediatype,total
+    elif not pathlib.Path(temp).exists():
+        log.debug(f"{get_medialog(ele)} {temp} was not created") 
+        return "skipped",1
+    elif abs(total-pathlib.Path(temp).absolute().stat().st_size)>500:
+        log.debug(f"{get_medialog(ele)} size mixmatch target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        return "skipped",1 
+    else:
+        log.debug(f"{get_medialog(ele)} {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
+        log.debug(f"{get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
+        shutil.move(temp,path_to_file)
+        addGlobalDir(path)
+        if ele.postdate:
+            newDate=dates.convert_local_time(ele.postdate)
+            log.debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+            set_time(path_to_file,newDate )
+            log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+
+        if ele.id:
+            await operations.write_media_table(ele,path_to_file,model_id,username)
+        set_cache_helper(ele)
+        return ele.mediatype,total
+
+async def main_download_data(c,path,ele):
+    temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+    total_count.set(attempt.get(0) + 1) 
+    pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
+    if not paths.truncate(temp).exists():
+        return None
+    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @sem_wrapper(total_sem)
+    async def inner(c,ele):
+        try:    
+            url=ele.url
+            log.debug(f"{get_medialog(ele)} [attempt {total_count.get()}/{constants.NUM_TRIES}] Getting size of  media {ele.filename_} with {url}")
+            async with c.requests(url=url)() as r:
+                    if r.ok:
+                        rheaders=r.headers
+                        return rheaders
+                    else:
+                        r.raise_for_status()   
+        except Exception:
+            raise Exception 
+    return await inner(c,ele)
+
+
+
+
+
+
+async def main_download_downloader(c,ele,path,username,model_id,progress,data):  
+    if data and data.get('Content-Length'):
+            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+            content_type = data.get("content-type").split('/')[-1]
+            total=data.get('Content-Length')
+            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+            resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+            if total==0:
+                log.debug(f"{get_medialog(ele)} not downloading because content length was zero")                  
+                return total ,temp,path_to_file      
+            elif file_size_limit>0 and total > int(file_size_limit): 
+                return 0,"forced_skipped",1  
+            elif file_size_min>0 and total < int(file_size_min): 
+                return 0,"forced_skipped",1
+            if total<resume_size:
+                return total ,temp,path_to_file
+
+    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @sem_wrapper
+    async def inner(c,ele,path,username,model_id,progress,total):  
+        attempt.set(attempt.get(0) + 1) 
+        try: 
+            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
+            resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+            url=ele.url
+            headers=None if total==None else {"Range":f"bytes={resume_size}-{total}"}
+            async with c.requests(url=url,headers=headers)() as r:
+                    if r.ok:
+                        data=r.headers
+                        total=int(data['Content-Length'])
+                        if attempt.get()==1:await update_total(total)
+                        content_type = data.get("content-type").split('/')[-1]
+                        if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
+                        if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
+                        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+                        filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
+                        path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {path_to_file}")
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] passed size check with size {total}")   
+                        pathstr=str(path_to_file)
+                        if total==0:
+                            log.debug(f"{get_medialog(ele)} not downloading because content length was zero")                  
+                            return total ,temp,path_to_file      
+                        elif file_size_limit>0 and total > int(file_size_limit): 
+                            return 0,"forced_skipped",1  
+                        elif file_size_min>0 and total < int(file_size_min): 
+                            return 0,"forced_skipped",1
+                        log.debug(f"{get_medialog(ele)} passed size check with size {total}")    
+                        pathstr=str(path_to_file)
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        count=0
+                        with open(temp, 'ab') as f: 
+                            async for chunk in r.iter_chunked(constants.maxChunkSize):
+                                count=count+1
+                                log.trace(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}]  Download:{len(chunk)}/{(pathlib.Path(temp).absolute().stat().st_size)}")
+                                f.write(chunk)
+                                if count==constants.CHUNK_ITER:progress.update(task1, completed=(pathlib.Path(temp).absolute().stat().st_size));count=0
+                            progress.remove_task(task1)  
+                    else:
+                        r.raise_for_status()               
+            return total ,temp,path_to_file
+        except Exception as E:
+            log.traceback(traceback.format_exc())
+            log.traceback(E)
+            raise E
+    total=(data or {}).get('Content-Length')
+    return await inner(c,ele,path,username,model_id,progress,total)
+    
+async def alt_download_helper(c,ele,path,username,model_id,progress):
+    log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
-    innerlog.get().debug(f"{get_medialog(ele)} filename from config {filename}")
-    innerlog.get().debug(f"{get_medialog(ele)} full filepath from config{pathlib.Path(path,filename)}")
+    log.debug(f"{get_medialog(ele)} filename from config {filename}")
+    log.debug(f"{get_medialog(ele)} full filepath from config{pathlib.Path(path,filename)}")
     path_to_file = paths.truncate(pathlib.Path(path,filename))
-    innerlog.get().debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
+    log.debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
-    log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
+    log.debug(f"{get_medialog(ele)}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
-    #get total seperatly so we can check before download
-    audio=await alt_download_get_total(audio,c,ele)
-    video=await alt_download_get_total(video,c,ele)
-    if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
-        innerlog.get().debug(f"{get_medialog(ele)} over size limit") 
-        return 'forced_skipped', 1 
-    elif int(file_size_min)>0 and int(video["total"])+int(audio["total"]) < int(file_size_min): 
-        innerlog.get().debug(f"{get_medialog(ele)} under size min") 
-        return 'forced_skipped', 1
+    audio=await alt_download_get_total(audio,c,ele,path)
+    video=await alt_download_get_total(video,c,ele,path)   
+
+    audio=await alt_download_downloader(audio,c,ele,path,progress)
+    video=await alt_download_downloader(video,c,ele,path,progress) 
+    if audio["total"]==0 and video["total"]==0:
+        return ele.mediatype,audio["total"]+video["total"]
+    elif int(file_size_limit)>0 and int(video["total"] or 0)+int(audio["total"] or 0) > int(file_size_limit): 
+            log.debug(f"{get_medialog(ele)} over size limit") 
+            return 'forced_skipped', 0
+    elif int(file_size_min)>0 and int(video["total"])+int(audio["total"]  or sys.maxsize) < int(file_size_min): 
+            log.debug(f"{get_medialog(ele)} under size min") 
+            return 'forced_skipped', 0
     elif int(video["total"])==0 or int(audio["total"])==0:
-        innerlog.get().debug("skipping because content length was zero") 
-        return ele.mediatype,audio["total"]+video["total"] 
-    audio=await alt_download_downloader(audio,c,ele,path)
-    video=await alt_download_downloader(video,c,ele,path)
-    innerlog.get().debug(f"{get_medialog(ele)} passed size check with size {int(video['total']) + int(audio['total'])}")    
+            log.debug("skipping because content length was zero") 
+            return ele.mediatype,audio["total"]+video["total"]
+    
     for item in [audio,video]:
-        innerlog.get().debug(f"temporary file name for protected media {item['path']}") 
+        log.debug(f"temporary file name for protected media {item['path']}")
         if not pathlib.Path(item["path"]).exists():
-                innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['path']} was not created") 
-                return "skipped",0
+                log.debug(f"{get_medialog(ele)} {item['path']} was not created") 
+                return "skipped",1
         elif abs(item["total"]-pathlib.Path(item['path']).absolute().stat().st_size)>500:
-            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {item['name']} size mixmatch target: {item['total']} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
-            return "skipped",0 
-                
+            log.debug(f"{get_medialog(ele)} {item['name']} size mixmatch target: {item['total']} vs actual: {pathlib.Path(item['path']).absolute().stat().st_size}")   
+            return "skipped",1             
     for item in [audio,video]:
         key=None
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
         if  keymode== "manual": key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  
         elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
         elif keymode=="cdrm": key=await key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
-        elif keymode=="cdrm2": key=await key_helper_cdrm2(c,item["pssh"],ele.license,ele.id)  
+        elif keymode=="cdrm2": key=await key_helper_cdrm2(c,item["pssh"],ele.license,ele.id) 
         if key==None:
-            innerlog.get().debug(f"{get_medialog(ele)} Could not get key")
-            return "skipped",0 
-        innerlog.get().debug(f"{get_medialog(ele)} got key")
+            log.debug(f"{get_medialog(ele)} Could not get key")
+            return "skipped",1 
+        log.debug(f"{get_medialog(ele)} got key")
         newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
-        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
+        log.debug(f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
         r=subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if not pathlib.Path(newpath).exists():
-            innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt failed")
-            innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt {r.stderr.decode()}")
-            innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt {r.stdout.decode()}")
+            log.debug(f"{get_medialog(ele)} mp4decrypt failed")
+            log.debug(f"{get_medialog(ele)} mp4decrypt {r.stderr.decode()}")
+            log.debug(f"{get_medialog(ele)} mp4decrypt {r.stdout.decode()}")
         else:
-            innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt success {newpath}")    
+            log.debug(f"{get_medialog(ele)} mp4decrypt success {newpath}")    
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     
@@ -562,26 +413,29 @@ async def alt_download_helper(c,ele,path,username,model_id):
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
-        innerlog.get().debug(f"{get_medialog(ele)} ffmpeg failed")
-        innerlog.get().debug(f"{get_medialog(ele)} ffmpeg {t.stderr.decode()}")
-        innerlog.get().debug(f"{get_medialog(ele)} ffmpeg {t.stdout.decode()}")
+        log.debug(f"{get_medialog(ele)} ffmpeg failed")
+        log.debug(f"{get_medialog(ele)} ffmpeg {t.stderr.decode()}")
+        log.debug(f"{get_medialog(ele)} ffmpeg {t.stdout.decode()}")
 
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
-    innerlog.get().debug(f"Moving intermediate path {temp_path} to {path_to_file}")
+    log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")
     shutil.move(temp_path,path_to_file)
-    addLocalDir(path_to_file)
+    addGlobalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
-        innerlog.get().debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
+        log.debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
         set_time(path_to_file,newDate )
-        innerlog.get().debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
+        log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         await operations.write_media_table(ele,path_to_file,model_id,username)
     return ele.mediatype,audio["total"]+video["total"]
 
+
+@sem_wrapper(mpd_sem)
 async def alt_download_preparer(ele):
-    mpd=await ele.parse_mpd
+    log.debug(f"{get_medialog(ele)} Attempting to get info for {ele.filename_} with {ele.mpd}")
+    mpd=await ele.parse_mpd    
     for period in mpd.periods:
                 for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
                     kId=None
@@ -607,75 +461,137 @@ async def alt_download_preparer(ele):
                         audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                         break
     return audio,video
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def alt_download_get_total(item,c,ele):
-    try:
-        base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
-        url=f"{base_url}{item['origname']}"
-        params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-        total=None
-        async with total_sem:
+
+async def alt_download_downloader(item,c,ele,path,progress):
+    base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
+    url=f"{base_url}{item['origname']}"
+    log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
+    params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+    temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+    item["path"]=temp
+    if item["total"]==0:
+        return item
+    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @sem_wrapper    
+    async def inner(item,c,ele,progress):
+        if ele["type"]=="video":_attempt=attempt
+        if ele["type"]=="audio":_attempt=attempt2
+        _attempt.set(_attempt.get(0) + 1) 
+        try:
+            pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
+            resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
+            total=item["total"]
+            if total>resume_size:
+                if _attempt.get(0) + 1==1:await update_total(total)
+                headers= {"Range":f"bytes={resume_size}-{total}"} if total else None
+                async with c.requests(url=url,headers=headers,params=params)() as l:                
+                    if l.ok:
+                        pathstr=str(temp)
+                        item["total"]=total or int(l.headers['Content-Length'])
+                        total=item["total"]
+                        if total==0:
+                            return item   
+                        log.debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        progress.update(task1, advance=resume_size)
+                        with open(temp, 'ab') as f:                           
+                            size=0
+                            count=0
+                            async for chunk in l.iter_chunked(constants.maxChunkSize):
+                                size=size+len(chunk)
+                                count=count+1
+                                log.trace(f"{get_medialog(ele)} Download:{len(chunk)}/{(pathlib.Path(temp).absolute().stat().st_size)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
+                                f.write(chunk)
+                                if count==constants.CHUNK_ITER:progress.update(task1, completed=(pathlib.Path(temp).absolute().stat().st_size));count=0
+                            progress.remove_task(task1)
+                    else:
+                        l.raise_for_status()
+                        return item
+            return item
+                
+        except Exception as E:
+            log.traceback(traceback.format_exc())
+            log.traceback(E)
+            raise E
+    return await inner(item,c,ele,progress)
+   
+
+
+async def alt_download_get_total(item,c,ele,path):
+    temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+    pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
+    if not paths.truncate(temp).exists() and file_size_limit==0 and file_size_min==0:
+        item["total"]=None
+        return item
+    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @sem_wrapper(total_sem)
+    async def inner(item,c,ele):
+        if item["type"]=="video":_total_count=total_count
+        if item["type"]=="audio":_total_count=total_count2
+        _total_count.set(_total_count.get(0) + 1)  
+
+        try:
+            base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
+            url=f"{base_url}{item['origname']}"
+            log.debug(f"{get_medialog(ele)} [attempt {_total_count.get()}/{constants.NUM_TRIES}] Getting size of  media {ele.filename_} with {url}")
+            params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+            total=None
+
             async with c.requests(url=url,params=params)() as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
                 else:
                     r.raise_for_status()  
-        item["total"]=total
-        return item
-              
-    except Exception as E:
-        innerlog.get().traceback(traceback.format_exc())
-        innerlog.get().traceback(E)
-        raise E
+            item["total"]=total
+            return item
+                
+        except Exception as E:
+            log.traceback(traceback.format_exc())
+            log.traceback(E)
+            raise E
+    return await inner(item,c,ele)
+  
 
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def alt_download_downloader(item,c,ele,path):
+@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+async def key_helper(c,pssh,licence_url,id):
+    log.debug(f"ID:{id} using auto key helper")
+    cache = Cache(paths.getcachepath())
     try:
-        base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
-        url=f"{base_url}{item['origname']}"
-        innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
-        params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
-        pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
-        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-        total=item["total"]
-        #send total since it passed test
-        await pipe_.coro_send(  (None, 0,total))
-        if total!=resume_size:
-            headers={"Range":f"bytes={resume_size}-{total}"} 
-            async with sem:
-                async with c.requests(url=url,headers=headers,params=params)() as l:                
-                    if l.ok:
-                        pathstr=str(temp)
-                        await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
-                                        "total":total,"visible":False})
-                        await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size}) 
-                        count=0
-                        size=resume_size                  
-                        with open(temp, 'ab') as f:                           
-                            await pipe_.coro_send({"type":"update","args":(ele.id,),"visible":False})
-                            async for chunk in l.iter_chunked(constants.maxChunkSize):
-                                count=count+1
-                                size=size+len(chunk)
-                                innerlog.get().trace(f"{get_medialog(ele)} Download:{size}/{total}")
-                                f.write(chunk)
-                                if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":size});count=0
-                        await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
-                    else:
-                        l.raise_for_status()
-        item["path"]=temp
-        return item
-              
+        out=cache.get(licence_url)
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
+        if out!=None:
+            log.debug(f"ID:{id} auto key helper got key from cache")
+            return out
+        headers=auth.make_headers(auth.read_auth())
+        headers["cookie"]=auth.get_cookies()
+        auth.create_sign(licence_url,headers)
+        json_data = {
+            'license': licence_url,
+            'headers': json.dumps(headers),
+            'pssh': pssh,
+            'buildInfo': '',
+            'proxy': '',
+            'cache': True,
+        }
+        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+            httpcontent=await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, 'html.parser')
+            out=soup.find("li").contents[0]
+            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+            cache.close()
+        return out
     except Exception as E:
-        innerlog.get().traceback(traceback.format_exc())
-        innerlog.get().traceback(E)
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
         raise E
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
-    log.debug(f"ID:{id} using cdrm auto key helper")
     cache = Cache(paths.getcachepath())
+    log.debug(f"ID:{id} using cdrm auto key helper")
     try:
         out=cache.get(licence_url)
         log.debug(f"ID:{id} pssh: {pssh!=None}")
@@ -707,17 +623,16 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
         log.traceback(traceback.format_exc())
         raise E       
 
-
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm2(c,pssh,licence_url,id):
-    innerlog.get().debug(f"ID:{id} using cdrm auto key helper")
     cache = Cache(paths.getcachepath())
+    log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
         out=cache.get(licence_url)
-        innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-        innerlog.get().debug(f"ID:{id} licence: {licence_url}")
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
-            innerlog.get().debug(f"ID:{id} cdrm auto key helper got key from cache")
+            log.debug(f"ID:{id} cdrm2 auto key helper got key from cache")
             return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
@@ -732,27 +647,28 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
         }
         async with c.requests(url='http://172.106.17.134:8080/wv',method="post",json=json_data)() as r:
             httpcontent=await r.text_()
-            innerlog.get().debug(f"ID:{id} key_response: {httpcontent}")
+            log.debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
             out=soup.find("li").contents[0]
             cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
             cache.close()
         return out
     except Exception as E:
-        innerlog.get().traceback(E)
-        innerlog.get().traceback(traceback.format_exc())
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
         raise E
+
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):
-    innerlog.get().debug(f"ID:{id} using keydb auto key helper")
+    log.debug(f"ID:{id} using keydb auto key helper")
     cache = Cache(paths.getcachepath())
     try:
-        out=out=cache.get(licence_url)
-        innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-        innerlog.get().debug(f"ID:{id} licence: {licence_url}")
+        out=cache.get(licence_url)
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
-            innerlog.get().debug(f"ID:{id} keydb auto key helper got key from cache")
+            log.debug(f"ID:{id} keydb auto key helper got key from cache")
             return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
@@ -772,62 +688,61 @@ async def key_helper_keydb(c,pssh,licence_url,id):
             "X-API-Key": config_.get_keydb_api(config_.read_config()),
         }
    
-        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:            
+
+
+
+
+        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
             data=await r.json()
-            innerlog.get().debug(f"keydb json {data}")
+            log.debug(f"keydb json {data}")
             if  isinstance(data,str): out=data
             elif  isinstance(data,object): out=data["keys"][0]["key"]
             cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
             cache.close()
         return out
     except Exception as E:
-        innerlog.get().traceback(E)
-        innerlog.get().traceback(traceback.format_exc())
-        raise E       
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        raise E  
+
 async def key_helper_manual(c,pssh,licence_url,id):
-    innerlog.get().debug(f"ID:{id} using manual key helper")
     cache = Cache(paths.getcachepath())
-    try:
-        out=cache.get(licence_url)
-        if out!=None:
-            innerlog.get().debug(f"ID:{id} manual key helper got key from cache")
-            return out
-        innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-        innerlog.get().debug(f"ID:{id} licence: {licence_url}")
+    log.debug(f"ID:{id} using manual key helper")
+    out=cache.get(licence_url)
+    if out!=None:
+        log.debug(f"ID:{id} manual key helper got key from cache")
+        return out
+    log.debug(f"ID:{id} pssh: {pssh!=None}")
+    log.debug(f"ID:{id} licence: {licence_url}")
 
-        # prepare pssh
-        pssh = PSSH(pssh)
-
-
-        # load device
-        private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
-        client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
-        device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
+    # prepare pssh
+    pssh = PSSH(pssh)
 
 
-        # load cdm
-        cdm = Cdm.from_device(device)
+    # load device
+    private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
+    client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
+    device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
 
-        # open cdm session
-        session_id = cdm.open()
 
-        
-        keys=None
-        challenge = cdm.get_license_challenge(session_id, pssh)
-        async with c.requests(url=licence_url,method="post",data=challenge)() as r:
-            cache = Cache(paths.getcachepath())
-            cdm.parse_license(session_id, (await r.content.read()))
-            keys = cdm.get_keys(session_id)
-            cdm.close(session_id)
-        keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
-        key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-        cache.set(licence_url,key, expire=constants.KEY_EXPIRY)
-        return key
-    except Exception as E:
-        innerlog.get().traceback(E)
-        innerlog.get().traceback(traceback.format_exc())
-        raise E   
+    # load cdm
+    cdm = Cdm.from_device(device)
+
+    # open cdm session
+    session_id = cdm.open()
+
+    
+    keys=None
+    challenge = cdm.get_license_challenge(session_id, pssh)
+    async with c.requests(url=licence_url,method="post",data=challenge)() as r:
+        cdm.parse_license(session_id, (await r.content.read()))
+        keys = cdm.get_keys(session_id)
+        cdm.close(session_id)
+    keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
+    key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
+    cache.set(licence_url,key, expire=constants.KEY_EXPIRY)
+    return key
+
                 
 
     
@@ -859,35 +774,25 @@ def get_error_message(content):
 
 def set_cache_helper(ele):
     cache = Cache(paths.getcachepath())
-
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
         cache.close()
 
 
-def addLocalDir(path):
-    localdirSet.add(path.resolve().parent)
-def addGlobalDir(newSet):
-    global dirSet
-    global dir_lock
-    with dir_lock:
-        dirSet.update(newSet)
+def addGlobalDir(path):
+    dirSet.add(path.parent)
+
+
 def setDirectoriesDate():
-    global dirSet
-    log=logging.getLogger("shared")
-    log.info( f" {pid_log_helper()} Setting Date for modified directories")
+    log.info("Setting Date for modified directories")
     output=set()
-    rootDir=pathlib.Path(config_.get_save_location(config_.read_config())).resolve()
+    rootDir=pathlib.Path(config_.get_save_location(config_.read_config()))
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:
-            log.debug(f"{pid_log_helper()} Setting Dates ele:{ele} rootDir:{rootDir}")
+            log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent
-    log.debug(f"{pid_log_helper()} Directories list {rootDir}")
+    log.debug(f"Directories list {rootDir}")
     for ele in output:
-        try:
-            set_time(ele,dates.get_current_time())
-        except PermissionError as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
+        set_time(ele,dates.get_current_time())

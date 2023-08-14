@@ -34,7 +34,7 @@ class sessionBuilder:
         self._async=True
         if self._backend=="aio":
             self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self._total_timeout, connect=self._connect_timeout,
-                      sock_connect=self._connect_timeout, sock_read=None),connector = aiohttp.TCPConnector(limit=constants.MAX_SEMAPHORE*3))
+                      sock_connect=self._connect_timeout, sock_read=None),connector = aiohttp.TCPConnector(limit=0))
         
         
         elif self._backend=="httpx":

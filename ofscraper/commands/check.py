@@ -69,11 +69,11 @@ def process_download_cart():
                     log.info(f"Downloading Invidual media for {username} {media.filename}")
                     operations.create_tables(model_id,username)
                     operations.write_profile_table(model_id,username)
-                    values=download.process_dicts(
+                    values= asyncio.run(download.process_dicts(
                     username,
                     model_id,
-                    [media],
-                    )
+                     [media],
+                    ))
                     if values==None or values[-1]==1:
                         raise Exception("Download is marked as skipped")
                     log.info("Download Finished")

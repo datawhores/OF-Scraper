@@ -337,7 +337,7 @@ def config_prompt_advanced(config_) -> dict:
             'type': 'number',
             'name': 'threads',
             "message":"Number of Download processes/threads: ",
-            'min_allowed':1,
+            'min_allowed':0,
             'max_allowed':os.cpu_count()-1,
              "validate":EmptyInputValidator(),
             'long_instruction':f"Value can be 1-{os.cpu_count()-1}",
