@@ -165,6 +165,7 @@ async def process_dicts(username, model_id, medialist):
                 skipped = 0
                 forced_skipped=0
                 total_downloaded = 0
+                sum=0
                 desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})'    
 
                 async with sessionbuilder.sessionBuilder() as c:
@@ -195,8 +196,9 @@ async def process_dicts(username, model_id, medialist):
                                 skipped += 1
                             elif media_type== 'forced_skipped':
                                  forced_skipped+=1
+                            sum+=1
                             overall_progress.update(task1,description=desc.format(
-                                        p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=video_count+audio_count+photo_count+skipped+forced_skipped,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
+                                        p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=sum,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
         overall_progress.remove_task(task1)
     setDirectoriesDate()
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
@@ -283,7 +285,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
     if data and data.get('Content-Length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             content_type = data.get("content-type").split('/')[-1]
-            total=data.get('Content-Length')
+            total=int(data.get('Content-Length'))
             filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
             path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
             resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
@@ -348,7 +350,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
             log.traceback(traceback.format_exc())
             log.traceback(E)
             raise E
-    total=(data or {}).get('Content-Length')
+    total=(data or {}).get('Content-Length',)
     return await inner(c,ele,path,username,model_id,progress,total)
     
 async def alt_download_helper(c,ele,path,username,model_id,progress):
@@ -481,7 +483,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
             pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
             resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
             total=item["total"]
-            if total>resume_size:
+            if not total or total>resume_size:
                 if _attempt.get(0) + 1==1:await update_total(total)
                 headers= {"Range":f"bytes={resume_size}-{total}"} if total else None
                 async with c.requests(url=url,headers=headers,params=params)() as l:                
