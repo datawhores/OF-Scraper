@@ -225,8 +225,9 @@ def getargs(input=None):
     args=parser.parse_args(input)
  
 
-    #deduplicate posts
+    #fix args
     args.posts=list(set(args.posts or []))
+    args.excluded_post=list(set(args.excluded_posts or []))
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
     args.label=set(args.label) if args.label else args.label
