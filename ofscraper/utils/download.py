@@ -312,7 +312,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
             log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
             resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
             url=ele.url
-            headers=None if total==None else {"Range":f"bytes={resume_size}-{total}"}
+            headers=None if not pathlib.Path(temp).exists() else {"Range":f"bytes={resume_size}-{total}"}
             async with c.requests(url=url,headers=headers)() as r:
                     if r.ok:
                         data=r.headers
@@ -491,7 +491,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
             total=item["total"]
             if not total or total>resume_size:
                 if _attempt.get(0) + 1==1:await update_total(total)
-                headers= {"Range":f"bytes={resume_size}-{total}"} if total else None
+                headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
                 async with c.requests(url=url,headers=headers,params=params)() as l:                
                     if l.ok:
                         pathstr=str(temp)
