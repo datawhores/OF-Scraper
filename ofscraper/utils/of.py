@@ -204,26 +204,26 @@ def process_areas(ele, model_id) -> list:
     if "Skip" in args_.getargs().posts:
         return []
   
-    if  (not 'Profile' in args_.getargs().excluded_posts and 'Profile' in args_.getargs().posts or 'All' in args_.getargs().posts):
+    if  (not 'Profile' in args_.getargs().excluded_posts and ('Profile' in args_.getargs().posts or 'All' in args_.getargs().posts)):
         profile_dicts  = process_profile(username)
-    if (not 'Pinned' in args_.getargs().excluded_posts and 'Pinned' in args_.getargs().posts or 'All' in args_.getargs().posts):
+    if (not 'Pinned' in args_.getargs().excluded_posts and ('Pinned' in args_.getargs().posts or 'All' in args_.getargs().posts)):
             pinned_post_dict = process_pinned_posts(model_id,username)
-    if (not 'Timeline' in args_.getargs().excluded_posts and'Timeline' in args_.getargs().posts or 'All' in args_.getargs().posts):
+    if (not 'Timeline' in args_.getargs().excluded_posts and ('Timeline' in args_.getargs().posts or 'All' in args_.getargs().posts)):
             timeline_posts_dicts = process_timeline_posts( model_id,username)
-    if (not 'Archived' in args_.getargs().excluded_posts and 'Archived' in args_.getargs().posts or 'All' in args_.getargs().posts):
+    if (not 'Archived' in args_.getargs().excluded_posts and ('Archived' in args_.getargs().posts or 'All' in args_.getargs().posts)):
             archived_posts_dicts = process_archived_posts( model_id,username)
-    if not 'Messages' in args_.getargs().excluded_posts and 'Messages' in args_.getargs().posts or 'All' in args_.getargs().posts:
+    if not 'Messages' in args_.getargs().excluded_posts and ('Messages' in args_.getargs().posts or 'All' in args_.getargs().posts):
             messages_dicts = process_messages( model_id,username)
-    if not "Purchased"  in args_.getargs().excluded_posts and "Purchased" in args_.getargs().posts or "All" in args_.getargs().posts:
+    if not "Purchased"  in args_.getargs().excluded_posts and ("Purchased" in args_.getargs().posts or "All" in args_.getargs().posts):
             purchased_dict=process_paid_post(model_id,username)
-    if not 'Highlights'  in args_.getargs().excluded_posts and 'Highlights'  in args_.getargs().posts or 'All' in args_.getargs().posts:
+    if not 'Highlights'  in args_.getargs().excluded_posts and ('Highlights'  in args_.getargs().posts or 'All' in args_.getargs().posts):
             highlights_dicts = process_highlights( model_id,username)  
-    if not 'Stories'  in args_.getargs().excluded_posts and 'Stories'  in args_.getargs().posts or 'All' in args_.getargs().posts:
+    if not 'Stories'  in args_.getargs().excluded_posts and ('Stories'  in args_.getargs().posts or 'All' in args_.getargs().posts):
             stories_dicts = process_stories( model_id,username)         
             
             
 
-    if (not 'Labels' in args_.getargs().excluded_posts and "Labels" in args_.getargs().posts or "All" in args_.getargs().posts) and ele["active"]:
+    if (not 'Labels' in args_.getargs().excluded_posts and ("Labels" in args_.getargs().posts or "All" in args_.getargs().posts) and ele["active"]):
         labels_dicts = process_labels(model_id,username)             
     return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts, labels_dicts]))
