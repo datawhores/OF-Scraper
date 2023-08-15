@@ -299,7 +299,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
                 return 0,"forced_skipped",1  
             elif file_size_min>0 and total < int(file_size_min): 
                 return 0,"forced_skipped",1
-            if total<resume_size:
+            if total<=resume_size:
                 return total ,temp,path_to_file
 
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
@@ -335,6 +335,8 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
                             return 0,"forced_skipped",1  
                         elif file_size_min>0 and total < int(file_size_min): 
                             return 0,"forced_skipped",1
+                        if total<=resume_size:
+                            return total ,temp,path_to_file
                         log.debug(f"{get_medialog(ele)} passed size check with size {total}")    
                         pathstr=str(path_to_file)
                         task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
@@ -375,6 +377,7 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
     audio=await alt_download_downloader(audio,c,ele,path,progress)
     video=await alt_download_downloader(video,c,ele,path,progress) 
     if audio["total"]==0 and video["total"]==0:
+        log.debug("skipping because content length was zero") 
         return ele.mediatype,audio["total"]+video["total"]
     elif int(file_size_limit)>0 and int(video["total"] or 0)+int(audio["total"] or 0) > int(file_size_limit): 
             log.debug(f"{get_medialog(ele)} over size limit") 
@@ -382,9 +385,9 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
     elif int(file_size_min)>0 and int(video["total"])+int(audio["total"]  or sys.maxsize) < int(file_size_min): 
             log.debug(f"{get_medialog(ele)} under size min") 
             return 'forced_skipped', 0
-    elif int(video["total"])==0 or int(audio["total"])==0:
-            log.debug("skipping because content length was zero") 
-            return ele.mediatype,audio["total"]+video["total"]
+    log.debug(f"{get_medialog(ele)} passed size check with size {int(video['total']) + int(audio['total'])}")    
+
+
     
     for item in [audio,video]:
         log.debug(f"temporary file name for protected media {item['path']}")

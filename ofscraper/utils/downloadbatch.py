@@ -315,7 +315,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     attempt2=contextvars.ContextVar("attempt")
     global total_count
     total_count=contextvars.ContextVar("attempt")   
-
+    global total_count2
+    total_count2=contextvars.ContextVar("attempt")   
  
     medialist=list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
@@ -480,7 +481,7 @@ async def main_download_downloader(c,ele,path,username,model_id,data):
                 return 0,"forced_skipped",1  
             elif file_size_min>0 and total < int(file_size_min): 
                 return 0,"forced_skipped",1
-            if total<resume_size:
+            if total<=resume_size:
                 return total ,temp,path_to_file
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     @sem_wrapper
@@ -518,6 +519,8 @@ async def main_download_downloader(c,ele,path,username,model_id,data):
                             return 0,"forced_skipped",1  
                         elif file_size_min>0 and total < int(file_size_min): 
                             return 0,"forced_skipped",1
+                        elif total<=resume_size:
+                            return total ,temp,path_to_file
                         count=0
                         with open(temp, 'ab') as f: 
                             await pipe_.coro_send({"type":"update","args":(ele.id,),"visible":True})             
@@ -560,20 +563,20 @@ async def alt_download_helper(c,ele,path,username,model_id):
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
-    #get total seperatly so we can check before download
+
     audio=await alt_download_get_total(audio,c,ele)
     video=await alt_download_get_total(video,c,ele)
+
+    audio=await alt_download_downloader(audio,c,ele,path,progress)
+    video=await alt_download_downloader(video,c,ele,path,progress) 
+    if audio["total"]==0 and video["total"]==0:
+        return ele.mediatype,audio["total"]+video["total"]
     if int(file_size_limit)>0 and int(video["total"])+int(audio["total"]) > int(file_size_limit): 
         innerlog.get().debug(f"{get_medialog(ele)} over size limit") 
         return 'forced_skipped', 1 
     elif int(file_size_min)>0 and int(video["total"])+int(audio["total"]) < int(file_size_min): 
         innerlog.get().debug(f"{get_medialog(ele)} under size min") 
         return 'forced_skipped', 1
-    elif int(video["total"])==0 or int(audio["total"])==0:
-        innerlog.get().debug("skipping because content length was zero") 
-        return ele.mediatype,audio["total"]+video["total"] 
-    audio=await alt_download_downloader(audio,c,ele,path)
-    video=await alt_download_downloader(video,c,ele,path)
     innerlog.get().debug(f"{get_medialog(ele)} passed size check with size {int(video['total']) + int(audio['total'])}")    
     for item in [audio,video]:
         innerlog.get().debug(f"temporary file name for protected media {item['path']}") 
@@ -656,27 +659,45 @@ async def alt_download_preparer(ele):
                         audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                         break
     return audio,video
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def alt_download_get_total(item,c,ele):
-    try:
-        base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
-        url=f"{base_url}{item['origname']}"
-        params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-        total=None
-        async with total_sem:
+async def alt_download_get_total(item,c,ele,path):
+    temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+    pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
+    if not paths.truncate(temp).exists() and file_size_limit==0 and file_size_min==0:
+        item["total"]=None
+        return item
+    @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+    @sem_wrapper(total_sem)
+    async def inner(item,c,ele):
+        if item["type"]=="video":_total_count=total_count
+        if item["type"]=="audio":_total_count=total_count2
+        _total_count.set(_total_count.get(0) + 1)  
+
+        try:
+            base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
+            url=f"{base_url}{item['origname']}"
+            innerlog.get().debug(f"{get_medialog(ele)} [attempt {_total_count.get()}/{constants.NUM_TRIES}] Getting size of  media {ele.filename_} with {url}")
+            params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+            total=None
+
             async with c.requests(url=url,params=params)() as r:
                 if r.ok:
                     rheaders=r.headers
                     total = int(rheaders['Content-Length'])
                 else:
                     r.raise_for_status()  
-        item["total"]=total
-        return item
-              
-    except Exception as E:
-        innerlog.get().traceback(traceback.format_exc())
-        innerlog.get().traceback(E)
-        raise E
+            item["total"]=total
+            return item
+                
+        except Exception as E:
+            innerlog.get().debug(f"[bold] {get_medialog(ele)} get alt total:[/bold]{r.status}")
+            innerlog.get().debug(f"[bold] {get_medialog(ele)} get alt total:[/bold] {await r.text_()}")
+            innerlog.get().debug(f"[bold] {get_medialog(ele)} get alt total[/bold] {r.headers}")            
+            innerlog.get().traceback(traceback.format_exc())
+            innerlog.get().traceback(E)
+            raise E
+    return await inner(item,c,ele)
+  
+
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def alt_download_downloader(item,c,ele,path):
