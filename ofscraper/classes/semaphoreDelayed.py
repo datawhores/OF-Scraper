@@ -14,4 +14,4 @@ class semaphoreDelayed(asyncio.Semaphore):
         self._delay = value
     async def acquire(self):
         await super().acquire()
-        await asyncio.sleep(self._delay)
+        if self._delay>0:await asyncio.sleep(self._delay)

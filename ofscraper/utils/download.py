@@ -222,7 +222,6 @@ async def download(c,ele,model_id,username,progress):
             return 'skipped', 1
 async def main_download_helper(c,ele,path,username,model_id,progress):
     path_to_file=None
-
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     #total may be none if no .part file
     data=await main_download_data(c,path,ele)
@@ -357,7 +356,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
             log.traceback(traceback.format_exc())
             log.traceback(E)
             raise E
-    total=(data or {}).get('Content-Length',)
+    total=(data or {}).get('Content-Length')
     return await inner(c,ele,path,username,model_id,progress,total)
     
 async def alt_download_helper(c,ele,path,username,model_id,progress):
@@ -503,7 +502,6 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
                         progress.update(task1, advance=resume_size)
                         with open(temp, 'ab') as f:                           
-                            size=0
                             count=0
                             async for chunk in l.iter_chunked(constants.maxChunkSize):
                                 size=size+len(chunk)

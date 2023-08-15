@@ -61,7 +61,7 @@ def create_parser(input=None):
     )
 
     post.add_argument(
-        '-eo', '--excluded-posts', help = 'Don\'t Download specified content from a model. Has preference over all',default=[],required=False,type = posttype_helper,action='extend'
+        '-eo', '--excluded-posts', help = 'Don\'t Download specified content from a model. Has preference over all',default=[],required=False,type = exposttype_helper,action='extend'
     )
 
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or temporary post",action="store_true")
@@ -269,6 +269,15 @@ def posttype_helper(x):
         x=list(map(lambda x:x.capitalize() ,x))
     if len(list(filter(lambda y: y not in choices,x)))>0:
         raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels','skip')")
+    return x
+
+def exposttype_helper(x):
+    choices=set(["Highlights","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Labels","Skip"])
+    if isinstance(x,str):
+        x=x.split(',')
+        x=list(map(lambda x:x.capitalize() ,x))
+    if len(list(filter(lambda y: y not in choices,x)))>0:
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels','skip')")
     return x
 
 def mediatype_helper(x):
