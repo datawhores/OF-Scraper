@@ -57,7 +57,11 @@ def create_parser(input=None):
 
     post.add_argument("-e","--dupe",action="store_true",default=False,help="Bypass the dupe check and redownload all files")
     post.add_argument(
-        '-o', '--posts', help = 'Download content from a model',default=[],required=False,type = posttype_helper,action='extend'
+        '-o', '--posts', help = 'Download specified content from a model',default=[],required=False,type = posttype_helper,action='extend'
+    )
+
+    post.add_argument(
+        '-eo', '--excluded-posts', help = 'Don\'t Download specified content from a model. Has preference over all',default=[],required=False,type = posttype_helper,action='extend'
     )
 
     post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or temporary post",action="store_true")
