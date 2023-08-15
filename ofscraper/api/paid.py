@@ -26,7 +26,6 @@ from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 from diskcache import Cache
-from ..utils.paths import getcachepath
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_ 
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -90,29 +89,34 @@ async def scrape_paid(c,username,job_progress,offset=0):
     global tasks
     media = None
     attempt.set(attempt.get(0) + 1)
-    await sem.acquire()
-    task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
-    async with c.requests(url=constants.purchased_contentEP.format(offset,username))() as r:
-        sem.release()
-        if r.ok:
-            data=await r.json_()
-            log.trace("paid raw {posts}".format(posts=  data))
-            attempt.set(0)
-            media=list(filter(lambda x:isinstance(x,list),data.values()))[0]
-            log.debug(f"offset:{offset} -> media found {len(media)}")
-            log.debug(f"offset:{offset} -> hasmore value in json {data.get('hasMore','undefined') }")
-            log.debug(f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}")
-            if  data.get("hasMore"):
-                offset += len(media)
-                tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress,offset=offset)))
-            job_progress.remove_task(task)
+    try:
+        task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}",visible=True)
+        await sem.acquire()
+        async with c.requests(url=constants.purchased_contentEP.format(offset,username))() as r:
+            sem.release()
+            if r.ok:
+                data=await r.json_()
+                log.trace("paid raw {posts}".format(posts=  data))
+                attempt.set(0)
+                media=list(filter(lambda x:isinstance(x,list),data.values()))[0]
+                log.debug(f"offset:{offset} -> media found {len(media)}")
+                log.debug(f"offset:{offset} -> hasmore value in json {data.get('hasMore','undefined') }")
+                log.debug(f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}")
+                if  data.get("hasMore"):
+                    offset += len(media)
+                    tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress,offset=offset)))
+                job_progress.remove_task(task)
 
-        else:
-            log.debug(f"[bold]paid response status code:[/bold]{r.status}")
-            log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]paid headers:[/bold] {r.headers}")
-            job_progress.remove_task(task)
-            r.raise_for_status()
+            else:
+                log.debug(f"[bold]paid response status code:[/bold]{r.status}")
+                log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]paid headers:[/bold] {r.headers}")
+                job_progress.remove_task(task)
+                r.raise_for_status()
+    except Exception as E:
+        raise E
+    finally:
+        sem.release()
     return media
 
 
@@ -134,10 +138,11 @@ async def get_all_paid_posts():
     page_count=0
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
         async with sessionbuilder.sessionBuilder() as c:
-            allpaid=cache.get(f"purchased_all",default=[]) if not args_.getargs().no_cache else []
+            if not args_.getargs().no_cache:allpaid=cache.get(f"purchased_all",default=[])
+            else:allpaid=[]
             log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
             
-        
+
             if len(allpaid)>min_posts:
                 splitArrays=[i for i in range(0, len(allpaid), min_posts)]
                 #use the previous split for timesamp
@@ -154,7 +159,10 @@ async def get_all_paid_posts():
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
             while len(tasks)!=0:
                 for coro in asyncio.as_completed(tasks):
-                    result=await coro or []
+                    try:
+                        result=await coro or []
+                    except Exception as E:
+                        continue
                     page_count=page_count+1
                     overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                     output.extend(result)

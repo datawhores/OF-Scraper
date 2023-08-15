@@ -200,7 +200,7 @@ async def process_dicts(username, model_id, medialist):
                                         p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=sum,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
         overall_progress.remove_task(task1)
     setDirectoriesDate()
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {skipped} skipped)' )
+    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {forced_skipped} skipped, {skipped} failed)' )
     return photo_count+video_count+audio_count,skipped
 def retry_required(value):
     return value == ('skipped', 1)
@@ -270,9 +270,14 @@ async def main_download_data(c,path,ele):
                         rheaders=r.headers
                         return rheaders
                     else:
+                        log.debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {r.status}")
+                        log.debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await r.text_()}")
+                        log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {r.headers}")                           
                         r.raise_for_status()   
-        except Exception:
-            raise Exception 
+        except Exception as E:
+            log.traceback(traceback.format_exc())
+            log.traceback(E)                
+            raise E
     return await inner(c,ele)
 
 
@@ -343,6 +348,9 @@ async def main_download_downloader(c,ele,path,username,model_id,progress,data):
                                 if count==constants.CHUNK_ITER:progress.update(task1, completed=(pathlib.Path(temp).absolute().stat().st_size));count=0
                             progress.remove_task(task1)  
                     else:
+                        log.debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
+                        log.debug(f"[bold {get_medialog(ele)} ]main download  response text [/bold]: {await r.text_()}")
+                        log.debug(f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}")
                         r.raise_for_status()               
             return total ,temp,path_to_file
         except Exception as E:
@@ -475,11 +483,10 @@ async def alt_download_downloader(item,c,ele,path,progress):
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     @sem_wrapper    
     async def inner(item,c,ele,progress):
-        if ele["type"]=="video":_attempt=attempt
-        if ele["type"]=="audio":_attempt=attempt2
+        if item["type"]=="video":_attempt=attempt
+        if item["type"]=="audio":_attempt=attempt2
         _attempt.set(_attempt.get(0) + 1) 
         try:
-            pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
             resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
             total=item["total"]
             if not total or total>resume_size:
@@ -506,13 +513,16 @@ async def alt_download_downloader(item,c,ele,path,progress):
                                 if count==constants.CHUNK_ITER:progress.update(task1, completed=(pathlib.Path(temp).absolute().stat().st_size));count=0
                             progress.remove_task(task1)
                     else:
+                        log.debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
+                        log.debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
+                        log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
                         return item
             return item
                 
         except Exception as E:
             log.traceback(traceback.format_exc())
-            log.traceback(E)
+            log.traceback(E)   
             raise E
     return await inner(item,c,ele,progress)
    
@@ -548,46 +558,15 @@ async def alt_download_get_total(item,c,ele,path):
             return item
                 
         except Exception as E:
+            log.debug(f"[bold] {get_medialog(ele)} get alt total:[/bold]{r.status}")
+            log.debug(f"[bold] {get_medialog(ele)} get alt total:[/bold] {await r.text_()}")
+            log.debug(f"[bold] {get_medialog(ele)} get alt total[/bold] {r.headers}")            
             log.traceback(traceback.format_exc())
             log.traceback(E)
             raise E
     return await inner(item,c,ele)
   
 
-@retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def key_helper(c,pssh,licence_url,id):
-    log.debug(f"ID:{id} using auto key helper")
-    cache = Cache(paths.getcachepath())
-    try:
-        out=cache.get(licence_url)
-        log.debug(f"ID:{id} pssh: {pssh!=None}")
-        log.debug(f"ID:{id} licence: {licence_url}")
-        if out!=None:
-            log.debug(f"ID:{id} auto key helper got key from cache")
-            return out
-        headers=auth.make_headers(auth.read_auth())
-        headers["cookie"]=auth.get_cookies()
-        auth.create_sign(licence_url,headers)
-        json_data = {
-            'license': licence_url,
-            'headers': json.dumps(headers),
-            'pssh': pssh,
-            'buildInfo': '',
-            'proxy': '',
-            'cache': True,
-        }
-        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
-            httpcontent=await r.text_()
-            log.debug(f"ID:{id} key_response: {httpcontent}")
-            soup = BeautifulSoup(httpcontent, 'html.parser')
-            out=soup.find("li").contents[0]
-            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
-            cache.close()
-        return out
-    except Exception as E:
-        log.traceback(E)
-        log.traceback(traceback.format_exc())
-        raise E
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
@@ -612,14 +591,20 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
             'cache': True,
         }
         async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
-            httpcontent=await r.text_()
-            log.debug(f"ID:{id} key_response: {httpcontent}")
-            soup = BeautifulSoup(httpcontent, 'html.parser')
-            out=soup.find("li").contents[0]
-            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
-            cache.close()
-        return out
-    except Exception as E:
+            if r.ok:
+                httpcontent=await r.text_()
+                log.debug(f"ID:{id} key_response: {httpcontent}")
+                soup = BeautifulSoup(httpcontent, 'html.parser')
+                out=soup.find("li").contents[0]
+                cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+                cache.close()
+            else:
+                log.debug(f"[bold]  key helper cdrm status[/bold]: {r.status}")
+                log.debug(f"[bold]  key helper cdrm text [/bold]: {await r.text_()}")
+                log.debug(f"[bold]  key helper cdrm headers [/bold]: {r.headers}") 
+                r.raise_for_status()
+            return out
+    except Exception as E:        
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E       
@@ -647,14 +632,20 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
             'cache': True,
         }
         async with c.requests(url='http://172.106.17.134:8080/wv',method="post",json=json_data)() as r:
-            httpcontent=await r.text_()
-            log.debug(f"ID:{id} key_response: {httpcontent}")
-            soup = BeautifulSoup(httpcontent, 'html.parser')
-            out=soup.find("li").contents[0]
-            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
-            cache.close()
+            if r.ok:
+                httpcontent=await r.text_()
+                log.debug(f"ID:{id} key_response: {httpcontent}")
+                soup = BeautifulSoup(httpcontent, 'html.parser')
+                out=soup.find("li").contents[0]
+                cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+                cache.close()
+            else:
+                log.debug(f"[bold]  key helper cdrm2 status[/bold]: {r.status}")
+                log.debug(f"[bold]  key helper cdrm2 text [/bold]: {await r.text_()}")
+                log.debug(f"[bold]  key helper cdrm2 headers [/bold]: {r.headers}")    
+                r. raise_for_status()  
         return out
-    except Exception as E:
+    except Exception as E:    
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E
@@ -694,14 +685,20 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
 
         async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
-            data=await r.json()
-            log.debug(f"keydb json {data}")
-            if  isinstance(data,str): out=data
-            elif  isinstance(data,object): out=data["keys"][0]["key"]
-            cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
-            cache.close()
+            if r.ok:
+                data=await r.json()
+                log.debug(f"keydb json {data}")
+                if  isinstance(data,str): out=data
+                elif  isinstance(data,object): out=data["keys"][0]["key"]
+                cache.set(licence_url,out, expire=constants.KEY_EXPIRY)
+                cache.close()
+            else:
+                log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")
+                log.debug(f"[bold]  key helper keydb text [/bold]: {await r.text_()}")
+                log.debug(f"[bold]  key helper keydb headers [/bold]: {r.headers}")  
+                r.raise_for_status()
         return out
-    except Exception as E:
+    except Exception as E:         
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E  

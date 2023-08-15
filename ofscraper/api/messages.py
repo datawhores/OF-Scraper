@@ -61,7 +61,8 @@ async def get_messages(model_id):
     min_posts=50
     with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c: 
-            oldmessages=cache.get(f"messages_{model_id}",default=[]) if not args_.getargs().no_cache else []
+            if not args_.getargs().no_cache:oldmessages=cache.get(f"messages_{model_id}",default=[])  
+            else: oldmessages=[];setCache=False
             log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))
 
             log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
@@ -135,8 +136,8 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
     ep = constants.messagesNextEP if message_id else constants.messagesEP
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'}{url}")
-
-    async with sem:
+    try:
+        await sem.acquire()
         async with c.requests(url=url)() as r:
             task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Message ID-> {message_id if message_id else 'initial'}")
             if r.ok:
@@ -174,7 +175,10 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
 
                 progress.remove_task(task)
                 r.raise_for_status()
-
+    except Exception as E:
+        raise E
+    finally:
+        sem.release()
     return messages
 
 def get_individual_post(model_id,postid,c=None):

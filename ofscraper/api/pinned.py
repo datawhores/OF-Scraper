@@ -52,10 +52,10 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
         ep=constants.timelinePinnedEP
         url=ep.format(model_id)
     log.debug(url)
-    async with sem:
+    try:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
+        await sem.acquire()
         async with c.requests(url=url)() as r:
-    
             if r.ok:
                 progress.remove_task(task)
 
@@ -80,8 +80,11 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
                 log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                 progress.remove_task(task)
                 r.raise_for_status()
-
-        return posts
+    except Exception as E:
+        raise E
+    finally:
+        sem.release()
+    return posts
 
 async def get_pinned_post(model_id): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting pinned media...\n{task.description}"))

@@ -9,8 +9,6 @@ r"""
 import time
 import asyncio
 import logging
-import ssl
-import certifi
 import contextvars
 import math
 from diskcache import Cache
@@ -53,8 +51,9 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
         ep=constants.timelineEP
         url=ep.format(model_id)
     log.debug(url)
-    async with sem:
+    try:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
+        await sem.acquire()
         async with  c.requests(url=url)() as r:
             if r.ok:
                 progress.remove_task(task)
@@ -87,6 +86,10 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                     log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                     progress.remove_task(task)
                     r.raise_for_status()
+    except Exception as E:
+        raise E
+    finally:
+        sem.release()
     return posts
 
 
@@ -104,12 +107,13 @@ async def get_timeline_post(model_id):
     min_posts=50
     responseArray=[]
     page_count=0
-    setcache=True
+    setCache=True
     
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         async with sessionbuilder.sessionBuilder() as c:
             cache = Cache(getcachepath())
-            oldtimeline=cache.get(f"timeline_{model_id}",default=[]) if not args_.getargs().no_cache else []
+            if not args_.getargs().no_cache: oldtimeline=cache.get(f"timeline_{model_id}",default=[])
+            else: oldtimeline=[];setCache=False
             log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
             log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
             oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
@@ -132,7 +136,7 @@ async def get_timeline_post(model_id):
                     try:
                         result=await coro or []
                     except Exception as E:
-                        setcache=False
+                        setCache=False
                         continue
                     page_count=page_count+1
                     overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
@@ -151,7 +155,7 @@ async def get_timeline_post(model_id):
     log.trace(f"timeline dupeset postids {dupeSet}")
     log.trace("post raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo timeline: {str(x)}",unduped)))))
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    if setcache and not (args_.getargs().before or args_.getargs().after):
+    if setCache and not (args_.getargs().before or args_.getargs().after):
         cache.set(f"timeline_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped)),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"timeline_check_{model_id}",unduped,expire=constants.CHECK_EXPIRY)
         cache.close()
