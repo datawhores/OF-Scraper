@@ -41,7 +41,7 @@ def operation_wrapper_async(func:abc.Callable):
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
                 createDir(datebase_path.parent)
                 conn=sqlite3.connect(datebase_path,check_same_thread=False,timeout=10)
-                await loop.run_in_executor(PROCESS_POOL, partial(func,*args,**kwargs,conn=conn))
+                return await loop.run_in_executor(PROCESS_POOL, partial(func,*args,**kwargs,conn=conn))
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
                 raise E  
@@ -63,7 +63,7 @@ def operation_wrapper(func:abc.Callable):
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
                 createDir(datebase_path.parent)
                 conn=sqlite3.connect(datebase_path,check_same_thread=True,timeout=10)
-                func(*args,**kwargs,conn=conn) 
+                return func(*args,**kwargs,conn=conn) 
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
                 raise E  
