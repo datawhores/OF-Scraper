@@ -154,7 +154,7 @@ FFMPEG_WINDOWS="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/f
 FFMPEG_MAC="https://evermeet.cx/ffmpeg/ffmpeg-111111-gc44fe10160.zip"
 
 
-MAX_SEMAPHORE=8
+MAX_SEMAPHORE=14
 MAXFILE_SEMAPHORE=0
 AlT_SEM=4
 CODE_EXECUTION_DEFAULT =False
