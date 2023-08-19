@@ -149,6 +149,7 @@ def process_all_paid():
 
         for model_id,value in user_dict.items():
             username=profile.scrape_profile(model_id).get("username")
+            operations.create_tables(model_id=model_id,username=username)
             if username=="modeldeleted":
                 username=operations.get_profile_info(model_id=model_id,username=username) or username
             log.info(f"Processing {username}_{model_id}")
