@@ -9,9 +9,6 @@ services:
   ofscraper:
     container_name: ofscraper
     image: datawhores/of-scraper:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
     # #change the host mountpoint
