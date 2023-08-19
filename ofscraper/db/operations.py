@@ -48,15 +48,16 @@ def operation_wrapper_async(func:abc.Callable):
             except Exception as E:
                 raise E   
             finally:
+                conn.close()
                 await loop.run_in_executor(LOCK_POOL, partial(lock.release,force=True))
                 log.trace("Force Closing DB") 
-                conn.close()
+                
     return inner
 
 
 def operation_wrapper(func:abc.Callable):
     def inner(*args,**kwargs): 
-            lock=FileLock(getDB())
+            lock=FileLock(getDB(),timeout=-1)
             try:
                 lock.acquire(timeout=-1)  
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
@@ -69,9 +70,10 @@ def operation_wrapper(func:abc.Callable):
             except Exception as E:
                 raise E   
             finally:
+                conn.close()
                 lock.release(force=True)
                 log.trace("Force Closing DB") 
-                conn.close()
+               
     return inner
 
 @operation_wrapper

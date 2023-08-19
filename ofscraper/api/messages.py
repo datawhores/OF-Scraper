@@ -25,9 +25,7 @@ from rich.style import Style
 import arrow
 from diskcache import Cache
 import ofscraper.constants as constants
-import ofscraper.utils.auth as auth
 import ofscraper.utils.paths as paths
-from ..utils import auth
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_
