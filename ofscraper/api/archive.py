@@ -115,7 +115,8 @@ async def get_archived_post(model_id):
             log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
             oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
             postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
-            filteredArray=list(filter(lambda x:x>=(args_.getargs().after or arrow.get(0)).float_timestamp,postedAtArray))
+            after=args_.getargs().after or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
+            filteredArray=list(filter(lambda x:x>=after,postedAtArray))
             
 
             if len(filteredArray)>min_posts:
@@ -127,7 +128,7 @@ async def get_archived_post(model_id):
                 # keeping grabbing until nothign left
                 tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
             else:
-                tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
+                tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=after)))
         
 
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
@@ -144,19 +145,22 @@ async def get_archived_post(model_id):
                 time.sleep(1)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)
-    unduped=[]
-    dupeSet=set()
+    unduped={}
     log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
     for post in responseArray:
-        if post["id"] in dupeSet:
-            continue
-        dupeSet.add(post["id"])
-        unduped.append(post)
-    log.trace(f"archive dupeset postids {dupeSet}")
+        id=post["id"]
+        if unduped.get(id):continue
+        unduped[id]=post
+    log.trace(f"archive dupeset postids {list(unduped.keys())}")
     log.trace("archived raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo archive: {str(x)}",unduped)))))
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-    if setCache and not (args_.getargs().before or args_.getargs().after):
-        cache.set(f"archived_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped)),expire=constants.RESPONSE_EXPIRY)
-        cache.set(f"archived_check_{model_id}{model_id}",unduped,expire=constants.CHECK_EXPIRY)
+    if setCache:
+        newcache={}
+        for post in oldarchived+list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped.values())):
+            id=post["id"]
+            if newcache.get(id):continue
+            newcache[id]=post
+        cache.set(f"archived_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},newcache.values())),expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"archived_check_{model_id}{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
     return unduped                                

@@ -49,12 +49,5 @@ def download_picker(username, model_id, medialist):
                     medialist
                     ))
 
-LOCK_POOL = ThreadPoolExecutor(max_workers=1)
-
-
-@asynccontextmanager
-async def async_lock(lock: BaseFileLock):
     
-    await loop.run_in_executor(LOCK_POOL, lock.acquire)
-    yield
-    await loop.run_in_executor(LOCK_POOL, lock.release)                    
+

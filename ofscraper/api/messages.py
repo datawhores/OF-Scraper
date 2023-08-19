@@ -75,8 +75,7 @@ async def get_messages(model_id):
             IDArray=list(map(lambda x:x.get("id"),sorted(oldmessages,key=lambda x:arrow.get(x.get("createdAt") or x.get("postedAt") ).float_timestamp,reverse=True)))
             postedAtArray=postedAtArray[startdex:]
             IDArray=IDArray[startdex:]
-
-        
+   
             if len(IDArray)>min_posts:
                 splitArraysID=[IDArray[i:i+min_posts] for i in range(0, len(IDArray), min_posts)]
                 splitArraysTime=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
