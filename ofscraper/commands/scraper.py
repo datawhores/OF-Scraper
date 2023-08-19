@@ -143,8 +143,7 @@ def process_post_user_first():
                     log.info(f"Getting {','.join(args_.getargs().posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}")
                 try:
                     model_id = profile.get_id( ele["name"])
-                    operations.create_tables(model_id,ele['name'])
-                    operations.write_profile_table(model_id,ele['name'])
+                    operations.write_profile_table(model_id=model_id,username=ele['name'])
                     output.extend(OF.process_areas( ele, model_id)) 
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
@@ -156,8 +155,8 @@ def process_post_user_first():
             for value in user_dict.values():
                 model_id =value[0].post.model_id
                 username=value[0].post.username
-                operations.create_tables(model_id,username)
-                operations.write_profile_table(model_id,username)
+                operations.create_tables(model_id=model_id,username=username)
+                operations.write_profile_table(model_id=model_id,username=username)
                 misc.download_picker(
                     username,
                     model_id,
@@ -178,7 +177,7 @@ def normal_post_process():
             try:
                 model_id = profile.get_id( ele["name"])
                 operations.create_tables(model_id,ele['name'])
-                operations.write_profile_table(model_id,ele['name'])
+                operations.write_profile_table(model_id=model_id,username=ele['name'])
                 combined_urls=OF.process_areas( ele, model_id)
                 misc.download_picker(
                     ele["name"],
@@ -196,8 +195,8 @@ def normal_post_process():
                 for value in user_dict.values():
                     model_id =value[0].post.model_id
                     username=value[0].post.username
-                    operations.create_tables(model_id,username)
-                    operations.write_profile_table(model_id,username)
+                    operations.create_tables(model_id=model_id,username=username)
+                    operations.write_profile_table(model_id=model_id,username=username)
                     misc.download_picker(
                         username,
                         model_id,

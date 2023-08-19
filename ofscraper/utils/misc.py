@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 import platform
 import psutil
 import asyncio
@@ -8,6 +10,7 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.downloadbatch as batchdownloader
 import ofscraper.utils.download as download
 import ofscraper.utils.config as config_
+from filelock import BaseFileLock
 
 
 def getcpu_count():
@@ -19,7 +22,7 @@ def getcpu_count():
 def medialist_filter(medialist,model_id,username):
     log=logging.getLogger("shared")
     if not args_.getargs().dupe:
-        media_ids = set(operations.get_media_ids(model_id,username))
+        media_ids = set(operations.get_media_ids(model_id=model_id,username=username))
         log.debug(f"Number of unique media ids in database for {username}: {len(media_ids)}")
         medialist = seperate.separate_by_id(medialist, media_ids)
         log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")  
@@ -45,3 +48,13 @@ def download_picker(username, model_id, medialist):
                     model_id,
                     medialist
                     ))
+
+LOCK_POOL = ThreadPoolExecutor(max_workers=1)
+
+
+@asynccontextmanager
+async def async_lock(lock: BaseFileLock):
+    
+    await loop.run_in_executor(LOCK_POOL, lock.acquire)
+    yield
+    await loop.run_in_executor(LOCK_POOL, lock.release)                    

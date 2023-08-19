@@ -6,6 +6,7 @@ import ssl
 import platform
 import certifi
 import multiprocessing
+import logging
 from threading import Event
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
@@ -28,6 +29,9 @@ def main():
    
     try:
         logger.init_download_logger()
+        args=args_.getargs()
+        if vars(args).get("help"):
+            return
         main_event = Event()
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
@@ -40,9 +44,7 @@ def main():
         # allow background processes to start
         time.sleep(3)
 
-        args=args_.getargs()
-        if vars(args).get("help"):
-            sys.exit()
+   
     
 
         make_folders()
@@ -58,11 +60,13 @@ def main():
             manual.manual_download()
         else:
             scraper.main()
-        logger.get_shared_logger().handlers[0].queue.put("None")
-        logger.get_shared_logger().handlers[1].queue.put("None")
+        logging.getLogger("shared").handlers[0].queue.put("None")
+        logging.getLogger("shared").handlers[-1].queue.put("None")
+        
+
         main_log_thread.join()
         if other_log_process:other_log_process.join()
-        if other_log_thread:other_log_thread.join()
+        elif other_log_thread:other_log_thread.join()
     except KeyboardInterrupt as E:
             print("Force closing script")
             try:

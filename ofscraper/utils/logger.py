@@ -1,10 +1,9 @@
 import logging
 import re
 import logging
-import threading
-import time
 import copy
-import queue
+import threading
+import sys
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 
@@ -429,10 +428,11 @@ def start_other_thread(input_=None,name=None,count=1,event=None):
     
 def start_other_process(input_=None,name=None,count=1):
     def inner(input_=None,name=None,count=1):
-        thread=start_other_thread(input_=None,name=None,count=1)
-        thread.join()
-        time.sleep(10)
-    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count)) if (args.getargs().log or args.getargs().discord) else None
+        input_=input_ or otherqueue_
+        logger_other(input_,name,count)
+        
+
+    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count),daemon=True) if (args.getargs().log or args.getargs().discord) else None
     process.start() if process else None
     return process 
 

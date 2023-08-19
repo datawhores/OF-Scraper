@@ -51,7 +51,7 @@ def process_paid_post(model_id,username):
         log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
         log.debug("Removing locked paid media")
         for post in paid_content:
-            operations.write_post_table(post,model_id,username)
+            operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [output.extend(post.media) for post in paid_content]
         return list(filter(lambda x:isinstance(x,media.Media),output))
@@ -63,7 +63,7 @@ def process_stories( model_id,username):
         stories = asyncio.run(highlights.get_stories_post( model_id))
         stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))  
         for post in stories:
-            operations.write_stories_table(post,model_id,username)   
+            operations.write_stories_table(post,model_id=model_id,username=username)   
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
         output=[]
         [ output.extend(stories.media) for stories in stories]
@@ -76,7 +76,7 @@ def process_highlights( model_id,username):
         highlights_=asyncio.run(highlights.get_highlight_post( model_id))
         highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
         for post in highlights_:
-            operations.write_stories_table(post,model_id,username)
+            operations.write_stories_table(post,model_id=model_id,username=username)
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
         output=[]
         [ output.extend(stories.media) for stories in highlights_]
@@ -94,7 +94,7 @@ def process_timeline_posts(model_id,username,individual=False):
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")
         for post in timeline_posts:
-            operations.write_post_table(post,model_id,username)
+            operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
         return list(filter(lambda x:isinstance(x,media.Media),output))
@@ -107,7 +107,7 @@ def process_archived_posts( model_id,username):
         log.debug("Removing locked archived media")
 
         for post in archived_posts:
-            operations.write_post_table(post,model_id,username)
+            operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [ output.extend(post.media) for post in archived_posts ]
         return list(filter(lambda x:isinstance(x,media.Media),output))
@@ -122,7 +122,7 @@ def process_pinned_posts( model_id,username):
         log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
         log.debug("Removing locked pinned media")
         for post in  pinned_posts:
-            operations.write_post_table(post,model_id,username)
+            operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
         return list(filter(lambda x:isinstance(x,media.Media),output))
@@ -150,13 +150,13 @@ def process_all_paid():
         for model_id,value in user_dict.items():
             username=profile.scrape_profile(model_id).get("username")
             if username=="modeldeleted":
-                username=operations.get_profile_info(model_id,username) or username
+                username=operations.get_profile_info(model_id=model_id,username=username) or username
             log.info(f"Processing {username}_{model_id}")
             operations.create_tables(model_id,username)
             log.debug(f"Created table for {username}")
             new_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
             post_array.extend(new_posts)
-            [operations.write_post_table(post,model_id,username) for post in new_posts]
+            [operations.write_post_table(post,model_id=model_id,username=username) for post in new_posts]
             log.debug(f"Added Paid media for {username}_{model_id}")
 
                      
@@ -173,7 +173,7 @@ def process_labels(model_id, username):
         labelled_posts_ = asyncio.run(labels_api.get_labelled_posts(labels_, model_id))
         labelled_posts_= list(map(lambda x:labels.Label(x,model_id,username),labelled_posts_))
         for labelled_post in labelled_posts_:
-            operations.write_labels_table(labelled_post, model_id, username)
+            operations.write_labels_table(labelled_post, model_id=model_id,username=username)
 
         output = [post.media for labelled_post in labelled_posts_ for post in labelled_post.posts]
         return [item for sublist in output for item in sublist]

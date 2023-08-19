@@ -27,8 +27,8 @@ def manual_download(urls=None):
         model_id =value[0].post.model_id
         username=value[0].post.username
         log.info(f"Downloading individual media for {username}")
-        operations.create_tables(model_id,username)
-        operations.write_profile_table(model_id,username)
+        operations.create_tables(model_id=model_id,username=username)
+        operations.write_profile_table(model_id=model_id,username=username)
         asyncio.run(download.process_dicts(
         username,
         model_id,
