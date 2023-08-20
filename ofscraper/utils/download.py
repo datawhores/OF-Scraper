@@ -338,13 +338,15 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                                 return total ,temp,path_to_file
                             log.debug(f"{get_medialog(ele)} passed size check with size {total}")    
                             pathstr=str(path_to_file)
-                            task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                            downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+                            task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True if downloadprogress else False)
                             count=0
                             loop=asyncio.get_event_loop()
                             size=resume_size
+                            
                             async with aiofiles.open(temp, 'ab') as f:                           
                                     async for chunk in r.iter_chunked(constants.maxChunkSize):
-                                        count=count+1
+                                        if downloadprogress:count=count+1
                                         size=size+len(chunk)
                                         log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {attempt.get()}/{constants.NUM_TRIES}] ")
                                         await f.write(chunk)
@@ -516,7 +518,8 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         if check1:
                             return check1                
                         log.debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True)
+                        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True if downloadprogress else False)
                         progress.update(task1, advance=resume_size)
                         count=0
                         loop=asyncio.get_event_loop()
@@ -524,7 +527,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                 
                         async with aiofiles.open(temp, 'ab') as f:                           
                             async for chunk in l.iter_chunked(constants.maxChunkSize):
-                                count=count+1
+                                if downloadprogress:count=count+1
                                 size=size+len(chunk)
                                 log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
                                 await f.write(chunk)
