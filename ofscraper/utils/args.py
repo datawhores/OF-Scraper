@@ -272,12 +272,12 @@ def posttype_helper(x):
     return x
 
 def exposttype_helper(x):
-    choices=set(["Highlights","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Labels","Skip"])
+    choices=set(["Highlights","Archived","Messages","Timeline","Pinned","Stories","Purchased","Profile","Labels"])
     if isinstance(x,str):
         x=x.split(',')
         x=list(map(lambda x:x.capitalize() ,x))
     if len(list(filter(lambda y: y not in choices,x)))>0:
-        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels','skip')")
+        raise argparse.ArgumentTypeError("error: argument -o/--posts: invalid choice: (choose from 'highlights', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')")
     return x
 
 def mediatype_helper(x):
