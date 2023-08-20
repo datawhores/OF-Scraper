@@ -157,11 +157,13 @@ def process_post_user_first():
                 username=value[0].post.username
                 operations.create_tables(model_id=model_id,username=username)
                 operations.write_profile_table(model_id=model_id,username=username)
-                misc.download_picker(
+                results=misc.download_picker(
                     username,
                     model_id,
                     value,
                     )
+                misc.set_success(results,model_id)
+
 
 @exit.exit_wrapper
 def normal_post_process():
@@ -179,11 +181,12 @@ def normal_post_process():
                 operations.create_tables(model_id,ele['name'])
                 operations.write_profile_table(model_id=model_id,username=ele['name'])
                 combined_urls=OF.process_areas( ele, model_id)
-                misc.download_picker(
+                results=misc.download_picker(
                     ele["name"],
                     model_id,
                     combined_urls
                     )
+                misc.set_success(results,model_id)
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
@@ -197,11 +200,12 @@ def normal_post_process():
                     username=value[0].post.username
                     operations.create_tables(model_id=model_id,username=username)
                     operations.write_profile_table(model_id=model_id,username=username)
-                    misc.download_picker(
+                    results=misc.download_picker(
                         username,
                         model_id,
                         value,
                         )
+                    misc.set_success(results,model_id)
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     

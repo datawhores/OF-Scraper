@@ -11,7 +11,11 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.downloadbatch as batchdownloader
 import ofscraper.utils.download as download
 import ofscraper.utils.config as config_
+import ofscraper.utils.config as config_
+import ofscraper.utils.paths as paths
+import ofscraper.db.operations as operations
 
+from diskcache import Cache
 
 def getcpu_count():
     if platform.system() != 'Darwin':      
@@ -40,16 +44,27 @@ def download_picker(username, model_id, medialist):
     log=logging.getLogger("shared")
     if len(medialist)==0:
         log.error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)' )
+        return  0,0,0,0,0
     elif (len(medialist)>=config_.get_download_semaphores(config_.read_config())) and getcpu_count()>1 and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
-        batchdownloader.process_dicts(username, model_id, medialist)
+        return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-        asyncio.run(download.process_dicts(
+        return asyncio.run(download.process_dicts(
                     username,
                     model_id,
                     medialist
                     ))
+    
+
+def set_success(result,model_id):
+    if not args_.getargs().after or not args_.getargs().before:
+        cache = Cache(paths.getcachepath())
+        cache.set(f"last_success_{model_id}",True if result[0]==0 else False)
+        cache.close()
+    else:
+        cache.set(f"last_success_{model_id}",None)
+        cache.close()
+
 
     
 

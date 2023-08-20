@@ -40,6 +40,7 @@ filelock = "^3.12.2"
 aiosqlite = {git = "https://github.com/omnilib/aiosqlite"}
 aiofiles = "^23.2.1"
 uvloop = "^0.17.0"
+anyio = "^3.7.1"
 
 
 [tool.poetry.group.dev.dependencies]

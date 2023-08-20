@@ -209,9 +209,6 @@ async def process_dicts(username, model_id, medialist):
         overall_progress.remove_task(task1)
     setDirectoriesDate()
     log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {forced_skipped} skipped, {skipped} failed)' )
-    cache = Cache(paths.getcachepath())
-    cache.set(f"last_success_{model_id}",True if skipped==0 else False)
-    cache.close()
     return photo_count+video_count+audio_count,skipped
 
 def size_checker(path,ele,total,name=None):
