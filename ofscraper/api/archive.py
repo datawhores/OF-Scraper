@@ -107,7 +107,7 @@ async def get_archived_post(model_id):
     min_posts=50
     responseArray=[]
     page_count=0
-    setCache=True
+    setCache=True if not not args_.getargs().after else False
 
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         

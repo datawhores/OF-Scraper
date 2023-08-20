@@ -109,7 +109,7 @@ async def get_timeline_post(model_id):
     min_posts=50
     responseArray=[]
     page_count=0
-    setCache=True
+    setCache=True if not not args_.getargs().after else False
 
 
     cache = Cache(getcachepath())
