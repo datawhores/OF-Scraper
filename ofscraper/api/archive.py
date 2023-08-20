@@ -118,7 +118,9 @@ async def get_archived_post(model_id):
             log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
             oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
             postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
-            after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
+            after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
+            or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
+            or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
             filteredArray=list(filter(lambda x:x>=after,postedAtArray))
             
 

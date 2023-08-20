@@ -119,7 +119,9 @@ async def get_timeline_post(model_id):
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-    after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
+    after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
+    or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
+    or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
     filteredArray=list(filter(lambda x:x>=after,postedAtArray))
               
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
