@@ -2,7 +2,7 @@ import asyncio
 import time
 import logging
 import arrow
-
+import uvloop
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.api.subscriptions as subscriptions
@@ -142,7 +142,7 @@ def get_models(subscribe_count) -> list:
     Get user's subscriptions in form of a list.
     """
     with stdout.lowstdout():
-    
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy()) 
         out=[]
         list_subscriptions = asyncio.run(
             subscriptions.get_subscriptions(subscribe_count))

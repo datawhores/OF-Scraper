@@ -11,6 +11,7 @@ r"""
 import asyncio
 import time
 import logging
+import uvloop
 from itertools import chain
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
@@ -34,6 +35,8 @@ log=logging.getLogger("shared")
 
 def process_messages(model_id,username):
     with stdout.lowstdout():
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         messages_ =asyncio.run(messages.get_messages(  model_id)) 
         messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
         log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
@@ -46,6 +49,7 @@ def process_messages(model_id,username):
 
 def process_paid_post(model_id,username):
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         paid_content=asyncio.run(paid.get_paid_posts(username,model_id))
         paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
         log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
@@ -60,6 +64,7 @@ def process_paid_post(model_id,username):
 
 def process_stories( model_id,username):
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         stories = asyncio.run(highlights.get_stories_post( model_id))
         stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))  
         for post in stories:
@@ -73,6 +78,7 @@ def process_stories( model_id,username):
 
 def process_highlights( model_id,username):
      with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         highlights_=asyncio.run(highlights.get_highlight_post( model_id))
         highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
         for post in highlights_:
@@ -89,6 +95,7 @@ def process_highlights( model_id,username):
 
 def process_timeline_posts(model_id,username,individual=False):
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         timeline_posts = asyncio.run(timeline.get_timeline_post( model_id)) if not individual else timeline.get_individual_post(id)
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
@@ -101,6 +108,7 @@ def process_timeline_posts(model_id,username,individual=False):
 
 def process_archived_posts( model_id,username):
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         archived_posts = asyncio.run(archive.get_archived_post(model_id))
         archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
         log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
@@ -117,6 +125,7 @@ def process_archived_posts( model_id,username):
 
 def process_pinned_posts( model_id,username):
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         pinned_posts = asyncio.run(pinned.get_pinned_post( model_id))
         pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
         log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
@@ -142,6 +151,7 @@ def process_profile( username) -> list:
 
 def process_all_paid():
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         paid_content=asyncio.run(paid.get_all_paid_posts())
         user_dict={}
         post_array=[]
@@ -168,6 +178,7 @@ def process_all_paid():
 
 def process_labels(model_id, username):
     with stdout.lowstdout():
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         labels_ = asyncio.run(labels_api.get_labels(model_id))
 
         labels_=labels_ if not args_.getargs().label else list(filter(lambda x:x.get("name").lower() in args_.getargs().label ,labels_))

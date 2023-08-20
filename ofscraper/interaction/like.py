@@ -28,9 +28,9 @@ from rich.progress import (
     SpinnerColumn
 )
 from rich.style import Style
+import uvloop
 from ..api import timeline
 from ..constants import favoriteEP, postURL
-from ..utils import auth
 import ofscraper.api.archive as archive
 import ofscraper.api.pinned as pinned
 import ofscraper.utils.console as console
@@ -51,7 +51,7 @@ def get_posts( model_id):
     timeline_posts=[]
     archived_posts=[]
     args=args_.getargs()
-
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
     args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.like_areas_prompt())
     ))
@@ -87,10 +87,12 @@ def get_post_ids(posts: list) -> list:
 
 
 def like( model_id, username, ids: list):
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(_like(model_id, username, ids, True))
 
 
 def unlike( model_id, username, ids: list):
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(_like( model_id, username, ids, False))
 
 

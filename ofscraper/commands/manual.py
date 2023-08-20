@@ -13,12 +13,14 @@ import ofscraper.api.highlights as highlights_
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.of as of
+import ofscraper.utils.misc as misc
 
 
-log = logging.getLogger("shared")
 
 
 def manual_download(urls=None):
+    log = logging.getLogger("shared")
+
     media_dict=get_media_from_urls(urls)
     log.debug(f"Media dict length {len(list(media_dict.values()))}")
     for value in media_dict.values():
@@ -29,11 +31,10 @@ def manual_download(urls=None):
         log.info(f"Downloading individual media for {username}")
         operations.create_tables(model_id=model_id,username=username)
         operations.write_profile_table(model_id=model_id,username=username)
-        asyncio.run(download.process_dicts(
-        username,
+        misc.download_picker( username,
         model_id,
-        value,
-        ))
+        value)
+
     log.info(f"Finished")
 
 def get_media_from_urls(urls):

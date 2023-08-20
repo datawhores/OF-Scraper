@@ -110,7 +110,6 @@ async def get_pinned_post(model_id):
                     page_count=page_count+1
                     overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                     responseArray.extend(result)
-                time.sleep(1)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)
     unduped=[]

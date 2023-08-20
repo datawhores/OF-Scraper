@@ -26,7 +26,7 @@ ffmpeg-python = "^0.2.0"
 dunamai = "^1.17.0"
 poetry-dynamic-versioning = "^0.22.0"
 textual = "^0.27.0"
-aiohttp = {extras = ["speedups"], version = "^3.8.4"}
+aiohttp = {extras = ["speedups"], version = "^3.8.5"}
 faust-cchardet = "^2.1.18"
 certifi = "^2023.5.7"
 pycryptodome = "^3.18.0"
@@ -39,6 +39,7 @@ humanfriendly = "^10.0"
 filelock = "^3.12.2"
 aiosqlite = {git = "https://github.com/omnilib/aiosqlite"}
 aiofiles = "^23.2.1"
+uvloop = "^0.17.0"
 
 
 [tool.poetry.group.dev.dependencies]

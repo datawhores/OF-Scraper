@@ -8,6 +8,7 @@ r"""
 """
 import time
 import asyncio
+
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
@@ -36,6 +37,8 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 
 log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
+
+
 
 sem = semaphoreDelayed(constants.AlT_SEM)
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
@@ -76,7 +79,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
        
                     if required_ids==None:
                         attempt.set(0)
-                        tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                        tasks.append(uvloop.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
                     else:
                         [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
 
@@ -142,7 +145,6 @@ async def get_archived_post(model_id):
                     page_count=page_count+1
                     overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
                     responseArray.extend(result)
-                time.sleep(1)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)
     unduped={}

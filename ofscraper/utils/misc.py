@@ -4,13 +4,13 @@ import platform
 import psutil
 import asyncio
 import logging
+import uvloop
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
 import ofscraper.utils.downloadbatch as batchdownloader
 import ofscraper.utils.download as download
 import ofscraper.utils.config as config_
-from filelock import BaseFileLock
 
 
 def getcpu_count():
@@ -43,6 +43,8 @@ def download_picker(username, model_id, medialist):
     elif (len(medialist)>=config_.get_download_semaphores(config_.read_config())) and getcpu_count()>1 and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
         batchdownloader.process_dicts(username, model_id, medialist)
     else:
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
         asyncio.run(download.process_dicts(
                     username,
                     model_id,
