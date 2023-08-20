@@ -119,7 +119,7 @@ async def get_timeline_post(model_id):
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-    after=args_.getargs().after or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
+    after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
     filteredArray=list(filter(lambda x:x>=after,postedAtArray))
               
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
@@ -127,7 +127,7 @@ async def get_timeline_post(model_id):
             if len(filteredArray)>min_posts:
                 splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
                 #use the previous split for timestamp
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= args_.getargs().after.float_timestamp if args_.getargs().after else None)))
+                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp=after)))
                 [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
                 for i in range(1,len(splitArrays)-1)]
                 # keeping grabbing until nothing left
