@@ -174,7 +174,9 @@ async def get_timeline_post(model_id,username,after=None):
         cache.close()
     if setCache:
         lastpost=cache.get(f"timeline_{model_id}_lastpost")
-        post=sorted(unduped.values(),key=lambda x:x.get("postedAtPrecise"))[-1]
+        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))[-1]
+        if len(post)==0: return [] 
+        else: post=post[-1]
         if not lastpost:
             cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
             cache.close()

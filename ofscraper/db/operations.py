@@ -178,7 +178,25 @@ def write_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -
             conn.execute(queries.mediaInsert,insertData)
         conn.commit()
    
-  
+@operation_wrapper
+def get_timeline_post(model_id=None,username=None,conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getTimelineMedia)
+        data=list(map(lambda x:x,cur.fetchall()))
+        conn.commit()
+        return data
+    
+@operation_wrapper
+def get_archived_post(conn=None,**kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getArchivedMedia)
+        data=list(map(lambda x:x,cur.fetchall()))
+        conn.commit()
+        return data
+async def batch_mediainsert(media,funct,**kwargs):
+    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
+    [await ele for ele in tasks]
+ 
 
 
 @operation_wrapper_async
@@ -235,17 +253,6 @@ def write_labels_table(label: dict, model_id=None,username=None,conn=None):
                 conn.commit()
 
 
-@operation_wrapper
-def get_timeline_post(model_id=None,username=None,conn=None) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getTimelineMedia)
-        data=list(map(lambda x:x,cur.fetchall()))
-        conn.commit()
-        return data
-
-async def batch_mediainsert(media,funct,**kwargs):
-    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
-    [await ele for ele in tasks]
 
 def create_tables(model_id,username):
     create_post_table(model_id=model_id,username=username)

@@ -75,7 +75,10 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}")
                     log.trace("{log_id} -> archive raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo archive: {str(x)}",posts)))))
-
+                    if timestamp==None or timestamp==0:
+                        cache = Cache(getcachepath())
+                        cache.set(f"archived_{model_id}_firstpost",(float(posts[0]['postedAtPrecise']),posts[0]["id"]))         
+                        cache.close()
        
                     if required_ids==None:
                         attempt.set(0)
@@ -107,7 +110,7 @@ async def get_archived_post(model_id,username,after=None):
     min_posts=50
     responseArray=[]
     page_count=0
-    setCache=True if not not args_.getargs().after else False
+    setCache=True if not args_.getargs().after else False
 
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
         
@@ -123,9 +126,6 @@ async def get_archived_post(model_id,username,after=None):
             log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
             oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
             postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
-            after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
-            or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
-            or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
             after=after or get_after(model_id,username)
             filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
             
@@ -171,8 +171,19 @@ async def get_archived_post(model_id,username,after=None):
             if newcache.get(id):continue
             newcache[id]=post
         cache.set(f"archived_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},newcache.values())),expire=constants.RESPONSE_EXPIRY)
-        cache.set(f"archived_check_{model_id}{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
+        cache.set(f"archived_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
+    if setCache:
+        lastpost=cache.get(f"archived_{model_id}_lastpost")
+        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+        if len(post)==0: return [] 
+        else: post=post[-1]
+        if not lastpost:
+            cache.set(f"archived_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+            cache.close()
+        if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
+            cache.set(f"archived_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+            cache.close()        
     return list(unduped.values()  )                             
 
 def get_after(model_id,username):
@@ -183,8 +194,8 @@ def get_after(model_id,username):
         log.debug("initial archived 0")
         return 0
     if len(list(filter(lambda x:x[-2]==0,operations.get_archived_post(model_id=model_id,username=username))))==0:
-        log.debug("set initial timeline to lastpost")
-        return cache.get(f"timeline_{model_id}_lastpost")[0]
+        log.debug("set initial archived to lastpost")
+        return cache.get(f"archived_{model_id}_lastpost")[0]
     else:
-        log.debug("initial archived 0")
+        log.debug("archived archived 0")
         return 0
