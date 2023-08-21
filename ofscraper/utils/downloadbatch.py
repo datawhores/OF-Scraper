@@ -452,7 +452,7 @@ async def main_download_helper(c,ele,path,username,model_id):
         set_time(path_to_file,newDate )
         innerlog.get().debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
-        await operations.write_media_table(ele,path_to_file,model_id=model_id,username=username)
+        await operations.write_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
     set_cache_helper(ele)
     return ele.mediatype,total
 
@@ -615,7 +615,7 @@ async def alt_download_helper(c,ele,path,username,model_id):
         set_time(path_to_file,newDate )
         innerlog.get().debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
-        await operations.write_media_table(ele,path_to_file,model_id=model_id,username=username)
+        await operations.write_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
     return ele.mediatype,audio["total"]+video["total"]
 
 async def alt_download_preparer(ele):

@@ -46,7 +46,7 @@ async def get_messages(model_id):
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    setCache=True
+    setCache=True if not not args_.getargs().after else False
 
     global tasks
     
@@ -62,17 +62,23 @@ async def get_messages(model_id):
             if not args_.getargs().no_cache:oldmessages=cache.get(f"messages_{model_id}",default=[])  
             else: oldmessages=[];setCache=False
             log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))
-
             log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
             oldmessages=list(filter(lambda x:(x.get("createdAt") or x.get("postedAt"))!=None,oldmessages))
-            startdex=0 if len(oldmessages)==0 else \
-            max(([i for i in range(len(oldmessages)) if arrow.get(oldmessages[i].get("createdAt") or oldmessages[i].get("postedAt")) <=(args_.getargs().before or arrow.now())] or [len(oldmessages)])[0]-1,0)
-            log.debug(f"Setting Start Index at {startdex}")
-            postedAtArray=list(map(lambda x:
-            arrow.get(x.get("createdAt") or x.get("postedAt")).float_timestamp,sorted(oldmessages,key=lambda x:arrow.get(x.get("createdAt") or x.get("postedAt") ).float_timestamp,reverse=True)))
-            IDArray=list(map(lambda x:x.get("id"),sorted(oldmessages,key=lambda x:arrow.get(x.get("createdAt") or x.get("postedAt") ).float_timestamp,reverse=True)))
-            postedAtArray=postedAtArray[startdex:]
-            IDArray=IDArray[startdex:]
+            
+            [ele.update({"date":arrow.get(ele.get("createdAt") or ele.get("postedAt")).float_timestamp}) for ele in oldmessages]
+            sorted(oldmessages,key=lambda x:x.get("date"),reverse=True)
+            after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
+            or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
+            or (oldmessages[-1].get("date" )if len(oldmessages)>0 else None) or 0
+
+            filteredArray=list(filter(lambda x:x.get("date")>=after, oldmessages)) if len( oldmessages)>0 else []
+
+
+            
+            IDArray=list(map(lambda x:x.get("id"),filteredArray))
+            postedAtArray=list(map(lambda x:x.get("date"),filteredArray))
+            
+          
    
             if len(IDArray)>min_posts:
                 splitArraysID=[IDArray[i:i+min_posts] for i in range(0, len(IDArray), min_posts)]
@@ -80,18 +86,15 @@ async def get_messages(model_id):
 
                 #use the previous split for message_id
 
-                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if startdex==0 else splitArraysID[0][0] ,required_ids=set(splitArraysTime[0]))))
+                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if len(filteredArray)==len(oldmessages) else splitArraysID[0][0] ,required_ids=set(splitArraysTime[0]))))
                 [tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,required_ids=set(splitArraysTime[i]),message_id=splitArraysID[i-1][-1])))
                 for i in range(1,len(splitArraysID)-1)]
                 # keeping grabbing until nothing left
                 tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-2][-1])))
             else:
-                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if startdex==0 else postedAtArray[0])))
+                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if len(filteredArray)==len(oldmessages) else postedAtArray[0])))
         
-        
-            
-            
-
+    
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
 
 
@@ -107,22 +110,29 @@ async def get_messages(model_id):
                     responseArray.extend(result)
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)  
-    unduped=[]
+    unduped={}
     dupeSet=set()
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
+
+
     for message in responseArray:
-        if message["id"] in dupeSet:
-            continue
-        dupeSet.add(message["id"])
-        unduped.append(message)
+        id=message["id"]
+        if unduped.get(id):continue
+        unduped[id]=message
+
     log.trace(f"messages dupeset messageids {dupeSet}")
     log.trace("messages raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo message: {str(x)}",unduped)))))
-    if setCache and not (args_.getargs().before or args_.getargs().after):
-        cache.set(f"messages_{model_id}",list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped)),expire=constants.RESPONSE_EXPIRY)
-        cache.set(f"message_check_{model_id}",oldmessages,expire=constants.CHECK_EXPIRY)
-        cache.close()
 
-    return unduped    
+    if setCache:
+        newcache={}
+        for messages in oldmessages+list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped.values())):
+            id=messages["id"]
+            if newcache.get(id):continue
+            newcache[id]=message
+        cache.set(f"messages_{model_id}",list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped.values())),expire=constants.RESPONSE_EXPIRY)
+        cache.set(f"message_check__{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
+        cache.close()        
+    return unduped.values()    
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_messages(c, model_id, progress,message_id=None,required_ids=None) -> list:

@@ -113,7 +113,12 @@ async def get_archived_post(model_id):
         
         async with sessionbuilder.sessionBuilder()  as c: 
 
-            oldarchived=cache.get(f"archived_{model_id}",default=[])
+
+            if not args_.getargs().no_cache:  oldarchived=cache.get(f"archived__{model_id}",default=[])
+            else:  oldarchived=[];setCache=False
+
+
+
             log.trace("oldarchive {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldarchive: {str(x)}",oldarchived)))))
             log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
             oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
@@ -121,7 +126,7 @@ async def get_archived_post(model_id):
             after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
             or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
             or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
-            filteredArray=list(filter(lambda x:x>=after,postedAtArray))
+            filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
             
 
             if len(filteredArray)>min_posts:
@@ -158,7 +163,7 @@ async def get_archived_post(model_id):
     log.trace(f"archive dupeset postids {list(unduped.keys())}")
     log.trace("archived raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo archive: {str(x)}",unduped)))))
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-    if setCache:
+    if setCache and not args_.getargs().after:
         newcache={}
         for post in oldarchived+list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped.values())):
             id=post["id"]
@@ -167,4 +172,4 @@ async def get_archived_post(model_id):
         cache.set(f"archived_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},newcache.values())),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"archived_check_{model_id}{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
-    return unduped                                
+    return list(unduped.values()  )                             

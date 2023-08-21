@@ -134,9 +134,13 @@ def get_media_ids(model_id=None,username=None,conn=None) -> list:
         conn.commit()
         return list(map(lambda x:x[0],cur.fetchall()))
 @operation_wrapper
-def get_post_ids(model_id=None,username=None,conn=None) -> list:
+def get_all_post_ids(model_id=None,username=None,conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.allPOSTCheck)
+        conn.commit()
+        return list(map(lambda x:x[0],cur.fetchall()))
+
+
         conn.commit()
         return list(map(lambda x:x[0],cur.fetchall()))
 
@@ -152,10 +156,10 @@ def get_profile_info(model_id=None,username=None,conn=None) -> list:
 
 
 @operation_wrapper_async
-def write_media_table(media,filename,model_id=None,username=None,conn=None) -> list:  
+def write_media_table(media,filename,model_id=None,username=None,conn=None,downloaded=False) -> list:  
         insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
         math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
-        media.preview,media.linked, 1,media.date]
+        media.preview,media.linked, 1 if downloaded else 0,media.date]
         # if len( (await conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
         if len(conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
             conn.execute(queries.mediaInsert,insertData)
@@ -210,6 +214,18 @@ def write_labels_table(label: dict, model_id=None,username=None,conn=None):
                 cur.execute(queries.labelInsert,insertData)
                 conn.commit()
 
+
+@operation_wrapper
+def get_timeline_post(model_id=None,username=None,conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getTimelineMedia)
+        data=list(map(lambda x:x,cur.fetchall()))
+        conn.commit()
+        return data
+
+async def batch_mediainsert(media,funct,**kwargs):
+    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
+    [await ele for ele in tasks]
 
 def create_tables(model_id,username):
     create_post_table(model_id=model_id,username=username)

@@ -122,6 +122,11 @@ postDupeCheck=\
 SELECT * FROM posts where post_id=(?)
 """
 
+postNormalCheck=\
+"""
+SELECT post_id FROM posts where archived=False
+"""
+
 
 storiesInsert=\
 f"""INSERT INTO 'stories'(
@@ -146,6 +151,8 @@ SELECT post_id FROM medias
 """
 
 
+
+
 mediaInsert=\
 f"""INSERT INTO 'medias'(
 media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at)
@@ -156,9 +163,12 @@ mediaDupeCheck=\
 SELECT * FROM medias where media_id=(?)
 """
 
+
+getTimelineMedia=\
 """
-SELECT * FROM medias where media_id=(?)
+SELECT * FROM medias where api_type=('Timeline') OR api_type=('Post')
 """
+
 
 mediaUpdate=\
 f"""Update 'medias'

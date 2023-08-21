@@ -32,6 +32,9 @@ import ofscraper.api.labels as labels_api
 import ofscraper.classes.labels as labels
 
 log=logging.getLogger("shared")
+ 
+        
+     
 
 def process_messages(model_id,username):
     with stdout.lowstdout():
@@ -96,7 +99,7 @@ def process_highlights( model_id,username):
 def process_timeline_posts(model_id,username,individual=False):
     with stdout.lowstdout():
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        timeline_posts = asyncio.run(timeline.get_timeline_post( model_id)) if not individual else timeline.get_individual_post(id)
+        timeline_posts = asyncio.run(timeline.get_timeline_post( model_id,username)) if not individual else timeline.get_individual_post(id)
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")
@@ -104,6 +107,8 @@ def process_timeline_posts(model_id,username,individual=False):
             operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id,username))
+
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
 def process_archived_posts( model_id,username):
@@ -134,8 +139,9 @@ def process_pinned_posts( model_id,username):
             operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
+ 
         return list(filter(lambda x:isinstance(x,media.Media),output))
-
+ 
 def process_profile( username) -> list:
     with stdout.lowstdout():
         user_profile = profile.scrape_profile( username)

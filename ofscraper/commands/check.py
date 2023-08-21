@@ -124,7 +124,7 @@ def post_checker():
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
                 data=asyncio.run(
-                    timeline.get_timeline_post( model_id))
+                    timeline.get_timeline_post( model_id,user_name))
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"timeline_check_{model_id}", data, expire=constants.CHECK_EXPIRY)

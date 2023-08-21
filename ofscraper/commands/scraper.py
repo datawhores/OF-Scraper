@@ -221,7 +221,7 @@ def process_like():
         with stdout.lowstdout():
             for count,ele in enumerate(active):
                     log.info(f"Progress {count+1}/{length} model")
-                    model_id = profile.get_id( ele["name"])
+                    model_id = profile.get_id( ele["name"],ele["username"])
                     posts = like.get_posts(model_id)
                     unfavorited_posts = like.filter_for_unfavorited(posts)  
                     unfavorited_posts=filters.timeline_array_filter(unfavorited_posts)   
