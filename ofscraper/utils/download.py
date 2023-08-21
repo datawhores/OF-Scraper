@@ -271,7 +271,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
         log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
     if ele.id:
-        await operations.write_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
     set_cache_helper(ele)
     return ele.mediatype,total
 
@@ -434,7 +434,7 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
         set_time(path_to_file,newDate )
         log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
-        await operations.write_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
     return ele.mediatype,audio["total"]+video["total"]
 
 
@@ -486,6 +486,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
         item["total"]=int(data.get("content-length"))
         check1=check_forced_skip(ele,item["total"])
         temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+        item["path"]=temp
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         if check1:
             return check1
@@ -541,7 +542,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         l.raise_for_status()
                 size_checker(temp,ele,total) 
                 cache.touch(f"{ele.filename}_headers",1)              
-                return item           
+            return item           
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)   

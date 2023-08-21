@@ -144,6 +144,11 @@ allIDCheck=\
 SELECT media_id FROM medias
 """
 
+allDLIDCheck=\
+"""
+SELECT media_id FROM medias where downloaded=(1)
+"""
+
 
 allPOSTCheck=\
 """

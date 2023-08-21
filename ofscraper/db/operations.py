@@ -130,7 +130,7 @@ def create_media_table(model_id=None,username=None,conn=None):
 @operation_wrapper
 def get_media_ids(model_id=None,username=None,conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.allIDCheck)
+        cur.execute(queries.allDLIDCheck)
         conn.commit()
         return list(map(lambda x:x[0],cur.fetchall()))
 @operation_wrapper
@@ -156,9 +156,9 @@ def get_profile_info(model_id=None,username=None,conn=None) -> list:
 
 
 @operation_wrapper_async
-def write_media_table(media,filename,model_id=None,username=None,conn=None,downloaded=False) -> list:  
-        insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
-        math.ceil(pathlib.Path(filename).stat().st_size),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+def update_media_table(media,filename,conn=None,downloaded=False,**kwargs) -> list:  
+        insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
+        math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
         media.preview,media.linked, 1 if downloaded else 0,media.date]
         # if len( (await conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
         if len(conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
@@ -167,7 +167,17 @@ def write_media_table(media,filename,model_id=None,username=None,conn=None,downl
             insertData.append(media.id)
             conn.execute(queries.mediaUpdate,insertData)
         conn.commit()
-        
+
+
+@operation_wrapper_async
+def write_media_table(media,filename,conn=None,downloaded=False,**kwargs) -> list:  
+        if len(conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
+            insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
+        math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+        media.preview,media.linked, 1 if downloaded else 0,media.date]
+            conn.execute(queries.mediaInsert,insertData)
+        conn.commit()
+               
 
 
    
@@ -223,8 +233,8 @@ def get_timeline_post(model_id=None,username=None,conn=None) -> list:
         conn.commit()
         return data
 
-async def batch_mediainsert(media,funct,*args**kwargs):
-    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
+async def batch_mediainsert(media,funct,**kwargs):
+    tasks=[asyncio.create_task(funct(ele,None,**kwargs)) for ele in media]
     [await ele for ele in tasks]
 
 def create_tables(model_id,username):

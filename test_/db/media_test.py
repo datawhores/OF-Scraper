@@ -33,7 +33,7 @@ def test_media_insert(mocker):
             try:
                 mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
                 create_media_table(11111,"test")
-                write_media_table(Post(TIMELINE_EXAMPLE,model_id="11111",username="test").media[0],d.name,model_id="11111",username="test")
+                update_media_table(Post(TIMELINE_EXAMPLE,model_id="11111",username="test").media[0],d.name,model_id="11111",username="test")
             except Exception as E:
                 print(E,traceback.format_exc())
                 raise Exception
@@ -43,4 +43,4 @@ def test_media_insert_failure(mocker):
             with pytest.raises(Exception):
                 mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=p.name)
                 create_media_table(11111,"test")
-                write_media_table(Post(TIMELINE_EXAMPLE,"11111","test3").media[0],d.name,"11111","test32")
+                update_media_table(Post(TIMELINE_EXAMPLE,"11111","test3").media[0],d.name,"11111","test32")
