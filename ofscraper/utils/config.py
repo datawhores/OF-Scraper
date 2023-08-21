@@ -291,8 +291,8 @@ def get_metadata(config=None):
 def get_threads(config=None):
     if config==None:
         return constants.THREADS_DEFAULT  
-    threads=int(config.get('threads', constants.THREADS_DEFAULT))
-    if threads==None:threads=constants.THREADS_DEFAULT
+    if threads==None or threads=="":threads=int(constants.THREADS_DEFAULT)
+    else:threads=int(config.get('threads', constants.THREADS_DEFAULT))
     return threads
 
 def get_mp4decrypt(config=None):
