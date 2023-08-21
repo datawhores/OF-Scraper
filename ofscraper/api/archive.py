@@ -6,7 +6,6 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-import time
 import asyncio
 
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -32,6 +31,7 @@ from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.db.operations as operations
 
 
 
@@ -95,7 +95,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                     r.raise_for_status()
     return posts
 
-async def get_archived_post(model_id): 
+async def get_archived_post(model_id,username,after=None): 
     cache = Cache(getcachepath())
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting archived media...\n{task.description}"))
     job_progress=Progress("{task.description}")
@@ -126,6 +126,7 @@ async def get_archived_post(model_id):
             after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
             or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
             or (postedAtArray[-1] if len(postedAtArray)>0 else None) or 0
+            after=after or get_after(model_id,username)
             filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
             
 
@@ -173,3 +174,17 @@ async def get_archived_post(model_id):
         cache.set(f"archived_check_{model_id}{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
     return list(unduped.values()  )                             
+
+def get_after(model_id,username):
+    cache = Cache(getcachepath())
+    if args_.getargs().after:
+        return args_.getargs().after.float_timestamp
+    if not cache.get(f"archived_{model_id}_lastpost") or not cache.get(f"archived_{model_id}_firstpost"):
+        log.debug("initial archived 0")
+        return 0
+    if len(list(filter(lambda x:x[-2]==0,operations.get_archived_post(model_id=model_id,username=username))))==0:
+        log.debug("set initial timeline to lastpost")
+        return cache.get(f"timeline_{model_id}_lastpost")[0]
+    else:
+        log.debug("initial archived 0")
+        return 0

@@ -135,7 +135,7 @@ def post_checker():
                 user_dict[user_name].extend(oldarchive)
             else:
                 data=asyncio.run(
-                    archive.get_archived_post( model_id))
+                    archive.get_archived_post( model_id,user_name,after=0))
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"archived_check_{model_id}", data, expire=constants.CHECK_EXPIRY)

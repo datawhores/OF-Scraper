@@ -60,7 +60,7 @@ def get_posts( model_id,username):
     if ('Timeline' in args.posts or 'All' in args.posts):
         timeline_posts = asyncio.run(timeline.get_timeline_post( model_id,username,after=0))
     if ('Archived' in args.posts or 'All' in args.posts):
-        archived_posts = asyncio.run(archive.get_archived_post( model_id))
+        archived_posts = asyncio.run(archive.get_archived_post( model_id,username,after=0))
     log.debug(f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}")
     return pinned_posts + timeline_posts + archived_posts
 

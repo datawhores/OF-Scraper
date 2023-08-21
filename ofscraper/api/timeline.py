@@ -6,7 +6,6 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-import time
 import asyncio
 import logging
 import contextvars
@@ -30,7 +29,6 @@ from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
 
 log=logging.getLogger("shared")
@@ -197,7 +195,6 @@ def get_individual_post(id,c=None):
             log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 
 
-#Deleted POST?
 def get_after(model_id,username):
     cache = Cache(getcachepath())
     if args_.getargs().after:
@@ -208,7 +205,9 @@ def get_after(model_id,username):
     if len(list(filter(lambda x:x[-2]==0,operations.get_timeline_post(model_id=model_id,username=username))))==0:
         log.debug("set initial timeline to lastpost")
         return cache.get(f"timeline_{model_id}_lastpost")[0]
-    return 0
+    else:
+        log.debug("initial timeline 0")
+        return 0
 
 
     
