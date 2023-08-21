@@ -108,6 +108,7 @@ def process_timeline_posts(model_id,username,individual=False):
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
+        asyncio.run(operations.batch_mediainsert(output,operations.update_response_media_table,model_id=model_id,username=username,downloaded=False))
 
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
@@ -115,7 +116,7 @@ def process_archived_posts( model_id,username):
     with stdout.lowstdout():
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         archived_posts = asyncio.run(archive.get_archived_post(model_id))
-        archived_posts =list(map(lambda x:posts_.Post(x,model_id,username),archived_posts ))
+        archived_posts =list(map(lambda x:posts_.Post(x,model_id,username,"archived"),archived_posts ))
         log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
         log.debug("Removing locked archived media")
 
@@ -123,6 +124,10 @@ def process_archived_posts( model_id,username):
             operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [ output.extend(post.media) for post in archived_posts ]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
+        #archived is set as post
+        asyncio.run(operations.batch_mediainsert(output,operations.update_response_media_table,model_id=model_id,username=username,downloaded=False))
+
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
 

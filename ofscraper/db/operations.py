@@ -156,7 +156,7 @@ def get_profile_info(model_id=None,username=None,conn=None) -> list:
 
 
 @operation_wrapper_async
-def update_media_table(media,filename,conn=None,downloaded=False,**kwargs) -> list:  
+def update_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -> list:  
         insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
         math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
         media.preview,media.linked, 1 if downloaded else 0,media.date]
@@ -170,15 +170,25 @@ def update_media_table(media,filename,conn=None,downloaded=False,**kwargs) -> li
 
 
 @operation_wrapper_async
-def write_media_table(media,filename,conn=None,downloaded=False,**kwargs) -> list:  
+def write_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -> list:  
         if len(conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
             insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
-        math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
-        media.preview,media.linked, 1 if downloaded else 0,media.date]
+            math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+            media.preview,media.linked, 1 if downloaded else 0,media.date]
             conn.execute(queries.mediaInsert,insertData)
         conn.commit()
-               
+   
+  
 
+
+@operation_wrapper_async
+def update_response_media_table(media,conn=None,downloaded=False,**kwargs) -> list:  
+    insertData=[media.responsetype_.capitalize(),media.mediatype.capitalize(),media.id]
+    conn.execute(queries.mediaTypeUpdate,insertData)
+    conn.commit()
+
+
+   
 
    
    
@@ -234,7 +244,7 @@ def get_timeline_post(model_id=None,username=None,conn=None) -> list:
         return data
 
 async def batch_mediainsert(media,funct,**kwargs):
-    tasks=[asyncio.create_task(funct(ele,None,**kwargs)) for ele in media]
+    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
     [await ele for ele in tasks]
 
 def create_tables(model_id,username):

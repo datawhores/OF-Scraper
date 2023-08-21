@@ -251,7 +251,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
     #total may be none if no .part file
     result=await main_download_downloader(c,ele,path,username,model_id,progress)
     if len(result)==2 and result[-1]==0:
-        if ele.id:await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
         return result
     total ,temp,path_to_file=result
 
@@ -273,7 +273,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
         log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
     if ele.id:
-        await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
     set_cache_helper(ele)
     return ele.mediatype,total
 
@@ -436,7 +436,7 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
         set_time(path_to_file,newDate )
         log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
-        await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
     return ele.mediatype,audio["total"]+video["total"]
 
 

@@ -171,14 +171,26 @@ SELECT * FROM medias where media_id=(?)
 
 getTimelineMedia=\
 """
-SELECT * FROM medias where api_type=('Timeline') OR api_type=('Post')
+SELECT * FROM medias where api_type=('Timeline')
 """
 
+
+getArchivedMedia=\
+"""
+SELECT * FROM medias where api_type=('Archived')
+"""
 
 mediaUpdate=\
 f"""Update 'medias'
 SET
 media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?
+WHERE media_id=(?);"""
+
+
+mediaTypeUpdate=\
+f"""Update 'medias'
+SET
+api_type=?,media_type=?
 WHERE media_id=(?);"""
 
 profileDupeCheck=\
