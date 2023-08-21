@@ -162,8 +162,7 @@ def process_post_user_first():
                     model_id,
                     value,
                     )
-                misc.set_success(results,model_id)
-
+                
 
 @exit.exit_wrapper
 def normal_post_process():
@@ -186,7 +185,6 @@ def normal_post_process():
                     model_id,
                     combined_urls
                     )
-                misc.set_success(results,model_id)
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
@@ -205,7 +203,6 @@ def normal_post_process():
                         model_id,
                         value,
                         )
-                    misc.set_success(results,model_id)
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     

@@ -56,15 +56,6 @@ def download_picker(username, model_id, medialist):
                     ))
     
 
-def set_success(result,model_id):
-    if not args_.getargs().after or not args_.getargs().before:
-        cache = Cache(paths.getcachepath())
-        cache.set(f"last_success_{model_id}",True if result[-1]==0 else False)
-        cache.close()
-    else:
-        cache.set(f"last_success_{model_id}",None)
-        cache.close()
-
 
     
 
