@@ -291,8 +291,13 @@ def get_metadata(config=None):
 def get_threads(config=None):
     if config==None:
         return constants.THREADS_DEFAULT  
+    threads=config.get('threads', None)
     if threads==None or threads=="":threads=int(constants.THREADS_DEFAULT)
-    else:threads=int(config.get('threads', constants.THREADS_DEFAULT))
+    else:
+        try:
+            threads=int(threads)
+        except:
+            threads=int(constants.THREADS_DEFAULT)
     return threads
 
 def get_mp4decrypt(config=None):
@@ -414,11 +419,18 @@ def get_backend(config=None):
 def get_download_semaphores(config=None):
     if config==None:
         return constants.DOWNLOAD_SEM_DEFAULT
-    try:
-        return int(config.get('download-sems', constants.DOWNLOAD_SEM_DEFAULT))
-    except:
-        return constants.DOWNLOAD_SEM_DEFAULT
+    sems=config.get('download-sems', None)
+    if sems==None or sems=="":sems=int(constants.DOWNLOAD_SEM_DEFAULT)
+    else:
+        try:
+            sems=int(sems)
+        except:
+            sems=int(constants.DOWNLOAD_SEM_DEFAULT)
+    return sems
     
+    
+    
+
 def get_maxfile_semaphores(config=None):
     if config==None:
         return constants.MAXFILE_SEMAPHORE
