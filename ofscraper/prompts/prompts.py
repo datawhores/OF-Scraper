@@ -347,15 +347,14 @@ def config_prompt_advanced(config_) -> dict:
     ])
 
     config_.update(threads)
-        
-        
-        
+    max_allowed=50 if int(threads["threads"])==0 else max(-(-(50//int(threads["threads"]))),6)
+         
     new_settings =promptClasses.batchConverter(*   [{
             'type': 'number',
             'name': 'download-sem',
             "message":"Number of semaphores per thread: ",
             'min_allowed':1,
-            'max_allowed':max(-(-(50//int(threads["threads"]))),6),
+            'max_allowed':max_allowed,
              "validate":EmptyInputValidator(),
              'long_instruction':"Value can be 1-20",
              'default':config.get_download_semaphores(config_),

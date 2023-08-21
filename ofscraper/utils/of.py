@@ -107,7 +107,7 @@ def process_timeline_posts(model_id,username,individual=False):
             operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
-        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id,username))
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
 
         return list(filter(lambda x:isinstance(x,media.Media),output))
 

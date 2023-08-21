@@ -223,7 +223,7 @@ def get_timeline_post(model_id=None,username=None,conn=None) -> list:
         conn.commit()
         return data
 
-async def batch_mediainsert(media,funct,**kwargs):
+async def batch_mediainsert(media,funct,*args**kwargs):
     tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
     [await ele for ele in tasks]
 
