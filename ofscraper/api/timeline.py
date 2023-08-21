@@ -102,7 +102,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
 
 
 
-async def get_timeline_post(model_id,username): 
+async def get_timeline_post(model_id,username,after=None): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -124,7 +124,7 @@ async def get_timeline_post(model_id,username):
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
     postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-    after=get_after(model_id,username)
+    after=after or get_after(model_id,username)
     filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
               
     with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
