@@ -250,7 +250,9 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     #total may be none if no .part file
     result=await main_download_downloader(c,ele,path,username,model_id,progress)
-    if len(result)==2:return result
+    if len(result)==2 and result[-1]==0:
+        if ele.id:await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        return result
     total ,temp,path_to_file=result
 
     check1=size_checker(temp,ele,total) 

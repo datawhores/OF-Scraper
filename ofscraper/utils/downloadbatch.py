@@ -428,7 +428,9 @@ async def main_download_helper(c,ele,path,username,model_id):
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")
     result=list(await main_download_downloader(c,ele,path,username,model_id,data))
-    if len(result)==2:return result
+    if len(result)==2 and result[-1]==0:
+        if ele.id:await operations.update_media_table(ele,path_to_file,model_id=model_id,username=username,downloaded=True)
+        return result
     total ,temp,path_to_file=result
     check1=size_checker(temp,ele,total)
     check2=check_forced_skip(ele,total)
