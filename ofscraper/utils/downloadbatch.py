@@ -275,7 +275,8 @@ def get_mediasplits(medialist):
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    plat=platform.system()
+    if plat=="Linux":asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
 
 def job_progress_helper(job_progress,result):

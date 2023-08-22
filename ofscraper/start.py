@@ -1,13 +1,14 @@
 
-import sys
 import os
 import time
 import ssl
+import asyncio
 import platform
 import certifi
 import multiprocessing
 import logging
 from threading import Event
+import uvloop
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.commands.scraper as scraper
@@ -118,3 +119,7 @@ def set_mulitproc_start_type():
         multiprocessing.set_start_method('spawn')
     else:
         multiprocessing.set_start_method('forkserver')
+
+def set_eventloop():
+    plat=platform.system()
+    if plat=="Linux":asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

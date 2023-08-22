@@ -48,7 +48,7 @@ def download_picker(username, model_id, medialist):
     elif (len(medialist)>=config_.get_download_semaphores(config_.read_config())) and getcpu_count()>1 and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        
         return asyncio.run(download.process_dicts(
                     username,
                     model_id,

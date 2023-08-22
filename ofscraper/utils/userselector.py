@@ -142,7 +142,7 @@ def get_models(subscribe_count) -> list:
     Get user's subscriptions in form of a list.
     """
     with stdout.lowstdout():
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy()) 
+         
         out=[]
         list_subscriptions = asyncio.run(
             subscriptions.get_subscriptions(subscribe_count))
