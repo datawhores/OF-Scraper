@@ -138,8 +138,9 @@ def process_archived_posts( model_id,username):
         log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
         log.debug("Removing locked archived media")
 
-        for post in archived_posts:
-            operations.write_post_table(post,model_id=model_id,username=username)
+        curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
+        [ operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,archived_posts)]
+
         output=[]
         [ output.extend(post.media) for post in archived_posts ]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
