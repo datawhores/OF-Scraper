@@ -158,12 +158,14 @@ def process_pinned_posts( model_id,username):
         pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
         log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
         log.debug("Removing locked pinned media")
-        for post in  pinned_posts:
-            operations.write_post_table(post,model_id=model_id,username=username)
+        curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
+        [ operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,pinned_posts)]
+
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
- 
+        asyncio.run(operations.batch_mediainsert(output,operations.update_response_media_table,model_id=model_id,username=username,downloaded=False))
+
         return list(filter(lambda x:isinstance(x,media.Media),output))
  
 def process_profile( username) -> list:
