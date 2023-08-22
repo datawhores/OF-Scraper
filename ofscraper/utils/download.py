@@ -156,7 +156,8 @@ async def process_dicts(username, model_id, medialist):
         global thread
         thread=ThreadPoolExecutor(max_workers=config_.get_download_semaphores(config_.read_config())*2)
         
-       
+        global cache_thread
+        cache_thread=ThreadPoolExecutor(max_workers=1)
 
     
 
@@ -298,8 +299,8 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
 
 async def main_download_downloader(c,ele,path,username,model_id,progress): 
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.id}_headers"))
-    await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
+    await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             content_type = data.get("content-type").split('/')[-1]
@@ -333,7 +334,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                 async with c.requests(url=url,headers=headers)() as r:
                         if r.ok:
                             data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                             total=int(data['content-length'])
                             if attempt.get()==1:await update_total(total)
                             content_type = data.get("content-type").split('/')[-1]
@@ -380,10 +381,10 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
             log.traceback(E)
             raise E
         finally:
-            await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
         size_checker(temp,ele,total) 
-        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.touch,f"{ele.filename}_headers",1))
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
         return total ,temp,path_to_file
     total=int(data.get("content-length")) if data else None
     return await inner(c,ele,path,username,model_id,progress,total)
@@ -492,8 +493,8 @@ async def alt_download_downloader(item,c,ele,path,progress):
     url=f"{base_url}{item['origname']}"
     log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{item['name']}_headers"))
-    await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers"))
+    await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     item['path']=temp
     pathlib.Path(temp).unlink(missing_ok=True) if not data or \
@@ -537,7 +538,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         pathstr=str(temp)
                         data=l.headers
                         item["total"]=total or int(data['content-length'])
-                        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                         check1=check_forced_skip(ele,item["total"])
                         if check1:
                             return check1                
@@ -564,14 +565,14 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
                 size_checker(temp,ele,total) 
-                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.touch,f"{item['name']}_headers",1))
+                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{item['name']}_headers",1))
             return item           
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)   
             raise E
         finally:
-            await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
     
     return await inner(item,c,ele,progress)
@@ -585,7 +586,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -608,7 +609,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
                 out=soup.find("li").contents[0]
-                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 log.debug(f"[bold]  key helper cdrm status[/bold]: {r.status}")
                 log.debug(f"[bold]  key helper cdrm text [/bold]: {await r.text_()}")
@@ -620,7 +621,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
         log.traceback(traceback.format_exc())
         raise E
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
        
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
@@ -628,7 +629,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -651,7 +652,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
                 out=soup.find("li").contents[0]
-                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 log.debug(f"[bold]  key helper cdrm2 status[/bold]: {r.status}")
                 log.debug(f"[bold]  key helper cdrm2 text [/bold]: {await r.text_()}")
@@ -663,7 +664,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
         log.traceback(traceback.format_exc())
         raise E
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 
 
@@ -672,7 +673,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
     log.debug(f"ID:{id} using keydb auto key helper")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -706,7 +707,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
                 log.debug(f"keydb json {data}")
                 if  isinstance(data,str): out=data
                 elif  isinstance(data,object): out=data["keys"][0]["key"]
-                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")
                 log.debug(f"[bold]  key helper keydb text [/bold]: {await r.text_()}")
@@ -718,14 +719,14 @@ async def key_helper_keydb(c,pssh,licence_url,id):
         log.traceback(traceback.format_exc())
         raise E 
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_manual(c,pssh,licence_url,id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using manual key helper")
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         if out!=None:
             log.debug(f"ID:{id} manual key helper got key from cache")
             return out
@@ -757,14 +758,14 @@ async def key_helper_manual(c,pssh,licence_url,id):
             cdm.close(session_id)
         keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
         key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
         return key
     except Exception as E:
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E 
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 
 
@@ -800,8 +801,8 @@ def get_error_message(content):
 async def set_cache_helper(ele):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     if  ele.postid and ele.responsetype_=="profile":
-        await asyncio.get_event_loop().run_in_executor(thread,partial(  cache.set,ele.postid ,True))
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial(  cache.set,ele.postid ,True))
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 
 

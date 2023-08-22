@@ -1,10 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 import platform
 import psutil
 import asyncio
 import logging
-import uvloop
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
@@ -12,10 +10,8 @@ import ofscraper.utils.downloadbatch as batchdownloader
 import ofscraper.utils.download as download
 import ofscraper.utils.config as config_
 import ofscraper.utils.config as config_
-import ofscraper.utils.paths as paths
 import ofscraper.db.operations as operations
 
-from diskcache import Cache
 
 def getcpu_count():
     if platform.system() != 'Darwin':      

@@ -8,14 +8,9 @@ r"""
                  \/     \/           \/            \/         
 """
 
-import random
-import time
 import logging
-import ssl
-import certifi
-from typing import Union
 import asyncio
-import aiohttp
+
 
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 
@@ -28,7 +23,6 @@ from rich.progress import (
     SpinnerColumn
 )
 from rich.style import Style
-import uvloop
 from ..api import timeline
 from ..constants import favoriteEP, postURL
 import ofscraper.api.archive as archive

@@ -8,7 +8,6 @@ import certifi
 import multiprocessing
 import logging
 from threading import Event
-import uvloop
 from diskcache import Cache
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
@@ -129,4 +128,4 @@ def set_mulitproc_start_type():
 
 def set_eventloop():
     plat=platform.system()
-    if plat=="Linux":asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

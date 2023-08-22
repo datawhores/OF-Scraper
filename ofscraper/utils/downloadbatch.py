@@ -29,7 +29,6 @@ import contextvars
 import json
 import subprocess
 import aiofiles
-import uvloop
 from rich.progress import (
     Progress,
     TimeElapsedColumn,
@@ -280,7 +279,7 @@ def get_mediasplits(medialist):
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
     plat=platform.system()
-    if plat=="Linux":asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
 
 def job_progress_helper(job_progress,result):
@@ -863,7 +862,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
             innerlog.get().debug(f"keydb json {data}")
             if  isinstance(data,str): out=data
             elif  isinstance(data,object): out=data["keys"][0]["key"]
-            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
 
         return out
     except Exception as E:

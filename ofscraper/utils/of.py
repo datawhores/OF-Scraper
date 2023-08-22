@@ -10,7 +10,6 @@ r"""
 
 import asyncio
 import logging
-import uvloop
 from itertools import chain
 import ofscraper.prompts.prompts as prompts
 import ofscraper.api.messages as messages
@@ -37,7 +36,6 @@ log=logging.getLogger("shared")
 
 def process_messages(model_id,username):
     with stdout.lowstdout():
-        import uvloop
         
         messages_ =asyncio.run(messages.get_messages(  model_id,username)) 
         messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))

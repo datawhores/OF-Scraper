@@ -1,8 +1,6 @@
 import asyncio
-import time
 import logging
 import arrow
-import uvloop
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.api.subscriptions as subscriptions
