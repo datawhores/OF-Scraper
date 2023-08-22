@@ -108,7 +108,7 @@ async def get_timeline_media(model_id,username,after=None):
     min_posts=50
     responseArray=[]
     page_count=0
-    setCache=True if not not args_.getargs().after else False
+    setCache=True if not args_.getargs().after else False
 
 
     cache = Cache(getcachepath())

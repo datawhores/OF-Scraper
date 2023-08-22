@@ -119,8 +119,10 @@ def process_timeline_posts(model_id,username,individual=False):
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")
-        for post in timeline_posts:
-            operations.write_post_table(post,model_id=model_id,username=username)
+        curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
+        [ operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,timeline_posts)]
+
+         
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
