@@ -211,6 +211,8 @@ def process_dicts(username,model_id,filtered_medialist):
         except Exception:
             raise KeyboardInterrupt
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios],  {forced_skipped} skipped, {skipped} failed)' )
+    cache = Cache(paths.getcachepath())
+    cache.close()
     return photo_count,video_count,audio_count,forced_skipped,skipped
 
 
@@ -473,7 +475,7 @@ async def main_download_helper(c,ele,path,username,model_id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def main_download_downloader(c,ele,path,username,model_id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.filename}_headers"))
+    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.id}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
@@ -508,7 +510,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                 async with c.requests(url=url,headers=headers)() as r:
                         if r.ok:
                             data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.filename}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                             total=int(data['content-length'])
                             if attempt.get()==1: await pipe_.coro_send(  (None, 0,total))
                             content_type = data.get("content-type").split('/')[-1]

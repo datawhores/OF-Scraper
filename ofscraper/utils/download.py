@@ -209,6 +209,10 @@ async def process_dicts(username, model_id, medialist):
         overall_progress.remove_task(task1)
     setDirectoriesDate()
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios],  {forced_skipped} skipped, {skipped} failed)' )
+    cache = Cache(paths.getcachepath())
+    cache.close()
+    return photo_count,video_count,audio_count,forced_skipped,skipped
+
     return photo_count+video_count+audio_count,skipped
 
 def size_checker(path,ele,total,name=None):
@@ -560,7 +564,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
                 size_checker(temp,ele,total) 
-                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.touch,f"{ele.filename}_headers",1))
+                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.touch,f"{item['name']}_headers",1))
             return item           
         except Exception as E:
             log.traceback(traceback.format_exc())
