@@ -7,7 +7,7 @@ import ofscraper.utils.logger as logger
 from textual import events
 import arrow
 import re
-from diskcache import Cache,JSONDisk
+from diskcache import Cache
 import ofscraper.utils.console as console_
 from ..utils.paths import getcachepath
 

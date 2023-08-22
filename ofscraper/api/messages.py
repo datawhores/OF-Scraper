@@ -22,7 +22,7 @@ from rich.console import Group
 from rich.live import Live
 from rich.style import Style
 import arrow
-from diskcache import Cache,JSONDisk
+from diskcache import Cache
 from ..utils.paths import getcachepath
 import ofscraper.db.operations as operations
 import ofscraper.constants as constants
@@ -31,7 +31,7 @@ import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
-
+import ofscraper.utils.config as config_
 
 log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -41,7 +41,7 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 async def get_messages(model_id,username,after=None):
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting Messages...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -234,7 +234,7 @@ def get_individual_post(model_id,postid,c=None):
             log.debug(f"[bold]invidual message  headers:[/bold] {r.headers}")
 
 def get_after(model_id,username):
-    cache = Cache(getcachepath(),disk=JSONDisk)
+    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"messages_{model_id}_lastpost") or not cache.get(f"messages_{model_id}_firstpost"):

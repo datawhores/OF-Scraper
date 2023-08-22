@@ -12,7 +12,7 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import logging
 import contextvars
 import math
-from diskcache import Cache,JSONDisk
+from diskcache import Cache
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
@@ -31,6 +31,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
+import ofscraper.utils.config as config_
 
 
 
@@ -94,7 +95,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
     return posts
 
 async def get_archived_media(model_id,username,after=None): 
-    cache = Cache(getcachepath(),disk=JSONDisk)
+    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting archived media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -194,7 +195,7 @@ async def get_archived_media(model_id,username,after=None):
     return list(unduped.values()  )                             
 
 def get_after(model_id,username):
-    cache = Cache(getcachepath(),disk=JSONDisk)
+    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"archived_{model_id}_last post") or not cache.get(f"archived_{model_id}_firstpost"):

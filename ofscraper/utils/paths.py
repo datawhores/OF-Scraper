@@ -78,7 +78,8 @@ def cleanup():
 
 def getcachepath():
     profile = get_profile_path()
-    path= profile/"cache_json"
+    name="cache_json" if config_.cache_mode_helper(config_.read_config())=="json" else "cache_sql"
+    path= profile/f"{name}"
     path=pathlib.Path(os.path.normpath(path))
     createDir(path.parent)
     return path

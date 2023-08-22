@@ -64,7 +64,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 
 
-from diskcache import Cache,JSONDisk
+from diskcache import Cache
 attempt = contextvars.ContextVar("attempt")
 attempt2 = contextvars.ContextVar("attempt")
 total_count = contextvars.ContextVar("total")
@@ -293,7 +293,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
 
 
 async def main_download_downloader(c,ele,path,username,model_id,progress): 
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.filename}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     if data and data.get('content-length'):
@@ -316,7 +316,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
     @sem_wrapper
     async def inner(c,ele,path,username,model_id,progress,total):
         attempt.set(attempt.get(0) + 1) 
-        cache = Cache(paths.getcachepath(),disk=JSONDisk)        
+        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))        
         try: 
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             if total==None:temp.unlink(missing_ok=True)
@@ -486,7 +486,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.filename}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
@@ -515,7 +515,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
         if item["type"]=="video":_attempt=attempt
         if item["type"]=="audio":_attempt=attempt2
         _attempt.set(_attempt.get(0) + 1) 
-        cache = Cache(paths.getcachepath(),disk=JSONDisk)
+        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
         try:
             total=item.get("total")
             if total==None:temp.unlink(missing_ok=True)
@@ -576,7 +576,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
   
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
         out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
@@ -619,7 +619,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm2(c,pssh,licence_url,id):
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
         out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
@@ -664,7 +664,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):
     log.debug(f"ID:{id} using keydb auto key helper")
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
         out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
         log.debug(f"ID:{id} pssh: {pssh!=None}")
@@ -716,7 +716,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
 
 async def key_helper_manual(c,pssh,licence_url,id):
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using manual key helper")
     out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
@@ -785,7 +785,7 @@ def get_error_message(content):
 
 
 async def set_cache_helper(ele):
-    cache = Cache(paths.getcachepath(),disk=JSONDisk)
+    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     if  ele.postid and ele.responsetype_=="profile":
         await asyncio.get_event_loop().run_in_executor(thread,partial(  cache.set,ele.postid ,True))
         await asyncio.get_event_loop().run_in_executor(thread,cache.close)

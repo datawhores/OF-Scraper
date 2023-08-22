@@ -16,11 +16,11 @@ from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception
 from ..constants import profileEP,NUM_TRIES,HOURLY_EXPIRY,DAILY_EXPIRY
 from ..utils import auth, encoding
 from xxhash import xxh128
-from diskcache import Cache,JSONDisk
+from diskcache import Cache
 from ..utils.paths import getcachepath
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
-
+import ofscraper.utils.config as config_
 
 
 log=logging.getLogger("shared")
@@ -40,7 +40,7 @@ def scrape_profile(username:Union[int, str]) -> dict:
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def scrape_profile_helper(c,username:Union[int, str]):
 
-    cache = Cache(getcachepath(),disk=JSONDisk)
+    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     id=cache.get(f"username_{username}",None)
     log.trace(f"username date: {id}")
     if id:
@@ -113,7 +113,7 @@ def get_id( username):
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 def get_id_helper(c,username):
-    cache = Cache(getcachepath(),disk=JSONDisk)   
+    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))   
     id=cache.get(f"model_id_{username}",None)
     if id:
         return id

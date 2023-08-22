@@ -11,6 +11,7 @@ r"""
 import json
 import pathlib
 import logging
+from diskcache import JSONDisk
 import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts 
 import ofscraper.utils.binaries as binaries
@@ -97,6 +98,8 @@ def get_current_config_schema(config:dict=None) -> dict:
             "download-sems":get_download_semaphores(config),
             "maxfile-sem":get_maxfile_semaphores(config),
             "downloadbars":get_show_downloadprogress(config),
+            "cache-mode":cache_mode_helper(config),
+
 
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
@@ -443,3 +446,20 @@ def get_show_downloadprogress(config):
     if config==None:
         return constants.PROGRESS_DEFAULT
     return config.get("downloadbars",constants.PROGRESS_DEFAULT) or constants.PROGRESS_DEFAULT
+
+def get_cache_mode(config):
+    if cache_mode_helper(config)=="sqlite":
+        return None
+    else:
+        return JSONDisk
+
+
+def cache_mode_helper(config):
+    if config==None:
+        return constants.CACHEDEFAULT
+    data= config.get("cache-mode",constants.CACHEDEFAULT)
+    if not data in [constants.CACHEDEFAULT,"json"]:return data
+    else:return constants.CACHEDEFAULT
+   
+
+    

@@ -382,6 +382,13 @@ def config_prompt_advanced(config_) -> dict:
             'choices':["deviint","digitalcriminals"],
         },
         
+            {
+            'type': 'cache mode',
+            'name': 'dynamic-mode-default',
+            'message': 'sqlite should be fine unless your using a network drive',
+            'default': config.get_dynamic(config_),
+            'choices':["sqlite","json"],
+        },
         {
             'type': 'list',
             'name': 'key-mode-default',
