@@ -15,7 +15,7 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 import ofscraper.db.operations as operations
 
-from diskcache import Cache
+from diskcache import Cache,JSONDisk
 
 def getcpu_count():
     if platform.system() != 'Darwin':      

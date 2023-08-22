@@ -25,7 +25,7 @@ import ofscraper.constants as constants
 from ..utils.paths import getcachepath
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
-from diskcache import Cache
+from diskcache import Cache,JSONDisk
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_ 
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -49,7 +49,7 @@ attempt = contextvars.ContextVar("attempt")
 
 
 async def get_paid_posts(username,model_id):
-    cache = Cache(getcachepath())
+    cache = Cache(getcachepath(),disk=JSONDisk)
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting paid media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -124,7 +124,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
 
 
 async def get_all_paid_posts():
-    cache = Cache(getcachepath())
+    cache = Cache(getcachepath(),disk=JSONDisk)
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting all paid media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(

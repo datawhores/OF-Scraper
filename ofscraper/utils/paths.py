@@ -78,7 +78,7 @@ def cleanup():
 
 def getcachepath():
     profile = get_profile_path()
-    path= profile/"cache"
+    path= profile/"cache_json"
     path=pathlib.Path(os.path.normpath(path))
     createDir(path.parent)
     return path

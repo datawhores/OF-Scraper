@@ -22,7 +22,7 @@ from rich.console import Group
 from rich.live import Live
 from rich.style import Style
 import arrow
-from diskcache import Cache
+from diskcache import Cache,JSONDisk
 from ..utils.paths import getcachepath
 import ofscraper.db.operations as operations
 import ofscraper.constants as constants
@@ -41,7 +41,7 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 async def get_messages(model_id,username,after=None):
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting Messages...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -234,7 +234,7 @@ def get_individual_post(model_id,postid,c=None):
             log.debug(f"[bold]invidual message  headers:[/bold] {r.headers}")
 
 def get_after(model_id,username):
-    cache = Cache(getcachepath())
+    cache = Cache(getcachepath(),disk=JSONDisk)
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"messages_{model_id}_lastpost") or not cache.get(f"messages_{model_id}_firstpost"):

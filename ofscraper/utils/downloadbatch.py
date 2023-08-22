@@ -54,7 +54,7 @@ from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception
 import more_itertools
 import aioprocessing
 import psutil
-from diskcache import Cache
+from diskcache import Cache,JSONDisk
 import ofscraper.utils.config as config_
 import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
@@ -144,6 +144,7 @@ def reset_globals():
 
 def process_dicts(username,model_id,filtered_medialist):
     log=logging.getLogger("shared")
+    filtered_medialist=filtered_medialist[:100]
     try:
         reset_globals()
         random.shuffle(filtered_medialist)
@@ -428,7 +429,7 @@ async def download(c,ele,model_id,username):
 async def main_download_helper(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")
-    result=list(await main_download_downloader(c,ele,path,username,model_id,data))
+    result=list(await main_download_downloader(c,ele,path,username,model_id))
     if len(result)==2 and result[-1]==0:
         if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
         return result
@@ -448,6 +449,9 @@ async def main_download_helper(c,ele,path,username,model_id):
         shutil.move(temp,path_to_file)
     elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
         shutil.move(temp,path_to_file)
+    else:
+        pathlib.Path(temp).unlink(missing_ok=True)
+        raise Exception(f"{get_medialog(ele)} smaller then previous file")
     addLocalDir(path)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
@@ -466,7 +470,7 @@ async def main_download_helper(c,ele,path,username,model_id):
  
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def main_download_downloader(c,ele,path,username,model_id):
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     data=cache.get(f"{ele.filename}_headers") 
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
@@ -487,9 +491,10 @@ async def main_download_downloader(c,ele,path,username,model_id):
     @sem_wrapper
     async def inner(c,ele,path,username,model_id,total):
         attempt.set(attempt.get(0) + 1) 
-        cache = Cache(paths.getcachepath())
+        cache = Cache(paths.getcachepath(),disk=JSONDisk)
         try:
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+            if total==None:temp.unlink(missing_ok=True)
             innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
             resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
             if not total or total>resume_size:
@@ -655,7 +660,7 @@ async def alt_download_downloader(item,c,ele,path):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     data= cache.get(f"{ele.filename}_headers") 
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     if data:
@@ -673,10 +678,11 @@ async def alt_download_downloader(item,c,ele,path):
         if item["type"]=="video":_attempt=attempt
         if item["type"]=="audio":_attempt=attempt2
         _attempt.set(_attempt.get(0)) + 1
-        cache = Cache(paths.getcachepath())
+        cache = Cache(paths.getcachepath(),disk=JSONDisk)
         try:
-            resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
             total=item.get("total")
+            if total==None:temp.unlink(missing_ok=True)
+            resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
             if total and _attempt.get(0) + 1==1:await pipe_.coro_send(  (None, 0,total))
             if not total or total>resume_size:
                 headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
@@ -725,7 +731,7 @@ async def alt_download_downloader(item,c,ele,path):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
     log.debug(f"ID:{id} using cdrm auto key helper")
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     try:
         out=cache.get(licence_url)
         log.debug(f"ID:{id} pssh: {pssh!=None}")
@@ -761,7 +767,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm2(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using cdrm auto key helper")
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     try:
         out=cache.get(licence_url)
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
@@ -796,7 +802,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using keydb auto key helper")
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     try:
         out=out=cache.get(licence_url)
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
@@ -837,7 +843,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_manual(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using manual key helper")
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
     try:
         out=cache.get(licence_url)
         if out!=None:
@@ -866,7 +872,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
         keys=None
         challenge = cdm.get_license_challenge(session_id, pssh)
         async with c.requests(url=licence_url,method="post",data=challenge)() as r:
-            cache = Cache(paths.getcachepath())
+            cache = Cache(paths.getcachepath(),disk=JSONDisk)
             cdm.parse_license(session_id, (await r.content.read()))
             keys = cdm.get_keys(session_id)
             cdm.close(session_id)
@@ -908,7 +914,7 @@ def get_error_message(content):
 
 
 def set_cache_helper(ele):
-    cache = Cache(paths.getcachepath())
+    cache = Cache(paths.getcachepath(),disk=JSONDisk)
 
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)

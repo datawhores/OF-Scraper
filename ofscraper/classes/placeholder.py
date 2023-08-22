@@ -64,6 +64,36 @@ class Placeholders:
         return pathlib.Path(data_path)
 
 
+    @wrapper
+    def databasePathCopyHelper(self,model_id,model_username):
+        username=model_username;self._variables.update({"username":username})
+        modelusername=model_username;self._variables.update({"modelusername":modelusername})
+        model_username=model_username;self._variables.update({"model_username":model_username})
+        first_letter=username[0].capitalize();self._variables.update({"first_letter":first_letter})
+        firstletter=username[0].capitalize();self._variables.update({"firstletter":firstletter})
+        self._variables.update({"model_id":model_id})
+        modelid=model_id;self._variables.update({"modelid":modelid})
+
+        log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
+        if config_.get_allow_code_execution(config_.read_config()):
+            if not isinstance(custom,dict)==True:
+                try:return eval(custom)
+                except:return custom
+            for key,val in custom.items():
+                try:custom[key]=eval(val)
+                except:continue
+        
+            formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
+            
+        else:
+            formatStr=config_.get_metadata(config_.read_config()).format(       
+                          **self._variables)
+        data_path=pathlib.Path(formatStr,'user_data_copy.db')
+        data_path=os.path.normpath(data_path )
+        log.trace(f"final database path {data_path}")
+        return pathlib.Path(data_path)
+
+
   
 
 

@@ -10,7 +10,7 @@ import asyncio
 import logging
 import contextvars
 import math
-from diskcache import Cache
+from diskcache import Cache,JSONDisk
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
 from rich.progress import (
@@ -111,7 +111,7 @@ async def get_timeline_media(model_id,username,after=None):
     setCache=True if not args_.getargs().after else False
 
 
-    cache = Cache(getcachepath())
+    cache = Cache(getcachepath(),disk=JSONDisk)
     if not args_.getargs().no_cache: oldtimeline=cache.get(f"timeline_{model_id}",default=[])
     else: oldtimeline=[];setCache=False
     log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
@@ -207,7 +207,7 @@ def get_individual_post(id,c=None):
 
 
 def get_after(model_id,username):
-    cache = Cache(getcachepath())
+    cache = Cache(getcachepath(),disk=JSONDisk)
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"timeline_{model_id}_lastpost") or not cache.get(f"timeline_{model_id}_firstpost"):

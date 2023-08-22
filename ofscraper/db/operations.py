@@ -8,7 +8,8 @@ r"""
                  \/     \/           \/            \/         
 """
 from collections import abc
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+import shutil
 from functools import singledispatch,partial
 import asyncio
 import contextlib
@@ -39,7 +40,10 @@ def operation_wrapper_async(func:abc.Callable):
             try: 
                 await loop.run_in_executor(LOCK_POOL, lock.acquire)
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
+                database_copy=placeholder.Placeholders().databasePathCopyHelper(kwargs.get("model_id"),kwargs.get("username"))
                 createDir(datebase_path.parent)
+                if datebase_path.exists() and not database_copy.exists():
+                    shutil.copy(datebase_path,database_copy)
                 conn=sqlite3.connect(datebase_path,check_same_thread=False,timeout=10)
                 return await loop.run_in_executor(PROCESS_POOL, partial(func,*args,**kwargs,conn=conn))
             except sqlite3.OperationalError as E:
@@ -61,7 +65,11 @@ def operation_wrapper(func:abc.Callable):
             try:
                 lock.acquire(timeout=-1)  
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
+                database_copy=placeholder.Placeholders().databasePathCopyHelper(kwargs.get("model_id"),kwargs.get("username"))
+                
                 createDir(datebase_path.parent)
+                if datebase_path.exists() and not database_copy.exists():
+                    shutil.copy(datebase_path,database_copy)                                
                 conn=sqlite3.connect(datebase_path,check_same_thread=True,timeout=10)
                 return func(*args,**kwargs,conn=conn) 
             except sqlite3.OperationalError as E:
@@ -78,8 +86,6 @@ def operation_wrapper(func:abc.Callable):
 
 @operation_wrapper
 def create_message_table(model_id=None,username=None,conn=None):
-    datebase_path =placeholder.Placeholders().databasePathHelper(model_id,username)
-    createDir(datebase_path.parent)
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.messagesCreate)
         conn.commit()
