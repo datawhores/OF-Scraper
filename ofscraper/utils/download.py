@@ -487,7 +487,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
     url=f"{base_url}{item['origname']}"
     log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.filename}_headers"))
+    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{item['name']}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
 
@@ -531,7 +531,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         pathstr=str(temp)
                         data=l.headers
                         item["total"]=total or int(data['content-length'])
-                        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.filename}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                         check1=check_forced_skip(ele,item["total"])
                         if check1:
                             return check1                

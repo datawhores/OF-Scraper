@@ -146,6 +146,7 @@ def reset_globals():
 
 def process_dicts(username,model_id,filtered_medialist):
     log=logging.getLogger("shared")
+    filtered_medialist=list(filter(lambda x:x.mpd!=None,filtered_medialist))
     try:
         reset_globals()
         random.shuffle(filtered_medialist)
@@ -660,7 +661,7 @@ async def alt_download_preparer(ele):
                         origname=f"{repr.base_urls[0].base_url_value}"
                         audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                         break
-    return audio,video
+    return audio,videome
   
 
 
@@ -669,7 +670,7 @@ async def alt_download_downloader(item,c,ele,path):
     url=f"{base_url}{item['origname']}"
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.filename}_headers"))
+    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{item['name']}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
@@ -687,7 +688,7 @@ async def alt_download_downloader(item,c,ele,path):
     async def inner(item,c,ele):
         if item["type"]=="video":_attempt=attempt
         if item["type"]=="audio":_attempt=attempt2
-        _attempt.set(_attempt.get(0)) + 1
+        _attempt.set(_attempt.get(0)+1) 
         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
         try:
             total=item.get("total")
@@ -702,7 +703,7 @@ async def alt_download_downloader(item,c,ele,path):
                         pathstr=str(temp)
                         item["total"]=total or int(l.headers['content-length'])
                         total=item["total"]
-                        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.filename}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                         check1=check_forced_skip(ele,item["total"])
                         if check1:
                             return check1
