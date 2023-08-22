@@ -11,7 +11,7 @@ r"""
 import json
 import pathlib
 import logging
-from diskcache import JSONDisk
+from diskcache import JSONDisk,Disk
 import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts 
 import ofscraper.utils.binaries as binaries
@@ -449,7 +449,7 @@ def get_show_downloadprogress(config):
 
 def get_cache_mode(config):
     if cache_mode_helper(config)=="sqlite":
-        return None
+        return Disk
     else:
         return JSONDisk
 

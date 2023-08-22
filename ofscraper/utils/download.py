@@ -714,46 +714,53 @@ async def key_helper_keydb(c,pssh,licence_url,id):
     finally:
         await asyncio.get_event_loop().run_in_executor(thread,cache.close)
 
-
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_manual(c,pssh,licence_url,id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using manual key helper")
-    out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
-    await asyncio.get_event_loop().run_in_executor(thread,cache.close)
-    if out!=None:
-        log.debug(f"ID:{id} manual key helper got key from cache")
-        return out
-    log.debug(f"ID:{id} pssh: {pssh!=None}")
-    log.debug(f"ID:{id} licence: {licence_url}")
+    try:
+        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        if out!=None:
+            log.debug(f"ID:{id} manual key helper got key from cache")
+            return out
+        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} licence: {licence_url}")
 
-    # prepare pssh
-    pssh = PSSH(pssh)
-
-
-    # load device
-    private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
-    client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
-    device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
+        # prepare pssh
+        pssh = PSSH(pssh)
 
 
-    # load cdm
-    cdm = Cdm.from_device(device)
+        # load device
+        private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
+        client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
+        device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
 
-    # open cdm session
-    session_id = cdm.open()
 
-    
-    keys=None
-    challenge = cdm.get_license_challenge(session_id, pssh)
-    async with c.requests(url=licence_url,method="post",data=challenge)() as r:
-        cdm.parse_license(session_id, (await r.content.read()))
-        keys = cdm.get_keys(session_id)
-        cdm.close(session_id)
-    keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
-    key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-    await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
-    await asyncio.get_event_loop().run_in_executor(thread,cache.close)
-    return key
+        # load cdm
+        cdm = Cdm.from_device(device)
+
+        # open cdm session
+        session_id = cdm.open()
+
+        
+        keys=None
+        challenge = cdm.get_license_challenge(session_id, pssh)
+        async with c.requests(url=licence_url,method="post",data=challenge)() as r:
+            cdm.parse_license(session_id, (await r.content.read()))
+            keys = cdm.get_keys(session_id)
+            cdm.close(session_id)
+        keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
+        key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
+        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+        return key
+    except Exception as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        raise E 
+    finally:
+        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+
+
 
                 
 
