@@ -661,7 +661,7 @@ async def alt_download_preparer(ele):
                         origname=f"{repr.base_urls[0].base_url_value}"
                         audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                         break
-    return audio,videome
+    return audio,video
   
 
 
@@ -674,10 +674,11 @@ async def alt_download_downloader(item,c,ele,path):
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+    item['path']=temp
     if data:
         item["total"]=int(data.get("content-length"))
         check1=check_forced_skip(ele,item["total"])
-        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         if check1:
             return check1
@@ -698,11 +699,13 @@ async def alt_download_downloader(item,c,ele,path):
             if not total or total>resume_size:
                 headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
                 params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+                item["path"]=temp
                 async with c.requests(url=url,headers=headers,params=params)() as l:                
                     if l.ok:
                         pathstr=str(temp)
                         item["total"]=total or int(l.headers['content-length'])
                         total=item["total"]
+                        data=l.headers
                         await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                         check1=check_forced_skip(ele,item["total"])
                         if check1:

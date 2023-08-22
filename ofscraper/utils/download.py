@@ -383,7 +383,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
     total=int(data.get("content-length")) if data else None
     return await inner(c,ele,path,username,model_id,progress,total)
     
-async def alt_download_helper(c,ele,path,username,model_id,progress):
+async def alt_download_helper(c,ele,apath,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
     log.debug(f"{get_medialog(ele)} filename from config {filename}")
@@ -490,7 +490,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
     data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{item['name']}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
-
+    item['path']=temp
     pathlib.Path(temp).unlink(missing_ok=True) if not data or \
     (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
 
@@ -500,7 +500,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
     if data:
         item["total"]=int(data.get("content-length"))
         check1=check_forced_skip(ele,item["total"])
-        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         item["path"]=temp
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         if check1:
