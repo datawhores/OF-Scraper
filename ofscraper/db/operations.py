@@ -94,6 +94,12 @@ def write_messages_table(message: dict):
                 conn.commit()
     return inner(model_id=message.model_id,username=message.username,message=message)
 
+@operation_wrapper
+def get_all_messages_ids(model_id=None,username=None,conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.allMessagesCheck)
+        conn.commit()
+        return list(map(lambda x:x[0],cur.fetchall()))
 
 
             
@@ -110,6 +116,14 @@ def create_post_table(model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.postCreate)
         conn.commit()
+
+@operation_wrapper
+def get_all_post_ids(model_id=None,username=None,conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.allPOSTCheck)
+        conn.commit()
+        return list(map(lambda x:x[0],cur.fetchall()))
+
 @operation_wrapper
 def create_stories_table(model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
@@ -120,7 +134,7 @@ def write_stories_table(data: dict,model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         if len(cur.execute(queries.storiesDupeCheck,(data.id,)).fetchall())==0:
             insertData=(data.id,data.text or data.title or "",data.price,data.paid ,data.archived,data.date)
-            cur.execute(queries.storiesInsert,insertData)
+            cur.execute(queries.staoriesInsert,insertData)
             conn.commit()
 @operation_wrapper
 def create_media_table(model_id=None,username=None,conn=None):
@@ -128,21 +142,12 @@ def create_media_table(model_id=None,username=None,conn=None):
         cur.execute(queries.mediaCreate)
         conn.commit()
 @operation_wrapper
-def get_media_ids(model_id=None,username=None,conn=None) -> list:
+def get_media_ids(model_id=None,username=None,conn=None,**kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.allDLIDCheck)
         conn.commit()
         return list(map(lambda x:x[0],cur.fetchall()))
-@operation_wrapper
-def get_all_post_ids(model_id=None,username=None,conn=None) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.allPOSTCheck)
-        conn.commit()
-        return list(map(lambda x:x[0],cur.fetchall()))
 
-
-        conn.commit()
-        return list(map(lambda x:x[0],cur.fetchall()))
 
 @operation_wrapper
 def get_profile_info(model_id=None,username=None,conn=None) -> list:
@@ -179,7 +184,7 @@ def write_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -
         conn.commit()
    
 @operation_wrapper
-def get_timeline_post(model_id=None,username=None,conn=None) -> list:
+def get_timeline_media(model_id=None,username=None,conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.getTimelineMedia)
         data=list(map(lambda x:x,cur.fetchall()))
@@ -187,17 +192,27 @@ def get_timeline_post(model_id=None,username=None,conn=None) -> list:
         return data
     
 @operation_wrapper
-def get_archived_post(conn=None,**kwargs) -> list:
+def get_archived_media(conn=None,**kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.getArchivedMedia)
         data=list(map(lambda x:x,cur.fetchall()))
         conn.commit()
         return data
-async def batch_mediainsert(media,funct,**kwargs):
-    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in media]
-    [await ele for ele in tasks]
- 
 
+@operation_wrapper
+def get_messages_media(conn=None,**kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getMessagesMedia)
+        data=list(map(lambda x:x,cur.fetchall()))
+        conn.commit()
+        return data
+async def batch_mediainsert(media,funct,**kwargs):
+    curr=set(get_media_ids(**kwargs) or [])
+
+    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in filter(lambda x:x.id not in curr,media) ]
+    [await ele for ele in tasks] 
+ 
+ 
 
 @operation_wrapper_async
 def update_response_media_table(media,conn=None,downloaded=False,**kwargs) -> list:  

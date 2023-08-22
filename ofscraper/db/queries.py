@@ -152,9 +152,13 @@ SELECT media_id FROM medias where downloaded=(1)
 
 allPOSTCheck=\
 """
-SELECT post_id FROM medias
+SELECT post_id FROM posts
 """
 
+allMessagesCheck=\
+"""
+SELECT post_id FROM messages
+"""
 
 
 
@@ -178,6 +182,11 @@ SELECT * FROM medias where api_type=('Timeline')
 getArchivedMedia=\
 """
 SELECT * FROM medias where api_type=('Archived')
+"""
+
+getMessagesMedia=\
+"""
+SELECT * FROM medias where api_type=('Messages')
 """
 
 mediaUpdate=\

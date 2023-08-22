@@ -124,7 +124,7 @@ def post_checker():
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
                 data=asyncio.run(
-                    timeline.get_timeline_post( model_id,user_name,after=0))
+                    timeline.get_timeline_media( model_id,user_name,after=0))
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"timeline_check_{model_id}", data, expire=constants.CHECK_EXPIRY)
@@ -135,7 +135,7 @@ def post_checker():
                 user_dict[user_name].extend(oldarchive)
             else:
                 data=asyncio.run(
-                    archive.get_archived_post( model_id,user_name,after=0))
+                    archive.get_archived_media( model_id,user_name,after=0))
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"archived_check_{model_id}", data, expire=constants.CHECK_EXPIRY)
@@ -212,7 +212,7 @@ def message_checker():
             messages = oldmessages
         else:
             messages = asyncio.run(
-                messages_.get_messages( model_id))
+                messages_.get_messages( model_id,user_name,after=0))
             cache.set(f"message_check_{model_id}",
                         messages, expire=constants.CHECK_EXPIRY)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])

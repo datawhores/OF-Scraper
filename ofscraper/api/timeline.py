@@ -74,10 +74,6 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}")
                     log.trace("{log_id} -> post raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo timeline: {str(x)}",posts)))))
-                    if timestamp==None or timestamp==0:
-                        cache = Cache(getcachepath())
-                        cache.set(f"timeline_{model_id}_firstpost",(float(posts[0]['postedAtPrecise']),posts[0]["id"]))         
-                        cache.close()
                     if required_ids==None:
                         attempt.set(0)
                         tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
@@ -100,7 +96,7 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
 
 
 
-async def get_timeline_post(model_id,username,after=None): 
+async def get_timeline_media(model_id,username,after=None): 
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
@@ -165,31 +161,44 @@ async def get_timeline_post(model_id,username,after=None):
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
     if setCache:
         newcache={}
-        for post in oldtimeline+list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped.values())):
+        for post in oldtimeline+list(unduped.values()):
             id=post["id"]
             if newcache.get(id):continue
-            newcache[id]=post
-        cache.set(f"timeline_{model_id}",list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},newcache.values())),expire=constants.RESPONSE_EXPIRY)
+            newcache[id]={"id":post.get("id"),"postedAtPrecise":post.get("postedAtPrecise")}
+        cache.set(f"timeline_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"timeline_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
     if setCache:
         lastpost=cache.get(f"timeline_{model_id}_lastpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))[-1]
-        if len(post)==0: return [] 
-        else: post=post[-1]
-        if not lastpost:
-            cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
-            cache.close()
-        if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
-            cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
-            cache.close()
+        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+        if len(post)>0:
+            post=post[-1]
+            if not lastpost:
+                cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+                cache.close()
+            if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
+                cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+                cache.close()
+            
+    if setCache and after==0:
+        firstpost=cache.get(f"timeline_{model_id}_firstpost")
+        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+        if len(post)>0:  
+            post=post[0]
+            if not firstpost:
+                cache.set(f"timeline_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
+                cache.close()
+            if firstpost and float(post['postedAtPrecise'])<firstpost[0]:
+                cache.set(f"timeline_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
+                cache.close()
+
     return list(unduped.values() )                             
 
 
 def get_individual_post(id,c=None):
     with c.requests(constants.INDVIDUAL_TIMELINE.format(id))() as r:
         if r.ok:
-            log.trace(f"message raw individual {r.json()}")
+            log.trace(f"post raw individual {r.json()}")
             return r.json()
         else:
             log.debug(f"[bold]individual post response status code:[/bold]{r.status}")
@@ -202,13 +211,13 @@ def get_after(model_id,username):
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"timeline_{model_id}_lastpost") or not cache.get(f"timeline_{model_id}_firstpost"):
-        log.debug("initial timeline 0")
+        log.debug("initial timeline to 0")
         return 0
-    if len(list(filter(lambda x:x[-2]==0,operations.get_timeline_post(model_id=model_id,username=username))))==0:
-        log.debug("set initial timeline to lastpost")
+    if len(list(filter(lambda x:x[-2]==0,operations.get_timeline_media(model_id=model_id,username=username))))==0:
+        log.debug("set initial timeline to last post")
         return cache.get(f"timeline_{model_id}_lastpost")[0]
     else:
-        log.debug("initial timeline 0")
+        log.debug("initial timeline to 0")
         return 0
 
 

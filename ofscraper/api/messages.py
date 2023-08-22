@@ -9,7 +9,6 @@ r"""
 """
 import asyncio
 import logging
-import ssl
 import contextvars
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
 from rich.progress import Progress
@@ -24,6 +23,8 @@ from rich.live import Live
 from rich.style import Style
 import arrow
 from diskcache import Cache
+from ..utils.paths import getcachepath
+import ofscraper.db.operations as operations
 import ofscraper.constants as constants
 import ofscraper.utils.paths as paths
 import ofscraper.utils.console as console
@@ -39,14 +40,14 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 
-async def get_messages(model_id):
+async def get_messages(model_id,username,after=None):
     cache = Cache(paths.getcachepath())
     overall_progress=Progress(SpinnerColumn(style=Style(color="blue"),),TextColumn("Getting Messages...\n{task.description}"))
     job_progress=Progress("{task.description}")
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    setCache=True if not not args_.getargs().after else False
+    setCache=True if not args_.getargs().after else False
 
     global tasks
     
@@ -61,20 +62,14 @@ async def get_messages(model_id):
         async with sessionbuilder.sessionBuilder() as c: 
             if not args_.getargs().no_cache:oldmessages=cache.get(f"messages_{model_id}",default=[])  
             else: oldmessages=[];setCache=False
-            log.trace("oldamessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldmessages)))))
+            log.trace("oldmessage {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldmessages: {str(x)}",oldmessages)))))
+            oldmessages=list(filter(lambda x:(x.get("date"))!=None,oldmessages))
             log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-            oldmessages=list(filter(lambda x:(x.get("createdAt") or x.get("postedAt"))!=None,oldmessages))
-            
-            [ele.update({"date":arrow.get(ele.get("createdAt") or ele.get("postedAt")).float_timestamp}) for ele in oldmessages]
+
             sorted(oldmessages,key=lambda x:x.get("date"),reverse=True)
-            after=(args_.getargs().after.float_timestamp if args_.getargs().after else None) \
-            or (0 if cache.get(f"last_success_{model_id}")!=True else None) \
-            or (oldmessages[-1].get("date" )if len(oldmessages)>0 else None) or 0
+            after=after or get_after(model_id,username)
+            filteredArray=list(filter(lambda x:x.get("date")>=after, oldmessages))
 
-            filteredArray=list(filter(lambda x:x.get("date")>=after, oldmessages)) if len( oldmessages)>0 else []
-
-
-            
             IDArray=list(map(lambda x:x.get("id"),filteredArray))
             postedAtArray=list(map(lambda x:x.get("date"),filteredArray))
             
@@ -125,14 +120,57 @@ async def get_messages(model_id):
 
     if setCache:
         newcache={}
-        for messages in oldmessages+list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped.values())):
-            id=messages["id"]
+        for message in oldmessages+list(unduped.values()):
+            id=message["id"]
             if newcache.get(id):continue
-            newcache[id]=message
-        cache.set(f"messages_{model_id}",list(map(lambda x:{"id":x.get("id"),"createdAt":x.get("createdAt") or x.get("postedAt") },unduped.values())),expire=constants.RESPONSE_EXPIRY)
+            newcache[id]={"id":message.get("id"), \
+                     "date":arrow.get(message.get("createdAt") or message.get("postedAt")).float_timestamp,\
+                     "createdAt":message.get("createdAt") or message.get("postedAt") }
+        cache.set(f"messages_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check__{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
-        cache.close()        
+        cache.close()
+
+    if setCache:
+        lastpost=cache.get(f"messages_{model_id}_lastpost")
+        post=sorted(newcache.values(),key=lambda x:x.get("date"))
+        if len(post)>0:
+            post=post[-1]
+            if not lastpost:
+                cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
+                cache.close()
+            if lastpost and float(post['date'])>lastpost[0]:
+                cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
+                cache.close()
+    
+    if setCache:
+        lastpost=cache.get(f"messages_{model_id}_lastpost")
+        post=sorted(newcache.values(),key=lambda x:x.get("date"))
+        if len(post)>0:
+            post=post[-1]
+            if not lastpost:
+                cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
+                cache.close()
+            if lastpost and float(post['date'])>lastpost[0]:
+                cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
+                cache.close()
+            
+    if setCache and after==0:
+        firstpost=cache.get(f"messages_{model_id}_firstpost")
+        post=sorted(newcache.values(),key=lambda x:x.get("date"))
+        if len(post)>0:  
+            post=post[0]
+            if not firstpost:
+                cache.set(f"messages_{model_id}_firstpost",(float(post['date']),post["id"]))
+                cache.close()
+            if firstpost and float(post['date'])<firstpost[0]:
+                cache.set(f"messages_{model_id}_firstpost",(float(post['date']),post["id"]))
+                cache.close()
+
+    
+    
+    
     return unduped.values()    
+           
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_messages(c, model_id, progress,message_id=None,required_ids=None) -> list:
@@ -198,3 +236,16 @@ def get_individual_post(model_id,postid,c=None):
             log.debug(f"[bold]invidual message  response:[/bold] {r.text_()}")
             log.debug(f"[bold]invidual message  headers:[/bold] {r.headers}")
 
+def get_after(model_id,username):
+    cache = Cache(getcachepath())
+    if args_.getargs().after:
+        return args_.getargs().after.float_timestamp
+    if not cache.get(f"messages_{model_id}_lastpost") or not cache.get(f"messages_{model_id}_firstpost"):
+        log.debug("initial messages to 0")
+        return 0
+    if len(list(filter(lambda x:x[-2]==0,operations.get_messages_media(model_id=model_id,username=username))))==0:
+        log.debug("set initial message to last messageid")
+        return cache.get(f"messages_{model_id}_lastpost")[0]
+    else:
+        log.debug("initial messages to 0")
+        return 0

@@ -196,9 +196,11 @@ def normal_post_process():
                 for value in user_dict.values():
                     model_id =value[0].post.model_id
                     username=value[0].post.username
+                    log.info(f"inserting {len(value)} items into  into media table for {username}")
+                    asyncio.run(operations.batch_mediainsert( value,operations.write_media_table,model_id=model_id,username=username,downloaded=False))  
                     operations.create_tables(model_id=model_id,username=username)
                     operations.write_profile_table(model_id=model_id,username=username)
-                    results=misc.download_picker(
+                    misc.download_picker(
                         username,
                         model_id,
                         value,

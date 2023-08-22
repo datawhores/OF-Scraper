@@ -9,7 +9,6 @@ r"""
 """
 
 import asyncio
-import time
 import logging
 import uvloop
 from itertools import chain
@@ -40,14 +39,18 @@ def process_messages(model_id,username):
     with stdout.lowstdout():
         import uvloop
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        messages_ =asyncio.run(messages.get_messages(  model_id)) 
+        messages_ =asyncio.run(messages.get_messages(  model_id,username)) 
         messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
         log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
         log.debug("Removing locked messages media")
-        for message in messages_:
-            operations.write_messages_table(message)
+        curr=set(operations.get_all_messages_ids(model_id=model_id,username=username))
+        [operations.write_messages_table(message,model_id=model_id,username=username) for message in filter(lambda x:x.id not in curr,messages_)]
+
+            
         output=[]
         [ output.extend(message.media) for message in messages_]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
+
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
 def process_paid_post(model_id,username):
@@ -61,6 +64,9 @@ def process_paid_post(model_id,username):
             operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [output.extend(post.media) for post in paid_content]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
+        
+        
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
          
@@ -75,6 +81,8 @@ def process_stories( model_id,username):
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
         output=[]
         [ output.extend(stories.media) for stories in stories]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
+       
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
         
@@ -89,7 +97,11 @@ def process_highlights( model_id,username):
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
         output=[]
         [ output.extend(stories.media) for stories in highlights_]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
+     
         return list(filter(lambda x:isinstance(x,media.Media),output))
+
+
 
           
 
@@ -99,7 +111,7 @@ def process_highlights( model_id,username):
 def process_timeline_posts(model_id,username,individual=False):
     with stdout.lowstdout():
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        timeline_posts = asyncio.run(timeline.get_timeline_post( model_id,username)) if not individual else timeline.get_individual_post(id)
+        timeline_posts = asyncio.run(timeline.get_timeline_media( model_id,username)) if not individual else timeline.get_individual_post(id)
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")
@@ -115,7 +127,7 @@ def process_timeline_posts(model_id,username,individual=False):
 def process_archived_posts( model_id,username):
     with stdout.lowstdout():
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        archived_posts = asyncio.run(archive.get_archived_post(model_id,username))
+        archived_posts = asyncio.run(archive.get_archived_media(model_id,username))
         archived_posts =list(map(lambda x:posts_.Post(x,model_id,username,"archived"),archived_posts ))
         log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
         log.debug("Removing locked archived media")
@@ -144,6 +156,7 @@ def process_pinned_posts( model_id,username):
             operations.write_post_table(post,model_id=model_id,username=username)
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
+        asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
  
         return list(filter(lambda x:isinstance(x,media.Media),output))
  
@@ -167,7 +180,7 @@ def process_all_paid():
         user_dict={}
         post_array=[]
         [user_dict.update({(ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id"):user_dict.get((ele.get("fromUser",None) or ele.get("author",None) or {} ).get("id"),[])+[ele]}) for ele in paid_content]
-
+        output=[]
         for model_id,value in user_dict.items():
             username=profile.scrape_profile(model_id).get("username")
             operations.create_tables(model_id=model_id,username=username)
@@ -178,13 +191,14 @@ def process_all_paid():
             log.debug(f"Created table for {username}")
             new_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
             post_array.extend(new_posts)
-            [operations.write_post_table(post,model_id=model_id,username=username) for post in new_posts]
-            log.debug(f"Added Paid media for {username}_{model_id}")
-
-                     
+            curr=set(operations.get_all_post_ids(model_id=model_id,username=username) or [])
+            [operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x not in curr,new_posts)]
+            temp=[]
+            [temp.extend(post.media) for post in post_array]
+            output.extend(temp)
+            log.debug(f"Added Paid {len(temp)} media items for {username}_{model_id}")
         log.debug(f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.media),post_array))}")
-        output=[]
-        [output.extend(post.media) for post in post_array]
+
         return output
 
 def process_labels(model_id, username):
