@@ -146,7 +146,6 @@ def reset_globals():
 
 def process_dicts(username,model_id,filtered_medialist):
     log=logging.getLogger("shared")
-    filtered_medialist=list(filter(lambda x:x.mpd!=None,filtered_medialist))
     try:
         reset_globals()
         random.shuffle(filtered_medialist)
