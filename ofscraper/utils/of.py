@@ -60,12 +60,12 @@ def process_paid_post(model_id,username):
         paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
         log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
         log.debug("Removing locked paid media")
-        for post in paid_content:
-            operations.write_post_table(post,model_id=model_id,username=username)
+        curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
+        [operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,paid_content)]            
         output=[]
         [output.extend(post.media) for post in paid_content]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
-        
+
         
         return list(filter(lambda x:isinstance(x,media.Media),output))
 
