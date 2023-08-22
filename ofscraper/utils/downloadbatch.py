@@ -210,7 +210,7 @@ def process_dicts(username,model_id,filtered_medialist):
                 raise KeyboardInterrupt
         except Exception:
             raise KeyboardInterrupt
-    log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios],  {forced_skipped} skipped, {skipped} failed)' )
+    log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios, {photo_count} photos],  {forced_skipped} skipped, {skipped} failed)' )
     cache = Cache(paths.getcachepath())
     cache.close()
     return photo_count,video_count,audio_count,forced_skipped,skipped
@@ -350,6 +350,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     file_size_min = args_.getargs().size_min or config_.get_filesize_min(config_.read_config()) 
     global thread
     thread=ThreadPoolExecutor(max_workers=config_.get_download_semaphores(config_.read_config())*2)   
+    global cache_thread
+    cache_thread=ThreadPoolExecutor(max_workers=1)   
     aws=[]
 
     async with sessionbuilder.sessionBuilder() as c:
@@ -475,8 +477,8 @@ async def main_download_helper(c,ele,path,username,model_id):
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def main_download_downloader(c,ele,path,username,model_id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.id}_headers"))
-    await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
+    await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             content_type = data.get("content-type").split('/')[-1]
@@ -510,7 +512,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                 async with c.requests(url=url,headers=headers)() as r:
                         if r.ok:
                             data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                             total=int(data['content-length'])
                             if attempt.get()==1: await pipe_.coro_send(  (None, 0,total))
                             content_type = data.get("content-type").split('/')[-1]
@@ -552,9 +554,9 @@ async def main_download_downloader(c,ele,path,username,model_id):
             innerlog.get().traceback(E)
             raise E
         finally:
-            await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
         size_checker(temp,ele,total)
-        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.touch,f"{ele.filename}_headers",1))
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
         return total,temp,path_to_file
         
     total=int(data.get("content-length")) if data else None
@@ -673,8 +675,8 @@ async def alt_download_downloader(item,c,ele,path):
     url=f"{base_url}{item['origname']}"
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{item['name']}_headers"))
-    await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers"))
+    await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
     
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     item['path']=temp
@@ -711,7 +713,7 @@ async def alt_download_downloader(item,c,ele,path):
                         item["total"]=total or int(l.headers['content-length'])
                         total=item["total"]
                         data=l.headers
-                        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                         check1=check_forced_skip(ele,item["total"])
                         if check1:
                             return check1
@@ -735,7 +737,7 @@ async def alt_download_downloader(item,c,ele,path):
                         innerlog.get().debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
                 size_checker(temp,ele,total) 
-                await asyncio.get_event_loop().run_in_executor(thread,partial( cache.touch,f"{ele.filename}_headers",1))
+                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
             return item
                 
         except Exception as E:
@@ -743,7 +745,7 @@ async def alt_download_downloader(item,c,ele,path):
             innerlog.get().traceback(E)   
             raise E
         finally:
-            await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
     return await inner(item,c,ele)
 
@@ -755,7 +757,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
     log.debug(f"ID:{id} using cdrm auto key helper")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -777,7 +779,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
             log.debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
             out=soup.find("li").contents[0]
-            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
           
         return out
     except Exception as E:
@@ -785,7 +787,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
         log.traceback(traceback.format_exc())
         raise E 
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
      
 
@@ -795,7 +797,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using cdrm auto key helper")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
         innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -817,14 +819,14 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
             innerlog.get().debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
             out=soup.find("li").contents[0]
-            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
         return out
     except Exception as E:
         innerlog.get().traceback(E)
         innerlog.get().traceback(traceback.format_exc())
         raise E
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
@@ -832,7 +834,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using keydb auto key helper")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
         innerlog.get().debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -869,7 +871,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
         innerlog.get().traceback(traceback.format_exc())
         raise E
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
        
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
@@ -877,7 +879,7 @@ async def key_helper_manual(c,pssh,licence_url,id):
     innerlog.get().debug(f"ID:{id} using manual key helper")
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
-        out=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,licence_url))
+        out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         if out!=None:
             innerlog.get().debug(f"ID:{id} manual key helper got key from cache")
             return out
@@ -910,14 +912,14 @@ async def key_helper_manual(c,pssh,licence_url,id):
             cdm.close(session_id)
         keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
         key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-        await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
         return key
     except Exception as E:
         innerlog.get().traceback(E)
         innerlog.get().traceback(traceback.format_exc())
         raise E 
     finally:
-        await asyncio.get_event_loop().run_in_executor(thread,cache.close)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
   
                 
 
