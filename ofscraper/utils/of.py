@@ -76,8 +76,10 @@ def process_stories( model_id,username):
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         stories = asyncio.run(highlights.get_stories_post( model_id))
         stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))  
-        for post in stories:
-            operations.write_stories_table(post,model_id=model_id,username=username)   
+        curr=set(operations.get_all_stories_ids(model_id=model_id,username=username))
+        [operations.write_stories_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,stories)]
+
+               
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
         output=[]
         [ output.extend(stories.media) for stories in stories]
@@ -92,8 +94,10 @@ def process_highlights( model_id,username):
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         highlights_=asyncio.run(highlights.get_highlight_post( model_id))
         highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
-        for post in highlights_:
-            operations.write_stories_table(post,model_id=model_id,username=username)
+        curr=set(operations.get_all_stories_ids(model_id=model_id,username=username))
+        [operations.write_stories_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,highlights_)]
+
+        
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
         output=[]
         [ output.extend(stories.media) for stories in highlights_]

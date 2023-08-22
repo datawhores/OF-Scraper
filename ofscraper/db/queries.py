@@ -160,6 +160,10 @@ allMessagesCheck=\
 SELECT post_id FROM messages
 """
 
+allStoriesCheck=\
+"""
+SELECT post_id FROM stories
+"""
 
 
 mediaInsert=\

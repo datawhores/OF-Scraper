@@ -134,8 +134,15 @@ def write_stories_table(data: dict,model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         if len(cur.execute(queries.storiesDupeCheck,(data.id,)).fetchall())==0:
             insertData=(data.id,data.text or data.title or "",data.price,data.paid ,data.archived,data.date)
-            cur.execute(queries.staoriesInsert,insertData)
+            cur.execute(queries.storiesInsert,insertData)
             conn.commit()
+@operation_wrapper
+def get_all_stories_ids(model_id=None,username=None,conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.allStoriesCheck)
+        conn.commit()
+        return list(map(lambda x:x[0],cur.fetchall()))
+
 @operation_wrapper
 def create_media_table(model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
