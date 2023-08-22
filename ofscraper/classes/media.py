@@ -236,11 +236,10 @@ class Media():
             return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
     @property
     def filename_(self):
-        if self.filename==None:
-            return None
+        filename= self.filename or self.id         
         if self.mediatype=="videos":
-            return self.filename if re.search("_source",self.filename) else f"{self.filename}_source"
-        return self.filename
+            return filename if re.search("_source",filename) else f"{filename}_source"
+        return filename
 
             
 

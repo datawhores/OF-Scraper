@@ -208,7 +208,7 @@ async def process_dicts(username, model_id, medialist):
                                         p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=sum,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
         overall_progress.remove_task(task1)
     setDirectoriesDate()
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios,  {forced_skipped} skipped, {skipped} failed)' )
+    log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios],  {forced_skipped} skipped, {skipped} failed)' )
     return photo_count+video_count+audio_count,skipped
 
 def size_checker(path,ele,total,name=None):
@@ -294,7 +294,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
 
 async def main_download_downloader(c,ele,path,username,model_id,progress): 
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.filename}_headers"))
+    data=await asyncio.get_event_loop().run_in_executor(thread,partial( cache.get,f"{ele.id}_headers"))
     await asyncio.get_event_loop().run_in_executor(thread,cache.close)
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
@@ -310,7 +310,8 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                 return total ,temp,path_to_file
             elif total<resume_size:
                 pathlib.Path(temp).unlink(missing_ok=True)
-        
+    else:
+        paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part")).unlink(missing_ok=True)
 
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     @sem_wrapper
@@ -328,7 +329,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                 async with c.requests(url=url,headers=headers)() as r:
                         if r.ok:
                             data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.filename}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            await asyncio.get_event_loop().run_in_executor(thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                             total=int(data['content-length'])
                             if attempt.get()==1:await update_total(total)
                             content_type = data.get("content-type").split('/')[-1]
@@ -383,7 +384,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
     total=int(data.get("content-length")) if data else None
     return await inner(c,ele,path,username,model_id,progress,total)
     
-async def alt_download_helper(c,ele,apath,username,model_id,progress):
+async def alt_download_helper(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
     log.debug(f"{get_medialog(ele)} filename from config {filename}")
@@ -508,7 +509,8 @@ async def alt_download_downloader(item,c,ele,path,progress):
         elif item["total"]<resume_size:
                 pathlib.Path(temp).unlink(missing_ok=True)
        
-        
+    else:
+        paths.truncate(pathlib.Path(path,f"{item['name']}.part")).unlink(missing_ok=True)        
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     @sem_wrapper    
     async def inner(item,c,ele,progress):

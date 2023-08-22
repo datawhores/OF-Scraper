@@ -9,6 +9,7 @@ import multiprocessing
 import logging
 from threading import Event
 import uvloop
+from diskcache import Cache
 import ofscraper.utils.logger as logger
 import ofscraper.utils.args as args_
 import ofscraper.commands.scraper as scraper
@@ -20,7 +21,7 @@ import ofscraper.utils.paths as paths_
 import ofscraper.utils.console as console_
 import ofscraper.utils.exit as exit
 import ofscraper.utils.misc as misc
-
+import ofscraper.utils.paths as paths
 
 
 def main():
@@ -75,6 +76,12 @@ def main():
                     main_event.set()
                     if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
                     if other_log_thread:other_event.set()
+                    try:
+                        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+                        cache.close()
+                        raise E
+                    except:
+                         raise E
                    
             except KeyboardInterrupt:
                     main_event.set()

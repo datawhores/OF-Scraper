@@ -210,7 +210,7 @@ def process_dicts(username,model_id,filtered_medialist):
                 raise KeyboardInterrupt
         except Exception:
             raise KeyboardInterrupt
-    log.error(f'[bold]{username}[/bold] ({photo_count} photos, {video_count} videos, {audio_count} audios, {forced_skipped} skipped, {skipped} failed)' )
+    log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios],  {forced_skipped} skipped, {skipped} failed)' )
     return photo_count,video_count,audio_count,forced_skipped,skipped
 
 
@@ -489,6 +489,8 @@ async def main_download_downloader(c,ele,path,username,model_id):
                 return total ,temp,path_to_file
             elif total<resume_size:
                 pathlib.Path(temp).unlink(missing_ok=True)
+    else:
+        paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part")).unlink(missing_ok=True)
 
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     @sem_wrapper
@@ -536,7 +538,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                                     innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
                                     await f.write(chunk)
                                     if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0            
-                            
+                            await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})                            
                         else:
                             innerlog.get().debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
                             innerlog.get().debug(f"[bold {get_medialog(ele)} ]main download  response text [/bold]: {await r.text_()}")
@@ -683,6 +685,8 @@ async def alt_download_downloader(item,c,ele,path):
             return check1
         elif item["total"]<resume_size:
                 pathlib.Path(temp).unlink(missing_ok=True)
+    else:
+        paths.truncate(pathlib.Path(path,f"{item['name']}.part")).unlink(missing_ok=True)
     @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
     @sem_wrapper    
     async def inner(item,c,ele):

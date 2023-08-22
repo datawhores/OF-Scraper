@@ -458,7 +458,7 @@ def cache_mode_helper(config):
     if config==None:
         return constants.CACHEDEFAULT
     data= config.get("cache-mode",constants.CACHEDEFAULT)
-    if not data in [constants.CACHEDEFAULT,"json"]:return data
+    if data in [constants.CACHEDEFAULT,"json"]:return data
     else:return constants.CACHEDEFAULT
    
 
