@@ -40,7 +40,7 @@ def main():
         #and if the the args are set
         if not args_.getargs().log and args_.getargs().discord:
             None
-        elif misc.getcpu_count()>=3 :other_log_process=logger.start_other_process()
+        elif misc.getcpu_count()>=2 :other_log_process=logger.start_other_process()
         else: other_log_thread=logger.start_other_thread(event=other_event)
         # allow background processes to start
         time.sleep(3)
@@ -109,6 +109,8 @@ def startvalues():
     log.debug(f"ssl {ssl.get_default_verify_paths()}")
     log.debug(f"python version {platform. python_version()}" )
     log.debug(f"certifi {certifi.where()}")
+    log.debug(f"number {misc.getcpu_count()} process")
+
 
 def discord_warning():
     if args_.getargs().discord=="DEBUG":

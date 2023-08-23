@@ -16,7 +16,6 @@ import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
-from multiprocessing.managers import BaseProxy
 queue_=aioprocessing.AioQueue()
 otherqueue_=aioprocessing.AioQueue()
 
@@ -427,14 +426,17 @@ def start_other_thread(input_=None,name=None,count=1,event=None):
     return thread
     
 def start_other_process(input_=None,name=None,count=1):
-    def inner(input_=None,name=None,count=1):
+    def inner(input_=None,name=None,count=1,args_=None):
+        if args_:args.changeargs(args_)
         input_=input_ or otherqueue_
         logger_other(input_,name,count)
         
-
-    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count),daemon=True) if (args.getargs().log or args.getargs().discord) else None
+    process=None
+    if (args.getargs().log or args.getargs().discord):
+        input_=otherqueue_
+        process=aioprocessing.AioProcess(target=inner,args=(input_,name,count,args.getargs()),daemon=True) 
     process.start() if process else None
-    return process 
+    return process  
 
     
 
