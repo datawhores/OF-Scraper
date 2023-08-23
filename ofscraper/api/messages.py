@@ -68,6 +68,7 @@ async def get_messages(model_id,username,after=None):
 
             sorted(oldmessages,key=lambda x:x.get("date"),reverse=True)
             after=after or get_after(model_id,username)
+            log.debug(f"setting after for messages to {after} for {username}")
             filteredArray=list(filter(lambda x:x.get("date")>=after, oldmessages))
             IDArray=list(map(lambda x:x.get("id"),filteredArray))
             postedAtArray=list(map(lambda x:x.get("date"),filteredArray))

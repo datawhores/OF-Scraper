@@ -123,6 +123,7 @@ async def get_archived_media(model_id,username,after=None):
             oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
             postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
             after=after or get_after(model_id,username)
+            log.debug(f"setting after for archive to {after} for {username}")
             filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
             
 
