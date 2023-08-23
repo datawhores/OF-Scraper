@@ -140,17 +140,6 @@ async def get_messages(model_id,username,after=None):
                 cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
                 cache.close()
     
-    if setCache:
-        lastpost=cache.get(f"messages_{model_id}_lastpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("date"))
-        if len(post)>0:
-            post=post[-1]
-            if not lastpost:
-                cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
-                cache.close()
-            if lastpost and float(post['date'])>lastpost[0]:
-                cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
-                cache.close()
             
     if setCache and after==0:
         firstpost=cache.get(f"messages_{model_id}_firstpost")
