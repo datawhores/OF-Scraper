@@ -109,7 +109,7 @@ def startvalues():
     log.debug(f"ssl {ssl.get_default_verify_paths()}")
     log.debug(f"python version {platform. python_version()}" )
     log.debug(f"certifi {certifi.where()}")
-    log.debug(f"number {misc.getcpu_count()} process")
+    log.debug(f"number {misc.getcpu_count()} threads available on system")
 
 
 def discord_warning():
@@ -131,3 +131,4 @@ def set_mulitproc_start_type():
 def set_eventloop():
     plat=platform.system()
     if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+

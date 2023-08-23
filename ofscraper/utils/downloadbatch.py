@@ -439,6 +439,7 @@ async def main_download_helper(c,ele,path,username,model_id):
         if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
         return result
     total ,temp,path_to_file=result
+    
     check1=size_checker(temp,ele,total)
     check2=check_forced_skip(ele,total)
     if check1:

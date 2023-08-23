@@ -28,15 +28,20 @@ from ofscraper.constants import DATABASE_TIMEOUT
 console=Console()
 log=logging.getLogger("shared")
 #print error 
-PROCESS_POOL=ThreadPoolExecutor(max_workers=1)
+
 
 
 def operation_wrapper_async(func:abc.Callable):
 
     async def inner(*args,**kwargs): 
-            LOCK_POOL=ThreadPoolExecutor(max_workers=1)
-            lock=FileLock(getDB(),timeout=-1)
-            loop = asyncio.get_event_loop()
+            try:
+                LOCK_POOL=ThreadPoolExecutor(max_workers=1)
+                PROCESS_POOL=ThreadPoolExecutor(max_workers=1)
+                lock=FileLock(getDB(),timeout=-1)
+                loop = asyncio.get_event_loop()
+            except Exception as E:
+                raise E
+            
             try: 
                 await loop.run_in_executor(LOCK_POOL, lock.acquire)
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
@@ -60,8 +65,11 @@ def operation_wrapper_async(func:abc.Callable):
 
 
 def operation_wrapper(func:abc.Callable):
-    def inner(*args,**kwargs): 
-            lock=FileLock(getDB(),timeout=-1)
+    def inner(*args,**kwargs):
+            try:
+                lock=FileLock(getDB(),timeout=-1)
+            except Exception as E:
+                raise E
             try:
                 lock.acquire(timeout=-1)  
                 datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
@@ -90,7 +98,7 @@ def create_message_table(model_id=None,username=None,conn=None):
         cur.execute(queries.messagesCreate)
         conn.commit()
 
-def write_messages_table(message: dict):
+def write_messages_table(message: dict,**kwargs):
     @operation_wrapper
     def inner(model_id=None,username=None,message=None,conn=None):
         with contextlib.closing(conn.cursor()) as cur:
@@ -98,7 +106,7 @@ def write_messages_table(message: dict):
                 insertData=(message.id,message.text,message.price,message.paid,message.archived,message.date,message.model_id)
                 cur.execute(queries.messagesInsert,insertData)
                 conn.commit()
-    return inner(model_id=message.model_id,username=message.username,message=message)
+    return inner(message=message,**kwargs)
 
 @operation_wrapper
 def get_all_messages_ids(model_id=None,username=None,conn=None) -> list:

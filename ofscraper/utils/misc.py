@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 import platform
+import pathlib
 import psutil
 import asyncio
 import logging
@@ -9,8 +10,8 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.downloadbatch as batchdownloader
 import ofscraper.utils.download as download
 import ofscraper.utils.config as config_
-import ofscraper.utils.config as config_
-import ofscraper.db.operations as operations
+import ofscraper.utils.paths as paths
+
 
 
 def getcpu_count():
@@ -52,6 +53,4 @@ def download_picker(username, model_id, medialist):
                     ))
     
 
-
-    
 

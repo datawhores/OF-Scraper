@@ -43,6 +43,7 @@ highlightsWithStoriesEP = 'https://onlyfans.com/api2/v2/users/{}/stories/highlig
 highlightsWithAStoryEP = 'https://onlyfans.com/api2/v2/users/{}/stories?unf=1'
 storyEP = 'https://onlyfans.com/api2/v2/stories/highlights/{}?unf=1'
 
+
 messagesEP = 'https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&offset=0&order=desc&skip_users=all&skip_users_dups=1'
 messagesNextEP = 'https://onlyfans.com/api2/v2/chats/{}/messages?limit=100&offset=0&id={}&order=desc&skip_users=all&skip_users_dups=1'
 

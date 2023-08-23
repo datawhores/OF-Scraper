@@ -47,10 +47,11 @@ async def get_messages(model_id,username,after=None):
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    setCache=True if not args_.getargs().after else False
+    setCache=True if not args_.getargs().before else False
 
     global tasks
-    
+    global after_
+
 
 
     tasks=[]
@@ -66,28 +67,64 @@ async def get_messages(model_id,username,after=None):
             oldmessages=list(filter(lambda x:(x.get("date"))!=None,oldmessages))
             log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
 
-            sorted(oldmessages,key=lambda x:x.get("date"),reverse=True)
-            after=after or get_after(model_id,username)
-            log.debug(f"setting after for messages to {after} for {username}")
-            filteredArray=list(filter(lambda x:x.get("date")>=after, oldmessages))
-            IDArray=list(map(lambda x:x.get("id"),filteredArray))
-            postedAtArray=list(map(lambda x:x.get("date"),filteredArray))
+            oldmessages=sorted(oldmessages,key=lambda x:x.get("date"),reverse=True)
+            oldmessages=[{"date":arrow.now().float_timestamp,"id":None}]+oldmessages
             
-            if len(IDArray)>min_posts:
+            before=args_.getargs().before or arrow.now().float_timestamp     
+            after_=after or get_after(model_id,username)
+            log.debug(f"Messages after = {after_}")
+            log.debug(f"Messages before = {before}")
+    
+            if after_>before:return []
+            
+            i=None
+            j=None
+
+             
+
+            if before>=oldmessages[1].get("date"):i=0
+            elif before<=oldmessages[-1].get("date"):i=len(oldmessages)-2
+            else: i=list(x.get("date")<before for x in oldmessages).index(True)
+
+            if after_>oldmessages[1].get("date"):j=2
+            elif after_<oldmessages[-1].get("date"):j=len(oldmessages)
+            else: temp=list(x.get("date")<after_ for x in oldmessages);j=temp.index(True) if True in temp else len(oldmessages)
+            j=min(max(i+2,j),len(oldmessages))
+            i=max(min(j-2,i),0)
+            log.debug(f"Messages found i=={i} length=={len(oldmessages)}")
+            log.debug(f"Messages found j=={j} length=={len(oldmessages)}")
+            filteredArray=oldmessages[i:j]
+
+
+
+            
+            
+
+            IDArray=list(map(lambda x:x.get("id"),filteredArray)) if len(filteredArray)>0 else []
+            postedAtArray=list(map(lambda x:x.get("date"),filteredArray)) if len(filteredArray)>0 else []
+            
+            
+            
+            if len(IDArray)<2:
+                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None)))
+            
+            elif len(IDArray)>=min_posts:
                 splitArraysID=[IDArray[i:i+min_posts] for i in range(0, len(IDArray), min_posts)]
                 splitArraysTime=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
 
-                #use the previous split for message_id
+                
 
-                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if len(filteredArray)==len(oldmessages) else splitArraysID[0][0] ,required_ids=set(splitArraysTime[0]))))
+                #use the previous split for message_id
+                if i==0:tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None,required_ids=set(splitArraysTime[0]))))
+                else:tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[0][0],required_ids=set(splitArraysTime[0]))))
                 [tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,required_ids=set(splitArraysTime[i]),message_id=splitArraysID[i-1][-1])))
                 for i in range(1,len(splitArraysID)-1)]
                 # keeping grabbing until nothing left
                 tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-2][-1])))
+            
             else:
-                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None if len(filteredArray)==len(oldmessages) else postedAtArray[0])))
+                tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=IDArray[0],required_ids=set(postedAtArray[1:]))))
         
-    
             page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
 
 
@@ -118,7 +155,7 @@ async def get_messages(model_id,username,after=None):
 
     if setCache:
         newcache={}
-        for message in oldmessages+list(unduped.values()):
+        for message in oldmessages[1:]+list(unduped.values()):
             id=message["id"]
             if newcache.get(id):continue
             newcache[id]={"id":message.get("id"), \
@@ -127,7 +164,7 @@ async def get_messages(model_id,username,after=None):
         cache.set(f"messages_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
         cache.set(f"message_check__{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
-
+    
     if setCache:
         lastpost=cache.get(f"messages_{model_id}_lastpost")
         post=sorted(newcache.values(),key=lambda x:x.get("date"))
@@ -139,7 +176,6 @@ async def get_messages(model_id,username,after=None):
             if lastpost and float(post['date'])>lastpost[0]:
                 cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
                 cache.close()
-    
             
     if setCache and after==0:
         firstpost=cache.get(f"messages_{model_id}_firstpost")
@@ -187,7 +223,7 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
                     log.trace("{log_id} -> messages raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f" messages scrapeinfo: {str(x)}",messages)))))
                     timestamp=arrow.get( messages[-1].get("createdAt") or messages[-1].get("postedAt")).float_timestamp
 
-                    if (timestamp<(args_.getargs().after or arrow.get(0)).float_timestamp):
+                    if (timestamp<after_):
                         attempt.set(0)
                     elif required_ids==None:
                         attempt.set(0)
@@ -236,3 +272,4 @@ def get_after(model_id,username):
     else:
         log.debug("initial messages to 0")
         return 0
+
