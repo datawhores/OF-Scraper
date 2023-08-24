@@ -109,7 +109,7 @@ def startvalues():
     log.debug(f"ssl {ssl.get_default_verify_paths()}")
     log.debug(f"python version {platform. python_version()}" )
     log.debug(f"certifi {certifi.where()}")
-    log.debug(f"number {misc.getcpu_count()} threads available on system")
+    log.debug(f"number of threads available on system {misc.getcpu_count()}")
 
 
 def discord_warning():
