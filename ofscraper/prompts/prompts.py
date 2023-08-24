@@ -10,6 +10,7 @@ r"""
 import sys
 import re
 import os
+import json
 from rich.console import Console
 
 import arrow
@@ -348,6 +349,7 @@ def config_prompt_advanced(config_) -> dict:
 
     config_.update(threads)
     max_allowed=50 if int(threads["threads"])==0 else max(-(-(50//int(threads["threads"]))),6)
+
          
     new_settings =promptClasses.batchConverter(*   [{
             'type': 'number',
@@ -377,16 +379,16 @@ def config_prompt_advanced(config_) -> dict:
         {
             'type': 'list',
             'name': 'dynamic-mode-default',
-            'message': 'What would you like to use for dynamic rules',
+            'message': 'What would you like to use for dynamic rules\nhttps://grantjenks.com/docs/diskcache/tutorial.html#caveats',
             'default': config.get_dynamic(config_),
             'choices':["deviint","digitalcriminals"],
         },
         
             {
-            'type': 'cache mode',
-            'name': 'dynamic-mode-default',
-            'message': 'sqlite should be fine unless your using a network drive',
-            'default': config.get_dynamic(config_),
+            'type': 'list',
+            'name': 'cache-mode',
+            'message': 'sqlite should be fine unless your using a network drive\nSee',
+            'default': config.cache_mode_helper(config_),
             'choices':["sqlite","json"],
         },
         {
@@ -438,7 +440,8 @@ def config_prompt_advanced(config_) -> dict:
             'name': 'custom',
             'message': 'edit custom value:\n',
             "long_instruction":"This is a helper value for remapping placeholder values",
-            'default': config.get_custom(config_) or "",
+            'default':json.loads(config.get_custom(config_)) if not isinstance(config.get_custom(config_),str) \
+            else config.get_custom(config_) or "" ,
         },
         {
             "type":"list",
