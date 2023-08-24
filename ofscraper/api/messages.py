@@ -47,7 +47,8 @@ async def get_messages(model_id,username,after=None):
     progress_group = Group(
     overall_progress,
     Panel(Group(job_progress)))
-    setCache=True if not args_.getargs().before else False
+    setCache=True if not args_.getargs().after else False
+    setCache=True
 
     global tasks
     global after_
@@ -70,7 +71,7 @@ async def get_messages(model_id,username,after=None):
             oldmessages=sorted(oldmessages,key=lambda x:x.get("date"),reverse=True)
             oldmessages=[{"date":arrow.now().float_timestamp,"id":None}]+oldmessages
             
-            before=args_.getargs().before or arrow.now().float_timestamp     
+            before=(args_.getargs().before or arrow.now()).float_timestamp     
             after_=after or get_after(model_id,username)
             log.debug(f"Messages after = {after_}")
             log.debug(f"Messages before = {before}")
@@ -84,9 +85,9 @@ async def get_messages(model_id,username,after=None):
 
             if before>=oldmessages[1].get("date"):i=0
             elif before<=oldmessages[-1].get("date"):i=len(oldmessages)-2
-            else: i=list(x.get("date")<before for x in oldmessages).index(True)
+            else: i=list(x.get("date")>before for x in oldmessages).index(False)-1
 
-            if after_>oldmessages[1].get("date"):j=2
+            if after_>=oldmessages[1].get("date"):j=2
             elif after_<oldmessages[-1].get("date"):j=len(oldmessages)
             else: temp=list(x.get("date")<after_ for x in oldmessages);j=temp.index(True) if True in temp else len(oldmessages)
             j=min(max(i+2,j),len(oldmessages))
@@ -141,7 +142,6 @@ async def get_messages(model_id,username,after=None):
                 tasks=list(filter(lambda x:x.done()==False,tasks))
             overall_progress.remove_task(page_task)  
     unduped={}
-    dupeSet=set()
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
 
 
@@ -150,7 +150,7 @@ async def get_messages(model_id,username,after=None):
         if unduped.get(id):continue
         unduped[id]=message
 
-    log.trace(f"messages dupeset messageids {dupeSet}")
+    log.trace(f"messages dupeset messageids {unduped.keys()}")
     log.trace("messages raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo message: {str(x)}",unduped)))))
 
     if setCache:
@@ -167,25 +167,25 @@ async def get_messages(model_id,username,after=None):
     
     if setCache:
         lastpost=cache.get(f"messages_{model_id}_lastpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("date"))
+        post=sorted(newcache.values(),key=lambda x:x.get("date"),reverse=True)
         if len(post)>0:
             post=post[-1]
             if not lastpost:
                 cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
                 cache.close()
-            if lastpost and float(post['date'])>lastpost[0]:
+            if lastpost and float(post['date'])<lastpost[0]:
                 cache.set(f"messages_{model_id}_lastpost",(float(post['date']),post["id"]))
                 cache.close()
             
-    if setCache and after==0:
+    if setCache:
         firstpost=cache.get(f"messages_{model_id}_firstpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("date"))
+        post=sorted(newcache.values(),key=lambda x:x.get("date"),reverse=True)
         if len(post)>0:  
             post=post[0]
             if not firstpost:
                 cache.set(f"messages_{model_id}_firstpost",(float(post['date']),post["id"]))
                 cache.close()
-            if firstpost and float(post['date'])<firstpost[0]:
+            if firstpost and float(post['date'])>firstpost[0]:
                 cache.set(f"messages_{model_id}_firstpost",(float(post['date']),post["id"]))
                 cache.close()
 
@@ -268,7 +268,7 @@ def get_after(model_id,username):
         return 0
     if len(list(filter(lambda x:x[-2]==0,operations.get_messages_media(model_id=model_id,username=username))))==0:
         log.debug("set initial message to last messageid")
-        return cache.get(f"messages_{model_id}_lastpost")[0]
+        return cache.get(f"messages_{model_id}_firstpost")[0]
     else:
         log.debug("initial messages to 0")
         return 0
