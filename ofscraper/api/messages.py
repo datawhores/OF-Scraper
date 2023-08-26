@@ -77,24 +77,25 @@ async def get_messages(model_id,username,after=None):
             log.debug(f"Messages before = {before}")
     
             if after_>before:return []
-            
-            i=None
-            j=None
+            if len(oldmessages)>2:filteredArray=oldmessages
+            else:         
+                i=None
+                j=None
 
-             
+                
 
-            if before>=oldmessages[1].get("date"):i=0
-            elif before<=oldmessages[-1].get("date"):i=len(oldmessages)-2
-            else: i=list(x.get("date")>before for x in oldmessages).index(False)-1
+                if before>=oldmessages[1].get("date"):i=0
+                elif before<=oldmessages[-1].get("date"):i=len(oldmessages)-2
+                else: i=list(x.get("date")>before for x in oldmessages).index(False)-1
 
-            if after_>=oldmessages[1].get("date"):j=2
-            elif after_<oldmessages[-1].get("date"):j=len(oldmessages)
-            else: temp=list(x.get("date")<after_ for x in oldmessages);j=temp.index(True) if True in temp else len(oldmessages)
-            j=min(max(i+2,j),len(oldmessages))
-            i=max(min(j-2,i),0)
-            log.debug(f"Messages found i=={i} length=={len(oldmessages)}")
-            log.debug(f"Messages found j=={j} length=={len(oldmessages)}")
-            filteredArray=oldmessages[i:j]
+                if after_>=oldmessages[1].get("date"):j=2
+                elif after_<oldmessages[-1].get("date"):j=len(oldmessages)
+                else: temp=list(x.get("date")<after_ for x in oldmessages);j=temp.index(True) if True in temp else len(oldmessages)
+                j=min(max(i+2,j),len(oldmessages))
+                i=max(min(j-2,i),0)
+                log.debug(f"Messages found i=={i} length=={len(oldmessages)}")
+                log.debug(f"Messages found j=={j} length=={len(oldmessages)}")
+                filteredArray=oldmessages[i:j]
 
 
 
