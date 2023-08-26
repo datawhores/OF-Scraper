@@ -557,6 +557,8 @@ async def main_download_downloader(c,ele,path,username,model_id):
             await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
         size_checker(temp,ele,total)
         await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
+        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
+
         return total,temp,path_to_file
         
     total=int(data.get("content-length")) if data else None
@@ -738,6 +740,8 @@ async def alt_download_downloader(item,c,ele,path):
                         l.raise_for_status()
                 size_checker(temp,ele,total) 
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
+                await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
+
             return item
                 
         except Exception as E:
