@@ -130,7 +130,7 @@ async def process_dicts(username, model_id, medialist):
         , Panel(Group(job_progress,fit=True)))
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         log_queue=aioprocessing.AioQueue()
-        log_thread=logger.start_other_thread(log_trace,name=str("download-temp"))
+        log_thread=logger.start_other_thread(log_queue,name=str("download-temp"))
       
 
         global dirSet
