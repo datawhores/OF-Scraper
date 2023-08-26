@@ -77,7 +77,7 @@ async def get_messages(model_id,username,after=None):
             log.debug(f"Messages before = {before}")
     
             if after_>before:return []
-            if len(oldmessages)>2:filteredArray=oldmessages
+            if len(oldmessages)<2:filteredArray=oldmessages
             else:         
                 i=None
                 j=None
