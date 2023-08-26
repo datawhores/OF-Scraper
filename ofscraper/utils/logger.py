@@ -270,7 +270,7 @@ def init_stdout_logger(name=None):
     return log
 
 def init_parent_logger(name=None,queue_=None):
-    name="ofscraper-download"
+    name=name or "ofscraper-download"
     log=logging.getLogger(name)
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)

@@ -9,6 +9,7 @@ r"""
 """
 from concurrent.futures import ThreadPoolExecutor
 from collections import abc
+import multiprocessing
 import asyncio
 import math
 import pathlib
@@ -47,7 +48,6 @@ try:
 except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
-import aioprocessing
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.auth as auth
@@ -143,7 +143,8 @@ async def process_dicts(username, model_id, medialist):
         global log
         log_thread=None
         if system.is_frozen() and platform.system()=="Windows":
-            log_queue=aioprocessing.AioQueue()
+
+            log_queue=multiprocessing.Queue()
             log_thread=logger.start_other_thread(log_queue,name=str("download-temp"))
             log=logger.init_parent_logger(name="temp",queue_=log_queue)
         else:
