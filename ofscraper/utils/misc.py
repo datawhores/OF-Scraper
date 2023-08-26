@@ -1,7 +1,4 @@
 from contextlib import asynccontextmanager
-import platform
-import pathlib
-import psutil
 import asyncio
 import logging
 import ofscraper.utils.separate as seperate
@@ -10,15 +7,10 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.downloadbatch as batchdownloader
 import ofscraper.utils.download as download
 import ofscraper.utils.config as config_
-import ofscraper.utils.paths as paths
+import ofscraper.utils.system as system
 
 
 
-def getcpu_count():
-    if platform.system() != 'Darwin':      
-        return len(psutil.Process().cpu_affinity())
-    else:
-        return psutil.cpu_count()
 
 def medialist_filter(medialist,model_id,username):
     log=logging.getLogger("shared")
@@ -42,7 +34,7 @@ def download_picker(username, model_id, medialist):
     if len(medialist)==0:
         log.error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)' )
         return  0,0,0,0,0
-    elif (len(medialist)>=config_.get_download_semaphores(config_.read_config())) and getcpu_count()>1 and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
+    elif (len(medialist)>=config_.get_download_semaphores(config_.read_config())) and system.getcpu_count()>1 and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         

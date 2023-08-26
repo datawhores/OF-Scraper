@@ -73,7 +73,7 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
-import ofscraper.utils.misc as misc
+import ofscraper.utils.system as system
 from aioprocessing import AioPipe
 platform_name=platform.system()
 if platform_name== 'Windows':
@@ -273,7 +273,7 @@ def queue_process(pipe_,overall_progress,job_progress,task1,total):
 
 def get_mediasplits(medialist):
     user_count=config_.get_threads(config_.read_config() or args_.getargs().downloadthreads)
-    final_count=min(user_count,misc.getcpu_count(), len(medialist)//5)
+    final_count=min(user_count,system.getcpu_count(), len(medialist)//5)
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):

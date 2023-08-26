@@ -18,6 +18,8 @@ import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
 queue_=aioprocessing.AioQueue()
 otherqueue_=aioprocessing.AioQueue()
+otherqueue2_=aioprocessing.AioQueue()
+
 
 class PipeHandler(logging.Handler):
     """
@@ -267,8 +269,9 @@ def init_stdout_logger(name=None):
 
     return log
 
-def init_parent_logger():
-    log=logging.getLogger("ofscraper-download")
+def init_parent_logger(name=None,queue_=None):
+    name="ofscraper-download"
+    log=logging.getLogger(name)
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
     addtraceback()
@@ -293,7 +296,8 @@ def init_parent_logger():
         sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(funct())
         log.addHandler(sh2)
-    log.addHandler(QueueHandler(otherqueue_))
+    queue_=queue_ or otherqueue_
+    log.addHandler(QueueHandler(queue_))
     return log
 
 def init_other_logger(name):
@@ -429,7 +433,7 @@ def start_other_process(input_=None,name=None,count=1):
     def inner(input_=None,name=None,count=1,args_=None):
         if args_:args.changeargs(args_)
         input_=input_ or otherqueue_
-        logger_other(input_,name,count)
+        start_other_thread(input_,name,count)
         
     process=None
     if (args.getargs().log or args.getargs().discord):

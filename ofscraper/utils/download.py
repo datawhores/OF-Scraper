@@ -62,6 +62,7 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
+import ofscraper.utils.system as system
 
 
 from diskcache import Cache
@@ -129,8 +130,7 @@ async def process_dicts(username, model_id, medialist):
         overall_progress
         , Panel(Group(job_progress,fit=True)))
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-        log_queue=aioprocessing.AioQueue()
-        log_thread=logger.start_other_thread(log_queue,name=str("download-temp"))
+        
       
 
         global dirSet
@@ -141,7 +141,14 @@ async def process_dicts(username, model_id, medialist):
         file_size_min=args_.getargs().size_min or config_.get_filesize_limit(config_.read_config()) 
       
         global log
-        log=logging.getLogger("download-temp")
+        log_thread=None
+        if system.is_frozen() and platform.system()=="Windows":
+            log_queue=aioprocessing.AioQueue()
+            log_thread=logger.start_other_thread(log_queue,name=str("download-temp"))
+            log=logger.init_parent_logger(name="temp",queue_=log_queue)
+        else:
+            log=logging.getLogger("ofscraper-download")
+            
         #log directly to stdout
         global log_trace
         log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
@@ -213,8 +220,9 @@ async def process_dicts(username, model_id, medialist):
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios], {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)' )
     cache = Cache(paths.getcachepath())
     cache.close()
-    log_queue.put("None")
-    log_thread.join()
+    #only set for windows frozen
+    if log_thread:log_queue.put("None")
+    if log_thread:log_thread.join()
     return photo_count,video_count,audio_count,forced_skipped,skipped
 
 
