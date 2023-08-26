@@ -238,7 +238,7 @@ def getNumber(input_):
     if isinstance(input_,str):return logging.getLevelName(input_)
     return input_
 
-def init_main_logger(name=None):
+def init_stdout_logger(name=None):
     log=logging.getLogger(name or "ofscraper")
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
@@ -267,7 +267,7 @@ def init_main_logger(name=None):
 
     return log
 
-def init_download_logger():
+def init_parent_logger():
     log=logging.getLogger("ofscraper-download")
     format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
@@ -338,7 +338,7 @@ def add_widget(widget):
 # executed in a process that performs logging
 def logger_process(input_,name=None,stop_count=1,event=None):
     # create a logger
-    log=init_main_logger(name)
+    log=init_stdout_logger(name)
     input_=input_ or queue_
     count=0
     close=False

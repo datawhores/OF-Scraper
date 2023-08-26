@@ -29,7 +29,7 @@ def main():
     other_log_thread=None
    
     try:
-        logger.init_download_logger()
+        logger.init_parent_logger()
         args=args_.getargs()
         if vars(args).get("help"):
             return

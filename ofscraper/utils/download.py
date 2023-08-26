@@ -47,7 +47,7 @@ try:
 except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
-
+import aioprocessing
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.auth as auth
@@ -129,8 +129,9 @@ async def process_dicts(username, model_id, medialist):
         overall_progress
         , Panel(Group(job_progress,fit=True)))
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
+        log_queue=aioprocessing.AioQueue()
+        log_thread=logger.start_other_thread(log_trace,name=str("download-temp"))
       
-
 
         global dirSet
         dirSet=set()
@@ -140,7 +141,7 @@ async def process_dicts(username, model_id, medialist):
         file_size_min=args_.getargs().size_min or config_.get_filesize_limit(config_.read_config()) 
       
         global log
-        log=logging.getLogger("ofscraper-download")
+        log=logging.getLogger("download-temp")
         #log directly to stdout
         global log_trace
         log_trace=True if "TRACE" in set([args_.getargs().log,args_.getargs().output,args_.getargs().discord]) else False
@@ -212,9 +213,10 @@ async def process_dicts(username, model_id, medialist):
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios], {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)' )
     cache = Cache(paths.getcachepath())
     cache.close()
+    log_queue.put("None")
+    log_thread.join()
     return photo_count,video_count,audio_count,forced_skipped,skipped
 
-    return photo_count+video_count+audio_count,skipped
 
 def size_checker(path,ele,total,name=None):
     name=name or ele.filename
@@ -368,7 +370,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                                         log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {attempt.get()}/{constants.NUM_TRIES}] ")
                                         await f.write(chunk)
                                         if count==constants.CHUNK_ITER:\
-                                        loop.run_in_executor(thread,partial( progress.update,task1, completed=size)); \
+                                        await loop.run_in_executor(thread,partial( progress.update,task1, completed=size)); \
                                         count=0
                         else:
                             log.debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
@@ -556,7 +558,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                                 size=size+len(chunk)
                                 log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
                                 await f.write(chunk)
-                                if count==constants.CHUNK_ITER:loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
+                                if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
                         
                         progress.remove_task(task1)
                     else:
@@ -757,6 +759,8 @@ async def key_helper_manual(c,pssh,licence_url,id):
             keys = cdm.get_keys(session_id)
             cdm.close(session_id)
         keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
+
+        
         key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
         await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
         return key
