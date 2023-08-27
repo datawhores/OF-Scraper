@@ -138,14 +138,8 @@ async def process_dicts(username, model_id, medialist):
         file_size_min=args_.getargs().size_min or config_.get_filesize_limit(config_.read_config()) 
       
         global log
-        log_thread=None
-        if system.is_frozen() and platform.system()=="Windows":
-
-            log_queue=multiprocessing.Queue()
-            log_thread=logger.start_other_thread(log_queue,name=str("download-temp"))
-            log=logger.init_parent_logger(name="temp",queue_=log_queue)
-        else:
-            log=logging.getLogger("ofscraper-download")
+     
+        log=logging.getLogger("ofscraper-download")
             
         #log directly to stdout
         global log_trace
@@ -226,9 +220,6 @@ async def process_dicts(username, model_id, medialist):
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} total downloaded [{video_count} videos, {audio_count} audios], {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)' )
     cache = Cache(paths.getcachepath())
     cache.close()
-    #only set for windows frozen
-    if log_thread:log_queue.put("None")
-    if log_thread:log_thread.join()
     return photo_count,video_count,audio_count,forced_skipped,skipped
 
 
