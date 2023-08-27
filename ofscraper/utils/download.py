@@ -71,9 +71,6 @@ attempt2 = contextvars.ContextVar("attempt")
 total_count = contextvars.ContextVar("total")
 total_count2 = contextvars.ContextVar("total")
 
-mpd_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
-total_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
-sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
 
 
 
@@ -167,6 +164,14 @@ async def process_dicts(username, model_id, medialist):
         
         global cache_thread
         cache_thread=ThreadPoolExecutor(max_workers=1)
+        #sems
+        global mpd_sem
+        global total_sem
+        global sem
+        mpd_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+        total_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+        sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+
 
     
 
@@ -469,36 +474,38 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
         await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
     return ele.mediatype,audio["total"]+video["total"]
 
-
-@sem_wrapper(mpd_sem)
 async def alt_download_preparer(ele):
-    log.debug(f"{get_medialog(ele)} Attempting to get info for {ele.filename_} with {ele.mpd}")
-    mpd=await ele.parse_mpd    
-    for period in mpd.periods:
-                for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
-                    kId=None
-                    for prot in adapt_set.content_protections:
-                        if prot.value==None:
-                            kId = prot.pssh[0].pssh 
+    @sem_wrapper(mpd_sem)
+    async def inner(ele):
+        log.debug(f"{get_medialog(ele)} Attempting to get info for {ele.filename_} with {ele.mpd}")
+        mpd=await ele.parse_mpd    
+        for period in mpd.periods:
+                    for adapt_set in filter(lambda x:x.mime_type=="video/mp4",period.adaptation_sets):             
+                        kId=None
+                        for prot in adapt_set.content_protections:
+                            if prot.value==None:
+                                kId = prot.pssh[0].pssh 
+                                break
+                        maxquality=max(map(lambda x:x.height,adapt_set.representations))
+                        for repr in adapt_set.representations:
+                            origname=f"{repr.base_urls[0].base_url_value}"
+                            if repr.height==maxquality:
+                                video={"origname":origname,"pssh":kId,"type":"video","name":f"tempvid_{origname}"}
+                                break
+                    for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
+                        kId=None
+                        for prot in adapt_set.content_protections:
+                            if prot.value==None:
+                                kId = prot.pssh[0].pssh 
+                                logger.updateSenstiveDict(kId,"pssh_code")
+                                break
+                        for repr in adapt_set.representations:
+                            origname=f"{repr.base_urls[0].base_url_value}"
+                            audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
                             break
-                    maxquality=max(map(lambda x:x.height,adapt_set.representations))
-                    for repr in adapt_set.representations:
-                        origname=f"{repr.base_urls[0].base_url_value}"
-                        if repr.height==maxquality:
-                            video={"origname":origname,"pssh":kId,"type":"video","name":f"tempvid_{origname}"}
-                            break
-                for adapt_set in filter(lambda x:x.mime_type=="audio/mp4",period.adaptation_sets):             
-                    kId=None
-                    for prot in adapt_set.content_protections:
-                        if prot.value==None:
-                            kId = prot.pssh[0].pssh 
-                            logger.updateSenstiveDict(kId,"pssh_code")
-                            break
-                    for repr in adapt_set.representations:
-                        origname=f"{repr.base_urls[0].base_url_value}"
-                        audio={"origname":origname,"pssh":kId,"type":"audio","name":f"tempaudio_{origname}"}
-                        break
-    return audio,video
+        return audio,video
+    return await inner(ele)
+
 
 async def alt_download_downloader(item,c,ele,path,progress):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
