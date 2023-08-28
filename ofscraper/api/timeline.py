@@ -7,6 +7,7 @@ r"""
                  \/     \/           \/            \/         
 """
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import contextvars
 import math
@@ -37,7 +38,7 @@ attempt = contextvars.ContextVar("attempt")
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_ids=None) -> list:
-    global tasks
+    global new_tasks
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
@@ -76,12 +77,12 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
                     log.trace("{log_id} -> post raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo timeline: {str(x)}",posts)))))
                     if required_ids==None:
                         attempt.set(0)
-                        tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                        new_tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
                     else:
                         [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
                         if len(required_ids)>0 and float((timestamp) or 0)<=max(required_ids):
                             attempt.set(0)
-                            tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
+                            new_tasks.append(asyncio.create_task(scrape_timeline_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
                     log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
                     log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
@@ -97,103 +98,110 @@ async def scrape_timeline_posts(c, model_id,progress, timestamp=None,required_id
 
 
 async def get_timeline_media(model_id,username,after=None): 
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
-    job_progress=Progress("{task.description}")
-    progress_group = Group(
-    overall_progress,
-    Panel(Group(job_progress)))
+    with  ThreadPoolExecutor(max_workers=20) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting timeline media...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
 
-    global tasks
-    tasks=[]
-    min_posts=50
-    responseArray=[]
-    page_count=0
-    setCache=True if not args_.getargs().after else False
-
-
-    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    if not args_.getargs().no_cache: oldtimeline=cache.get(f"timeline_{model_id}",default=[])
-    else: oldtimeline=[];setCache=False
-    log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
-    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
-    postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-    after=after or get_after(model_id,username)
-    log.debug(f"setting after for timeline to {after} for {username}")
-    filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
-              
-    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
-        async with sessionbuilder.sessionBuilder() as c:     
-            if len(filteredArray)>min_posts:
-                splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
-                #use the previous split for timestamp
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp=after)))
-                [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
-                for i in range(1,len(splitArrays)-1)]
-                # keeping grabbing until nothing left
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
-            else:
-                tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=after)))
-            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
-            while len(tasks)!=0:
-                for coro in asyncio.as_completed(tasks):
-                    try:
-                        result=await coro or []
-                    except Exception as E:
-                        setCache=False
-                        continue
-                    page_count=page_count+1
-                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                    responseArray.extend(result)
-                tasks=list(filter(lambda x:x.done()==False,tasks))
-            overall_progress.remove_task(page_task)
-    
-    unduped={}
-    log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        id=post["id"]
-        if unduped.get(id):continue
-        unduped[id]=post
-    
+        global tasks
+        global new_tasks
+        tasks=[]
+        new_tasks=[]
+        min_posts=50
+        responseArray=[]
+        page_count=0
+        setCache=True if not args_.getargs().after else False
 
 
-    log.trace(f"timeline dupeset postids {list(unduped.keys())}")
-    log.trace("post raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo timeline: {str(x)}",unduped)))))
-    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    if setCache:
-        newcache={}
-        for post in oldtimeline+list(unduped.values()):
+        cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+        if not args_.getargs().no_cache: oldtimeline=cache.get(f"timeline_{model_id}",default=[])
+        else: oldtimeline=[];setCache=False
+        log.trace("oldtimeline {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldtimeline: {str(x)}",oldtimeline)))))
+        log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
+        oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
+        postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
+        after=after or get_after(model_id,username)
+        log.debug(f"setting after for timeline to {after} for {username}")
+        filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
+                
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
+            async with sessionbuilder.sessionBuilder() as c:     
+                if len(filteredArray)>min_posts:
+                    splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
+                    #use the previous split for timestamp
+                    tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp=after)))
+                    [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
+                    for i in range(1,len(splitArrays)-1)]
+                    # keeping grabbing until nothing left
+                    tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
+                else:
+                    tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=after)))
+                page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
+                while tasks:
+                    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                    for result in done:
+                        try:
+                            result=await result
+                        except Exception as E:
+                            log.debug(E)
+                            continue
+                        page_count=page_count+1
+                        overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                        responseArray.extend(result)
+                    tasks = list(pending)
+                    tasks.extend(new_tasks)
+                    new_tasks=[]
+                overall_progress.remove_task(page_task)
+        
+        unduped={}
+        log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
+        for post in responseArray:
             id=post["id"]
-            if newcache.get(id):continue
-            newcache[id]={"id":post.get("id"),"postedAtPrecise":post.get("postedAtPrecise")}
-        cache.set(f"timeline_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
-        cache.set(f"timeline_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
-        cache.close()
-    if setCache:
-        lastpost=cache.get(f"timeline_{model_id}_lastpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
-        if len(post)>0:
-            post=post[-1]
-            if not lastpost:
-                cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
-            if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
-                cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
-            
-    if setCache and after==0:
-        firstpost=cache.get(f"timeline_{model_id}_firstpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
-        if len(post)>0:  
-            post=post[0]
-            if not firstpost:
-                cache.set(f"timeline_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
-            if firstpost and float(post['postedAtPrecise'])<firstpost[0]:
-                cache.set(f"timeline_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
+            if unduped.get(id):continue
+            unduped[id]=post
+        
 
-    return list(unduped.values() )                             
+
+        log.trace(f"timeline dupeset postids {list(unduped.keys())}")
+        log.trace("post raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo timeline: {str(x)}",unduped)))))
+        log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
+        if setCache:
+            newcache={}
+            for post in oldtimeline+list(unduped.values()):
+                id=post["id"]
+                if newcache.get(id):continue
+                newcache[id]={"id":post.get("id"),"postedAtPrecise":post.get("postedAtPrecise")}
+            cache.set(f"timeline_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
+            cache.set(f"timeline_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
+            cache.close()
+        if setCache:
+            lastpost=cache.get(f"timeline_{model_id}_lastpost")
+            post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+            if len(post)>0:
+                post=post[-1]
+                if not lastpost:
+                    cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
+                if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
+                    cache.set(f"timeline_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
+                
+        if setCache and after==0:
+            firstpost=cache.get(f"timeline_{model_id}_firstpost")
+            post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+            if len(post)>0:  
+                post=post[0]
+                if not firstpost:
+                    cache.set(f"timeline_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
+                if firstpost and float(post['postedAtPrecise'])<firstpost[0]:
+                    cache.set(f"timeline_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
+
+        return list(unduped.values() )                             
 
 
 def get_individual_post(id,c=None):

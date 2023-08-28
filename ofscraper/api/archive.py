@@ -7,6 +7,7 @@ r"""
                  \/     \/           \/            \/         
 """
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import logging
@@ -78,14 +79,14 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
 
                     if required_ids==None:
                         attempt.set(0)
-                        tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                        new_tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
                     else:
                         [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
 
     
                         if len(required_ids)>0 and float(timestamp or 0)<max(required_ids):
                             attempt.set(0)
-                            tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
+                            new_tasks.append(asyncio.create_task(scrape_archived_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],required_ids=required_ids)))
             else:
                     log.debug(f"[bold]archived response status code:[/bold]{r.status}")
                     log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
@@ -95,103 +96,110 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
     return posts
 
 async def get_archived_media(model_id,username,after=None): 
-    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting archived media...\n{task.description}"))
-    job_progress=Progress("{task.description}")
-    progress_group = Group(
-    overall_progress,
-    Panel(Group(job_progress)))
-    global tasks
-    tasks=[]
-    min_posts=50
-    responseArray=[]
-    page_count=0
-    setCache=True if not args_.getargs().after else False
+    with  ThreadPoolExecutor(max_workers=20) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting archived media...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
+        global tasks
+        global new_tasks
+        tasks=[]
+        new_tasks=[]
+        min_posts=50
+        responseArray=[]
+        page_count=0
+        setCache=True if not args_.getargs().after else False
 
-    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
-        
-        async with sessionbuilder.sessionBuilder()  as c: 
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
+            
+            async with sessionbuilder.sessionBuilder()  as c: 
 
 
-            if not args_.getargs().no_cache:  oldarchived=cache.get(f"archived__{model_id}",default=[])
-            else:  oldarchived=[];setCache=False
+                if not args_.getargs().no_cache:  oldarchived=cache.get(f"archived__{model_id}",default=[])
+                else:  oldarchived=[];setCache=False
 
 
 
-            log.trace("oldarchive {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldarchive: {str(x)}",oldarchived)))))
-            log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-            oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
-            postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
-            after=after or get_after(model_id,username)
-            log.debug(f"setting after for archive to {after} for {username}")
-            filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
+                log.trace("oldarchive {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"oldarchive: {str(x)}",oldarchived)))))
+                log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+                oldarchived=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldarchived))
+                postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldarchived)))
+                after=after or get_after(model_id,username)
+                log.debug(f"setting after for archive to {after} for {username}")
+                filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
+                
+
+                if len(filteredArray)>min_posts:
+                    splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
+                    #use the previous split for timesamp
+                    tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= args_.getargs().after.float_timestamp if args_.getargs().after else None)))
+                    [tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
+                    for i in range(1,len(splitArrays)-1)]
+                    # keeping grabbing until nothign left
+                    tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
+                else:
+                    tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=after)))
             
 
-            if len(filteredArray)>min_posts:
-                splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
-                #use the previous split for timesamp
-                tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp= args_.getargs().after.float_timestamp if args_.getargs().after else None)))
-                [tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
-                for i in range(1,len(splitArrays)-1)]
-                # keeping grabbing until nothign left
-                tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
-            else:
-                tasks.append(asyncio.create_task(scrape_archived_posts(c,model_id,job_progress,timestamp=after)))
-        
-
-            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
-            while len(tasks)!=0:
-                for coro in asyncio.as_completed(tasks):
-                    try:
-                        result=await coro or []
-                    except:
-                        setCache=False
-                        continue
-                    page_count=page_count+1
-                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                    responseArray.extend(result)
-                tasks=list(filter(lambda x:x.done()==False,tasks))
-            overall_progress.remove_task(page_task)
-    unduped={}
-    log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        id=post["id"]
-        if unduped.get(id):continue
-        unduped[id]=post
-    log.trace(f"archive dupeset postids {list(unduped.keys())}")
-    log.trace("archived raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo archive: {str(x)}",unduped)))))
-    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-    if setCache and not args_.getargs().after:
-        newcache={}
-        for post in oldarchived+list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped.values())):
+                page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
+                while tasks:
+                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                        for result in done:
+                            try:
+                                result=await result
+                            except Exception as E:
+                                log.debug(E)
+                                continue
+                            page_count=page_count+1
+                            overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                            responseArray.extend(result)
+                        tasks = list(pending)
+                        tasks.extend(new_tasks)
+                        new_tasks=[]
+                overall_progress.remove_task(page_task)
+        unduped={}
+        log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
+        for post in responseArray:
             id=post["id"]
-            if newcache.get(id):continue
-            newcache[id]={"id":post.get("id"),"postedAtPrecise":post.get("postedAtPrecise")}
-        cache.set(f"archived_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
-        cache.set(f"archived_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
-        cache.close()
-    if setCache:
-        lastpost=cache.get(f"archived_{model_id}_lastpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
-        if len(post)>0:
-            post=post[-1]
-            if not lastpost:
-                cache.set(f"archived_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
-            if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
-                cache.set(f"archived_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()    
-    if setCache and after==0:
-        firstpost=cache.get(f"archived_{model_id}_firstpost")
-        post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
-        if len(post)>0:  
-            post=post[0]
-            if not firstpost:
-                cache.set(f"archived_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
-            if firstpost and float(post['postedAtPrecise'])<firstpost[0]:
-                cache.set(f"archived_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
-                cache.close()
+            if unduped.get(id):continue
+            unduped[id]=post
+        log.trace(f"archive dupeset postids {list(unduped.keys())}")
+        log.trace("archived raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo archive: {str(x)}",unduped)))))
+        log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
+        if setCache and not args_.getargs().after:
+            newcache={}
+            for post in oldarchived+list(map(lambda x:{"id":x.get("id"),"postedAtPrecise":x.get("postedAtPrecise")},unduped.values())):
+                id=post["id"]
+                if newcache.get(id):continue
+                newcache[id]={"id":post.get("id"),"postedAtPrecise":post.get("postedAtPrecise")}
+            cache.set(f"archived_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
+            cache.set(f"archived_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
+            cache.close()
+        if setCache:
+            lastpost=cache.get(f"archived_{model_id}_lastpost")
+            post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+            if len(post)>0:
+                post=post[-1]
+                if not lastpost:
+                    cache.set(f"archived_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
+                if lastpost and float(post['postedAtPrecise'])>lastpost[0]:
+                    cache.set(f"archived_{model_id}_lastpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()    
+        if setCache and after==0:
+            firstpost=cache.get(f"archived_{model_id}_firstpost")
+            post=sorted(newcache.values(),key=lambda x:x.get("postedAtPrecise"))
+            if len(post)>0:  
+                post=post[0]
+                if not firstpost:
+                    cache.set(f"archived_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
+                if firstpost and float(post['postedAtPrecise'])<firstpost[0]:
+                    cache.set(f"archived_{model_id}_firstpost",(float(post['postedAtPrecise']),post["id"]))
+                    cache.close()
 
     return list(unduped.values()  )                             
 

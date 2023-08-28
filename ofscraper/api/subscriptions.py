@@ -10,6 +10,7 @@ r"""
 
 import asyncio
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 import logging
 from rich.console import Console
 from rich.progress import (
@@ -30,26 +31,34 @@ import ofscraper.utils.args as args_
 
 
 async def get_subscriptions(subscribe_count):
-    with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
-        task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
-        out=[]
-
-        if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list:
-            async with sessionbuilder.sessionBuilder() as c: 
-
-                offsets = range(0, subscribe_count, 10)
-                global tasks
-                tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in offsets]
-                while len(tasks)!=0:
-                    for coro in asyncio.as_completed(tasks):
-                        result=await coro or []
-                        out.extend(result)
-                    tasks=list(filter(lambda x:x.done()==False,tasks))
-        progress.remove_task(task1)
-        outdict=OrderedDict()
-        for ele in out:
-            outdict[ele["id"]]=ele
-        return outdict.values()
+    with  ThreadPoolExecutor(max_workers=20) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
+            task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
+            out=[]
+            global tasks
+            global new_tasks
+            if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list:
+                async with sessionbuilder.sessionBuilder() as c: 
+                    tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in  range(0, subscribe_count, 10)] 
+                    new_tasks=[]   
+                    while tasks:
+                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                        for result in done:
+                            try:
+                                result=await result
+                            except Exception as E:
+                                log.debug(E)
+                                continue
+                            out.extend(result)
+                        tasks = list(pending)
+                        tasks.extend(new_tasks)
+                        new_tasks=[]
+            progress.remove_task(task1)
+            outdict={}
+            for ele in out:
+                outdict[ele["id"]]=ele
+            return outdict.values()
 
 
 
@@ -65,7 +74,7 @@ async def scrape_subscriptions(c,offset=0,num=0) -> list:
                 if len(subscriptions)==0:
                      return subscriptions
                 if num+len(subscriptions)<10:
-                    tasks.append(asyncio.create_task(scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
+                    new_tasks.append(asyncio.create_task(scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 return subscriptions
             else:

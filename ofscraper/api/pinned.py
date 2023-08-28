@@ -6,6 +6,7 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+from concurrent.futures import ThreadPoolExecutor
 import time
 import asyncio
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -73,7 +74,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}")
                     log.trace("{log_id} -> pinned raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo pinned: {str(x)}",posts)))))
-                    tasks.append(asyncio.create_task(scrape_pinned_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                    new_tasks.append(asyncio.create_task(scrape_pinned_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
             else:
                 log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
                 log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
@@ -87,40 +88,46 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
     return posts
 
 async def get_pinned_post(model_id): 
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting pinned media...\n{task.description}"))
-    job_progress=Progress("{task.description}")
-    progress_group = Group(
-    overall_progress,
-    Panel(Group(job_progress)))
+    with  ThreadPoolExecutor(max_workers=20) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting pinned media...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
 
-    global tasks
-    tasks=[]
-    min_posts=50
-    responseArray=[]
-    page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
-       async with sessionbuilder.sessionBuilder() as c: 
-            tasks.append(asyncio.create_task(scrape_pinned_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
-        
+        global tasks
+        global new_tasks
+        tasks=[]
+        new_tasks=[]
+        responseArray=[]
+        page_count=0
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
+            async with sessionbuilder.sessionBuilder() as c: 
+                    tasks.append(asyncio.create_task(scrape_pinned_posts(c,model_id,job_progress,timestamp=args_.getargs().after.float_timestamp if args_.getargs().after else None)))
+                
 
-            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
-            while len(tasks)!=0:
-                for coro in asyncio.as_completed(tasks):
-                    result=await coro or []
-                    page_count=page_count+1
-                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                    responseArray.extend(result)
-                tasks=list(filter(lambda x:x.done()==False,tasks))
-            overall_progress.remove_task(page_task)
-    unduped=[]
-    dupeSet=set()
-    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        if post["id"] in dupeSet:
-            continue
-        dupeSet.add(post["id"])
-        unduped.append(post)
-    log.trace(f"pinned dupeset postids {dupeSet}")
-    log.trace("pinned raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo pinned: {str(x)}",unduped)))))
-    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(unduped)} found")
-    return unduped                                
+                    page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)
+                    while tasks:
+                            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                            for result in done:
+                                try:
+                                    result=await result
+                                except Exception as E:
+                                    log.debug(E)
+                                    continue
+                                page_count=page_count+1
+                                overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                                responseArray.extend(result)
+                            tasks = list(pending)
+                            tasks.extend(new_tasks)
+                            new_tasks=[]
+                    overall_progress.remove_task(page_task)
+        outdict={}
+        log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
+        for post in responseArray:
+            outdict[post["id"]]=post
+        log.trace(f"pinned dupeset postids {outdict.keys()}")
+        log.trace("pinned raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo pinned: {str(x)}",outdict.values())))))
+        log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(outdict.values())} found")
+        return outdict.values()                             

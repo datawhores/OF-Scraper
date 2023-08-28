@@ -7,6 +7,7 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import asyncio
 import contextvars
@@ -49,36 +50,51 @@ attempt = contextvars.ContextVar("attempt")
 
 
 async def get_paid_posts(username,model_id):
-    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting paid media...\n{task.description}"))
-    job_progress=Progress("{task.description}")
-    progress_group = Group(
-    overall_progress,
-    Panel(Group(job_progress)))
+    with  ThreadPoolExecutor(max_workers=20) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting paid media...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
 
-    output=[]
-    global tasks
-    tasks=[]
-    page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
-        async with sessionbuilder.sessionBuilder() as c:
-            tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress)))
-         
-            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
-            while len(tasks)!=0:
-                for coro in asyncio.as_completed(tasks):
-                    result=await coro or []
-                    page_count=page_count+1
-                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                    output.extend(result)
-                tasks=list(filter(lambda x:x.done()==False,tasks))
-            overall_progress.remove_task(page_task)  
-    log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(output)} found")
-    # set purchash check values during scan
-    log.trace("paid raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo paid: {str(x)}",output)))))
-    cache.set(f"purchased_check_{model_id}",output,expire=constants.CHECK_EXPIRY)
-    cache.close()
-    return output
+        output=[]
+        global tasks
+        global new_tasks
+        tasks=[]
+        new_tasks=[]
+
+        page_count=0
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
+            async with sessionbuilder.sessionBuilder() as c:
+                tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress)))
+            
+                page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
+                while tasks:
+                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                        for result in done:
+                            try:
+                                result=await result
+                            except Exception as E:
+                                log.debug(E)
+                                continue
+                            page_count=page_count+1
+                            overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                            output.extend(result)
+                        tasks = list(pending)
+                        tasks.extend(new_tasks)
+                        new_tasks=[]
+                overall_progress.remove_task(page_task)
+        outdict={}
+        for post in output:
+            outdict[post["id"]]=post
+        log.trace("paid raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo paid: {str(x)}",  outdict.values())))))
+        cache.set(f"purchased_check_{model_id}", list(outdict.values()),expire=constants.CHECK_EXPIRY)
+        cache.close()
+        return  outdict.values()
+        
+    
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
@@ -104,7 +120,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
                 log.debug(f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}")
                 if  data.get("hasMore"):
                     offset += len(media)
-                    tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress,offset=offset)))
+                    new_tasks.append(asyncio.create_task(scrape_paid(c,username,job_progress,offset=offset)))
                 job_progress.remove_task(task)
 
             else:
@@ -124,62 +140,66 @@ async def scrape_paid(c,username,job_progress,offset=0):
 
 
 async def get_all_paid_posts():
-    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting all paid media...\n{task.description}"))
-    job_progress=Progress("{task.description}")
-    progress_group = Group(
-    overall_progress,
-    Panel(Group(job_progress)))
+    with  ThreadPoolExecutor(max_workers=20) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+        overall_progress=Progress(SpinnerColumn(style=Style(color="blue")),TextColumn("Getting all paid media...\n{task.description}"))
+        job_progress=Progress("{task.description}")
+        progress_group = Group(
+        overall_progress,
+        Panel(Group(job_progress)))
 
-    output=[]
-    min_posts=100
-    global tasks
-    tasks=[]
-    page_count=0
-    with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
-        async with sessionbuilder.sessionBuilder() as c:
-            if not args_.getargs().no_cache:allpaid=cache.get(f"purchased_all",default=[])
-            else:allpaid=[]
-            log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
-            
+        output=[]
+        min_posts=100
+        global tasks
+        global new_tasks
+        tasks=[]
+        new_tasks=[]
+        page_count=0
+        with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()):
+            async with sessionbuilder.sessionBuilder() as c:
+                if not args_.getargs().no_cache:allpaid=cache.get(f"purchased_all",default=[])
+                else:allpaid=[]
+                log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
 
-            if len(allpaid)>min_posts:
-                splitArrays=[i for i in range(0, len(allpaid), min_posts)]
-                #use the previous split for timesamp
-                tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=0,count=0,required=0)))
-                [ tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,count=0,required=0,offset=splitArrays[i])))
-                for i in range(1,len(splitArrays))]
-                # keeping grabbing until nothign left
-                tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=len(allpaid))))
-            else:
-                tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress)))
+                if len(allpaid)>min_posts:
+                    splitArrays=[i for i in range(0, len(allpaid), min_posts)]
+                    #use the previous split for timesamp
+                    tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=0,count=0,required=0)))
+                    [ tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,count=0,required=0,offset=splitArrays[i])))
+                    for i in range(1,len(splitArrays))]
+                    # keeping grabbing until nothign left
+                    tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=len(allpaid))))
+                else:
+                    tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress)))
+                    
                 
+                
+                page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
+                while tasks:
+                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                        for result in done:
+                            try:
+                                result=await result
+                            except Exception as E:
+                                log.debug(E)
+                                continue
+                            page_count=page_count+1
+                            overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
+                            output.extend(result)
+                        tasks = list(pending)
+                        tasks.extend(new_tasks)
+                        new_tasks=[]
+                overall_progress.remove_task(page_task)
+        outdict={}
+        log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
+        for post in output:
+            outdict[post["id"]]=post
             
-            
-            page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True) 
-            while len(tasks)!=0:
-                for coro in asyncio.as_completed(tasks):
-                    try:
-                        result=await coro or []
-                    except Exception as E:
-                        continue
-                    page_count=page_count+1
-                    overall_progress.update(page_task,description=f'Pages Progress: {page_count}')
-                    output.extend(result)
-                tasks=list(filter(lambda x:x.done()==False,tasks))
-            overall_progress.remove_task(page_task)  
-    unduped=[]
-    dupeSet=set()
-    log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
-    for post in output:
-        if post["id"] in dupeSet:
-            continue
-        dupeSet.add(post["id"])
-        unduped.append(post)
-    log.debug(f"[bold]Paid Post count[/bold] {len(unduped)} found")
-    cache.set(f"purchased_all",list(map(lambda x:x.get("id"),unduped)),expire=constants.RESPONSE_EXPIRY)
-    cache.close()
-    return unduped
+        log.debug(f"[bold]Paid Post count[/bold] {len(outdict.values())} found")
+        cache.set(f"purchased_all",list(map(lambda x:x.get("id"),list(outdict.values()))),expire=constants.RESPONSE_EXPIRY)
+        cache.close()
+        return outdict.values()
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
@@ -187,7 +207,7 @@ async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list."""
     global sem
-    global tasks
+    global new_tasks
     media = None
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
@@ -214,10 +234,10 @@ async def scrape_all_paid(c,job_progress,offset=0,count=0,required=0):
 
                 if required==0:
                     attempt.set(0)
-                    tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=offset+len(media))))
+                    new_tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=offset+len(media))))
 
                 elif len(count)<len(required):
-                    tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=offset+len(media),required=required,count=count+len(media))))
+                    new_tasks.append(asyncio.create_task(scrape_all_paid(c,job_progress,offset=offset+len(media),required=required,count=count+len(media))))
 
 
             
