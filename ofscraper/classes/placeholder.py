@@ -133,12 +133,13 @@ class Placeholders:
 
         log.trace(f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
-            if isinstance(custom,dict)==False:
-                try:custom=eval(customval)
-                except:custom={}
-            for key,val in customval.items():
-                try:custom[key]=eval(val)
-                except:continue
+            if isinstance(customval,dict)==False:
+                    try:custom=eval(customval)
+                    except:custom={}
+            else:
+                    for key,val in customval.items():
+                        try:custom[key]=eval(val)
+                        except:continue
         
             downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
         else:
