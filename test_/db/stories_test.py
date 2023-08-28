@@ -8,7 +8,11 @@ from ofscraper.classes.media import Media
 def test_stories_create(mocker):
     with tempfile.NamedTemporaryFile() as p:
         try:
+            a=mocker
+            a.trace=None
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
+            mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
+            mocker.patch("ofscraper.db.operations.log",new_callabe=a)              
             create_stories_table("11111","test")
         except:
             raise Exception
@@ -25,7 +29,11 @@ def test_stories_failure(mocker):
 def test_stories_insert(mocker):
     with tempfile.NamedTemporaryFile() as p:
         try:
+            a=mocker
+            a.trace=None
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
+            mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
+            mocker.patch("ofscraper.db.operations.log",new_callabe=a)              
             create_stories_table("11111","test")
             write_stories_table(Post(STORIES_EXAMPLE,"11111","test"),"11111","test")
         except Exception as E:

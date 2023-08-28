@@ -303,7 +303,7 @@ def init_parent_logger(name=None,queue_=None):
 def init_other_logger(name):
     name=name or "other"
     log=logging.getLogger(name)
-    format=' \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
+    format=' %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s'
     log.setLevel(1)
     addtraceback()
     addtrace()
@@ -318,14 +318,14 @@ def init_other_logger(name):
         stream=open(paths.getlogpath(), encoding='utf-8',mode="a",)
         fh=logging.StreamHandler(stream)
         fh.setLevel(getLevel(args.getargs().log))
-        fh.setFormatter(LogFileFormatter('%(asctime)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh.setFormatter(LogFileFormatter(format,"%Y-%m-%d %H:%M:%S"))
         fh.addFilter(NoDebug())
         log.addHandler(fh)
     if args.getargs().log in {"TRACE","DEBUG"}:
         funct=DebugOnly if args.getargs().output=="DEBUG" else TraceOnly
         fh2=logging.StreamHandler(stream)
         fh2.setLevel(getLevel(args.getargs().log))
-        fh2.setFormatter(LogFileFormatter('%(asctime)s - %(levelname)s - %(message)s',"%Y-%m-%d %H:%M:%S"))
+        fh2.setFormatter(LogFileFormatter(format,"%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(funct())
         log.addHandler(fh2)
     return log

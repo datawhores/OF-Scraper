@@ -70,6 +70,7 @@ coverage = "^7.2.7"
 pytest = "^7.4.0"
 pytest-check = "^2.2.0"
 random-unicode-emoji = "^2.8"
+pytest-mock = "^3.11.1"
 
 
 [tool.poetry.group.build.dependencies]
