@@ -240,9 +240,9 @@ async def scrape_messages(c, model_id, progress,message_id=None,required_ids=Non
                     else:
                         [required_ids.discard(ele.get("createdAt") or ele.get("postedAt")) for ele in messages]
     
-                        if len(required_ids)>0 and timestamp<max(list(required_ids)):
+                        if len(required_ids)>0 and timestamp>min(list(required_ids)):
                             attempt.set(0)
-                            # new_tasks.append(asyncio.create_task(scrape_messages(c, model_id,progress,message_id=messages[-1]['id'],required_ids=required_ids)))
+                            new_tasks.append(asyncio.create_task(scrape_messages(c, model_id,progress,message_id=messages[-1]['id'],required_ids=required_ids)))
                 progress.remove_task(task)
 
             else:
