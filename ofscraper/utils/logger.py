@@ -433,7 +433,7 @@ def start_other_process(input_=None,name=None,count=1):
     def inner(input_=None,name=None,count=1,args_=None):
         if args_:args.changeargs(args_)
         input_=input_ or otherqueue_
-        start_other_thread(input_,name,count)
+        logger_other(input_=input_,name=name,stop_count=count)
         
     process=None
     if (args.getargs().log or args.getargs().discord):
