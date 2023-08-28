@@ -47,8 +47,8 @@ class Placeholders:
         log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
             if not isinstance(custom,dict)==True:
-                try:return eval(custom)
-                except:return custom
+                try:custom=eval(custom)
+                except:custom={}
             for key,val in custom.items():
                 try:custom[key]=eval(val)
                 except:continue
@@ -77,8 +77,8 @@ class Placeholders:
         log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
             if not isinstance(custom,dict)==True:
-                try:return eval(custom)
-                except:return custom
+                try:custom=eval(custom)
+                except:custom={}
             for key,val in custom.items():
                 try:custom[key]=eval(val)
                 except:continue
@@ -131,8 +131,8 @@ class Placeholders:
         log.trace(f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
             if not isinstance(custom,dict)==True:
-                try:return eval(custom)
-                except:return custom
+                try:custom=eval(custom)
+                except:custom={}
             for key,val in custom.items():
                 try:custom[key]=eval(val)
                 except:continue
