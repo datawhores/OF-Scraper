@@ -9,7 +9,7 @@ r"""
 """
 
 import asyncio
-from itertools import chain
+from collections import OrderedDict
 import logging
 from rich.console import Console
 from rich.progress import (
@@ -33,14 +33,23 @@ async def get_subscriptions(subscribe_count):
     with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
         task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
         out=[]
+
         if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list:
-            offsets = range(0, subscribe_count, 10)
             async with sessionbuilder.sessionBuilder() as c: 
-                tasks = [scrape_subscriptions(c,offset) for offset in offsets]
-                subscriptions = await asyncio.gather(*tasks)
-                out.extend(list(chain.from_iterable(subscriptions)))
+
+                offsets = range(0, subscribe_count, 10)
+                global tasks
+                tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in offsets]
+                while len(tasks)!=0:
+                    for coro in asyncio.as_completed(tasks):
+                        result=await coro or []
+                        out.extend(result)
+                    tasks=list(filter(lambda x:x.done()==False,tasks))
         progress.remove_task(task1)
-        return out
+        outdict=OrderedDict()
+        for ele in out:
+            outdict[ele["id"]]=ele
+        return outdict.values()
 
 
 
@@ -49,11 +58,14 @@ async def get_subscriptions(subscribe_count):
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_subscriptions(c,offset=0) -> list:
-
+async def scrape_subscriptions(c,offset=0,num=0) -> list:
         async with c.requests( subscriptionsEP.format(offset))() as r:
             if r.ok:
                 subscriptions = (await r.json_())["list"]
+                if len(subscriptions)==0:
+                     return subscriptions
+                if num+len(subscriptions)<10:
+                    tasks.append(asyncio.create_task(scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 return subscriptions
             else:

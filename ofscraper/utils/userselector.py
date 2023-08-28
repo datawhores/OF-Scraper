@@ -51,7 +51,7 @@ def parsed_subscriptions_helper(force=False):
     global args
     args= args_.getargs()
     if not args_.getargs().username:
-        selectedusers=get_model(ALL_SUBS)
+        selectedusers=get_model(filterNSort(ALL_SUBS))
         args_.getargs().username=list(map(lambda x:x["name"],selectedusers))
         PARSED_SUBS=selectedusers
         args_.changeargs(args)  

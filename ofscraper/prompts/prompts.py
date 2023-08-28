@@ -440,7 +440,7 @@ def config_prompt_advanced(config_) -> dict:
             'name': 'custom',
             'message': 'edit custom value:\n',
             "long_instruction":"This is a helper value for remapping placeholder values",
-            'default':json.loads(config.get_custom(config_)) if not isinstance(config.get_custom(config_),str) \
+            'default':json.dumps(config.get_custom(config_)) if not isinstance(config.get_custom(config_),str) \
             else config.get_custom(config_) or "" ,
         },
         {
