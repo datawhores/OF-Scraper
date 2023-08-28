@@ -31,7 +31,7 @@ class Placeholders:
                "my_id":my_id,
                "my_username":my_username,
                "root": pathlib.Path((config_.get_save_location(config_.read_config()))),
-               "custom": config_.get_custom(config_.read_config()) }
+               "customval": config_.get_custom(config_.read_config()) }
         
         globals().update(self._variables)
     @wrapper
@@ -46,12 +46,14 @@ class Placeholders:
 
         log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
-            if not isinstance(custom,dict)==True:
-                try:custom=eval(custom)
-                except:custom={}
-            for key,val in custom.items():
-                try:custom[key]=eval(val)
-                except:continue
+            if isinstance(customval,dict)==False:
+                    try:custom=eval(customval)
+                    except:custom={}
+            else:
+                    for key,val in customval.items():
+                        try:custom[key]=eval(val)
+                        except:continue
+
         
             formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
             
@@ -76,12 +78,13 @@ class Placeholders:
 
         log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
-            if not isinstance(custom,dict)==True:
-                try:custom=eval(custom)
-                except:custom={}
-            for key,val in custom.items():
-                try:custom[key]=eval(val)
-                except:continue
+            if isinstance(customval,dict)==False:
+                    try:custom=eval(customval)
+                    except:custom={}
+            else:
+                    for key,val in customval.items():
+                        try:custom[key]=eval(val)
+                        except:continue
         
             formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
             
@@ -130,10 +133,10 @@ class Placeholders:
 
         log.trace(f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         if config_.get_allow_code_execution(config_.read_config()):
-            if not isinstance(custom,dict)==True:
-                try:custom=eval(custom)
+            if isinstance(custom,dict)==False:
+                try:custom=eval(customval)
                 except:custom={}
-            for key,val in custom.items():
+            for key,val in customval.items():
                 try:custom[key]=eval(val)
                 except:continue
         
@@ -184,12 +187,13 @@ class Placeholders:
         log.trace(f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
         out=None
         if config_.get_allow_code_execution(config_.read_config()):
-            if not isinstance(custom,dict)==True:
-                    try:return eval(custom)
-                    except:return custom
-            for key,val in custom.items():
-                try:custom[key]=eval(val)
-                except:continue
+            if isinstance(customval,dict)==False:
+                    try:custom=eval(customval)
+                    except:custom={}
+            else:
+                    for key,val in customval.items():
+                        try:custom[key]=eval(val)
+                        except:continue
             out=eval('f"""{}"""'.format(config_.get_fileformat(config_.read_config())))
         else:
             if ele.responsetype_ =="profile":out=f"{filename}.{ext}"
