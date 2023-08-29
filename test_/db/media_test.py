@@ -16,7 +16,8 @@ def test_media_create(mocker):
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
             mocker.patch("ofscraper.db.operations.log",new_callabe=a)  
-
+            mocker.patch("ofscraper.db.operations.FileLock.acquire",return_value=True)       
+            mocker.patch("ofscraper.db.operations.FileLock.release",return_value=True)          
             create_post_table("11111","test")         
             write_post_table(Post(TIMELINE_EXAMPLE,"11111","test"),"11111","test")            
             create_media_table(model_id="11111",username="test")
@@ -42,7 +43,9 @@ def test_media_insert(mocker):
                 a.trace=None
                 mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
                 mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
-                mocker.patch("ofscraper.db.operations.log",new_callabe=a)                  
+                mocker.patch("ofscraper.db.operations.log",new_callabe=a) 
+                mocker.patch("ofscraper.db.operations.FileLock.acquire",return_value=True)       
+                mocker.patch("ofscraper.db.operations.FileLock.release",return_value=True)                                           
                 create_media_table(11111,"test")
                 update_media_table(Post(TIMELINE_EXAMPLE,model_id="11111",username="test").media[0],d.name,model_id="11111",username="test")
             except Exception as E:

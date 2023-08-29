@@ -17,6 +17,8 @@ def test_profile_create(mocker):
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
             mocker.patch("ofscraper.db.operations.log",new_callabe=a)
+            mocker.patch("ofscraper.db.operations.FileLock.acquire",return_value=True)       
+            mocker.patch("ofscraper.db.operations.FileLock.release",return_value=True)                      
             create_profile_table(model_id="11111",username="test")
         except Exception as E:
             raise Exception
@@ -42,6 +44,8 @@ def test_profile_insert(mocker):
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathHelper",return_value=pathlib.Path(p.name))
             mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
             mocker.patch("ofscraper.db.operations.log",new_callabe=a)
+            mocker.patch("ofscraper.db.operations.FileLock.acquire",return_value=True)       
+            mocker.patch("ofscraper.db.operations.FileLock.release",return_value=True)                      
             create_profile_table(model_id="11111",username="test")
             write_profile_table(model_id="11111",username="test")
         except Exception as E:
