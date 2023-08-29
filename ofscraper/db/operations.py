@@ -146,12 +146,12 @@ def create_stories_table(model_id=None,username=None,conn=None):
         cur.execute(queries.storiesCreate)
         conn.commit()
 @operation_wrapper
-def write_stories_table(data: dict,model_id=None,username=None,conn=None):
+def write_stories_table(stories: dict,model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        if len(cur.execute(queries.storiesDupeCheck,(data.id,)).fetchall())==0:
-            insertData=(data.id,data.text or data.title or "",data.price,data.paid ,data.archived,data.date)
-            cur.execute(queries.storiesInsert,insertData)
-            conn.commit()
+        stories=converthelper(stories)
+        insertData=list(map(lambda data:(data.id,data.text or data.title or "",data.price,data.paid ,data.archived,data.date),stories))
+        cur.executemany(queries.storiesInsert,insertData)
+        conn.commit()
 @operation_wrapper
 def get_all_stories_ids(model_id=None,username=None,conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -292,13 +292,20 @@ def create_labels_table(model_id=None,username=None,conn=None):
         conn.commit()
 
 @operation_wrapper
-def write_labels_table(label: dict, model_id=None,username=None,conn=None):
-    with contextlib.closing(conn.cursor()) as cur:
-        for post in label.posts:
-            if len(cur.execute(queries.labelDupeCheck,(label.label_id, post.id)).fetchall())==0:
-                insertData=(label.label_id, label.name,label.type, post.id)
-                cur.execute(queries.labelInsert,insertData)
-                conn.commit()
+def write_labels_table(label:dict, model_id=None,username=None,conn=None):
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData=list(map(lambda post:(label.label_id, label.name,label.type, post.id),label))     
+        curr.executemany(queries.labelInsert,insertData)
+        conn.commit()
+
+
+@operation_wrapper
+def get_all_labels_ids(model_id=None,username=None,conn=None):
+    with contextlib.closing(conn.cursor()) as curr:
+        curr.execute(queries.labelID)
+        conn.commit()
+        return curr.fetchall()
+
 
 
 def converthelper(media):

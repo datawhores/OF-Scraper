@@ -244,3 +244,7 @@ id, name, type, post_id)
 VALUES (?, ?,?,?);"""
 
 
+labelID=\
+"""
+SELECT id,post_id  FROM  labels
+"""

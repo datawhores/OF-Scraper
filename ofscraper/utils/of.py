@@ -93,8 +93,7 @@ def process_highlights( model_id,username):
         highlights_=asyncio.run(highlights.get_highlight_post( model_id))
         highlights_=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="highlights"),highlights_))
         curr=set(operations.get_all_stories_ids(model_id=model_id,username=username))
-        [operations.write_stories_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,highlights_)]
-
+        operations.write_stories_table(list(filter(lambda x:x.id not in curr,highlights_)),model_id=model_id,username=username) 
         
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
         output=[]
@@ -102,12 +101,6 @@ def process_highlights( model_id,username):
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
      
         return list(filter(lambda x:isinstance(x,media.Media),output))
-
-
-
-          
-
-
 
 
 def process_timeline_posts(model_id,username,individual=False):
@@ -219,8 +212,9 @@ def process_labels(model_id, username):
         labels_=labels_ if not args_.getargs().label else list(filter(lambda x:x.get("name").lower() in args_.getargs().label ,labels_))
         labelled_posts_ = asyncio.run(labels_api.get_labelled_posts(labels_, model_id))
         labelled_posts_= list(map(lambda x:labels.Label(x,model_id,username),labelled_posts_))
+        curr=set(operations.get_all_labels_ids(model_id=model_id,username=username))
         for labelled_post in labelled_posts_:
-            operations.write_labels_table(labelled_post, model_id=model_id,username=username)
+            operations.write_labels_table(list(filter(lambda post:(labelled_post.label_id,post.id) not in curr,labelled_post.posts)), model_id=model_id,username=username)
 
         output = [post.media for labelled_post in labelled_posts_ for post in labelled_post.posts]
         return [item for sublist in output for item in sublist]
