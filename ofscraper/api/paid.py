@@ -199,7 +199,8 @@ async def get_all_paid_posts():
         log.debug(f"[bold]Paid Post count[/bold] {len(outdict.values())} found")
         cache.set(f"purchased_all",list(map(lambda x:x.get("id"),list(outdict.values()))),expire=constants.RESPONSE_EXPIRY)
         cache.close()
-        return outdict.values()
+        #filter at user level
+        return output
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   

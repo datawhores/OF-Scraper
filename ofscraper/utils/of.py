@@ -75,7 +75,7 @@ def process_stories( model_id,username):
         stories = asyncio.run(highlights.get_stories_post( model_id))
         stories=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="stories"),stories))  
         curr=set(operations.get_all_stories_ids(model_id=model_id,username=username))
-        [operations.write_stories_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,stories)]
+        operations.write_stories_table(list( filter(lambda x:x.id not in curr,stories)),model_id=model_id,username=username)
 
                
         log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
@@ -196,10 +196,13 @@ def process_all_paid():
             log.info(f"Processing {username}_{model_id}")
             operations.create_tables(model_id,username)
             log.debug(f"Created table for {username}")
-            new_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
+            all_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
+            new_dict={}
+            for ele in all_posts:new_dict[ele.id]=ele
+            new_posts=new_dict.values()
             post_array.extend(new_posts)
             curr=set(operations.get_all_post_ids(model_id=model_id,username=username) or [])
-            operations.write_post_table(list(filter(lambda x:x not in curr,new_posts)),model_id=model_id,username=username) 
+            operations.write_post_table(list(filter(lambda x:x.id not in curr,new_posts)),model_id=model_id,username=username) 
             temp=[]
             [temp.extend(post.media) for post in post_array]
             output.extend(temp)
