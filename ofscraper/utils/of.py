@@ -59,7 +59,7 @@ def process_paid_post(model_id,username):
         log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
         log.debug("Removing locked paid media")
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
-        [operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,paid_content)]            
+        operations.write_post_table(list(filter(lambda x:x.id not in curr,paid_content)),model_id=model_id,username=username)          
         output=[]
         [output.extend(post.media) for post in paid_content]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
@@ -118,7 +118,7 @@ def process_timeline_posts(model_id,username,individual=False):
         log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
         log.debug("Removing locked timeline media")
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
-        [ operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,timeline_posts)]
+        operations.write_post_table(list(filter(lambda x:x.id not in curr,timeline_posts)),model_id=model_id,username=username)
 
          
         output=[]
@@ -137,7 +137,7 @@ def process_archived_posts( model_id,username):
         log.debug("Removing locked archived media")
 
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
-        [ operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,archived_posts)]
+        operations.write_post_table(list(filter(lambda x:x.id not in curr,archived_posts)),model_id=model_id,username=username)
 
         output=[]
         [ output.extend(post.media) for post in archived_posts ]
@@ -158,7 +158,7 @@ def process_pinned_posts( model_id,username):
         log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
         log.debug("Removing locked pinned media")
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
-        [ operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x.id not in curr,pinned_posts)]
+        operations.write_post_table(list(filter(lambda x:x.id not in curr,pinned_posts)),model_id=model_id,username=username) 
 
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
@@ -199,7 +199,7 @@ def process_all_paid():
             new_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
             post_array.extend(new_posts)
             curr=set(operations.get_all_post_ids(model_id=model_id,username=username) or [])
-            [operations.write_post_table(post,model_id=model_id,username=username) for post in filter(lambda x:x not in curr,new_posts)]
+            operations.write_post_table(list(filter(lambda x:x not in curr,new_posts)),model_id=model_id,username=username) 
             temp=[]
             [temp.extend(post.media) for post in post_array]
             output.extend(temp)

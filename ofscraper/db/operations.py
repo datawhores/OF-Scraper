@@ -102,7 +102,8 @@ def write_messages_table(messages: dict,**kwargs):
     @operation_wrapper  
     def inner(messages=None,conn=None,**kwargs):
         with contextlib.closing(conn.cursor()) as cur:
-            if not isinstance(messages,list):messages=[messages]
+            messages=converthelper(messages)
+            if len(messages)==0:return
             insertData=list(map(lambda message:(message.id,message.text,message.price,message.paid,message.archived,message.date,message.model_id),messages))
             cur.executemany(queries.messagesInsert,insertData)
             conn.commit()
@@ -119,12 +120,13 @@ def get_all_messages_ids(model_id=None,username=None,conn=None) -> list:
             
   
 @operation_wrapper
-def write_post_table(data: dict, model_id=None,username=None,conn=None):
+def write_post_table(posts: list, model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        if len(cur.execute(queries.postDupeCheck,(data.id,)).fetchall())==0:
-            insertData=(data.id,data.text,data.price,data.paid ,data.archived,data.date)
-            cur.execute(queries.postInsert,insertData)
-            conn.commit()
+        posts=converthelper(posts)
+        if len(posts)==0:return
+        insertData=list(map(lambda data:(data.id,data.text,data.price,data.paid ,data.archived,data.date),posts))
+        cur.executemany(queries.postInsert,insertData)
+        conn.commit()
 @operation_wrapper
 def create_post_table(model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
@@ -172,7 +174,7 @@ def get_media_ids(model_id=None,username=None,conn=None,**kwargs) -> list:
 @operation_wrapper
 def get_media_ids_downloaded(model_id=None,username=None,conn=None,**kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.allIDDLCheck)
+        cur.execute(queries.allDLIDCheck)
         conn.commit()
         return list(map(lambda x:x[0],cur.fetchall()))
 
@@ -203,8 +205,8 @@ def update_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) 
 
 @operation_wrapper_async
 def write_media_table(medias,filename=None,conn=None,downloaded=False,**kwargs) -> list:
-        if not isinstance(medias,list):
-            medias=[medias]
+        medias=converthelper(medias)
+        if len(medias)==0:return
         insertData=list(map(lambda media:[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
         math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
         media.preview,media.linked, 1 if downloaded else 0,media.date],medias))
@@ -245,9 +247,10 @@ async def batch_mediainsert(media,funct,**kwargs):
  
 
 @operation_wrapper_async
-def update_response_media_table(media,conn=None,downloaded=False,**kwargs) -> list:  
-    insertData=[media.responsetype_.capitalize(),media.mediatype.capitalize(),media.id]
-    conn.execute(queries.mediaTypeUpdate,insertData)
+def update_response_media_table(medias,conn=None,downloaded=False,**kwargs) -> list:
+    medias=converthelper(medias)
+    insertData=list(map(lambda media:[media.responsetype_.capitalize(),media.mediatype.capitalize(),media.id],medias))
+    conn.executemany(queries.mediaTypeUpdate,insertData)
     conn.commit()
 
 
@@ -296,6 +299,15 @@ def write_labels_table(label: dict, model_id=None,username=None,conn=None):
                 insertData=(label.label_id, label.name,label.type, post.id)
                 cur.execute(queries.labelInsert,insertData)
                 conn.commit()
+
+
+def converthelper(media):
+    if isinstance(media,list):
+        return media
+    elif isinstance(media,filter):
+       return list(filter)
+    else:
+        return [media]
 
 
 
