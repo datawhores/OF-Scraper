@@ -64,7 +64,6 @@ def create_parser(input=None):
         '-eo', '--excluded-posts', help = 'Don\'t Download specified content from a model. Has preference over all',default=[],required=False,type = exposttype_helper,action='extend'
     )
 
-    post.add_argument("-sk","--skip-timed",default=None,help="skip promotional or temporary post",action="store_true")
     post.add_argument(
         '-ft', '--filter', help = 'Filter post to where the provided regex True\nNote if you include any uppercase characters the search will be case-sensitive',default=".*",required=False,type = str
     )
@@ -95,6 +94,22 @@ def create_parser(input=None):
         '-sx', '--size-max', help = 'Filter out files greater then given size supported inputs include int in bytes or human-readable such as 10mb',required=False,type = parse_size)
     post.add_argument(
         '-sm', '--size-min', help = 'Filter out files greater smaller then the given size bytes or human-readable such as 10mb',required=False,type =parse_size)
+    
+    #mutual exclusive groups
+    group1=post.add_mutually_exclusive_group()
+    
+    group1.add_argument(
+        '-mm', '--mass-only', help = 'download mass messages only',default=None,required=False,action="store_const",dest='mass_msg',const=True
+    )
+
+    group1.add_argument(
+        '-ms', '--mass-skip', help = 'skip mass messages',default=None,required=False,action="store_const",dest='mass_msg',const=False
+    )
+    group2=post.add_mutually_exclusive_group()
+    group2.add_argument("-sk","--skip-timed",default=None,help="skip promotional or temporary post",action="store_const",const=False,dest="timed_only")
+    group2.add_argument("-ok","--only-timed",default=None,help="skip promotional or temporary post",action="store_const",const=True,dest="timed_only")
+
+    
      #Filters for accounts
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     

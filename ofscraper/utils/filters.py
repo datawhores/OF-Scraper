@@ -34,9 +34,14 @@ def filterMedia(media):
     media=download_type_filter(media)
     log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 8->  all download type filter: ",x.media,x.id,x.postid),media))))
     log.debug(f"filter 8->  all download type filter count: {len(media)}")
+
+    media=mass_msg_filter(media)
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 9->  mass message filter: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 9->  mass message filter count: {len(media)}")
+   
     media=sort_media(media)
-    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 9-> final media  from retrived post: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 9->  final media count from retrived post: {len(media)}")
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 10-> final media  from retrived post: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 11->  final media count from retrived post: {len(media)}")
     return media
 
 def sort_media(media):
@@ -96,8 +101,10 @@ def posts_date_filter(media):
     return media
 
 def post_timed_filter(media):
-    if args_.getargs().skip_timed:
+    if args_.getargs().timed_only==False:
         return list(filter(lambda x:not x.expires,media))
+    elif args_.getargs().timed_only==True:
+        return list(filter(lambda x:x.expires,media))
     return media
 def post_user_filter(media):
     userfilter=args_.getargs().filter
@@ -123,3 +130,11 @@ def download_type_filter(media):
     elif args_.getargs().download_type=="normal":
         return list(filter(lambda x:x.url!=None,media))
 
+
+def mass_msg_filter(media):
+    if args_.getargs().mass_msg==None:
+        return media
+    elif args_.getargs().mass_msg==True:
+        return list((filter(lambda x:x.mass==True,media)))
+    elif args_.getargs().mass_msg==False:
+        return list((filter(lambda x:x.mass==False,media)))

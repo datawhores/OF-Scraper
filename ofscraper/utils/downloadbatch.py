@@ -545,7 +545,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                             await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})                            
                         else:
                             innerlog.get().debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
-                            innerlog.get().debug(f"[bold {get_medialog(ele)} ]main download  response text [/bold]: {await r.text_()}")
+                            innerlog.get().debug(f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}")
                             innerlog.get().debug(f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}")
                             r.raise_for_status()  
                         size_checker(temp,ele,total)

@@ -317,7 +317,7 @@ def get_downloaded(user_name, model_id,paid=False):
     downloaded = {}
     operations.create_tables(model_id=model_id,username=user_name)
     paid=get_paid_ids(model_id,user_name) if paid else []
-    [downloaded.update({ele: downloaded.get(ele, 0)+1}) for ele in operations.get_media_ids(model_id=model_id,username=user_name)+paid]
+    [downloaded.update({ele: downloaded.get(ele, 0)+1}) for ele in operations.get_media_ids_downloaded(model_id=model_id,username=user_name)+paid]
 
     return downloaded
 

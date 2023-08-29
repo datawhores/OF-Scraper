@@ -98,15 +98,15 @@ def create_message_table(model_id=None,username=None,conn=None):
         cur.execute(queries.messagesCreate)
         conn.commit()
 
-def write_messages_table(message: dict,**kwargs):
-    @operation_wrapper
-    def inner(model_id=None,username=None,message=None,conn=None):
+def write_messages_table(messages: dict,**kwargs):
+    @operation_wrapper  
+    def inner(messages=None,conn=None,**kwargs):
         with contextlib.closing(conn.cursor()) as cur:
-            if len(cur.execute(queries.messageDupeCheck,(message.id,)).fetchall())==0:
-                insertData=(message.id,message.text,message.price,message.paid,message.archived,message.date,message.model_id)
-                cur.execute(queries.messagesInsert,insertData)
-                conn.commit()
-    return inner(message=message,**kwargs)
+            if not isinstance(messages,list):messages=[messages]
+            insertData=list(map(lambda message:(message.id,message.text,message.price,message.paid,message.archived,message.date,message.model_id),messages))
+            cur.executemany(queries.messagesInsert,insertData)
+            conn.commit()
+    return inner(messages=messages,**kwargs)
 
 @operation_wrapper
 def get_all_messages_ids(model_id=None,username=None,conn=None) -> list:
@@ -165,10 +165,16 @@ def create_media_table(model_id=None,username=None,conn=None):
 @operation_wrapper
 def get_media_ids(model_id=None,username=None,conn=None,**kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.allDLIDCheck)
+        cur.execute(queries.allIDCheck)
         conn.commit()
         return list(map(lambda x:x[0],cur.fetchall()))
 
+@operation_wrapper
+def get_media_ids_downloaded(model_id=None,username=None,conn=None,**kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.allIDDLCheck)
+        conn.commit()
+        return list(map(lambda x:x[0],cur.fetchall()))
 
 @operation_wrapper
 def get_profile_info(model_id=None,username=None,conn=None) -> list:
@@ -196,12 +202,13 @@ def update_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) 
 
 
 @operation_wrapper_async
-def write_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -> list:  
-        if len(conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
-            insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
-            math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
-            media.preview,media.linked, 1 if downloaded else 0,media.date]
-            conn.execute(queries.mediaInsert,insertData)
+def write_media_table(medias,filename=None,conn=None,downloaded=False,**kwargs) -> list:
+        if not isinstance(medias,list):
+            medias=[medias]
+        insertData=list(map(lambda media:[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
+        math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+        media.preview,media.linked, 1 if downloaded else 0,media.date],medias))
+        conn.executemany(queries.mediaInsert,insertData)
         conn.commit()
    
 @operation_wrapper
@@ -229,9 +236,11 @@ def get_messages_media(conn=None,**kwargs) -> list:
         return data
 async def batch_mediainsert(media,funct,**kwargs):
     curr=set(get_media_ids(**kwargs) or [])
+    mediaDict={}
+    for ele in media:mediaDict[ele.id]=ele
+    await funct(list(filter(lambda x:x.id not in curr,mediaDict.values())),**kwargs)
+  
 
-    tasks=[asyncio.create_task(funct(ele,**kwargs)) for ele in filter(lambda x:x.id not in curr,media) ]
-    [await ele for ele in tasks] 
  
  
 

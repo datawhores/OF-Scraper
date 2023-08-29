@@ -131,3 +131,7 @@ class Post():
     @property
     def expires(self):
         return (self._post.get("expiredAt",{}) or self._post.get("expiresAt",None))!=None
+    
+    @property
+    def mass(self):
+        return self._post.get("isFromQueue",None)

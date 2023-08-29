@@ -286,6 +286,9 @@ class Media():
         return LICENCE_URL.format(self.id,responsetype,self.postid)
 
 
+    @property
+    def mass(self):
+        return self._post.mass
     # for use in dynamic names
     def _addcount(self):
         if len(self._post.post_media) > 1 or self.responsetype_ in ["stories", "highlights"]:

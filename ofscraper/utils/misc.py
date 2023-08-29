@@ -15,7 +15,7 @@ import ofscraper.utils.system as system
 def medialist_filter(medialist,model_id,username):
     log=logging.getLogger("shared")
     if not args_.getargs().dupe:
-        media_ids = set(operations.get_media_ids(model_id=model_id,username=username))
+        media_ids = set(operations.get_media_ids_downloaded(model_id=model_id,username=username))
         log.debug(f"Number of unique media ids in database for {username}: {len(media_ids)}")
         medialist = seperate.separate_by_id(medialist, media_ids)
         log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")  

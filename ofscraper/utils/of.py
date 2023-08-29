@@ -42,7 +42,7 @@ def process_messages(model_id,username):
         log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
         log.debug("Removing locked messages media")
         curr=set(operations.get_all_messages_ids(model_id=model_id,username=username))
-        [operations.write_messages_table(message,model_id=model_id,username=username) for message in filter(lambda x:x.id not in curr,messages_)]
+        [operations.write_messages_table(list(filter(lambda x:x.id not in curr,messages_)),model_id=model_id,username=username)]
 
             
         output=[]

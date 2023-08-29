@@ -378,8 +378,8 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                                         count=0
                         else:
                             log.debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
-                            log.debug(f"[bold {get_medialog(ele)} ]main download  response text [/bold]: {await r.text_()}")
-                            log.debug(f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}")
+                            log.debug(f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}")
+                            log.debug(f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}")
                             r.raise_for_status()  
                         progress.remove_task(task1)
                         size_checker(temp,ele,total) 
