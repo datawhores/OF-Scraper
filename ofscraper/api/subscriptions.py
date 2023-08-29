@@ -38,7 +38,7 @@ async def get_subscriptions(subscribe_count):
             out=[]
             global tasks
             global new_tasks
-            if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list:
+            if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list and constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().black_list:
                 async with sessionbuilder.sessionBuilder() as c: 
                     tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in  range(0, subscribe_count, 10)] 
                     new_tasks=[]   

@@ -35,12 +35,21 @@ attempt = contextvars.ContextVar("attempt")
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 async def get_otherlist():
     out=[]
-    if len(args_.getargs().user_list)>=2 or constants.OFSCRAPER_RESERVED_LIST not in args_.getargs():
+    if len(args_.getargs().user_list)>=2 or constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list:
         out.extend(await get_lists())
     out=list(filter(lambda x:x.get("name").lower() in args_.getargs().user_list,out))
-    log.debug(f"Lists found on profile {list(map(lambda x:x.get('name').lower() in args_.getargs().user_list,out))}")
+    log.debug(f"Lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
     return await get_list_users(out)
-    
+
+async def get_blacklist():
+    out=[]
+    if len(args_.getargs().black_list)>=1:
+        out.extend(await get_lists())
+    out=list(filter(lambda x:x.get("name").lower() in args_.getargs().black_list,out))
+    log.debug(f"Lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
+    names= list(await get_list_users(out))
+    return set(list(map(lambda x:x["id"],names)))
+      
 
 
 async def get_lists():
@@ -163,16 +172,18 @@ async def scrape_list(c,item,job_progress,offset=0):
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task=job_progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES} : offset -> {offset} + label -> {item.get('name')}",visible=True)
+    
     async with c.requests(url=constants.listusersEP.format(item.get("id"),offset))() as r:
         sem.release()
-        
+        log_id=f"offset:{offset} list:{item.get('name')} =>"
         if r.ok:
             data=await r.json_()
             attempt.set(0)
             users=data.get("list") or []
-            log.debug(f"offset:{offset} -> names found {len(users)}")
-            log.debug(f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }")
-            log.trace("{offset} -> {posts}".format(offset=offset,posts= "\n\n".join(list(map(lambda x:f"scrapeinfo list {str(x)}",users)))))  
+            log.debug(f"{log_id} -> names found {len(users)}")
+            log.debug(f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }")
+            log.debug(f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}")   
+            log.trace("offset: {offset} list: {item} -> {posts}".format(item=item.get("name"),offset=offset,posts= "\n\n".join(list(map(lambda x:f"scrapeinfo list {str(x)}",users)))))  
             if data.get("hasMore"):
                 offset += len(users)
                 new_tasks.append(asyncio.create_task(scrape_list(c, item,job_progress,offset=offset)))

@@ -124,7 +124,11 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
-        '-ul', '--user-list', help = 'Filter by userlist the list "ofscraper.main" is a reserved word and should not be the name of any list you have on OF',default=[],required=False,type = lambda x:x.split(","),action='extend'
+        '-ul', '--user-list', help = 'Filter by userlist\n Note:  the list "ofscraper.main" is a reserved word and should not be the name of any list you have on OF',default=[],required=False,type = lambda x:x.split(","),action='extend'
+    )
+    
+    filters.add_argument(
+        '-bl', '--black-list', help = 'Remove all users from selected list\n Note: the list "ofscraper.main" is a reserved word and should not be the name of any list you have on OF',default=[],required=False,type = lambda x:x.split(","),action='extend'
     )
     
     

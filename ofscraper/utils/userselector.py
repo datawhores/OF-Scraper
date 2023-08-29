@@ -109,7 +109,7 @@ def filterNSort(usernames):
     filterusername=list(filter(lambda x:x["name"] not in args_.getargs().excluded_username ,filterusername))
     log.debug(f"final username count with all filters: {len(filterusername)}")
     if len(filterusername)==0:
-        raise Exception("You have filtered the user list to zero\nPlease Select less restrictive filters")
+        raise Exception("You have filtered the user list to zero\nPlease Select less restrictive filters and userlists")
     return sort_models_helper(filterusername)      
 
 
@@ -147,6 +147,8 @@ def get_models(subscribe_count) -> list:
         other_subscriptions=asyncio.run(lists.get_otherlist())
         out.extend(list_subscriptions)
         out.extend(other_subscriptions)
+        black_list=list(asyncio.run(lists.get_blacklist()))
+        out=list(filter(lambda x:x.get("id") not in black_list,out))
         parsed_subscriptions = subscriptions.parse_subscriptions(
             out)
         return parsed_subscriptions
