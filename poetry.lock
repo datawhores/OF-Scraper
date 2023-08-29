@@ -172,22 +172,15 @@ name = "aiosqlite"
 version = "0.19.0"
 description = "asyncio bridge to the standard sqlite3 module"
 optional = false
-python-versions = ">=3.8"
-files = []
-develop = false
-
-[package.dependencies]
-typing_extensions = ">=4.0"
+python-versions = ">=3.7"
+files = [
+    {file = "aiosqlite-0.19.0-py3-none-any.whl", hash = "sha256:edba222e03453e094a3ce605db1b970c4b3376264e56f32e2a4959f948d66a96"},
+    {file = "aiosqlite-0.19.0.tar.gz", hash = "sha256:95ee77b91c8d2808bd08a59fbebf66270e9090c3d92ffbf260dc0db0b979577d"},
+]
 
 [package.extras]
-dev = ["attribution (==1.6.2)", "black (==23.3.0)", "coverage[toml] (==7.2.5)", "flake8 (==6.0.0)", "flake8-bugbear (==23.3.23)", "flit (==3.8.0)", "mypy (==1.2.0)", "ufmt (==2.1.0)", "usort (==1.0.6)"]
-docs = ["sphinx (==7.0.0)", "sphinx-mdinclude (==0.5.3)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/omnilib/aiosqlite"
-reference = "HEAD"
-resolved_reference = "40442815b1a9a67b6f458fe56a1f4717c6f6c74c"
+dev = ["aiounittest (==1.4.1)", "attribution (==1.6.2)", "black (==23.3.0)", "coverage[toml] (==7.2.3)", "flake8 (==5.0.4)", "flake8-bugbear (==23.3.12)", "flit (==3.7.1)", "mypy (==1.2.0)", "ufmt (==2.1.0)", "usort (==1.0.6)"]
+docs = ["sphinx (==6.1.3)", "sphinx-mdinclude (==0.5.3)"]
 
 [[package]]
 name = "alabaster"
@@ -2871,4 +2864,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.12"
-content-hash = "a70eec61de8573cbd18b1e36ca3f5642ed497d03dbefb29363feee6f8807d21b"
+content-hash = "7d3a05905e12bbb7712accc51b1f0492607bf4e6caed8576e08b07282215c7bd"

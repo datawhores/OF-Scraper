@@ -37,9 +37,9 @@ psutil = "^5.9.5"
 pytest = "^7.4.0"
 humanfriendly = "^10.0"
 filelock = "^3.12.2"
-aiosqlite = {git = "https://github.com/omnilib/aiosqlite"}
 aiofiles = "^23.2.1"
 uvloop = { version = "^0.17.0", markers = "sys_platform == 'linux' or sys_platform == 'linux2'" }
+aiosqlite = "^0.19.0"
 
 
 [tool.poetry.group.dev.dependencies]
