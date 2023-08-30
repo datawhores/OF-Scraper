@@ -37,21 +37,15 @@ attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.AlT_SEM)
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
+async def scrape_pinned_posts(c, model_id,progress, timestamp=None,count=0) -> list:
     global tasks
     global sem
     posts=None
     attempt.set(attempt.get(0) + 1)
     if timestamp and   (float(timestamp)>(args_.getargs().before or arrow.now()).float_timestamp):
         return []
-    if timestamp:
-        log.debug(arrow.get(math.trunc(float(timestamp))))
-        timestamp=str(timestamp)
-        ep = constants.timelinePinnedNextEP
-        url = ep.format(model_id, timestamp)
-    else:
-        ep=constants.timelinePinnedEP
-        url=ep.format(model_id)
+    url=constants.timelinePinnedEP.format(model_id,count)
+
     log.debug(url)
     try:
         task=progress.add_task(f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",visible=True)
@@ -74,7 +68,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
                     log.debug(f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}")
                     log.debug(f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}")
                     log.trace("{log_id} -> pinned raw {posts}".format(log_id=log_id,posts=  "\n\n".join(list(map(lambda x:f"scrapeinfo pinned: {str(x)}",posts)))))
-                    new_tasks.append(asyncio.create_task(scrape_pinned_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'])))
+                    new_tasks.append(asyncio.create_task(scrape_pinned_posts(c, model_id,progress,timestamp=posts[-1]['postedAtPrecise'],count=count+len(posts))))
             else:
                 log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
                 log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
