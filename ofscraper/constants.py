@@ -28,6 +28,9 @@ INDVIDUAL_TIMELINE="https://onlyfans.com/api2/v2/posts/{}?skip_users=all"
 meEP = 'https://onlyfans.com/api2/v2/users/me'
 
 subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite'
+subscriptionsActiveEP='https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=active&format=infinite'
+subscriptionsExpiredEP='https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=expired&format=infinite'
+
 subscribeCountEP='https://onlyfans.com/api2/v2/subscriptions/count/all'
 sortSubscriptions="https://onlyfans.com/api2/v2/lists/following/sort"
 profileEP = 'https://onlyfans.com/api2/v2/users/{}'

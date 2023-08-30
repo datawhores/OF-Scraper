@@ -40,9 +40,8 @@ def getselected_usernames(rescan=False,reset=False):
  
     
 def all_subs_helper(): 
-    subscribe_count = process_me()
     global ALL_SUBS
-    ALL_SUBS= get_models( subscribe_count)
+    ALL_SUBS= get_models()
 
 
 def parsed_subscriptions_helper(force=False):
@@ -51,7 +50,7 @@ def parsed_subscriptions_helper(force=False):
     global args
     args= args_.getargs()
     if not args_.getargs().username:
-        selectedusers=get_model(filterNSort(ALL_SUBS))
+        selectedusers=get_model(filterNSort((ALL_SUBS)))
         args_.getargs().username=list(map(lambda x:x["name"],selectedusers))
         PARSED_SUBS=selectedusers
         args_.changeargs(args)  
@@ -135,17 +134,18 @@ def process_me():
     me.print_user(name, username)
     return subscribe_count
 
-def get_models(subscribe_count) -> list:
+def get_models() -> list:
     """
     Get user's subscriptions in form of a list.
     """
     with stdout.lowstdout():
-         
+        count=process_me()
         out=[]
-        list_subscriptions = asyncio.run(
-            subscriptions.get_subscriptions(subscribe_count))
+        active_subscriptions = asyncio.run(subscriptions.get_subscriptions(count[0]))
+        expired_subcriptions=asyncio.run(subscriptions.get_subscriptions(count[1],account="expired"))
         other_subscriptions=asyncio.run(lists.get_otherlist())
-        out.extend(list_subscriptions)
+        out.extend(active_subscriptions)
+        out.extend(expired_subcriptions)
         out.extend(other_subscriptions)
         black_list=list(asyncio.run(lists.get_blacklist()))
         out=list(filter(lambda x:x.get("id") not in black_list,out))

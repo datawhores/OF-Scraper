@@ -60,7 +60,7 @@ def parse_subscriber_count():
         with c.requests(constants.subscribeCountEP)() as r:
             if r.ok:
                 data=r.json_()
-                return data["subscriptions"]["all"]
+                return data["subscriptions"]["active"],data["subscriptions"]["expired"]
             else:
                 log.debug(f"[bold]subscriber count response status code:[/bold]{r.status}")
                 log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")

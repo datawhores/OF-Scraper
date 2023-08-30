@@ -23,14 +23,14 @@ from rich.style import Style
 import arrow
 console=Console()
 from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
-from ..constants import subscriptionsEP,NUM_TRIES
+from ..constants import subscriptionsEP,NUM_TRIES,subscriptionsActiveEP,subscriptionsExpiredEP
 import ofscraper.constants as constants
 log=logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
 
 
-async def get_subscriptions(subscribe_count):
+async def get_subscriptions(subscribe_count,account="active"):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
@@ -38,30 +38,32 @@ async def get_subscriptions(subscribe_count):
             out=[]
             global tasks
             global new_tasks
+
             if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list and constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().black_list:
                 async with sessionbuilder.sessionBuilder() as c: 
+                    if account=="active":funct=scrape_subscriptions_active
+                    else:funct=scrape_subscriptions_disabled
 
-                    # tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in  range(0, subscribe_count+1, 10)] 
-            #         while tasks:
-            #             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
-            #             for result in done:
-            #                 try:
-            #                     result=await result
-            #                 except Exception as E:
-            #                     log.debug(E)
-            #                     continue
-            #                 out.extend(result)
-            #             tasks = list(pending)
-            #             tasks.extend(new_tasks)
-            #             new_tasks=[]
-            # progress.remove_task(task1)
-                    for offset in  range(0, subscribe_count*2, 10):
-                        result=await scrape_subscriptions(c,offset)
-                        out.extend(result)
+                    tasks = [asyncio.create_task(funct(c,offset)) for offset in  range(0, subscribe_count+1, 10)] 
+                    new_tasks=[]
+                    while tasks:
+                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+                        for result in done:
+                            try:
+                                result=await result
+                            except Exception as E:
+                                log.debug(E)
+                                continue
+                            out.extend(result)
+                        tasks = list(pending)
+                        tasks.extend(new_tasks)
+                        new_tasks=[]
+            progress.remove_task(task1)
             outdict={}
             for ele in out:
                 outdict[ele["id"]]=ele
-            return outdict.values()
+            log.debug(f"Total {account} subscriptions found {len(outdict.values())}")
+            return list(outdict.values())
 
 
 
@@ -70,17 +72,16 @@ async def get_subscriptions(subscribe_count):
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_subscriptions(c,offset=0,num=0) -> list:
-        async with c.requests( subscriptionsEP.format(offset))() as r:
+async def scrape_subscriptions_active(c,offset=0,num=0) -> list:
+        async with c.requests( subscriptionsActiveEP.format(offset))() as r:
             if r.ok:
                 subscriptions = (await r.json_())["list"]
                 if len(subscriptions)==0:
                      return subscriptions
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
-                # if num+len(subscriptions)<10:
-                #     new_tasks.append(asyncio.create_task(scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
+                if num+len(subscriptions)<10:
+                    new_tasks.append(asyncio.create_task(scrape_subscriptions_active(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
                     
-                    # subscriptions=subscriptions+await scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))
                 return subscriptions
             else:
                 log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
@@ -89,6 +90,23 @@ async def scrape_subscriptions(c,offset=0,num=0) -> list:
                 r.raise_for_status()
             
 
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+async def scrape_subscriptions_disabled(c,offset=0,num=0) -> list:
+        async with c.requests( subscriptionsExpiredEP.format(offset))() as r:
+            if r.ok:
+                subscriptions = (await r.json_())["list"]
+                if len(subscriptions)==0:
+                     return subscriptions
+                log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
+                if num+len(subscriptions)<10:
+                    new_tasks.append(asyncio.create_task(scrape_subscriptions_disabled(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
+                    
+                return subscriptions
+            else:
+                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                r.raise_for_status()
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
 async def sort_list(c) -> list:
