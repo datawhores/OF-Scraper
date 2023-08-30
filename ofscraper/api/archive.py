@@ -204,15 +204,16 @@ async def get_archived_media(model_id,username,after=None):
     return list(unduped.values()  )                             
 
 def get_after(model_id,username):
-    cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    if args_.getargs().after:
-        return args_.getargs().after.float_timestamp
-    if not cache.get(f"archived_{model_id}_last post") or not cache.get(f"archived_{model_id}_firstpost"):
-        log.debug("initial archived to 0")
-        return 0
-    if len(list(filter(lambda x:x[-2]==0,operations.get_archived_media(model_id=model_id,username=username))))==0:
-        log.debug("set initial archived to last post")
-        return cache.get(f"archived_{model_id}_lastpost")[0]
-    else:
-        log.debug("archived archived to 0")
-        return 0
+    return 0
+    # cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+    # if args_.getargs().after:
+    #     return args_.getargs().after.float_timestamp
+    # if not cache.get(f"archived_{model_id}_last post") or not cache.get(f"archived_{model_id}_firstpost"):
+    #     log.debug("initial archived to 0")
+    #     return 0
+    # if len(list(filter(lambda x:x[-2]==0,operations.get_archived_media(model_id=model_id,username=username))))==0:
+    #     log.debug("set initial archived to last post")
+    #     return cache.get(f"archived_{model_id}_lastpost")[0]
+    # else:
+    #     log.debug("archived archived to 0")
+    #     return 0
