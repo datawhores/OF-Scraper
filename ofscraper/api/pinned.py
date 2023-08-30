@@ -67,7 +67,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None) -> list:
                 if not posts:
                     posts= []
                 if len(posts)==0:
-                    log.debug(f"{log_id} -> number of pinned post f found 0")
+                    log.debug(f"{log_id} -> number of pinned post found 0")
                 else:
                     log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
                     log.debug(f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}")
