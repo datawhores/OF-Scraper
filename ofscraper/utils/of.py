@@ -214,7 +214,7 @@ def process_labels(model_id, username):
         labelled_posts_= list(map(lambda x:labels.Label(x,model_id,username),labelled_posts_))
         curr=set(operations.get_all_labels_ids(model_id=model_id,username=username))
         for labelled_post in labelled_posts_:
-            operations.write_labels_table(list(filter(lambda post:(labelled_post.label_id,post.id) not in curr,labelled_post.posts)), model_id=model_id,username=username)
+            operations.write_labels_table(labelled_post,list(filter(lambda post:(labelled_post.label_id,post.id) not in curr,labelled_post.posts)), model_id=model_id,username=username)
 
         output = [post.media for labelled_post in labelled_posts_ for post in labelled_post.posts]
         return [item for sublist in output for item in sublist]

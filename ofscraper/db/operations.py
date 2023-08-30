@@ -292,9 +292,9 @@ def create_labels_table(model_id=None,username=None,conn=None):
         conn.commit()
 
 @operation_wrapper
-def write_labels_table(label:dict, model_id=None,username=None,conn=None):
+def write_labels_table(label:dict, posts:dict,model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as curr:
-        insertData=list(map(lambda post:(label.label_id, label.name,label.type, post.id),label))     
+        insertData=list(map(lambda post:(label.label_id, label.name,label.type, post.id),posts))     
         curr.executemany(queries.labelInsert,insertData)
         conn.commit()
 
