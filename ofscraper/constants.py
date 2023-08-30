@@ -29,6 +29,7 @@ meEP = 'https://onlyfans.com/api2/v2/users/me'
 
 subscriptionsEP = 'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite'
 subscribeCountEP='https://onlyfans.com/api2/v2/subscriptions/count/all'
+sortSubscriptions="https://onlyfans.com/api2/v2/lists/following/sort"
 profileEP = 'https://onlyfans.com/api2/v2/users/{}'
 
 timelineEP = 'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&pinned=0&format=infinite'

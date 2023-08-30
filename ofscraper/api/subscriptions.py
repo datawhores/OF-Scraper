@@ -40,21 +40,24 @@ async def get_subscriptions(subscribe_count):
             global new_tasks
             if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list and constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().black_list:
                 async with sessionbuilder.sessionBuilder() as c: 
-                    tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in  range(0, subscribe_count, 10)] 
-                    new_tasks=[]   
-                    while tasks:
-                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
-                        for result in done:
-                            try:
-                                result=await result
-                            except Exception as E:
-                                log.debug(E)
-                                continue
-                            out.extend(result)
-                        tasks = list(pending)
-                        tasks.extend(new_tasks)
-                        new_tasks=[]
-            progress.remove_task(task1)
+
+                    # tasks = [asyncio.create_task(scrape_subscriptions(c,offset)) for offset in  range(0, subscribe_count+1, 10)] 
+            #         while tasks:
+            #             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+            #             for result in done:
+            #                 try:
+            #                     result=await result
+            #                 except Exception as E:
+            #                     log.debug(E)
+            #                     continue
+            #                 out.extend(result)
+            #             tasks = list(pending)
+            #             tasks.extend(new_tasks)
+            #             new_tasks=[]
+            # progress.remove_task(task1)
+                    for offset in  range(0, subscribe_count*2, 10):
+                        result=await scrape_subscriptions(c,offset)
+                        out.extend(result)
             outdict={}
             for ele in out:
                 outdict[ele["id"]]=ele
@@ -73,9 +76,11 @@ async def scrape_subscriptions(c,offset=0,num=0) -> list:
                 subscriptions = (await r.json_())["list"]
                 if len(subscriptions)==0:
                      return subscriptions
-                if num+len(subscriptions)<10:
-                    new_tasks.append(asyncio.create_task(scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
+                # if num+len(subscriptions)<10:
+                #     new_tasks.append(asyncio.create_task(scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
+                    
+                    # subscriptions=subscriptions+await scrape_subscriptions(c,offset=offset+len(subscriptions),num= num+len(subscriptions))
                 return subscriptions
             else:
                 log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
@@ -84,6 +89,22 @@ async def scrape_subscriptions(c,offset=0,num=0) -> list:
                 r.raise_for_status()
             
 
+
+@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
+async def sort_list(c) -> list:
+        async with c.requests( constants.sortSubscriptions,method="post",json={
+  "order": "users.name",
+  "direction": "desc",
+  "type": "all"
+})() as r:
+            if r.ok:
+                None
+            else:
+                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                r.raise_for_status()
+            
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()
     data = [
