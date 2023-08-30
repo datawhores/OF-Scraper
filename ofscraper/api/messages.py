@@ -275,7 +275,11 @@ def get_after(model_id,username):
     if not cache.get(f"messages_{model_id}_lastpost") or not cache.get(f"messages_{model_id}_firstpost"):
         log.debug("initial messages to 0")
         return 0
-    if len(list(filter(lambda x:x[-2]==0,operations.get_messages_media(model_id=model_id,username=username))))==0:
+    curr=operations.get_messages_media(model_id=model_id,username=username)
+    if len(curr)==0:
+        log.debug("initial messages to 0")
+        return 0
+    elif len(list(filter(lambda x:x[-2]==0,curr)))==0:
         log.debug("set initial message to last messageid")
         return cache.get(f"messages_{model_id}_firstpost")[0]
     else:

@@ -222,7 +222,14 @@ def get_after(model_id,username):
     if not cache.get(f"timeline_{model_id}_lastpost") or not cache.get(f"timeline_{model_id}_firstpost"):
         log.debug("initial timeline to 0")
         return 0
-    if len(list(filter(lambda x:x[-2]==0,operations.get_timeline_media(model_id=model_id,username=username))))==0:
+    
+    
+    curr=operations.get_timeline_media(model_id=model_id,username=username)
+    if len(curr)==0:
+        log.debug("initial timeline to 0")
+        return 0
+
+    elif len(list(filter(lambda x:x[-2]==0,curr)))==0:
         log.debug("set initial timeline to last post")
         return cache.get(f"timeline_{model_id}_lastpost")[0]
     else:
