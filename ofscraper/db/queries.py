@@ -190,7 +190,7 @@ SELECT * FROM medias where api_type=('Archived')
 
 getMessagesMedia=\
 """
-SELECT * FROM medias where api_type=('Messages')
+SELECT * FROM medias where api_type=('Message') or api_type=('Messages')
 """
 
 mediaUpdate=\

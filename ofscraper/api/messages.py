@@ -102,8 +102,13 @@ async def get_messages(model_id,username,after=None):
                     filteredArray=oldmessages[i:j]
 
 
-
-                
+                log.info(
+                f"""
+Setting initial message scan date for {username} to {arrow.get(after_).format('YYYY.MM.DD')}
+[yellow]Hint: append ' --after 2000' to force scan of entire messages[/yellow]
+                """)
+                         
+                            
                 
 
                 IDArray=list(map(lambda x:x.get("id"),filteredArray)) if len(filteredArray)>0 else []
@@ -273,16 +278,16 @@ def get_after(model_id,username):
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"messages_{model_id}_lastpost") or not cache.get(f"messages_{model_id}_firstpost"):
-        log.debug("initial messages to 0")
+        log.debug("last date or first date not found in cache")
         return 0
     curr=operations.get_messages_media(model_id=model_id,username=username)
     if len(curr)==0:
-        log.debug("initial messages to 0")
+        log.debug("Database is empty")
         return 0
     elif len(list(filter(lambda x:x[-2]==0,curr)))==0:
-        log.debug("set initial message to last messageid")
+        log.debug("All downloads in db marked as downloaded")
         return cache.get(f"messages_{model_id}_firstpost")[0]
     else:
-        log.debug("initial messages to 0")
+        log.debug("All other test failed")
         return 0
 

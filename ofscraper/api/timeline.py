@@ -124,7 +124,12 @@ async def get_timeline_media(model_id,username,after=None):
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
         after=after or get_after(model_id,username)
-        log.debug(f"setting after for timeline to {after} for {username}")
+
+        log.info(
+                f"""
+Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+[yellow]Hint: append ' --after 2000' to force scan of entire timeline[/yellow]
+                """)
         filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
                 
         with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
@@ -220,20 +225,20 @@ def get_after(model_id,username):
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if not cache.get(f"timeline_{model_id}_lastpost") or not cache.get(f"timeline_{model_id}_firstpost"):
-        log.debug("initial timeline to 0")
+        log.debug("last date or first date not found in cache")
         return 0
     
     
     curr=operations.get_timeline_media(model_id=model_id,username=username)
     if len(curr)==0:
-        log.debug("initial timeline to 0")
+        log.debug("Database is empty")
         return 0
 
     elif len(list(filter(lambda x:x[-2]==0,curr)))==0:
-        log.debug("set initial timeline to last post")
+        log.debug("All media in db marked as downloaded")
         return cache.get(f"timeline_{model_id}_lastpost")[0]
     else:
-        log.debug("initial timeline to 0")
+        log.debug("All other test failed")
         return 0
 
 
