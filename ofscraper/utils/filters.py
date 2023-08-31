@@ -33,11 +33,11 @@ def filterMedia(media):
     log.debug(f"filter 7->  all media post text filter count: {len(media)}")
     media=download_type_filter(media)
     log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 8->  all download type filter: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 8->  all download type filter count: {len(media)}")
+    log.debug(f"filter 8->  all media download type filter count: {len(media)}")
 
     media=mass_msg_filter(media)
     log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 9->  mass message filter: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 9->  mass message filter count: {len(media)}")
+    log.debug(f"filter 9->  all media mass message filter count: {len(media)}")
    
     media=sort_media(media)
     log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 10-> final media  from retrived post: ",x.media,x.id,x.postid),media))))

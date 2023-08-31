@@ -90,7 +90,7 @@ def scrape_paid_prompt():
         {
             'type': 'list',
             "name":name,
-            'message': "Scrape entire paid page [WARNING ONLY USE IF NEEDED i.e for DELETED MODELS]",
+            'message': "Scrape entire paid page\n\n[Warning: initial Scan can be slow]\n[Caution: You should not need this unless your looking to scrape paid content from a deleted/banned model]",
             'choices':[Choice(True,"True"),Choice(False,"False",enabled=True)],
             'long_instruction': prompt_strings.SCRAPE_PAID,
             "default":False

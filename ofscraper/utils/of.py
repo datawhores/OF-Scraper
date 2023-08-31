@@ -39,14 +39,15 @@ def process_messages(model_id,username):
         
         messages_ =asyncio.run(messages.get_messages(  model_id,username)) 
         messages_=list(map(lambda x:posts_.Post(x,model_id,username),messages_))
-        log.debug(f"[bold]Messages Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
-        log.debug("Removing locked messages media")
         curr=set(operations.get_all_messages_ids(model_id=model_id,username=username))
         [operations.write_messages_table(list(filter(lambda x:x.id not in curr,messages_)),model_id=model_id,username=username)]
 
-            
+        log.debug(f"[bold]Messages media count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}")
+        log.debug("Removing locked messages media")  
         output=[]
         [ output.extend(message.media) for message in messages_]
+        log.debug(f"[bold]Messages media count[/bold] {len(output)}")
+
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
 
         return list(filter(lambda x:isinstance(x,media.Media),output))
@@ -56,12 +57,12 @@ def process_paid_post(model_id,username):
         
         paid_content=asyncio.run(paid.get_paid_posts(username,model_id))
         paid_content=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),paid_content))
-        log.debug(f"[bold]Paid Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),paid_content))}")
-        log.debug("Removing locked paid media")
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
         operations.write_post_table(list(filter(lambda x:x.id not in curr,paid_content)),model_id=model_id,username=username)          
         output=[]
         [output.extend(post.media) for post in paid_content]
+        log.debug(f"[bold]Paid media count without locked[/bold] {len(output)}")
+
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
 
         
@@ -78,7 +79,7 @@ def process_stories( model_id,username):
         operations.write_stories_table(list( filter(lambda x:x.id not in curr,stories)),model_id=model_id,username=username)
 
                
-        log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
+        log.debug(f"[bold]Story media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}")
         output=[]
         [ output.extend(stories.media) for stories in stories]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
@@ -95,7 +96,7 @@ def process_highlights( model_id,username):
         curr=set(operations.get_all_stories_ids(model_id=model_id,username=username))
         operations.write_stories_table(list(filter(lambda x:x.id not in curr,highlights_)),model_id=model_id,username=username) 
         
-        log.debug(f"[bold]Story Media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
+        log.debug(f"[bold]highlight media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}")
         output=[]
         [ output.extend(stories.media) for stories in highlights_]
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
@@ -108,14 +109,15 @@ def process_timeline_posts(model_id,username,individual=False):
         
         timeline_posts = asyncio.run(timeline.get_timeline_media( model_id,username)) if not individual else timeline.get_individual_post(id)
         timeline_posts  =list(map(lambda x:posts_.Post(x,model_id,username,"timeline"), timeline_posts ))
-        log.debug(f"[bold]Timeline Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
-        log.debug("Removing locked timeline media")
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
         operations.write_post_table(list(filter(lambda x:x.id not in curr,timeline_posts)),model_id=model_id,username=username)
 
-         
+        log.debug(f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}")
+        log.debug("Removing locked timeline media")
         output=[]
         [output.extend(post.media) for post in  timeline_posts ]
+        log.debug(f"[bold]Timeline media count without locked[/bold] {len(output)}")
+
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
         asyncio.run(operations.batch_mediainsert(output,operations.update_response_media_table,model_id=model_id,username=username,downloaded=False))
 
@@ -126,14 +128,16 @@ def process_archived_posts( model_id,username):
         
         archived_posts = asyncio.run(archive.get_archived_media(model_id,username))
         archived_posts =list(map(lambda x:posts_.Post(x,model_id,username,"archived"),archived_posts ))
-        log.debug(f"[bold]Archived Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
-        log.debug("Removing locked archived media")
+  
 
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
         operations.write_post_table(list(filter(lambda x:x.id not in curr,archived_posts)),model_id=model_id,username=username)
-
+        log.debug(f"[bold]Archived media count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}")
+        log.debug("Removing locked archived media")
         output=[]
         [ output.extend(post.media) for post in archived_posts ]
+        log.debug(f"[bold]Archived media count without locked[/bold] {len(output)}")
+
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
         #archived is set as post
         asyncio.run(operations.batch_mediainsert(output,operations.update_response_media_table,model_id=model_id,username=username,downloaded=False))
@@ -148,13 +152,14 @@ def process_pinned_posts( model_id,username):
         
         pinned_posts = asyncio.run(pinned.get_pinned_post( model_id))
         pinned_posts =list(map(lambda x:posts_.Post(x,model_id,username,"pinned"),pinned_posts ))
-        log.debug(f"[bold]Pinned Media Count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
-        log.debug("Removing locked pinned media")
         curr=set(operations.get_all_post_ids(model_id=model_id,username=username))
         operations.write_post_table(list(filter(lambda x:x.id not in curr,pinned_posts)),model_id=model_id,username=username) 
-
+        log.debug(f"[bold]Pinned media count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}")
+        log.debug("Removing locked pinned media")
         output=[]
         [ output.extend(post.media) for post in pinned_posts ]
+        log.debug(f"[bold]Pinned media count without locked[/bold] {len(output)}")
+
         asyncio.run(operations.batch_mediainsert(output,operations.write_media_table,model_id=model_id,username=username,downloaded=False))
         asyncio.run(operations.batch_mediainsert(output,operations.update_response_media_table,model_id=model_id,username=username,downloaded=False))
 
@@ -199,6 +204,7 @@ def process_all_paid():
             temp=[]
             [temp.extend(post.media) for post in post_array]
             output.extend(temp)
+            log.debug(f"[bold]Paid media count {username}_{model_id}[/bold] {len(temp)}")
             log.debug(f"Added Paid {len(temp)} media items for {username}_{model_id}")
         log.debug(f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.media),post_array))}")
 
@@ -216,7 +222,11 @@ def process_labels(model_id, username):
         for labelled_post in labelled_posts_:
             operations.write_labels_table(labelled_post,list(filter(lambda post:(labelled_post.label_id,post.id) not in curr,labelled_post.posts)), model_id=model_id,username=username)
 
+        log.debug(f"[bold]Label media count with locked[/bold] {sum(map(lambda x:len(x),[post.post_media for labelled_post in labelled_posts_ for post in labelled_post.posts]))}")
+        log.debug("Removing locked messages media")  
         output = [post.media for labelled_post in labelled_posts_ for post in labelled_post.posts]
+        log.debug(f"[bold]Label media count without locked[/bold] {sum(map(lambda x:len(x),output))}")
+
         return [item for sublist in output for item in sublist]
 
 def select_areas():

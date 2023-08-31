@@ -118,7 +118,6 @@ def get_all_messages_ids(model_id=None,username=None,conn=None) -> list:
 
 
             
-  
 @operation_wrapper
 def write_post_table(posts: list, model_id=None,username=None,conn=None):
     with contextlib.closing(conn.cursor()) as cur:
