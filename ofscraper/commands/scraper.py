@@ -155,7 +155,9 @@ def process_post_user_first():
             for value in user_dict.values():
                 model_id =value[0].post.model_id
                 username=value[0].post.username
+                
                 operations.create_tables(model_id=model_id,username=username)
+                operations.create_backup(model_id,username)
                 operations.write_profile_table(model_id=model_id,username=username)
                 results=misc.download_picker(
                     username,
@@ -178,6 +180,7 @@ def normal_post_process():
             try:
                 model_id = profile.get_id( ele["name"])
                 operations.create_tables(model_id,ele['name'])
+                operations.create_backup(model_id,ele['name'])
                 operations.write_profile_table(model_id=model_id,username=ele['name'])
                 combined_urls=OF.process_areas( ele, model_id)
                 results=misc.download_picker(
@@ -199,6 +202,7 @@ def normal_post_process():
                     log.info(f"inserting {len(value)} items into  into media table for {username}")
                     asyncio.run(operations.batch_mediainsert( value,operations.write_media_table,model_id=model_id,username=username,downloaded=False))  
                     operations.create_tables(model_id=model_id,username=username)
+                    operations.create_backup(model_id,username)                    
                     operations.write_profile_table(model_id=model_id,username=username)
                     misc.download_picker(
                         username,

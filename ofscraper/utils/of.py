@@ -188,11 +188,11 @@ def process_all_paid():
         output=[]
         for model_id,value in user_dict.items():
             username=profile.scrape_profile(model_id).get("username")
-            operations.create_tables(model_id=model_id,username=username)
             if username=="modeldeleted":
                 username=operations.get_profile_info(model_id=model_id,username=username) or username
             log.info(f"Processing {username}_{model_id}")
             operations.create_tables(model_id,username)
+            operations.create_backup(model_id,username)
             log.debug(f"Created table for {username}")
             all_posts=list(map(lambda x:posts_.Post(x,model_id,username,responsetype="paid"),value))
             new_dict={}

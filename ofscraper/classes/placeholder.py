@@ -7,6 +7,8 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.profiles as profiles
 import ofscraper.api.me as me
 import arrow
+from diskcache import Cache
+
 
 
 log=logging.getLogger("shared")
@@ -50,11 +52,11 @@ class Placeholders:
                     try:custom=eval(customval)
                     except:custom={}
             else:
+                    custom={}
                     for key,val in customval.items():
                         try:custom[key]=eval(val)
-                        except:continue
-
-        
+                        except:custom[key]=val
+   
             formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
             
         else:
@@ -66,36 +68,12 @@ class Placeholders:
         return pathlib.Path(data_path)
 
 
-    @wrapper
     def databasePathCopyHelper(self,model_id,model_username):
-        username=model_username;self._variables.update({"username":username})
-        modelusername=model_username;self._variables.update({"modelusername":modelusername})
-        model_username=model_username;self._variables.update({"model_username":model_username})
-        first_letter=username[0].capitalize();self._variables.update({"first_letter":first_letter})
-        firstletter=username[0].capitalize();self._variables.update({"firstletter":firstletter})
-        self._variables.update({"model_id":model_id})
-        modelid=model_id;self._variables.update({"modelid":modelid})
-
-        log.trace(f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}")
-        if config_.get_allow_code_execution(config_.read_config()):
-            if isinstance(customval,dict)==False:
-                    try:custom=eval(customval)
-                    except:custom={}
-            else:
-                    for key,val in customval.items():
-                        try:custom[key]=eval(val)
-                        except:continue
-        
-            formatStr=eval("f'{}'".format(config_.get_metadata(config_.read_config())))
-            
-        else:
-            formatStr=config_.get_metadata(config_.read_config()).format(       
-                          **self._variables)
-        data_path=pathlib.Path(formatStr,'user_data_copy.db')
-        data_path=os.path.normpath(data_path )
-        log.trace(f"final database path {data_path}")
-        return pathlib.Path(data_path)
-
+        cache = Cache(paths.getcachepath())
+        counter= (cache.get(f"{model_username}_{model_id}_dbcounter",0)%5)+1
+        cache.set(f"{model_username}_{model_id}_dbcounter",counter)
+        cache.close()
+        return pathlib.Path(re.sub('user_data.db',f"/backup/user_data_copy_{counter}.db",str(self.databasePathHelper(model_id,model_username))))
 
   
 
@@ -137,10 +115,10 @@ class Placeholders:
                     try:custom=eval(customval)
                     except:custom={}
             else:
+                    custom={}
                     for key,val in customval.items():
                         try:custom[key]=eval(val)
-                        except:continue
-        
+                        except:custom[key]=val
             downloadDir=eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
         else:
             
@@ -192,9 +170,10 @@ class Placeholders:
                     try:custom=eval(customval)
                     except:custom={}
             else:
+                    custom={}
                     for key,val in customval.items():
                         try:custom[key]=eval(val)
-                        except:continue
+                        except:custom[key]=val
             out=eval('f"""{}"""'.format(config_.get_fileformat(config_.read_config())))
         else:
             if ele.responsetype_ =="profile":out=f"{filename}.{ext}"

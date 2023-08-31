@@ -40,7 +40,6 @@ timelineEP = 'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publis
 timelineNextEP = 'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&afterPublishTime={}&pinned=0&format=infinite'
 
 timelinePinnedEP = 'https://onlyfans.com/api2/v2/users/{}/posts?skip_users=all&pinned=1&counters={}&format=infinite'
-# timelinePinnedNextEP = 'https://onlyfans.com/api2/v2/users/{}/posts?skip_users=all&pinned=1&counters=0&format=infinite&afterPublishTime={}'
 archivedEP = 'https://onlyfans.com/api2/v2/users/{}/posts/archived?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&format=infinite'
 archivedNextEP = 'https://onlyfans.com/api2/v2/users/{}/posts/archived?limit=100&order=publish_date_asc&skip_users=all&skip_users_dups=1&afterPublishTime={}&format=infinite'
 
@@ -173,7 +172,9 @@ API_REQUEST_TIMEOUT=90
 SUPRESS_OUTPUTS={"CRITICAL","ERROR","WARNING","OFF","LOW","PROMPT"}
 CHUNK_ITER=10
 maxChunkSize=1024*1024*10
+maxChunkSizeB=1024*1024
 KEY_OPTIONS=["cdrm","cdrm2","manual","keydb"]
 
 OFSCRAPER_RESERVED_LIST="ofscraper.main"
 MULTIPROCESS_MIN=200
+DBINTERVAL=259200

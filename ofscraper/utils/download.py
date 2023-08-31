@@ -61,7 +61,6 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
-import ofscraper.utils.system as system
 
 
 from diskcache import Cache

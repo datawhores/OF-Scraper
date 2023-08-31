@@ -10,7 +10,7 @@ r"""
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 import shutil
-from functools import singledispatch,partial
+from functools import partial
 import asyncio
 import contextlib
 import pathlib
@@ -19,11 +19,14 @@ import aiosqlite
 import math
 import logging
 from filelock import FileLock
+import arrow
+
 from rich.console import Console
 from ..db import queries
-from ..utils.paths import createDir,getDB
+from ..utils.paths import createDir,getDB,getcachepath
 import ofscraper.classes.placeholder as placeholder
-from ofscraper.constants import DATABASE_TIMEOUT
+from diskcache import Cache
+from ofscraper.constants import DBINTERVAL
 
 console=Console()
 log=logging.getLogger("shared")
@@ -44,12 +47,9 @@ def operation_wrapper_async(func:abc.Callable):
             
             try: 
                 await loop.run_in_executor(LOCK_POOL, lock.acquire)
-                datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
-                database_copy=placeholder.Placeholders().databasePathCopyHelper(kwargs.get("model_id"),kwargs.get("username"))
-                createDir(datebase_path.parent)
-                if datebase_path.exists() and not database_copy.exists():
-                    shutil.copy(datebase_path,database_copy)
-                conn=sqlite3.connect(datebase_path,check_same_thread=False,timeout=10)
+                database_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
+                createDir(database_path.parent)
+                conn=sqlite3.connect(database_path,check_same_thread=False,timeout=10)
                 return await loop.run_in_executor(PROCESS_POOL, partial(func,*args,**kwargs,conn=conn))
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
@@ -72,13 +72,9 @@ def operation_wrapper(func:abc.Callable):
                 raise E
             try:
                 lock.acquire(timeout=-1)  
-                datebase_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
-                database_copy=placeholder.Placeholders().databasePathCopyHelper(kwargs.get("model_id"),kwargs.get("username"))
-                
-                createDir(datebase_path.parent)
-                if datebase_path.exists() and not database_copy.exists():
-                    shutil.copy(datebase_path,database_copy)                                
-                conn=sqlite3.connect(datebase_path,check_same_thread=True,timeout=10)
+                database_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))                
+                createDir(database_path.parent)
+                conn=sqlite3.connect(database_path,check_same_thread=True,timeout=10)
                 return func(*args,**kwargs,conn=conn) 
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
@@ -179,7 +175,7 @@ def get_media_ids_downloaded(model_id=None,username=None,conn=None,**kwargs) -> 
 
 @operation_wrapper
 def get_profile_info(model_id=None,username=None,conn=None) -> list:
-    datebase_path =placeholder.Placeholders().databasePathHelper(model_id,username)
+    database_path =placeholder.Placeholders().databasePathHelper(model_id,username)
     if not pathlib.Path(datebase_path).exists():
         return None
     with contextlib.closing(conn.cursor()) as cur:
@@ -326,4 +322,26 @@ def create_tables(model_id,username):
     create_profile_table(model_id=model_id,username=username)
     create_stories_table(model_id=model_id,username=username)
     create_labels_table(model_id=model_id,username=username)
+
+
+def create_backup(model_id,username):
+    database_path =placeholder.Placeholders().databasePathHelper(model_id,username)
+    cache = Cache(getcachepath())
+    now=arrow.now().float_timestamp
+    last=cache.get(f"{username}_{model_id}_db_backup",now)
+    if now-last>DBINTERVAL and database_path.exists():
+        database_copy=placeholder.Placeholders().databasePathCopyHelper(model_id,username)
+        createDir(database_copy.parent)
+        shutil.copy2(database_path,database_copy)
+        cache.set(f"{username}_{model_id}_db_backup",now)
+    elif not pathlib.Path(database_path.parent/"backup").exists() or len(list(pathlib.Path(database_path.parent/"backup").iterdir()))==0:
+        database_copy=placeholder.Placeholders().databasePathCopyHelper(model_id,username)
+        createDir(database_copy.parent)
+        shutil.copy2(database_path,database_copy)
+        cache.set(f"{username}_{model_id}_db_backup",now)
+    cache.close()
+
+
+                    
+    
 

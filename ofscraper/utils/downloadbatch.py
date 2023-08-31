@@ -537,7 +537,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                             await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})                        
                             
                             async with aiofiles.open(temp, 'ab') as f:                             
-                                async for chunk in r.iter_chunked(constants.maxChunkSize):
+                                async for chunk in r.iter_chunked(constants.maxChunkSizeB):
                                     count=count+1
                                     innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
                                     await f.write(chunk)
@@ -633,7 +633,6 @@ async def alt_download_helper(c,ele,path,username,model_id):
     addLocalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
-        innerlog.get().debug(f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}")  
         set_time(path_to_file,newDate )
         innerlog.get().debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
@@ -724,7 +723,7 @@ async def alt_download_downloader(item,c,ele,path):
                         count=0
                         
                         async with aiofiles.open(temp, 'ab') as f:                                              
-                            async for chunk in l.iter_chunked(constants.maxChunkSize):
+                            async for chunk in l.iter_chunked(constants.maxChunkSizeB):
                                 count=count+1
                                 innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
                                 await f.write(chunk)

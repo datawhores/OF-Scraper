@@ -69,6 +69,7 @@ def process_download_cart():
                     username=media.post.username
                     log.info(f"Downloading Invidual media for {username} {media.filename}")
                     operations.create_tables(model_id=model_id,username=username)
+                    operations.create_backup(model_id,username)                    
                     operations.write_profile_table(model_id=model_id,username=username)
                     values= asyncio.run(download.process_dicts(
                     username,
@@ -316,6 +317,8 @@ def get_all_found_media(user_name, posts):
 def get_downloaded(user_name, model_id,paid=False):
     downloaded = {}
     operations.create_tables(model_id=model_id,username=user_name)
+    operations.create_backup(model_id,user_name)
+
     paid=get_paid_ids(model_id,user_name) if paid else []
     [downloaded.update({ele: downloaded.get(ele, 0)+1}) for ele in operations.get_media_ids_downloaded(model_id=model_id,username=user_name)+paid]
 
