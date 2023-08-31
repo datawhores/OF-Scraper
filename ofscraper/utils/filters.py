@@ -41,7 +41,7 @@ def filterMedia(media):
    
     media=sort_media(media)
     log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 10-> final media  from retrived post: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 11->  final media count from retrived post: {len(media)}")
+    log.debug(f"filter 10->  final media count from retrived post: {len(media)}")
     return media
 
 def sort_media(media):
