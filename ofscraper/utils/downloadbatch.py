@@ -202,7 +202,7 @@ def process_dicts(username,model_id,filtered_medialist):
             except KeyboardInterrupt:
                     raise KeyboardInterrupt
             except:
-                raise KeyboardInterrupt
+                raise Exception
     except Exception as E:
         try:
             with exit.DelayedKeyboardInterrupt():
@@ -212,7 +212,7 @@ def process_dicts(username,model_id,filtered_medialist):
         except KeyboardInterrupt:
                 raise KeyboardInterrupt
         except Exception:
-            raise KeyboardInterrupt
+            raise Exception
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos],  {forced_skipped} skipped, {skipped} failed)' )
     cache = Cache(paths.getcachepath())
     cache.close()

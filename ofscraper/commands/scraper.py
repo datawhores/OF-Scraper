@@ -318,18 +318,15 @@ def run_helper(*functs):
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
-                    None
-                raise KeyboardInterrupt
+                    raise KeyboardInterrupt
             except KeyboardInterrupt:
                 schedule.clear()
                 raise KeyboardInterrupt
         except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
-                    None
-                raise E
+                    raise E
             except KeyboardInterrupt:
-                None
                 raise KeyboardInterrupt     
                 
 def check_auth():
