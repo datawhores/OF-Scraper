@@ -208,7 +208,7 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
         
         
         
-        return unduped.values()    
+        return list(unduped.values())  
            
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   

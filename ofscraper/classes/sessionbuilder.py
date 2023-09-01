@@ -25,7 +25,7 @@ class sessionBuilder:
         self._set_header=set_header
         self._set_sign=set_sign
         self._connect_timeout=connect_timeout
-        self._total_timeout=None
+        self._total_timeout=total_timeout
         
         
      
@@ -38,7 +38,7 @@ class sessionBuilder:
         
         
         elif self._backend=="httpx":
-            self._session= httpx.AsyncClient(http2=True,timeout=None)
+            self._session= httpx.AsyncClient(http2=True,timeout=self._total_timeout)
     
         return self
     
@@ -50,7 +50,7 @@ class sessionBuilder:
     def __enter__(self):
         self._async=False
         if self._backend=="httpx":
-            self._session= httpx.Client(http2=True,timeout=None)
+            self._session= httpx.Client(http2=True,timeout=self._total_timeout)
         elif self._backend=="aio":
             raise Exception("aiohttp is async only")
         return self

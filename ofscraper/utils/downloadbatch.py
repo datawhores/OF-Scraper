@@ -57,7 +57,6 @@ import aioprocessing
 import psutil
 from diskcache import Cache
 import ofscraper.utils.config as config_
-import ofscraper.utils.separate as seperate
 import ofscraper.db.operations as operations
 import ofscraper.utils.paths as paths
 import ofscraper.utils.auth as auth
@@ -778,7 +777,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
             'proxy': '',
             'cache': True,
         }
-        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+        async with c.requests(url=constants.CDRM,method="post",json=json_data)() as r:
             httpcontent=await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
@@ -818,7 +817,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
             'proxy': '',
             'cache': True,
         }
-        async with c.requests(url='http://172.106.17.134:8080/wv',method="post",json=json_data)() as r:
+        async with c.requests(url=constants.CDRM2,method="post",json=json_data)() as r:
             httpcontent=await r.text_()
             innerlog.get().debug(f"ID:{id} key_response: {httpcontent}")
             soup = BeautifulSoup(httpcontent, 'html.parser')
@@ -862,7 +861,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
             "X-API-Key": config_.get_keydb_api(config_.read_config()),
         }
    
-        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:            
+        async with c.requests(url=constants.KEYDB,method="post",json=json_data,headers=headers)() as r:            
             data=await r.json()
             innerlog.get().debug(f"keydb json {data}")
             if  isinstance(data,str): out=data

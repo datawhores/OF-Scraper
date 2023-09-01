@@ -388,11 +388,11 @@ def print_start():
         )                
 def main():
  
-        try:
-            
+        try:    
             print_start()
             paths.cleanup()
             paths.cleanDB()
+            misc.check_cdrm()
             scrapper()
             paths.cleanup()
             paths.cleanDB()

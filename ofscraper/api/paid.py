@@ -92,7 +92,7 @@ async def get_paid_posts(username,model_id):
         log.trace("paid raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo paid: {str(x)}",  outdict.values())))))
         cache.set(f"purchased_check_{model_id}", list(outdict.values()),expire=constants.CHECK_EXPIRY)
         cache.close()
-        return  outdict.values()
+        return  list(outdict.values())
         
     
 

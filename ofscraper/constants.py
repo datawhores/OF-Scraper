@@ -179,3 +179,7 @@ OFSCRAPER_RESERVED_LIST="ofscraper.main"
 MULTIPROCESS_MIN=200
 DBINTERVAL=259200
 LARGEZIP="https://proof.ovh.net/files/100Mb.dat"
+
+CDRM2='http://172.106.17.134:8080/wv'
+KEYDB='https://keysdb.net/api'
+CDRM='https://cdrm-project.com/wv'

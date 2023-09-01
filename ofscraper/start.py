@@ -21,6 +21,7 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.exit as exit
 import ofscraper.utils.system as system
 import ofscraper.utils.paths as paths
+import ofscraper.utils.misc as misc
 
 
 def main():
@@ -131,4 +132,5 @@ def set_mulitproc_start_type():
 def set_eventloop():
     plat=platform.system()
     if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
 

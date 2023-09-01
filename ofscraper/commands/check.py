@@ -27,6 +27,7 @@ import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.config as config_
 from ..utils.paths import getcachepath
+import ofscraper.utils.misc as misc
 
 log = logging.getLogger("shared")
 console=console_.get_shared_console()
@@ -35,11 +36,19 @@ ROWS = []
 app=None
 
 
+
 def process_download_cart():
-        
+
         while True:
             global app
             while app and not app.row_queue.empty():
+                if process_download_cart.counter==0:
+                    if not misc.check_cdrm():
+                        log.info("error was raised by cdm checker\nncdm will not be check again\n\n")
+                    else:
+                        log.info("cdm checker was fine\ncdm will not be check again\n\n")
+
+                process_download_cart.counter=process_download_cart.counter+1
                 log.info("Getting items from queue")
                 try:
                     row,key=app.row_queue.get() 
@@ -167,6 +176,7 @@ def post_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url() 
     set_count(ROWS)
+    misc.check_cdrm()
     thread_starters(ROWS)
 
 def reset_url():
@@ -234,11 +244,14 @@ def message_checker():
                 unduped.append(ele)
                 id_set.add(ele.id)
         downloaded = get_downloaded(user_name, model_id,True)
+
         ROWS.extend(row_gather(unduped, downloaded, user_name))
     
     reset_url()
     set_count(ROWS)
+    misc.check_cdrm()
     thread_starters(ROWS)
+
 
 
 
@@ -265,6 +278,7 @@ def purchase_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
+    misc.check_cdrm()
     thread_starters(ROWS)
 
 
@@ -290,6 +304,7 @@ def stories_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
+    misc.check_cdrm()
     thread_starters(ROWS)
 
   
@@ -343,6 +358,7 @@ def get_paid_ids(model_id,user_name):
 def thread_starters(ROWS_): 
     worker_thread = threading.Thread(target=process_download_cart,daemon=True)
     worker_thread.start()
+    process_download_cart.counter=0
     start_table(ROWS_)
     
 

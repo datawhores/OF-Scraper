@@ -611,7 +611,7 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
             'proxy': '',
             'cache': True,
         }
-        async with c.requests(url='https://cdrm-project.com/wv',method="post",json=json_data)() as r:
+        async with c.requests(url=constants.CDRM,method="post",json=json_data)() as r:
             if r.ok:
                 httpcontent=await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -654,7 +654,7 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
             'proxy': '',
             'cache': True,
         }
-        async with c.requests(url='http://172.106.17.134:8080/wv',method="post",json=json_data)() as r:
+        async with c.requests(url=constants.CDRM2,method="post",json=json_data)() as r:
             if r.ok:
                 httpcontent=await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -709,7 +709,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
 
 
-        async with c.requests(url='https://keysdb.net/api',method="post",json=json_data,headers=headers)() as r:
+        async with c.requests(url=constants.KEYDB,method="post",json=json_data,headers=headers)() as r:
             if r.ok:
                 data=await r.json()
                 log.debug(f"keydb json {data}")
