@@ -6,7 +6,13 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = [{ version = ">=3.10.0,<3.12", markers = "sys_platform == 'linux' or sys_platform == 'linux2'" },{ version = ">=3.10.12,<3.12" }]
+python=[
+    {platform = 'windows', version = ">=3.10.12,<3.13"},
+    {platform = 'linux', version = ">=3.10.0,<3.13"},
+    {platform = 'darwin', version = ">=3.10.0,<3.13"},
+
+
+]
 
 
 
