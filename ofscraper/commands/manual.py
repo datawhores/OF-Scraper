@@ -20,7 +20,7 @@ import ofscraper.utils.misc as misc
 
 def manual_download(urls=None):
     log = logging.getLogger("shared")
-    misc.check_cdrm()
+    misc.check_cdm()
     media_dict=get_media_from_urls(urls)
     log.debug(f"Media dict length {len(list(media_dict.values()))}")
     for value in media_dict.values():

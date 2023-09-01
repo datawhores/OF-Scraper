@@ -43,7 +43,7 @@ def process_download_cart():
             global app
             while app and not app.row_queue.empty():
                 if process_download_cart.counter==0:
-                    if not misc.check_cdrm():
+                    if not misc.check_cdm():
                         log.info("error was raised by cdm checker\nncdm will not be check again\n\n")
                     else:
                         log.info("cdm checker was fine\ncdm will not be check again\n\n")
@@ -176,7 +176,7 @@ def post_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url() 
     set_count(ROWS)
-    misc.check_cdrm()
+    misc.check_cdm()
     thread_starters(ROWS)
 
 def reset_url():
@@ -249,7 +249,7 @@ def message_checker():
     
     reset_url()
     set_count(ROWS)
-    misc.check_cdrm()
+    misc.check_cdm()
     thread_starters(ROWS)
 
 
@@ -278,7 +278,7 @@ def purchase_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
-    misc.check_cdrm()
+    misc.check_cdm()
     thread_starters(ROWS)
 
 
@@ -304,7 +304,7 @@ def stories_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
-    misc.check_cdrm()
+    misc.check_cdm()
     thread_starters(ROWS)
 
   

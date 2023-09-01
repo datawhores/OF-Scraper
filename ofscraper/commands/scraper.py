@@ -392,7 +392,7 @@ def main():
             print_start()
             paths.cleanup()
             paths.cleanDB()
-            misc.check_cdrm()
+            misc.check_cdm()
             scrapper()
             paths.cleanup()
             paths.cleanDB()

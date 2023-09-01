@@ -49,7 +49,7 @@ def download_picker(username, model_id, medialist):
                     ))
     
 
-def check_cdrm():
+def check_cdm():
     with stdout.lowstdout():
         console=console_.get_shared_console()
         log=logging.getLogger("shared")
