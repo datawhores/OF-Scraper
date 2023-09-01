@@ -210,9 +210,9 @@ jobs:
         with:
           name: ofscraper_version     
           path: ofscraper
-      - name: update line
-        run: 
-          sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml      
+      # - name: update line
+      #   run: 
+      #     sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml      
       - name: Set up Python 3.10.12
         uses: actions/setup-python@v4
         with:
