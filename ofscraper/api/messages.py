@@ -105,7 +105,9 @@ async def get_messages(model_id,username,after=None):
                 log.info(
                 f"""
 Setting initial message scan date for {username} to {arrow.get(after_).format('YYYY.MM.DD')}
-[yellow]Hint: append ' --after 2000' to force scan of entire messages[/yellow]
+[yellow]Hint: append ' --after 2000' to force scan of entire messages + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --dupe' to force scan of entire messages + download of all files[/yellow]
+
                 """)
                          
                             

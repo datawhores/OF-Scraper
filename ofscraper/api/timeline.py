@@ -128,7 +128,9 @@ async def get_timeline_media(model_id,username,after=None):
         log.info(
                 f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
-[yellow]Hint: append ' --after 2000' to force scan of entire timeline[/yellow]
+[yellow]Hint: append ' --after 2000' to force scan of entire timeline + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --dupe' to force scan of entire timeline + download of all files[/yellow]
+
                 """)
         filteredArray=list(filter(lambda x:x>=after,postedAtArray)) if len(postedAtArray)>0 else []
                 
