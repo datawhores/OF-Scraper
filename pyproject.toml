@@ -6,7 +6,10 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10.0,<3.12"
+python = [{ version = ">=3.10.0,<3.12", markers = "sys_platform == 'linux' or sys_platform == 'linux2'" },{ version = ">=3.10.12,<3.12", markers = "sys_platform == 'win32'" }]
+
+
+
 httpx = {extras = ["http2"], version = "^0.23.3"}
 inquirerpy = "^0.3.4"
 setuptools = "^67.6.0"
