@@ -1,3 +1,6 @@
 [submodule "wiki"]
 	path = wiki
-	url = https://github.com/datawhores/OF-Scraper-Docs.git
+	url = https://github.com/datawhores/OF-Scraper-Docs
+[submodule "OF-Scraper-Docs"]
+	path = OF-Scraper-Docs
+	url = https://github.com/datawhores/OF-Scraper-Docs

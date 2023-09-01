@@ -135,7 +135,7 @@ launch.json
 #other
 .tempmedia
 dupe.json
-doc*
+doc[0-9]*
 source
 sphinx
 /config*
