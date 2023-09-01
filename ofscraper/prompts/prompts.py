@@ -11,9 +11,10 @@ import sys
 import re
 import os
 import json
+import logging
 from rich.console import Console
-
 import arrow
+from diskcache import Cache
 from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.base import Choice
@@ -24,7 +25,8 @@ import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.utils.config as config
 import ofscraper.utils.args as args_
 import ofscraper.prompts.promptConvert as promptClasses
-
+import ofscraper.utils.system as system
+import ofscraper.utils.paths as paths
 
 
 console=Console()
@@ -348,7 +350,16 @@ def config_prompt_advanced(config_) -> dict:
     ])
 
     config_.update(threads)
-    max_allowed=50 if int(threads["threads"])==0 else max(-(-(50//int(threads["threads"]))),6)
+
+   
+    cache = Cache(paths.getcachepath(),disk=config.get_cache_mode(config.read_config()))
+    if not cache.get("speed_download") or  promptClasses.getChecklistSelection(choices=["Yes","No"],message="Re-run speedteset",long_instruction="Download Sems max value is based on calculated speed")=="Yes":
+        cache.set("speed_download",get_speed(threads))
+    max_allowed=cache.get("speed_download")
+    cache.close()
+ 
+    
+
 
          
     new_settings =promptClasses.batchConverter(*   [{
@@ -358,7 +369,7 @@ def config_prompt_advanced(config_) -> dict:
             'min_allowed':1,
             'max_allowed':max_allowed,
              "validate":EmptyInputValidator(),
-             'long_instruction':"Value can be 1-20",
+             'long_instruction':f"Value can be 1-{max_allowed}",
              'default':config.get_download_semaphores(config_),
         },
 
@@ -1014,3 +1025,10 @@ def manual_auth_prompt(authText) -> str:
 
     return questions[name]
 
+def get_speed(threads):
+    logging.getLogger("shared").info("running speed test")
+    speed=system.speed_test()
+    thread_count=int(threads["threads"])
+    if int(thread_count)==0:max_allowed=max((speed*.6)//constants.maxChunkSize,3)
+    else: max_allowed=int(max(((speed*.6)/thread_count)//constants.maxChunkSizeB,3))
+    return max_allowed

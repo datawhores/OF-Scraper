@@ -22,10 +22,11 @@ from filelock import FileLock
 import arrow
 
 from rich.console import Console
+from diskcache import Cache
 from ..db import queries
 from ..utils.paths import createDir,getDB,getcachepath
+import ofscraper.utils.config as config
 import ofscraper.classes.placeholder as placeholder
-from diskcache import Cache
 from ofscraper.constants import DBINTERVAL
 
 console=Console()
@@ -326,7 +327,8 @@ def create_tables(model_id,username):
 
 def create_backup(model_id,username):
     database_path =placeholder.Placeholders().databasePathHelper(model_id,username)
-    cache = Cache(getcachepath())
+    cache = Cache(getcachepath(),disk=config.get_cache_mode(config.read_config()))
+
     now=arrow.now().float_timestamp
     last=cache.get(f"{username}_{model_id}_db_backup",now)
     if now-last>DBINTERVAL and database_path.exists():

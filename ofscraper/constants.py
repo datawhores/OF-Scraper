@@ -178,3 +178,4 @@ KEY_OPTIONS=["cdrm","cdrm2","manual","keydb"]
 OFSCRAPER_RESERVED_LIST="ofscraper.main"
 MULTIPROCESS_MIN=200
 DBINTERVAL=259200
+LARGEZIP="https://proof.ovh.net/files/100Mb.dat"

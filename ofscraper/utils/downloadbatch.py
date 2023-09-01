@@ -162,9 +162,8 @@ def process_dicts(username,model_id,filtered_medialist):
 
             
             #start stdout/main queues consumers
-            logthreads=[logger.start_stdout_logthread(input_=logqueues_[i//split_val],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
-    #For some reason windows loses queue when not passed seperatly
-
+            logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
+  
             processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
             [process.start() for process in processes]
             downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
@@ -179,13 +178,19 @@ def process_dicts(username,model_id,filtered_medialist):
                 with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                     queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
                     [thread.start() for thread in queue_threads]
-                    while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
-                        for thread in list(filter(lambda x:x.is_alive(),queue_threads)):
-                            thread.join(1)
-                            time.sleep(1)
-                [logthread.join() for logthread in logthreads]
-        [process.join(timeout=1) for process in processes]    
-        [process.terminate() for process in processes]
+                    while len(list(filter(lambda x:x.is_alive(),logthreads)))>0: 
+                        for thread in list(filter(lambda x:x.is_alive(),logthreads)):
+                            thread.join(timeout=.1)
+                        time.sleep(.5)
+        while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
+            for thread in list(filter(lambda x:x.is_alive(),queue_threads)):
+                thread.join(timeout=.1)
+            time.sleep(.5)
+        while len(list(filter(lambda x:x.is_alive(),processes)))>0: 
+            for process in list(filter(lambda x:x.is_alive(),process)):
+                process.join(timeout=.1)
+            time.sleep(.5)
+        # [process.terminate() for process in processes]
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
         setDirectoriesDate()  

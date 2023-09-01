@@ -142,3 +142,4 @@ sphinx
 /profile*
 *.json
 package
+core

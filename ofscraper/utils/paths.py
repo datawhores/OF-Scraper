@@ -249,3 +249,7 @@ def getDB():
 
 def cleanDB():
     pathlib.Path(get_profile_path()/"db.lock").unlink(missing_ok=True)
+
+
+def speed_file():
+    return pathlib.Path(get_profile_path()/"speed.zip")

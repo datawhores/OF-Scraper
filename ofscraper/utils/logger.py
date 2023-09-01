@@ -347,7 +347,7 @@ def logger_process(input_,name=None,stop_count=1,event=None):
     count=0
     close=False
     funct=None
-    if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get
+    if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get;end_funct=input_.get_nowait
     elif hasattr(input_,"send"):funct=input_.recv
     while True:
         # consume a log message, block until one arrives
@@ -361,7 +361,6 @@ def logger_process(input_,name=None,stop_count=1,event=None):
             if event and event.is_set():
                 close=True
             if message=="None":
-                close=True
                 count=count+1
                 continue  
             if message.message=="None":
@@ -371,8 +370,14 @@ def logger_process(input_,name=None,stop_count=1,event=None):
                 # log the message
                 log.handle(message)
         # check close and empty message
-        if close==True:
-            return
+        
+        if close==True or count==stop_count:
+            while True:
+                try:
+                    end_funct()
+                except:
+                    return
+            
 
 
 
@@ -386,7 +391,7 @@ def logger_other(input_,name=None,stop_count=1,event=None):
     if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
         return
     funct=None
-    if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get
+    if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get;end_funct=input_.get_nowait
     elif hasattr(input_,"send"):funct=input_.recv
     while True:
         # consume a log message, block until one arrives
@@ -400,7 +405,7 @@ def logger_other(input_,name=None,stop_count=1,event=None):
             if event and event.is_set():
                 close=True
             if message=="None":
-                close=True
+                count=count+1
                 continue    
             if message.message=="None":
                 count=count+1
@@ -409,8 +414,14 @@ def logger_other(input_,name=None,stop_count=1,event=None):
                 # log the message
                 log.handle(message)
         # check close and empty message
-        if close==True:
-            return
+        if close==True or count==stop_count:
+            while True:
+                try:
+                    end_funct()
+                except:
+                    return
+            
+
 
 
 # some inherantence from main process

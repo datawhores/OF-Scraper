@@ -69,7 +69,7 @@ class Placeholders:
 
 
     def databasePathCopyHelper(self,model_id,model_username):
-        cache = Cache(paths.getcachepath())
+        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
         counter= (cache.get(f"{model_username}_{model_id}_dbcounter",0)%5)+1
         cache.set(f"{model_username}_{model_id}_dbcounter",counter)
         cache.close()
