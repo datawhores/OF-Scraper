@@ -6,7 +6,7 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python= ">=3.10.12,<3.12"
+python= ">=3.10.11,<3.12"
 
 
 
