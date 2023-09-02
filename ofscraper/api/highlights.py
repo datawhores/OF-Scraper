@@ -69,10 +69,11 @@ async def get_stories_post(model_id):
                         new_tasks=[]
                 overall_progress.remove_task(page_task)
         log.trace("stories raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories: {str(x)}",output)))))
-        log.debug(f"[bold]stories Count without Dupes[/bold] {len(output)} found")
+        log.debug(f"[bold]stories Count with Dupes[/bold] {len(output)} found")
         outdict={}
         for ele in output:
             outdict[ele["id"]]=ele
+        log.debug(f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found")
         return list(outdict.values())
 
 
@@ -180,10 +181,11 @@ async def get_highlight_post(model_id):
             
 
         log.trace("highlight raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo heighlight: {str(x)}",output)))))
-        log.debug(f"[bold]highlight Count without Dupes[/bold] {len(output)} found")
+        log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output)} found")
         outdict={}
         for ele in output2:
             outdict[ele["id"]]=ele
+        log.debug(f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found")
         return list(outdict.values())
 
 
