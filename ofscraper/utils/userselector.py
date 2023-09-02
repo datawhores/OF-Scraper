@@ -142,10 +142,10 @@ def get_models() -> list:
         count=process_me()
         out=[]
         active_subscriptions = asyncio.run(subscriptions.get_subscriptions(count[0]))
-        expired_subcriptions=asyncio.run(subscriptions.get_subscriptions(count[1],account="expired"))
+        expired_subscriptions=asyncio.run(subscriptions.get_subscriptions(count[1],account="expired"))
         other_subscriptions=asyncio.run(lists.get_otherlist())
         out.extend(active_subscriptions)
-        out.extend(expired_subcriptions)
+        out.extend(expired_subscriptions)
         out.extend(other_subscriptions)
         black_list=list(asyncio.run(lists.get_blacklist()))
         out=list(filter(lambda x:x.get("id") not in black_list,out))

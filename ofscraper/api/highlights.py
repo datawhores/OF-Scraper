@@ -70,7 +70,10 @@ async def get_stories_post(model_id):
                 overall_progress.remove_task(page_task)
         log.trace("stories raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo stories: {str(x)}",output)))))
         log.debug(f"[bold]stories Count without Dupes[/bold] {len(output)} found")
-        return output
+        outdict={}
+        for ele in output:
+            outdict[ele["id"]]=ele
+        return list(outdict.values())
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
@@ -178,7 +181,11 @@ async def get_highlight_post(model_id):
 
         log.trace("highlight raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo heighlight: {str(x)}",output)))))
         log.debug(f"[bold]highlight Count without Dupes[/bold] {len(output)} found")
-        return output2
+        outdict={}
+        for ele in output2:
+            outdict[ele["id"]]=ele
+        return list(outdict.values())
+
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   

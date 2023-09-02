@@ -85,7 +85,7 @@ async def expiredHelper(subscribe_count,c):
         return[]
     if constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list and constants.OFSCRAPER_EXPIRED_LIST not in args_.getargs().user_list:
         return []
-    funct=scrape_subscriptions_active
+    funct=scrape_subscriptions_disabled
 
     tasks = [asyncio.create_task(funct(c,offset)) for offset in  range(0, subscribe_count+1, 10)] 
     new_tasks=[]
