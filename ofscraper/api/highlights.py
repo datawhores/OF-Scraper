@@ -181,7 +181,7 @@ async def get_highlight_post(model_id):
             
 
         log.trace("highlight raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo heighlight: {str(x)}",output)))))
-        log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output)} found")
+        log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output2)} found")
         outdict={}
         for ele in output2:
             outdict[ele["id"]]=ele
