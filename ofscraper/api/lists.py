@@ -38,7 +38,7 @@ async def get_otherlist():
     if len(args_.getargs().user_list)>=2 or constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list:
         out.extend(await get_lists())
     out=list(filter(lambda x:x.get("name").lower() in args_.getargs().user_list,out))
-    log.debug(f"Lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
+    log.debug(f"User lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
     return await get_list_users(out)
 
 async def get_blacklist():
@@ -46,7 +46,7 @@ async def get_blacklist():
     if len(args_.getargs().black_list)>=1:
         out.extend(await get_lists())
     out=list(filter(lambda x:x.get("name").lower() in args_.getargs().black_list,out))
-    log.debug(f"Lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
+    log.debug(f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
     names= list(await get_list_users(out))
     return set(list(map(lambda x:x["id"],names)))
       

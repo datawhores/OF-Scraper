@@ -250,8 +250,10 @@ def getargs(input=None):
     args.username=set(args.username or [])
     args.excluded_username=set( args.excluded_username or [])
     args.label=set(args.label) if args.label else args.label
+    args.black_list=set(list(map(lambda x:x.lower(),args.black_list)))
     if len(args.user_list)==0:args.user_list={constants.OFSCRAPER_RESERVED_LIST}
     else:args.user_list=set(list(map(lambda x:x.lower(),args.user_list)))
+
     
 
 

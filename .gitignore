@@ -143,3 +143,4 @@ sphinx
 *.json
 package
 core
+doc
