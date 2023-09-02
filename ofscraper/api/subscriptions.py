@@ -31,39 +31,52 @@ import ofscraper.utils.args as args_
 
 
 async def get_subscriptions(subscribe_count,account="active"):
+    if account=="active":
+        activeHelper(subscribe_count)
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
             task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
-            out=[]
-            global tasks
-            global new_tasks
-
-            if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().user_list and constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().black_list:
-                async with sessionbuilder.sessionBuilder() as c: 
-                    if account=="active":funct=scrape_subscriptions_active
-                    else:funct=scrape_subscriptions_disabled
-
-                    tasks = [asyncio.create_task(funct(c,offset)) for offset in  range(0, subscribe_count+1, 10)] 
-                    new_tasks=[]
-                    while tasks:
-                        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
-                        for result in done:
-                            try:
-                                result=await result
-                            except Exception as E:
-                                log.debug(E)
-                                continue
-                            out.extend(result)
-                        tasks = list(pending)
-                        tasks.extend(new_tasks)
-                        new_tasks=[]
+            if account=="active":out=await activeHelper(subscribe_count)
             progress.remove_task(task1)
-            outdict={}
-            for ele in out:
-                outdict[ele["id"]]=ele
-            log.debug(f"Total {account} subscriptions found {len(outdict.values())}")
-            return list(outdict.values())
+        outdict={}
+        for ele in out:
+            outdict[ele["id"]]=ele
+        log.debug(f"Total {account} subscriptions found {len(outdict.values())}")
+        return list(outdict.values())
+
+async def activeHelper(subscribe_count):
+    out=[]
+    global tasks
+    global new_tasks
+
+    if constants.OFSCRAPER_RESERVED_LIST in args_.getargs().black_list or constants.OFSCRAPER_ACTIVE_LIST in args_.getargs().black_list:
+        return[]
+    if constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list or constants.OFSCRAPER_ACTIVE_LIST not in args_.getargs().user_list:
+        return []
+    funct=scrape_subscriptions_disabled
+
+    tasks = [asyncio.create_task(funct(c,offset)) for offset in  range(0, subscribe_count+1, 10)] 
+    new_tasks=[]
+    while tasks:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+        for result in done:
+            try:
+                result=await result
+            except Exception as E:
+                log.debug(E)
+                continue
+            out.extend(result)
+        tasks = list(pending)
+        tasks.extend(new_tasks)
+        new_tasks=[]
+    
+    return out    
+   
+
+
+
+
 
 
 

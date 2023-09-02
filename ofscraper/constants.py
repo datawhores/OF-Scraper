@@ -176,6 +176,10 @@ maxChunkSizeB=1024*1024
 KEY_OPTIONS=["cdrm","cdrm2","manual","keydb"]
 
 OFSCRAPER_RESERVED_LIST="ofscraper.main"
+OFSCRAPER_ACTIVE_LIST="ofscraper.active"
+OFSCRAPER_EXPIRED_LIST="ofscraper.expired"
+
+
 MULTIPROCESS_MIN=200
 DBINTERVAL=259200
 LARGEZIP="https://proof.ovh.net/files/100Mb.dat"
