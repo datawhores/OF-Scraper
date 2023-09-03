@@ -88,7 +88,7 @@ async def get_lists():
                         tasks.extend(new_tasks)
                         new_tasks=[]
                     overall_progress.remove_task(page_task)
-        log.trace("post label names unduped {posts}".format(posts= "\n\n".join(map(lambda x:f" label name unduped:{x}",output))))
+        log.trace("list unduped {posts}".format(posts= "\n\n".join(map(lambda x:f" list data raw:{x}",output))))
         log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
         return output    
 
