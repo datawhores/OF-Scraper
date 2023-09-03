@@ -682,6 +682,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
         out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
+        out=None
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
@@ -714,7 +715,10 @@ async def key_helper_keydb(c,pssh,licence_url,id):
                 data=await r.json()
                 log.debug(f"keydb json {data}")
                 if  isinstance(data,str): out=data
-                elif  isinstance(data,object): out=data["keys"][0]["key"]
+                elif isinstance(data["keys"][0],list):
+                    out=data["keys"][0]
+                elif  isinstance(data["keys"][0],object):
+                    out==data["keys"][0]["key"]
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")

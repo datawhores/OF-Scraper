@@ -1030,5 +1030,5 @@ def get_speed(threads):
     speed=system.speed_test()
     thread_count=int(threads["threads"])
     if int(thread_count)==0:max_allowed=max((speed*.6)//constants.maxChunkSize,3)
-    else: max_allowed=min(int(max(((speed*.6)/thread_count)//constants.maxChunkSizeB,3)),35)
+    else: max_allowed=min(int(max(((speed*.6)/thread_count)//constants.maxChunkSizeB,3)),25)
     return max_allowed
