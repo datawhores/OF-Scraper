@@ -682,7 +682,6 @@ async def key_helper_keydb(c,pssh,licence_url,id):
     cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
         out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
-        out=None
         log.debug(f"ID:{id} pssh: {pssh!=None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         if out!=None:
