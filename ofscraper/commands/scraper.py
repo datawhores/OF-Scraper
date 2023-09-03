@@ -183,7 +183,7 @@ def normal_post_process():
                 operations.create_backup(model_id,ele['name'])
                 operations.write_profile_table(model_id=model_id,username=ele['name'])
                 combined_urls=OF.process_areas( ele, model_id)
-                results=misc.download_picker(
+                misc.download_picker(
                     ele["name"],
                     model_id,
                     combined_urls
@@ -197,18 +197,22 @@ def normal_post_process():
                 user_dict={}
                 [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in OF.process_all_paid()]
                 for value in user_dict.values():
-                    model_id =value[0].post.model_id
-                    username=value[0].post.username
-                    log.info(f"inserting {len(value)} items into  into media table for {username}")
-                    asyncio.run(operations.batch_mediainsert( value,operations.write_media_table,model_id=model_id,username=username,downloaded=False))  
-                    operations.create_tables(model_id=model_id,username=username)
-                    operations.create_backup(model_id,username)                    
-                    operations.write_profile_table(model_id=model_id,username=username)
-                    misc.download_picker(
-                        username,
-                        model_id,
-                        value,
-                        )
+                    try:
+                        model_id =value[0].post.model_id
+                        username=value[0].post.username
+                        log.info(f"inserting {len(value)} items into  into media table for {username}")
+                        asyncio.run(operations.batch_mediainsert( value,operations.write_media_table,model_id=model_id,username=username,downloaded=False))  
+                        operations.create_tables(model_id=model_id,username=username)
+                        operations.create_backup(model_id,username)                    
+                        operations.write_profile_table(model_id=model_id,username=username)
+                        misc.download_picker(
+                            username,
+                            model_id,
+                            value,
+                            )
+                    except Exception as E:
+                        log.traceback(f"failed with exception: {E}")
+                        log.traceback(traceback.format_exc())
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     
@@ -296,16 +300,18 @@ def run_helper(*functs):
                     schedule.clear()
                 raise KeyboardInterrupt
             except KeyboardInterrupt:
-                schedule.clear()
-                raise KeyboardInterrupt
+                with exit.DelayedKeyboardInterrupt():
+                    schedule.clear()
+                    raise E
     except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     schedule.clear()
                 raise E
             except KeyboardInterrupt:
-                schedule.clear()
-                raise KeyboardInterrupt
+                with exit.DelayedKeyboardInterrupt():
+                    schedule.clear()
+                    raise E
             
             #update selected user
     else:
@@ -320,14 +326,16 @@ def run_helper(*functs):
                 with exit.DelayedKeyboardInterrupt():
                     raise KeyboardInterrupt
             except KeyboardInterrupt:
-                schedule.clear()
-                raise KeyboardInterrupt
+                with exit.DelayedKeyboardInterrupt():
+                    schedule.clear()
+                    raise KeyboardInterrupt
         except Exception as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     raise E
             except KeyboardInterrupt:
-                raise KeyboardInterrupt     
+                with exit.DelayedKeyboardInterrupt():
+                    raise E  
                 
 def check_auth():
     status=None
@@ -410,7 +418,8 @@ def main():
                     log.traceback(traceback.format_exc())
                     raise E
             except KeyboardInterrupt:
-                raise KeyboardInterrupt
+                with exit.DelayedKeyboardInterrupt():
+                    raise E
 def scrapper():
     if platform.system() == 'Windows':
         os.system('color')

@@ -17,6 +17,7 @@ ALL_SUBS=None
 PARSED_SUBS=None
 log=logging.getLogger("shared")
 
+
 def getselected_usernames(rescan=False,reset=False):
     #username list will be retrived every time reset==True
     global ALL_SUBS
@@ -141,8 +142,8 @@ def get_models() -> list:
     with stdout.lowstdout():
         count=process_me()
         out=[]
-        active_subscriptions = asyncio.run(subscriptions.get_subscriptions(count[0]))
-        expired_subscriptions=asyncio.run(subscriptions.get_subscriptions(count[1],account="expired"))
+        active_subscriptions = subscriptions.get_subscriptions(count[0])
+        expired_subscriptions=subscriptions.get_subscriptions(count[1],account="expired")
         other_subscriptions=asyncio.run(lists.get_otherlist())
         out.extend(active_subscriptions)
         out.extend(expired_subscriptions)

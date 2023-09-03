@@ -9,7 +9,6 @@ r"""
 """
 
 import asyncio
-from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from rich.console import Console
@@ -28,8 +27,9 @@ import ofscraper.constants as constants
 log=logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
+import ofscraper.utils.misc as misc
 
-
+@misc.run
 async def get_subscriptions(subscribe_count,account="active"):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
@@ -192,7 +192,6 @@ def setpricehelper(data):
             ele["price"]=min(prices)
     return data
     
-
 
 
 

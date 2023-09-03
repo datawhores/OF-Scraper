@@ -83,8 +83,6 @@ def exit_wrapper(func):
         except KeyboardInterrupt as E:
             with DelayedKeyboardInterrupt():
                 raise KeyboardInterrupt
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt
         except Exception as E:
             try:
                 with DelayedKeyboardInterrupt():

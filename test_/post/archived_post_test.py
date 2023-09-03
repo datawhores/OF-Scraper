@@ -132,8 +132,8 @@ def test_mediaclass_archived():
     t=Post(ARCHIVED_POST_EXAMPLE,model_id,username)
     try:
         media=Media(t.media[index],index,t)
-    except:
-        raise Exception()
+    except Exception as E:
+        raise E
     
 
 def test_mediatype_archived():

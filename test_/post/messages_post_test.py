@@ -133,7 +133,7 @@ def test_mediaclass_messages():
     try:
         media=Media(t.media[index],index,t)
     except Exception as E:
-        raise Exception()
+        raise E
     
 
 def test_mediatype_messages():

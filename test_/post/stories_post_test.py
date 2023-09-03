@@ -142,8 +142,8 @@ def test_mediaclass_stories():
     t=Post(STORIES_EXAMPLE,model_id,username,"stories")
     try:
         media=Media(t.media[index],index,t)
-    except:
-        raise Exception()
+    except Exception as E:
+        raise E
     
 
 def test_mediatype_stories():

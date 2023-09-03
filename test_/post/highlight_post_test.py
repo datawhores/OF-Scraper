@@ -131,8 +131,8 @@ def test_mediaclass_highlights():
     t=Post(HIGHLIGHT_EXAMPLE["stories"][0],model_id,username,"highlights")
     try:
         media=Media(t.media[index],index,t)
-    except:
-        raise Exception()
+    except Exception as E:
+        raise E
     
 
 def test_mediatype_highlights():

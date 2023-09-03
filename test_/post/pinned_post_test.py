@@ -131,8 +131,8 @@ def test_mediaclass_pinned():
     t=Post(PINNED_POSTS_EXAMPLE,model_id,username)
     try:
         media=Media(t.media[index],index,t)
-    except:
-        raise Exception()
+    except Exception as E:
+        raise E
     
 
 def test_mediatype_pinned():

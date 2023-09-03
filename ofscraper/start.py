@@ -2,6 +2,7 @@
 import os
 import time
 import ssl
+import traceback
 import asyncio
 import platform
 import certifi
@@ -71,6 +72,8 @@ def main():
         elif other_log_thread:other_log_thread.join()
     except KeyboardInterrupt as E:
             print("Force closing script")
+            logging.getLogger("shared").traceback(traceback.format_exc())
+            logging.getLogger("shared").traceback(E)
             try:
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
@@ -80,13 +83,39 @@ def main():
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
                         cache.close()
                         raise E
-                    except:
-                         raise E
+                    except Exception as E:
+                         with exit.DelayedKeyboardInterrupt():
+                            raise E
                    
-            except KeyboardInterrupt:
+            except KeyboardInterrupt as E:
+                    with exit.DelayedKeyboardInterrupt():
+                        main_event.set()
+                        if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                        if other_log_thread:other_event.set()
+                        raise 
+    except Exception as E:
+            logging.getLogger("shared").traceback(traceback.format_exc())
+            logging.getLogger("shared").traceback(E)
+            try:
+                with exit.DelayedKeyboardInterrupt():
                     main_event.set()
                     if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
                     if other_log_thread:other_event.set()
+                    try:
+                        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+                        cache.close()
+                        raise E
+                    except Exception as E:
+                         with exit.DelayedKeyboardInterrupt():
+                            raise E
+                   
+            except KeyboardInterrupt as E:
+                    with exit.DelayedKeyboardInterrupt():
+                        main_event.set()
+                        if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                        if other_log_thread:other_event.set()
+                        raise 
+
 
     
 
