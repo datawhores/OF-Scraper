@@ -715,7 +715,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
                 data=await r.json()
                 log.debug(f"keydb json {data}")
                 if  isinstance(data,str): out=data
-                elif isinstance(data["keys"][0],list):
+                elif isinstance(data["keys"][0],str):
                     out=data["keys"][0]
                 elif  isinstance(data["keys"][0],object):
                     out==data["keys"][0]["key"]
