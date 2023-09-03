@@ -91,6 +91,7 @@ def run(coro):
         asyncio.set_event_loop(loop)
         try:
             tasks=loop.run_until_complete(coro(*args,**kwargs))
+            return tasks
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
                 try:

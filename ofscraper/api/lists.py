@@ -27,12 +27,13 @@ import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
-
+import ofscraper.utils.misc as misc
 
 log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+@misc.run
 async def get_otherlist():
     out=[]
     if len(args_.getargs().user_list)>=2 or constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list:
@@ -41,6 +42,7 @@ async def get_otherlist():
     log.debug(f"User lists found on profile {list(map(lambda x:x.get('name').lower(),out))}")
     return await get_list_users(out)
 
+@misc.run
 async def get_blacklist():
     out=[]
     if len(args_.getargs().black_list)>=1:

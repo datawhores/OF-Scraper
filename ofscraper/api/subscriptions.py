@@ -35,7 +35,7 @@ async def get_subscriptions(subscribe_count,account="active"):
         asyncio.get_event_loop().set_default_executor(executor)
         
         with Progress(  SpinnerColumn(style=Style(color="blue")),TextColumn("{task.description}")) as progress:
-            task1=progress.add_task('Getting your subscriptions (this may take awhile)...')
+            task1=progress.add_task(f'Getting your {account} subscriptions (this may take awhile)...')
             async with sessionbuilder.sessionBuilder() as c: 
                 if account=="active":out=await activeHelper(subscribe_count,c)
                 else:out= await expiredHelper(subscribe_count,c)
