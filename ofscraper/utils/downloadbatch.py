@@ -869,7 +869,10 @@ async def key_helper_keydb(c,pssh,licence_url,id):
             data=await r.json()
             innerlog.get().debug(f"keydb json {data}")
             if  isinstance(data,str): out=data
-            elif  isinstance(data,object): out=data["keys"][0]["key"]
+            elif isinstance(data["keys"][0],str):
+                out=data["keys"][0]
+            elif  isinstance(data["keys"][0],object):
+                 out==data["keys"][0]["key"]
             await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
 
         return out
