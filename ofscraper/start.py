@@ -77,7 +77,8 @@ def main():
             try:
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
-                    if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                    main_log_thread.join()
+                    if other_log_process:other_log_process.join(timeout=1)
                     if other_log_thread:other_event.set()
                     try:
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
@@ -90,16 +91,18 @@ def main():
             except KeyboardInterrupt as E:
                     with exit.DelayedKeyboardInterrupt():
                         main_event.set()
-                        if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                        main_log_thread.join()
+                        if other_log_process:other_log_process.join(timeout=1)
                         if other_log_thread:other_event.set()
-                        raise 
+                        raise E
     except Exception as E:
             logging.getLogger("shared").traceback(traceback.format_exc())
             logging.getLogger("shared").traceback(E)
             try:
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
-                    if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                    main_log_thread.join()
+                    if other_log_process:other_log_process.join(timeout=1)
                     if other_log_thread:other_event.set()
                     try:
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
@@ -112,7 +115,8 @@ def main():
             except KeyboardInterrupt as E:
                     with exit.DelayedKeyboardInterrupt():
                         main_event.set()
-                        if other_log_process:other_log_process.join(timeout=1);other_log_process.terminate()
+                        main_log_thread.join()                        
+                        if other_log_process:other_log_process.join()
                         if other_log_thread:other_event.set()
                         raise 
 
