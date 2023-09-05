@@ -42,11 +42,11 @@ def download_picker(username, model_id, medialist):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         
-        return asyncio.run(download.process_dicts(
+        return download.process_dicts(
                     username,
                     model_id,
                     medialist
-                    ))
+                    )
     
 
 def check_cdm():
