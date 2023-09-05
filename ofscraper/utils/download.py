@@ -717,7 +717,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
                 elif isinstance(data["keys"][0],str):
                     out=data["keys"][0]
                 elif  isinstance(data["keys"][0],object):
-                    out==data["keys"][0]["key"]
+                    out=data["keys"][0]["key"]
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")
