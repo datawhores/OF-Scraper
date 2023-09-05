@@ -27,7 +27,9 @@ from ..db import queries
 from ..utils.paths import createDir,getDB,getcachepath
 import ofscraper.utils.config as config
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.utils.exit as exit
 from ofscraper.constants import DBINTERVAL
+
 
 console=Console()
 log=logging.getLogger("shared")
@@ -54,7 +56,14 @@ def operation_wrapper_async(func:abc.Callable):
                 return await loop.run_in_executor(PROCESS_POOL, partial(func,*args,**kwargs,conn=conn))
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
-                raise E  
+                raise E 
+            except KeyboardInterrupt as E:
+                with exit.DelayedKeyboardInterrupt():
+                    try:lock.release()
+                    except:None
+                    try:conn.close()
+                    except:None
+                    raise E 
             except Exception as E:
                 raise E   
             finally:
@@ -80,6 +89,14 @@ def operation_wrapper(func:abc.Callable):
             except sqlite3.OperationalError as E:
                 log.info("DB may be locked") 
                 raise E  
+            except KeyboardInterrupt as E:
+                with exit.DelayedKeyboardInterrupt():
+                    try:lock.release()
+                    except:None
+                    try:conn.close()
+                    except:None
+                    raise E
+                
             except Exception as E:
                 raise E   
             finally:
