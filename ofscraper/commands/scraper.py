@@ -145,6 +145,8 @@ def process_post_user_first():
                     model_id = profile.get_id( ele["name"])
                     operations.write_profile_table(model_id=model_id,username=ele['name'])
                     output.extend(OF.process_areas( ele, model_id)) 
+                except KeyboardInterrupt as E:
+                    raise E
                 except Exception as e:
                     log.traceback(f"failed with exception: {e}")
                     log.traceback(traceback.format_exc())               
@@ -188,9 +190,12 @@ def normal_post_process():
                     model_id,
                     combined_urls
                     )
+            except KeyboardInterrupt as E:
+                raise E
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
+            
         
         if args_.getargs().scrape_paid:
             try:
@@ -210,9 +215,14 @@ def normal_post_process():
                             model_id,
                             value,
                             )
+                    except KeyboardInterrupt as E:
+                        raise E
                     except Exception as E:
                         log.traceback(f"failed with exception: {E}")
                         log.traceback(traceback.format_exc())
+
+            except KeyboardInterrupt as E:
+                raise E
             except Exception as e:
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())     
