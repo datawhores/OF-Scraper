@@ -547,6 +547,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         pathstr=str(temp)
                         data=l.headers
                         item["total"]=total or int(data['content-length'])
+                        total=item["total"]
                         await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                         check1=check_forced_skip(ele,item["total"])
                         if check1:
