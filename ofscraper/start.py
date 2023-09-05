@@ -72,8 +72,8 @@ def main():
         elif other_log_thread:other_log_thread.join()
     except KeyboardInterrupt as E:
             print("Force closing script")
-            logging.getLogger("shared").traceback(traceback.format_exc())
-            logging.getLogger("shared").traceback(E)
+            # logging.getLogger("shared").traceback(traceback.format_exc())
+            # logging.getLogger("shared").traceback(E)
             try:
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
