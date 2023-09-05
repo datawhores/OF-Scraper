@@ -195,7 +195,7 @@ def get_media_ids_downloaded(model_id=None,username=None,conn=None,**kwargs) -> 
 @operation_wrapper
 def get_profile_info(model_id=None,username=None,conn=None) -> list:
     database_path =placeholder.Placeholders().databasePathHelper(model_id,username)
-    if not pathlib.Path(datebase_path).exists():
+    if not pathlib.Path(database_path).exists():
         return None
     with contextlib.closing(conn.cursor()) as cur:
         modelinfo=cur.execute(queries.profileDupeCheck,(model_id,)).fetchall() or [(None,)]

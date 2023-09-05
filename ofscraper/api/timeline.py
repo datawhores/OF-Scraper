@@ -124,7 +124,7 @@ async def get_timeline_media(model_id,username,after=None):
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline=list(filter(lambda x:x.get("postedAtPrecise")!=None,oldtimeline))
         postedAtArray=sorted(list(map(lambda x:float(x["postedAtPrecise"]),oldtimeline)))
-        after=after or get_after(model_id,username)
+        if after==None:after=get_after(model_id,username)
 
         log.info(
                 f"""

@@ -78,8 +78,11 @@ async def get_messages(model_id,username,after=None):
                 oldmessages=[{"date":arrow.now().float_timestamp,"id":None}]+oldmessages
                 
                 before=(args_.getargs().before or arrow.now()).float_timestamp     
-                after_=after or get_after(model_id,username)
+                if after==None:after_=get_after(model_id,username)    
+                else:after_=after
+
                 log.debug(f"Messages after = {after_}")
+
                 log.debug(f"Messages before = {before}")
         
                 if after_>before:return []
