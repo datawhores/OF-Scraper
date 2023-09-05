@@ -248,7 +248,10 @@ def getDB():
     return get_profile_path()/"db.lock"
 
 def cleanDB():
-    pathlib.Path(get_profile_path()/"db.lock").unlink(missing_ok=True)
+    try:
+        pathlib.Path(get_profile_path()/"db.lock").unlink(missing_ok=True)
+    except PermissionError:
+        None
 
 
 def speed_file():
