@@ -183,7 +183,10 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
                         "date":arrow.get(message.get("createdAt") or message.get("postedAt")).float_timestamp,\
                         "createdAt":message.get("createdAt") or message.get("postedAt") }
             cache.set(f"messages_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
-            cache.set(f"message_check__{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
+            newCheck={}
+            for post in cache.get(f"message_check_{model_id}",[])+list(unduped.values()):
+                newCheck[post["id"]]=post
+            cache.set(f"message_check_{model_id}",list(newCheck.values()),expire=constants.CHECK_EXPIRY)
             cache.close()
         
         if setCache:

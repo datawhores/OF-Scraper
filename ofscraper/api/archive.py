@@ -177,7 +177,10 @@ async def get_archived_media(model_id,username,after=None):
                 if newcache.get(id):continue
                 newcache[id]={"id":post.get("id"),"postedAtPrecise":post.get("postedAtPrecise")}
             cache.set(f"archived_{model_id}",list(newcache.values()),expire=constants.RESPONSE_EXPIRY)
-            cache.set(f"archived_check_{model_id}",list(newcache.values()),expire=constants.CHECK_EXPIRY)
+            newCheck={}
+            for post in cache.get(f"archived_check_{model_id}",[])+list(unduped.values()):
+                newCheck[post["id"]]=post
+            cache.set(f"archived_check_{model_id}",list(newCheck.values()),expire=constants.CHECK_EXPIRY)
             cache.close()
         if setCache:
             lastpost=cache.get(f"archived_{model_id}_lastpost")
