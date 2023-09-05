@@ -290,7 +290,19 @@ def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
     plat=platform.system()
     if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    asyncio.run(process_dicts_split(username,model_id,ele,log,pipe_))
+    try:
+        process_dicts_split(username,model_id,ele,log,pipe_)
+    except KeyboardInterrupt as E:
+        with exit.DelayedKeyboardInterrupt():
+            try:
+                p_otherqueue_.put("None")
+                p_logqueue_.put("None")
+                pipe_.send(None)
+                raise E
+            except Exception as E:
+                raise E
+
+
 
 def job_progress_helper(job_progress,result):
     funct={
@@ -381,6 +393,7 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
                     media_type = "skipped"
                     num_bytes_downloaded = 0
                     await pipe_.coro_send(  (media_type, num_bytes_downloaded,0))
+
             
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     #send message directly
