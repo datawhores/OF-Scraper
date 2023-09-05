@@ -59,7 +59,7 @@ def operation_wrapper_async(func:abc.Callable):
                 raise E 
             except KeyboardInterrupt as E:
                 with exit.DelayedKeyboardInterrupt():
-                    try:lock.release()
+                    try:lock.release(True)
                     except:None
                     try:conn.close()
                     except:None
@@ -91,7 +91,7 @@ def operation_wrapper(func:abc.Callable):
                 raise E  
             except KeyboardInterrupt as E:
                 with exit.DelayedKeyboardInterrupt():
-                    try:lock.release()
+                    try:lock.release(force=True)
                     except:None
                     try:conn.close()
                     except:None
