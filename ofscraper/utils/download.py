@@ -291,8 +291,8 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
         set_time(path_to_file,newDate )
         log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
-    if ele.id:
-        await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
+    # if ele.id:
+    #     # await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
     await set_cache_helper(ele)
     return ele.mediatype,total
 
@@ -340,7 +340,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                 async with c.requests(url=url,headers=headers)() as r:
                         if r.ok:
                             data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            # await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                             total=int(data['content-length'])
                             if attempt.get()==1:await update_total(total)
                             content_type = data.get("content-type").split('/')[-1]
@@ -409,8 +409,7 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
     audio,video=await alt_download_preparer(ele)
 
     audio=await alt_download_downloader(audio,c,ele,path,progress)
-    video=await alt_download_downloader(video,c,ele,path,progress) 
-    
+    video=await alt_download_downloader(video,c,ele,path,progress)
     for m in [audio,video]:
         if not isinstance(m,dict):
             return m
@@ -511,7 +510,6 @@ async def alt_download_downloader(item,c,ele,path,progress):
 
 
 
-
     if data:
         item["total"]=int(data.get("content-length"))
         check1=check_forced_skip(ele,item["total"])
@@ -559,6 +557,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         count=0
                         loop=asyncio.get_event_loop()
                         size=resume_size
+                        
                 
                         async with aiofiles.open(temp, 'ab') as f:                           
                             async for chunk in l.iter_chunked(constants.maxChunkSize):
@@ -567,7 +566,6 @@ async def alt_download_downloader(item,c,ele,path,progress):
                                 log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
                                 await f.write(chunk)
                                 if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
-                        
                         progress.remove_task(task1)
                     else:
                         log.debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
@@ -584,7 +582,6 @@ async def alt_download_downloader(item,c,ele,path,progress):
         finally:
             await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
-    
     return await inner(item,c,ele,progress)
    
 

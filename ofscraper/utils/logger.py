@@ -453,9 +453,8 @@ def start_other_process(input_=None,name=None,count=1):
         logger_other(input_=input_,name=name,stop_count=count)
         
     process=None
-    if (args.getargs().log or args.getargs().discord):
-        input_=otherqueue_
-        process=aioprocessing.AioProcess(target=inner,args=(input_,name,count,args.getargs()),daemon=True) 
+    input_=otherqueue_
+    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count,args.getargs()),daemon=True) 
     process.start() if process else None
     return process  
 

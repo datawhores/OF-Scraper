@@ -40,9 +40,8 @@ def main():
         main_log_thread=logger.start_stdout_logthread(event=main_event)
         #start other log consumer, only if 3 or more process
         #and if the the args are set
-        if not args_.getargs().log and not args_.getargs().discord:None
-        elif system.getcpu_count()>=2:other_log_process=logger.start_other_process()
-        else: other_log_thread=logger.start_other_thread(event=other_event)
+        # if system.getcpu_count()>=2:other_log_process=logger.start_other_process()
+        # else: other_log_thread=logger.start_other_thread(event=other_event)
         # allow background processes to start
         time.sleep(3)
 
@@ -62,17 +61,16 @@ def main():
             manual.manual_download()
         else:
             scraper.main()
+        logging.getLogger("shared").error("Finished Script")
         logging.getLogger("shared").handlers[0].queue.put("None")
         logging.getLogger("shared").handlers[-1].queue.put("None")
         
 
         main_log_thread.join()
-        if other_log_process:other_log_process.join()
-        elif other_log_thread:other_log_thread.join()
+        # if other_log_process:other_log_process.join()
+        # elif other_log_thread:other_log_thread.join()
     except KeyboardInterrupt as E:
             print("Force closing script")
-            # logging.getLogger("shared").traceback(traceback.format_exc())
-            # logging.getLogger("shared").traceback(E)
             try:
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
