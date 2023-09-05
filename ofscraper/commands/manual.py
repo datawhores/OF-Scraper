@@ -7,13 +7,13 @@ import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
-import ofscraper.utils.download as download
 import ofscraper.api.messages as messages_
 import ofscraper.api.highlights as highlights_
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.of as of
 import ofscraper.utils.misc as misc
+import ofscraper.utils.args as args_
 
 
 
@@ -23,6 +23,10 @@ def manual_download(urls=None):
     misc.check_cdm()
     media_dict=get_media_from_urls(urls)
     log.debug(f"Media dict length {len(list(media_dict.values()))}")
+    args=args_.getargs()
+    args.dupe=True
+    args_.changeargs(args)
+
     for value in media_dict.values():
         if len(value)==0:
             continue
@@ -110,7 +114,7 @@ def get_all_media(id_dict,inputtype=None):
     return media_dict
 
 def paid_failback(id,username):
-    log.debug("Using failback search because query return 0 media")
+    logging.getLogger("shared").debug("Using failback search because query return 0 media")
     return of.process_paid_post(id,username) 
     
 
