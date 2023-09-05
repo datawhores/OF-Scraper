@@ -26,6 +26,7 @@ import ofscraper.constants as constants
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
+from ofscraper.utils.run_async import run
 
 
 log=logging.getLogger("shared")
@@ -33,6 +34,7 @@ attempt = contextvars.ContextVar("attempt")
 
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
+@run
 async def get_labels(model_id):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
@@ -105,7 +107,7 @@ async def scrape_labels(c,model_id,job_progress,offset=0):
             job_progress.remove_task(task)
             r.raise_for_status()
 
-
+@run
 async def get_labelled_posts(labels, username):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)

@@ -31,6 +31,8 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_ 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.config as config_
+from ofscraper.utils.run_async import run
+
 
 
 
@@ -48,7 +50,7 @@ attempt = contextvars.ContextVar("attempt")
 
 
 
-
+@run
 async def get_paid_posts(username,model_id):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
@@ -139,6 +141,7 @@ async def scrape_paid(c,username,job_progress,offset=0):
 
 
 
+@run
 async def get_all_paid_posts():
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)

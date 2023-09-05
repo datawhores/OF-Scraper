@@ -14,10 +14,13 @@ def run(coro):
                     tasks.cancel()
                     loop.run_forever()
                     tasks.exception()
-                except:
+                except Exception as Y:
                     None
             raise E
         finally:
-            loop.close()
+            try:
+                loop.close()
+            except:
+                None
             asyncio.set_event_loop(None)
     return inner

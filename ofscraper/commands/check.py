@@ -80,11 +80,11 @@ def process_download_cart():
                     operations.create_tables(model_id=model_id,username=username)
                     operations.create_backup(model_id,username)                    
                     operations.write_profile_table(model_id=model_id,username=username)
-                    values= asyncio.run(download.process_dicts(
+                    values= download.process_dicts(
                     username,
                     model_id,
                      [media],
-                    ))
+                    )
                     if values==None or values[-1]==1:
                         raise Exception("Download is marked as skipped")
                     log.info("Download Finished")
@@ -134,8 +134,7 @@ def post_checker():
             else:
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
-                data=asyncio.run(
-                    timeline.get_timeline_media( model_id,user_name,after=0))
+                data=timeline.get_timeline_media( model_id,user_name,after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"timeline_check_{model_id}", data, expire=constants.CHECK_EXPIRY)
@@ -145,8 +144,7 @@ def post_checker():
             if len( oldarchive) > 0 and not args_.getargs().force:
                 user_dict[user_name].extend(oldarchive)
             else:
-                data=asyncio.run(
-                    archive.get_archived_media( model_id,user_name,after=0))
+                data=archive.get_archived_media( model_id,user_name,after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"archived_check_{model_id}", data, expire=constants.CHECK_EXPIRY)
@@ -223,8 +221,7 @@ def message_checker():
         if len(oldmessages) > 0 and not args_.getargs().force:
             messages = oldmessages
         else:
-            messages = asyncio.run(
-                messages_.get_messages( model_id,user_name,after=0))
+            messages = messages_.get_messages( model_id,user_name,after=0)
             cache.set(f"message_check_{model_id}",
                         messages, expire=constants.CHECK_EXPIRY)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
@@ -233,7 +230,7 @@ def message_checker():
         if len(oldpaid) > 0 and not args_.getargs().force:
             paid = oldpaid
         else:
-            paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
+            paid = paid_.get_paid_posts(user_name, model_id)
             cache.set(f"purchased_check_{model_id}",
                       paid, expire=constants.CHECK_EXPIRY)  
         media = get_all_found_media(user_name, messages+paid)
@@ -270,7 +267,7 @@ def purchase_checker():
         if len(oldpaid) > 0 and not args_.getargs().force:
             paid = oldpaid
         else:
-            paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
+            paid = paid_.get_paid_posts(user_name, model_id)
             cache.set(f"purchased_check_{model_id}",
                       paid, expire=constants.CHECK_EXPIRY)
         downloaded = get_downloaded(user_name, model_id)
@@ -289,8 +286,8 @@ def stories_checker():
         user_name=profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id( user_name)    
-        stories = asyncio.run(highlights.get_stories_post( model_id))
-        highlights_=asyncio.run(highlights.get_highlight_post( model_id))
+        stories = highlights.get_stories_post( model_id)
+        highlights_=highlights.get_highlight_post( model_id)
         highlights_=list(map(lambda x:posts_.Post(
         x, model_id, user_name,"highlights"), highlights_))
         stories=list(map(lambda x:posts_.Post(
@@ -347,7 +344,7 @@ def get_paid_ids(model_id,user_name):
     if len(oldpaid) > 0 and not args_.getargs().force:
          paid = oldpaid
     else:
-        paid = asyncio.run(paid_.get_paid_posts(user_name, model_id))
+        paid = paid_.get_paid_posts(user_name, model_id)
         cache.set(f"purchased_check_{model_id}",
                       paid, expire=constants.CHECK_EXPIRY)
     media = get_all_found_media(user_name, paid)

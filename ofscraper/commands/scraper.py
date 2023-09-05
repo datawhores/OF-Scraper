@@ -145,9 +145,8 @@ def process_post_user_first():
                     model_id = profile.get_id( ele["name"])
                     operations.write_profile_table(model_id=model_id,username=ele['name'])
                     output.extend(OF.process_areas( ele, model_id)) 
-                except KeyboardInterrupt as E:
-                    raise E
                 except Exception as e:
+                    if isinstance(e,KeyboardInterrupt):raise e
                     log.traceback(f"failed with exception: {e}")
                     log.traceback(traceback.format_exc())               
             if args_.getargs().scrape_paid:
@@ -190,15 +189,13 @@ def normal_post_process():
                     model_id,
                     combined_urls
                     )
-            except KeyboardInterrupt as E:
-                raise E
             except Exception as e:
+                if isinstance(e,KeyboardInterrupt):raise e
                 log.traceback(f"failed with exception: {e}")
                 log.traceback(traceback.format_exc())
             
         
         if args_.getargs().scrape_paid:
-            try:
                 user_dict={}
                 [user_dict.update({ele.post.model_id:user_dict.get(ele.post.model_id,[])+[ele]}) for ele in OF.process_all_paid()]
                 for value in user_dict.values():
@@ -206,7 +203,7 @@ def normal_post_process():
                         model_id =value[0].post.model_id
                         username=value[0].post.username
                         log.info(f"inserting {len(value)} items into  into media table for {username}")
-                        asyncio.run(operations.batch_mediainsert( value,operations.write_media_table,model_id=model_id,username=username,downloaded=False))  
+                        operations.batch_mediainsert( value,operations.write_media_table,model_id=model_id,username=username,downloaded=False)
                         operations.create_tables(model_id=model_id,username=username)
                         operations.create_backup(model_id,username)                    
                         operations.write_profile_table(model_id=model_id,username=username)
@@ -215,18 +212,10 @@ def normal_post_process():
                             model_id,
                             value,
                             )
-                    except KeyboardInterrupt as E:
-                        raise E
                     except Exception as E:
+                        if isinstance(e,KeyboardInterrupt):raise E
                         log.traceback(f"failed with exception: {E}")
                         log.traceback(traceback.format_exc())
-
-            except KeyboardInterrupt as E:
-                raise E
-            except Exception as e:
-                log.traceback(f"failed with exception: {e}")
-                log.traceback(traceback.format_exc())     
-
 @exit.exit_wrapper
 def process_like():
     with scrape_context_manager():
@@ -291,10 +280,9 @@ def run_helper(*functs):
     global jobqueue
     jobqueue=queue.Queue()
     [jobqueue.put(funct) for funct in functs]
-    worker_thread=None
-          
-    try:
-        if args_.getargs().daemon:
+    worker_thread=None     
+    if args_.getargs().daemon:
+        try:
                 worker_thread = threading.Thread(target=set_schedule,args=[*functs],daemon=True)
                 worker_thread.start()
                 # Check if jobqueue has function
@@ -304,25 +292,25 @@ def run_helper(*functs):
                     job_func()
                     jobqueue.task_done()
                     userselector.getselected_usernames(rescan=True)
-    except KeyboardInterrupt as E:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                raise KeyboardInterrupt
-            except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
+        except KeyboardInterrupt as E:
+                try:
+                    with exit.DelayedKeyboardInterrupt():
+                        schedule.clear()
+                    raise KeyboardInterrupt
+                except KeyboardInterrupt:
+                    with exit.DelayedKeyboardInterrupt():
+                        schedule.clear()
+                        raise E
+        except Exception as E:
+                try:
+                    with exit.DelayedKeyboardInterrupt():
+                        schedule.clear()
                     raise E
-    except Exception as E:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                raise E
-            except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                    raise E
-            
+                except KeyboardInterrupt:
+                    with exit.DelayedKeyboardInterrupt():
+                        schedule.clear()
+                        raise E
+                
             #update selected user
     else:
         try:

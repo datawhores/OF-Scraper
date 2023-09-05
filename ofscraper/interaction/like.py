@@ -33,6 +33,7 @@ import ofscraper.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.prompts.prompts as prompts
+from ofscraper.utils.run_async import run
 
 
 sem = semaphoreDelayed(1)
@@ -51,11 +52,11 @@ def get_posts( model_id,username):
     args.posts = list(map(lambda x:x.capitalize(),(args.posts or prompts.like_areas_prompt())
     ))
     if ('Pinned' in args.posts or 'All' in args.posts):
-        pinned_posts = asyncio.run(pinned.get_pinned_post( model_id))
+        pinned_posts = pinned.get_pinned_post( model_id)
     if ('Timeline' in args.posts or 'All' in args.posts):
-        timeline_posts = asyncio.run(timeline.get_timeline_media( model_id,username,after=0))
+        timeline_posts = timeline.get_timeline_media( model_id,username,after=0)
     if ('Archived' in args.posts or 'All' in args.posts):
-        archived_posts = asyncio.run(archive.get_archived_media( model_id,username,after=0))
+        archived_posts = archive.get_archived_media( model_id,username,after=0)
     log.debug(f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}")
     return pinned_posts + timeline_posts + archived_posts
 
@@ -83,16 +84,16 @@ def get_post_ids(posts: list) -> list:
 
 def like( model_id, username, ids: list):
     
-    asyncio.run(_like(model_id, username, ids, True))
+    _like(model_id, username, ids, True)
 
 
 def unlike( model_id, username, ids: list):
     
-    asyncio.run(_like( model_id, username, ids, False))
+    like( model_id, username, ids, False)
 
 
 
-
+@run
 async def _like( model_id, username, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
     global sem

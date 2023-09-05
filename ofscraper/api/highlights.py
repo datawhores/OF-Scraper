@@ -29,11 +29,14 @@ import ofscraper.utils.auth as auth
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.console as console
 import ofscraper.classes.sessionbuilder as sessionbuilder
+from ofscraper.utils.run_async import run
+
 
 log=logging.getLogger("shared")
 sem = semaphoreDelayed(1)
 attempt = contextvars.ContextVar("attempt")
 
+@run
 async def get_stories_post(model_id):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
@@ -108,7 +111,7 @@ async def scrape_stories( c,user_id,job_progress) -> list:
 
 
 
-
+@run
 async def get_highlight_post(model_id):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)

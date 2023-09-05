@@ -29,6 +29,7 @@ import ofscraper.utils.config as config
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.exit as exit
 from ofscraper.constants import DBINTERVAL
+from ofscraper.utils.run_async import run
 
 
 console=Console()
@@ -249,6 +250,7 @@ def get_messages_media(conn=None,**kwargs) -> list:
         data=list(map(lambda x:x,cur.fetchall()))
         conn.commit()
         return data
+@run
 async def batch_mediainsert(media,funct,**kwargs):
     curr=set(get_media_ids(**kwargs) or [])
     mediaDict={}

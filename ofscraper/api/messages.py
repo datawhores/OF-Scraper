@@ -33,6 +33,8 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.config as config_
+from ofscraper.utils.run_async import run
+
 
 log=logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -40,7 +42,7 @@ attempt = contextvars.ContextVar("attempt")
 sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
-
+@run
 async def get_messages(model_id,username,after=None):
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)

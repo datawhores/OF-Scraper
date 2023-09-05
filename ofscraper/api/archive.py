@@ -33,6 +33,7 @@ import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.config as config_
+from ofscraper.utils.run_async import run
 
 
 
@@ -94,7 +95,7 @@ async def scrape_archived_posts(c, model_id,progress, timestamp=None,required_id
                     progress.remove_task(task)
                     r.raise_for_status()
     return posts
-
+@run
 async def get_archived_media(model_id,username,after=None): 
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)

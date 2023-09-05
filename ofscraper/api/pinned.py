@@ -30,6 +30,8 @@ from ..utils import auth
 import ofscraper.utils.console as console
 import ofscraper.utils.args as args_
 import ofscraper.classes.sessionbuilder as sessionbuilder
+from ofscraper.utils.run_async import run
+
 
 
 log=logging.getLogger("shared")
@@ -81,6 +83,7 @@ async def scrape_pinned_posts(c, model_id,progress, timestamp=None,count=0) -> l
         sem.release()
     return posts
 
+@run
 async def get_pinned_post(model_id): 
     with  ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
