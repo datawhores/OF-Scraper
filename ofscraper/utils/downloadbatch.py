@@ -73,6 +73,8 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
 import ofscraper.utils.system as system
+from ofscraper.utils.run_async import run
+
 from aioprocessing import AioPipe
 platform_name=platform.system()
 if platform_name== 'Windows':
@@ -315,6 +317,7 @@ def setpriority():
     else:  # MAC OS X or other
         process.nice(10) 
 
+@run
 async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")

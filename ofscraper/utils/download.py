@@ -61,6 +61,7 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
+from ofscraper.utils.run_async import run
 
 
 from diskcache import Cache
@@ -113,7 +114,7 @@ async def update_total(update):
         
 
 
-
+@run
 async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
         overall_progress=Progress(  TextColumn("{task.description}"),
