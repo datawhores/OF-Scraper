@@ -38,10 +38,8 @@ def main():
         main_event = Event()
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
-        #start other log consumer, only if 3 or more process
-        #and if the the args are set
-        # if system.getcpu_count()>=2:other_log_process=logger.start_other_process()
-        # else: other_log_thread=logger.start_other_thread(event=other_event)
+        if system.getcpu_count()>=2:other_log_process=logger.start_other_process()
+        else: other_log_thread=logger.start_other_thread(event=other_event)
         # allow background processes to start
         time.sleep(3)
 
@@ -67,8 +65,8 @@ def main():
         
 
         main_log_thread.join()
-        # if other_log_process:other_log_process.join()
-        # elif other_log_thread:other_log_thread.join()
+        if other_log_process:other_log_process.join()
+        elif other_log_thread:other_log_thread.join()
     except KeyboardInterrupt as E:
             print("Force closing script")
             try:
