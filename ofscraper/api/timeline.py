@@ -137,14 +137,20 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                 
         with Live(progress_group, refresh_per_second=5,console=console.get_shared_console()): 
             async with sessionbuilder.sessionBuilder() as c:     
-                if len(filteredArray)>min_posts:
+                if len(filteredArray)>=min_posts+1:
                     splitArrays=[filteredArray[i:i+min_posts] for i in range(0, len(filteredArray), min_posts)]
                     #use the previous split for timestamp
-                    tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp=after)))
-                    [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
-                    for i in range(1,len(splitArrays)-1)]
-                    # keeping grabbing until nothing left
-                    tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
+                    if len(filteredArray)>=(min_posts*2)+1:
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[0]),timestamp=after)))
+                        [tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,required_ids=set(splitArrays[i]),timestamp=splitArrays[i-1][-1])))
+                        for i in range(1,len(splitArrays)-1)]
+                        # keeping grabbing until nothing left
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-2][-1])))
+                    else:
+                        tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=splitArrays[-1][-1])))
+
+                        
+
                 else:
                     tasks.append(asyncio.create_task(scrape_timeline_posts(c,model_id,job_progress,timestamp=after)))
                 page_task = overall_progress.add_task(f' Pages Progress: {page_count}',visible=True)

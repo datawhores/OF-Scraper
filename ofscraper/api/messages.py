@@ -126,19 +126,20 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
                 if len(IDArray)<=2:
                     tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None)))
                 
-                elif len(IDArray)>=min_posts:
+                elif len(IDArray)>=min_posts+1:
                     splitArraysID=[IDArray[i:i+min_posts] for i in range(0, len(IDArray), min_posts)]
                     splitArraysTime=[postedAtArray[i:i+min_posts] for i in range(0, len(postedAtArray), min_posts)]
-
-                    
 
                     #use the previous split for message_id
                     if i==0:tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None,required_ids=set(splitArraysTime[0]))))
                     else:tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[0][0],required_ids=set(splitArraysTime[0]))))
-                    [tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,required_ids=set(splitArraysTime[i]),message_id=splitArraysID[i-1][-1])))
-                    for i in range(1,len(splitArraysID)-1)]
-                    # keeping grabbing until nothing left
-                    tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-2][-1])))
+                    if len(IDArray)>=(min_posts*2)+1:
+                        [tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,required_ids=set(splitArraysTime[i]),message_id=splitArraysID[i-1][-1])))
+                        for i in range(1,len(splitArraysID)-1)]
+                        # keeping grabbing until nothing left
+                        tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-2][-1])))
+                    else:
+                        tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-1][-1])))
                 
                 else:
                     tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=IDArray[0],required_ids=set(postedAtArray[1:]))))
