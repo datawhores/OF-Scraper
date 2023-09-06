@@ -86,7 +86,7 @@ async def get_messages(model_id,username,after=None):
                 log.debug(f"Messages before = {before}")
         
                 if after_>before:return []
-                if len(oldmessages)<2:filteredArray=oldmessages
+                if len(oldmessages)<=2:filteredArray=oldmessages
                 else:         
                     i=None
                     j=None
@@ -123,7 +123,7 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
                 
                 
                 
-                if len(IDArray)<2:
+                if len(IDArray)<=2:
                     tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=None)))
                 
                 elif len(IDArray)>=min_posts:

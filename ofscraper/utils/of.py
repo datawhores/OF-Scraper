@@ -278,7 +278,7 @@ def process_areas(ele, model_id) -> list:
             
 
     if ("Labels" in final_post_areas and ele["active"]):
-        labels_dicts = process_labels(model_id,username)             
+        labels_dicts = process_labels(model_id,username)      
     return filters.filterMedia(list(chain(*[profile_dicts  , timeline_posts_dicts ,pinned_post_dict,purchased_dict,
             archived_posts_dicts , highlights_dicts , messages_dicts,stories_dicts, labels_dicts]))
 
