@@ -41,15 +41,16 @@ log=logging.getLogger("shared")
 def operation_wrapper_async(func:abc.Callable):
 
     async def inner(*args,**kwargs): 
+            LOCK_POOL=None
+            PROCESS_POOL=None
+            lock=None
+            loop=None
+            conn=None
             try:
                 LOCK_POOL=ThreadPoolExecutor(max_workers=1)
                 PROCESS_POOL=ThreadPoolExecutor(max_workers=1)
                 lock=FileLock(getDB(),timeout=-1)
                 loop = asyncio.get_event_loop()
-            except Exception as E:
-                raise E
-            
-            try: 
                 await loop.run_in_executor(LOCK_POOL, lock.acquire)
                 database_path =placeholder.Placeholders().databasePathHelper(kwargs.get("model_id"),kwargs.get("username"))
                 createDir(database_path.parent)
@@ -60,16 +61,18 @@ def operation_wrapper_async(func:abc.Callable):
                 raise E 
             except KeyboardInterrupt as E:
                 with exit.DelayedKeyboardInterrupt():
-                    try:lock.release(True)
-                    except:None
-                    try:conn.close()
-                    except:None
+                    if lock:lock.release(True)
+                    if conn:conn.close()
+                    if LOCK_POOL:LOCK_POOL.shutdown()
+                    if PROCESS_POOL:PROCESS_POOL.shutdown()
                     raise E 
             except Exception as E:
                 raise E   
             finally:
-                conn.close()
-                await loop.run_in_executor(LOCK_POOL, partial(lock.release,force=True))
+                if conn:conn.close()              
+                if lock:await loop.run_in_executor(LOCK_POOL, partial(lock.release,force=True))
+                if LOCK_POOL:LOCK_POOL.shutdown()
+                if PROCESS_POOL:PROCESS_POOL.shutdown()  
                 log.trace("Force Closing DB") 
                 
     return inner

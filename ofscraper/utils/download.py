@@ -219,6 +219,8 @@ async def process_dicts(username, model_id, medialist):
     log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} downloads total [{video_count} videos, {audio_count} audios], {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)' )
     cache = Cache(paths.getcachepath())
     cache.close()
+    thread.shutdown()
+    cache_thread.shutdown()
     return photo_count,video_count,audio_count,forced_skipped,skipped
 
 

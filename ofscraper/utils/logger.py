@@ -3,10 +3,9 @@ import re
 import logging
 import copy
 import threading
-import sys
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
-
+import multiprocessing
 
 from tenacity import retry,stop_after_attempt,retry_if_not_exception_type,wait_fixed
 import aioprocessing
@@ -16,10 +15,15 @@ import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
-queue_=aioprocessing.AioQueue()
-otherqueue_=aioprocessing.AioQueue()
-otherqueue2_=aioprocessing.AioQueue()
+import queue
+queue_=None
+otherqueue_=None
 
+def init_queues():
+    global queue_
+    global otherqueue_
+    queue_=multiprocessing.Queue()
+    otherqueue_=multiprocessing.Queue()
 
 class PipeHandler(logging.Handler):
     """

@@ -1,9 +1,9 @@
 #!/root/OF-Scraper/.venv/bin/python
 import multiprocessing
 import ofscraper.start as start
-import os
 def main():
-    start.set_mulitproc_start_type()
+    start.set_mulitproc_start_type()    
+    start.logger.init_queues()
     start.set_eventloop()
     start.startvalues()
     start.discord_warning()

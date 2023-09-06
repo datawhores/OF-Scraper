@@ -82,7 +82,6 @@ if platform_name== 'Windows':
  # pylint: disable=import-errorm
  
 #main thread queues
-logqueue_=logger.queue_
 
 
 
@@ -397,6 +396,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
             
     split_log.debug(f"{pid_log_helper()} download process thread closing")
     #send message directly
+    cache_thread.shutdown()
+    thread.shutdown()
     log.handlers[0].queue.put("None")
     log.handlers[1].queue.put("None")
     other_thread.join()

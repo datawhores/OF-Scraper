@@ -22,8 +22,7 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.exit as exit
 import ofscraper.utils.system as system
 import ofscraper.utils.paths as paths
-import ofscraper.utils.misc as misc
-
+import threading
 
 def main():
     main_log_thread=None
@@ -47,6 +46,7 @@ def main():
     
 
         make_folders()
+        
         if args.command=="post_check":
             check.post_checker()
         elif args.command=="msg_check":
@@ -62,11 +62,20 @@ def main():
         logging.getLogger("shared").error("Finished Script")
         logging.getLogger("shared").handlers[0].queue.put("None")
         logging.getLogger("shared").handlers[-1].queue.put("None")
+  
         
-
         main_log_thread.join()
         if other_log_process:other_log_process.join()
         elif other_log_thread:other_log_thread.join()
+        print(threading.enumerate())
+        logger.queue_.close()
+        logger.otherqueue_.close()
+        logger.queue_.cancel_join_thread()
+        logger.otherqueue_.cancel_join_thread()
+        logger.queue_=None
+        logger.otherqueue_=None
+        print(threading.enumerate())
+        
     except KeyboardInterrupt as E:
             print("Force closing script")
             try:
