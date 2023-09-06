@@ -37,7 +37,7 @@ def main():
         main_event = Event()
         other_event = Event()
         main_log_thread=logger.start_stdout_logthread(event=main_event)
-        if system.getcpu_count()>=2 and system.platform.system()!="Linux":other_log_process=logger.start_other_process()
+        if system.getcpu_count()>=2 and system.platform.system()=="Linux":other_log_process=logger.start_other_process()
         else: other_log_thread=logger.start_other_thread(event=other_event)
         # allow background processes to start
         time.sleep(3)
