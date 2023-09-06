@@ -176,7 +176,8 @@ def parse_subscriptions(subscriptions: list) -> list:
          "expired":profile.get("subscribedByData").get("expiredAt") if profile.get("subscribedByData") else None,
          "subscribed":(profile.get("subscribedByData").get("subscribes") or [{}])[0].get("startDate") if profile.get("subscribedByData") else None ,
          "renewed":profile.get("subscribedByData").get("renewedAt") if profile.get("subscribedByData") else None,
-        "active" :  arrow.get(profile.get("subscribedByExpireDate") or profile.get("subscribedByData",{}).get("expiredAt") or 0)>datenow or profile.get("subscribedByData",{}).get("status")=="Set to Expire"
+        "active" :  arrow.get(profile.get("subscribedByExpireDate") or (profile.get("subscribedByData",{}) or {}).get("expiredAt") or 0)>datenow 
+        or (profile.get("subscribedByData",{}) or {}).get("status")=="Set to Expire"
                     
 
 
