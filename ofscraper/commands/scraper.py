@@ -32,7 +32,6 @@ import ofscraper.utils.config as config
 import ofscraper.utils.auth as auth
 import ofscraper.utils.profiles as profiles
 import ofscraper.api.init as init
-import ofscraper.utils.download as download
 import ofscraper.interaction.like as like
 import ofscraper.utils.args as args_
 import ofscraper.utils.filters as filters

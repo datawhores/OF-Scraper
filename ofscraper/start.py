@@ -63,18 +63,18 @@ def main():
         logging.getLogger("shared").handlers[0].queue.put("None")
         logging.getLogger("shared").handlers[-1].queue.put("None")
   
-        
+        stdout=logging.getLogger("ofscraper")
         main_log_thread.join()
+        stdout.debug(f"Main Process threads before closing log threads {threading.enumerate()}")
         if other_log_process:other_log_process.join()
         elif other_log_thread:other_log_thread.join()
-        print(threading.enumerate())
+        stdout.debug(f"Main Process threads after closing log threads {threading.enumerate()}")
         logger.queue_.close()
         logger.otherqueue_.close()
         logger.queue_.cancel_join_thread()
-        logger.otherqueue_.cancel_join_thread()
         logger.queue_=None
         logger.otherqueue_=None
-        print(threading.enumerate())
+        stdout.debug(f"Main Process threads after closing cancel_join {threading.enumerate()}")
         
     except KeyboardInterrupt as E:
             print("Force closing script")
