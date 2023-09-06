@@ -23,6 +23,7 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.exit as exit
 import ofscraper.utils.system as system
 import ofscraper.utils.paths as paths
+import ofscraper.utils.manager as manager
 
 def main():
     main_log_thread=None
@@ -70,11 +71,10 @@ def main():
         elif other_log_thread:other_log_thread.join()
         stdout.debug(f"Main Process threads after closing log threads {threading.enumerate()}")
         logger.queue_.close()
-        logger.otherqueue_.close()
         logger.queue_.cancel_join_thread()
-        logger.otherqueue_.cancel_join_thread()
-        logger.queue_=None
-        logger.otherqueue_=None
+        manager.shutdown()
+        
+       
         stdout.debug(f"Main Process threads after closing cancel_join {threading.enumerate()}")
         
     except KeyboardInterrupt as E:
@@ -86,9 +86,8 @@ def main():
                     if other_log_process:other_log_process.join(timeout=1)
                     if other_log_thread:other_event.set();other_log_thread.join()
                     logger.queue_.close()
-                    logger.otherqueue_.close()
                     logger.queue_.cancel_join_thread()
-                    logger.otherqueue_.cancel_join_thread()
+                    manager.shutdown()
                     try:
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
                         cache.close()
@@ -104,9 +103,8 @@ def main():
                         if other_log_process:other_log_process.join(timeout=1)
                         if other_log_thread:other_event.set();other_log_thread.join()
                         logger.queue_.close()
-                        logger.otherqueue_.close()
                         logger.queue_.cancel_join_thread()
-                        logger.otherqueue_.cancel_join_thread()
+                        manager.shutdown()
                         raise E
     except Exception as E:
             logging.getLogger("shared").traceback(traceback.format_exc())
@@ -118,9 +116,8 @@ def main():
                     if other_log_process:other_log_process.join(timeout=1)
                     if other_log_thread:other_event.set();other_log_thread.join()
                     logger.queue_.close()
-                    logger.otherqueue_.close()
                     logger.queue_.cancel_join_thread()
-                    logger.otherqueue_.cancel_join_thread()
+                    manager.shutdown()
                     
                     try:
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
@@ -138,9 +135,8 @@ def main():
                         if other_log_process:other_log_process.join()
                         if other_log_thread:other_event.set();other_log_thread.join()
                         logger.queue_.close()
-                        logger.otherqueue_.close()
                         logger.queue_.cancel_join_thread()
-                        logger.otherqueue_.cancel_join_thread()
+                        manager.shutdown()
                         raise 
 
 
