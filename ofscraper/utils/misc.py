@@ -60,7 +60,7 @@ def check_cdm():
         elif keymode=="cdrm": url=constants.CDRM
         elif keymode=="cdrm2": url=constants.CDRM2
         try:
-            with sessionbuilder.sessionBuilder(backend="httpx",total_timeout=5) as c:
+            with sessionbuilder.sessionBuilder(backend="httpx",total_timeout=30) as c:
                 with c.requests(url=url)() as r:
                     if r.ok:
                         console.print("[green] CDM service seems to be working\n[/green]")
