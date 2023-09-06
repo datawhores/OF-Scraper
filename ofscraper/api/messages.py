@@ -140,7 +140,6 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
                         tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-2][-1])))
                     else:
                         tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=splitArraysID[-1][-1])))
-                
                 else:
                     tasks.append(asyncio.create_task(scrape_messages(c,model_id,job_progress,message_id=IDArray[0],required_ids=set(postedAtArray[1:]))))
             

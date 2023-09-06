@@ -74,6 +74,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as progress 
 import ofscraper.utils.system as system
 from ofscraper.utils.run_async import run
+import ofscraper.utils.manager as manager_
 
 from aioprocessing import AioPipe
 platform_name=platform.system()
@@ -146,40 +147,40 @@ def process_dicts(username,model_id,filtered_medialist):
     try:
         reset_globals()
         random.shuffle(filtered_medialist)
-        with multiprocess.Manager() as manager:
-            mediasplits=get_mediasplits(filtered_medialist)
-            num_proc=len(mediasplits)
-            split_val=min(4,num_proc)
-            log.debug(f"Number of process {num_proc}")
-            connect_tuples=[AioPipe() for _ in range(num_proc)]
-            shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
-            #shared with other process + main
-            logqueues_=[ manager.Queue() for _ in range(len(shared))]
-            #other logger queues
-            otherqueues_=[manager.Queue()  for _ in range(len(shared))]
+        manager=manager_.get_manager()
+        mediasplits=get_mediasplits(filtered_medialist)
+        num_proc=len(mediasplits)
+        split_val=min(4,num_proc)
+        log.debug(f"Number of process {num_proc}")
+        connect_tuples=[AioPipe() for _ in range(num_proc)]
+        shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
+        #shared with other process + main
+        logqueues_=[ manager.Queue() for _ in range(len(shared))]
+        #other logger queues
+        otherqueues_=[manager.Queue()  for _ in range(len(shared))]
 
-            
-            #start stdout/main queues consumers
-            logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
-  
-            processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
-            [process.start() for process in processes]
-            downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-            job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-                TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
-            overall_progress=Progress(  TextColumn("{task.description}"),
-            BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-            progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-            task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(filtered_medialist),visible=True)
-            progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
-            with stdout.lowstdout():
-                with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
-                    queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
-                    [thread.start() for thread in queue_threads]
-                    while len(list(filter(lambda x:x.is_alive(),logthreads)))>0: 
-                        for thread in list(filter(lambda x:x.is_alive(),logthreads)):
-                            thread.join(timeout=.1)
-                        time.sleep(.5)
+        
+        #start stdout/main queues consumers
+        logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
+
+        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
+        [process.start() for process in processes]
+        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+        job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+            TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
+        overall_progress=Progress(  TextColumn("{task.description}"),
+        BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+        progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
+        task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(filtered_medialist),visible=True)
+        progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+        with stdout.lowstdout():
+            with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
+                queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
+                [thread.start() for thread in queue_threads]
+                while len(list(filter(lambda x:x.is_alive(),logthreads)))>0: 
+                    for thread in list(filter(lambda x:x.is_alive(),logthreads)):
+                        thread.join(timeout=.1)
+                    time.sleep(.5)
         while len(list(filter(lambda x:x.is_alive(),queue_threads)))>0: 
             for thread in list(filter(lambda x:x.is_alive(),queue_threads)):
                 thread.join(timeout=.1)

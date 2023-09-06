@@ -331,7 +331,6 @@ def label_helper(x):
     return list(map(lambda x:x.lower(),temp))
 
 def arrow_helper(x):
-    print(x)
     try:
         return arrow.get(x)
     except arrow.parser.ParserError as E:
@@ -340,7 +339,6 @@ def arrow_helper(x):
             x=re.sub("\\bday\\b","days",x)
             x=re.sub("\\bmonth\\b","months",x)
             x=re.sub("\\bweek\\b","weeks",x)
-            print(x)
             arw=arrow.utcnow()
             return arw.dehumanize(x)
         except ValueError as E:
