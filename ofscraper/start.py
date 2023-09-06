@@ -72,6 +72,7 @@ def main():
         logger.queue_.close()
         logger.otherqueue_.close()
         logger.queue_.cancel_join_thread()
+        logger.otherqueue_.cancel_join_thread()
         logger.queue_=None
         logger.otherqueue_=None
         stdout.debug(f"Main Process threads after closing cancel_join {threading.enumerate()}")
