@@ -293,8 +293,8 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
         set_time(path_to_file,newDate )
         log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
 
-    # if ele.id:
-    #     # await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
+    if ele.id:
+        await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
     await set_cache_helper(ele)
     return ele.mediatype,total
 
@@ -342,7 +342,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                 async with c.requests(url=url,headers=headers)() as r:
                         if r.ok:
                             data=r.headers
-                            # await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
                             total=int(data['content-length'])
                             if attempt.get()==1:await update_total(total)
                             content_type = data.get("content-type").split('/')[-1]

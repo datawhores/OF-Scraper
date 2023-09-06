@@ -79,9 +79,7 @@ from aioprocessing import AioPipe
 platform_name=platform.system()
 if platform_name== 'Windows':
     from win32_setctime import setctime 
- # pylint: disable=import-errorm
  
-#main thread queues
 
 
 
@@ -190,7 +188,6 @@ def process_dicts(username,model_id,filtered_medialist):
             for process in list(filter(lambda x:x.is_alive(),process)):
                 process.join(timeout=.1)
             time.sleep(.5)
-        # [process.terminate() for process in processes]
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
         setDirectoriesDate()  
