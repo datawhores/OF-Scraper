@@ -15,15 +15,17 @@ import ofscraper.utils.args as args
 import ofscraper.utils.console as console
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import queue
+import ofscraper.utils.manager as manager_
+import ofscraper.utils.system as system
 queue_=None
 otherqueue_=None
+otherqueue2_=None
 
 def init_queues():
     global queue_
     global otherqueue_
     queue_=multiprocessing.Queue()
-    otherqueue_=multiprocessing.Queue()
+    otherqueue_=  manager_.get_manager().Queue()
 
 class PipeHandler(logging.Handler):
     """
