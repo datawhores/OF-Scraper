@@ -84,7 +84,11 @@ def main():
                     main_event.set()
                     main_log_thread.join()
                     if other_log_process:other_log_process.join(timeout=1)
-                    if other_log_thread:other_event.set()
+                    if other_log_thread:other_event.set();other_log_thread.join()
+                    logger.queue_.close()
+                    logger.otherqueue_.close()
+                    logger.queue_.cancel_join_thread()
+                    logger.otherqueue_.cancel_join_thread()
                     try:
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
                         cache.close()
@@ -98,7 +102,11 @@ def main():
                         main_event.set()
                         main_log_thread.join()
                         if other_log_process:other_log_process.join(timeout=1)
-                        if other_log_thread:other_event.set()
+                        if other_log_thread:other_event.set();other_log_thread.join()
+                        logger.queue_.close()
+                        logger.otherqueue_.close()
+                        logger.queue_.cancel_join_thread()
+                        logger.otherqueue_.cancel_join_thread()
                         raise E
     except Exception as E:
             logging.getLogger("shared").traceback(traceback.format_exc())
@@ -108,10 +116,16 @@ def main():
                     main_event.set()
                     main_log_thread.join()
                     if other_log_process:other_log_process.join(timeout=1)
-                    if other_log_thread:other_event.set()
+                    if other_log_thread:other_event.set();other_log_thread.join()
+                    logger.queue_.close()
+                    logger.otherqueue_.close()
+                    logger.queue_.cancel_join_thread()
+                    logger.otherqueue_.cancel_join_thread()
+                    
                     try:
                         cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
                         cache.close()
+                        
                         raise E
                     except Exception as E:
                          with exit.DelayedKeyboardInterrupt():
@@ -122,7 +136,11 @@ def main():
                         main_event.set()
                         main_log_thread.join()                        
                         if other_log_process:other_log_process.join()
-                        if other_log_thread:other_event.set()
+                        if other_log_thread:other_event.set();other_log_thread.join()
+                        logger.queue_.close()
+                        logger.otherqueue_.close()
+                        logger.queue_.cancel_join_thread()
+                        logger.otherqueue_.cancel_join_thread()
                         raise 
 
 
