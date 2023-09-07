@@ -54,7 +54,7 @@ def check_cdm():
         console=console_.get_shared_console()
         log=logging.getLogger("shared")
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
-        if  keymode== "manual": console.print("[green] Using manual cdm[/green]");\
+        if  keymode== "manual": console.print("[green] Using manual CDM[/green]");\
         console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-option\n\n[/yellow]");return True
         elif keymode=="keydb":url=constants.KEYDB
         elif keymode=="cdrm": url=constants.CDRM
@@ -68,9 +68,9 @@ def check_cdm():
                         return True
                     else:
                         console.print("[red]CDM return an error\nThis may cause a lot of failed downloads\n consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]")
-                        log.debug(f"[bold] cdm status[/bold]: {r.status}")
-                        log.debug(f"[bold]  cdm text [/bold]: {r.text_()}")
-                        log.debug(f"[bold]  cdm headers [/bold]: {r.headers}") 
+                        log.debug(f"[bold] cdm status[/bold]: {r.status}[/bold]")
+                        log.debug(f"[bold]  cdm text [/bold]: {r.text_()}[/bold]")
+                        log.debug(f"[bold]  cdm headers [/bold]: {r.headers}[/bold]") 
                         time.sleep(3.5)
                         return False
         except httpx.TimeoutException as E:
