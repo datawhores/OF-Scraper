@@ -55,7 +55,7 @@ def check_cdm():
         log=logging.getLogger("shared")
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
         if  keymode== "manual": console.print("[green] Using manual CDM[/green]");\
-        console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-option\n\n[/yellow]");return True
+        console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]");return True
         elif keymode=="keydb":url=constants.KEYDB
         elif keymode=="cdrm": url=constants.CDRM
         elif keymode=="cdrm2": url=constants.CDRM2
@@ -64,7 +64,7 @@ def check_cdm():
                 with c.requests(url=url)() as r:
                     if r.ok:
                         console.print("[green] CDM service seems to be working\n[/green]")
-                        console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-option\n\n[/yellow]")
+                        console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]")
                         return True
                     else:
                         console.print("[red]CDM return an error\nThis may cause a lot of failed downloads\n consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]")
