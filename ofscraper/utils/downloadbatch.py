@@ -564,9 +564,6 @@ async def main_download_downloader(c,ele,path,username,model_id):
                             
                             fileobject= await aiofiles.open(temp, 'ab').__aenter__()
                             log.debug(f"{pid_log_helper()}: Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")           
-                            log.debug(f" Number of open files across all processes-> {len(system.getOpenFiles(unique=False))}")   
-                            log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
-                            log.debug(f"Unique Files Data across all processes -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
 
                             async for chunk in r.iter_chunked(constants.maxChunkSizeB):
                                 count=count+1
