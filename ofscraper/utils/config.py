@@ -407,7 +407,7 @@ def get_dynamic(config=None):
     if config==None:
         return constants.DYNAMIC_DEFAULT
     value=config.get("dynamic-mode-default")
-    return value.lower() if value and value.lower() in set(["deviint","digitalcriminals"]) else "deviint"
+    return value.lower() if value and value.lower() in set(["deviint","digitalcriminals","dv","dev","dc","digital","digitials"]) else "deviint"
 def get_part_file_clean(config=None):
     if config==None:
         return False

@@ -275,7 +275,7 @@ def make_request_auth():
 
 
 def get_request_auth():
-    if (args_.getargs().dynamic_rules or config.get_dynamic(config.read_config()) or "deviint")=="deviint":
+    if (args_.getargs().dynamic_rules or config.get_dynamic(config.read_config()) or "deviint") in {"deviint","dv","dev"}:
         return get_request_auth_deviint()
     else:
         return get_request_digitalcriminals()

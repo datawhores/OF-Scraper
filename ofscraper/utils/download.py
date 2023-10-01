@@ -21,6 +21,7 @@ import contextvars
 import json
 import subprocess
 from functools import singledispatch,partial
+import psutil
 from rich.progress import Progress
 from rich.progress import (
     Progress,
@@ -62,6 +63,8 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 from ofscraper.utils.run_async import run
+import ofscraper.utils.exit as exit
+
 
 
 from diskcache import Cache
@@ -164,64 +167,76 @@ async def process_dicts(username, model_id, medialist):
         mpd_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
         total_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
         sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+        global cache
+        cache= Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
 
 
     
 
+
+    
+        try:
         
-        with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):               
-                aws=[]
-                photo_count = 0
-                video_count = 0
-                audio_count=0
-                skipped = 0
-                forced_skipped=0
-                total_downloaded = 0
-                sum=0
-                desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})'    
+            with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.shared_console):               
+                    aws=[]
+                    photo_count = 0
+                    video_count = 0
+                    audio_count=0
+                    skipped = 0
+                    forced_skipped=0
+                    total_downloaded = 0
+                    sum=0
+                    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})'    
 
-                async with sessionbuilder.sessionBuilder() as c:
-                    for ele in medialist:
-                        aws.append(asyncio.create_task(download(c,ele ,model_id, username,job_progress)))
-                    task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist),forced_skipped=forced_skipped, sumcount=0,total_bytes_download=0,total_bytes=0), total=len(aws),visible=True)
-                    progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
-                    for coro in asyncio.as_completed(aws):
-                            try:
-                                pack= await coro
-                                log.debug(f"unpack {pack} count {len(pack)}")
-                                media_type, num_bytes_downloaded =pack
-                            except Exception as e:
-                                log.traceback(e)
-                                log.traceback(traceback.format_exc())
-                                media_type = "skipped"
-                                num_bytes_downloaded = 0
-                          
+                    async with sessionbuilder.sessionBuilder() as c:
+                        for ele in medialist:
+                            aws.append(asyncio.create_task(download(c,ele ,model_id, username,job_progress)))
+                        task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(medialist),forced_skipped=forced_skipped, sumcount=0,total_bytes_download=0,total_bytes=0), total=len(aws),visible=True)
+                        progress_group.renderables[1].height=max(15,console.shared_console.size[1]-2)
+                        for coro in asyncio.as_completed(aws):
+                                try:
+                                    pack= await coro
+                                    log.debug(f"unpack {pack} count {len(pack)}")
+                                    media_type, num_bytes_downloaded =pack
+                                except Exception as e:
+                                    log.traceback(e)
+                                    log.traceback(traceback.format_exc())
+                                    media_type = "skipped"
+                                    num_bytes_downloaded = 0
+                            
 
-                            total_downloaded += num_bytes_downloaded
-                            total_bytes_downloaded=convert_num_bytes(total_downloaded)
-                            total_bytes=convert_num_bytes(total_data)
-                            if media_type == 'images':
-                                photo_count += 1 
+                                total_downloaded += num_bytes_downloaded
+                                total_bytes_downloaded=convert_num_bytes(total_downloaded)
+                                total_bytes=convert_num_bytes(total_data)
+                                if media_type == 'images':
+                                    photo_count += 1 
 
-                            elif media_type == 'videos':
-                                video_count += 1
-                            elif media_type == 'audios':
-                                audio_count += 1
-                            elif media_type == 'skipped':
-                                skipped += 1
-                            elif media_type== 'forced_skipped':
-                                 forced_skipped+=1
-                            sum+=1
-                            overall_progress.update(task1,description=desc.format(
-                                        p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=sum,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
-        overall_progress.remove_task(task1)
-    setDirectoriesDate()
-    log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} downloads total [{video_count} videos, {audio_count} audios], {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)' )
-    cache = Cache(paths.getcachepath())
-    cache.close()
-    thread.shutdown()
-    cache_thread.shutdown()
-    return photo_count,video_count,audio_count,forced_skipped,skipped
+                                elif media_type == 'videos':
+                                    video_count += 1
+                                elif media_type == 'audios':
+                                    audio_count += 1
+                                elif media_type == 'skipped':
+                                    skipped += 1
+                                elif media_type== 'forced_skipped':
+                                    forced_skipped+=1
+                                sum+=1
+                                overall_progress.update(task1,description=desc.format(
+                                            p_count=photo_count, v_count=video_count, a_count=audio_count,skipped=skipped, forced_skipped=forced_skipped,mediacount=len(medialist), sumcount=sum,total_bytes=total_bytes,total_bytes_download=total_bytes_downloaded), refresh=True, advance=1)
+            overall_progress.remove_task(task1)
+            setDirectoriesDate()
+            log.error(f'[bold]{username}[/bold] ({photo_count+audio_count+video_count} downloads total [{video_count} videos, {audio_count} audios], {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)' )
+            thread.shutdown()
+            return photo_count,video_count,audio_count,forced_skipped,skipped
+
+        except Exception as E:
+            with exit.DelayedKeyboardInterrupt():
+                raise E
+        finally:
+            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
+            cache_thread.shutdown()
+
+
+
 
 
 def size_checker(path,ele,total,name=None):
@@ -306,9 +321,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
 
 
 async def main_download_downloader(c,ele,path,username,model_id,progress): 
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
-    await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             content_type = data.get("content-type").split('/')[-1]
@@ -330,7 +343,6 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
     @sem_wrapper
     async def inner(c,ele,path,username,model_id,progress,total):
         attempt.set(attempt.get(0) + 1) 
-        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))        
         try: 
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             if total==None:temp.unlink(missing_ok=True)
@@ -368,16 +380,15 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                             count=0
                             loop=asyncio.get_event_loop()
                             size=resume_size
-                            
-                            async with aiofiles.open(temp, 'ab') as f:                           
-                                    async for chunk in r.iter_chunked(constants.maxChunkSize):
-                                        if downloadprogress:count=count+1
-                                        size=size+len(chunk)
-                                        log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {attempt.get()}/{constants.NUM_TRIES}] ")
-                                        await f.write(chunk)
-                                        if count==constants.CHUNK_ITER:\
-                                        await loop.run_in_executor(thread,partial( progress.update,task1, completed=size)); \
-                                        count=0
+                            fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+                            async for chunk in r.iter_chunked(constants.maxChunkSize):
+                                if downloadprogress:count=count+1
+                                size=size+len(chunk)
+                                log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {attempt.get()}/{constants.NUM_TRIES}] ")
+                                await fileobject.write(chunk)
+                                if count==constants.CHUNK_ITER:\
+                                await loop.run_in_executor(thread,partial( progress.update,task1, completed=size)); \
+                                count=0
                         else:
                             log.debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
                             log.debug(f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}")
@@ -387,12 +398,17 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                         size_checker(temp,ele,total) 
                         await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
             return total ,temp,path_to_file 
+        except OSError as E:
+            log.traceback(E)
+            log.traceback(traceback.format_exc())
+            log.traceback(f"Number of Open Files { len(psutil.Process().open_files())}")      
+            log.trace(f"Open Files {list(map(lambda x:x.path,psutil.Process().open_files()))}")                  
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)
             raise E
         finally:
-            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
+            if fileobject:await fileobject.close()
 
 
     total=int(data.get("content-length")) if data else None
@@ -502,9 +518,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers"))
-    await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     item['path']=temp
     pathlib.Path(temp).unlink(missing_ok=True) if not data or \
@@ -531,7 +545,6 @@ async def alt_download_downloader(item,c,ele,path,progress):
         if item["type"]=="video":_attempt=attempt
         if item["type"]=="audio":_attempt=attempt2
         _attempt.set(_attempt.get(0) + 1) 
-        cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
         try:
             total=item.get("total")
             if total==None:temp.unlink(missing_ok=True)
@@ -560,29 +573,34 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         loop=asyncio.get_event_loop()
                         size=resume_size
                         
-                
-                        async with aiofiles.open(temp, 'ab') as f:                           
-                            async for chunk in l.iter_chunked(constants.maxChunkSize):
-                                if downloadprogress:count=count+1
-                                size=size+len(chunk)
-                                log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
-                                await f.write(chunk)
-                                if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
-                        progress.remove_task(task1)
+                        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+
+                        async for chunk in l.iter_chunked(constants.maxChunkSize):
+                            if downloadprogress:count=count+1
+                            size=size+len(chunk)
+                            log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
+                            await fileobject.write(chunk)
+                            if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
                     else:
                         log.debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
                         log.debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
                         log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
+                progress.remove_task(task1)
                 size_checker(temp,ele,total) 
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{item['name']}_headers",1))
             return item           
+        except OSError as E:
+            log.traceback(E)
+            log.traceback(traceback.format_exc())
+            log.traceback(f"Number of Open Files { len(psutil.Process().open_files())}")      
+            log.trace(f"Open Files {list(map(lambda x:x.path,psutil.Process().open_files()))}")              
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)   
             raise E
         finally:
-            await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
+            if fileobject:await fileobject.close()
 
     return await inner(item,c,ele,progress)
    
@@ -592,7 +610,6 @@ async def alt_download_downloader(item,c,ele,path,progress):
   
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
         out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
@@ -629,13 +646,11 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E
-    finally:
-        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
+
        
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm2(c,pssh,licence_url,id):
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
         out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
@@ -672,15 +687,11 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E
-    finally:
-        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
-
 
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_keydb(c,pssh,licence_url,id):
     log.debug(f"ID:{id} using keydb auto key helper")
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     try:
         out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
         log.debug(f"ID:{id} pssh: {pssh!=None}")
@@ -730,12 +741,9 @@ async def key_helper_keydb(c,pssh,licence_url,id):
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E 
-    finally:
-        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_manual(c,pssh,licence_url,id):
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     log.debug(f"ID:{id} using manual key helper")
     try:
         out=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,licence_url))
@@ -778,8 +786,6 @@ async def key_helper_manual(c,pssh,licence_url,id):
         log.traceback(E)
         log.traceback(traceback.format_exc())
         raise E 
-    finally:
-        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 
 
@@ -813,10 +819,8 @@ def get_error_message(content):
 
 
 async def set_cache_helper(ele):
-    cache = Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
     if  ele.postid and ele.responsetype_=="profile":
         await asyncio.get_event_loop().run_in_executor(cache_thread,partial(  cache.set,ele.postid ,True))
-        await asyncio.get_event_loop().run_in_executor(cache_thread,cache.close)
 
 
 
