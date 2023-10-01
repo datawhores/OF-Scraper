@@ -381,6 +381,8 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                             loop=asyncio.get_event_loop()
                             size=resume_size
                             fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+
+                            log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
                             async for chunk in r.iter_chunked(constants.maxChunkSize):
                                 if downloadprogress:count=count+1
                                 size=size+len(chunk)
@@ -401,8 +403,8 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
         except OSError as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())
-            log.traceback(f"Number of Open Files { len(psutil.Process().open_files())}")      
-            log.trace(f"Open Files {list(map(lambda x:x.path,psutil.Process().open_files()))}")                  
+            log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
+            log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)
@@ -574,6 +576,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         size=resume_size
                         
                         fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+                        log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
 
                         async for chunk in l.iter_chunked(constants.maxChunkSize):
                             if downloadprogress:count=count+1
@@ -593,8 +596,8 @@ async def alt_download_downloader(item,c,ele,path,progress):
         except OSError as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())
-            log.traceback(f"Number of Open Files { len(psutil.Process().open_files())}")      
-            log.trace(f"Open Files {list(map(lambda x:x.path,psutil.Process().open_files()))}")              
+            log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
+            log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")              
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)   

@@ -25,3 +25,15 @@ def speed_test():
     speed=json.loads(out.strip())["download"]
     return speed
 
+def getOpenFiles(unique=True):
+    match=set()
+    out=[]
+    for proc in psutil.process_iter():
+        for ele in proc.open_files():
+            if not unique:
+                out.append(ele)
+            elif ele.fd not in match:
+                out.append(ele)
+                match.add(ele.fd)
+    return out
+

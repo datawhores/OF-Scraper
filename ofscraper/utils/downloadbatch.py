@@ -140,8 +140,6 @@ def reset_globals():
     dirSet=set()
     global dir_lock
     dir_lock=aioprocessing.AioLock()
-    global cache
-    cache=  Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
 
 
 def process_dicts(username,model_id,filtered_medialist):
@@ -160,12 +158,15 @@ def process_dicts(username,model_id,filtered_medialist):
         logqueues_=[ manager.Queue() for _ in range(len(shared))]
         #other logger queues
         otherqueues_=[manager.Queue()  for _ in range(len(shared))]
+        #shared cache
+        cache=  Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+
 
         
         #start stdout/main queues consumers
         logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
 
-        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
+        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,cache,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
         [process.start() for process in processes]
         downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
         job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
@@ -188,7 +189,7 @@ def process_dicts(username,model_id,filtered_medialist):
                 thread.join(timeout=.1)
             time.sleep(.5)
         while len(list(filter(lambda x:x.is_alive(),processes)))>0: 
-            for process in list(filter(lambda x:x.is_alive(),process)):
+            for process in list(filter(lambda x:x.is_alive(),processes)):
                 process.join(timeout=.1)
             time.sleep(.5)
         overall_progress.remove_task(task1)
@@ -283,12 +284,12 @@ def get_mediasplits(medialist):
     final_count=min(user_count,system.getcpu_count(), len(medialist)//5)
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
-def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
+def process_dict_starter(username,model_id,cache,ele,p_logqueue_,p_otherqueue_,pipe_):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
     plat=platform.system()
     if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     try:
-        process_dicts_split(username,model_id,ele,log,pipe_)
+        process_dicts_split(username,model_id,cache,ele,log,pipe_)
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
             try:
@@ -327,7 +328,7 @@ def setpriority():
         process.nice(10) 
 
 @run
-async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
+async def process_dicts_split(username, model_id,cacheCopy, medialist,logCopy,pipecopy):
     global innerlog
     innerlog = contextvars.ContextVar("innerlog")
     global log 
@@ -372,6 +373,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
     global cache_thread
     cache_thread=ThreadPoolExecutor(max_workers=1)   
     aws=[]
+    global cache
+    cache=cacheCopy
 
 
 
@@ -560,8 +563,10 @@ async def main_download_downloader(c,ele,path,username,model_id):
                             await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})                        
                             
                             fileobject= await aiofiles.open(temp, 'ab').__aenter__()
-                            log.traceback(f"Open Files {list(map(lambda x:x.path,psutil.Process().open_files()))}")           
-        
+                            log.debug(f"{pid_log_helper()}: Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")           
+                            log.debug(f" Number of open files across all processes-> {len(system.getOpenFiles(unique=False))}")   
+                            log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
+                            log.debug(f"Unique Files Data across all processes -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
 
                             async for chunk in r.iter_chunked(constants.maxChunkSizeB):
                                 count=count+1
@@ -580,8 +585,9 @@ async def main_download_downloader(c,ele,path,username,model_id):
         except OSError as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())
-            log.traceback(f"Number of Open Files { len(psutil.Process().open_files())}")      
-            log.trace(f"Open Files {list(map(lambda x:x.path,psutil.Process().open_files()))}")   
+            log.debug(f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}")   
+            log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
+            log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
         except Exception as E:
             innerlog.get().traceback(traceback.format_exc())
             innerlog.get().traceback(E)
@@ -768,8 +774,9 @@ async def alt_download_downloader(item,c,ele,path):
         except OSError as E:
             log.traceback(E)
             log.traceback(traceback.format_exc())
-            log.traceback(f"Number of Open Files { len(psutil.Process().open_files())}")      
-            log.trace(f"Open Files {list(map(lambda x:x.path,path,psutil.Process().open_files()))}")              
+            log.debug(f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}")   
+            log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
+            log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
         except Exception as E:
             innerlog.get().traceback(traceback.format_exc())
             innerlog.get().traceback(E)   
