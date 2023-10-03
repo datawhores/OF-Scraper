@@ -127,4 +127,4 @@ async def get_pinned_post(model_id):
         log.trace(f"pinned dupeset postids {outdict.keys()}")
         log.trace("pinned raw unduped {posts}".format(posts=  "\n\n".join(list(map(lambda x:f"undupedinfo pinned: {str(x)}",outdict.values())))))
         log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(outdict.values())} found")
-        return outdict.values()                             
+        return list(outdict.values()  )                           
