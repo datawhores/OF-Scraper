@@ -210,6 +210,10 @@ profileDupeCheck=\
 """
 SELECT * FROM profiles where user_id=(?)
 """
+profileTableCheck=\
+"""
+SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
+"""
 
 profileInsert=\
 f"""INSERT INTO 'profiles'(

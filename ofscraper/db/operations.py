@@ -199,11 +199,16 @@ def get_media_ids_downloaded(model_id=None,username=None,conn=None,**kwargs) -> 
 def get_profile_info(model_id=None,username=None,conn=None) -> list:
     database_path =placeholder.Placeholders().databasePathHelper(model_id,username)
     if not pathlib.Path(database_path).exists():
-        return None
+        return None 
     with contextlib.closing(conn.cursor()) as cur:
-        modelinfo=cur.execute(queries.profileDupeCheck,(model_id,)).fetchall() or [(None,)]
-        conn.commit()
-        return modelinfo[0][-1]
+        try:
+            modelinfo=cur.execute(queries.profileDupeCheck,(model_id,)).fetchall() or [(None,)]
+            conn.commit()
+            return modelinfo[0][-1]
+        except sqlite3.OperationalError as E:
+            None
+        except Exception as E:
+            raise E
 
 
 @operation_wrapper_async
@@ -302,6 +307,21 @@ def write_profile_table(model_id=None,username=None,conn=None) -> list:
             insertData.append(model_id)
             cur.execute(queries.profileUpdate,insertData)
         conn.commit()
+
+@operation_wrapper
+def check_profile_table_exists(model_id=None,username=None,conn=None):
+    database_path =placeholder.Placeholders().databasePathHelper(model_id,username)
+    if not pathlib.Path(database_path).exists():
+        return False
+    with contextlib.closing(conn.cursor()) as cur:
+        if len(cur.execute(queries.profileTableCheck).fetchall())>0:
+            conn.commit()
+            return True
+        conn.commit()
+        return False
+        
+        
+
 
 @operation_wrapper
 def create_labels_table(model_id=None,username=None,conn=None):

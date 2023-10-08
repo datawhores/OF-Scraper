@@ -187,8 +187,8 @@ def process_all_paid():
         output=[]
         for model_id,value in user_dict.items():
             username=profile.scrape_profile(model_id).get("username")
-            if username=="modeldeleted":
-                username=operations.get_profile_info(model_id=model_id,username=username) or username
+            if username=="modeldeleted" and operations.check_profile_table_exists(model_id=model_id,username=username):
+                    username=operations.get_profile_info(model_id=model_id,username=username) or username
             log.info(f"Processing {username}_{model_id}")
             operations.create_tables(model_id,username)
             operations.create_backup(model_id,username)
