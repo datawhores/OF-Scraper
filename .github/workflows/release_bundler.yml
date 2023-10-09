@@ -226,7 +226,7 @@ jobs:
       - name: Install package
         run: poetry install
       - name: install builder
-        run: poetry add pyinstaller        
+        run: poetry add pyinstaller==5.13.0        
       - name: create-one-file
         id: create-one-file
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --onefile --name "ofscraper_macos_${{inputs.version}}"
