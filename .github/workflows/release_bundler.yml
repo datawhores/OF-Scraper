@@ -95,7 +95,7 @@ jobs:
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry add lxml
                 /root/.local/bin/poetry install
-                /root/.local/bin/poetry add pyinstaller
+                /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
       - name: upload one file
@@ -114,7 +114,7 @@ jobs:
                 apt-get install zip -y
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install
-                /root/.local/bin/poetry add pyinstaller
+                /root/.local/bin/poetry add pyinstaller==5.13.0
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
                 zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload zip
@@ -160,7 +160,7 @@ jobs:
       - name: Install package
         run: poetry install
       - name: install builder
-        run: poetry add pyinstaller   
+        run: poetry add pyinstaller==5.13.0
       - name: create-one-file   
         id: create-one-file
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{inputs.version}}"
