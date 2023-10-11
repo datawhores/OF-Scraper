@@ -527,6 +527,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
     @sem_wrapper
     async def inner(c,ele,path,username,model_id,total):
         attempt.set(attempt.get(0) + 1) 
+        fileobject=None
         try:
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
             if total==None:temp.unlink(missing_ok=True)
@@ -728,6 +729,7 @@ async def alt_download_downloader(item,c,ele,path):
         if item["type"]=="video":_attempt=attempt
         if item["type"]=="audio":_attempt=attempt2
         _attempt.set(_attempt.get(0)+1) 
+        fileobject=None
         try:
             total=item.get("total")
             if total==None:temp.unlink(missing_ok=True)
