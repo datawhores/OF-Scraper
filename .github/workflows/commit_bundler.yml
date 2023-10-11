@@ -133,7 +133,7 @@ jobs:
       - name: Install package
         run: poetry install
       - name: Install builder       
-        run: poetry add pyinstaller
+        run: poetry add pyinstaller==5.13.0
       # - name: temp deactive
       #   run: deactive
       - name: create-one-file
@@ -206,7 +206,7 @@ jobs:
       - name: Install package
         run: poetry install
       - name: Install builder
-        run: pip install pyinstaller
+        run: pip install pyinstaller==5.13.0
       - name: create-one-file
         id: create-one-file
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
