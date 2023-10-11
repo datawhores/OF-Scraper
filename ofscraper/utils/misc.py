@@ -54,7 +54,7 @@ def check_cdm():
         console=console_.get_shared_console()
         log=logging.getLogger("shared")
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
-        if  keymode== "manual": Total active subscriptions;\
+        if  keymode== "manual":\
         console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]");return True
         elif keymode=="keydb":url=constants.KEYDB
         elif keymode=="cdrm": url=constants.CDRM

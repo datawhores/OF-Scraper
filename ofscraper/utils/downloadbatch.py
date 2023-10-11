@@ -997,6 +997,7 @@ def setDirectoriesDate():
     log.info( f" {pid_log_helper()} Setting Date for modified directories")
     output=set()
     rootDir=pathlib.Path(config_.get_save_location(config_.read_config())).resolve()
+    log.debug(f"Original DirSet {list(dirSet)}")
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:
