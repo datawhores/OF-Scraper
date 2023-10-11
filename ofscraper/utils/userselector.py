@@ -144,7 +144,7 @@ def get_models() -> list:
         out=[]
         active_subscriptions = subscriptions.get_subscriptions(count[0])
         expired_subscriptions=subscriptions.get_subscriptions(count[1],account="expired")
-        console.get_shared_console().print("[yellow]Numbering on OF site can be iffy\nExample Including deactived accounts in expired[/yellow]")
+        console.get_shared_console().print("[yellow]Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://app.gitbook.com/o/KULkvbsBAkF5q8PRvd1h/s/OlkVHnCqS3EnmDo4hGKm/~/changes/174/faq#number-of-users-doesnt-match-account-number[/yellow]")
 
         other_subscriptions=lists.get_otherlist()
         out.extend(active_subscriptions)
