@@ -8,7 +8,7 @@ import ofscraper.api.lists as lists
 import ofscraper.api.me as me
 import ofscraper.utils.args as args_
 import ofscraper.utils.stdout as stdout
-
+import ofscraper.utils.console as console
 
 
 
@@ -144,6 +144,8 @@ def get_models() -> list:
         out=[]
         active_subscriptions = subscriptions.get_subscriptions(count[0])
         expired_subscriptions=subscriptions.get_subscriptions(count[1],account="expired")
+        console.get_shared_console().print("[yellow]Numbering on OF site can be iffy\nExample Including deactived accounts in expired[/yellow]")
+
         other_subscriptions=lists.get_otherlist()
         out.extend(active_subscriptions)
         out.extend(expired_subscriptions)
