@@ -837,12 +837,15 @@ def setDirectoriesDate():
     log.info("Setting Date for modified directories")
     output=set()
     rootDir=pathlib.Path(config_.get_save_location(config_.read_config()))
+    log.debug(f"Original DirSet {list(dirSet)}")
+    log.debug(f"rooDir {rootDir}")
+
     for ele in dirSet:
         output.add(ele)
         while ele!=rootDir and ele.parent!=rootDir:
             log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent
-    log.debug(f"Directories list {rootDir}")
+    log.debug(f"Directories list {output}")
     for ele in output:
         set_time(ele,dates.get_current_time())
