@@ -120,7 +120,7 @@ class NoDebug(logging.Filter):
 class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
-        self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False)
+        self.sess=sessionbuilder.sessionBuilder(backend="httpx",set_header=False,set_cookies=False,set_sign=False,total_timeout=10)
     def emit(self, record):
         @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_fixed(8))
         def inner(sess):
