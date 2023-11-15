@@ -57,7 +57,7 @@ jobs:
 #       - name: list files 4
 #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper         
   
-linux:
+  linux:
     needs: [create_version]    
     runs-on: ubuntu-20.04
     name: create linux release
@@ -121,7 +121,7 @@ linux:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ inputs.files}}.zip"              
         
-windows:
+  windows:
     needs: [create_version]
     runs-on: windows-latest
     name: create windows release
@@ -197,7 +197,7 @@ windows:
         with:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{inputs.files}}.zip"               
-mac:
+  mac:
     needs: [create_version]
     runs-on: macos-latest 
     name: create mac release
