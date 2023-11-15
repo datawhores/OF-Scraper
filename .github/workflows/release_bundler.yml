@@ -114,6 +114,7 @@ jobs:
                 apt-get install zip -y
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install
+                /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
                 zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
