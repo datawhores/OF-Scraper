@@ -398,7 +398,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
                             log.debug(f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}")
                             r.raise_for_status()  
                         progress.remove_task(task1)
-                        fileobject.close()
+                        await fileobject.close()
                         size_checker(temp,ele,total) 
                         await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
             return total ,temp,path_to_file 
@@ -410,7 +410,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
         except Exception as E:
             log.traceback(traceback.format_exc())
             log.traceback(E)
-            raise Ef
+            raise E
         finally:
             #Close file if needed
             try:
@@ -597,6 +597,7 @@ async def alt_download_downloader(item,c,ele,path,progress):
                         log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
                 progress.remove_task(task1)
+                await fileobject.close()
                 size_checker(temp,ele,total) 
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{item['name']}_headers",1))
             return item           
