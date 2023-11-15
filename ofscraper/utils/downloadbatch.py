@@ -770,8 +770,9 @@ async def alt_download_downloader(item,c,ele,path):
                         innerlog.get().debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
                         innerlog.get().debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
-                size_checker(temp,ele,total) 
                 fileobject.close()
+                size_checker(temp,ele,total) 
+         
 
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
             return item
