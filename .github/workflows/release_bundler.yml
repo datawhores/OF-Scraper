@@ -108,18 +108,16 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get install zip libxml2-dev libxslt-dev -y
+                apt-get install zip libxml2-dev libxslt-dev zip -y
                 python3.11 -m venv .venv
                 /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
                 /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
-      - name: upload zip
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"              
+                zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
+
+             
         
   windows:
     needs: [create_version]
@@ -257,7 +255,7 @@ jobs:
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{ inputs.version}}"
-          dest: "dist/ofscraper_macos_${{ inputs.version}}.zip"
+          dest: "dist/ofscraper_macos_${{ inputs.files}}.zip"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
