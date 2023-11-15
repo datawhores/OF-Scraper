@@ -259,13 +259,13 @@ jobs:
         run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ inputs.version}}"        
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_macos_${{ inputs.version}}"
+          files: "dist/ofscraper_macos_${{ inputs.files}}"
           dest: "dist/ofscraper_macos_${{ inputs.files}}.zip"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.version}}.zip"    
+          path: "dist/ofscraper_macos_${{inputs.files}}.zip"    
           
   publish_release:
     runs-on: ubuntu-latest
