@@ -30,7 +30,7 @@ Hint: Please make sure that the log formatting is readable, use a paste site
 like https://paste.passtheheadphones.me/
 
 Hint2 : add " --log debug" this will create a log file with debug messages
-Hint3 : add " --output debug" this will show debug messages in the terminal output, a log file is preferred. If your doing this make your presentation readable
+Hint3 : add " --output debug" this will show debug messages in the terminal output, a log file is preferred. If your're doing this make your presentation readable
 
 
 
