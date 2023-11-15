@@ -120,7 +120,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ inputs.files}}.zip"              
+          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"              
         
         
         
