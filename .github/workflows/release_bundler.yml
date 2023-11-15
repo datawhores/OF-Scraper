@@ -92,12 +92,13 @@ jobs:
             shell: bash
             run: |
                 cd work
+                apt-get install zip libxml2-dev libxslt-dev -y
                 python3.11 -m venv .venv
-                /root/.local/bin/poetry add lxml
+                /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -111,12 +112,13 @@ jobs:
             shell: bash
             run: |
                 cd work
-                apt-get install zip -y
+                apt-get install zip libxml2-dev libxslt-dev -y
                 python3.11 -m venv .venv
+                /root/.local/bin/poetry install --with build
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{inputs.version}}" --onefile
-                zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
+                echo "install run pyinstaller"
+                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
       - name: upload zip
         uses: actions/upload-artifact@v3
         with:
