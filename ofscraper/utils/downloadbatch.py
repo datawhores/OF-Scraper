@@ -577,6 +577,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                             innerlog.get().debug(f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}")
                             innerlog.get().debug(f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}")
                             r.raise_for_status()  
+                        fileobject.close()
                         size_checker(temp,ele,total)
                         await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
             return total,temp,path_to_file
@@ -591,8 +592,10 @@ async def main_download_downloader(c,ele,path,username,model_id):
             innerlog.get().traceback(E)
             raise E
         finally:
-            if fileobject:await fileobject.close()
- 
+            try:
+              await fileobject.close()
+            except Exception as E:
+                raise E 
         
     total=int(data.get("content-length")) if data else None
     return await inner(c,ele,path,username,model_id,total)
@@ -768,6 +771,8 @@ async def alt_download_downloader(item,c,ele,path):
                         innerlog.get().debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                         l.raise_for_status()
                 size_checker(temp,ele,total) 
+                fileobject.close()
+
                 await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
             return item
         except OSError as E:
@@ -781,7 +786,10 @@ async def alt_download_downloader(item,c,ele,path):
             innerlog.get().traceback(E)   
             raise E
         finally:
-            if fileobject:await fileobject.close()
+            try:
+              await fileobject.close()
+            except Exception as E:
+                raise E
 
     return await inner(item,c,ele)
 
