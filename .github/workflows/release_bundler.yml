@@ -99,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ inputs.files}}"
+          path: "dist/ofscraper_linux_${{ inputs.version}}"
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -119,7 +119,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ inputs.files}}.zip"              
+          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"              
         
   windows:
     needs: [create_version]
@@ -163,19 +163,19 @@ jobs:
       #   run: deactive
       - name: create-one-file
         id: create-one-file
-        run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ inputs.files}}"
+        run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ inputs.version}}"
         continue-on-error: true
       - name: active env for createfile2
         run: poetry env use  .venv/Scripts/python3     
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
-        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{ inputs.files}}"
+        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{ inputs.version}}"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
-          path: 'dist\ofscraper_windows_${{ inputs.files}}.exe'
+          path: 'dist\ofscraper_windows_${{ inputs.version}}.exe'
       # - name: temp deactive
       #   run: deactive
       - name: create-dir
@@ -235,34 +235,34 @@ jobs:
         run: pip install pyinstaller==5.13.0
       - name: create-one-file
         id: create-one-file
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ inputs.files}}"
+        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
         continue-on-error: true
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ inputs.files}}"      
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ inputs.version}}"      
       - name: upload fille
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
-          path: "dist/ofscraper_macos_${{ inputs.files}}"
+          path: "dist/ofscraper_macos_${{ inputs.version}}"
       - name: create-dir
         id: create-dir
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.files}}" 
+        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.version}}" 
         continue-on-error: true
       - name: create-dir2
         id: create-dir2
         if: steps.create-dir.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ inputs.files}}"        
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ inputs.version}}"        
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_macos_${{ inputs.files}}"
-          dest: "dist/ofscraper_macos_${{ inputs.files}}.zip"
+          files: "dist/ofscraper_macos_${{ inputs.version}}"
+          dest: "dist/ofscraper_macos_${{ inputs.version}}.zip"
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.files}}.zip"    
+          path: "dist/ofscraper_macos_${{inputs.version}}.zip"    
           
   publish_release:
     runs-on: ubuntu-latest
