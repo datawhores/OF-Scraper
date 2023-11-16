@@ -595,7 +595,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
             try:
               await fileobject.close()
             except Exception as E:
-                raise E 
+                None
         
     total=int(data.get("content-length")) if data else None
     return await inner(c,ele,path,username,model_id,total)
@@ -790,7 +790,7 @@ async def alt_download_downloader(item,c,ele,path):
             try:
               await fileobject.close()
             except Exception as E:
-                raise E
+                raise None
 
     return await inner(item,c,ele)
 
