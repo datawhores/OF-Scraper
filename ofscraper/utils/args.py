@@ -89,6 +89,8 @@ def create_parser(input=None):
         '-af', '--after', help = 'Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts',type=arrow_helper)
     post.add_argument(
         '-mt', '--mediatype', help = 'Filter by media',default=[],required=False,type = mediatype_helper,action='extend')
+    post.add_argument(
+        '-md', '--metadata', help = 'Skip all media downloads and gather metadata only',default=False,action="store_true")
    
     post.add_argument(
         '-sx', '--size-max', help = 'Filter out files greater then given size supported inputs include int in bytes or human-readable such as 10mb',required=False,type = parse_size)
