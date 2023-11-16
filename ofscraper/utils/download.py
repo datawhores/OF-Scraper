@@ -269,10 +269,16 @@ def check_forced_skip(ele,*args):
 async def download(c,ele,model_id,username,progress):
     async with maxfile_sem:
             with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
-                if ele.url:
-                    return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
-                elif ele.mpd:
-                    return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                try:
+                    if ele.url:
+                        return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                    elif ele.mpd:
+                        return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                except Exception as E:
+                    log.debug(f"{get_medialog(ele)} exception {E}")   
+                    log.debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
+                    return "skipped",0
+
 async def main_download_helper(c,ele,path,username,model_id,progress):
     path_to_file=None
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")

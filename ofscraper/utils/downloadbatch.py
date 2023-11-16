@@ -457,6 +457,7 @@ async def download(c,ele,model_id,username):
             innerlog.get().debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
             # we can put into seperate otherqueue_
             log.handlers[1].queue.put(list(innerlog.get().handlers[1].queue.queue))
+            return "skipped",0
 async def main_download_helper(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")

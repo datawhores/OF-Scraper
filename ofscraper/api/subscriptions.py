@@ -125,11 +125,10 @@ async def scrape_subscriptions_active(c,offset=0,num=0,recur=False) -> list:
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
                 if len(subscriptions)==0:
                      return subscriptions
-                elif recur==True:
-                    new_tasks.append(asyncio.create_task(scrape_subscriptions_active(c,recur=True,offset=offset+len(subscriptions),num= num+len(subscriptions))))
-                elif num+len(subscriptions)<10:
-                    new_tasks.append(asyncio.create_task(scrape_subscriptions_active(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
-                    
+                elif recur==False:
+                    None
+                elif (await r.json_())["hasMore"]==True:
+                    new_tasks.append(asyncio.create_task(scrape_subscriptions_active(c,recur=True,offset=offset+len(subscriptions))))
                 return subscriptions
             else:
                 log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
@@ -146,11 +145,11 @@ async def scrape_subscriptions_disabled(c,offset=0,num=0,recur=False) -> list:
                 log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}") 
                 if len(subscriptions)==0:
                      return subscriptions
-                elif recur==True:
-                    new_tasks.append(asyncio.create_task(scrape_subscriptions_disabled(c,recur=True,offset=offset+len(subscriptions),num= num+len(subscriptions))))
-                elif num+len(subscriptions)<10:
-                    new_tasks.append(asyncio.create_task(scrape_subscriptions_disabled(c,offset=offset+len(subscriptions),num= num+len(subscriptions))))
-                    
+                elif recur==False:
+                    None
+                elif (await r.json_())["hasMore"]==True:
+                    new_tasks.append(asyncio.create_task(scrape_subscriptions_disabled(c,recur=True,offset=offset+len(subscriptions))))
+              
                 return subscriptions
             else:
                 log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
