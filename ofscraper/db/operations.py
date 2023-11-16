@@ -212,18 +212,24 @@ def get_profile_info(model_id=None,username=None,conn=None) -> list:
 
 
 @operation_wrapper_async
-def update_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -> list:  
-        insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent) if filename else filename,pathlib.Path(filename).name if filename else filename,
-        math.ceil(pathlib.Path(filename).stat().st_size  )if filename else filename,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
-        media.preview,media.linked, 1 if downloaded else 0,media.date]
-        # if len( (await conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
+def update_media_table(media,filename=None,conn=None,downloaded=False,**kwargs) -> list:
+        insertData=media_insert_helper(media,filename,downloaded)
         if len(conn.execute(queries.mediaDupeCheck,(media.id,)).fetchall())==0:
             conn.execute(queries.mediaInsert,insertData)
         else:
             insertData.append(media.id)
             conn.execute(queries.mediaUpdate,insertData)
         conn.commit()
-
+def media_insert_helper(media,filename,downloaded):
+    if not filename or not pathlib.Path(filename).exists():
+            insertData=[media.id,media.postid,media.url,None,None,
+            0,media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+            media.preview,media.linked, 1 if downloaded else 0,media.date]   
+    elif downloaded or pathlib.Path(filename).exists():
+            insertData=[media.id,media.postid,media.url,str(pathlib.Path(filename).parent),pathlib.Path(filename).name,
+            math.ceil(pathlib.Path(filename).stat().st_size  ),media.responsetype_.capitalize(),media.mediatype.capitalize() ,
+            media.preview,media.linked, 1 if downloaded else 0,media.date]
+    return insertData
 
 @operation_wrapper_async
 def write_media_table(medias,filename=None,conn=None,downloaded=False,**kwargs) -> list:

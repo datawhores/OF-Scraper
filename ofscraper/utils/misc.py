@@ -35,11 +35,7 @@ def medialist_filter(medialist,model_id,username):
 
 def download_picker(username, model_id, medialist):
     medialist=medialist_filter(medialist,model_id,username)
-    if args_.getargs().metadata:
-        logging.getLogger("shared").info("skipping all downloads, since metadata is on")
-        logging.getLogger("shared").error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)' )
-        return  0,0,0,0,0
-
+    medialist=medialist[0:10]
     if len(medialist)==0:
         logging.getLogger("shared").error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)' )
         return  0,0,0,0,0

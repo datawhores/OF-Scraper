@@ -278,9 +278,10 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     #total may be none if no .part file
     result=await main_download_downloader(c,ele,path,username,model_id,progress)
-    if len(result)==2 and result[-1]==0:
-        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
-        return result
+    if len(result)==3 and result[0]==0:
+        path_to_file=result[-1]
+        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
+        return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0
     total ,temp,path_to_file=result
 
     check1=size_checker(temp,ele,total) 
@@ -328,6 +329,9 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
             total=int(data.get('content-length'))
             filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
             path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+            if args_.getargs().metadata:
+                log.info(f"{get_medialog(ele)} skipping adding download to disk because metadata is on")
+                return 0 ,temp,path_to_file 
             resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
             check1=check_forced_skip(ele,total)
             if check1:
@@ -424,10 +428,13 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
     
 async def alt_download_helper(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
-    filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
+    filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'  
     log.debug(f"{get_medialog(ele)} filename from config {filename}")
     log.debug(f"{get_medialog(ele)} full filepath from config{pathlib.Path(path,filename)}")
     path_to_file = paths.truncate(pathlib.Path(path,filename))
+    if args_.getargs().metadata:
+        operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(filename).exists())      
+        return ele.mediatype,0    
     log.debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     log.debug(f"{get_medialog(ele)}  temporary path from combined audio/video {temp_path}")
