@@ -243,14 +243,14 @@ def get_after(model_id,username):
     
     curr=operations.get_timeline_media(model_id=model_id,username=username)
     if len(curr)==0:
-        log.debug("Database is empty")
+        log.debug("Setting date to zero because database is empty")
         return 0
 
     elif len(list(filter(lambda x:x[-2]==0,curr)))==0:
-        log.debug("All media in db marked as downloaded")
+        log.debug("Using cache for date because,all downloads in db marked as downloaded")
         return cache.get(f"timeline_{model_id}_lastpost")[0]
     else:
-        log.debug("All other test failed")
+        log.debug("Setting date to zero because all other test failed")
         return 0
 
 
