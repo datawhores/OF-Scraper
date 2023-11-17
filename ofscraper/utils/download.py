@@ -456,8 +456,8 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
             log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
             log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
         except Exception as E:
-            log.traceback(traceback.format_exc())
-            log.traceback(E)
+            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")  
             raise E
         finally:
             #Close file if needed
@@ -657,8 +657,8 @@ async def alt_download_downloader(item,c,ele,path,progress):
             log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
             log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")              
         except Exception as E:
-            log.traceback(traceback.format_exc())
-            log.traceback(E)   
+            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")  
             raise E
         finally:
             #Close file if needed

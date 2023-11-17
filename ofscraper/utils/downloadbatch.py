@@ -581,7 +581,7 @@ async def main_download_downloader(c,ele,path,username,model_id):
                         if r.ok:
                             data=r.headers
                             await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
-                            total=int(data['content-length'])
+                            total=int(data['content-length']) 
                             if attempt.get()==1: await pipe_.coro_send(  (None, 0,total))
                             content_type = data.get("content-type").split('/')[-1]
                             if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
@@ -629,8 +629,8 @@ async def main_download_downloader(c,ele,path,username,model_id):
             log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
             log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
         except Exception as E:
-            innerlog.get().traceback(traceback.format_exc())
-            innerlog.get().traceback(E)
+            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")
             raise E
         finally:
             try:
@@ -660,8 +660,6 @@ async def alt_download_helper(c,ele,path,username,model_id):
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
-
-
 
     audio=await alt_download_downloader(audio,c,ele,path)
     video=await alt_download_downloader(video,c,ele,path)
@@ -828,8 +826,8 @@ async def alt_download_downloader(item,c,ele,path):
             log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
             log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
         except Exception as E:
-            innerlog.get().traceback(traceback.format_exc())
-            innerlog.get().traceback(E)   
+            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")
             raise E
         finally:
             try:
