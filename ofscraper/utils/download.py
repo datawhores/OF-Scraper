@@ -279,15 +279,56 @@ async def download(c,ele,model_id,username,progress):
                     log.debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
                     return "skipped",0
 
+async def metadata_helper(c,ele,path,username,model_id,filename=None,path_to_file=None):
+    log.info(f"{get_medialog(ele)} skipping adding download to disk because metadata is on")
+    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
+    if filename and path_to_file:
+        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
+        return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0
+    if data and data.get('content-length'):
+            content_type = data.get("content-type").split('/')[-1]
+            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+            if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
+            return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0
+    else:
+
+        @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
+        @sem_wrapper
+        async def inner(c,ele,path,username,model_id):
+                url=ele.url
+                path_to_file=None
+                filename=None
+                attempt.set(attempt.get(0) + 1) 
+                async with c.requests(url=url,headers=None)() as r:
+                        if r.ok:
+                            data=r.headers
+                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                            content_type = data.get("content-type").split('/')[-1]
+                            if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
+                            if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
+                            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
+                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
+                            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))
+
+                        else:
+                            r.raise_for_status()
+                if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
+                return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0 
+
+        return await inner(c,ele,path,username,model_id)
+
+
 async def main_download_helper(c,ele,path,username,model_id,progress):
     path_to_file=None
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     #total may be none if no .part file
+    if args_.getargs().metadata:
+        return await metadata_helper(c,ele,path,username,model_id)
     result=await main_download_downloader(c,ele,path,username,model_id,progress)
-    if len(result)==3 and result[0]==0:
-        path_to_file=result[-1]
-        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
-        return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0
+    if len(result)==2 and result[-1]==0:
+        return result
     total ,temp,path_to_file=result
 
     check1=size_checker(temp,ele,total) 
@@ -335,13 +376,10 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
             total=int(data.get('content-length'))
             filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
             path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-            if args_.getargs().metadata:
-                log.info(f"{get_medialog(ele)} skipping adding download to disk because metadata is on")
-                return 0 ,temp,path_to_file 
             resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
             check1=check_forced_skip(ele,total)
             if check1:
-                return check1
+                return check1[-1] ,temp,path_to_file 
             elif total==resume_size:
                 return total ,temp,path_to_file
             elif total<resume_size:
@@ -438,10 +476,9 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} filename from config {filename}")
     log.debug(f"{get_medialog(ele)} full filepath from config{pathlib.Path(path,filename)}")
     path_to_file = paths.truncate(pathlib.Path(path,filename))
-    if args_.getargs().metadata:
-        operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(filename).exists())      
-        return ele.mediatype,0    
     log.debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
+    if args_.getargs().metadata:
+        return await metadata_helper(c,ele,path,username,model_id,filename=filename,path_to_file=path_to_file) 
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     log.debug(f"{get_medialog(ele)}  temporary path from combined audio/video {temp_path}")
 
