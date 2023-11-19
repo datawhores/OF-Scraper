@@ -47,7 +47,7 @@ try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
-from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type,AsyncRetrying
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.auth as auth
@@ -239,7 +239,7 @@ async def process_dicts(username, model_id, medialist):
 
 
 
-def size_checker(path,ele,total,name=None):
+async def size_checker(path,ele,total,name=None):
     name=name or ele.filename
     if not pathlib.Path(path).exists():
         s=f"{get_medialog(ele)} {path} was not created"
@@ -247,11 +247,12 @@ def size_checker(path,ele,total,name=None):
     elif total-pathlib.Path(path).absolute().stat().st_size>500:
         s=f"{get_medialog(ele)} {name} size mixmatch target: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
         pathlib.Path(path).unlink(missing_ok=True)
-        raise Exception(s)
-    
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",None))       
+        raise Exception(s)    
     elif (total-pathlib.Path(path).absolute().stat().st_size)<0:
         s=f"{get_medialog(ele)} {path} size mixmatch target item too large: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
         pathlib.Path(path).unlink(missing_ok=True)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",None))        
         raise Exception(s)
 
     
@@ -279,7 +280,7 @@ async def download(c,ele,model_id,username,progress):
                     log.debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
                     return "skipped",0
 
-async def metadata_helper(c,ele,path,username,model_id,filename=None,path_to_file=None):
+async def metadata(c,ele,path,username,model_id,filename=None,path_to_file=None):
     log.info(f"{get_medialog(ele)} skipping adding download to disk because metadata is on")
     data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
     if filename and path_to_file:
@@ -292,32 +293,36 @@ async def metadata_helper(c,ele,path,username,model_id,filename=None,path_to_fil
             if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
             return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0
     else:
+        try:
+            async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+                with _:
+                    return await metadata_helper(c,ele,path,username,model_id)
+        except Exception as E: 
+            raise E
+@sem_wrapper
+async def metadata_helper(c,ele,path,username,model_id):
+        url=ele.url
+        path_to_file=None
+        filename=None
+        attempt.set(attempt.get(0) + 1) 
+        async with c.requests(url=url,headers=None)() as r:
+                if r.ok:
+                    data=r.headers
+                    await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                    content_type = data.get("content-type").split('/')[-1]
+                    if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
+                    if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
+                    filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                    log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
+                    log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
+                    path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))
 
-        @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-        @sem_wrapper
-        async def inner(c,ele,path,username,model_id):
-                url=ele.url
-                path_to_file=None
-                filename=None
-                attempt.set(attempt.get(0) + 1) 
-                async with c.requests(url=url,headers=None)() as r:
-                        if r.ok:
-                            data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
-                            content_type = data.get("content-type").split('/')[-1]
-                            if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
-                            if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
-                            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
-                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
-                            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}"))
+                else:
+                    r.raise_for_status()
+        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
+        return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0 
 
-                        else:
-                            r.raise_for_status()
-                if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
-                return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0 
 
-        return await inner(c,ele,path,username,model_id)
 
 
 async def main_download(c,ele,path,username,model_id,progress):
@@ -325,7 +330,7 @@ async def main_download(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     #total may be none if no .part file
     if args_.getargs().metadata:
-        return await metadata_helper(c,ele,path,username,model_id)
+        return await metadata(c,ele,path,username,model_id)
     result=await main_download_helper(c,ele,path,username,model_id,progress)
     if len(result)==2 and result[-1]==0:
         return result
@@ -340,15 +345,7 @@ async def main_download(c,ele,path,username,model_id,progress):
     
     log.debug(f"{get_medialog(ele)} {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
     log.debug(f"{get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
-    if not path_to_file.exists():
-        shutil.move(temp,path_to_file)
-    elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
-        shutil.move(temp,path_to_file)
-    else:
-        pathlib.Path(temp).unlink(missing_ok=True)
-        raise Exception(f"{get_medialog(ele)} smaller then previous file")
-
-
+    moveHelper(temp,path_to_file,ele)
     addGlobalDir(path)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
@@ -369,107 +366,125 @@ async def main_download(c,ele,path,username,model_id,progress):
 
 
 async def main_download_helper(c,ele,path,username,model_id,progress): 
-    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
-    if data and data.get('content-length'):
-            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-            content_type = data.get("content-type").split('/')[-1]
-            total=int(data.get('content-length'))
-            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-            resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-            check1=check_forced_skip(ele,total)
-            if check1:
-                return check1[-1] ,temp,path_to_file 
-            elif total==resume_size:
-                return total ,temp,path_to_file
-            elif total<resume_size:
-                pathlib.Path(temp).unlink(missing_ok=True)
-    else:
-        paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part")).unlink(missing_ok=True)
-
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-    @sem_wrapper
-    async def inner(c,ele,path,username,model_id,progress,total):
-        attempt.set(attempt.get(0) + 1) 
-        fileobject=None
-        try: 
-            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-            if total==None:temp.unlink(missing_ok=True)
-            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-            resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-            if not total or total>resume_size:
-                url=ele.url
-                headers=None if not pathlib.Path(temp).exists() else {"Range":f"bytes={resume_size}-{total}"}
-                async with c.requests(url=url,headers=headers)() as r:
-                        if r.ok:
-                            data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
-                            total=int(data['content-length'])
-                            if attempt.get()==1:await update_total(total)
-                            content_type = data.get("content-type").split('/')[-1]
-                            if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
-                            if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
-                            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-                            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
-                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
-                            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {path_to_file}")
-                            log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] passed size check with size {total}")   
-                            pathstr=str(path_to_file)
-                            check=check_forced_skip(ele,total)
-                            if check:
-                                return check
-                            elif total<=resume_size:
-                                return total ,temp,path_to_file
-                            log.debug(f"{get_medialog(ele)} passed size check with size {total}")    
-                            pathstr=str(path_to_file)
-                            downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-                            task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True if downloadprogress else False)
-                            count=0
-                            loop=asyncio.get_event_loop()
-                            size=resume_size
-                            fileobject= await aiofiles.open(temp, 'ab').__aenter__()
-
-                            log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
-                            async for chunk in r.iter_chunked(constants.maxChunkSize):
-                                if downloadprogress:count=count+1
-                                size=size+len(chunk)
-                                log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {attempt.get()}/{constants.NUM_TRIES}] ")
-                                await fileobject.write(chunk)
-                                if count==constants.CHUNK_ITER:\
-                                await loop.run_in_executor(thread,partial( progress.update,task1, completed=size)); \
-                                count=0
-                        else:
-                            log.debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
-                            log.debug(f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}")
-                            log.debug(f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}")
-                            r.raise_for_status()  
-                        progress.remove_task(task1)
-                        await fileobject.close()
-                        size_checker(temp,ele,total) 
-                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
-            return total ,temp,path_to_file 
-        except OSError as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
-            log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
-            log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
-        except Exception as E:
-            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
-            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")  
-            raise E
-        finally:
-            #Close file if needed
-            try:
-              await fileobject.close()
-            except Exception as E:
-                None
-
-
-    total=int(data.get("content-length")) if data else None
-    return await inner(c,ele,path,username,model_id,progress,total)
+    try:
+        async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+            with _:
+                    try:    
     
+                        data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
+                        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+                        
+                        if data and data.get('content-length'):
+                                content_type = data.get("content-type").split('/')[-1]
+                                total=int(data.get('content-length'))
+                                filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                                path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+                                resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+                                check1=check_forced_skip(ele,total)
+                                if check1:
+                                    return 0 ,temp,path_to_file
+                                elif total==resume_size:
+                                    return total ,temp,path_to_file
+                                elif total<resume_size:
+                                   temp.unlink(missing_ok=True)
+                        else:
+                            paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part")).unlink(missing_ok=True)
+                    except Exception as E: 
+                        raise E    
+    
+    
+    except Exception as E: 
+                    raise E
+    
+    try:
+        async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+            with _:
+                    try:
+                        total=int(data.get("content-length")) if data else None
+                        return await main_download_runner(c,ele,path,username,model_id,progress,total)
+                    except Exception as E: 
+                        raise E
+    except Exception as E: 
+                    raise E
+    
+@sem_wrapper
+async def main_download_runner(c,ele,path,username,model_id,progress,total):
+    attempt.set(attempt.get(0) + 1) 
+    fileobject=None
+    total=total if attempt.get()==1 else None
+    try: 
+        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
+        if not total:temp.unlink(missing_ok=True)
+        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+        if not total or total>resume_size:
+            url=ele.url
+            headers=None if not pathlib.Path(temp).exists() else {"Range":f"bytes={resume_size}-{total}"}
+            async with c.requests(url=url,headers=headers)() as r:
+                    if r.ok:
+                        data=r.headers
+                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                        total=int(total or (data['content-length']))
+                        if attempt.get()==1:await update_total(total)
+                        content_type = data.get("content-type").split('/')[-1]
+                        if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
+                        if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
+                        filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
+                        path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {path_to_file}")
+                        log.debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] passed size check with size {total}")   
+                        pathstr=str(path_to_file)
+                        check=check_forced_skip(ele,total)
+                        if check:
+                            return 0 ,temp,path_to_file
+                        elif total==resume_size:
+                            return total ,temp,path_to_file
+                        elif total<resume_size:
+                            temp.unlink(missing_ok=True)
+                        log.debug(f"{get_medialog(ele)} passed size check with size {total}")    
+                        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True if downloadprogress else False)
+                        count=0
+                        loop=asyncio.get_event_loop()
+                        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+
+                        async for chunk in r.iter_chunked(constants.maxChunkSize):
+                            if downloadprogress:count=count+1
+                            await fileobject.write(chunk)
+                            if count==constants.CHUNK_ITER:\
+                            await loop.run_in_executor(thread,partial( progress.update,task1, completed=size)); \
+                            count=0
+                    else:
+                        log.debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
+                        log.debug(f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}")
+                        log.debug(f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}")
+                        r.raise_for_status()  
+                    progress.remove_task(task1)
+                    await fileobject.close()
+                    await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
+                    size_checker(temp,ele,total) 
+        return total ,temp,path_to_file 
+    except OSError as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
+        log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
+    except Exception as E:
+        log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+        log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")  
+        raise E
+    finally:
+        #Close file if needed
+        try:
+            await fileobject.close()
+        except Exception as E:
+            None
+
+
+
+
 async def alt_download(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'  
@@ -478,7 +493,7 @@ async def alt_download(c,ele,path,username,model_id,progress):
     path_to_file = paths.truncate(pathlib.Path(path,filename))
     log.debug(f"{get_medialog(ele)} full path trunicated from config {path_to_file}")
     if args_.getargs().metadata:
-        return await metadata_helper(c,ele,path,username,model_id,filename=filename,path_to_file=path_to_file) 
+        return await metadata(c,ele,path,username,model_id,filename=filename,path_to_file=path_to_file) 
     temp_path=paths.truncate(pathlib.Path(path,f"temp_{ele.id or ele.filename_}.mp4"))
     log.debug(f"{get_medialog(ele)}  temporary path from combined audio/video {temp_path}")
 
@@ -517,7 +532,6 @@ async def alt_download(c,ele,path,username,model_id,progress):
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
     
-    path_to_file.unlink(missing_ok=True)
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find("Output")==-1:
@@ -528,7 +542,7 @@ async def alt_download(c,ele,path,username,model_id,progress):
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
     log.debug(f"Moving intermediate path {temp_path} to {path_to_file}")
-    shutil.move(temp_path,path_to_file)
+    moveHelper(temp_path,path_to_file,ele)
     addGlobalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
@@ -572,102 +586,112 @@ async def alt_download_preparer(ele):
     return await inner(ele)
 
 
-async def alt_download_helper(item,c,ele,path,progress):
+
+
+@sem_wrapper    
+async def alt_download_runner(item,c,ele,path,progress):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
+    
+    if item["type"]=="video":_attempt=attempt
+    if item["type"]=="audio":_attempt=attempt2
+    _attempt.set(_attempt.get(0) + 1)
+    fileobject=None 
+    item["total"]=item["total"] if _attempt.get()==1 else None
+
+    try:
+        total=item.get("total")
+        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+        if total==None:temp.unlink(missing_ok=True)
+        resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size        
+
+        if not total or total>resume_size:
+            headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
+            params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+            item["path"]=temp
+            async with c.requests(url=url,headers=headers,params=params)() as l:                
+                if l.ok:
+                    pathstr=str(temp)
+                    data=l.headers
+                    item["total"]=int(total or (l.headers['content-length']))
+                    total=item["total"]
+                    if attempt.get(0) + 1==1:await update_total(total)
+
+                    check1=check_forced_skip(ele,item["total"])
+                    if check1:
+                        return check1                
+                    log.debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
+                    downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+                    task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True if downloadprogress else False)
+                    progress.update(task1, advance=resume_size)
+                    count=0
+                    loop=asyncio.get_event_loop()
+                    size=resume_size                    
+                    fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+
+                    async for chunk in l.iter_chunked(constants.maxChunkSize):
+                        if downloadprogress:count=count+1
+                        log.trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
+                        await fileobject.write(chunk)
+                        if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
+                else:
+                    log.debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
+                    log.debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
+                    log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
+                    l.raise_for_status()
+            progress.remove_task(task1)
+            await fileobject.close()
+            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))            
+            size_checker(temp,ele,total) 
+        return item           
+    except OSError as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
+        log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")              
+    except Exception as E:
+        log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+        log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")  
+        raise E
+    finally:
+        #Close file if needed
+        try:
+            await fileobject.close()
+        except Exception as E:
+            None
+
+async def alt_download_helper(item,c,ele,path,progress):
     data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers"))
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     item['path']=temp
-    pathlib.Path(temp).unlink(missing_ok=True) if not data or \
-    (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
-
-
+    pathlib.Path(temp).unlink(missing_ok=True) if (args_.getargs().part_cleanup or config_.get_part_file_clean(config_.read_config()) or False) else None
 
     if data:
         item["total"]=int(data.get("content-length"))
         check1=check_forced_skip(ele,item["total"])
-        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         item["path"]=temp
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         if check1:
             return check1
+        elif item["total"]==resume_size:
+                return item
         elif item["total"]<resume_size:
                 pathlib.Path(temp).unlink(missing_ok=True)
        
     else:
         paths.truncate(pathlib.Path(path,f"{item['name']}.part")).unlink(missing_ok=True)        
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-    @sem_wrapper    
-    async def inner(item,c,ele,progress):
-        if item["type"]=="video":_attempt=attempt
-        if item["type"]=="audio":_attempt=attempt2
-        _attempt.set(_attempt.get(0) + 1)
-        fileobject=None 
-        try:
-            total=item.get("total")
-            if total==None:temp.unlink(missing_ok=True)
-            resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
-            
-            if total and _attempt.get(0) + 1==1:await update_total(total)
-            if not total or total>resume_size:
-                headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
-                params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                item["path"]=temp
-                async with c.requests(url=url,headers=headers,params=params)() as l:                
-                    if l.ok:
-                        pathstr=str(temp)
-                        data=l.headers
-                        item["total"]=total or int(data['content-length'])
-                        total=item["total"]
-                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
-                        check1=check_forced_skip(ele,item["total"])
-                        if check1:
-                            return check1                
-                        log.debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-                        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-                        task1 = progress.add_task(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n", total=total,visible=True if downloadprogress else False)
-                        progress.update(task1, advance=resume_size)
-                        count=0
-                        loop=asyncio.get_event_loop()
-                        size=resume_size
-                        
-                        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
-                        log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")                  
+    try:
+            async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+                with _:
+                    try:
+                        return await alt_download_runner(item,c,ele,path,progress)
+                    except Exception as E:
+                        log.debug(f"{get_medialog(ele)} {E} {_.retry_state.attempt_number} alt expection")
+                        raise E
+    except Exception as E:
+        pass
 
-                        async for chunk in l.iter_chunked(constants.maxChunkSize):
-                            if downloadprogress:count=count+1
-                            size=size+len(chunk)
-                            log.trace(f"{get_medialog(ele)} Download:{size}/{total} [attempt {_attempt.get()}/{constants.NUM_TRIES}] ")
-                            await fileobject.write(chunk)
-                            if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
-                    else:
-                        log.debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
-                        log.debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
-                        log.debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
-                        l.raise_for_status()
-                progress.remove_task(task1)
-                await fileobject.close()
-                size_checker(temp,ele,total) 
-                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{item['name']}_headers",1))
-            return item           
-        except OSError as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
-            log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
-            log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")              
-        except Exception as E:
-            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
-            log.traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")  
-            raise E
-        finally:
-            #Close file if needed
-            try:
-              await fileobject.close()
-            except Exception as E:
-                None
-    return await inner(item,c,ele,progress)
-   
 
 
 
@@ -886,7 +910,14 @@ async def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         await asyncio.get_event_loop().run_in_executor(cache_thread,partial(  cache.set,ele.postid ,True))
 
-
+def moveHelper(temp,path_to_file,ele):
+    if not path_to_file.exists():
+        shutil.move(temp,path_to_file)
+    elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
+        shutil.move(temp,path_to_file)
+    else:
+        pathlib.Path(temp).unlink(missing_ok=True)
+        log.debug(f"{get_medialog(ele)} smaller then previous file")
 
 def addGlobalDir(path):
     dirSet.add(path.parent)

@@ -38,7 +38,7 @@ def download_picker(username, model_id, medialist):
     if len(medialist)==0:
         logging.getLogger("shared").error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)' )
         return  0,0,0,0,0
-    elif system.getcpu_count()>1 and (len(medialist)>=config_.get_download_semaphores(config_.read_config())*5) and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
+    elif system.getcpu_count()>1000 and (len(medialist)>=config_.get_download_semaphores(config_.read_config())*5) and (args_.getargs().downloadthreads or config_.get_threads(config_.read_config()))>0:
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         
