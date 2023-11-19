@@ -271,9 +271,9 @@ async def download(c,ele,model_id,username,progress):
             with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
                 try:
                     if ele.url:
-                        return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                        return await main_download(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
                     elif ele.mpd:
-                        return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
+                        return await alt_download(c,ele,pathlib.Path(".").absolute(),username,model_id,progress)
                 except Exception as E:
                     log.debug(f"{get_medialog(ele)} exception {E}")   
                     log.debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
@@ -320,13 +320,13 @@ async def metadata_helper(c,ele,path,username,model_id,filename=None,path_to_fil
         return await inner(c,ele,path,username,model_id)
 
 
-async def main_download_helper(c,ele,path,username,model_id,progress):
+async def main_download(c,ele,path,username,model_id,progress):
     path_to_file=None
     log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     #total may be none if no .part file
     if args_.getargs().metadata:
         return await metadata_helper(c,ele,path,username,model_id)
-    result=await main_download_downloader(c,ele,path,username,model_id,progress)
+    result=await main_download_helper(c,ele,path,username,model_id,progress)
     if len(result)==2 and result[-1]==0:
         return result
     total ,temp,path_to_file=result
@@ -368,7 +368,7 @@ async def main_download_helper(c,ele,path,username,model_id,progress):
 
 
 
-async def main_download_downloader(c,ele,path,username,model_id,progress): 
+async def main_download_helper(c,ele,path,username,model_id,progress): 
     data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
     if data and data.get('content-length'):
             temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
@@ -470,7 +470,7 @@ async def main_download_downloader(c,ele,path,username,model_id,progress):
     total=int(data.get("content-length")) if data else None
     return await inner(c,ele,path,username,model_id,progress,total)
     
-async def alt_download_helper(c,ele,path,username,model_id,progress):
+async def alt_download(c,ele,path,username,model_id,progress):
     log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     filename=f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'  
     log.debug(f"{get_medialog(ele)} filename from config {filename}")
@@ -484,8 +484,8 @@ async def alt_download_helper(c,ele,path,username,model_id,progress):
 
     audio,video=await alt_download_preparer(ele)
 
-    audio=await alt_download_downloader(audio,c,ele,path,progress)
-    video=await alt_download_downloader(video,c,ele,path,progress)
+    audio=await alt_download_helper(audio,c,ele,path,progress)
+    video=await alt_download_helper(video,c,ele,path,progress)
     for m in [audio,video]:
         if not isinstance(m,dict):
             return m
@@ -572,7 +572,7 @@ async def alt_download_preparer(ele):
     return await inner(ele)
 
 
-async def alt_download_downloader(item,c,ele,path,progress):
+async def alt_download_helper(item,c,ele,path,progress):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")

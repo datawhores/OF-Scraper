@@ -99,8 +99,7 @@ def get_current_config_schema(config:dict=None) -> dict:
             "maxfile-sem":get_maxfile_semaphores(config),
             "downloadbars":get_show_downloadprogress(config),
             "cache-mode":cache_mode_helper(config),
-
-
+            "appendlog":get_appendlog(config),
             "responsetype":{
            "timeline":get_timeline_responsetype(config),
          "message":get_messages_responsetype(config),
@@ -411,7 +410,7 @@ def get_dynamic(config=None):
 def get_part_file_clean(config=None):
     if config==None:
         return False
-    return config.get("partfileclean",False) or False
+    return config.get("partfileclean",False)
 
 
 def get_backend(config=None):
@@ -445,8 +444,7 @@ def get_maxfile_semaphores(config=None):
 def get_show_downloadprogress(config):
     if config==None:
         return constants.PROGRESS_DEFAULT
-    return config.get("downloadbars",constants.PROGRESS_DEFAULT) or constants.PROGRESS_DEFAULT
-
+    return config.get("downloadbars",constants.PROGRESS_DEFAULT)
 def get_cache_mode(config):
     if cache_mode_helper(config)=="sqlite":
         return Disk
@@ -463,3 +461,8 @@ def cache_mode_helper(config):
    
 
     
+def get_appendlog(config):
+    return True
+    if config==None:
+        return constants.APPEND_DEFAULT
+    config.get("appendlog",constants.APPEND_DEFAULT)

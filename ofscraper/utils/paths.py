@@ -201,7 +201,8 @@ def ffmpegexecutecheck(x):
         return False  
    
 def getlogpath():
-    path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}.log'
+    dataform=arrow.now().format("YYYY-MM-DD") if config_.get_appendlog(config_.read_config()) else arrow.now().format("YYYY-MM-DD_hh:mm:ss")
+    path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{dataform}.log'
     path=pathlib.Path(os.path.normpath(path))
     createDir(path.parent)
     return path

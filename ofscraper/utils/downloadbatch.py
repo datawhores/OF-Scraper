@@ -15,7 +15,6 @@ from functools import singledispatch,partial
 import math
 import os
 import pathlib
-import multiprocess
 import time
 import platform
 import shutil
@@ -51,7 +50,7 @@ import arrow
 from bs4 import BeautifulSoup
 
 
-from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type
+from tenacity import retry,stop_after_attempt,wait_random,retry_if_not_exception_type,AsyncRetrying
 import more_itertools
 import aioprocessing
 import psutil
@@ -107,6 +106,7 @@ def _(func:abc.Callable,input_sem:None|semaphoreDelayed=None):
         finally:
             input_sem.release()  
     return inner
+    
 
 
 def reset_globals():
@@ -417,18 +417,20 @@ async def process_dicts_split(username, model_id,cacheCopy, medialist,logCopy,pi
 def pid_log_helper():
     return f"PID: {os.getpid()}"  
 
-def size_checker(path,ele,total,name=None):
+async def size_checker(path,ele,total,name=None):
     name=name or ele.filename
     if not pathlib.Path(path).exists():
         s=f"{get_medialog(ele)} {path} was not created"
         raise Exception(s)
-    elif total-pathlib.Path(path).absolute().stat().st_size>500:
+    elif (total-pathlib.Path(path).absolute().stat().st_size)>500:
         s=f"{get_medialog(ele)} {name} size mixmatch target: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
         pathlib.Path(path).unlink(missing_ok=True)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",None))
         raise Exception(s)
     elif (total-pathlib.Path(path).absolute().stat().st_size)<0:
         s=f"{get_medialog(ele)} {path} size mixmatch target item too large: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
         pathlib.Path(path).unlink(missing_ok=True)
+        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",None))
         raise Exception(s)
     
 def check_forced_skip(ele,*args):
@@ -455,8 +457,6 @@ async def metadata_helper(c,ele,path,username,model_id,filename=None,path_to_fil
             if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
             return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0
     else:
-
-        @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
         @sem_wrapper
         async def inner(c,ele,path,username,model_id):
                 url=ele.url
@@ -479,8 +479,14 @@ async def metadata_helper(c,ele,path,username,model_id,filename=None,path_to_fil
                             r.raise_for_status()
                 if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=pathlib.Path(path_to_file).exists())
                 return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",0 
+        try:
+            async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+                with _:
+                    return inner(c,ele,path,username,model_id)
+        except Exception as E: 
+            raise E
 
-        return await inner(c,ele,path,username,model_id)
+        
 
 
 async def download(c,ele,model_id,username):
@@ -491,26 +497,26 @@ async def download(c,ele,model_id,username):
         try:
                 with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
                     if ele.url:
-                        return await main_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
+                        return await main_download(c,ele,pathlib.Path(".").absolute(),username,model_id)
                     elif ele.mpd:
-                        return await alt_download_helper(c,ele,pathlib.Path(".").absolute(),username,model_id)
+                        return await alt_download(c,ele,pathlib.Path(".").absolute(),username,model_id)
         except Exception as e:
             innerlog.get().debug(f"{get_medialog(ele)} exception {e}")   
             innerlog.get().debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
             # we can put into seperate otherqueue_
             log.handlers[1].queue.put(list(innerlog.get().handlers[1].queue.queue))
             return "skipped",0
-async def main_download_helper(c,ele,path,username,model_id): 
+async def main_download(c,ele,path,username,model_id): 
     path_to_file=None
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")
     if args_.getargs().metadata:
         return await metadata_helper(c,ele,path,username,model_id) 
-    result=list(await main_download_downloader(c,ele,path,username,model_id))
+    result=list(await main_download_helper(c,ele,path,username,model_id))
     if len(result)==2 and result[-1]==0:
         return result
     total ,temp,path_to_file=result
     
-    check1=size_checker(temp,ele,total)
+    check1=await size_checker(temp,ele,total)
     check2=check_forced_skip(ele,total)
     if check1:
         return check1
@@ -521,13 +527,7 @@ async def main_download_helper(c,ele,path,username,model_id):
     innerlog.get().debug(f"{get_medialog(ele)} {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}")   
     innerlog.get().debug(f"{get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}")   
     #move temp file
-    if not path_to_file.exists():
-        shutil.move(temp,path_to_file)
-    elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
-        shutil.move(temp,path_to_file)
-    else:
-        pathlib.Path(temp).unlink(missing_ok=True)
-        raise Exception(f"{get_medialog(ele)} smaller then previous file")
+    moveHelper(temp,path_to_file,ele)
     addLocalDir(path)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
@@ -544,109 +544,123 @@ async def main_download_helper(c,ele,path,username,model_id):
 
 
  
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def main_download_downloader(c,ele,path,username,model_id):
-    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
-    if data and data.get('content-length'):
-            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-            content_type = data.get("content-type").split('/')[-1]
-            total=int(data.get('content-length'))
-            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-            resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-            check1=check_forced_skip(ele,total)
-            if check1:
-                return check1
-            elif total==resume_size:
-                return total ,temp,path_to_file
-            elif total<resume_size:
-                pathlib.Path(temp).unlink(missing_ok=True)
-    else:
-        paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part")).unlink(missing_ok=True)
-
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-    @sem_wrapper
-    async def inner(c,ele,path,username,model_id,total):
-        attempt.set(attempt.get(0) + 1) 
-        fileobject=None
-        try:
-            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-            if total==None:temp.unlink(missing_ok=True)
-            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-            resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
-            if not total or total>resume_size:
-                url=ele.url
-                headers=None if not pathlib.Path(temp).exists() else {"Range":f"bytes={resume_size}-{total}"}
-                async with c.requests(url=url,headers=headers)() as r:
-                        if r.ok:
-                            data=r.headers
-                            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
-                            total=int(data['content-length']) 
-                            if attempt.get()==1: await pipe_.coro_send(  (None, 0,total))
-                            content_type = data.get("content-type").split('/')[-1]
-                            if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
-                            if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
-                            temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
-                            filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
-                            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
-                            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
-                            path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
-                            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {path_to_file}")
-                            innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] passed size check with size {total}")   
-                            pathstr=str(path_to_file)
-                            check=check_forced_skip(ele,total)
-                            if check:
-                                return total ,temp,path_to_file
-                            elif total<=resume_size:
-                                return total ,temp,path_to_file
-                            count=0
-                            await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
-                                        "total":total,"visible":False})
-                            await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})                        
-                            
-                            fileobject= await aiofiles.open(temp, 'ab').__aenter__()
-                            log.debug(f"{pid_log_helper()}: Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")           
-
-                            async for chunk in r.iter_chunked(constants.maxChunkSizeB):
-                                count=count+1
-                                innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
-                                await fileobject.write(chunk)
-                                if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0            
-                            await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})                            
+async def main_download_helper(c,ele,path,username,model_id):
+    try:
+        async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+            with _:
+                    try:
+                        data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{ele.id}_headers"))
+                        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+                        if data and data.get('content-length'):
+                                content_type = data.get("content-type").split('/')[-1]
+                                total=int(data.get('content-length'))
+                                filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                                path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+                                resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+                                check1=check_forced_skip(ele,total)
+                                if check1:
+                                    return check1
+                                elif total==resume_size:
+                                    return total ,temp,path_to_file
+                                elif total<resume_size:
+                                    pathlib.Path(temp).unlink(missing_ok=True)
                         else:
-                            innerlog.get().debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
-                            innerlog.get().debug(f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}")
-                            innerlog.get().debug(f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}")
-                            r.raise_for_status()  
-                        await fileobject.close()
-                        size_checker(temp,ele,total)
-                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
-            return total,temp,path_to_file
-        except OSError as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
-            log.debug(f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}")   
-            log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
-            log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
+                            paths.truncate(pathlib.Path(temp)).unlink(missing_ok=True)
+                    except Exception as E: 
+                        raise E
+    except Exception as E: 
+                    raise E
+
+      
+    try:
+        async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+            with _:
+                    try:
+                        total=int(data.get("content-length")) if data else None
+                        return await main_download_runner(c,ele,path,username,model_id,total)
+                    except Exception as E: 
+                        raise E
+    except Exception as E: 
+                    raise E
+
+@sem_wrapper
+async def main_download_runner(c,ele,path,username,model_id,total):
+    attempt.set(attempt.get(0) + 1) 
+    fileobject=None
+    total=total if attempt.get()==1 else None
+    try:
+        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
+        if not total:temp.unlink(missing_ok=True)
+        resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
+        if not total or total>resume_size:
+            url=ele.url
+            headers=None if not pathlib.Path(temp).exists() else {"Range":f"bytes={resume_size}-{total}"}
+            async with c.requests(url=url,headers=headers)() as r:
+                    if r.ok:
+                        data=r.headers
+                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{ele.id}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                        total=int(total or (data['content-length']))
+                        if attempt.get()==1: await pipe_.coro_send(  (None, 0,total))
+                        content_type = data.get("content-type").split('/')[-1]
+                        if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
+                        if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
+                        temp=paths.truncate(pathlib.Path(path,f"{ele.filename}_{ele.id}.part"))
+                        filename=placeholder.Placeholders().createfilename(ele,username,model_id,content_type)
+                        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}")
+                        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}")
+                        path_to_file = paths.truncate(pathlib.Path(path,f"{filename}")) 
+                        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {path_to_file}")
+                        innerlog.get().debug(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] passed size check with size {total}")   
+                        pathstr=str(path_to_file)
+                        check=check_forced_skip(ele,total)
+                        if check:
+                            return total ,temp,path_to_file
+                        elif total<=resume_size:
+                            return total ,temp,path_to_file
+                        count=0
+                        await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
+                                    "total":total,"visible":False})
+                        await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})                        
+                        
+                        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+                        async for chunk in r.iter_chunked(constants.maxChunkSizeB):
+                            count=count+1
+                            innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
+                            await fileobject.write(chunk)
+                            if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0                                        
+                    else:
+                        innerlog.get().debug(f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}")
+                        innerlog.get().debug(f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}")
+                        innerlog.get().debug(f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}")
+                        r.raise_for_status()  
+                    await fileobject.close()
+                    await size_checker(temp,ele,total)
+        return total,temp,path_to_file
+    except OSError as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        log.debug(f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}")   
+        log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
+        log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
+    except Exception as E:
+        innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+        innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")
+        raise E
+    finally:
+        try:
+            await fileobject.close()
         except Exception as E:
-            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
-            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")
-            raise E
-        finally:
-            try:
-              await fileobject.close()
-            except Exception as E:
-                None
+            None  
+                
         
-    total=int(data.get("content-length")) if data else None
-    return await inner(c,ele,path,username,model_id,total)
 
 
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
 
-async def alt_download_helper(c,ele,path,username,model_id):
+async def alt_download(c,ele,path,username,model_id):
 
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with protected media downloader")      
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {ele.filename_} with {ele.mpd}")
@@ -661,13 +675,13 @@ async def alt_download_helper(c,ele,path,username,model_id):
     log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
 
-    audio=await alt_download_downloader(audio,c,ele,path)
-    video=await alt_download_downloader(video,c,ele,path)
+    audio=await alt_download_helper(audio,c,ele,path)
+    video=await alt_download_helper(video,c,ele,path)
 
     for m in [audio,video]:
         if not isinstance(m,dict):
             return m
-        check1=size_checker(m["path"],ele,m["total"])
+        check1=await size_checker(m["path"],ele,m["total"])
         check2=check_forced_skip(ele,m["total"])
         if check1:
             return check1
@@ -675,7 +689,6 @@ async def alt_download_helper(c,ele,path,username,model_id):
             return check2
 
         
-    
     for item in [audio,video]:
         key=None
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
@@ -694,15 +707,13 @@ async def alt_download_helper(c,ele,path,username,model_id):
             innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt failed")
             innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt {r.stderr.decode()}")
             innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt {r.stdout.decode()}")
-        else:
+        else:\
             innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt success {newpath}")    
         pathlib.Path(item["path"]).unlink(missing_ok=True)
         item["path"]=newpath
-    
-    path_to_file.unlink(missing_ok=True)
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    if t.stderr.decode().find("Output")==-1:
+    if t.stderr.decode().find( "Output")==-1:
         innerlog.get().debug(f"{get_medialog(ele)} ffmpeg failed")
         innerlog.get().debug(f"{get_medialog(ele)} ffmpeg {t.stderr.decode()}")
         innerlog.get().debug(f"{get_medialog(ele)} ffmpeg {t.stdout.decode()}")
@@ -710,7 +721,7 @@ async def alt_download_helper(c,ele,path,username,model_id):
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
     innerlog.get().debug(f"Moving intermediate path {temp_path} to {path_to_file}")
-    shutil.move(temp_path,path_to_file)
+    moveHelper(temp_path,path_to_file,ele)
     addLocalDir(path_to_file)
     if ele.postdate:
         newDate=dates.convert_local_time(ele.postdate)
@@ -750,12 +761,78 @@ async def alt_download_preparer(ele):
   
 
 
-async def alt_download_downloader(item,c,ele,path):
+@sem_wrapper    
+async def alt_download_runner(item,c,ele,path):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
-    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers"))
-    
+    if item["type"]=="video":_attempt=attempt
+    if item["type"]=="audio":_attempt=attempt2
+    _attempt.set(_attempt.get(0)+1) 
+    fileobject=None
+    item["total"]=item["total"] if _attempt.get()==1 else None
+    try:
+        total=item.get("total")
+        temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
+        if total==None:temp.unlink(missing_ok=True)
+        resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
+        if not total or total>resume_size:
+            headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
+            params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
+            item["path"]=temp
+            async with c.requests(url=url,headers=headers,params=params)() as l:                
+                if l.ok:
+                    pathstr=str(temp)
+                    item["total"]=int(total or (l.headers['content-length']))
+                    total=item["total"]
+                    if _attempt.get(0) + 1==1:await pipe_.coro_send(  (None, 0,total))
+                    data=l.headers
+                    await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                    check1=check_forced_skip(ele,item["total"])
+                    if check1:
+                        return check1
+                    innerlog.get().debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
+                    await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
+                                "total":total,"visible":False})
+                    await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})     
+                    count=0
+                    fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+                    async for chunk in l.iter_chunked(constants.maxChunkSizeB):
+                        count=count+1
+                        innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
+                        await fileobject.write(chunk)
+                        if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0
+                    await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
+
+                else:
+                    innerlog.get().debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
+                    innerlog.get().debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
+                    innerlog.get().debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
+                    l.raise_for_status()
+            await fileobject.close()
+            await size_checker(temp,ele,total) 
+        
+
+            await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
+        return item
+    except OSError as E:
+        log.traceback(E)
+        log.traceback(traceback.format_exc())
+        log.debug(f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}")   
+        log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
+        log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
+    except Exception as E:
+        innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+        innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")
+        raise E
+    finally:
+        try:
+            await fileobject.close()
+        except Exception as E:
+            raise None
+
+async def alt_download_helper(item,c,ele,path):
+    data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers")) 
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     item['path']=temp
     if data:
@@ -765,80 +842,24 @@ async def alt_download_downloader(item,c,ele,path):
         resume_size=0 if not pathlib.Path(temp).exists() else pathlib.Path(temp).absolute().stat().st_size
         if check1:
             return check1
+        elif item["total"]==resume_size:
+                return item
         elif item["total"]<resume_size:
                 pathlib.Path(temp).unlink(missing_ok=True)
     else:
         paths.truncate(pathlib.Path(path,f"{item['name']}.part")).unlink(missing_ok=True)
-    @retry(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-    @sem_wrapper    
-    async def inner(item,c,ele):
-        if item["type"]=="video":_attempt=attempt
-        if item["type"]=="audio":_attempt=attempt2
-        _attempt.set(_attempt.get(0)+1) 
-        fileobject=None
-        try:
-            total=item.get("total")
-            if total==None:temp.unlink(missing_ok=True)
-            resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
-            if total and _attempt.get(0) + 1==1:await pipe_.coro_send(  (None, 0,total))
-            if not total or total>resume_size:
-                headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
-                params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
-                item["path"]=temp
-                async with c.requests(url=url,headers=headers,params=params)() as l:                
-                    if l.ok:
-                        pathstr=str(temp)
-                        item["total"]=total or int(l.headers['content-length'])
-                        total=item["total"]
-                        data=l.headers
-                        await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
-                        check1=check_forced_skip(ele,item["total"])
-                        if check1:
-                            return check1
-                        innerlog.get().debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-                        await pipe_.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
-                                    "total":total,"visible":False})
-                        await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})     
-                        count=0
-                        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
-                        async for chunk in l.iter_chunked(constants.maxChunkSizeB):
-                            count=count+1
-                            innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
-                            await fileobject.write(chunk)
-                            if count==constants.CHUNK_ITER:await pipe_.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0
-                        await pipe_.coro_send({"type":"remove_task","args":(ele.id,)})
+    try:
+        async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
+            with _:
+                try:
+                    return await alt_download_runner(item,c,ele,path)
+                except Exception as E:
+                    innerlog.get().debug(f"{get_medialog(ele)} {E} {_.retry_state.attempt_number} alt expection")
+                    raise E
+    except Exception as E:
+        pass
 
-                    else:
-                        innerlog.get().debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
-                        innerlog.get().debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
-                        innerlog.get().debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
-                        l.raise_for_status()
-                await fileobject.close()
-                size_checker(temp,ele,total) 
-         
-
-                await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.touch,f"{ele.filename}_headers",1))
-            return item
-        except OSError as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
-            log.debug(f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}")   
-            log.debug(f" Number of unique open files across all processes-> {len(system.getOpenFiles())}")   
-            log.debug(f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}" )
-        except Exception as E:
-            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
-            innerlog.get().traceback(f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] {E}")
-            raise E
-        finally:
-            try:
-              await fileobject.close()
-            except Exception as E:
-                raise None
-
-    return await inner(item,c,ele)
-
-
-
+  
 
 @retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
 async def key_helper_cdrm(c,pssh,licence_url,id):
@@ -1035,7 +1056,14 @@ def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         cache.set(ele.postid ,True)
 
-
+def moveHelper(temp,path_to_file,ele):
+    if not path_to_file.exists():
+        shutil.move(temp,path_to_file)
+    elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
+        shutil.move(temp,path_to_file)
+    else:
+        pathlib.Path(temp).unlink(missing_ok=True)
+        innerlog.get().debug(f"{get_medialog(ele)} smaller then previous file")
 def addLocalDir(path):
     localdirSet.add(path.resolve().parent)
 def addGlobalDir(newSet):

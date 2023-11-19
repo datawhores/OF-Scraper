@@ -42,7 +42,7 @@ from unittest.mock import patch,MagicMock
     
 
 #     # try:
-#     #     assert(download.main_download_downloader("s",media,"t",0,"dd","ddd","dd"))
+#     #     assert(download.main_download_helper("s",media,"t",0,"dd","ddd","dd"))
 #     # except:
 #     #     None
       
