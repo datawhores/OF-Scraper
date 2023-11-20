@@ -9,7 +9,7 @@ from unittest.mock import patch,MagicMock
 # import logging
 # import random
 # import string
-# import ofscraper.utils.download as download
+#  import ofscraper.download.download as download
 # import ofscraper.utils.paths as paths
 # from random_unicode_emoji import random_emoji
 
@@ -18,7 +18,7 @@ from unittest.mock import patch,MagicMock
 # from ofscraper.classes.media import Media
 # from ofscraper.utils.dates import convert_local_time
 # # import ofscraper.utils.logger as logger
-# import ofscraper.utils.download as download
+#  import ofscraper.download.download as download
 
 
 # def test_user_data_dc_db_str(mocker):
@@ -42,7 +42,7 @@ from unittest.mock import patch,MagicMock
     
 
 #     # try:
-#     #     assert(download.main_download_helper("s",media,"t",0,"dd","ddd","dd"))
+#     #     assert(download.main_download_downloader("s",media,"t",0,"dd","ddd","dd"))
 #     # except:
 #     #     None
       

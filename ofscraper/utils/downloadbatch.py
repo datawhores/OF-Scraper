@@ -141,6 +141,15 @@ def reset_globals():
     dirSet=set()
     global dir_lock
     dir_lock=aioprocessing.AioLock()
+def setupProgressBar():
+    downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+    job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
+    overall_progress=Progress(  TextColumn("{task.description}"),
+    BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+    progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
+    progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+    return progress_group,  overall_progress,job_progress     
 
 
 def process_dicts(username,model_id,filtered_medialist):
@@ -169,14 +178,9 @@ def process_dicts(username,model_id,filtered_medialist):
 
         processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,cache,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
         [process.start() for process in processes]
-        downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-        job_progress=progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-            TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
-        overall_progress=Progress(  TextColumn("{task.description}"),
-        BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
-        progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
+        progress_group,overall_progress,job_progress=setupProgressBar()
         task1 = overall_progress.add_task(desc.format(p_count=photo_count, v_count=video_count,a_count=audio_count, skipped=skipped,mediacount=len(filtered_medialist), sumcount=video_count+audio_count+photo_count+skipped,forced_skipped=forced_skipped,data=data,total=total_data), total=len(filtered_medialist),visible=True)
-        progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+
         with stdout.lowstdout():
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                 queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
@@ -511,7 +515,7 @@ async def main_download(c,ele,path,username,model_id):
     innerlog.get().debug(f"{get_medialog(ele)} Downloading with normal downloader")
     if args_.getargs().metadata:
         return await metadata(c,ele,path,username,model_id) 
-    result=list(await main_download_helper(c,ele,path,username,model_id))
+    result=list(await main_download_downloader(c,ele,path,username,model_id))
     if len(result)==2 and result[-1]==0:
         return result
     total ,temp,path_to_file=result
@@ -544,7 +548,7 @@ async def main_download(c,ele,path,username,model_id):
 
 
  
-async def main_download_helper(c,ele,path,username,model_id):
+async def main_download_downloader(c,ele,path,username,model_id):
     try:
         async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
             with _:
@@ -577,14 +581,14 @@ async def main_download_helper(c,ele,path,username,model_id):
             with _:
                     try:
                         total=int(data.get("content-length")) if data else None
-                        return await main_download_runner(c,ele,path,username,model_id,total)
+                        return await main_download_sendreq(c,ele,path,username,model_id,total)
                     except Exception as E: 
                         raise E
     except Exception as E: 
                     raise E
 
 @sem_wrapper
-async def main_download_runner(c,ele,path,username,model_id,total):
+async def main_download_sendreq(c,ele,path,username,model_id,total):
     attempt.set(attempt.get(0) + 1) 
     fileobject=None
     total=total if attempt.get()==1 else None
@@ -629,6 +633,7 @@ async def main_download_runner(c,ele,path,username,model_id,total):
                         
                         fileobject= await aiofiles.open(temp, 'ab').__aenter__()
                         async for chunk in r.iter_chunked(constants.maxChunkSizeB):
+                            count=count+1
                             if downloadprogress:count=count+1
                             innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
                             await fileobject.write(chunk)
@@ -680,8 +685,8 @@ async def alt_download(c,ele,path,username,model_id):
     log.debug(f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}")
     audio,video=await alt_download_preparer(ele)
 
-    audio=await alt_download_helper(audio,c,ele,path)
-    video=await alt_download_helper(video,c,ele,path)
+    audio=await alt_download_downloader(audio,c,ele,path)
+    video=await alt_download_downloader(video,c,ele,path)
 
     for m in [audio,video]:
         if not isinstance(m,dict):
@@ -767,7 +772,7 @@ async def alt_download_preparer(ele):
 
 
 @sem_wrapper    
-async def alt_download_runner(item,c,ele,path):
+async def alt_download_sendreq(item,c,ele,path):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     innerlog.get().debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
@@ -836,7 +841,7 @@ async def alt_download_runner(item,c,ele,path):
         except Exception as E:
             raise None
 
-async def alt_download_helper(item,c,ele,path):
+async def alt_download_downloader(item,c,ele,path):
     data=await asyncio.get_event_loop().run_in_executor(cache_thread,partial( cache.get,f"{item['name']}_headers")) 
     temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
     item['path']=temp
@@ -858,7 +863,7 @@ async def alt_download_helper(item,c,ele,path):
         async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
             with _:
                 try:
-                    return await alt_download_runner(item,c,ele,path)
+                    return await alt_download_sendreq(item,c,ele,path)
                 except Exception as E:
                     innerlog.get().debug(f"{get_medialog(ele)} {E} {_.retry_state.attempt_number} alt expection")
                     raise E

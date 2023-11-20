@@ -21,7 +21,7 @@ import ofscraper.api.highlights as highlights
 import ofscraper.utils.console as console_
 import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
-import ofscraper.utils.download as download
+import ofscraper.download.download as download
 import ofscraper.db.operations as operations
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
