@@ -23,7 +23,23 @@ try:
 except ModuleNotFoundError:
     pass
 from tenacity import retry,stop_after_attempt,wait_random,AsyncRetrying
+from rich.progress import (
+    Progress,
+    TimeElapsedColumn,
+    DownloadColumn,
+    TransferSpeedColumn,
+    TextColumn,
+    TaskProgressColumn,
+    BarColumn,
+    TimeRemainingColumn
+)
+from rich.panel import Panel
+from rich.console import Group
+from rich.table import Column
+
+import aioprocessing
 import ofscraper.utils.config as config_
+import ofscraper.utils.console as console_
 import ofscraper.utils.paths as paths
 import ofscraper.constants as constants
 import ofscraper.utils.dates as dates
@@ -40,78 +56,75 @@ attempt = contextvars.ContextVar("attempt")
 attempt2 = contextvars.ContextVar("attempt")
 total_count = contextvars.ContextVar("total")
 total_count2 = contextvars.ContextVar("total")
-
-cache=None
-cache_thread=None
+innerlog = contextvars.ContextVar("innerlog")
+pipe=None
 log=None
-sem=None
-mpd_sem=None
-dirSet=None
-lock=None
-total_data=None
+localDirSet=None
 
 
-def get_sem():
-    global sem
-    if not sem:
-        sem=semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
-    return sem
 
 
-def get_cache_thread():
-    global cache_thread
-    if not cache_thread:
-        cache_thread=ThreadPoolExecutor(max_workers=1)
-    return cache_thread
-
-
-def get_cache():
-    global cache
-    if not cache:
-        cache= Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-
-    return cache
-
-def get_log():
-    global log
-    if not log:
-        log=logging.getLogger("ofscraper-download")
-    return log
-
-def get_dirSet():
-    global dirSet
-    if not dirSet:
-        dirSet=set()
-    return dirSet  
-
-def get_sem():
-    global mpd_sem
-    if not mpd_sem:
-        mpd_sem=semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
-    return mpd_sem
-
-def get_lock():
-    global lock
+def reset_globals():
     
-    if not lock:
-        lock=asyncio.Lock()
-    return lock
+    #reset globals
 
-def get_total_data():
+    global total_bytes_downloaded
+    total_bytes_downloaded = 0
+    global total_bytes
+    total_bytes=0
+    global photo_count
+    photo_count = 0
+    global video_count
+    video_count = 0
+    global audio_count
+    audio_count=0
+    global skipped
+    skipped = 0
+    global forced_skipped
+    forced_skipped=0
+    global data
+    data=0
     global total_data
-    if not total_data:
-        total_data=0
-get_log()
-get_sem()
-get_cache_thread()
-get_cache()
-get_dirSet()
-get_lock()
-get_total_data()
+    total_data=0
+    global desc
+    desc = 'Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})'   
+    global count_lock
+    count_lock=aioprocessing.AioLock()
+    global chunk_lock
+    chunk_lock=aioprocessing.AioLock()
+    
+
+    #global 
+    global thread
+    thread=ThreadPoolExecutor(max_workers=config_.get_download_semaphores(config_.read_config())*2) 
+    global sem
+    sem=semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))    
+    global cache_thread
+    cache_thread=ThreadPoolExecutor(max_workers=1)
+    global cache
+    cache= Cache(paths.getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
+    global dirSet
+    dirSet=set()
+    global mpd_sem
+    mpd_sem=semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+    global lock   
+    lock=asyncio.Lock()
+    global maxfile_sem
+    maxfile_sem = semaphoreDelayed(config_.get_maxfile_semaphores(config_.read_config()))
+    global console
+    console=console_.get_shared_console()
+    global localDirSet
+    localDirSet=set()
+
+
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
-
+def process_split_globals(pipeCopy,logCopy):
+    global pipe
+    global log
+    pipe=pipeCopy
+    log=logCopy   
 
 @singledispatch
 def sem_wrapper(*args, **kwargs):
@@ -127,7 +140,7 @@ def _(input_sem: semaphoreDelayed):
 @sem_wrapper.register
 def _(func:abc.Callable,input_sem:None|semaphoreDelayed=None):
     async def inner(*args,input_sem=input_sem,**kwargs):
-        if input_sem==None:input_sem=get_sem()
+        if input_sem==None:input_sem=sem
         await input_sem.acquire()
         try:  
             return await func(*args,**kwargs) 
@@ -137,6 +150,15 @@ def _(func:abc.Callable,input_sem:None|semaphoreDelayed=None):
             input_sem.release()  
     return inner
 
+def setupProgressBar():
+    downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
+    job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
+    overall_progress=Progress(  TextColumn("{task.description}"),
+    BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
+    progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
+    progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+    return progress_group,  overall_progress,job_progress     
 
 
 
@@ -173,20 +195,21 @@ def path_to_file_helper(filename,ele,path,logout=False):
     return path_to_file
 
 
-def check_forced_skip(ele,*args): 
+async def check_forced_skip(ele,path_to_file,*args): 
     total=sum(map(lambda x:int(x),args))  
 
     file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(config_.read_config()) 
     file_size_min=args_.getargs().size_min or config_.get_filesize_limit(config_.read_config()) 
       
     if total==0:
+        if ele.id:await operations.update_media_table(ele,filename=path_to_file,model_id=ele.post.model_id,username=ele.post.username,downloaded=path_to_file.exists())
         return ele.mediatype,0
     if int(file_size_limit)>0 and int(total) > int(file_size_limit): 
         log.debug(f"{get_medialog(ele)} over size limit") 
-        return 'forced_skipped', 1 
+        return 'forced_skipped', 0 
     elif int(file_size_min)>0 and int(total) < int(file_size_min): 
         log.debug(f"{get_medialog(ele)} under size min") 
-        return 'forced_skipped', 1 
+        return 'forced_skipped', 0 
 
 
 async def metadata(c,ele,path,username,model_id,filename=None,path_to_file=None):
@@ -260,18 +283,27 @@ async def set_cache_helper(ele):
     if  ele.postid and ele.responsetype_=="profile":
         await asyncio.get_event_loop().run_in_executor(cache_thread,partial(  cache.set,ele.postid ,True))
 
-def moveHelper(temp,path_to_file,ele):
+def moveHelper(temp,path_to_file,ele,log_=None):
+
     if not path_to_file.exists():
         shutil.move(temp,path_to_file)
     elif pathlib.Path(temp).absolute().stat().st_size>=pathlib.Path(path_to_file).absolute().stat().st_size: 
         shutil.move(temp,path_to_file)
     else:
         pathlib.Path(temp).unlink(missing_ok=True)
-        log.debug(f"{get_medialog(ele)} smaller then previous file")
+        log_=log_ or log
+        log_.debug(f"{get_medialog(ele)} smaller then previous file")
 
-def addGlobalDir(path):
-    dirSet.add(path.parent)
 
+def addGlobalDir(input):
+    if input==isinstance(input,pathlib.PosixPath):
+        dirSet.add(input.parent)
+    else:
+        dirSet.update(input)
+def addLocalDir(path):
+
+
+    localDirSet.add(path.resolve().parent)
 
 def setDirectoriesDate():
     log.info("Setting Date for modified directories")
