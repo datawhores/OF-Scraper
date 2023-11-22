@@ -168,6 +168,7 @@ async def main_download_datahandler(r,ele,total,temp,path_to_file):
                         "total":total,"visible":False})
             
             fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+            await  common.pipe.coro_send({"type":"update","args":(ele.id,),"visible":True})
             async for chunk in r.iter_chunked(constants.maxChunkSizeB):
                 count=count+1
                 if downloadprogress:count=count+1

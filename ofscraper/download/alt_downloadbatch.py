@@ -168,9 +168,11 @@ async def alt_download_datahandler(item,l,ele):
     pathstr=str(temp)
     try:
         count=0
-        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
         await common.pipe.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
                                 "total":total,"visible":False})
+        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+        await  common.pipe.coro_send({"type":"update","args":(ele.id,),"visible":True})
+
         async for chunk in l.iter_chunked(constants.maxChunkSizeB):
             count=count+1
             common.innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")

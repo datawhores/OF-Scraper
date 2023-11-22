@@ -64,7 +64,7 @@ def process_dicts(username,model_id,filtered_medialist):
 
         processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
         [process.start() for process in processes]
-        progress_group,overall_progress,job_progress=setupProgressBar()
+        progress_group,overall_progress,job_progress=setupProgressBar(multi=True)
         task1 = overall_progress.add_task(common.desc.format(p_count=common.photo_count, v_count=common.video_count,a_count=common.audio_count, 
         skipped=common.skipped,mediacount=len(filtered_medialist), sumcount=common.video_count+common.audio_count+
         common.photo_count+common.skipped,forced_skipped=common.forced_skipped,data=common.data,total=common.total_data), total=len(filtered_medialist),visible=True)
@@ -186,9 +186,6 @@ def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
                 raise E
             except Exception as E:
                 raise E
-
-
-
 def job_progress_helper(job_progress,result):
     funct={
       "add_task"  :job_progress.add_task,

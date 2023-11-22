@@ -32,11 +32,14 @@ from rich.progress import (
     BarColumn,
     TimeRemainingColumn
 )
+
 from rich.panel import Panel
 from rich.console import Group
 from rich.table import Column
 
 import aioprocessing
+from   ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
+
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
 import ofscraper.utils.paths as paths
@@ -149,10 +152,12 @@ def _(func:abc.Callable,input_sem:None|semaphoreDelayed=None):
             input_sem.release()  
     return inner
 
-def setupProgressBar():
+def setupProgressBar(multi=False):
     downloadprogress=config_.get_show_downloadprogress(config_.read_config()) or args_.getargs().downloadbars
-    job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
-        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())      
+    if not multi: job_progress=Progress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn())   
+    else:job_progress=MultiProgress(TextColumn("{task.description}",table_column=Column(ratio=2)),BarColumn(),
+        TaskProgressColumn(),TimeRemainingColumn(),TransferSpeedColumn(),DownloadColumn()) 
     overall_progress=Progress(  TextColumn("{task.description}"),
     BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
     progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
