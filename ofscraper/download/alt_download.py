@@ -29,7 +29,6 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 import ofscraper.classes.sessionbuilder as sessionbuilder
-
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
@@ -130,12 +129,17 @@ async def alt_download_preparer(ele):
 async def un_encrypt(item,c,ele):
     key=None
     keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
+    past_key=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,ele.license))
+    if past_key:
+        key=past_key
+        common.log.debug(f"ID:{ele.id} cdrm auto key helper got key from cache")
     if  keymode== "manual": key=await key_helper_manual(c,item["pssh"],ele.license,ele.id)  
     elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
     elif keymode=="cdrm": key=await key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
     elif keymode=="cdrm2": key=await key_helper_cdrm2(c,item["pssh"],ele.license,ele.id) 
     if key==None:
         raise Exception(f"{get_medialog(ele)} Could not get key")
+    await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,ele.license,key, expire=constants.KEY_EXPIRY))
     common.log.debug(f"{get_medialog(ele)} got key")
     newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
     common.log.debug(f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
@@ -177,7 +181,7 @@ async def alt_download_sendreq(item,c,ele,path,path_to_file,progress):
                 if l.ok:
                     item["total"]=int(total or (l.headers['content-length']))
                     total=item["total"]
-                    if common.attempt.get(0) + 1==1:await update_total(total)
+                    if _attempt.get(0) + 1==1:await update_total(total)
                     check1=await check_forced_skip(ele,path_to_file,item["total"])
 
 
@@ -198,8 +202,8 @@ async def alt_download_sendreq(item,c,ele,path,path_to_file,progress):
         common.log.debug(f"Number of Open Files -> { len(psutil.Process().open_files())}")      
         common.log.debug(f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}")              
     except Exception as E:
-        common.log.traceback(f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
-        common.log.traceback(f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {E}")  
+        common.log.traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
+        common.log.traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}")  
         raise E
     finally:
         #Close file if needed
@@ -224,7 +228,7 @@ async def alt_download_datahandler(item,l,ele,progress,path):
             if downloadprogress:count=count+1
             common.log.trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
             await fileobject.write(chunk)
-            if count==constants.CHUNK_ITER:await loop.run_in_executor(thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
+            if count==constants.CHUNK_ITER:await loop.run_in_executor(common.thread,partial( progress.update,task1, completed=pathlib.Path(path).absolute().stat().st_size));count=0
         data=l.headers
         await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))            
     except Exception as E:
@@ -281,12 +285,8 @@ async def alt_download_downloader(item,c,ele,path,path_to_file,progress):
 async def key_helper_cdrm(c,pssh,licence_url,id):
     common.log.debug(f"ID:{id} using cdrm auto key helper")
     try:
-        out=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,licence_url))
         common.log.debug(f"ID:{id} pssh: {pssh!=None}")
         common.log.debug(f"ID:{id} licence: {licence_url}")
-        if out!=None:
-            common.log.debug(f"ID:{id} cdrm auto key helper got key from cache")
-            return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
         auth.create_sign(licence_url,headers)
@@ -304,7 +304,6 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
                 common.log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
                 out=soup.find("li").contents[0]
-                await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 common.log.debug(f"[bold]  key helper cdrm status[/bold]: {r.status}")
                 common.log.debug(f"[bold]  key helper cdrm text [/bold]: {await r.text_()}")
@@ -321,12 +320,8 @@ async def key_helper_cdrm(c,pssh,licence_url,id):
 async def key_helper_cdrm2(c,pssh,licence_url,id):
     common.log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
-        out=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,licence_url))
         common.log.debug(f"ID:{id} pssh: {pssh!=None}")
         common.log.debug(f"ID:{id} licence: {licence_url}")
-        if out!=None:
-            common.log.debug(f"ID:{id} cdrm2 auto key helper got key from cache")
-            return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
         auth.create_sign(licence_url,headers)
@@ -344,7 +339,6 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
                 common.log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, 'html.parser')
                 out=soup.find("li").contents[0]
-                await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             else:
                 common.log.debug(f"[bold]  key helper cdrm2 status[/bold]: {r.status}")
                 common.log.debug(f"[bold]  key helper cdrm2 text [/bold]: {await r.text_()}")
@@ -361,12 +355,8 @@ async def key_helper_cdrm2(c,pssh,licence_url,id):
 async def key_helper_keydb(c,pssh,licence_url,id):
     common.log.debug(f"ID:{id} using keydb auto key helper")
     try:
-        out=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,licence_url))
         common.log.debug(f"ID:{id} pssh: {pssh!=None}")
         common.log.debug(f"ID:{id} licence: {licence_url}")
-        if out!=None:
-            common.log.debug(f"ID:{id} keydb auto key helper got key from cache")
-            return out
         headers=auth.make_headers(auth.read_auth())
         headers["cookie"]=auth.get_cookies()
         auth.create_sign(licence_url,headers)
@@ -416,10 +406,6 @@ async def key_helper_manual(c,pssh,licence_url,id):
     async with sessionbuilder.sessionBuilder(backend="aio") as c:
         common.log.debug(f"ID:{id} using manual key helper")
         try:
-            out=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,licence_url))
-            if out!=None:
-                common.log.debug(f"ID:{id} manual key helper got key from cache")
-                return out
             common.log.debug(f"ID:{id} pssh: {pssh!=None}")
             common.log.debug(f"ID:{id} licence: {licence_url}")
 
@@ -452,7 +438,6 @@ async def key_helper_manual(c,pssh,licence_url,id):
 
             
             key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-            await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,licence_url,out, expire=constants.KEY_EXPIRY))
             return key
         except Exception as E:
             common.log.traceback(E)

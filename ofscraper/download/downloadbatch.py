@@ -8,7 +8,6 @@ import random
 import threading
 import logging
 import logging.handlers
-import contextvars
 from rich.live import Live
 import more_itertools
 import aioprocessing
@@ -22,7 +21,6 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.exit as exit
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.system as system
@@ -31,7 +29,7 @@ import ofscraper.utils.manager as manager_
 from ofscraper.download.common import addGlobalDir,get_medialog,setDirectoriesDate,\
 reset_globals,convert_num_bytes,setupProgressBar,process_split_globals
 from ofscraper.download.main_downloadbatch import main_download
-# import ofscraper.download.alt_downloadbatch as altdownload
+from ofscraper.download.alt_downloadbatch import alt_download
 import ofscraper.download.common as common
 
 
@@ -285,8 +283,8 @@ async def download(c,ele,model_id,username):
                 with paths.set_directory(placeholder.Placeholders().getmediadir(ele,username,model_id)):
                     if ele.url:
                         return await main_download(c,ele,pathlib.Path(".").absolute(),username,model_id)
-                    # elif ele.mpd:
-                        # return await alt_download(c,ele,pathlib.Path(".").absolute(),username,model_id)
+                    elif ele.mpd:
+                        return await alt_download(c,ele,pathlib.Path(".").absolute(),username,model_id)
         except Exception as e:
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {e}")   
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
