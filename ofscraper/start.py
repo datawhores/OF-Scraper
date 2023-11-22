@@ -42,7 +42,7 @@ def main():
         else: other_log_thread=logger.start_other_thread(event=other_event)
         # allow background processes to start
         time.sleep(3)
-
+  
    
     
 

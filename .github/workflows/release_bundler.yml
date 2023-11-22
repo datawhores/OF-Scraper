@@ -94,7 +94,7 @@ jobs:
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+                /root/.local/bin/poetry run pyinstaller /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -114,7 +114,7 @@ jobs:
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+                /root/.local/bin/poetry run pyinstaller /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
                 zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload zip
         uses: actions/upload-artifact@v3

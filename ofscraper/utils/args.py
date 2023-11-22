@@ -240,6 +240,8 @@ def getargs(input=None):
     elif input==None:
         input=sys.argv[1:]
 
+ 
+
 
     parser=create_parser(input)
 
@@ -265,6 +267,7 @@ def getargs(input=None):
         raise argparse.ArgumentTypeError("error: argument missing --username or --file must be specified )")
     elif args.command in set(["manual"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
+    print(args)
     return args
 
 
