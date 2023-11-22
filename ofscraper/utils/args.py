@@ -8,7 +8,7 @@ from ofscraper.__version__ import __version__
 import ofscraper.constants as constants
 args=None
 def create_parser(input=None):
-    parent_parser=argparse.ArgumentParser(add_help=False)
+    parent_parser=argparse.ArgumentParser(add_help=False,allow_abbrev=False)
     general=parent_parser.add_argument_group("Program",description="Program Args")  
     general.add_argument('-v', '--version', action='version', version=__version__ ,default=__version__)
     general.add_argument(
