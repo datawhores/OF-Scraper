@@ -48,7 +48,6 @@ def download_picker(username, model_id, medialist):
                     medialist
                     )
     
-
 def check_cdm():
     with stdout.lowstdout():
         console=console_.get_shared_console()

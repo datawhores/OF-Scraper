@@ -14,7 +14,6 @@ import math
 import pathlib
 import platform
 import shutil
-import logging
 import contextvars
 
 from functools import singledispatch,partial
@@ -157,7 +156,7 @@ def setupProgressBar():
     overall_progress=Progress(  TextColumn("{task.description}"),
     BarColumn(),TaskProgressColumn(),TimeElapsedColumn())
     progress_group = Group(overall_progress,Panel(Group(job_progress,fit=True)))
-    progress_group.renderables[1].height=max(15,console.get_shared_console().size[1]-2) if downloadprogress else 0
+    progress_group.renderables[1].height=max(15,console_.get_shared_console().size[1]-2) if downloadprogress else 0
     return progress_group,  overall_progress,job_progress     
 
 
