@@ -296,7 +296,7 @@ def moveHelper(temp,path_to_file,ele,log_=None):
 
 
 def addGlobalDir(input):
-    if input==isinstance(input,pathlib.PosixPath):
+    if isinstance(input,pathlib.PosixPath):
         dirSet.add(input.parent)
     else:
         dirSet.update(input)
@@ -321,3 +321,5 @@ def setDirectoriesDate():
     log.debug(f"Directories list {output}")
     for ele in output:
         set_time(ele,dates.get_current_time())
+
+

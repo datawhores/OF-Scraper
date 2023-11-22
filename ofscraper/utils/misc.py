@@ -36,12 +36,7 @@ def medialist_filter(medialist,model_id,username):
 def download_picker(username, model_id, medialist):
     medialist=medialist_filter(medialist,model_id,username)
     return batchdownloader.process_dicts(username, model_id, medialist)
-        
-    return download.process_dicts(
-                    username,
-                    model_id,
-                    medialist
-                    )
+
    
     if len(medialist)==0:
         logging.getLogger("shared").error(f'[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)' )

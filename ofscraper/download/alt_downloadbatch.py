@@ -1,6 +1,5 @@
 import asyncio
 import re
-import json
 import pathlib
 import subprocess
 import traceback
@@ -8,17 +7,11 @@ from functools import singledispatch,partial
 from tenacity import retry,stop_after_attempt,wait_random,AsyncRetrying,retry_if_not_exception_type
 import aiofiles
 import arrow
-from bs4 import BeautifulSoup
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
-from pywidevine.cdm import Cdm
-from pywidevine.device import Device
-from pywidevine.pssh import PSSH
-import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.logger as logger
-import ofscraper.utils.auth as auth
 import ofscraper.utils.dates as dates
 import ofscraper.db.operations as operations
 import ofscraper.utils.config as config_
@@ -32,6 +25,7 @@ import ofscraper.utils.system as system
 from ofscraper.download.common import get_medialog,check_forced_skip,sem_wrapper,get_medialog \
 ,size_checker,moveHelper,addLocalDir,set_time
 import ofscraper.download.common as common
+import ofscraper.download.keyhelpers as keyhelpers
                 
         
 
@@ -64,7 +58,8 @@ async def alt_download(c,ele,path,username,model_id):
         if check2:
             return check2
     for item in [audio,video]:
-        item=await un_encrypt(item,c,ele)
+        item=await keyhelpers.un_encrypt(item,c,ele,common.innerlog.get())
+
     temp_path.unlink(missing_ok=True)
     t=subprocess.run([config_.get_ffmpeg(config_.read_config()),"-i",str(video["path"]),"-i",str(audio["path"]),"-c","copy","-movflags", "use_metadata_tags",str(temp_path)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     if t.stderr.decode().find( "Output")==-1:
@@ -123,47 +118,36 @@ async def alt_download_sendreq(item,c,ele,path_to_file):
     if item["type"]=="video":_attempt=common.attempt
     if item["type"]=="audio":_attempt=common.attempt2
     _attempt.set(_attempt.get(0)+1) 
-    fileobject=None
     item["total"]=item["total"] if _attempt.get()==1 else None
+
     try:
         total=item.get("total")
         temp= paths.truncate(pathlib.Path(path_to_file,f"{item['name']}.part"))
         if total==None:temp.unlink(missing_ok=True)
         resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size
+        
         if not total or total>resume_size:
             headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
             params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
             item["path"]=temp
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
-                    pathstr=str(temp)
                     item["total"]=int(total or (l.headers['content-length']))
                     total=item["total"]
                     if _attempt.get(0) + 1==1:await common.pipe.coro_send(  (None, 0,total))
-                    data=l.headers
-                    await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+                    await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":l.headers.get("content-length"),"content-type":l.headers.get("content-type")}))
                     check1=await check_forced_skip(ele,path_to_file,item["total"])
                     if check1:
                         return check1
                     common.innerlog.get().debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-                    await common.pipe.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
-                                "total":total,"visible":False})
-                    await common.pipe.coro_send({"type":"update","args":(ele.id,),"completed":resume_size,"visible":True})     
-                    count=0
-                    fileobject= await aiofiles.open(temp, 'ab').__aenter__()
-                    async for chunk in l.iter_chunked(constants.maxChunkSizeB):
-                        count=count+1
-                        common.innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
-                        await fileobject.write(chunk)
-                        if count==constants.CHUNK_ITER:await common.pipe.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0
-                    await common.pipe.coro_send({"type":"remove_task","args":(ele.id,)})
+                    await alt_download_datahandler(item,l,ele)        
 
                 else:
                     common.innerlog.get().debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
                     common.innerlog.get().debug(f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}")
                     common.innerlog.get().debug(f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}")   
                     l.raise_for_status()
-            await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":data.get("content-length"),"content-type":data.get("content-type")}))
+            await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":l.headers.get("content-length"),"content-type":l.headers.get("content-type")}))
             await size_checker(temp,ele,total) 
         
         return item
@@ -177,11 +161,37 @@ async def alt_download_sendreq(item,c,ele,path_to_file):
         common.innerlog.get().traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
         common.innerlog.get().traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}")
         raise E
+
+async def alt_download_datahandler(item,l,ele):
+    total=item["total"]
+    temp= item["path"]
+    pathstr=str(temp)
+    try:
+        count=0
+        fileobject= await aiofiles.open(temp, 'ab').__aenter__()
+        await common.pipe.coro_send({"type":"add_task","args":(f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",ele.id),
+                                "total":total,"visible":False})
+        async for chunk in l.iter_chunked(constants.maxChunkSizeB):
+            count=count+1
+            common.innerlog.get().trace(f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}")
+            await fileobject.write(chunk)
+            if count==constants.CHUNK_ITER:await common.pipe.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0
+    except Exception as E:
+        raise E
     finally:
+        #Close file if needed
         try:
             await fileobject.close()
         except Exception as E:
-            raise None
+            None
+
+        try:
+            await common.pipe.coro_send({"type":"remove_task","args":(ele.id,)})
+        except Exception as E:
+            None
+
+
+
 
 async def alt_download_downloader(item,c,ele,path_to_file):
     data=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,f"{item['name']}_headers")) 
@@ -212,173 +222,3 @@ async def alt_download_downloader(item,c,ele,path_to_file):
     except Exception as E:
         pass
 
-async def un_encrypt(item,c,ele):
-    key=None
-    keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
-
-    past_key=await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.get,ele.license))
-    if past_key:
-        key=past_key
-        common.log.debug(f"ID:{ele.id} cdrm auto key helper got key from cache")
-    elif  keymode== "manual": key=await key_helper_manual(item["pssh"],ele.license,ele.id)  
-    elif keymode=="keydb":key=await key_helper_keydb(c,item["pssh"],ele.license,ele.id)  
-    elif keymode=="cdrm": key=await key_helper_cdrm(c,item["pssh"],ele.license,ele.id)  
-    elif keymode=="cdrm2": key=await key_helper_cdrm2(c,item["pssh"],ele.license,ele.id) 
-    
-    if key==None:
-        raise Exception(f"{get_medialog(ele)} Could not get key")
-    await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,ele.license,key, expire=constants.KEY_EXPIRY))
-    common.innerlog.get().debug(f"{get_medialog(ele)} got key")
-    newpath=pathlib.Path(re.sub("\.part$","",str(item["path"]),re.IGNORECASE))
-    common.innerlog.get().debug(f"{get_medialog(ele)}  renaming {pathlib.Path(item['path']).absolute()} -> {newpath}")   
-    r=subprocess.run([config_.get_mp4decrypt(config_.read_config()),"--key",key,str(item["path"]),str(newpath)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    if not pathlib.Path(newpath).exists():
-        common.innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt failed")
-        common.innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt {r.stderr.decode()}")
-        common.innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt {r.stdout.decode()}")
-    else:
-        common.innerlog.get().debug(f"{get_medialog(ele)} mp4decrypt success {newpath}")    
-    pathlib.Path(item["path"]).unlink(missing_ok=True)
-    item["path"]=newpath
-    return item
-
-
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def key_helper_cdrm(c,pssh,licence_url,id):
-    common.log.debug(f"ID:{id} using cdrm auto key helper")
-    try:
-        common.log.debug(f"ID:{id} pssh: {pssh!=None}")
-        common.log.debug(f"ID:{id} licence: {licence_url}")
-        headers=auth.make_headers(auth.read_auth())
-        headers["cookie"]=auth.get_cookies()
-        auth.create_sign(licence_url,headers)
-        json_data = {
-            'license': licence_url,
-            'headers': json.dumps(headers),
-            'pssh': pssh,
-            'buildInfo': '',
-            'proxy': '',
-            'cache': True,
-        }
-        async with c.requests(url=constants.CDRM,method="post",json=json_data)() as r:
-            httpcontent=await r.text_()
-            common.log.debug(f"ID:{id} key_response: {httpcontent}")
-            soup = BeautifulSoup(httpcontent, 'html.parser')
-            out=soup.find("li").contents[0]          
-        return out
-
-    except Exception as E:
-        common.log.traceback(E)
-        common.log.traceback(traceback.format_exc())
-        raise E 
-
-     
-
-
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def key_helper_cdrm2(c,pssh,licence_url,id):
-    common.innerlog.get().debug(f"ID:{id} using cdrm auto key helper")
-    try:
-        common.innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-        common.innerlog.get().debug(f"ID:{id} licence: {licence_url}")
-        headers=auth.make_headers(auth.read_auth())
-        headers["cookie"]=auth.get_cookies()
-        auth.create_sign(licence_url,headers)
-        json_data = {
-            'license': licence_url,
-            'headers': json.dumps(headers),
-            'pssh': pssh,
-            'buildInfo': 'google/sdk_gphone_x86/generic_x86:8.1.0/OSM1.180201.037/6739391:userdebug/dev-keys',
-            'proxy': '',
-            'cache': True,
-        }
-        async with c.requests(url=constants.CDRM2,method="post",json=json_data)() as r:
-            httpcontent=await r.text_()
-            common.innerlog.get().debug(f"ID:{id} key_response: {httpcontent}")
-            soup = BeautifulSoup(httpcontent, 'html.parser')
-            out=soup.find("li").contents[0]
-        return out
-    except Exception as E:
-        common.innerlog.get().traceback(E)
-        common.innerlog.get().traceback(traceback.format_exc())
-        raise E
-
-
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def key_helper_keydb(c,pssh,licence_url,id):
-    common.innerlog.get().debug(f"ID:{id} using keydb auto key helper")
-    try:
-        common.innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-        common.innerlog.get().debug(f"ID:{id} licence: {licence_url}")
-        headers=auth.make_headers(auth.read_auth())
-        headers["cookie"]=auth.get_cookies()
-        auth.create_sign(licence_url,headers)
-        json_data = {
-            'license_url': licence_url,
-            'headers': json.dumps(headers),
-            'pssh': pssh,
-            'buildInfo': '',
-            'proxy': '',
-            'cache': True,
-        }
-  
-        headers = {
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Ktesttemp, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
-            "Content-Type": "application/json",
-            "X-API-Key": config_.get_keydb_api(config_.read_config()),
-        }
-   
-        async with c.requests(url=constants.KEYDB,method="post",json=json_data,headers=headers)() as r:            
-            data=await r.json()
-            common.innerlog.get().debug(f"keydb json {data}")
-            if  isinstance(data,str): out=data
-            elif isinstance(data["keys"][0],str):
-                out=data["keys"][0]
-            elif  isinstance(data["keys"][0],object):
-                 out==data["keys"][0]["key"]
-        return out
-    except Exception as E:
-        common.innerlog.get().traceback(E)
-        common.innerlog.get().traceback(traceback.format_exc())
-        raise E
-
-
-       
-@retry(retry=retry_if_not_exception_type(KeyboardInterrupt),stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True) 
-async def key_helper_manual(pssh,licence_url,id):
-    common.innerlog.get().debug(f"ID:{id} using manual key helper")
-    async with sessionbuilder.sessionBuilder(backend="aio") as c:
-        try:
-            common.innerlog.get().debug(f"ID:{id} pssh: {pssh!=None}")
-            common.innerlog.get().debug(f"ID:{id} licence: {licence_url}")
-
-            # prepare pssh
-            pssh = PSSH(pssh)
-
-
-            # load device
-            private_key=pathlib.Path(config_.get_private_key(config_.read_config())).read_bytes()
-            client_id=pathlib.Path(config_.get_client_id(config_.read_config())).read_bytes()
-            device = Device(security_level=3,private_key=private_key,client_id=client_id,type_="ANDROID",flags=None)
-
-
-            # load cdm
-            cdm = Cdm.from_device(device)
-
-            # open cdm session
-            session_id = cdm.open()
-
-            
-            keys=None
-            challenge = cdm.get_license_challenge(session_id, pssh)
-            async with c.requests(url=licence_url,method="post",data=challenge)() as r:            
-                cdm.parse_license(session_id, (await r.content.read()))
-                keys = cdm.get_keys(session_id)
-                cdm.close(session_id)
-            keyobject=list(filter(lambda x:x.type=="CONTENT",keys))[0]
-            key="{}:{}".format(keyobject.kid.hex,keyobject.key.hex())
-            return key
-        except Exception as E:
-            common.innerlog.get().traceback(E)
-            common.innerlog.get().traceback(traceback.format_exc())
-            raise E 

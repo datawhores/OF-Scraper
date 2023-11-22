@@ -39,7 +39,6 @@ platform_name=platform.system()
  
 
 def process_dicts(username,model_id,filtered_medialist):
-    reset_globals()
     log=logging.getLogger("shared")
     common.log=log
     try:
@@ -114,8 +113,8 @@ def process_dicts(username,model_id,filtered_medialist):
             with exit.DelayedKeyboardInterrupt():
                 raise E
     log.error(f'[bold]{username}[/bold] ({common.photo_count+common.audio_count+common.video_count} \
-              downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
-              {common.forced_skipped} skipped, {common.skipped} failed)' )
+downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
+{common.forced_skipped} skipped, {common.skipped} failed)' )
     return common.photo_count,common.video_count,common.audio_count,common.forced_skipped,common.skipped
 
 
@@ -267,11 +266,8 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
    
  
 
-
-
 def pid_log_helper():
     return f"PID: {os.getpid()}"  
-
 
 
 async def download(c,ele,model_id,username):
@@ -289,5 +285,9 @@ async def download(c,ele,model_id,username):
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {e}")   
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")   
             # we can put into seperate otherqueue_
-            common.log.handlers[1].queue.put(list(common.innerlog.get().handlers[1].queue.queue))
             return "skipped",0
+        finally:
+            common.log.handlers[1].queue.put(list(common.innerlog.get().handlers[1].queue.queue))
+            common.log.handlers[0].queue.put(list(common.innerlog.get().handlers[0].queue.queue))
+
+
