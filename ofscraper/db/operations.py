@@ -104,8 +104,10 @@ def operation_wrapper(func:abc.Callable):
             except Exception as E:
                 raise E   
             finally:
-                conn.close()
-                lock.release(force=True)
+                try:conn.close()
+                except:None
+                try:lock.release(force=True)
+                except:None
                 log.trace("Force Closing DB") 
                
     return inner
