@@ -52,7 +52,9 @@ def check_cdm():
     with stdout.lowstdout():
         console=console_.get_shared_console()
         log=logging.getLogger("shared")
+
         keymode=(args_.getargs().key_mode or config_.get_key_mode(config_.read_config()) or "cdrm")
+        console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
         if  keymode== "manual":\
         console.print("[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]");return True
         elif keymode=="keydb":url=constants.KEYDB

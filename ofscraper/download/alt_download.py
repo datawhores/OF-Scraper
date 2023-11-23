@@ -227,7 +227,6 @@ async def alt_download_downloader(item,c,ele,path,path_to_file,progress):
                     try:
                         return await alt_download_sendreq(item,c,ele,path,path_to_file,progress)
                     except Exception as E:
-                        common.log.debug(f"{get_medialog(ele)} {E} {_.retry_state.attempt_number} alt sendtreq expection")
                         raise E
     except Exception as E:
         pass
