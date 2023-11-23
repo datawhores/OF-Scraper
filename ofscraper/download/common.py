@@ -300,7 +300,7 @@ def moveHelper(temp,path_to_file,ele,log_=None):
 
 
 def addGlobalDir(input):
-    if isinstance(input,pathlib.PosixPath):
+    if isinstance(input,pathlib.Path):
         dirSet.add(input.parent)
     else:
         dirSet.update(input)
