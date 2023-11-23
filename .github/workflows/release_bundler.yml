@@ -309,11 +309,15 @@ jobs:
         id: commit
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
+
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-          tag: ${{inputs.version}}
+          tag: "${{steps.date.outputs.date}}_${{inputs.version}}"
           allowUpdates: True
           omitBodyDuringUpdate: True
           omitDraftDuringUpdate: True
