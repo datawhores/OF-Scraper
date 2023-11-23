@@ -130,7 +130,7 @@ async def main_download_sendreq(c,ele,path,username,model_id,progress,total):
             headers=None if not pathlib.Path(temp).exists() else {"Range":f"bytes={resume_size}-{total}"}               
             async with c.requests(url=url,headers=headers)()  as r:
                     if r.ok:
-                        total=int(total or r.headers['content-length'])
+                        total=int(r.headers['content-length'])
                         if common.attempt.get()==1:await update_total(total)
                         content_type = r.headers.get("content-type").split('/')[-1]
                         if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"

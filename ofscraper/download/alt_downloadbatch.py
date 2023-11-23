@@ -23,7 +23,7 @@ import ofscraper.classes.placeholder as placeholder
 from ofscraper.utils.run_async import run
 import ofscraper.utils.system as system
 from ofscraper.download.common import get_medialog,check_forced_skip,sem_wrapper,get_medialog \
-,size_checker,moveHelper,addLocalDir,set_time
+,size_checker,moveHelper,addLocalDir,set_time,get_item_total
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
                 
@@ -49,6 +49,7 @@ async def alt_download(c,ele,path,username,model_id):
     video=await alt_download_downloader(video,c,ele,path)
 
     for m in [audio,video]:
+        m["total"]=get_item_total(m)
         if not isinstance(m,dict):
             return m
         check1=await size_checker(m["path"],ele,m["total"])
@@ -77,8 +78,7 @@ async def alt_download(c,ele,path,username,model_id):
         common.innerlog.get().debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
-    return ele.mediatype,audio["total"]+video["total"]
-
+    return ele.mediatype,video["total"]+audio["total"]
 async def alt_download_preparer(ele):
     mpd=await ele.parse_mpd
     for period in mpd.periods:
@@ -132,15 +132,14 @@ async def alt_download_sendreq(item,c,ele,path_to_file):
             item["path"]=temp
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
-                    item["total"]=int(total or (l.headers['content-length']))
-                    total=item["total"]
+                    total=int(l.headers['content-length'])
                     if _attempt.get(0) + 1==1:await common.pipe.coro_send(  (None, 0,total))
                     await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":l.headers.get("content-length"),"content-type":l.headers.get("content-type")}))
-                    check1=await check_forced_skip(ele,path_to_file,item["total"])
+                    check1=await check_forced_skip(ele,path_to_file,total)
                     if check1:
                         return check1
                     common.innerlog.get().debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-                    await alt_download_datahandler(item,l,ele)        
+                    await alt_download_datahandler(item,total,l,ele)        
 
                 else:
                     common.innerlog.get().debug(f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}")
@@ -162,8 +161,7 @@ async def alt_download_sendreq(item,c,ele,path_to_file):
         common.innerlog.get().traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}")
         raise E
 
-async def alt_download_datahandler(item,l,ele):
-    total=item["total"]
+async def alt_download_datahandler(item,total,l,ele):
     temp= item["path"]
     pathstr=str(temp)
     try:

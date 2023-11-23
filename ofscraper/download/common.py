@@ -327,3 +327,5 @@ def setDirectoriesDate():
         set_time(ele,dates.get_current_time())
 
 
+def get_item_total(item):
+    return item["path"].absolute().stat().st_size

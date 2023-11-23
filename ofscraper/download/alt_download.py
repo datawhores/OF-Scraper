@@ -33,7 +33,7 @@ import ofscraper.utils.dates as dates
 import ofscraper.db.operations as operations
 import ofscraper.utils.logger as logger
 from ofscraper.download.common import metadata,check_forced_skip,size_checker,\
-addGlobalDir,moveHelper,sem_wrapper,set_time,get_medialog,update_total
+addGlobalDir,moveHelper,sem_wrapper,set_time,get_medialog,update_total,get_item_total
 import ofscraper.download.keyhelpers as keyhelpers
 import ofscraper.download.common as common
 
@@ -54,6 +54,7 @@ async def alt_download(c,ele,path,username,model_id,progress):
     audio=await alt_download_downloader(audio,c,ele,path, path_to_file,progress)
     video=await alt_download_downloader(video,c,ele,path,path_to_file,progress)
     for m in [audio,video]:
+        m["total"]=get_item_total(m)
         if not isinstance(m,dict):
             return m
         check1=await size_checker(m["path"],ele,m["total"])  
@@ -84,7 +85,7 @@ async def alt_download(c,ele,path,username,model_id,progress):
         common.log.debug(f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}")  
     if ele.id:
         await operations.update_media_table(ele,filename=path_to_file,model_id=model_id,username=username,downloaded=True)
-    return ele.mediatype,audio["total"]+video["total"]
+    return ele.mediatype,video["total"]+audio["total"]
 
 async def alt_download_preparer(ele):
     @sem_wrapper(common.mpd_sem)
@@ -141,7 +142,7 @@ async def alt_download_sendreq(item,c,ele,path,path_to_file,progress,total):
             item["path"]=temp
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
-                    total=int(total or (l.headers['content-length']))
+                    total=int(l.headers['content-length'])
                     if _attempt.get(0) + 1==1:await update_total(total)
                     check1=await check_forced_skip(ele,path_to_file,total)
                     if check1:
