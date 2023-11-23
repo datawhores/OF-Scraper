@@ -73,7 +73,7 @@ jobs:
                 echo "install run pyinstaller"
                 echo "ls files"
                 ls .
-                /root/.local/bin/poetry run pyinstaller /root/work/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+                /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
 
       - name: upload one file
         uses: actions/upload-artifact@v3
@@ -96,7 +96,7 @@ jobs:
                 echo "install run pyinstaller"
                 echo "ls files"
                 ls .
-                /root/.local/bin/poetry run pyinstaller /root/work/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+                /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
                 zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
         uses: actions/upload-artifact@v3
