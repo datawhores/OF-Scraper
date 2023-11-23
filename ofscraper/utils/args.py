@@ -234,7 +234,6 @@ def create_parser(input=None):
 def getargs(input=None):
     global args
     import multiprocessing
-    print(multiprocessing.parent_process())
     if args and input==None:
         return args
     if "pytest" in sys.modules and input==None:
@@ -270,8 +269,6 @@ def getargs(input=None):
         raise argparse.ArgumentTypeError("error: argument missing --username or --file must be specified )")
     elif args.command in set(["manual"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
-    print(args)
-    sys.exit()
     return args
 
 
