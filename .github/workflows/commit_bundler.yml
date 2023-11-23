@@ -292,7 +292,7 @@ jobs:
           tag: "${{steps.commit.outputs.short}}"
           name: ${{env.name}}
           body: ${{env.body}}
-          commit: "${{steps.commit.outputs.short}}"
+          commit: "${{steps.commit.outputs.long}}"
         env:
           name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }}_${{ steps.commit.outputs.short}}_package"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
