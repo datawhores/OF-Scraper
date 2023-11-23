@@ -321,6 +321,8 @@ jobs:
           allowUpdates: True
           omitBodyDuringUpdate: True
           omitDraftDuringUpdate: True
+          commit: "${{steps.commit.outputs.short}}"
+
 
   pypi:
     if: ${{ inputs.pip}}
