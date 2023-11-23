@@ -6,6 +6,7 @@ import pathlib
 from humanfriendly import parse_size
 from ofscraper.__version__ import __version__ 
 import ofscraper.constants as constants
+import ofscraper.utils.system as system
 args=None
 def create_parser(input=None):
     parent_parser=argparse.ArgumentParser(add_help=False,allow_abbrev=True)
@@ -240,7 +241,7 @@ def getargs(input=None):
         input=[]
     elif input==None:
         input=sys.argv[1:]
-    if multiprocessing.parent_process():
+    if not system.get_parent():
         input=[]
         
 

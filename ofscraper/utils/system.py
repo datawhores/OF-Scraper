@@ -1,15 +1,17 @@
 import sys
 import json
-import logging
 import platform
 import psutil
 import subprocess
+import multiprocessing
 def is_frozen():
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
        return True
     else:
         return False
 
+def get_parent():
+    return (multiprocessing.parent_process()!=None or "pytest" in sys.modules)==False
 def getcpu_count():
     if platform.system() != 'Darwin':      
         return len(psutil.Process().cpu_affinity())
