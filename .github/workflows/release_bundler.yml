@@ -47,15 +47,15 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_version
-          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
+          path: /home/runner/work/OF-Scraper/ofscraper/__version__.py 
 #       - name: list files 1
 #         run: ls /home/runner/work/
 #       - name: list files 2
 #         run: ls /home/runner/work/OF-Scraper/
 #       - name: list files 3
-#         run: ls /home/runner/work/OF-Scraper/OF-Scraper
+#         run: ls /home/runner/work/OF-Scraper
 #       - name: list files 4
-#         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper         
+#         run: ls /home/runner/work/OF-Scraper/ofscraper         
   
   linux:
     needs: [create_version]    
@@ -94,7 +94,7 @@ jobs:
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+                /root/.local/bin/poetry run pyinstaller /home/runner/work/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -114,7 +114,7 @@ jobs:
                 /root/.local/bin/poetry install
                 /root/.local/bin/poetry add pyinstaller==5.13.0
                 echo "install run pyinstaller"
-                /root/.local/bin/poetry run pyinstaller /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+                /root/.local/bin/poetry run pyinstaller /home/runner/work/OF-Scraper/ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
                 zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload zip
         uses: actions/upload-artifact@v3
@@ -238,7 +238,7 @@ jobs:
         run: pip install pyinstaller==5.13.0
       - name: create-one-file
         id: create-one-file
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
+        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
         continue-on-error: true
       - name: create-one-file2
         id: create-one-file2
@@ -251,7 +251,7 @@ jobs:
           path: "dist/ofscraper_macos_${{ inputs.version}}"
       - name: create-dir
         id: create-dir
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.version}}" 
+        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.version}}" 
         continue-on-error: true
       - name: create-dir2
         id: create-dir2
@@ -304,11 +304,11 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: show files
-        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+        run: ls /home/runner/work/OF-Scraper 
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+          artifacts: "/home/runner/work/OF-Scraper/ofscraper_*"
           tag: ${{inputs.version}}
           allowUpdates: True
           omitBodyDuringUpdate: True
