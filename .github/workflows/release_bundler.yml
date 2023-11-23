@@ -317,7 +317,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-          tag: "${{steps.date.outputs.date}}_${{inputs.version}}"
+          tag: "${{inputs.version}}"
           allowUpdates: True
           omitBodyDuringUpdate: True
           omitDraftDuringUpdate: True
