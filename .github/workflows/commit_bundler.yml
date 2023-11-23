@@ -289,7 +289,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-          tag: ${{steps.commit.outputs.short}}
+          tag: "${{steps.date.outputs.date}}_${{steps.commit.outputs.short}}"
           name: ${{env.name}}
           body: ${{env.body}}
         env:
