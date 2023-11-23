@@ -233,46 +233,44 @@ def create_parser(input=None):
 
 def getargs(input=None):
     global args
+    print(multiprocessing.parent_process())
     if args and input==None:
         return args
     if "pytest" in sys.modules and input==None:
         input=[]
     elif input==None:
         input=sys.argv[1:]
+    if multiprocessing.parent_process():
+        input=[]
+        
 
+    print(input)
+    parser=create_parser(input)
+
+    args=parser.parse_args(input)
  
 
-    try:
-        print(input)
-        parser=create_parser(input)
+    #fix args
+    args.posts=list(set(args.posts or []))
+    args.excluded_post=list(set(args.excluded_posts or []))
+    args.username=set(args.username or [])
+    args.excluded_username=set( args.excluded_username or [])
+    args.label=set(args.label) if args.label else args.label
+    args.black_list=set(list(map(lambda x:x.lower(),args.black_list)))
+    if len(args.user_list)==0:args.user_list={constants.OFSCRAPER_RESERVED_LIST}
+    else:args.user_list=set(list(map(lambda x:x.lower(),args.user_list)))
+
     
-        args=parser.parse_args(input)
-     
-    
-        #fix args
-        args.posts=list(set(args.posts or []))
-        args.excluded_post=list(set(args.excluded_posts or []))
-        args.username=set(args.username or [])
-        args.excluded_username=set( args.excluded_username or [])
-        args.label=set(args.label) if args.label else args.label
-        args.black_list=set(list(map(lambda x:x.lower(),args.black_list)))
-        if len(args.user_list)==0:args.user_list={constants.OFSCRAPER_RESERVED_LIST}
-        else:args.user_list=set(list(map(lambda x:x.lower(),args.user_list)))
-    
-        
-    
-    
-        if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
-            raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
-        elif args.command in set(["story_check","paid_check"])and not (args.username or args.file):
-            raise argparse.ArgumentTypeError("error: argument missing --username or --file must be specified )")
-        elif args.command in set(["manual"])and not (args.url or args.file):
-            raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
-        print(args)
-        sys.exit()
-    except Exception as E: 
-        print(E)
-        sys.exit()
+
+
+    if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
+        raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
+    elif args.command in set(["story_check","paid_check"])and not (args.username or args.file):
+        raise argparse.ArgumentTypeError("error: argument missing --username or --file must be specified )")
+    elif args.command in set(["manual"])and not (args.url or args.file):
+        raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
+    print(args)
+    sys.exit()
     return args
 
 
