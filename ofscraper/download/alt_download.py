@@ -120,7 +120,7 @@ async def alt_download_preparer(ele):
 
 
 @sem_wrapper   
-async def alt_download_sendreq(item,c,ele,path,path_to_file,progress):
+async def alt_download_sendreq(item,c,ele,path,path_to_file,progress,total):
     base_url=re.sub("[0-9a-z]*\.mpd$","",ele.mpd,re.IGNORECASE)
     url=f"{base_url}{item['origname']}"
     common.log.debug(f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}")
@@ -129,27 +129,25 @@ async def alt_download_sendreq(item,c,ele,path,path_to_file,progress):
     if item["type"]=="audio":_attempt=common.attempt2
     _attempt.set(_attempt.get(0) + 1)
     item["total"]=item["total"] if _attempt.get()==1 else None
+    total=total if _attempt.get()==1 else None
 
     try:
-        total=item.get("total")
         temp= paths.truncate(pathlib.Path(path,f"{item['name']}.part"))
         if total==None:temp.unlink(missing_ok=True)
         resume_size=0 if not pathlib.Path(temp).absolute().exists() else pathlib.Path(temp).absolute().stat().st_size        
-
         if not total or total>resume_size:
             headers= {"Range":f"bytes={resume_size}-{total}"} if pathlib.Path(temp).exists() else None
             params={"Policy":ele.policy,"Key-Pair-Id":ele.keypair,"Signature":ele.signature}   
             item["path"]=temp
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
-                    item["total"]=int(total or (l.headers['content-length']))
-                    total=item["total"]
+                    total=int(total or (l.headers['content-length']))
                     if _attempt.get(0) + 1==1:await update_total(total)
-                    check1=await check_forced_skip(ele,path_to_file,item["total"])
+                    check1=await check_forced_skip(ele,path_to_file,total)
                     if check1:
                         return check1                
                     common.log.debug(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}")
-                    await alt_download_datahandler(item,l,ele,progress,path)        
+                    await alt_download_datahandler(item,total,l,ele,progress,path)        
                 else:                            
                     common.log.debug(f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}")
                     common.log.debug(f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}")
@@ -166,8 +164,7 @@ async def alt_download_sendreq(item,c,ele,path,path_to_file,progress):
         common.log.traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}")
         common.log.traceback(f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}")  
         raise E
-async def alt_download_datahandler(item,l,ele,progress,path):
-    total=item["total"]
+async def alt_download_datahandler(item,total,l,ele,progress,path):
     temp= item["path"]
     pathstr=str(temp)
     
@@ -225,7 +222,8 @@ async def alt_download_downloader(item,c,ele,path,path_to_file,progress):
             async for _ in AsyncRetrying(stop=stop_after_attempt(constants.NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True):
                 with _:
                     try:
-                        return await alt_download_sendreq(item,c,ele,path,path_to_file,progress)
+                        total=int(data.get("content-length")) if data else None
+                        return await alt_download_sendreq(item,c,ele,path,path_to_file,progress,total)
                     except Exception as E:
                         raise E
     except Exception as E:
