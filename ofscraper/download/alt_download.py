@@ -143,7 +143,7 @@ async def alt_download_sendreq(item,c,ele,path,path_to_file,progress,total):
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     total=int(l.headers['content-length'])
-                    if _attempt.get(0) + 1==1:await update_total(total)
+                    if _attempt.get(0)==1:await update_total(total)
                     check1=await check_forced_skip(ele,path_to_file,total)
                     if check1:
                         return check1                

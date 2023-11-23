@@ -133,7 +133,7 @@ async def alt_download_sendreq(item,c,ele,path_to_file):
             async with c.requests(url=url,headers=headers,params=params)() as l:                
                 if l.ok:
                     total=int(l.headers['content-length'])
-                    if _attempt.get(0) + 1==1:await common.pipe.coro_send(  (None, 0,total))
+                    if _attempt.get(0)==1:await common.pipe.coro_send(  (None, 0,total))
                     await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.set,f"{item['name']}_headers",{"content-length":l.headers.get("content-length"),"content-type":l.headers.get("content-type")}))
                     check1=await check_forced_skip(ele,path_to_file,total)
                     if check1:
