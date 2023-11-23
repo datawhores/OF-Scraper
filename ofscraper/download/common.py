@@ -9,6 +9,7 @@ r"""
 """
 from concurrent.futures import ThreadPoolExecutor
 from collections import abc
+import os
 import asyncio
 import math
 import pathlib
@@ -318,8 +319,8 @@ def setDirectoriesDate():
 
     for ele in dirSet:
         output.add(ele)
-        while ele!=rootDir and ele.parent!=rootDir:
-            log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
+        while not os.path.samefile(ele, rootDir) and not os.path.samefile(ele.parent, rootDir):
+            log.debug(f"Setting Date s ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent
     log.debug(f"Directories list {output}")
