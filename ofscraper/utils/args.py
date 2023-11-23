@@ -243,6 +243,7 @@ def getargs(input=None):
  
 
     try:
+        print(input)
         parser=create_parser(input)
     
         args=parser.parse_args(input)
