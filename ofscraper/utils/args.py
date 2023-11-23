@@ -233,6 +233,7 @@ def create_parser(input=None):
 
 def getargs(input=None):
     global args
+    import multiprocessing
     print(multiprocessing.parent_process())
     if args and input==None:
         return args
