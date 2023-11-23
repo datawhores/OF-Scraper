@@ -268,6 +268,7 @@ def getargs(input=None):
     elif args.command in set(["manual"])and not (args.url or args.file):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
     print(args)
+    sys.exit()
     return args
 
 
