@@ -252,7 +252,7 @@ async def process_dicts_split(username, model_id, medialist):
     common.cache_thread.shutdown()
     common.log.handlers[0].queue.put("None")
     common.log.handlers[1].queue.put("None")
-    other_thread.join()
+    if other_thread:other_thread.join()
     await common.pipe.coro_send(common.localDirSet)
     await common.pipe.coro_send(None)
    
