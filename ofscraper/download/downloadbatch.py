@@ -64,11 +64,12 @@ def process_dicts(username,model_id,filtered_medialist):
 
         processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1],args_.getargs())) for i in range(num_proc)]
         [process.start() for process in processes]
+        processes_set=set(map(lambda x:x.pid,processes))
         progress_group,overall_progress,job_progress=setupProgressBar(multi=True)
+        
         task1 = overall_progress.add_task(common.desc.format(p_count=common.photo_count, v_count=common.video_count,a_count=common.audio_count, 
         skipped=common.skipped,mediacount=len(filtered_medialist), sumcount=common.video_count+common.audio_count+
         common.photo_count+common.skipped,forced_skipped=common.forced_skipped,data=common.data,total=common.total_data), total=len(filtered_medialist),visible=True)
-
         with stdout.lowstdout():
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                 queue_threads=[threading.Thread(target=queue_process,args=(connect_tuples[i][0],overall_progress,job_progress,task1,len(filtered_medialist)),daemon=True) for i in range(num_proc)]
@@ -81,9 +82,12 @@ def process_dicts(username,model_id,filtered_medialist):
             for thread in list(filter(lambda x:x.is_alive(),queue_threads)):
                 thread.join(timeout=.1)
             time.sleep(.5)
-        while len(list(filter(lambda x:x.is_alive(),processes)))>0: 
+        while len(list(filter(lambda x:x.is_alive(),processes)))>0:
             for process in list(filter(lambda x:x.is_alive(),processes)):
                 process.join(timeout=.1)
+                if not process.is_alive():
+                    processes_set.remove(process.pid)
+                    log.debug(f"Remaining Processes: {processes_set}")
             time.sleep(.5)
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
