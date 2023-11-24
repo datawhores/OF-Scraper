@@ -3,20 +3,17 @@ from pathlib import Path
 import traceback
 import pathlib
 import os
-import sys
 import re
 import platform
 import subprocess
 import logging
-import arrow
 from InquirerPy.utils import patched_print
+import arrow
 import ofscraper.constants as constants
-import ofscraper.utils.profiles as profiles
 import ofscraper.utils.config as config_
 import ofscraper.utils.args as args_
 import ofscraper.utils.console as console_
 from .profiles import get_current_config_profile
-import ofscraper.api.me as me
 
 
 
@@ -200,9 +197,12 @@ def ffmpegexecutecheck(x):
         patched_print(traceback.format_exc())
         return False  
    
+
+
+
 def getlogpath():
-    dataform=arrow.now().format("YYYY-MM-DD") if config_.get_appendlog(config_.read_config()) else arrow.now().format("YYYY-MM-DD_hh:mm:ss")
-    path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{dataform}.log'
+    logDate=args_.getargs().dateformat
+    path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{logDate}.log'
     path=pathlib.Path(os.path.normpath(path))
     createDir(path.parent)
     return path

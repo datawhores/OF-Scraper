@@ -24,7 +24,7 @@ import ofscraper.utils.exit as exit
 import ofscraper.utils.system as system
 import ofscraper.utils.paths as paths
 import ofscraper.utils.manager as manager
-
+import ofscraper.utils.misc as misc
 def main():
     main_log_thread=None
     other_log_process=None

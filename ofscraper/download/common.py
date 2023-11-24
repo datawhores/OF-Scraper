@@ -118,17 +118,21 @@ def reset_globals():
     console=console_.get_shared_console()
     global localDirSet
     localDirSet=set()
-
+def setLogDate(args):
+    args_.changeargs(args)
 
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
-def process_split_globals(pipeCopy,logCopy,argsCopy):
+def process_split_globals(pipeCopy,logCopy):
     global pipe
     global log
     pipe=pipeCopy
-    log=logCopy   
-    args_.changeargs(argsCopy)
+    log=logCopy  
+def subProcessVariableInit(argsCopy,pipeCopy,logCopy):
+    reset_globals()
+    setLogDate(argsCopy)
+    process_split_globals(pipeCopy,logCopy)   
 @singledispatch
 def sem_wrapper(*args, **kwargs):
     if len(args) == 1 and callable(args[0]):
@@ -298,16 +302,13 @@ def moveHelper(temp,path_to_file,ele,log_=None):
         pathlib.Path(temp).unlink(missing_ok=True)
         log_=log_ or log
         log_.debug(f"{get_medialog(ele)} smaller then previous file")
-
-
+    #set variables based on parent process
 def addGlobalDir(input):
     if isinstance(input,pathlib.Path):
         dirSet.add(input.parent)
     else:
         dirSet.update(input)
 def addLocalDir(path):
-
-
     localDirSet.add(path.resolve().parent)
 
 def setDirectoriesDate():

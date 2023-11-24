@@ -345,8 +345,7 @@ def add_widget(widget):
 
 
 
-#mulitprocess
-# executed in a process that performs logging
+#processor for logging discord/log via queues, runnable by any process
 def logger_process(input_,name=None,stop_count=1,event=None):
     # create a logger
     log=init_stdout_logger(name)
@@ -391,8 +390,7 @@ def logger_process(input_,name=None,stop_count=1,event=None):
 
 
 
-#mulitprocess
-# executed in a process that performs logging
+#processor for logging discord/log via queues, runnable by any process
 def logger_other(input_,name=None,stop_count=1,event=None):
     # create a logger
     log=init_other_logger(name)
@@ -435,7 +433,7 @@ def logger_other(input_,name=None,stop_count=1,event=None):
 
 
 
-# some inherantence from main process
+#console log thread must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None,name=None,count=1,event=None):
     input_=input_ or queue_
     thread= threading.Thread(target=logger_process,args=(input_,name,count,event),daemon=True)
@@ -444,6 +442,7 @@ def start_stdout_logthread(input_=None,name=None,count=1,event=None):
     return thread
 
 
+#wrapper function for discord and  log, check if threads/process should start
 def start_checker(func:abc.Callable):
     def inner(*args_,**kwargs):
         if args.getargs().discord and args.getargs().discord!="OFF":
@@ -451,7 +450,7 @@ def start_checker(func:abc.Callable):
         elif args.getargs().log and args.getargs().log!="OFF":
              func(*args_,**kwargs)          
     return inner
-
+# processs discord/log queues via a thread
 @start_checker
 def start_other_thread(input_=None,name=None,count=1,event=None):
     input_=input_ or otherqueue_
@@ -459,6 +458,7 @@ def start_other_thread(input_=None,name=None,count=1,event=None):
     thread.start()
     return thread
     
+# processs discord/log queues via a process
 @start_checker
 def start_other_process(input_=None,name=None,count=1):
     def inner(input_=None,name=None,count=1):
@@ -474,7 +474,7 @@ def start_other_process(input_=None,name=None,count=1):
     
 
 
-
+#logger for subprocess that is sharable with main process via queues
 def get_shared_logger(main_=None ,other_=None,name=None):
     # create a logger
     logger = logging.getLogger(name or 'shared')

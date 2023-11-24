@@ -234,7 +234,6 @@ def create_parser(input=None):
 
 def getargs(input=None):
     global args
-    import multiprocessing
     if args and input==None:
         return args
     if "pytest" in sys.modules and input==None:
@@ -258,10 +257,10 @@ def getargs(input=None):
     args.excluded_username=set( args.excluded_username or [])
     args.label=set(args.label) if args.label else args.label
     args.black_list=set(list(map(lambda x:x.lower(),args.black_list)))
+    args.dateformat= getDateHelper(args)
+
     if len(args.user_list)==0:args.user_list={constants.OFSCRAPER_RESERVED_LIST}
     else:args.user_list=set(list(map(lambda x:x.lower(),args.user_list)))
-
-    
 
 
     if args.command in set(["post_check","msg_check"])and not (args.url or args.file):
@@ -272,7 +271,11 @@ def getargs(input=None):
         raise argparse.ArgumentTypeError("error: argument missing --url or --file must be specified )")
     return args
 
-
+def getDateHelper(args):
+    if not vars(args).get("dateformat"):
+        from ofscraper.utils.config import read_config,get_appendlog
+        return arrow.now().format("YYYY-MM-DD") if not get_appendlog(read_config()) else arrow.now().format("YYYY-MM-DD_hh:mm:ss")
+    return args.dateformat
 
 
 def check_strhelper(x):

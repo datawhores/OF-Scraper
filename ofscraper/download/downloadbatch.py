@@ -27,7 +27,7 @@ import ofscraper.utils.system as system
 from ofscraper.utils.run_async import run
 import ofscraper.utils.manager as manager_
 from ofscraper.download.common import addGlobalDir,get_medialog,setDirectoriesDate,\
-reset_globals,convert_num_bytes,setupProgressBar,process_split_globals
+reset_globals,convert_num_bytes,setupProgressBar,subProcessVariableInit
 from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.download.alt_downloadbatch import alt_download
 import ofscraper.download.common as common
@@ -172,11 +172,12 @@ def get_mediasplits(medialist):
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
 def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_,argsCopy):
-    log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
+    subProcessVariableInit(argsCopy,pipe_,logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}"))
+    setpriority()
     plat=platform.system()
     if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     try:
-        process_dicts_split(username,model_id,ele,log,pipe_,argsCopy)
+        process_dicts_split(username,model_id,ele)
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
             try:
@@ -212,15 +213,11 @@ def setpriority():
         process.nice(10) 
 
 @run
-async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy,argsCopy):
-    reset_globals()
-    logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")  
+async def process_dicts_split(username, model_id, medialist):
+    common.log.debug(f"{pid_log_helper()} start inner thread for other loggers")  
     #set variables based on parent process
-    process_split_globals(pipecopy,logCopy,argsCopy)
     #start consumer for other
-    other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
-    setpriority()
-
+    other_thread=logger.start_other_thread(input_=common.log.handlers[1].queue,name=str(os.getpid()),count=1)
     medialist=list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
 
@@ -229,9 +226,6 @@ async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy,arg
  
     aws=[]
    
-
-
-
 
     async with sessionbuilder.sessionBuilder() as c:
         i=0
