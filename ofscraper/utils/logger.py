@@ -3,6 +3,7 @@ import re
 import logging
 import copy
 import threading
+from collections import abc
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 import multiprocessing
@@ -397,8 +398,6 @@ def logger_other(input_,name=None,stop_count=1,event=None):
     log=init_other_logger(name)
     count=0
     close=False
-    if len(list(filter(lambda x:x.level!=100,log.handlers)))==0:
-        return
     funct=None
     if hasattr(input_,"get") and hasattr(input_,"put_nowait"):funct=input_.get;end_funct=input_.get_nowait
     elif hasattr(input_,"send"):funct=input_.recv
@@ -442,25 +441,33 @@ def start_stdout_logthread(input_=None,name=None,count=1,event=None):
     thread= threading.Thread(target=logger_process,args=(input_,name,count,event),daemon=True)
     thread.start()
 
-
     return thread
 
 
+def start_checker(func:abc.Callable):
+    def inner(*args_,**kwargs):
+        if args.getargs().discord and args.getargs().discord!="OFF":
+             func(*args_,**kwargs)
+        elif args.getargs().log and args.getargs().log!="OFF":
+             func(*args_,**kwargs)          
+    return inner
+
+@start_checker
 def start_other_thread(input_=None,name=None,count=1,event=None):
     input_=input_ or otherqueue_
     thread= threading.Thread(target=logger_other,args=(input_,name,count,event),daemon=True)
     thread.start()
     return thread
     
+@start_checker
 def start_other_process(input_=None,name=None,count=1):
-    def inner(input_=None,name=None,count=1,args_=None):
-        if args_:args.changeargs(args_)
+    def inner(input_=None,name=None,count=1):
         input_=input_ or otherqueue_
         logger_other(input_=input_,name=name,stop_count=count)
         
     process=None
     input_=otherqueue_
-    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count,args.getargs()),daemon=True) 
+    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count),daemon=True) 
     process.start() if process else None
     return process  
 

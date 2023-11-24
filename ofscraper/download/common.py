@@ -123,12 +123,12 @@ def reset_globals():
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
-def process_split_globals(pipeCopy,logCopy):
+def process_split_globals(pipeCopy,logCopy,argsCopy):
     global pipe
     global log
     pipe=pipeCopy
     log=logCopy   
-
+    args_.changeargs(argsCopy)
 @singledispatch
 def sem_wrapper(*args, **kwargs):
     if len(args) == 1 and callable(args[0]):

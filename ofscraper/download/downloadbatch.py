@@ -62,7 +62,7 @@ def process_dicts(username,model_id,filtered_medialist):
         #start stdout/main queues consumers
         logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
 
-        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1])) for i in range(num_proc)]
+        processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1],args_.getargs())) for i in range(num_proc)]
         [process.start() for process in processes]
         progress_group,overall_progress,job_progress=setupProgressBar(multi=True)
         task1 = overall_progress.add_task(common.desc.format(p_count=common.photo_count, v_count=common.video_count,a_count=common.audio_count, 
@@ -171,12 +171,12 @@ def get_mediasplits(medialist):
     final_count=min(user_count,system.getcpu_count(), len(medialist)//5)
     if final_count==0:final_count=1
     return more_itertools.divide(final_count, medialist   )
-def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_):
+def process_dict_starter(username,model_id,ele,p_logqueue_,p_otherqueue_,pipe_,argsCopy):
     log=logger.get_shared_logger(main_=p_logqueue_,other_=p_otherqueue_,name=f"shared_{os.getpid()}")
     plat=platform.system()
     if plat=="Linux":import uvloop;asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     try:
-        process_dicts_split(username,model_id,ele,log,pipe_)
+        process_dicts_split(username,model_id,ele,log,pipe_,argsCopy)
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
             try:
@@ -212,16 +212,17 @@ def setpriority():
         process.nice(10) 
 
 @run
-async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy):
+async def process_dicts_split(username, model_id, medialist,logCopy,pipecopy,argsCopy):
     reset_globals()
     logCopy.debug(f"{pid_log_helper()} start inner thread for other loggers")  
+    #set variables based on parent process
+    process_split_globals(pipecopy,logCopy,argsCopy)
     #start consumer for other
     other_thread=logger.start_other_thread(input_=logCopy.handlers[1].queue,name=str(os.getpid()),count=1)
     setpriority()
 
     medialist=list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-    process_split_globals(pipecopy,logCopy)
 
     common.log.debug(f"{pid_log_helper()} starting process")
     common.log.debug(f"{pid_log_helper()} process mediasplit from total {len(medialist)}")
