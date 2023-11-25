@@ -79,6 +79,8 @@ def process_dicts(username,model_id,filtered_medialist):
         [thread.start() for thread in queue_threads]    
         with stdout.lowstdout():
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
+                log.debug(f"Initial Queue Threads: {queue_threads}")
+                log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
                 while True: 
                     newqueue_threads=list(filter(lambda x:x.is_alive(),queue_threads))
                     if len(newqueue_threads)!=len(queue_threads):
@@ -89,6 +91,8 @@ def process_dicts(username,model_id,filtered_medialist):
                     for thread in queue_threads:
                         thread.join(timeout=.1)
                     time.sleep(.5)  
+                log.debug(f"Intial Log Threads: {log_threads}")
+                log.debug(f"Number of intial Log Threads: {len(log_threads)}")               
                 while True: 
                     new_logthreads=list(filter(lambda x:x.is_alive(),log_threads))
                     if len(new_logthreads)!=len(log_threads):
@@ -99,6 +103,8 @@ def process_dicts(username,model_id,filtered_medialist):
                     for thread in log_threads:
                         thread.join(timeout=.1)                            
                     time.sleep(.5)       
+        log.debug(f"Initial Processes: {processes}")
+        log.debug(f"Initial Number of Processes: {len(processes)}")        
         while True:
             new_proceess=list(filter(lambda x:x.is_alive(),processes))
             if len(new_proceess)!=len(processes):
@@ -107,7 +113,8 @@ def process_dicts(username,model_id,filtered_medialist):
             if len(new_proceess)==0:break
             processes=new_proceess
             for process in processes:
-                process.join(timeout=.1)                    
+                process.join(timeout=30)      
+                if process.is_alive():process.terminate()              
             time.sleep(.5)
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height=0
