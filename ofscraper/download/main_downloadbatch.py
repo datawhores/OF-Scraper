@@ -126,7 +126,7 @@ async def main_download_sendreq(c,ele,path,username,model_id,total):
             async with c.requests(url=url,headers=headers)() as r:
                     if r.ok:
                         total=int(total or (r.headers['content-length']))
-                        if common.attempt.get()==1: await common.pipe.coro_send(  (None, 0,total))
+                        await common.pipe.coro_send(  (None, 0,total))
                         content_type = r.headers.get("content-type").split('/')[-1]
                         if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
                         if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
@@ -176,7 +176,9 @@ async def main_download_datahandler(r,ele,total,temp,path_to_file):
                 await fileobject.write(chunk)
                 if count==constants.CHUNK_ITER:await common.pipe.coro_send({"type":"update","args":(ele.id,),"completed":(pathlib.Path(temp).absolute().stat().st_size)});count=0                                        
         except Exception as E:
-             raise E
+               # reset download data
+            await common.pipe.coro_send(  (None, 0,-total))
+            raise E
         finally:
             try:
                 await common.pipe.coro_send({"type":"remove_task","args":(ele.id,)})   

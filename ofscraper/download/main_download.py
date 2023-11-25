@@ -131,7 +131,7 @@ async def main_download_sendreq(c,ele,path,username,model_id,progress,total):
             async with c.requests(url=url,headers=headers)()  as r:
                     if r.ok:
                         total=int(r.headers['content-length'])
-                        if common.attempt.get()==1:await update_total(total)
+                        await update_total(total)
                         content_type = r.headers.get("content-type").split('/')[-1]
                         if not content_type and ele.mediatype.lower()=="videos":content_type="mp4"
                         if not content_type and ele.mediatype.lower()=="images":content_type="jpg"
@@ -182,6 +182,7 @@ async def main_download_datahandler(r,progress,ele,total,temp,path_to_file):
             count=0
         await asyncio.get_event_loop().run_in_executor(common.cache_thread,partial( common.cache.touch,f"{ele.filename}_headers",1))
     except Exception as E:
+        await update_total(-total)
         raise E
     finally:
         #Close file if needed
