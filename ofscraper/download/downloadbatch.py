@@ -81,21 +81,20 @@ def process_dicts(username,model_id,filtered_medialist):
             with Live(progress_group, refresh_per_second=constants.refreshScreen,console=console.get_shared_console()):
                 while True: 
                     newqueue_threads=list(filter(lambda x:x.is_alive(),queue_threads))
-                    if len(queue_threads)==0:break
                     if len(newqueue_threads)!=len(queue_threads):
                         log.debug(f"Remaining Queue Threads: {newqueue_threads}")
                         log.debug(f"Number of Queue Threads: {len(newqueue_threads)}")
-
+                    if len(queue_threads)==0:break
                     queue_threads=newqueue_threads
                     for thread in queue_threads:
                         thread.join(timeout=.1)
                     time.sleep(.5)  
                 while True: 
                     new_logthreads=list(filter(lambda x:x.is_alive(),log_threads))
-                    if len(new_logthreads)==0:break
                     if len(new_logthreads)!=len(log_threads):
                         log.debug(f"Remaining Log Threads: {new_logthreads}")
                         log.debug(f"Number of Log Threads: {len(new_logthreads)}")
+                    if len(new_logthreads)==0:break
                     log_threads=new_logthreads
                     for thread in log_threads:
                         thread.join(timeout=.1)                            
