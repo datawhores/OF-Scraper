@@ -113,7 +113,7 @@ def process_dicts(username,model_id,filtered_medialist):
             if len(new_proceess)==0:break
             processes=new_proceess
             for process in processes:
-                process.join(timeout=30)      
+                process.join(timeout=10)      
                 if process.is_alive():process.terminate()              
             time.sleep(.5)
         overall_progress.remove_task(task1)
@@ -286,6 +286,9 @@ async def process_dicts_split(username, model_id, medialist):
     if other_thread:other_thread.join()
     await common.pipe.coro_send(common.localDirSet)
     await common.pipe.coro_send(None)
+    while True:
+        time.sleep(50)
+    
    
  
 
