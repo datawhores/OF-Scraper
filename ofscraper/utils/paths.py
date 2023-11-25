@@ -203,7 +203,7 @@ def ffmpegexecutecheck(x):
 def getlogpath():
     logDate=args_.getargs().dateformat
     path=None
-    if config_.get_appendlog(config_.read_config()):
+    if not config_.get_appendlog(config_.read_config()):
         path= get_config_home() / "logging"/f'{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}'/f'ofscraper_{config_.get_main_profile()}_{logDate}.log'
     else:
         path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{logDate}.log'
