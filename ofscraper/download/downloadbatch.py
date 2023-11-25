@@ -53,14 +53,14 @@ def process_dicts(username,model_id,filtered_medialist):
         shared=list(more_itertools.chunked([i for i in range(num_proc)],split_val))
         #shared with other process + main
         logqueues_=[ manager.Queue() for _ in range(len(shared))]
-        #other logger queues
+        #other logger queuesprocesses
         otherqueues_=[manager.Queue()  for _ in range(len(shared))]
         #shared cache
 
 
         
         #start stdout/main queues consumers
-        logthreads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
+        log_threads=[logger.start_stdout_logthread(input_=logqueues_[i],name=f"ofscraper_{model_id}_{i+1}",count=len(shared[i])) for i in range(len(shared))]
 
         processes=[ aioprocessing.AioProcess(target=process_dict_starter, args=(username,model_id,mediasplits[i],logqueues_[i//split_val],otherqueues_[i//split_val],connect_tuples[i][1],args_.getargs())) for i in range(num_proc)]
         [process.start() for process in processes]
@@ -83,16 +83,19 @@ def process_dicts(username,model_id,filtered_medialist):
                     newqueue_threads=list(filter(lambda x:x.is_alive(),queue_threads))
                     if len(queue_threads)==0:break
                     if len(newqueue_threads)!=len(queue_threads):
-                        log.debug(f"Remaining Queue Threads: {set(filter(lambda x:x.is_alive(),queue_threads))}")
+                        log.debug(f"Remaining Queue Threads: {newqueue_threads}")
+                        log.debug(f"Number of Queue Threads: {len(newqueue_threads)}")
+
                     queue_threads=newqueue_threads
                     for thread in queue_threads:
                         thread.join(timeout=.1)
                     time.sleep(.5)  
                 while True: 
-                    new_logthreads=list(filter(lambda x:x.is_alive(),logthreads))
+                    new_logthreads=list(filter(lambda x:x.is_alive(),log_threads))
                     if len(new_logthreads)==0:break
-                    if len(new_logthreads)!=len(logthreads):
-                        log.debug(f"Remaining Log Threads: {set(filter(lambda x:x.is_alive(),logthreads))}")
+                    if len(new_logthreads)!=len(log_threads):
+                        log.debug(f"Remaining Log Threads: {new_logthreads}")
+                        log.debug(f"Number of Log Threads: {len(new_logthreads)}")
                     log_threads=new_logthreads
                     for thread in log_threads:
                         thread.join(timeout=.1)                            
@@ -101,9 +104,10 @@ def process_dicts(username,model_id,filtered_medialist):
             new_proceess=list(filter(lambda x:x.is_alive(),processes))
             if len(new_proceess)==0:break
             if len(new_proceess)!=len(processes):
-                log.debug(f"Remaining Processes: {set(filter(lambda x:x.is_alive(),processes))}")
+                log.debug(f"Remaining Processes: {new_proceess}")
+                log.debug(f"Number of Processes: {len(new_proceess)}")
             processes=new_logthreads
-            for process in list(filter(lambda x:x.is_alive(),processes)):
+            for process in processes:
                 process.join(timeout=.1)                    
             time.sleep(.5)
         overall_progress.remove_task(task1)
