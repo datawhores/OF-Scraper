@@ -7,7 +7,6 @@ from collections import abc
 from logging.handlers import QueueHandler
 from rich.logging import RichHandler
 import multiprocessing
-
 from tenacity import retry,stop_after_attempt,retry_if_not_exception_type,wait_fixed
 import aioprocessing
 import ofscraper.utils.paths as paths
@@ -17,7 +16,6 @@ import ofscraper.utils.console as console
 import ofscraper.constants as constants
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.manager as manager_
-import ofscraper.utils.system as system
 queue_=None
 otherqueue_=None
 otherqueue2_=None
@@ -360,9 +358,10 @@ def logger_process(input_,name=None,stop_count=1,event=None):
         if event and event.is_set():
             return
         try:
-            messages = funct(timeout=.5)
+            
+            messages = funct(timeout=constants.LOGGER_TIMEOUT)
         except:
-            continue
+            break
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
@@ -404,9 +403,9 @@ def logger_other(input_,name=None,stop_count=1,event=None):
         if event and event.is_set():
            return True
         try:
-            messages = funct(timeout=.5)
+            messages = funct(timeout=constants.LOGGER_TIMEOUT)
         except:
-            continue
+            break
         if not isinstance(messages,list):
             messages=[messages]
         for message in messages:
