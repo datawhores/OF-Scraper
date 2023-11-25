@@ -105,7 +105,7 @@ def process_dicts(username,model_id,filtered_medialist):
                 log.debug(f"Remaining Processes: {new_proceess}")
                 log.debug(f"Number of Processes: {len(new_proceess)}")
             if len(new_proceess)==0:break
-            processes=new_logthreads
+            processes=new_proceess
             for process in processes:
                 process.join(timeout=.1)                    
             time.sleep(.5)
