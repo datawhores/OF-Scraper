@@ -207,7 +207,7 @@ def getlogpath():
         path= get_config_home() / "logging"/f'{config_.get_main_profile()}_{arrow.now().format("YYYY-MM-DD")}'/f'ofscraper_{config_.get_main_profile()}_{logDate}.log'
     else:
         path= get_config_home() / "logging"/f'ofscraper_{config_.get_main_profile()}_{logDate}.log'
-    path=pathlib.Path(os.path.normpath(path))
+    path=pathlib.Path(path).resolve()
     createDir(path.parent)
     return path
 
