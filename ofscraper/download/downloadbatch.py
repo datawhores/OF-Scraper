@@ -113,7 +113,7 @@ def process_dicts(username,model_id,filtered_medialist):
             if len(new_proceess)==0:break
             processes=new_proceess
             for process in processes:
-                process.join(timeout=30)      
+                process.join(timeout=15)      
                 if process.is_alive():process.terminate()              
             time.sleep(.5)
         overall_progress.remove_task(task1)
