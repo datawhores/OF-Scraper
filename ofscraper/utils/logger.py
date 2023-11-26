@@ -460,13 +460,13 @@ def start_other_thread(input_=None,name=None,count=1,event=None):
 # processs discord/log queues via a process
 @start_checker
 def start_other_process(input_=None,name=None,count=1):
-    def inner(input_=None,name=None,count=1):
+    def inner(date_,input_=None,name=None,count=1):
+        args.getargs().dateformat=date_
         input_=input_ or otherqueue_
-        logger_other(input_=input_,name=name,stop_count=count)
-        
+        logger_other(date_,input_=input_,name=name,stop_count=count)    
     process=None
     input_=otherqueue_
-    process=aioprocessing.AioProcess(target=inner,args=(input_,name,count),daemon=True) 
+    process=aioprocessing.AioProcess(target=inner,args=(args.getargs().dateformat,input_,name,count),daemon=True) 
     process.start() if process else None
     return process  
 

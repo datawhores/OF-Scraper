@@ -272,7 +272,7 @@ def getargs(input=None):
 def getDateHelper(args):
     if not vars(args).get("dateformat"):
         from ofscraper.utils.config import read_config,get_appendlog
-        return arrow.now().format("YYYY-MM-DD") if get_appendlog(read_config()) else f'{arrow.now().format("YYYY-MM-DD_hh:mm:ss")}'
+        return arrow.now().format("YYYY-MM-DD") if get_appendlog(read_config()) else f'{arrow.now().format("YYYY-MM-DD_hh.mm.ss")}'
     return args.dateformat
 
 
