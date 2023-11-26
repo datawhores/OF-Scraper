@@ -151,7 +151,7 @@ async def key_helper_keydb(c,pssh,licence_url,id):
 
         async with c.requests(url=constants.KEYDB,method="post",json=json_data,headers=headers)() as r:
             if r.ok:
-                data=await r.json()
+                data=await r.json_()
                 log.debug(f"keydb json {data}")
                 if  isinstance(data,str): out=data
                 elif isinstance(data["keys"][0],str):
