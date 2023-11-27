@@ -36,7 +36,7 @@ class sessionBuilder:
         
         
         elif self._backend=="httpx":
-            self._session= httpx.AsyncClient(http2=False,timeout=self._total_timeout)
+            self._session= httpx.AsyncClient(timeout=self._total_timeout)
     
         return self
     
