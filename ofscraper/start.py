@@ -83,7 +83,10 @@ def main():
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
                     main_log_thread.join()
-                    if other_log_process:other_log_process.join(timeout=1)
+                    if other_log_process:
+                        other_log_process.join(timeout=20)
+                        if other_log_process.is_alive():other_log_process.terminate()  
+
                     if other_log_thread:other_event.set();other_log_thread.join()
                     logger.queue_.close()
                     logger.queue_.cancel_join_thread()
@@ -100,9 +103,9 @@ def main():
                     with exit.DelayedKeyboardInterrupt():
                         main_event.set()
                         main_log_thread.join()
-                        if other_log_process:other_log_process.join(timeout=1)
-                        if other_log_thread:other_event.set();other_log_thread.join()
-                        logger.queue_.close()
+                        if other_log_process:
+                            other_log_process.join(timeout=20)
+                            if other_log_process.is_alive():other_log_process.terminate()
                         logger.queue_.cancel_join_thread()
                         manager.shutdown()
                         raise E
@@ -113,7 +116,9 @@ def main():
                 with exit.DelayedKeyboardInterrupt():
                     main_event.set()
                     main_log_thread.join()
-                    if other_log_process:other_log_process.join(timeout=1)
+                    if other_log_process:
+                        other_log_process.join(timeout=20)
+                        if other_log_process.is_alive():other_log_process.terminate()  
                     if other_log_thread:other_event.set();other_log_thread.join()
                     logger.queue_.close()
                     logger.queue_.cancel_join_thread()
@@ -132,7 +137,9 @@ def main():
                     with exit.DelayedKeyboardInterrupt():
                         main_event.set()
                         main_log_thread.join()                        
-                        if other_log_process:other_log_process.join()
+                        if other_log_process:
+                            other_log_process.join(timeout=20)
+                            if other_log_process.is_alive():other_log_process.terminate()  
                         if other_log_thread:other_event.set();other_log_thread.join()
                         logger.queue_.close()
                         logger.queue_.cancel_join_thread()

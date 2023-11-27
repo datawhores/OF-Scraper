@@ -466,7 +466,7 @@ def config_prompt_advanced(config_) -> dict:
         },
     {
             "type":"list",
-            "name":"downloadbars",
+            "name":"appendlog",
             "message":"append logs into daily log files",
             "default":config.get_appendlog(config_) ,
             'choices':[Choice(True,"Yes"),Choice(False,"No")]
