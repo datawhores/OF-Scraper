@@ -321,7 +321,7 @@ jobs:
           allowUpdates: True
           omitBodyDuringUpdate: True
           omitDraftDuringUpdate: True
-          commit: "${{steps.commit.outputs.short}}"
+          commit: "${{steps.commit.outputs.long}}"
 
 
   pypi:
