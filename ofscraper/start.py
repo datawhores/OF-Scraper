@@ -86,7 +86,6 @@ def main():
                     if other_log_process:
                         other_log_process.join(timeout=20)
                         if other_log_process.is_alive():other_log_process.terminate()  
-
                     if other_log_thread:other_event.set();other_log_thread.join()
                     logger.queue_.close()
                     logger.queue_.cancel_join_thread()
