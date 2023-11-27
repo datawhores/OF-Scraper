@@ -269,7 +269,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.files}}.zip"    
+          path: "dist/ofscraper_macos_${{inputs.version}}.zip"    
           
   publish_release:
     runs-on: ubuntu-latest
