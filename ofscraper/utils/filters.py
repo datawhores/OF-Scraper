@@ -29,19 +29,22 @@ def filterMedia(media):
     log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 6->  all media post timed post filter: ",x.media,x.id,x.postid),media))))
     log.debug(f"filter 6->  all media post timed post filter count: {len(media)}")
     media=post_user_filter(media)
-    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 7-> all media post text filter: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 7->  all media post text filter count: {len(media)}")
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 7-> all media post included text filter: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 7->  all media post included text filter count: {len(media)}")
+    media=anti_post_user_filter(media)
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 8-> all media post excluded text filter: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 8->  all media post excluded text filter count: {len(media)}")
     media=download_type_filter(media)
-    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 8->  all download type filter: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 8->  all media download type filter count: {len(media)}")
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 9->  all download type filter: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 9->  all media download type filter count: {len(media)}")
 
     media=mass_msg_filter(media)
-    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 9->  mass message filter: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 9->  all media mass message filter count: {len(media)}")
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 10->  mass message filter: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 10->  all media mass message filter count: {len(media)}")
    
     media=sort_media(media)
-    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 10-> final media  from retrived post: ",x.media,x.id,x.postid),media))))
-    log.debug(f"filter 10->  final media count from retrived post: {len(media)}")
+    log.trace("\n\n\n".join(list(map(lambda x: logformater.format("filter 11-> final media  from retrived post: ",x.media,x.id,x.postid),media))))
+    log.debug(f"filter 11->  final media count from retrived post: {len(media)}")
     return media
 
 def sort_media(media):
@@ -108,17 +111,21 @@ def post_timed_filter(media):
     return media
 def post_user_filter(media):
     userfilter=args_.getargs().filter
-    if not userfilter.islower():
-        return list(filter(lambda x:re.search(userfilter,x.text or "")!=None,media))
+    if not userfilter:
+        return media
+    elif not userfilter.islower():
+        return list(filter(lambda x:re.search(userfilter,x.text)!=None,media))
     else:
-        return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)!=None,media))
+        return list(filter(lambda x:re.search(userfilter,x.text ,re.IGNORECASE)!=None,media))
 
 def anti_post_user_filter(media):
     userfilter=args_.getargs().neg_filter
-    if not userfilter.islower():
-        return list(filter(lambda x:re.search(userfilter,x.text or "")==None,media)) if userfilter else media
+    if not userfilter:
+        return media
+    elif not userfilter.islower():
+        return list(filter(lambda x:re.search(userfilter,x.text or "")==None,media))
     else:
-        return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)==None,media)) if userfilter else media
+        return list(filter(lambda x:re.search(userfilter,x.text or "",re.IGNORECASE)==None,media))
 
 
 
