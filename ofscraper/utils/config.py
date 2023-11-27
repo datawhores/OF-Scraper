@@ -464,4 +464,4 @@ def cache_mode_helper(config):
 def get_appendlog(config):
     if config==None:
         return constants.APPEND_DEFAULT
-    config.get("appendlog",constants.APPEND_DEFAULT)
+    return config.get("appendlog",constants.APPEND_DEFAULT)
