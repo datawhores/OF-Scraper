@@ -353,7 +353,7 @@ def config_prompt_advanced(config_) -> dict:
 
    
     cache = Cache(paths.getcachepath(),disk=config.get_cache_mode(config.read_config()))
-    if not cache.get("speed_download") or  promptClasses.getChecklistSelection(choices=["Yes","No"],message="Re-run speedtest",long_instruction="Download Sems max value is based on calculated speed",default="No")=="Yes":
+    if not cache.get("speed_download") or  promptClasses.getChecklistSelection(choices=[Choice(True,"Yes"),Choice(False,"No")],message="Re-run speedtest",long_instruction="Download Sems max value is based on calculated speed",default="No")=="Yes":
         cache.set("speed_download",get_speed(threads))
     max_allowed=cache.get("speed_download")
     cache.close()
@@ -468,7 +468,7 @@ def config_prompt_advanced(config_) -> dict:
             "type":"list",
             "name":"downloadbars",
             "message":"append logs into daily log files",
-            "default":config.get_appendlog(config_.read) ,
+            "default":config.get_appendlog(config_) ,
             'choices':[Choice(True,"Yes"),Choice(False,"No")]
 
 
