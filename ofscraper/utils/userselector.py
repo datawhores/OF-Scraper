@@ -50,7 +50,7 @@ def all_subs_helper():
         elif len(ALL_SUBS)==0:
             print("No accounts found during scan")
             #give log time to process
-            time.sleep(constants.USER_LOOP_TIME)
+            time.sleep(constants.LOG_DISPLAY_TIMEOUT)
             if not prompts.retry_user_scan():
                 raise Exception("Could not find any accounts on list")
                 
@@ -121,7 +121,7 @@ def filterNSort(usernames):
         filterusername=list(filter(lambda x:x["name"] not in args_.getargs().excluded_username ,filterusername))
         log.debug(f"final username count with all filters: {len(filterusername)}")
         #give log time to process
-        time.sleep(constants.USER_LOOP_TIME)
+        time.sleep(constants.LOG_DISPLAY_TIMEOUT)
         if len(filterusername)!=0:
             return sort_models_helper(filterusername)   
         print(

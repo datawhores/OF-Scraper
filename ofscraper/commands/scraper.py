@@ -8,10 +8,8 @@ r"""
                  \/     \/           \/            \/         
 """
 
-import asyncio
 import time
 import os
-import sys
 import platform
 import time
 import traceback
@@ -41,7 +39,8 @@ import ofscraper.utils.console as console
 import ofscraper.utils.of as OF
 import ofscraper.utils.exit as exit
 import ofscraper.utils.misc as misc
-
+import ofscraper.classes.placeholder as placeholder
+import ofscraper.constants as constants
 log=logging.getLogger("shared")
 
 @exit.exit_wrapper
@@ -130,6 +129,12 @@ def process_post():
 @exit.exit_wrapper           
 def process_post_user_first():
      with scrape_context_manager():
+        if not placeholder.Placeholders().check_uniquename():
+            log.error("[red]Warning: Your generated filenames may not be unique\n \
+            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
+            ")
+            time.sleep(constants.LOG_DISPLAY_TIMEOUT*3)
+            
         profiles.print_current_profile()
         init.print_sign_status()
         if args_.getargs().users_first:
@@ -169,6 +174,11 @@ def process_post_user_first():
 @exit.exit_wrapper
 def normal_post_process():
     with scrape_context_manager():
+        if not placeholder.Placeholders().check_uniquename():
+            log.error("[red]Warning: Your generated filenames may not be unique\n \
+            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]     \
+            ")
+            time.sleep(constants.LOG_DISPLAY_TIMEOUT*3)
         profiles.print_current_profile()
         init.print_sign_status()
         userdata=userselector.getselected_usernames(rescan=False)
