@@ -98,31 +98,31 @@ def filterNSort(usernames):
         log.debug(f"Account Type: {args_.getargs().account_type}")
         if args_.getargs().account_type=="paid":
             filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
-            log.debug(f"+paid filter username count: {len(filterusername)}")
+            log.debug(f"paid filter username count: {len(filterusername)}")
         elif args_.getargs().account_type=="free":
             filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
-            log.debug(f"+free filter username count: {len(filterusername)}")
+            log.debug(f"free filter username count: {len(filterusername)}")
         log.debug(f"Renewal: {args_.getargs().renewal}")
         if args_.getargs().renewal=="active":
             filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
-            log.debug(f"+active renewal filter username count: {len(filterusername)}")
+            log.debug(f"active renewal filter username count: {len(filterusername)}")
         elif args_.getargs().renewal=="disabled":
             filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
-            log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
+            log.debug(f"disabled renewal filter username count: {len(filterusername)}")
         log.debug(f"Sub Status: {args_.getargs().sub_status}")
         if args_.getargs().sub_status=="active":
             filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
-            log.debug(f"+active subscribtion filter username count: {len(filterusername)}")
+            log.debug(f"active subscribtion filter username count: {len(filterusername)}")
 
         elif args_.getargs().sub_status=="expired":
             filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
-            log.debug(f"+expired subscribtion filter username count: {len(filterusername)}")
+            log.debug(f"expired subscribtion filter username count: {len(filterusername)}")
 
         filterusername=list(filter(lambda x:x["name"] not in args_.getargs().excluded_username ,filterusername))
         log.debug(f"final username count with all filters: {len(filterusername)}")
         #give log time to process
         time.sleep(constants.USER_LOOP_TIME)
-        if len(filterusername)==0:
+        if len(filterusername)!=0:
             return sort_models_helper(filterusername)   
         print(
 f"""You have filtered the user list to zero
