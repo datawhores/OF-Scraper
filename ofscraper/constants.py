@@ -189,3 +189,4 @@ KEYDB='https://keysdb.net/api'
 CDRM='https://cdrm-project.com/wv'
 
 LOGGER_TIMEOUT=180
+USER_LOOP_TIME=.8

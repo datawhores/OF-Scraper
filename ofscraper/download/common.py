@@ -320,7 +320,8 @@ def setDirectoriesDate():
 
     for ele in dirSet:
         output.add(ele)
-        while not os.path.samefile(ele, rootDir) and not os.path.samefile(ele.parent, rootDir):
+        while not os.path.samefile(ele, rootDir) and not os.path.samefile(ele.parent, rootDir
+        ):
             log.debug(f"Setting Dates ele:{ele} rootDir:{rootDir}")
             output.add(ele.parent)
             ele=ele.parent

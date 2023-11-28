@@ -1041,3 +1041,11 @@ def get_speed(threads):
     if int(thread_count)==0:max_allowed=max((speed*.6)//constants.maxChunkSize,3)
     else: max_allowed=min(int(max(((speed*.6)/thread_count)//constants.maxChunkSizeB,3)),25)
     return max_allowed
+
+def retry_user_scan():
+    answer=promptClasses.getChecklistSelection(           
+            message= 'Rescan account for users',
+            choices = [Choice(True,"Yes"),Choice(False,"No")]
+    )
+
+    return answer

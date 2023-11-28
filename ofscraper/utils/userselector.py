@@ -1,6 +1,6 @@
-import asyncio
 import logging
 import arrow
+import time
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.api.subscriptions as subscriptions
@@ -9,6 +9,7 @@ import ofscraper.api.me as me
 import ofscraper.utils.args as args_
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.console as console
+import ofscraper.constants as constants
 
 
 
@@ -35,6 +36,7 @@ def getselected_usernames(rescan=False,reset=False):
     if not PARSED_SUBS or not args_.getargs().username:
         all_subs_helper()
         parsed_subscriptions_helper()
+
     return PARSED_SUBS
 
 
@@ -42,7 +44,17 @@ def getselected_usernames(rescan=False,reset=False):
     
 def all_subs_helper(): 
     global ALL_SUBS
-    ALL_SUBS= get_models()
+    while True:
+        ALL_SUBS= get_models()
+        if len(ALL_SUBS)>0:return
+        elif len(ALL_SUBS)==0:
+            print("No accounts found during scan")
+            #give log time to process
+            time.sleep(constants.USER_LOOP_TIME)
+            if not prompts.retry_user_scan():
+                raise Exception("Could not find any accounts on list")
+                
+        
 
 
 def parsed_subscriptions_helper(force=False):
@@ -60,57 +72,62 @@ def parsed_subscriptions_helper(force=False):
     elif args_.getargs().username:
         usernameset=set(args_.getargs().username)
         PARSED_SUBS=list(filter(lambda x:x["name"] in usernameset,ALL_SUBS))
+    
     return PARSED_SUBS
-        
-       
 
-def setfilter():
-    if prompts.decide_filters_prompt()=="Yes":
+            
+        
+
+def setfilter(forced=False):
+    if forced or prompts.decide_filters_prompt()=="Yes":
         global args
         args=prompts.modify_filters_prompt(args)
 
  
-def setsort():
-    if prompts.decide_sort_prompt()=="Yes":
+def setsort(forced=False):
+    if forced or prompts.decide_sort_prompt()=="Yes":
         global args
         args=prompts.modify_sort_prompt(args)
 
 def filterNSort(usernames):
 
+    while True:
+        #paid/free
+        filterusername=usernames
+        log.debug(f"username count no filters: {len(filterusername)}")
+        if args_.getargs().account_type=="paid":
+            filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
+            log.debug(f"+paid filter username count: {len(filterusername)}")
 
-    #paid/free
-    filterusername=usernames
-    log.debug(f"username count no filters: {len(filterusername)}")
-    dateNow=arrow.now()
-    if args_.getargs().account_type=="paid":
-        filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
-        log.debug(f"+paid filter username count: {len(filterusername)}")
+        elif args_.getargs().account_type=="free":
+            filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
+            log.debug(f"+free filter username count: {len(filterusername)}")
+        
+        if args_.getargs().renewal=="active":
+            filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
+            log.debug(f"+active renewal filter username count: {len(filterusername)}")
 
-    elif args_.getargs().account_type=="free":
-        filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
-        log.debug(f"+free filter username count: {len(filterusername)}")
-    
-    if args_.getargs().renewal=="active":
-        filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
-        log.debug(f"+active renewal filter username count: {len(filterusername)}")
+        elif args_.getargs().renewal=="disabled":
+            filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
+            log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
 
-    elif args_.getargs().renewal=="disabled":
-        filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
-        log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
+        if args_.getargs().sub_status=="active":
+            filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
+            log.debug(f"+active subscribtion filter username count: {len(filterusername)}")
 
-    if args_.getargs().sub_status=="active":
-        filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
-        log.debug(f"+active subscribtion filter username count: {len(filterusername)}")
+        elif args_.getargs().sub_status=="expired":
+            filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
+            log.debug(f"+expired subscribtion filter username count: {len(filterusername)}")
 
-    elif args_.getargs().sub_status=="expired":
-        filterusername=list(filter(lambda x:x.get("subscribed")==None,filterusername))
-        log.debug(f"+expired subscribtion filter username count: {len(filterusername)}")
-
-    filterusername=list(filter(lambda x:x["name"] not in args_.getargs().excluded_username ,filterusername))
-    log.debug(f"final username count with all filters: {len(filterusername)}")
-    if len(filterusername)==0:
-        raise Exception("You have filtered the user list to zero\nPlease Select less restrictive filters and userlists")
-    return sort_models_helper(filterusername)      
+        filterusername=list(filter(lambda x:x["name"] not in args_.getargs().excluded_username ,filterusername))
+        log.debug(f"final username count with all filters: {len(filterusername)}")
+        #give log time to process
+        time.sleep(constants.USER_LOOP_TIME)
+        if len(filterusername)>0:
+            return sort_models_helper(filterusername)   
+        print("You have filtered the user list to zero\nChange the filter settings to continue")
+        setfilter(forced=True)
+        print("dd")
 
 
 
