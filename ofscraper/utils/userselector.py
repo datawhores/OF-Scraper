@@ -95,22 +95,21 @@ def filterNSort(usernames):
         #paid/free
         filterusername=usernames
         log.debug(f"username count no filters: {len(filterusername)}")
+        log.debug(f"Account Type:{args_.getargs().account_type}")
         if args_.getargs().account_type=="paid":
             filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
             log.debug(f"+paid filter username count: {len(filterusername)}")
-
         elif args_.getargs().account_type=="free":
             filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
             log.debug(f"+free filter username count: {len(filterusername)}")
-        
+        log.debug(f"renewal:{args_.getargs().renewal}")
         if args_.getargs().renewal=="active":
             filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
             log.debug(f"+active renewal filter username count: {len(filterusername)}")
-
         elif args_.getargs().renewal=="disabled":
             filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
             log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
-
+        log.debug(f"sub Status:{args_.getargs().sub_status}")
         if args_.getargs().sub_status=="active":
             filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
             log.debug(f"+active subscribtion filter username count: {len(filterusername)}")
@@ -123,11 +122,19 @@ def filterNSort(usernames):
         log.debug(f"final username count with all filters: {len(filterusername)}")
         #give log time to process
         time.sleep(constants.USER_LOOP_TIME)
-        if len(filterusername)>0:
+        if len(filterusername)==0:
             return sort_models_helper(filterusername)   
-        print("You have filtered the user list to zero\nChange the filter settings to continue")
+        print(
+f"""You have filtered the user list to zero
+Change the filter settings to continue
+
+Sub Status:{args_.getargs().sub_status or 'No Filter'}
+Renewal Status:{args_.getargs().renewal or 'No Filter'}
+Account Type:{args_.getargs().account_type or 'No Filter'}
+
+""")
+       
         setfilter(forced=True)
-        print("dd")
 
 
 
