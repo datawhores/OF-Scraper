@@ -95,21 +95,21 @@ def filterNSort(usernames):
         #paid/free
         filterusername=usernames
         log.debug(f"username count no filters: {len(filterusername)}")
-        log.debug(f"Account Type:{args_.getargs().account_type}")
+        log.debug(f"Account Type: {args_.getargs().account_type}")
         if args_.getargs().account_type=="paid":
             filterusername=list(filter(lambda x:(x.get("price") or 0)>0,filterusername))
             log.debug(f"+paid filter username count: {len(filterusername)}")
         elif args_.getargs().account_type=="free":
             filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
             log.debug(f"+free filter username count: {len(filterusername)}")
-        log.debug(f"Renewal:{args_.getargs().renewal}")
+        log.debug(f"Renewal: {args_.getargs().renewal}")
         if args_.getargs().renewal=="active":
             filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
             log.debug(f"+active renewal filter username count: {len(filterusername)}")
         elif args_.getargs().renewal=="disabled":
             filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
             log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
-        log.debug(f"Sub Status:{args_.getargs().sub_status}")
+        log.debug(f"Sub Status: {args_.getargs().sub_status}")
         if args_.getargs().sub_status=="active":
             filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
             log.debug(f"+active subscribtion filter username count: {len(filterusername)}")
@@ -128,9 +128,9 @@ def filterNSort(usernames):
 f"""You have filtered the user list to zero
 Change the filter settings to continue
 
-Sub Status:{args_.getargs().sub_status or 'No Filter'}
-Renewal Status:{args_.getargs().renewal or 'No Filter'}
-Account Type:{args_.getargs().account_type or 'No Filter'}
+Sub Status: {args_.getargs().sub_status or 'No Filter'}
+Renewal Status: {args_.getargs().renewal or 'No Filter'}
+Account Type: {args_.getargs().account_type or 'No Filter'}
 
 """)
        
