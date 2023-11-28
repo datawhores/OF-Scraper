@@ -117,13 +117,13 @@ def create_parser(input=None):
     filters=parser.add_argument_group("filters",description="Filters out usernames based on selected parameters")
     
     filters.add_argument(
-        '-at', '--account-type', help = 'Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price',default=None,required=False,type = str.lower,choices=["paid","free"]
+        '-at', '--account-type', help = 'Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price',default=False,required=False,type = str.lower,choices=["paid","free"]
     )
     filters.add_argument(
-        '-rw', '--renewal', help = 'Filter by whether renewal is on or off for account',default=None,required=False,type = str.lower,choices=["active","disabled"]
+        '-rw', '--renewal', help = 'Filter by whether renewal is on or off for account',default=False,required=False,type = str.lower,choices=["active","disabled"]
     )
     filters.add_argument(
-        '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=None,required=False,type = str.lower,choices=["active","expired"]
+        '-ss', '--sub-status', help = 'Filter by whether or not your subscription has expired or not',default=False,required=False,type = str.lower,choices=["active","expired"]
     )
 
     filters.add_argument(
