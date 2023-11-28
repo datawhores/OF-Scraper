@@ -102,14 +102,14 @@ def filterNSort(usernames):
         elif args_.getargs().account_type=="free":
             filterusername=list(filter(lambda x:(x.get("price") or 0)==0,filterusername))    
             log.debug(f"+free filter username count: {len(filterusername)}")
-        log.debug(f"renewal:{args_.getargs().renewal}")
+        log.debug(f"Renewal:{args_.getargs().renewal}")
         if args_.getargs().renewal=="active":
             filterusername=list(filter(lambda x:x.get("renewed")!=None,filterusername))
             log.debug(f"+active renewal filter username count: {len(filterusername)}")
         elif args_.getargs().renewal=="disabled":
             filterusername=list(filter(lambda x:x.get("renewed")==None,filterusername))  
             log.debug(f"+disabled renewal filter username count: {len(filterusername)}")
-        log.debug(f"sub Status:{args_.getargs().sub_status}")
+        log.debug(f"Sub Status:{args_.getargs().sub_status}")
         if args_.getargs().sub_status=="active":
             filterusername=list(filter(lambda x:x.get("subscribed")!=None,filterusername)) 
             log.debug(f"+active subscribtion filter username count: {len(filterusername)}")

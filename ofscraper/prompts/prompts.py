@@ -890,16 +890,16 @@ def modify_filters_prompt(args):
         {
             'type': 'list',
             "name":"renewal",
-             "default":False,
+             "default":None,
             'message': "Filter account by whether it has a renewal date",
-            'choices':[Choice("active","Active Only"),Choice("disabled","Disabled Only"),Choice(False,"Both")]
+            'choices':[Choice("active","Active Only"),Choice("disabled","Disabled Only"),Choice(None,"Both")]
         },
         {
             'type': 'list',
             "name":"expire",
-             "default":False,
+             "default":None,
             'message': "Filter accounts based on access to content via a subscription",
-            'choices':[Choice("active","Active Only"),Choice("expired","Expired Only"),Choice(False,"Both")]
+            'choices':[Choice("active","Active Only"),Choice("expired","Expired Only"),Choice(None,"Both")]
         },
 
      
@@ -907,8 +907,8 @@ def modify_filters_prompt(args):
             'type': 'list',
             "name":"subscription",
             'message': "Filter accounts by the type of subscription",
-             "default":False,
-            'choices':[Choice("paid","Paid Subscriptions Only"),Choice("free","Free Subscriptions Only"),Choice(False,"Both")]
+             "default":None,
+            'choices':[Choice("paid","Paid Subscriptions Only"),Choice("free","Free Subscriptions Only"),Choice(None,"Both")]
         }
     ])
     args.renewal=answer["renewal"]
