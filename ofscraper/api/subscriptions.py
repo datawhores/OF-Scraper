@@ -25,24 +25,51 @@ log=logging.getLogger(__package__)
 
 
 async def get_subscriptions(headers, subscribe_count):
-    offsets = range(0, subscribe_count, 10)
-    tasks = [scrape_subscriptions(headers, offset) for offset in offsets]
-    subscriptions = await asyncio.gather(*tasks)
-    return list(chain.from_iterable(subscriptions))
+    global tasks
+    global new_tasks
+    tasks = [asyncio.create_task(scrape_subscriptions(headers, offset)) for offset in  range(0, subscribe_count+1, 10)] 
+    tasks.extend([asyncio.create_task(scrape_subscriptions(headers, subscribe_count+1,recurs=True))] ) 
+    new_tasks=[]
+    out=[]
+    while tasks:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED) 
+        for result in done:
+            try:
+                result=await result
+            except Exception as E:
+                log.debug(E)
+                continue
+            out.extend(result)
+        tasks = list(pending)
+        tasks.extend(new_tasks)
+        new_tasks=[]
+    return out
+    
+
+
 
 
 @retry(stop=stop_after_attempt(NUM_TRIES),wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),reraise=True)   
-async def scrape_subscriptions(headers, offset=0) -> list:
+async def scrape_subscriptions(headers, offset=0,recurs=False) -> list:
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=constants.API_REEQUEST_TIMEOUT, connect=None,sock_connect=None, sock_read=None)) as c: 
         url = subscriptionsEP.format(offset)
         headers=auth.make_headers(auth.read_auth())
         headers=auth.create_sign(url, headers)
-        async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
-            if r.ok:
-                subscriptions = await r.json()
-                log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}")      
-                return subscriptions
+        try:
+            async with c.request("get",url,ssl=ssl.create_default_context(cafile=certifi.where()),cookies=auth.add_cookies_aio(),headers=headers) as r:
+                if r.ok:
+                    data=await r.json()
+                    if len(data)==0:
+                        None
+                    elif recurs:
+                        new_tasks.append(asyncio.create_task(scrape_subscriptions(c,recurs=True,offset=offset+len(data)))) 
+                    log.debug(f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),data))}")      
+                    return data
+                
             r.raise_for_status()
+        except Exception as E:
+            log.debug(E)
+            raise E
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow=arrow.now()
