@@ -127,6 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.trunk/
 
 #vscode
 .vscode/
@@ -144,3 +145,4 @@ sphinx
 package
 core
 doc
+

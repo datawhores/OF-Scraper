@@ -1,9 +1,10 @@
 import contextlib
 import io
+import logging
 import os
 import sys
+
 import ofscraper.constants as constants
-import logging
 import ofscraper.utils.args as args_
 
 
@@ -11,13 +12,14 @@ import ofscraper.utils.args as args_
 def lowstdout():
     if args_.getargs().output in constants.SUPRESS_OUTPUTS:
         save_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
         yield
         sys.stdout = save_stdout
     else:
         None
         yield
         None
+
 
 # @contextlib.contextmanager
 # def lowstdout():
@@ -38,4 +40,3 @@ def nostdout():
     sys.stdout = io.BytesIO()
     yield
     sys.stdout = save_stdout
-    

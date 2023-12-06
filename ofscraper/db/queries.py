@@ -1,4 +1,4 @@
-mediaCreate= """
+mediaCreate = """
 CREATE TABLE IF NOT EXISTS medias (
 	id INTEGER NOT NULL, 
 	media_id INTEGER, 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS medias (
 	UNIQUE (media_id)
 );"""
 
-messagesCreate="""
+messagesCreate = """
 CREATE TABLE IF NOT EXISTS messages (
 	id INTEGER NOT NULL, 
 	post_id INTEGER NOT NULL, 
@@ -31,8 +31,7 @@ CREATE TABLE IF NOT EXISTS messages (
 	UNIQUE (post_id)
 )
 """
-postCreate=\
-"""
+postCreate = """
 CREATE TABLE IF NOT EXISTS posts (
 	id INTEGER NOT NULL, 
 	post_id INTEGER NOT NULL, 
@@ -45,8 +44,7 @@ CREATE TABLE IF NOT EXISTS posts (
 	UNIQUE (post_id)
 )
 """
-otherCreate=\
-"""
+otherCreate = """
 CREATE TABLE IF NOT EXISTS others (
 	id INTEGER NOT NULL,  
 	post_id INTEGER NOT NULL, 
@@ -59,8 +57,7 @@ CREATE TABLE IF NOT EXISTS others (
 	UNIQUE (post_id)
 )
 """
-productCreate=\
-"""
+productCreate = """
 CREATE TABLE IF NOT EXISTS products (
 	id INTEGER NOT NULL, 
 	post_id INTEGER NOT NULL, 
@@ -73,8 +70,7 @@ CREATE TABLE IF NOT EXISTS products (
 	UNIQUE (post_id)
 )
 """
-profilesCreate=\
-"""
+profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
 	id INTEGER NOT NULL, 
 	user_id INTEGER NOT NULL, 
@@ -84,7 +80,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 )
 """
 
-storiesCreate="""
+storiesCreate = """
 CREATE TABLE IF NOT EXISTS stories (
 	id INTEGER NOT NULL, 
 	post_id INTEGER NOT NULL, 
@@ -98,136 +94,104 @@ CREATE TABLE IF NOT EXISTS stories (
 )
 """
 
-messagesInsert=\
-f"""INSERT INTO 'messages'(
+messagesInsert = f"""INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
 created_at,user_id)
             VALUES (?, ?,?,?,?,?,?);"""
 
-messageDupeCheck=\
-"""
+messageDupeCheck = """
 SELECT * FROM messages where post_id=(?)
 """
 
-
-
-postInsert=\
-f"""INSERT INTO 'posts'(
+postInsert = f"""INSERT INTO 'posts'(
 post_id, text,price,paid,archived,
 created_at)
             VALUES (?, ?,?,?,?,?);"""
 
-postDupeCheck=\
-"""
+postDupeCheck = """
 SELECT * FROM posts where post_id=(?)
 """
 
-postNormalCheck=\
-"""
+postNormalCheck = """
 SELECT post_id FROM posts where archived=False
 """
 
-
-storiesInsert=\
-f"""INSERT INTO 'stories'(
+storiesInsert = f"""INSERT INTO 'stories'(
 post_id, text,price,paid,archived,
 created_at)
             VALUES (?, ?,?,?,?,?);"""
 
-storiesDupeCheck=\
-"""
+storiesDupeCheck = """
 SELECT * FROM stories where post_id=(?)
 """
 
-allIDCheck=\
-"""
+allIDCheck = """
 SELECT media_id FROM medias
 """
 
-allDLIDCheck=\
-"""
+allDLIDCheck = """
 SELECT media_id FROM medias where downloaded=(1)
 """
 
-
-allPOSTCheck=\
-"""
+allPOSTCheck = """
 SELECT post_id FROM posts
 """
 
-allMessagesCheck=\
-"""
+allMessagesCheck = """
 SELECT post_id FROM messages
 """
 
-allStoriesCheck=\
-"""
+allStoriesCheck = """
 SELECT post_id FROM stories
 """
 
-
-mediaInsert=\
-f"""INSERT INTO 'medias'(
+mediaInsert = f"""INSERT INTO 'medias'(
 media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at)
             VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);"""
 
-mediaDupeCheck=\
-"""
+mediaDupeCheck = """
 SELECT * FROM medias where media_id=(?)
 """
 
-
-getTimelineMedia=\
-"""
+getTimelineMedia = """
 SELECT * FROM medias where api_type=('Timeline')
 """
 
-
-getArchivedMedia=\
-"""
+getArchivedMedia = """
 SELECT * FROM medias where api_type=('Archived')
 """
 
-getMessagesMedia=\
-"""
+getMessagesMedia = """
 SELECT * FROM medias where api_type=('Message') or api_type=('Messages')
 """
 
-mediaUpdate=\
-f"""Update 'medias'
+mediaUpdate = f"""Update 'medias'
 SET
 media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?
 WHERE media_id=(?);"""
 
-
-mediaTypeUpdate=\
-f"""Update 'medias'
+mediaTypeUpdate = f"""Update 'medias'
 SET
 api_type=?,media_type=?
 WHERE media_id=(?);"""
 
-profileDupeCheck=\
-"""
+profileDupeCheck = """
 SELECT * FROM profiles where user_id=(?)
 """
-profileTableCheck=\
-"""
+profileTableCheck = """
 SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 """
 
-profileInsert=\
-f"""INSERT INTO 'profiles'(
+profileInsert = f"""INSERT INTO 'profiles'(
 user_id,username)
             VALUES (?, ?);"""
 
-profileUpdate=\
-f"""Update 'profiles'
+profileUpdate = f"""Update 'profiles'
 SET
 user_id=?,username=?
 WHERE user_id=(?);"""
 
-labelsCreate=\
-"""
+labelsCreate = """
 CREATE TABLE IF NOT EXISTS labels (
 	id INTEGER NOT NULL, 
 	name VARCHAR, 
@@ -237,18 +201,14 @@ CREATE TABLE IF NOT EXISTS labels (
 )
 """
 
-labelDupeCheck=\
-"""
+labelDupeCheck = """
 SELECT * FROM labels WHERE id=? AND post_id=?
 """
 
-labelInsert=\
-f"""INSERT INTO 'labels'(
+labelInsert = f"""INSERT INTO 'labels'(
 id, name, type, post_id)
 VALUES (?, ?,?,?);"""
 
-
-labelID=\
-"""
+labelID = """
 SELECT id,post_id  FROM  labels
 """

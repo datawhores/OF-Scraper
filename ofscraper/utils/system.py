@@ -1,35 +1,49 @@
-import sys
 import json
-import platform
-import psutil
-import subprocess
 import multiprocessing
+import platform
+import subprocess
+import sys
+
+import psutil
+
+
 def is_frozen():
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-       return True
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return True
     else:
         return False
 
+
 def get_parent():
-    return (multiprocessing.parent_process()!=None or "pytest" in sys.modules)==False
+    return (
+        multiprocessing.parent_process() != None or "pytest" in sys.modules
+    ) == False
+
+
 def getcpu_count():
-    if platform.system() != 'Darwin':      
+    if platform.system() != "Darwin":
         return len(psutil.Process().cpu_affinity())
     else:
         return psutil.cpu_count()
 
+
 def speed_test():
-    r=subprocess.Popen(["speedtest-cli","--bytes","--no-upload","--json","--secure"],stdout=subprocess.PIPE,universal_newlines=True)
-    out=""
+    r = subprocess.Popen(
+        ["speedtest-cli", "--bytes", "--no-upload", "--json", "--secure"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    out = ""
     for stdout_line in iter(r.stdout.readline, ""):
-        out=out+stdout_line 
+        out = out + stdout_line
     r.wait()
-    speed=json.loads(out.strip())["download"]
+    speed = json.loads(out.strip())["download"]
     return speed
 
+
 def getOpenFiles(unique=True):
-    match=set()
-    out=[]
+    match = set()
+    out = []
     for proc in psutil.process_iter():
         for ele in proc.open_files():
             if not unique:
@@ -38,4 +52,3 @@ def getOpenFiles(unique=True):
                 out.append(ele)
                 match.add(ele.fd)
     return out
-

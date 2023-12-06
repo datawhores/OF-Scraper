@@ -6,19 +6,18 @@
 import os
 import signal
 
-
 __all__ = [
-    'SIGNAL_TRANSLATION_MAP',
+    "SIGNAL_TRANSLATION_MAP",
 ]
 
 SIGNAL_TRANSLATION_MAP = {
-    signal.SIGINT: 'SIGINT',
-    signal.SIGTERM: 'SIGTERM',
+    signal.SIGINT: "SIGINT",
+    signal.SIGTERM: "SIGTERM",
 }
 
 
 class DelayedKeyboardInterrupt:
-    def __init__(self,propagate_to_forked_processes=None):
+    def __init__(self, propagate_to_forked_processes=None):
         """
         Constructs a context manager that suppresses SIGINT & SIGTERM signal handlers
         for a block of code.
@@ -46,7 +45,6 @@ class DelayedKeyboardInterrupt:
         }
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-
         for sig, handler in self._old_signal_handler_map.items():
             signal.signal(sig, handler)
         if self._sig is None:
@@ -62,24 +60,29 @@ class DelayedKeyboardInterrupt:
         #
         if os.getpid() != self._pid:
             if self._propagate_to_forked_processes is False:
-                print(f'!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; '
-                      f'PID mismatch: {os.getpid()=}, {self._pid=}, calling original handler')
+                print(
+                    f"!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; "
+                    f"PID mismatch: {os.getpid()=}, {self._pid=}, calling original handler"
+                )
                 self._old_signal_handler_map[self._sig](self._sig, self._frame)
             elif self._propagate_to_forked_processes is None:
-                print(f'!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; '
-                      f'PID mismatch: {os.getpid()=}, ignoring the signal')
+                print(
+                    f"!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; "
+                    f"PID mismatch: {os.getpid()=}, ignoring the signal"
+                )
                 return
             # elif self._propagate_to_forked_processes is True:
             #   ... passthrough
 
-        print(f'!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; delaying KeyboardInterrupt')
+        print(
+            f"!!! DelayedKeyboardInterrupt._handler: {SIGNAL_TRANSLATION_MAP[sig]} received; delaying KeyboardInterrupt"
+        )
 
 
-def exit_wrapper(func): 
-    def inner(*args,**kwargs): 
+def exit_wrapper(func):
+    def inner(*args, **kwargs):
         try:
-
-            func(*args,**kwargs)
+            func(*args, **kwargs)
         except KeyboardInterrupt as E:
             with DelayedKeyboardInterrupt():
                 raise KeyboardInterrupt
@@ -88,5 +91,6 @@ def exit_wrapper(func):
                 with DelayedKeyboardInterrupt():
                     raise E
             except KeyboardInterrupt:
-                  raise KeyboardInterrupt  
+                raise KeyboardInterrupt
+
     return inner

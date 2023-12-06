@@ -1,22 +1,22 @@
 name: package builder release
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
     inputs:
-          version:
-            description: 'version'
-            required: true
-          files:
-              required: true
-              type: boolean
-          pip:
-              required: true
-              type: boolean
-          docker:
-              required: true
-              type: boolean    
-          docker_old:
-              required: true
-              type: boolean    
+      version:
+        description: "version"
+        required: true
+      files:
+        required: true
+        type: boolean
+      pip:
+        required: true
+        type: boolean
+      docker:
+        required: true
+        type: boolean
+      docker_old:
+        required: true
+        type: boolean
 jobs:
   create_version:
     runs-on: ubuntu-20.04
@@ -26,77 +26,76 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
-            ref: ${{inputs.version}}
+          fetch-depth: 0
+          ref: ${{inputs.version}}
       - name: update line
-        run: 
-          sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml      
+        run: sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11.5'
+          python-version: "3.11.5"
       - name: install dunamai
         run: pip install dunamai
-      - name: replace_version 
-        run: | 
+      - name: replace_version
+        run: |
           sed -i -e s/'from dunamai import Version,Pattern'// ofscraper/__version__.py 
           sed -i -e  s/'Version.from_git(pattern=.*'/\""$(dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\d+|\d+\.\d+)")"\"/ ofscraper/__version__.py
       - name: show file
-        run: cat ofscraper/__version__.py 
+        run: cat ofscraper/__version__.py
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_version
-          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py 
-#       - name: list files 1
-#         run: ls /home/runner/work/
-#       - name: list files 2
-#         run: ls /home/runner/work/OF-Scraper/
-#       - name: list files 3
-#         run: ls /home/runner/work/OF-Scraper/OF-Scraper
-#       - name: list files 4
-#         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper         
-  
+          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
+  #       - name: list files 1
+  #         run: ls /home/runner/work/
+  #       - name: list files 2
+  #         run: ls /home/runner/work/OF-Scraper/
+  #       - name: list files 3
+  #         run: ls /home/runner/work/OF-Scraper/OF-Scraper
+  #       - name: list files 4
+  #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
+
   linux:
-    needs: [create_version]    
+    needs: [create_version]
     runs-on: ubuntu-20.04
     name: create linux release
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
-            ref: ${{inputs.version}}
+          fetch-depth: 0
+          ref: ${{inputs.version}}
       - name: list files
-        run:   ls -d $PWD/*    
+        run: ls -d $PWD/*
       - name: list files2
-        run:   ls -d $PWD/ofscraper/*      
+        run: ls -d $PWD/ofscraper/*
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
-        id: commit            
+        id: commit
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_version 
-          path: ofscraper      
-      
+          name: ofscraper_version
+          path: ofscraper
+
       - name: create one file
         uses: addnab/docker-run-action@v3
         with:
-            image: datawhores/ubuntu:latest
-            options: -v ${{ github.workspace }}:/root/work
-            shell: bash
-            run: |
-                cd work
-                apt-get install zip libxml2-dev libxslt-dev -y
-                python3.11 -m venv .venv
-                /root/.local/bin/poetry install --with build
-                /root/.local/bin/poetry install
-                /root/.local/bin/poetry add pyinstaller==5.13.0
-                echo "install run pyinstaller"
-                echo "ls files"
-                ls .
-                /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+          image: datawhores/ubuntu:latest
+          options: -v ${{ github.workspace }}:/root/work
+          shell: bash
+          run: |
+            cd work
+            apt-get install zip libxml2-dev libxslt-dev -y
+            python3.11 -m venv .venv
+            /root/.local/bin/poetry install --with build
+            /root/.local/bin/poetry install
+            /root/.local/bin/poetry add pyinstaller==5.13.0
+            echo "install run pyinstaller"
+            echo "ls files"
+            ls .
+            /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -105,29 +104,27 @@ jobs:
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
-            image: datawhores/ubuntu:latest
-            options: -v ${{ github.workspace }}:/root/work
-            shell: bash
-            run: |
-                cd work
-                apt-get install zip libxml2-dev libxslt-dev zip -y
-                python3.11 -m venv .venv
-                /root/.local/bin/poetry install --with build
-                /root/.local/bin/poetry install
-                /root/.local/bin/poetry add pyinstaller==5.13.0
-                echo "install run pyinstaller"
-                echo "ls files"
-                ls .
-                /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
-                zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
+          image: datawhores/ubuntu:latest
+          options: -v ${{ github.workspace }}:/root/work
+          shell: bash
+          run: |
+            cd work
+            apt-get install zip libxml2-dev libxslt-dev zip -y
+            python3.11 -m venv .venv
+            /root/.local/bin/poetry install --with build
+            /root/.local/bin/poetry install
+            /root/.local/bin/poetry add pyinstaller==5.13.0
+            echo "install run pyinstaller"
+            echo "ls files"
+            ls .
+            /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+            zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload zip
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"              
-        
-        
-        
+          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"
+
   windows:
     needs: [create_version]
     runs-on: windows-latest
@@ -136,35 +133,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
-            ref: ${{inputs.version}}
+          fetch-depth: 0
+          ref: ${{inputs.version}}
       - name: list files
-        run:   ls .
+        run: ls .
       - name: list files2
-        run:   ls ofscraper  
+        run: ls ofscraper
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
-        id: commit   
+        id: commit
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_version 
+          name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11.5'
+          python-version: "3.11.5"
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: 1.4.1 
+          poetry-version: 1.4.1
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: active env
-        run: poetry env use  .venv/Scripts/python3        
+        run: poetry env use  .venv/Scripts/python3
       - name: Install package
         run: poetry install
-      - name: Install builder       
+      - name: Install builder
         run: poetry add pyinstaller==5.13.0
       # - name: temp deactive
       #   run: deactive
@@ -173,7 +170,7 @@ jobs:
         run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ inputs.version}}"
         continue-on-error: true
       - name: active env for createfile2
-        run: poetry env use  .venv/Scripts/python3     
+        run: poetry env use  .venv/Scripts/python3
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
@@ -187,10 +184,10 @@ jobs:
       #   run: deactive
       - name: create-dir
         id: create-dir
-        run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" 
+        run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}"
         continue-on-error: true
       - name: active env for create-dir2
-        run: poetry env use  .venv/Scripts/python3     
+        run: poetry env use  .venv/Scripts/python3
       - name: create-dir2
         id: create-one-dir2
         if: steps.create-dir.outcome != 'success'
@@ -203,33 +200,33 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{inputs.version}}.zip"               
+          path: "dist/ofscraper_windows_${{inputs.version}}.zip"
   mac:
     needs: [create_version]
-    runs-on: macos-latest 
+    runs-on: macos-latest
     name: create mac release
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
-            ref: ${{inputs.version}}
+          fetch-depth: 0
+          ref: ${{inputs.version}}
       - name: list files
-        run:   ls -d $PWD/*    
+        run: ls -d $PWD/*
       - name: list files2
-        run:   ls -d $PWD/ofscraper/*  
+        run: ls -d $PWD/ofscraper/*
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
-        id: commit            
+        id: commit
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_version     
+          name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11.5'
+          python-version: "3.11.5"
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
@@ -247,7 +244,7 @@ jobs:
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ inputs.version}}"      
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ inputs.version}}"
       - name: upload fille
         uses: actions/upload-artifact@v3
         with:
@@ -255,12 +252,12 @@ jobs:
           path: "dist/ofscraper_macos_${{ inputs.version}}"
       - name: create-dir
         id: create-dir
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.version}}" 
+        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.version}}"
         continue-on-error: true
       - name: create-dir2
         id: create-dir2
         if: steps.create-dir.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ inputs.version}}"        
+        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ inputs.version}}"
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{ inputs.version}}"
@@ -269,46 +266,46 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.version}}.zip"    
-          
+          path: "dist/ofscraper_macos_${{inputs.version}}.zip"
+
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [linux,windows,mac]
+    needs: [linux, windows, mac]
     permissions:
-      contents: write 
+      contents: write
     steps:
       - name: Download linux
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_linux  
+          name: ofscraper_linux
       - name: Download linux zip
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_linux_zip 
+          name: ofscraper_linux_zip
 
       - name: Download mac
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_macos   
+          name: ofscraper_macos
       - name: Download mac zip
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_macos_zip         
+          name: ofscraper_macos_zip
       - name: Download windows
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_windows        
+          name: ofscraper_windows
       - name: Download windows zip
         uses: actions/download-artifact@v3
         with:
-          name: ofscraper_windows_zip  
-      
+          name: ofscraper_windows_zip
+
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: show files
-        run: ls /home/runner/work/OF-Scraper/OF-Scraper 
+        run: ls /home/runner/work/OF-Scraper/OF-Scraper
       - name: Get current date
         id: date
         run: echo "date=$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
@@ -323,7 +320,6 @@ jobs:
           omitDraftDuringUpdate: True
           commit: "${{steps.commit.outputs.long}}"
 
-
   pypi:
     if: ${{ inputs.pip}}
     runs-on: ubuntu-latest
@@ -337,18 +333,18 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11.5'
+          python-version: "3.11.5"
       - name: 🐍 Install dependencies
         run: |
           pip install poetry-dynamic-versioning
-          pip install dunamai 
+          pip install dunamai
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Build
         run: |
           poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+\.\w+|\d+\.\w+)")
           poetry build
-      - name: Push to pypi 
+      - name: Push to pypi
         env:
           PYPI_TOKEN: ${{ secrets.pypi }}
         run: |
@@ -365,13 +361,13 @@ jobs:
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
 
-    steps:  
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
+          fetch-depth: 0
       - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV       
+        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
@@ -381,22 +377,19 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@main #v2.6.0
         with:
-          cosign-release: 'v1.13.1'
+          cosign-release: "v1.13.1"
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
-    
-      -  name: Set up Docker Buildx
-         uses: docker/setup-buildx-action@v2
-      
-            
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
 
-      
       - name: push image to Docker Hub
         id: build-and-push
         uses: docker/build-push-action@v4
@@ -405,43 +398,43 @@ jobs:
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
             datawhores/of-scraper:latest
-            
+
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          
+
       - name: cosign-installer
         uses: sigstore/cosign-installer@v3.0.5
-        
+
       - name: Write signing key to disk
         run: 'echo "$KEY" > cosign.key'
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      
+
       - name: Sign the published Docker image
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
-#       # Sign the resulting Docker image digest except on PRs.
-#       # This will only write to the public Rekor transparency log when the Docker
-#       # repository is public to avoid leaking data.  If you would like to publish
-#       # transparency data even for private images, pass --force to cosign below.
-#       # https://github.com/sigstore/cosign
-#       - name: Sign the published Docker image
-#         env:
-#           COSIGN_EXPERIMENTAL: "true"
-#         # This step uses the identity token to provision an ephemeral certificate
-#         # against the sigstore community Fulcio instance.
-#         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+      #       # Sign the resulting Docker image digest except on PRs.
+      #       # This will only write to the public Rekor transparency log when the Docker
+      #       # repository is public to avoid leaking data.  If you would like to publish
+      #       # transparency data even for private images, pass --force to cosign below.
+      #       # https://github.com/sigstore/cosign
+      #       - name: Sign the published Docker image
+      #         env:
+      #           COSIGN_EXPERIMENTAL: "true"
+      #         # This step uses the identity token to provision an ephemeral certificate
+      #         # against the sigstore community Fulcio instance.
+      #         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
       - name: login to ghcr
         uses: docker/login-action@v2
         with:
-          registry:  ghcr.io
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN}}
           # Extract metadata (tags, labels) for Docker
@@ -455,7 +448,7 @@ jobs:
             ghcr.io/datawhores/of-scraper:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          push: true          
+          push: true
 
   docker_old:
     if: ${{ inputs.docker_old}}
@@ -468,13 +461,13 @@ jobs:
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
 
-    steps:  
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
+          fetch-depth: 0
       - name: get tag
-        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV       
+        run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Set up QEMU
@@ -484,22 +477,19 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@main #v2.6.0
         with:
-          cosign-release: 'v1.13.1'
+          cosign-release: "v1.13.1"
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
-    
-      -  name: Set up Docker Buildx
-         uses: docker/setup-buildx-action@v2
-      
-            
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
 
-      
       - name: push image to Docker Hub
         id: build-and-push
         uses: docker/build-push-action@v4
@@ -507,43 +497,43 @@ jobs:
           context: .
           tags: |
             datawhores/of-scraper:${{ inputs.version }}
-            
+
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          
+
       - name: cosign-installer
         uses: sigstore/cosign-installer@v3.0.5
-        
+
       - name: Write signing key to disk
         run: 'echo "$KEY" > cosign.key'
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      
+
       - name: Sign the published Docker image
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_EXPERIMENTAL: "true"
         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign --yes --key cosign.key {}@${{ steps.build-and-push.outputs.digest }}
 
-#       # Sign the resulting Docker image digest except on PRs.
-#       # This will only write to the public Rekor transparency log when the Docker
-#       # repository is public to avoid leaking data.  If you would like to publish
-#       # transparency data even for private images, pass --force to cosign below.
-#       # https://github.com/sigstore/cosign
-#       - name: Sign the published Docker image
-#         env:
-#           COSIGN_EXPERIMENTAL: "true"
-#         # This step uses the identity token to provision an ephemeral certificate
-#         # against the sigstore community Fulcio instance.
-#         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+      #       # Sign the resulting Docker image digest except on PRs.
+      #       # This will only write to the public Rekor transparency log when the Docker
+      #       # repository is public to avoid leaking data.  If you would like to publish
+      #       # transparency data even for private images, pass --force to cosign below.
+      #       # https://github.com/sigstore/cosign
+      #       - name: Sign the published Docker image
+      #         env:
+      #           COSIGN_EXPERIMENTAL: "true"
+      #         # This step uses the identity token to provision an ephemeral certificate
+      #         # against the sigstore community Fulcio instance.
+      #         run: echo "datawhores/of-scraper:${{ env.release }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
       - name: login to ghcr
         uses: docker/login-action@v2
         with:
-          registry:  ghcr.io
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN}}
           # Extract metadata (tags, labels) for Docker
@@ -556,4 +546,4 @@ jobs:
             ghcr.io/datawhores/of-scraper:${{ inputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          push: true  
+          push: true

@@ -1,239 +1,264 @@
-from  test_.test_constants import *
-from ofscraper.classes.posts import Post
-from ofscraper.classes.media import Media
 import re
-import ofscraper.utils.args as args_
+
 from pytest_check import check
+
+import ofscraper.utils.args as args_
+from ofscraper.classes.media import Media
+from ofscraper.classes.posts import Post
+from test_.test_constants import *
+
+
 def test_postcreate_stories():
-    username="test"
-    model_id=TEST_ID
+    username = "test"
+    model_id = TEST_ID
     try:
-        Post(STORIES_EXAMPLE,model_id,username,"stories")
+        Post(STORIES_EXAMPLE, model_id, username, "stories")
     except Exception as E:
         raise Exception(f"Exception: {E}\nPost Creation Failed")
 
 
 def test_media_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(len(t.post_media))==len(STORIES_EXAMPLE["media"])
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (len(t.post_media)) == len(STORIES_EXAMPLE["media"])
+
 
 def test_post_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.post)==t._post
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.post) == t._post
 
 
 def test_modelid_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.model_id)==model_id
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.model_id) == model_id
 
 
 def test_username_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.username)==username
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.username) == username
+
 
 def test_archived_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.archived)==False
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.archived) == False
+
 
 def test_text_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.text)==None
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.text) == None
+
 
 def test_text_stories2():
+    username = "test"
+    model_id = TEST_ID
+    index = 0
 
-    username="test"
-    model_id=TEST_ID
-    index=0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (media.text_.find(media.filename)) == 0
 
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(media.text_.find(media.filename))==0
+
 def test_title_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.title)==STORIES_EXAMPLE.get("title")
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.title) == STORIES_EXAMPLE.get("title")
+
 
 def test_ogresponse_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.responsetype_)=="stories"
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.responsetype_) == "stories"
+
 
 def test_id_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.id)==STORIES_EXAMPLE.get("id")
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.id) == STORIES_EXAMPLE.get("id")
+
 
 def test_date_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.date)==STORIES_EXAMPLE.get("createdAt") or STORIES_EXAMPLE.get("postedAt")
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.date) == STORIES_EXAMPLE.get("createdAt") or STORIES_EXAMPLE.get(
+        "postedAt"
+    )
 
 
 def test_value_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.value)=="free"
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.value) == "free"
+
 
 def test_price_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.price)==0
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.price) == 0
 
 
 def test_paid_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.paid)==True
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.paid) == True
 
 
 def test_fromuser_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.fromuser)==model_id
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.fromuser) == model_id
+
 
 def test_preview_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    assert(t.preview)==STORIES_EXAMPLE.get("preview")
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    assert (t.preview) == STORIES_EXAMPLE.get("preview")
+
 
 def test_mediacanview_stories():
-    username="test"
-    model_id=TEST_ID
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    username = "test"
+    model_id = TEST_ID
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     for ele in t.media:
-        assert(ele.canview)==True
+        assert (ele.canview) == True
 
 
 def test_mediaclass_stories():
-    username="test"
-    model_id=TEST_ID
-    
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    username = "test"
+    model_id = TEST_ID
+
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     for ele in t.media:
-        assert(isinstance(ele,Media))==True
- 
- #Media Test
+        assert (isinstance(ele, Media)) == True
+
+
+# Media Test
 def test_mediaclass_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     try:
-        media=Media(t.media[index],index,t)
+        media = Media(t.media[index], index, t)
     except Exception as E:
         raise E
-    
+
 
 def test_mediatype_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(mediaDict["type"])=="photo"
-    assert(media.mediatype)=="images"
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (mediaDict["type"]) == "photo"
+    assert (media.mediatype) == "images"
 
 
 def test_mediaurl_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(re.search("http",media.url))!=None
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (re.search("http", media.url)) != None
+
 
 def test_mediapost_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(media.post)==t
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (media.post) == t
+
 
 def test_media_id_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(media.id)==mediaDict["id"]
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (media.id) == mediaDict["id"]
+
 
 def test_medialen_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(len(media.post.post_media))==len(STORIES_EXAMPLE["media"])
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (len(media.post.post_media)) == len(STORIES_EXAMPLE["media"])
 
 
 def test_mediacount_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(media.count)==index+1
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (media.count) == index + 1
+
 
 def test_mediapreview_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(STORIES_EXAMPLE.get("preview"))==None
-    assert(media.preview)==0
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (STORIES_EXAMPLE.get("preview")) == None
+    assert (media.preview) == 0
+
 
 def test_medialinked_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(media.linked)==None   
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (media.linked) == None
+
 
 def test_mediamedia_stories():
-    username="test"
-    model_id=TEST_ID
-    index=0
-    t=Post(STORIES_EXAMPLE,model_id,username,"stories")
-    mediaDict=STORIES_EXAMPLE["media"][index]
-    media=Media(mediaDict,index,t)
-    assert(media.media)==mediaDict
+    username = "test"
+    model_id = TEST_ID
+    index = 0
+    t = Post(STORIES_EXAMPLE, model_id, username, "stories")
+    mediaDict = STORIES_EXAMPLE["media"][index]
+    media = Media(mediaDict, index, t)
+    assert (media.media) == mediaDict
+
 
 def test_stories_text_wordtruncate(mocker):
-    length=TEXTLENGTH_ALT2
-    migrationConfig={
+    length = TEXTLENGTH_ALT2
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -242,24 +267,29 @@ def test_stories_text_wordtruncate(mocker):
         "textlength": TEXTLENGTH_ALT2,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=["",""]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,2,post)
-    wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = ["", ""]
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 2, post)
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.text_)))
     with check:
-        assert(len(wordarray))>= length-1
-  
+        assert (len(wordarray)) >= length - 1
+
     with check:
-        assert(len(wordarray))< length+1
+        assert (len(wordarray)) < length + 1
+
 
 def test_stories_text_wordtruncate2(mocker):
-    length=int(TEXTLENGTH_ALT2/2)
-    migrationConfig={
+    length = int(TEXTLENGTH_ALT2 / 2)
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -268,24 +298,29 @@ def test_stories_text_wordtruncate2(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=["",""]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,2,post)
-    wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = ["", ""]
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 2, post)
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.text_)))
     with check:
-        assert(len(wordarray))>=length-1
-  
+        assert (len(wordarray)) >= length - 1
+
     with check:
-        assert(len(wordarray))<length+1
+        assert (len(wordarray)) < length + 1
+
 
 def test_stories_text_wordtruncate3(mocker):
-    length=TEXTLENGTH_DEFAULT
-    migrationConfig={
+    length = TEXTLENGTH_DEFAULT
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -294,23 +329,33 @@ def test_stories_text_wordtruncate3(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=["",""]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,2,post)
-    wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
-    textarray=list(filter(lambda x:len(x)!=0,re.split("( )", f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")))
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = ["", ""]
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 2, post)
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.text_)))
+    textarray = list(
+        filter(
+            lambda x: len(x) != 0,
+            re.split("( )", f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"),
+        )
+    )
     with check:
-        assert(len(wordarray))>=len(textarray)-1
+        assert (len(wordarray)) >= len(textarray) - 1
     with check:
-        assert(len(wordarray))<=len(textarray)+2
+        assert (len(wordarray)) <= len(textarray) + 2
+
 
 def test_stories_text_wordtruncate4(mocker):
-    migrationConfig={
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -319,24 +364,29 @@ def test_stories_text_wordtruncate4(mocker):
         "textlength": TEXTLENGTH_ALT2,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=[]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,0,post)
-    wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = []
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 0, post)
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.text_)))
     with check:
-        assert(len(wordarray))>=TEXTLENGTH_ALT2-1
-  
+        assert (len(wordarray)) >= TEXTLENGTH_ALT2 - 1
+
     with check:
-        assert(len(wordarray))<TEXTLENGTH_ALT2+1
+        assert (len(wordarray)) < TEXTLENGTH_ALT2 + 1
+
 
 def test_stories_text_wordtruncate5(mocker):
-    length=int(TEXTLENGTH_ALT2/2)
-    migrationConfig={
+    length = int(TEXTLENGTH_ALT2 / 2)
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -345,24 +395,29 @@ def test_stories_text_wordtruncate5(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=[]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,0,post)
-    wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = []
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 0, post)
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.text_)))
     with check:
-        assert(len(wordarray))>=length-1
-  
+        assert (len(wordarray)) >= length - 1
+
     with check:
-        assert(len(wordarray))<length+1
+        assert (len(wordarray)) < length + 1
+
 
 def test_stories_text_wordtruncate6(mocker):
-    length=TEXTLENGTH_DEFAULT
-    migrationConfig={
+    length = TEXTLENGTH_DEFAULT
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -371,21 +426,27 @@ def test_stories_text_wordtruncate6(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs([])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=[]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,0,post)
-    wordarray=list(filter(lambda x:len(x)!=0,re.split("( )", t.text_)))
-    assert(len(wordarray))>=len("{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = []
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 0, post)
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.text_)))
+    assert (len(wordarray)) >= len(
+        "{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
 
 
 def test_stories_text_lettertruncate(mocker):
-    length=TEXTLENGTH_ALT
-    migrationConfig={
+    length = TEXTLENGTH_ALT
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -394,22 +455,25 @@ def test_stories_text_lettertruncate(mocker):
         "textlength": TEXTLENGTH_ALT,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=["",""]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,2,post)
-    wordarray=t.text_
-    assert(len(wordarray))==length
-  
-        
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = ["", ""]
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 2, post)
+    wordarray = t.text_
+    assert (len(wordarray)) == length
+
 
 def test_stories_text_lettertruncate2(mocker):
-    length=int(TEXTLENGTH_ALT2/2)
-    migrationConfig={
+    length = int(TEXTLENGTH_ALT2 / 2)
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -418,20 +482,25 @@ def test_stories_text_lettertruncate2(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=["",""]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,2,post)
-    wordarray=t.text_
-    assert(len(wordarray))==length
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = ["", ""]
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 2, post)
+    wordarray = t.text_
+    assert (len(wordarray)) == length
+
 
 def test_stories_text_lettertruncate3(mocker):
-    length=TEXTLENGTH_DEFAULT
-    migrationConfig={
+    length = TEXTLENGTH_DEFAULT
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -440,23 +509,27 @@ def test_stories_text_lettertruncate3(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=["",""]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,2,post)
-    wordarray=t.text_
-    assert(len(wordarray))==len(f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")+2
-  
-
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = ["", ""]
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 2, post)
+    wordarray = t.text_
+    assert (len(wordarray)) == len(
+        f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    ) + 2
 
 
 def test_stories_text_lettertruncate4(mocker):
-    length=TEXTLENGTH_ALT2
-    migrationConfig={
+    length = TEXTLENGTH_ALT2
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -465,21 +538,25 @@ def test_stories_text_lettertruncate4(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=[]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,0,post)
-    wordarray=t.text_
-    assert(len(wordarray))==length
-   
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = []
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 0, post)
+    wordarray = t.text_
+    assert (len(wordarray)) == length
+
 
 def test_stories_text_lettertruncate5(mocker):
-    length=int(TEXTLENGTH_ALT2/2)
-    migrationConfig={
+    length = int(TEXTLENGTH_ALT2 / 2)
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -488,20 +565,25 @@ def test_stories_text_lettertruncate5(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=[]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,0,post)
-    wordarray=t.text_
-    assert(len(wordarray))==length
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = []
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 0, post)
+    wordarray = t.text_
+    assert (len(wordarray)) == length
+
 
 def test_stories_text_lettertruncate6(mocker):
-    length=TEXTLENGTH_DEFAULT
-    migrationConfig={
+    length = TEXTLENGTH_DEFAULT
+    migrationConfig = {
         "main_profile": PROFILE_DEFAULT,
         "save_location": SAVE_PATH_DEFAULT,
         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
@@ -510,14 +592,19 @@ def test_stories_text_lettertruncate6(mocker):
         "textlength": length,
         "date": DATE_DEFAULT,
         "metadata": METADATA_DEFAULT,
-        "filter": FILTER_DEFAULT
+        "filter": FILTER_DEFAULT,
     }
     args_.getargs(["--letter-count"])
-    mocker.patch('ofscraper.classes.posts.config.read_config', return_value=migrationConfig)
-    post=mocker.PropertyMock()
-    post.post_media=[]
-    mocker.patch.object(Media,"text",new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-    t=Media(None,0,post)
-    wordarray=t.text_
-    assert(len(wordarray))>=len("{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}")
-  
+    mocker.patch(
+        "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
+    )
+    post = mocker.PropertyMock()
+    post.post_media = []
+    mocker.patch.object(
+        Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )
+    t = Media(None, 0, post)
+    wordarray = t.text_
+    assert (len(wordarray)) >= len(
+        "{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
+    )

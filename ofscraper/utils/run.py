@@ -1,9 +1,9 @@
 def run(coro):
-    def inner(*args,**kwargs):
+    def inner(*args, **kwargs):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            tasks=loop.run_until_complete(coro(*args,**kwargs))
+            tasks = loop.run_until_complete(coro(*args, **kwargs))
             return tasks
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
@@ -17,4 +17,5 @@ def run(coro):
         finally:
             loop.close()
             asyncio.set_event_loop(None)
+
     return inner

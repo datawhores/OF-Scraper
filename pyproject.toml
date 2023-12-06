@@ -6,13 +6,10 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python= ">=3.10.11,<=3.12"
+python = ">=3.10.11,<=3.12"
 
 
-
-
-
-httpx = {extras = ["http2"], version = "^0.23.3"}
+httpx = { extras = ["http2"], version = "^0.23.3" }
 inquirerpy = "^0.3.4"
 setuptools = "^67.6.0"
 schedule = "^1.1.0"
@@ -31,12 +28,12 @@ ffmpeg-python = "^0.2.0"
 dunamai = "^1.17.0"
 poetry-dynamic-versioning = "^0.22.0"
 textual = "^0.27.0"
-aiohttp = {extras = ["speedups"], version = "^3.8.5"}
+aiohttp = { extras = ["speedups"], version = "^3.8.5" }
 faust-cchardet = "^2.1.18"
 certifi = "^2023.5.7"
 pycryptodome = "^3.18.0"
 pywidevine = "^1.6.0"
-aioprocessing = {extras = ["dill"], version = "^2.0.1"}
+aioprocessing = { extras = ["dill"], version = "^2.0.1" }
 more-itertools = "^9.1.0"
 psutil = "^5.9.5"
 pytest = "^7.4.0"
@@ -65,9 +62,6 @@ random-emoji = "^1.0.15"
 pytest-mock = "^3.11.1"
 
 
-
-
-
 [tool.poetry.group.docs.dependencies]
 sphinx-argparse = "^0.4.0"
 
@@ -92,7 +86,6 @@ build-backend = "poetry_dynamic_versioning.backend"
 ofscraper = "ofscraper.__main__:main"
 
 
-
 [tool.poetry.urls]
 "Homepage" = "https://github.com/datawhores/OF-Scraper"
 
@@ -100,13 +93,11 @@ ofscraper = "ofscraper.__main__:main"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
-testpaths = [
-    "tests",
-]
+testpaths = ["tests"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
-vcs="git"
-metadata=true
-format="{base}"
+vcs = "git"
+metadata = true
+format = "{base}"
 pattern = "(?P<base>\\d+\\.\\d+\\.\\w+|\\d+\\.\\w+)"

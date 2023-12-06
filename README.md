@@ -1,4 +1,5 @@
 # Table-of-contents
+
 - [Intro](#intro)
 - [Documentation](#documentation)
 - [Feature Requests](#feature-requests)
@@ -15,7 +16,9 @@ In addition there are numerous filtering features to control exactly which type 
 https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
 
 # Documentation
-For information on how to 
+
+For information on how to
+
 - install
 - run
 - and other things you might want to know
@@ -31,26 +34,23 @@ https://of-scraper.gitbook.io/of-scraper
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
 
+## Description:
 
-
-  ## Description:
-  command-line program to download media, and to process other batch operations such as liking and unliking posts.
-    
+command-line program to download media, and to process other batch operations such as liking and unliking posts.
 
 ![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
 # Issues
+
 Open a issue in this repo, or you can mention your issue in the discord
 https://discord.gg/wN7uxEVHRK
 
-
-    
 # Feature Requests
 
 https://ofscraper.clearflask.com/feedback
-    
+
 Or the discord
-        
+
 # Migrating from DC script
 
 You will need to change the settings so that the metadata option is compatible with your current folders
@@ -67,26 +67,16 @@ https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
-
 # Discord
 
 https://discord.gg/wN7uxEVHRK
-    
+
 # Support
+
 buymeacoffee.com/datawhores
-    
+
 BTC: bc1qcnnetrgmtr86rmqvukl2e24f5upghpcsqqsy87
-    
+
 ETH: 0x1d427a6E336edF6D95e589C16cb740A1372F6609
 
-
 [![codecov](https://codecov.io/gh/datawhores/OF-Scraper/branch/main/graph/badge.svg?token=U1F1PQ7LGM)](https://codecov.io/gh/datawhores/OF-Scraper)
-
-
-
-
-
-
-
-
-

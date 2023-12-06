@@ -1,4 +1,5 @@
-from unittest.mock import patch,MagicMock
+from unittest.mock import MagicMock, patch
+
 # import re
 # import pathlib
 # import os
@@ -20,7 +21,6 @@ from unittest.mock import patch,MagicMock
 # # import ofscraper.utils.logger as logger
 #  import ofscraper.download.download as download
 
-
 # def test_user_data_dc_db_str(mocker):
 #     migrationConfig={
 #         "main_profile": PROFILE_DEFAULT,
@@ -39,18 +39,15 @@ from unittest.mock import patch,MagicMock
 #     # mocker.patch('ofscraper.utils.paths.config_.read_config', return_value=migrationConfig)
 #     # mocker.patch('ofscraper.utils.paths.profiles.get_my_info', return_value=ME)
 #     # media=Post( TIMELINE_EXAMPLE,"dd","dd").media[0]
-    
 
 #     # try:
 #     #     assert(download.main_download_downloader("s",media,"t",0,"dd","ddd","dd"))
 #     # except:
 #     #     None
-      
-      
 
 # from example import *
 
-# def test_func1__should_call_func2(mocker):  
+# def test_func1__should_call_func2(mocker):
 #     mock_func2=MagicMock("example.func2")
 #     func1()
 #     mock_func2.assert_called_once()
@@ -59,8 +56,3 @@ from unittest.mock import patch,MagicMock
 #     func1(False)
 #     mock_func2=MagicMock("example.func2")
 #     mock_func2.assert_not_called()
-    
-
-
-
-

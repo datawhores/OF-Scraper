@@ -1,5 +1,4 @@
-CHECKLISTINSTRUCTIONS=\
-"""
+CHECKLISTINSTRUCTIONS = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Instructions
@@ -31,12 +30,7 @@ PRESS ENTER TO CONTINUE
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
 
-
-
-
-
-FUZZY_INSTRUCTION=\
-"""
+FUZZY_INSTRUCTION = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Instructions
@@ -92,10 +86,7 @@ PRESS ENTER TO CONTINUE
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
 
-
-
-MODEL_FUZZY=\
-"""
+MODEL_FUZZY = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Instructions
@@ -156,8 +147,7 @@ PRESS ENTER TO CONTINUE
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
 
-SCRAPE_PAID=\
-"""
+SCRAPE_PAID = """
 This is meant really for scraping content for deleted models
 This can greatly increase the time needed for a single scrape
 
@@ -166,9 +156,7 @@ It should not be needed to turn this on everytime, especially with  frequent scr
 SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
-
-SINGLE_LINE=\
-"""
+SINGLE_LINE = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 
@@ -190,28 +178,20 @@ PRESS ENTER TO CONTINUE
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
 
-
-KEY_BOARD=\
-"""
+KEY_BOARD = """
 SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
-
-NUMBER=\
-"""
+NUMBER = """
 SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
-
-MODEL_SELECT=\
-"""
+MODEL_SELECT = """
 SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 CHANGE_SORT/CHANGE_FILTER: [ALT+X] or [CTRL+B]
 """
 
-
-MULTI_LINE=\
-"""
+MULTI_LINE = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Instructions for editing
@@ -232,9 +212,7 @@ PRESS ENTER TO CONTINUE
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
 
-
-AUTH_MULTI=\
-"""
+AUTH_MULTI = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 
@@ -257,9 +235,7 @@ PRESS ENTER TO CONTINUE
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
 
-
-CONFIG_MULTI=\
-"""
+CONFIG_MULTI = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Instructions for editing config
@@ -279,5 +255,3 @@ PRESS ENTER TO CONTINUE
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
-
-

@@ -1,29 +1,27 @@
 name: Docker Purge
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"  # every day at midnight
+    - cron: "0 0 * * *" # every day at midnight
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-    - name: Main purger
-      uses: snok/container-retention-policy@v2
-      with:
-        image-names: of-scraper
-        timestamp-to-use: created_at
-        account-type: personal
-        token: ${{ secrets.DOCKER_DELETE}}
-        filter-tags: sha*
-        cut-off: 1 second ago UTC
-    - name: Delete untagged
-      uses: snok/container-retention-policy@v2
-      with:
-        image-names: of-scraper
-        cut-off: 1 second ago UTC
-        account-type: personal
-        token: ${{ secrets.DOCKER_DELETE}}
-        untagged-only: true
-
-
+      - name: Main purger
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: of-scraper
+          timestamp-to-use: created_at
+          account-type: personal
+          token: ${{ secrets.DOCKER_DELETE}}
+          filter-tags: sha*
+          cut-off: 1 second ago UTC
+      - name: Delete untagged
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: of-scraper
+          cut-off: 1 second ago UTC
+          account-type: personal
+          token: ${{ secrets.DOCKER_DELETE}}
+          untagged-only: true

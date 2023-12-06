@@ -1,18 +1,16 @@
 name: Delete Package
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-    - uses: snok/container-retention-policy@v2
-      with:
-        image-names: ofscraper
-        cut-off: two hours ago UTC+2
-        timestamp-to-use: updated_at
-        account-type: personal
-        keep-at-least: 10
-        skip-tags: latest,1.*
-        token: ${{ secrets.DOCKER_DELETE}}
-
-
+      - uses: snok/container-retention-policy@v2
+        with:
+          image-names: ofscraper
+          cut-off: two hours ago UTC+2
+          timestamp-to-use: updated_at
+          account-type: personal
+          keep-at-least: 10
+          skip-tags: latest,1.*
+          token: ${{ secrets.DOCKER_DELETE}}

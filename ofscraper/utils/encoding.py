@@ -10,6 +10,6 @@ r"""
 
 
 def encode_utf_16(string):
-    encoded_string = string.encode('utf-16', 'surrogatepass')
-    decoded_string = encoded_string.decode('utf-16')
+    encoded_string = string.encode("utf-16", "surrogatepass")
+    decoded_string = encoded_string.decode("utf-16")
     return decoded_string
