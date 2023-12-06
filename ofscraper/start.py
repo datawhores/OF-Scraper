@@ -4,7 +4,6 @@ import multiprocessing
 import os
 import platform
 import ssl
-import threading
 import time
 import traceback
 from threading import Event
@@ -21,7 +20,6 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.exit as exit
 import ofscraper.utils.logger as logger
 import ofscraper.utils.manager as manager
-import ofscraper.utils.misc as misc
 import ofscraper.utils.paths as paths_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles_
@@ -29,10 +27,6 @@ import ofscraper.utils.system as system
 
 
 def main():
-    main_log_thread = None
-    other_log_process = None
-    other_log_thread = None
-
     try:
         logger.init_parent_logger()
         args = args_.getargs()
@@ -40,11 +34,11 @@ def main():
             return
         main_event = Event()
         other_event = Event()
-        main_log_thread = logger.start_stdout_logthread(event=main_event)
-        if system.getcpu_count() >= 2:
-            other_log_process = logger.start_other_process()
+        main_logger_thread = logger.start_stdout_logthread(event=main_event)
+        if system.getcpu_count() >= 20000:
+            other_logger = logger.start_other_process()
         else:
-            other_log_thread = logger.start_other_thread(event=other_event)
+            other_logger = logger.start_other_thread(event=other_event)
         # allow background processes to start
         time.sleep(3)
 
@@ -62,47 +56,16 @@ def main():
             manual.manual_download()
         else:
             scraper.main()
-        logging.getLogger("shared").error("Finished Script")
-        logging.getLogger("shared").handlers[0].queue.put("None")
-        logging.getLogger("shared").handlers[-1].queue.put("None")
-
-        stdout = logging.getLogger("ofscraper")
-        main_log_thread.join()
-        stdout.debug(
-            f"Main Process threads before closing log threads {threading.enumerate()}"
-        )
-        if other_log_process:
-            other_log_process.join()
-        elif other_log_thread:
-            other_log_thread.join()
-        stdout.debug(
-            f"Main Process threads after closing log threads {threading.enumerate()}"
-        )
-        if logger.queue_:
-            logger.queue_.close()
-            logger.queue_.cancel_join_thread()
+        logger.closeNormal(other_logger, main_logger_thread)
         manager.shutdown()
-
-        stdout.debug(
-            f"Main Process threads after closing cancel_join {threading.enumerate()}"
-        )
 
     except KeyboardInterrupt as E:
         print("Force closing script")
         try:
             with exit.DelayedKeyboardInterrupt():
-                main_event.set()
-                main_log_thread.join()
-                if other_log_process:
-                    other_log_process.join(timeout=20)
-                    if other_log_process.is_alive():
-                        other_log_process.terminate()
-                if other_log_thread:
-                    other_event.set()
-                    other_log_thread.join()
-                if logger.queue_:
-                    logger.queue_.close()
-                    logger.queue_.cancel_join_thread()
+                logger.forcedClose(
+                    other_logger, main_logger_thread, main_event, other_event
+                )
                 manager.shutdown()
                 try:
                     cache = Cache(
@@ -117,15 +80,9 @@ def main():
 
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                main_event.set()
-                main_log_thread.join()
-                if other_log_process:
-                    other_log_process.join(timeout=20)
-                    if other_log_process.is_alive():
-                        other_log_process.terminate()
-                if logger.queue_:
-                    logger.queue_.close()
-                    logger.queue_.cancel_join_thread()
+                logger.forcedClose(
+                    other_logger, main_logger_thread, main_event, other_event
+                )
                 manager.shutdown()
                 raise E
     except Exception as E:
@@ -133,20 +90,10 @@ def main():
         logging.getLogger("shared").traceback(E)
         try:
             with exit.DelayedKeyboardInterrupt():
-                main_event.set()
-                main_log_thread.join()
-                if other_log_process:
-                    other_log_process.join(timeout=20)
-                    if other_log_process.is_alive():
-                        other_log_process.terminate()
-                if other_log_thread:
-                    other_event.set()
-                    other_log_thread.join()
-                if logger.queue_:
-                    logger.queue_.close()
-                    logger.queue_.cancel_join_thread()
+                logger.forcedClose(
+                    other_logger, main_logger_thread, main_event, other_event
+                )
                 manager.shutdown()
-
                 try:
                     cache = Cache(
                         paths.getcachepath(),
@@ -161,15 +108,9 @@ def main():
 
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                main_event.set()
-                main_log_thread.join()
-                if other_log_process:
-                    other_log_process.join(timeout=20)
-                    if other_log_process.is_alive():
-                        other_log_process.terminate()
-                if other_log_thread:
-                    other_event.set()
-                    other_log_thread.join()
+                logger.forcedClose(
+                    other_logger, main_logger_thread, main_event, other_event
+                )
                 if logger.queue_:
                     logger.queue_.close()
                     logger.queue_.cancel_join_thread()

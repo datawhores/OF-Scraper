@@ -36,6 +36,7 @@ console = Console()
 def main_prompt() -> int:
     main_prompt_choices = [*constants.mainPromptChoices]
     main_prompt_choices.insert(3, Separator())
+    main_prompt_choices.insert(8, Separator())
     answer = promptClasses.getChecklistSelection(
         message="What would you like to do?", choices=[*main_prompt_choices]
     )

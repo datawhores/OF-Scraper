@@ -515,9 +515,9 @@ def start_stdout_logthread(input_=None, name=None, count=1, event=None):
 def start_checker(func: abc.Callable):
     def inner(*args_, **kwargs):
         if args.getargs().discord and args.getargs().discord != "OFF":
-            func(*args_, **kwargs)
+            return func(*args_, **kwargs)
         elif args.getargs().log and args.getargs().log != "OFF":
-            func(*args_, **kwargs)
+            return func(*args_, **kwargs)
 
     return inner
 
@@ -576,3 +576,61 @@ def get_shared_logger(main_=None, other_=None, name=None):
     # log all messages, debug and up
     logger.setLevel(1)
     return logger
+
+
+def closeNormal(other, main):
+    closeMessage()
+    stdout = logging.getLogger("ofscraper")
+    main.join()
+    stdout.debug(
+        f"Main Process threads before closing log threads {threading.enumerate()}"
+    )
+    closeOther(other)
+    stdout.debug(
+        f"Main Process threads after closing log threads {threading.enumerate()}"
+    )
+    closeQueue()
+    stdout.debug(
+        f"Main Process threads after closing cancel_join {threading.enumerate()}"
+    )
+
+
+def forcedClose(other, main, main_event, other_event):
+    main_event.set()
+    main.join()
+    closeOther(other, other_event=other_event)
+    closeQueue()
+
+
+def closeMessage():
+    logging.getLogger("shared").error("Finished Script")
+    num_loggers = len(logging.getLogger("shared").handlers)
+    if num_loggers > 0:
+        logging.getLogger("shared").handlers[0].queue.put("None")
+    if num_loggers > 1:
+        logging.getLogger("shared").handlers[-1].queue.put("None")
+
+
+def closeOther(other, other_event=None):
+    if not other:
+        return
+
+    if not other_event:
+        if isinstance(other, threading.Thread):
+            other.join()
+        else:
+            other.join()
+    if other_event:
+        if isinstance(other, threading.Thread):
+            other_event.set()
+            other.join()
+        else:
+            other.join(timeout=20)
+            if other.is_alive():
+                other.terminate()
+
+
+def closeQueue():
+    if queue_:
+        queue_.close()
+        queue_.cancel_join_thread()
