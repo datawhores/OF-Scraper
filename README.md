@@ -9,11 +9,9 @@
 
 # Intro
 
-A fork of onlyfans-scraper. It has been optimized to make it more feature complete with DIGITALCRIMINALS' onlyfans script.
-A matter of fact with the right settings transitioning between the two scripts should be a easy enough process
+This is a fork of the original onlyfans-scraper, is designed to facilitate effortless transitions between DIGITALCRIMINALS' script, ensuring high compatibility and smooth transfer of features
 
-In addition there are numerous filtering features to control exactly which type of content you want to scrape.
-https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
+Additionally, it offers a wealth of filtering features, providing extensive control over the specific types of content you wish to scrape. For a detailed breakdown of these enhancements, you can refer to the CHANGES.md file available at this link: https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
 
 # Documentation
 
@@ -23,7 +21,12 @@ For information on how to
 - run
 - and other things you might want to know
 
-https://of-scraper.gitbook.io/of-scraper
+For detailed instructions on:
+
+- Installation
+- Running the tool
+- And other pertinent information you might need,
+Visit the following link: https://of-scraper.gitbook.io/of-scraper
 
 <h3>DISCLAIMERS:</h3>
 <ol>
@@ -36,7 +39,13 @@ https://of-scraper.gitbook.io/of-scraper
 
 ## Description:
 
+<<<<<<< HEAD
 command-line program to download media, and to process other batch operations such as liking and unliking posts.
+=======
+
+# Description:
+This tool functions as a command-line program enabling media downloads and executing various batch operations like liking and unliking posts on OnlyFans.    
+>>>>>>> ac63182e8fa145d6655e99a21aeb32365e0040fc
 
 ![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
@@ -52,18 +61,16 @@ https://ofscraper.clearflask.com/feedback
 Or the discord
 
 # Migrating from DC script
+To maintain compatibility with your current folders, make sure to modify the metadata option within the config file. Additionally, configure the save_path, dir_path, and filename settings to generate outputs that align with your existing setup.
 
-You will need to change the settings so that the metadata option is compatible with your current folders
-Additionally you might want to set the save_path, dir_path, and filename so they output similar outputs
+The inherited metadata files from DIGITALCRIMINALS' script play a crucial role in preventing redundant downloads by acting as a check for duplicates.
 
-The metadata path from DIGITALCRIMINALS' script is used for duplicate check so as long as your set the right path.
-Files won't download a second time
+For comprehensive guidance on making these adjustments, you can refer to the provided resources
 
-https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script
 
-https://of-scraper.gitbook.io/of-scraper/config-options
-
-https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
+1. https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script
+2. https://of-scraper.gitbook.io/of-scraper/config-options
+3. https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
