@@ -1,4 +1,3 @@
-import asyncio
 import functools
 
 from InquirerPy import get_style, inquirer

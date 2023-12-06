@@ -10,7 +10,6 @@ import asyncio
 import contextvars
 import logging
 import math
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow

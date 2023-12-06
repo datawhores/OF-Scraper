@@ -106,7 +106,7 @@ def edit_auth():
                     authText = f.read()
                     auth = json.loads(authText)
                 break
-            except Exception as E:
+            except Exception:
                 continue
     make_request_auth()
 

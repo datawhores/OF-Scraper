@@ -147,7 +147,7 @@ def test_mediaclass_timeline():
     index = 1
     t = Post(TIMELINE_EXAMPLE, model_id, username)
     try:
-        media = Media(t.media[index], index, t)
+        Media(t.media[index], index, t)
     except Exception as E:
         raise E
 

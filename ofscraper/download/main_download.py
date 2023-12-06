@@ -284,9 +284,9 @@ async def main_download_datahandler(r, progress, ele, total, temp, path_to_file)
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception as E:
+        except Exception:
             None
         try:
             progress.remove_task(task1)
-        except Exception as E:
+        except Exception:
             None

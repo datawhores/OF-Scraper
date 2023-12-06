@@ -147,7 +147,7 @@ def test_mediaclass_pinned():
     index = 0
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
     try:
-        media = Media(t.media[index], index, t)
+        Media(t.media[index], index, t)
     except Exception as E:
         raise E
 

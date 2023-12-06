@@ -281,7 +281,7 @@ def message_checker():
 def purchase_checker():
     cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     user_dict = {}
-    headers = auth.make_headers(auth.read_auth())
+    auth.make_headers(auth.read_auth())
     ROWS = []
     for user_name in args_.getargs().username:
         user_name = profile.scrape_profile(user_name)["username"]

@@ -331,12 +331,12 @@ async def alt_download_datahandler(item, total, l, ele, progress, path):
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception as E:
+        except Exception:
             None
 
         try:
             progress.remove_task(task1)
-        except Exception as E:
+        except Exception:
             None
 
 
@@ -386,5 +386,5 @@ async def alt_download_downloader(item, c, ele, path, path_to_file, progress):
                     )
                 except Exception as E:
                     raise E
-    except Exception as E:
+    except Exception:
         pass

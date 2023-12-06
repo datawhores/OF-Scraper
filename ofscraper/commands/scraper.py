@@ -363,7 +363,7 @@ def run_helper(*functs):
                 job_func = jobqueue.get()
                 job_func()
                 jobqueue.task_done()
-        except KeyboardInterrupt as E:
+        except KeyboardInterrupt:
             try:
                 with exit.DelayedKeyboardInterrupt():
                     raise KeyboardInterrupt
@@ -452,7 +452,7 @@ def main():
         scrapper()
         paths.cleanup()
         paths.cleanDB()
-    except KeyboardInterrupt as E:
+    except KeyboardInterrupt:
         try:
             with exit.DelayedKeyboardInterrupt():
                 paths.cleanup()

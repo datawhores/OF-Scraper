@@ -106,7 +106,7 @@ def main():
                     with exit.DelayedKeyboardInterrupt():
                         raise E
 
-        except KeyboardInterrupt as E:
+        except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
                 logger.forcedClose(
                     other_logger, main_logger_thread, main_event, other_event

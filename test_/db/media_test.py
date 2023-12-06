@@ -1,7 +1,5 @@
 import tempfile
 import traceback
-from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 

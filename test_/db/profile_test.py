@@ -1,4 +1,3 @@
-import logging
 import tempfile
 
 import pytest
@@ -28,7 +27,7 @@ def test_profile_create(mocker):
             mocker.patch("ofscraper.db.operations.FileLock.acquire", return_value=True)
             mocker.patch("ofscraper.db.operations.FileLock.release", return_value=True)
             create_profile_table(model_id="11111", username="test")
-        except Exception as E:
+        except Exception:
             raise Exception
 
 

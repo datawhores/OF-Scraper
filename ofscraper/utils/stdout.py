@@ -1,6 +1,5 @@
 import contextlib
 import io
-import logging
 import os
 import sys
 

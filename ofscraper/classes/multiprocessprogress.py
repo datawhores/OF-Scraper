@@ -1,4 +1,3 @@
-import sys
 from typing import Any, NewType, Optional
 
 import rich.progress

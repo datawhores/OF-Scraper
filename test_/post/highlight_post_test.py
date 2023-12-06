@@ -147,7 +147,7 @@ def test_mediaclass_highlights():
     index = 0
     t = Post(HIGHLIGHT_EXAMPLE["stories"][0], model_id, username, "highlights")
     try:
-        media = Media(t.media[index], index, t)
+        Media(t.media[index], index, t)
     except Exception as E:
         raise E
 
@@ -166,7 +166,6 @@ def test_mediatype_highlights():
 def test_mediaurl_highlights():
     username = "test"
     model_id = TEST_ID
-    index = 0
     t = Post(HIGHLIGHT_EXAMPLE["stories"][0], model_id, username, "highlights")
     assert (re.search("http", t.media[0].url)) != None
 

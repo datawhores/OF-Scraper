@@ -159,7 +159,7 @@ def test_mediaclass_stories():
     index = 0
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     try:
-        media = Media(t.media[index], index, t)
+        Media(t.media[index], index, t)
     except Exception as E:
         raise E
 

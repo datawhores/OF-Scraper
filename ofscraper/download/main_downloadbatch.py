@@ -10,7 +10,7 @@ r"""
 import asyncio
 import pathlib
 import traceback
-from functools import partial, singledispatch
+from functools import partial
 
 import aiofiles
 import arrow
@@ -297,5 +297,5 @@ async def main_download_datahandler(r, ele, total, temp, path_to_file):
 
         try:
             await fileobject.close()
-        except Exception as E:
+        except Exception:
             None

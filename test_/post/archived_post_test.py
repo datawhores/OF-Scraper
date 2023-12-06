@@ -147,7 +147,7 @@ def test_mediaclass_archived():
     index = 0
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
     try:
-        media = Media(t.media[index], index, t)
+        Media(t.media[index], index, t)
     except Exception as E:
         raise E
 

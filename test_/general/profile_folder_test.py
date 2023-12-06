@@ -1,4 +1,3 @@
-import json
 import tempfile
 
 from pytest_check import check

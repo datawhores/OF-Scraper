@@ -3,7 +3,7 @@ import pathlib
 import re
 import subprocess
 import traceback
-from functools import partial, singledispatch
+from functools import partial
 
 import aiofiles
 import arrow
@@ -325,12 +325,12 @@ async def alt_download_datahandler(item, total, l, ele):
         # Close file if needed
         try:
             await fileobject.close()
-        except Exception as E:
+        except Exception:
             None
 
         try:
             await common.pipe.coro_send({"type": "remove_task", "args": (ele.id,)})
-        except Exception as E:
+        except Exception:
             None
 
 
@@ -375,5 +375,5 @@ async def alt_download_downloader(item, c, ele, path_to_file):
                     return await alt_download_sendreq(item, c, ele, path_to_file)
                 except Exception as E:
                     raise E
-    except Exception as E:
+    except Exception:
         pass

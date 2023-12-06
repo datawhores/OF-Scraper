@@ -16,7 +16,7 @@ def run(coro):
                     tasks.cancel()
                     loop.run_forever()
                     tasks.exception()
-                except Exception as Y:
+                except Exception:
                     None
             raise E
         finally:

@@ -146,7 +146,7 @@ def test_mediaclass_messages():
     index = 0
     t = Post(MESSAGES_DICT, model_id, username)
     try:
-        media = Media(t.media[index], index, t)
+        Media(t.media[index], index, t)
     except Exception as E:
         raise E
 

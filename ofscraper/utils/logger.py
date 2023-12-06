@@ -629,7 +629,7 @@ def closeOther(other, other_event=None):
             if other.is_alive():
                 other.terminate()
 
-g
+
 def closeQueue():
     if queue_:
         queue_.close()
