@@ -104,6 +104,8 @@ def process_prompts():
             elif result_profiles_prompt == 4:
                 # View profiles
                 profiles.print_profiles()
+        elif result_main_prompt == 7:
+            break
         if prompts.continue_prompt() == "No":
             break
 

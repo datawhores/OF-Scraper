@@ -78,8 +78,9 @@ def main():
         stdout.debug(
             f"Main Process threads after closing log threads {threading.enumerate()}"
         )
-        logger.queue_.close()
-        logger.queue_.cancel_join_thread()
+        if logger.queue_:
+            logger.queue_.close()
+            logger.queue_.cancel_join_thread()
         manager.shutdown()
 
         stdout.debug(
@@ -99,8 +100,9 @@ def main():
                 if other_log_thread:
                     other_event.set()
                     other_log_thread.join()
-                logger.queue_.close()
-                logger.queue_.cancel_join_thread()
+                if logger.queue_:
+                    logger.queue_.close()
+                    logger.queue_.cancel_join_thread()
                 manager.shutdown()
                 try:
                     cache = Cache(
@@ -121,7 +123,9 @@ def main():
                     other_log_process.join(timeout=20)
                     if other_log_process.is_alive():
                         other_log_process.terminate()
-                logger.queue_.cancel_join_thread()
+                if logger.queue_:
+                    logger.queue_.close()
+                    logger.queue_.cancel_join_thread()
                 manager.shutdown()
                 raise E
     except Exception as E:
@@ -138,8 +142,9 @@ def main():
                 if other_log_thread:
                     other_event.set()
                     other_log_thread.join()
-                logger.queue_.close()
-                logger.queue_.cancel_join_thread()
+                if logger.queue_:
+                    logger.queue_.close()
+                    logger.queue_.cancel_join_thread()
                 manager.shutdown()
 
                 try:
@@ -165,8 +170,9 @@ def main():
                 if other_log_thread:
                     other_event.set()
                     other_log_thread.join()
-                logger.queue_.close()
-                logger.queue_.cancel_join_thread()
+                if logger.queue_:
+                    logger.queue_.close()
+                    logger.queue_.cancel_join_thread()
                 manager.shutdown()
                 raise
 

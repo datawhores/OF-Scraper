@@ -83,6 +83,7 @@ mainPromptChoices = {
     "Edit config.json file": 4,
     "Edit advanced config.json settings": 5,
     "Edit Profile": 6,
+    "Quit": 7,
 }
 usernameOrListChoices = {
     "Select from accounts on profile": 0,
