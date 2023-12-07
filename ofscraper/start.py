@@ -41,7 +41,7 @@ def main():
         paths.make_folders()
         picker.pick()
 
-        logger.closeNormal(other_logger, main_logger_thread)
+        logger.gracefulClose(other_logger, main_logger_thread)
         manager.shutdown()
 
     except KeyboardInterrupt as E:

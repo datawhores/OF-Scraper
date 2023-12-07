@@ -577,8 +577,8 @@ def get_shared_logger(main_=None, other_=None, name=None):
     return logger
 
 
-def closeNormal(other, main):
-    closeMessage()
+def gracefulClose(other, main):
+    sendCloseMessage()
     stdout = logging.getLogger("ofscraper")
     stdout.debug(
         f"Main Process threads before closing log threads {threading.enumerate()}"
@@ -602,7 +602,7 @@ def forcedClose(other, main):
     closeQueue()
 
 
-def closeMessage():
+def sendCloseMessage():
     logging.getLogger("shared").error("Finished Script")
     num_loggers = len(logging.getLogger("shared").handlers)
     if num_loggers > 0:
