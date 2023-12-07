@@ -1,7 +1,4 @@
-import asyncio
 import logging
-import multiprocessing
-import os
 import platform
 import ssl
 import time
@@ -37,7 +34,7 @@ def main():
         main_event = Event()
         other_event = Event()
         main_logger_thread = logger.start_stdout_logthread(event=main_event)
-        if system.getcpu_count() >= 20000:
+        if system.getcpu_count() >= 2:
             other_logger = logger.start_other_process()
         else:
             other_logger = logger.start_other_thread(event=other_event)
@@ -55,7 +52,7 @@ def main():
         try:
             with exit.DelayedKeyboardInterrupt():
                 logger.forcedClose(
-                    other_logger, main_logger_thread, main_event, other_event
+                    other_logger, main_logger_thread, other_event, main_event
                 )
                 manager.shutdown()
                 try:
@@ -72,7 +69,7 @@ def main():
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
                 logger.forcedClose(
-                    other_logger, main_logger_thread, main_event, other_event
+                    other_logger, main_logger_thread, other_event, main_event
                 )
                 manager.shutdown()
                 raise E
@@ -82,7 +79,7 @@ def main():
         try:
             with exit.DelayedKeyboardInterrupt():
                 logger.forcedClose(
-                    other_logger, main_logger_thread, main_event, other_event
+                    other_logger, main_logger_thread, other_event, main_event
                 )
                 manager.shutdown()
                 try:
@@ -100,7 +97,7 @@ def main():
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
                 logger.forcedClose(
-                    other_logger, main_logger_thread, main_event, other_event
+                    other_logger, main_logger_thread, other_event, main_event
                 )
                 if logger.queue_:
                     logger.queue_.close()

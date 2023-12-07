@@ -192,3 +192,4 @@ CDRM = "https://cdrm-project.com/wv"
 
 LOGGER_TIMEOUT = 180
 LOG_DISPLAY_TIMEOUT = 0.8
+FORCED_THREAD_TIMEOUT = 5

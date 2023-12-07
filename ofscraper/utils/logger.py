@@ -416,11 +416,9 @@ def logger_process(input_, name=None, stop_count=1, event=None):
     log = init_stdout_logger(name)
     input_ = input_ or queue_
     count = 0
-    close = False
     funct = None
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = input_.get
-        end_funct = input_.get_nowait
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
@@ -436,7 +434,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         for message in messages:
             # check for shutdown
             if event and event.is_set():
-                close = True
+                break
             if message == "None":
                 count = count + 1
                 continue
@@ -446,14 +444,6 @@ def logger_process(input_, name=None, stop_count=1, event=None):
             if message.message != "None":
                 # log the message
                 log.handle(message)
-        # check close and empty message
-
-        if close == True or count == stop_count:
-            while True:
-                try:
-                    end_funct()
-                except:
-                    return
 
 
 # processor for logging discord/log via queues, runnable by any process
@@ -461,11 +451,9 @@ def logger_other(input_, name=None, stop_count=1, event=None):
     # create a logger
     log = init_other_logger(name)
     count = 0
-    close = False
     funct = None
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = input_.get
-        end_funct = input_.get_nowait
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
@@ -481,7 +469,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         for message in messages:
             # set close value
             if event and event.is_set():
-                close = True
+                break
             if message == "None":
                 count = count + 1
                 continue
@@ -491,13 +479,6 @@ def logger_other(input_, name=None, stop_count=1, event=None):
             if message.message != "None":
                 # log the message
                 log.handle(message)
-        # check close and empty message
-        if close == True or count == stop_count:
-            while True:
-                try:
-                    end_funct()
-                except:
-                    return
 
 
 # console log thread must be ran by main process, sharable via queues
@@ -595,9 +576,9 @@ def closeNormal(other, main):
     )
 
 
-def forcedClose(other, main, main_event, other_event):
+def forcedClose(other, main, other_event, main_event):
     main_event.set()
-    main.join()
+    main.join(constants.FORCED_THREAD_TIMEOUT)
     closeOther(other, other_event=other_event)
     closeQueue()
 
@@ -623,9 +604,9 @@ def closeOther(other, other_event=None):
     if other_event:
         if isinstance(other, threading.Thread):
             other_event.set()
-            other.join()
+            other.join(timeout=constants.FORCED_THREAD_TIMEOUT)
         else:
-            other.join(timeout=20)
+            other.join(timeout=constants.FORCED_THREAD_TIMEOUT)
             if other.is_alive():
                 other.terminate()
 
