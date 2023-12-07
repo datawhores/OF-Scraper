@@ -143,7 +143,7 @@ def update_config(field: str, value):
 
 
 def auto_update_config(path, config: dict) -> dict:
-    log.error("Auto updating config...")
+    log.warning("Auto updating config...")
     new_config = get_current_config_schema(config)
 
     with open(path, "w") as f:
@@ -560,6 +560,6 @@ def get_appendlog(config):
 
 
 def get_avatar(config):
-    if config == None:
+    if config is None:
         return constants.AVATAR_DEFAULT
     return config.get("avatar", constants.AVATAR_DEFAULT)

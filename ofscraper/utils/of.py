@@ -301,9 +301,6 @@ def process_profile(username) -> list:
                     posts_.Post(data, info[2], username, responsetype="profile"),
                 )
             )
-        avatars = list(filter(lambda x: x.filename.find("avatar") != -1, output))
-        if len(avatars) > 0:
-            log.warning(f"Avatar : {avatars[0].url}")
         return output
 
 

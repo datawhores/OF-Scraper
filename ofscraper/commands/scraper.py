@@ -122,7 +122,7 @@ def process_post():
 def process_post_user_first():
     with scrape_context_manager():
         if not placeholder.Placeholders().check_uniquename():
-            log.error(
+            log.warning(
                 "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
             "
@@ -168,7 +168,7 @@ def process_post_user_first():
                 operations.create_tables(model_id=model_id, username=username)
                 operations.create_backup(model_id, username)
                 operations.write_profile_table(model_id=model_id, username=username)
-                results = misc.download_picker(
+                misc.download_picker(
                     username,
                     model_id,
                     value,
@@ -179,7 +179,7 @@ def process_post_user_first():
 def normal_post_process():
     with scrape_context_manager():
         if not placeholder.Placeholders().check_uniquename():
-            log.error(
+            log.warning(
                 "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]     \
             "
@@ -190,9 +190,9 @@ def normal_post_process():
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
         for count, ele in enumerate(userdata):
-            log.error(f"Progress {count+1}/{length} model")
+            log.warning(f"Progress {count+1}/{length} model")
             if args_.getargs().posts:
-                log.error(
+                log.warning(
                     f"Getting {','.join(args_.getargs().posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}"
                 )
             try:
@@ -385,7 +385,7 @@ def check_auth():
     while status != "UP":
         status = init.getstatus()
         if status == "DOWN":
-            log.error("Auth Failed")
+            log.warning("Auth Failed")
             auth.make_auth(auth=auth.read_auth())
             continue
         break
@@ -417,7 +417,7 @@ def scrape_context_manager():
     # Before yield as the enter method
 
     start = timeit.default_timer()
-    log.error(
+    log.warning(
         f"""
 ==============================                            
 [bold] starting script [/bold]
@@ -426,7 +426,7 @@ def scrape_context_manager():
     )
     yield
     end = timeit.default_timer()
-    log.error(
+    log.warning(
         f"""
 ===========================
 [bold] Script Finished [/bold]
@@ -486,7 +486,7 @@ def scrapper():
         and not args_.getargs().scrape_paid
     ):
         if args_.getargs().daemon:
-            log.error(
+            log.warning(
                 "You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu"
             )
         process_prompts()

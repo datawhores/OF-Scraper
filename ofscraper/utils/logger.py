@@ -183,14 +183,11 @@ class SensitiveFormatter(logging.Formatter):
 
     @staticmethod
     def _filter(s):
-        if s.find("Avatar :") != -1:
-            None
-        else:
-            s = re.sub("&Policy=[^&\"']+", "&Policy={hidden}", s)
-            s = re.sub("&Signature=[^&\"']+", "&Signature={hidden}", s)
-            s = re.sub("&Key-Pair-Id=[^&\"']+", "&Key-Pair-Id={hidden}", s)
-            for ele in senstiveDict.items():
-                s = re.sub(re.escape(str(ele[0])), str(ele[1]), s)
+        s = re.sub("&Policy=[^&\"']+", "&Policy={hidden}", s)
+        s = re.sub("&Signature=[^&\"']+", "&Signature={hidden}", s)
+        s = re.sub("&Key-Pair-Id=[^&\"']+", "&Key-Pair-Id={hidden}", s)
+        for ele in senstiveDict.items():
+            s = re.sub(re.escape(str(ele[0])), str(ele[1]), s)
         return s
 
     def format(self, record):
@@ -259,8 +256,7 @@ def getLevel(input):
     """
     return {
         "OFF": 100,
-        "PROMPT": "CRITICAL",
-        "STATS": "ERROR",
+        "PROMPT": "ERROR",
         "LOW": "WARNING",
         "NORMAL": "INFO",
         "DEBUG": "DEBUG",

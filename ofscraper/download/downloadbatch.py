@@ -202,7 +202,7 @@ def process_dicts(username, model_id, filtered_medialist):
         except Exception:
             with exit.DelayedKeyboardInterrupt():
                 raise E
-    log.error(
+    log.warning(
         f"[bold]{username}[/bold] ({common.photo_count+common.audio_count+common.video_count} \
 downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
 {common.forced_skipped} skipped, {common.skipped} failed)"
