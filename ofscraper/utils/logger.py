@@ -419,6 +419,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
     funct = None
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = input_.get
+        end_funct = input_.get_nowait
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
@@ -445,6 +446,13 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                 # log the message
                 log.handle(message)
 
+        if count == stop_count:
+            while True:
+                try:
+                    end_funct()
+                except:
+                    return
+
 
 # processor for logging discord/log via queues, runnable by any process
 def logger_other(input_, name=None, stop_count=1, event=None):
@@ -454,6 +462,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
     funct = None
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = input_.get
+        end_funct = input_.get_nowait
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
@@ -479,6 +488,12 @@ def logger_other(input_, name=None, stop_count=1, event=None):
             if message.message != "None":
                 # log the message
                 log.handle(message)
+        if count == stop_count:
+            while True:
+                try:
+                    end_funct()
+                except:
+                    return
 
 
 # console log thread must be ran by main process, sharable via queues
@@ -562,11 +577,11 @@ def get_shared_logger(main_=None, other_=None, name=None):
 def closeNormal(other, main):
     closeMessage()
     stdout = logging.getLogger("ofscraper")
-    main.join()
     stdout.debug(
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
     closeOther(other)
+    main.join()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )

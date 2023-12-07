@@ -125,6 +125,7 @@ DYNAMIC_DEFAULT = "deviint"
 SUPPRESS_LOG_LEVEL = 21
 PROGRESS_DEFAULT = False
 APPEND_DEFAULT = True
+AVATAR_DEFAULT = True
 RESPONSE_TYPE_DEFAULT = {
     "message": "Messages",
     "timeline": "Posts",

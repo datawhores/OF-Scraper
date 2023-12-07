@@ -105,6 +105,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "downloadbars": get_show_downloadprogress(config),
             "cache-mode": cache_mode_helper(config),
             "appendlog": get_appendlog(config),
+            "avatar": get_avatar(config),
             "responsetype": {
                 "timeline": get_timeline_responsetype(config),
                 "message": get_messages_responsetype(config),
@@ -556,3 +557,9 @@ def get_appendlog(config):
     if config == None:
         return constants.APPEND_DEFAULT
     return config.get("appendlog", constants.APPEND_DEFAULT)
+
+
+def get_avatar(config):
+    if config == None:
+        return constants.AVATAR_DEFAULT
+    return config.get("avatar", constants.AVATAR_DEFAULT)

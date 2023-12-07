@@ -422,6 +422,13 @@ def config_prompt_advanced(config_) -> dict:
     new_settings = promptClasses.batchConverter(
         *[
             {
+                "type": "list",
+                "name": "avatars",
+                "message": "Show Avatars in Log",
+                "default": config.get_avatar(config_),
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
+            },
+            {
                 "type": "number",
                 "name": "download-sem",
                 "message": "Number of semaphores per thread: ",
