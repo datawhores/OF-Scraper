@@ -207,14 +207,6 @@ def create_parser(input=None):
         action="extend",
     )
     post.add_argument(
-        "-md",
-        "--metadata",
-        help="Skip all media downloads and gathers metadata only",
-        default=False,
-        action="store_true",
-    )
-
-    post.add_argument(
         "-sx",
         "--size-max",
         help="Filter out files greater then given size supported inputs include int in bytes or human-readable such as 10mb",
@@ -408,6 +400,14 @@ def create_parser(input=None):
         help="Number threads to use minimum will always be 1, Maximmum will never be higher then max availible-1",
         default=None,
         type=int,
+    )
+
+    advanced.add_argument(
+        "-md",
+        "--metadata",
+        help="Skip all media downloads and gathers metadata only",
+        default=False,
+        action="store_true",
     )
 
     subparser = parser.add_subparsers(help="commands", dest="command")
