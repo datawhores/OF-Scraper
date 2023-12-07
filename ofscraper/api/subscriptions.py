@@ -233,6 +233,8 @@ def parse_subscriptions(subscriptions: list) -> list:
         {
             "name": profile["username"],
             "id": profile["id"],
+            "avatar": profile.get("avatar"),
+            "header": profile.get("header"),
             "sub-price": profile.get("currentSubscribePrice", {}),
             "regular-price": profile.get("subscribedByData").get("regularPrice")
             if profile.get("subscribedByData")
