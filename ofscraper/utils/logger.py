@@ -5,6 +5,7 @@ import re
 import threading
 from collections import abc
 from logging.handlers import QueueHandler
+from threading import Event
 
 import aioprocessing
 from rich.logging import RichHandler
@@ -21,13 +22,19 @@ import ofscraper.utils.paths as paths
 queue_ = None
 otherqueue_ = None
 otherqueue2_ = None
+main_event = None
+other_event = None
 
 
-def init_queues():
+def init_values():
     global queue_
     global otherqueue_
+    global main_event
+    global other_event
     queue_ = multiprocessing.Queue()
     otherqueue_ = manager_.get_manager().Queue()
+    main_event = Event()
+    other_event = Event()
 
 
 class PipeHandler(logging.Handler):
@@ -493,10 +500,10 @@ def logger_other(input_, name=None, stop_count=1, event=None):
 
 
 # console log thread must be ran by main process, sharable via queues
-def start_stdout_logthread(input_=None, name=None, count=1, event=None):
+def start_stdout_logthread(input_=None, name=None, count=1):
     input_ = input_ or queue_
     thread = threading.Thread(
-        target=logger_process, args=(input_, name, count, event), daemon=True
+        target=logger_process, args=(input_, name, count, main_event), daemon=True
     )
     thread.start()
 
@@ -516,10 +523,10 @@ def start_checker(func: abc.Callable):
 
 # processs discord/log queues via a thread
 @start_checker
-def start_other_thread(input_=None, name=None, count=1, event=None):
+def start_other_thread(input_=None, name=None, count=1):
     input_ = input_ or otherqueue_
     thread = threading.Thread(
-        target=logger_other, args=(input_, name, count, event), daemon=True
+        target=logger_other, args=(input_, name, count, other_event), daemon=True
     )
     thread.start()
     return thread
@@ -587,10 +594,11 @@ def closeNormal(other, main):
     )
 
 
-def forcedClose(other, main, other_event, main_event):
+def forcedClose(other, main):
     main_event.set()
+    other_event.set()
     main.join(constants.FORCED_THREAD_TIMEOUT)
-    closeOther(other, other_event=other_event)
+    closeOther(other)
     closeQueue()
 
 
@@ -603,18 +611,16 @@ def closeMessage():
         logging.getLogger("shared").handlers[-1].queue.put("None")
 
 
-def closeOther(other, other_event=None):
+def closeOther(other):
     if not other:
         return
-
-    if not other_event:
+    elif not other_event.is_set():
         if isinstance(other, threading.Thread):
             other.join()
         else:
             other.join()
-    if other_event:
+    elif other_event.is_set():
         if isinstance(other, threading.Thread):
-            other_event.set()
             other.join(timeout=constants.FORCED_THREAD_TIMEOUT)
         else:
             other.join(timeout=constants.FORCED_THREAD_TIMEOUT)

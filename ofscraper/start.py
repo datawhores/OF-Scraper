@@ -3,7 +3,6 @@ import platform
 import ssl
 import time
 import traceback
-from threading import Event
 
 import certifi
 from diskcache import Cache
@@ -22,7 +21,7 @@ import ofscraper.utils.system as system
 def main():
     try:
         system.set_mulitproc_start_type()
-        logger.init_queues()
+        logger.init_values()
         system.set_eventloop()
         startvalues()
         logger.discord_warning()
@@ -31,13 +30,11 @@ def main():
         args = args_.getargs()
         if vars(args).get("help"):
             return
-        main_event = Event()
-        other_event = Event()
-        main_logger_thread = logger.start_stdout_logthread(event=main_event)
+        main_logger_thread = logger.start_stdout_logthread()
         if system.getcpu_count() >= 2:
             other_logger = logger.start_other_process()
         else:
-            other_logger = logger.start_other_thread(event=other_event)
+            other_logger = logger.start_other_thread()
         # allow background processes to start
         time.sleep(3)
 
@@ -51,9 +48,7 @@ def main():
         print("Force closing script")
         try:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(
-                    other_logger, main_logger_thread, other_event, main_event
-                )
+                logger.forcedClose(other_logger, main_logger_thread)
                 manager.shutdown()
                 try:
                     cache = Cache(
@@ -68,9 +63,7 @@ def main():
 
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(
-                    other_logger, main_logger_thread, other_event, main_event
-                )
+                logger.forcedClose(other_logger, main_logger_thread)
                 manager.shutdown()
                 raise E
     except Exception as E:
@@ -78,9 +71,7 @@ def main():
         logging.getLogger("shared").traceback_(E)
         try:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(
-                    other_logger, main_logger_thread, other_event, main_event
-                )
+                logger.forcedClose(other_logger, main_logger_thread)
                 manager.shutdown()
                 try:
                     cache = Cache(
@@ -96,9 +87,7 @@ def main():
 
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(
-                    other_logger, main_logger_thread, other_event, main_event
-                )
+                logger.forcedClose(other_logger, main_logger_thread)
                 if logger.queue_:
                     logger.queue_.close()
                     logger.queue_.cancel_join_thread()
