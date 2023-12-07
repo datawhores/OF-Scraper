@@ -16,7 +16,7 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
 
-from .profiles import get_current_config_profile
+from .profiles import create_profile_path, get_current_config_profile
 
 console = console_.get_shared_console()
 homeDir = pathlib.Path.home()
@@ -296,3 +296,8 @@ def cleanDB():
 
 def speed_file():
     return pathlib.Path(get_profile_path() / "speed.zip")
+
+
+def make_folders():
+    config_.get_config_folder()
+    create_profile_path()

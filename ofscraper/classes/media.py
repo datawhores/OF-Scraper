@@ -318,8 +318,8 @@ class Media:
                         r.raise_for_status()
                     return MPEGDASHParser.parse(await r.text_())
         except Exception as E:
-            log.traceback(traceback.format_exc())
-            log.traceback(E)
+            log.traceback_(traceback.format_exc())
+            log.traceback_(E)
             raise E
 
     @property

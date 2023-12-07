@@ -391,8 +391,8 @@ async def process_dicts_split(username, model_id, medialist):
                 media_type, num_bytes_downloaded = pack
                 await common.pipe.coro_send((media_type, num_bytes_downloaded, 0))
             except Exception as e:
-                common.log.traceback(e)
-                common.log.traceback(traceback.format_exc())
+                common.log.traceback_(e)
+                common.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
                 num_bytes_downloaded = 0
                 await common.pipe.coro_send((media_type, num_bytes_downloaded, 0))

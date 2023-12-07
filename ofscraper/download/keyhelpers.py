@@ -118,8 +118,8 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
                 r.raise_for_status()
             return out
     except Exception as E:
-        log.traceback(E)
-        log.traceback(traceback.format_exc())
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
         raise E
 
 
@@ -160,8 +160,8 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
                 r.raise_for_status()
         return out
     except Exception as E:
-        log.traceback(E)
-        log.traceback(traceback.format_exc())
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
         raise E
 
 
@@ -219,8 +219,8 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                 r.raise_for_status()
         return out
     except Exception as E:
-        log.traceback(E)
-        log.traceback(traceback.format_exc())
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
         raise E
 
 
@@ -276,6 +276,6 @@ async def key_helper_manual(c, pssh, licence_url, id):
             key = "{}:{}".format(keyobject.kid.hex, keyobject.key.hex())
             return key
         except Exception as E:
-            log.traceback(E)
-            log.traceback(traceback.format_exc())
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
             raise E

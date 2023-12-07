@@ -229,8 +229,8 @@ def addtraceback():
     logging.addLevelName(level, "TRACEBACK")
     logging.TRACEBACK = level
     setattr(logging, "TRACEBACK", level)
-    setattr(logging.getLoggerClass(), "traceback", logForLevel(level))
-    setattr(logging, "traceback", logToRoot(level))
+    setattr(logging.getLoggerClass(), "traceback_", logForLevel(level))
+    setattr(logging, "traceback_", logToRoot(level))
 
 
 def addtrace():
@@ -318,7 +318,7 @@ def init_stdout_logger(name=None):
     return log
 
 
-def init_parent_logger(name=None, queue_=None):
+def init_parent_logger(name=None, other_=None):
     name = name or "ofscraper-download"
     log = logging.getLogger(name)
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
@@ -358,8 +358,8 @@ def init_parent_logger(name=None, queue_=None):
         sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(funct())
         log.addHandler(sh2)
-    queue_ = queue_ or otherqueue_
-    log.addHandler(QueueHandler(queue_))
+    # other_= other_ or otherqueue_
+    # log.addHandler(QueueHandler(other_))
     return log
 
 
@@ -634,3 +634,10 @@ def closeQueue():
     if queue_:
         queue_.close()
         queue_.cancel_join_thread()
+
+
+def discord_warning():
+    if args.getargs().discord == "DEBUG":
+        console.get_shared_console().print(
+            "[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]"
+        )

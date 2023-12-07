@@ -150,8 +150,8 @@ def process_post_user_first():
                 except Exception as e:
                     if isinstance(e, KeyboardInterrupt):
                         raise e
-                    log.traceback(f"failed with exception: {e}")
-                    log.traceback(traceback.format_exc())
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
             if args_.getargs().scrape_paid:
                 output.extend(OF.process_all_paid())
             user_dict = {}
@@ -205,8 +205,8 @@ def normal_post_process():
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
-                log.traceback(f"failed with exception: {e}")
-                log.traceback(traceback.format_exc())
+                log.traceback_(f"failed with exception: {e}")
+                log.traceback_(traceback.format_exc())
 
         if args_.getargs().scrape_paid:
             user_dict = {}
@@ -241,8 +241,8 @@ def normal_post_process():
                 except Exception as E:
                     if isinstance(e, KeyboardInterrupt):
                         raise E
-                    log.traceback(f"failed with exception: {E}")
-                    log.traceback(traceback.format_exc())
+                    log.traceback_(f"failed with exception: {E}")
+                    log.traceback_(traceback.format_exc())
 
 
 @exit.exit_wrapper
@@ -420,7 +420,7 @@ def scrape_context_manager():
     log.error(
         f"""
 ==============================                            
-[bold]starting script[/bold]
+[bold] starting script [/bold]
 ==============================
 """
     )
@@ -429,7 +429,7 @@ def scrape_context_manager():
     log.error(
         f"""
 ===========================
-[bold]Script Finished[/bold]
+[bold] Script Finished [/bold]
 Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 ===========================
 """
@@ -439,7 +439,7 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green]Welcome to OF-Scraper Version {args_.getargs().version}[/bold green]"
+            f"[bold green] Welcome to OF-Scraper Version {args_.getargs().version}[/bold green]"
         )
 
 
@@ -449,6 +449,7 @@ def main():
         paths.cleanup()
         paths.cleanDB()
         misc.check_cdm()
+
         scrapper()
         paths.cleanup()
         paths.cleanDB()
@@ -465,8 +466,8 @@ def main():
             with exit.DelayedKeyboardInterrupt():
                 paths.cleanup()
                 paths.cleanDB()
-                log.traceback(E)
-                log.traceback(traceback.format_exc())
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():

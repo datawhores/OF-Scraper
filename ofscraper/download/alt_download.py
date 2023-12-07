@@ -259,8 +259,8 @@ async def alt_download_sendreq(item, c, ele, path, path_to_file, progress, total
             await size_checker(temp, ele, total)
         return item
     except OSError as E:
-        common.log.traceback(E)
-        common.log.traceback(traceback.format_exc())
+        common.log.traceback_(E)
+        common.log.traceback_(traceback.format_exc())
         common.log.debug(
             f"Number of Open Files -> { len(psutil.Process().open_files())}"
         )
@@ -268,10 +268,10 @@ async def alt_download_sendreq(item, c, ele, path, path_to_file, progress, total
             f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
-        common.log.traceback(
+        common.log.traceback_(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}"
         )
-        common.log.traceback(
+        common.log.traceback_(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}"
         )
         raise E

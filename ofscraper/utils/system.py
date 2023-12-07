@@ -1,5 +1,7 @@
+import asyncio
 import json
 import multiprocessing
+import os
 import platform
 import subprocess
 import sys
@@ -52,3 +54,23 @@ def getOpenFiles(unique=True):
                 out.append(ele)
                 match.add(ele.fd)
     return out
+
+
+def set_mulitproc_start_type():
+    plat = platform.system()
+    if plat == "Darwin":
+        multiprocessing.set_start_method("spawn")
+        os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+        os.environ["no_proxy"] = "*"
+    elif plat == "Windows":
+        multiprocessing.set_start_method("spawn")
+    else:
+        multiprocessing.set_start_method("forkserver")
+
+
+def set_eventloop():
+    plat = platform.system()
+    if plat == "Linux":
+        import uvloop
+
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

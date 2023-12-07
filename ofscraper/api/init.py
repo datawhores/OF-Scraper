@@ -36,6 +36,6 @@ def getstatus():
         me.scrape_user()
         return "UP"
     except Exception as e:
-        log.traceback(e)
-        log.traceback(traceback.format_exc())
+        log.traceback_(e)
+        log.traceback_(traceback.format_exc())
         return "DOWN"
