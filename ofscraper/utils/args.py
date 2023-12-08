@@ -376,7 +376,7 @@ def create_parser(input=None):
         choices=[
             "name",
             "subscribed",
-            "expiring",
+            "expired",
             "current-price",
             "renewal-price",
             "regular-price",

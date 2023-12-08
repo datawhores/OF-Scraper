@@ -926,7 +926,7 @@ def model_selector(models) -> bool:
         return prompt
 
     def funct2(prompt_):
-        selected = models[prompt_.content_control._selected_choice_index]
+        selected = prompt_.content_control.selection["value"]
         format = "YYYY-MM-DD"
         print(
             f"""
