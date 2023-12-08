@@ -7,6 +7,7 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+import copy
 import json
 import logging
 import os
@@ -898,10 +899,12 @@ def model_selector(models) -> bool:
     choices = list(map(lambda x: model_selectorHelper(x[0], x[1]), enumerate(models)))
 
     def funct(prompt):
+        oldargs = copy.deepcopy(vars(args_.getargs()))
         userselector.setfilter()
         userselector.setsort()
-        nonlocal models
-        models = userselector.filterNSort(userselector.ALL_SUBS)
+        if oldargs != vars(args_.getargs()):
+            nonlocal models
+            models = userselector.filterNSort(userselector.ALL_SUBS)
         choices = list(
             map(lambda x: model_selectorHelper(x[0], x[1]), enumerate(models))
         )
