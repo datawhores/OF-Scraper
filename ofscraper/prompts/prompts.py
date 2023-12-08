@@ -900,6 +900,7 @@ def model_selector(models) -> bool:
     def funct(prompt):
         userselector.setfilter()
         userselector.setsort()
+        nonlocal models
         models = userselector.filterNSort(userselector.ALL_SUBS)
         choices = list(
             map(lambda x: model_selectorHelper(x[0], x[1]), enumerate(models))
@@ -922,7 +923,6 @@ def model_selector(models) -> bool:
         return prompt
 
     def funct2(prompt_):
-        models = userselector.filterNSort(userselector.ALL_SUBS)
         selected = models[prompt_.content_control._selected_choice_index]
         format = "YYYY-MM-DD"
         print(
@@ -971,7 +971,7 @@ def model_selectorHelper(count, x):
 
     return Choice(
         x,
-        name=f"{count+1}: {name} | end_date={renewed or expired or 'N/A'} | current_price={x['final-current-price']}",
+        name=f"{count+1}: {name} | end/renew date={renewed or expired or 'N/A'} | current price={x['final-current-price']}",
     )
 
 
