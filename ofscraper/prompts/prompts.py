@@ -1077,7 +1077,7 @@ def modify_filters_prompt(args):
             {
                 "type": "list",
                 "name": "all-promo",
-                "message": "Filter accounts precence of any promotions",
+                "message": "Filter accounts presence of any promotions",
                 "default": False,
                 "choices": [
                     Choice("yes", "Promotions Only"),
