@@ -3,16 +3,16 @@ CHECKLISTINSTRUCTIONS = """
 
 Instructions
 ============================================================
-Enter one of the  'SELECT_KEYS' to confirm
+Enter one of the  'SELECT KEYS' to confirm
 
 MINUMUM CHOICE: 1
-MAX_CHOICE:1
+MAX CHOICE:1
 ============================================================
 
 KEYS
 ============================================================
 
-   SELECT_KEYS
+   SELECT KEYS
    ======================================================================
    END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | shift+right
    ========================================================================
@@ -41,19 +41,19 @@ Parantheses indicates number of selected user
 
 
 MINUMUM CHOICE: 1
-MAX_CHOICE:ALL
+MAX CHOICE:ALL
 
 =========================================================================
 
 KEYS
 =========================================================================
-  CONFIRM_KEY          
+  CONFIRM KEY          
   ============
   ENTER
   ================
  
  
-   SELECT_KEYS
+   SELECT KEYS
    ================================================
    END  |  HOME | PAGEUP | PAGEDOWN | shift+right
    ================================================
@@ -65,17 +65,17 @@ KEYS
    =================
 
 
-  TOGGLE_ALL_FALSE
+  TOGGLE ALL FALSE
    ========
    CTRL+D
    ========
   
-  TOGGLE_ALL_TRUE
+  TOGGLE ALL TRUE
    ========
    CTRL+S
    ========
 
-   TOGGLE_ALL
+   TOGGLE ALL
    ========
    CTRL+A
    ========
@@ -97,19 +97,19 @@ Parantheses indicates number of selected user
 
 
 MINUMUM CHOICE: 1
-MAX_CHOICE:ALL
+MAX CHOICE:ALL
 
 =========================================================================
 
 KEYS
 =========================================================================
-  CONFIRM_KEY          
+  CONFIRM KEY          
   ============
   ENTER
   ================
  
  
- SELECT_KEYS
+ SELECT KEYS
    ================================================
    END  |  HOME | PAGEUP | PAGEDOWN | shift+right
    ================================================
@@ -121,24 +121,24 @@ KEYS
  =================
 
 
-  TOGGLE_ALL_FALSE
+  TOGGLE ALL FALSE
    ========
    CTRL+D
    ========
   
-  TOGGLE_ALL_TRUE
+  TOGGLE ALL TRUE
    ========
    CTRL+S
    ========
 
 
-  TOGGLE_ALL
+  TOGGLE ALL
    ========
    CTRL+A
    ========
 
 
-   CHANGE_FILTER/SORT
+   CHANGE FILTER/SORT
    ========
    ALT+X|CTRL+B
    ========
@@ -162,13 +162,13 @@ SINGLE_LINE = """
 
 Instructions for submitting text
 =========================================================================
-HIT one of the 'SUBMIT_KEYs' to submit text
+HIT one of the 'SUBMIT KEYs' to submit text
 ===========================================================================
 
 KEYS
 ==========================================================================
 
-   SUBMIT_KEYs
+   SUBMIT KEYs
    ======================================================================
    END  |  HOME   | PAGEUP | PAGEDOWN | SPACE | ENTER | shift+right
    ========================================================================
@@ -188,8 +188,8 @@ SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 
 MODEL_SELECT = """
 SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
-CHANGE_SORT/CHANGE_FILTER: [ALT+X] or [CTRL+B]
-MODEL_DETAILS: [ALT+D]
+CHANGE SORT/CHANGE FILTER: [ALT+X] or [CTRL+B]
+MODEL DETAILS: [ALT+D]
 """
 
 MULTI_LINE = """
@@ -202,7 +202,7 @@ HIT one of the 'SUBMIT' combinations when your auth syntax is corrected
 
 KEYS
 ===========================================================================
-   SUBMIT_KEYs
+   SUBMITis not NoneKEYs
    ==============================================================================
    END+ENTER  |  HOME+ENTER   | PAGEUP+ENTER | PAGEDOWN+ENTER | SPACE+ENTER | ESC
    ================================================================================
@@ -225,7 +225,7 @@ HIT one of the 'SUBMIT' combinations to confirm text
 KEYS
 =========================================================================
 
-   SUBMIT_KEYs
+   SUBMIT KEYs
    =============================================================================
    END+ENTER  |  HOME+ENTER   | PAGEUP+ENTER | PAGEDOWN+ENTER | SPACE+ENTER| ESC
    =============================================================================
@@ -246,7 +246,7 @@ HIT one of the 'SUBMIT' combinations when your auth syntax is corrected
 
 KEYS
 =========================================================================
-   SUBMIT_KEYs
+   SUBMIT KEYs
    ================================================================================
    END+ENTER  |  HOME+ENTER   | PAGEUP+ENTER | PAGEDOWN+ENTER | SPACE+ENTER | ESC
    ===============================================================================

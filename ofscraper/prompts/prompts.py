@@ -936,7 +936,7 @@ def model_selector(models) -> bool:
         Original Regular Price: {selected['regular-price']} 
         Original Claimable Promo Price: {selected['promo-price']} 
         Original Any Promo Price: {selected['all-promo-price']} 
-        Final Current-Price: {selected['final-current-price']} 
+        Final Current Price: {selected['final-current-price']} 
         Final Promo Price: {selected['final-promo-price']} 
         Final Regular Price: {selected['final-regular-price']} 
         Final Renewal Price: {selected['final-renewal-price']} 
