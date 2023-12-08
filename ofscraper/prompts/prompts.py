@@ -941,13 +941,16 @@ def model_selectorHelper(count, x):
     expired = arrow.get(x["expired"]).format(format) if x["expired"] else None
     renewed = arrow.get(x["renewed"]).format(format) if x["renewed"] else None
     subscribed = arrow.get(x["subscribed"]).format(format) if x["subscribed"] else None
-    price = x["price"] if x["price"] != None else "Unknown"
+    sub_price = x["prompt-sub-price"]
+    renewal_price = x["prompt-renewal-price"]
+    promo_price = x["prompt-promo-price"]
+    regular_price = x["regular-price"]
     name = x["name"]
     active = x["active"]
 
     return Choice(
         x,
-        name=f"{count+1}: {name}  renewed={renewed}  subdate={subscribed}  exprdate={expired} subprice={price} active={active}",
+        name=f"{count+1}: {name} | renewed={renewed} | subdate={subscribed} | exprdate={expired} | current_price={sub_price} | renewal_price={renewal_price} | regular_price={regular_price} | promo_price={promo_price}  | active={active}",
     )
 
 
@@ -995,7 +998,7 @@ def modify_filters_prompt(args):
             {
                 "type": "list",
                 "name": "subscription",
-                "message": "Filter accounts by the type of subscription",
+                "message": "Filter accounts by the type of a current subscription price",
                 "default": False,
                 "choices": [
                     Choice("paid", "Paid Subscriptions Only"),
@@ -1003,11 +1006,72 @@ def modify_filters_prompt(args):
                     Choice(False, "Both"),
                 ],
             },
+            {
+                "type": "list",
+                "name": "regular",
+                "message": "Filter accounts by the regular subscription price",
+                "default": False,
+                "choices": [
+                    Choice("paid", "Paid Subscriptions Only"),
+                    Choice("free", "Free Subscriptions Only"),
+                    Choice(False, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "future",
+                "message": "Filter accounts by renewal price",
+                "default": False,
+                "choices": [
+                    Choice("paid", "Paid Renewals Only"),
+                    Choice("free", "Free Renewals Only"),
+                    Choice(False, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "promo-price",
+                "message": "Filter accounts by any promotional price",
+                "default": False,
+                "choices": [
+                    Choice("paid", "Paid Promotions"),
+                    Choice("free", "Free Promotions"),
+                    Choice(False, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "promo",
+                "message": "Filter accounts presence of claimable promotions",
+                "default": False,
+                "choices": [
+                    Choice("yes", "Promotions Only"),
+                    Choice("no", "No Promotions"),
+                    Choice(False, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "all-promo",
+                "message": "Filter accounts precence of any promotions",
+                "default": False,
+                "choices": [
+                    Choice("yes", "Promotions Only"),
+                    Choice("no", "No Promotions"),
+                    Choice(False, "Both"),
+                ],
+            },
         ]
     )
     args.renewal = answer["renewal"]
     args.sub_status = answer["expire"]
-    args.account_type = answer["subscription"]
+    args.promo = answer["promo"]
+    args.all_promo = answer["all-promo"]
+    args.current_price = answer["subscription"]
+    args.regular_price = answer["regular"]
+    args.renewal_price = answer["future"]
+    args.promo_price = answer["promo-price"]
+
     return args
 
 
@@ -1039,7 +1103,10 @@ def modify_sort_prompt(args):
                     Choice("name", "By Name"),
                     Choice("subscribed", "Subscribed Date"),
                     Choice("expired", "Expiring Date"),
-                    Choice("price", "Price"),
+                    Choice("current-price", "Current Price"),
+                    Choice("promo-price", "Promotional Price"),
+                    Choice("regular-price", "Regular Price"),
+                    Choice("renewal-price", "Renewal Price"),
                 ],
             },
             {

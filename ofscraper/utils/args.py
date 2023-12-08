@@ -271,9 +271,58 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
-        "-at",
-        "--account-type",
-        help="Filter Free or paid accounts\npaid and free correspond to your original price, and not the renewal price",
+        "-cp",
+        "--current-price",
+        help="Filter Free or paid accounts\npaid and free means your original price, and not the renewal price",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["paid", "free"],
+    )
+
+    filters.add_argument(
+        "-rp",
+        "--renewal-price",
+        help="Filter Free or paid accounts\npaid and free means the price at renewal including promotions",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["paid", "free"],
+    )
+
+    filters.add_argument(
+        "-pm",
+        "--promo",
+        help="Filter based on if there is a claimable promo price",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["yes", "no"],
+    )
+    filters.add_argument(
+        "-am",
+        "--all-promo",
+        help="Filter based on if there is any promo price",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["yes", "no"],
+    )
+
+    filters.add_argument(
+        "-gp",
+        "--regular-price",
+        help="Filter Free or paid accounts\npaid and free means the price at renewal excluding promotions",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["paid", "free"],
+    )
+
+    filters.add_argument(
+        "-pp",
+        "--promo-price",
+        help="Filter Free or paid accounts\npaid and free including any promotion, even if not claimable",
         default=False,
         required=False,
         type=str.lower,
@@ -324,7 +373,15 @@ def create_parser(input=None):
         "--sort",
         help="What to sort the model list by",
         default="Name",
-        choices=["name", "subscribed", "expiring", "price"],
+        choices=[
+            "name",
+            "subscribed",
+            "expiring",
+            "current-price",
+            "renewal-price",
+            "regular-price",
+            "promo-price",
+        ],
         type=str.lower,
     )
     sort.add_argument(

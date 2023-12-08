@@ -191,7 +191,7 @@ def normal_post_process():
         length = len(userdata)
         for count, ele in enumerate(userdata):
             log.warning(f"Progress {count+1}/{length} model")
-            if config.get_avatar(config.read_config()):
+            if config.get_avatar(config.read_config()) and ele["avatar"]:
                 log.warning(f"Avatar : {ele['avatar']}")
             if args_.getargs().posts:
                 log.warning(

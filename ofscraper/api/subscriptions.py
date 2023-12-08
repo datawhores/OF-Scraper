@@ -229,8 +229,9 @@ async def sort_list(c) -> list:
 
 def parse_subscriptions(subscriptions: list) -> list:
     datenow = arrow.now()
-    data = [
-        {
+    data = []
+    for profile in subscriptions:
+        ele = {
             "name": profile["username"],
             "id": profile["id"],
             "avatar": profile.get("avatar"),
@@ -238,7 +239,7 @@ def parse_subscriptions(subscriptions: list) -> list:
             "sub-price": profile.get("currentSubscribePrice", {}),
             "regular-price": profile.get("subscribedByData").get("regularPrice")
             if profile.get("subscribedByData")
-            else None,
+            else profile.get("subscribePrice"),
             "promo-price": sorted(
                 list(
                     filter(
@@ -246,6 +247,10 @@ def parse_subscriptions(subscriptions: list) -> list:
                         profile.get("promotions") or [],
                     )
                 ),
+                key=lambda x: x["price"],
+            ),
+            "all-promo-price": sorted(
+                profile.get("promotions") or [],
                 key=lambda x: x["price"],
             ),
             "expired": profile.get("subscribedByData").get("expiredAt")
@@ -268,26 +273,85 @@ def parse_subscriptions(subscriptions: list) -> list:
             or (profile.get("subscribedByData", {}) or {}).get("status")
             == "Set to Expire",
         }
-        for profile in subscriptions
-    ]
-    data = setpricehelper(data)
+        promo_price_helper(ele)
+        prompt_sub_price_helper(ele)
+        prompt_renewal_price_helper(ele)
+        final_promo_price_helper(ele)
+        final_current_price_helper(ele)
+        final_renewal_price_helper(ele)
+        final_regular_price_helper(ele)
+        data.append(ele)
     return data
 
 
-def setpricehelper(data):
-    for ele in data:
-        prices = list(
-            filter(
-                lambda x: x != None,
-                [
-                    ele.get("sub-price"),
-                    (ele.get("promo-price") or [{}])[0].get("price"),
-                    ele["regular-price"],
-                ],
-            )
-        )
-        if len(prices) == 0:
-            ele["price"] = None
-        else:
-            ele["price"] = min(prices)
-    return data
+# Price Helpers
+
+
+def final_promo_price_helper(ele):
+    if ele.get("all-promo-price") is not None:
+        ele["final-promo-price"] = ele.get("all-promo-price")
+    elif ele.get("regular-price") is not None:
+        ele["final-promo-price"] = ele.get("regular-price")
+    else:
+        ele["final-promo-price"] = 0
+
+
+def final_renewal_price_helper(ele):
+    if ele.get("promo-price") is not None:
+        ele["final-renewal-price"] = ele.get("promo-price")
+    elif ele.get("regular-price") is not None:
+        ele["final-renewal-price"] = ele.get("regular-price")
+    else:
+        ele["final-renewal-price"] = 0
+
+
+def final_current_price_helper(ele):
+    if ele.get("sub-price") is not None:
+        ele["final-current-price"] = ele.get("sub-price")
+    elif ele.get("promo-price") is not None:
+        ele["final-current-price"] = ele.get("promo-price")
+    elif ele.get("regular-price") is not None:
+        ele["final-current-price"] = ele.get("regular-price")
+    else:
+        ele["final-current-price"] = 0
+
+
+def final_regular_price_helper(ele):
+    if ele.get("regular-price") is not None:
+        ele["final-regular-price"] = ele.get("regular-price")
+    else:
+        ele["final-regular-price"] = 0
+
+
+def promo_price_helper(ele):
+    if len(ele["promo-price"]) == 0:
+        ele["promo-price"] = None
+    else:
+        ele["promo-price"] = ele["promo-price"][0]["price"]
+
+    if len(ele["all-promo-price"]) == 0:
+        ele["all-promo-price"] = None
+
+    else:
+        ele["all-promo-price"] = ele["all-promo-price"][0]["price"]
+
+
+def prompt_sub_price_helper(ele):
+    if ele.get("sub-price") is None:
+        ele["prompt-sub-price"] = "N/A"
+    else:
+        ele["prompt-sub-price"] = ele.get("sub-price")
+
+
+def prompt_renewal_price_helper(ele):
+    if ele.get("promo-price") is not None:
+        ele["prompt-renewal-price"] = ele.get("promo-price")
+    elif ele.get("regular-price") != None:
+        ele["prompt-renewal-price"] = ele.get("regular-price")
+    else:
+        ele["prompt-renewal-price"] = "N/A"
+
+    if ele.get("all-promo-price") is not None:
+        ele["prompt-promo-price"] = ele.get("all-promo-price")
+    else:
+        ele["prompt-promo-price"] = "N/A"
