@@ -21,6 +21,7 @@ def wrapper(funct):
         kwargs["message"] = f"{kwargs.get('message')}" if kwargs.get("message") else ""
 
         altx_action = kwargs.pop("altx", None) or (lambda prompt: None)
+        altd_action = kwargs.pop("altd", None) or (lambda prompt: None)
         altv_action = kwargs.pop("altv", None) or long_message
 
         action_set = set()
@@ -47,6 +48,11 @@ def wrapper(funct):
             action_set.add("altv")
             event.app.exit()
 
+        @prompt_.register_kb("alt-d")
+        def _handle_altd(event):
+            action_set.add("alt-d")
+            event.app.exit()
+
         while True:
             out = prompt_.execute()
             prompt_._default = get_default(funct, prompt_)
@@ -56,6 +62,8 @@ def wrapper(funct):
                 prompt_ = altx_action(prompt_)
             if "altv" in action_set:
                 altv_action()
+            if "alt-d" in action_set:
+                altd_action(prompt_)
             action_set = set()
 
         return out

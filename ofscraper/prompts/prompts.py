@@ -16,9 +16,9 @@ import sys
 import arrow
 from diskcache import Cache
 from InquirerPy.base import Choice
-from InquirerPy.resolver import prompt
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
+from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
 import ofscraper.constants as constants
@@ -921,6 +921,32 @@ def model_selector(models) -> bool:
         prompt.content_control._format_choices()
         return prompt
 
+    def funct2(prompt_):
+        models = userselector.filterNSort(userselector.ALL_SUBS)
+        selected = models[prompt_.content_control._selected_choice_index]
+        format = "YYYY-MM-DD"
+        print(
+            f"""
+        Name: {selected['name']}
+        ID: {selected['id']}
+        Renewed Date: {arrow.get(selected["renewed"]).format(format) if selected["renewed"] else None}
+        Subscribed Date: {arrow.get(selected["subscribed"]).format(format) if selected["subscribed"] else None}
+        Expired Date: {arrow.get(selected["expired"]).format(format) if selected["expired"] else None} 
+        Original Sub Price: {selected['sub-price']}
+        Original Regular Price: {selected['regular-price']} 
+        Original Claimable Promo Price: {selected['promo-price']} 
+        Original Any Promo Price: {selected['all-promo-price']} 
+        Final Current-Price: {selected['final-current-price']} 
+        Final Promo Price: {selected['final-promo-price']} 
+        Final Regular Price: {selected['final-regular-price']} 
+        Final Renewal Price: {selected['final-renewal-price']} 
+        ======================================================
+        Press Enter to Continue
+
+        """
+        )
+        prompt("")
+
     p = promptClasses.getFuzzySelection(
         choices=choices,
         transformer=lambda result: ",".join(map(lambda x: x.split(" ")[1], result)),
@@ -928,6 +954,7 @@ def model_selector(models) -> bool:
         long_instruction=prompt_strings.MODEL_SELECT,
         long_message=prompt_strings.MODEL_FUZZY,
         altx=funct,
+        altd=funct2,
         validate=prompt_validators.emptyListValidator(),
         prompt="Filter: ",
         message="Which models do you want to scrape\n:",
@@ -940,17 +967,11 @@ def model_selectorHelper(count, x):
     format = "YYYY-MM-DD"
     expired = arrow.get(x["expired"]).format(format) if x["expired"] else None
     renewed = arrow.get(x["renewed"]).format(format) if x["renewed"] else None
-    subscribed = arrow.get(x["subscribed"]).format(format) if x["subscribed"] else None
-    sub_price = x["prompt-sub-price"]
-    renewal_price = x["prompt-renewal-price"]
-    promo_price = x["prompt-promo-price"]
-    regular_price = x["regular-price"]
     name = x["name"]
-    active = x["active"]
 
     return Choice(
         x,
-        name=f"{count+1}: {name} | renewed={renewed} | subdate={subscribed} | exprdate={expired} | current_price={sub_price} | renewal_price={renewal_price} | regular_price={regular_price} | promo_price={promo_price}  | active={active}",
+        name=f"{count+1}: {name} | end_date={renewed or expired or 'N/A'} | current_price={x['final-current-price']}",
     )
 
 

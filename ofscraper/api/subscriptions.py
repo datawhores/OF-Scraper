@@ -274,8 +274,6 @@ def parse_subscriptions(subscriptions: list) -> list:
             == "Set to Expire",
         }
         promo_price_helper(ele)
-        prompt_sub_price_helper(ele)
-        prompt_renewal_price_helper(ele)
         final_promo_price_helper(ele)
         final_current_price_helper(ele)
         final_renewal_price_helper(ele)
@@ -334,24 +332,3 @@ def promo_price_helper(ele):
 
     else:
         ele["all-promo-price"] = ele["all-promo-price"][0]["price"]
-
-
-def prompt_sub_price_helper(ele):
-    if ele.get("sub-price") is None:
-        ele["prompt-sub-price"] = "N/A"
-    else:
-        ele["prompt-sub-price"] = ele.get("sub-price")
-
-
-def prompt_renewal_price_helper(ele):
-    if ele.get("promo-price") is not None:
-        ele["prompt-renewal-price"] = ele.get("promo-price")
-    elif ele.get("regular-price") != None:
-        ele["prompt-renewal-price"] = ele.get("regular-price")
-    else:
-        ele["prompt-renewal-price"] = "N/A"
-
-    if ele.get("all-promo-price") is not None:
-        ele["prompt-promo-price"] = ele.get("all-promo-price")
-    else:
-        ele["prompt-promo-price"] = "N/A"
