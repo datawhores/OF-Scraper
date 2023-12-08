@@ -274,6 +274,7 @@ def parse_subscriptions(subscriptions: list) -> list:
             == "Set to Expire",
         }
         promo_price_helper(ele)
+        all_promo_price_helper(ele)
         final_promo_price_helper(ele)
         final_current_price_helper(ele)
         final_renewal_price_helper(ele)
@@ -327,6 +328,8 @@ def promo_price_helper(ele):
     else:
         ele["promo-price"] = ele["promo-price"][0]["price"]
 
+
+def all_promo_price_helper(ele):
     if len(ele["all-promo-price"]) == 0:
         ele["all-promo-price"] = None
 

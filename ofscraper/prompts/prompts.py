@@ -935,17 +935,17 @@ def model_selector(models) -> bool:
         Renewed Date: {arrow.get(selected["renewed"]).format(format) if selected["renewed"] else None}
         Subscribed Date: {arrow.get(selected["subscribed"]).format(format) if selected["subscribed"] else None}
         Expired Date: {arrow.get(selected["expired"]).format(format) if selected["expired"] else None} 
-        Original Sub Price: {selected['sub-price']}
-        Original Regular Price: {selected['regular-price']} 
-        Original Claimable Promo Price: {selected['promo-price']} 
-        Original Any Promo Price: {selected['all-promo-price']} 
-        Final Current Price: {selected['final-current-price']}
-        Final Promo Price: {selected['final-promo-price']} 
-        Final Regular Price: {selected['final-regular-price']} 
-        Final Renewal Price: {selected['final-renewal-price']} 
+        Original Sub Price: {selected['sub-price']}     [Current Subscription Price]
+        Original Regular Price: {selected['regular-price']}     [Regular Subscription Price Set By Model]
+        Original Claimable Promo Price: {selected['promo-price']}   [Lowest Promotional Price Marked as Claimable]
+        Original Any Promo Price: {selected['all-promo-price']}     [Lowest of Any Promotional Price]
+        Final Current Price: {selected['final-current-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#current-price]
+        Final Promo Price: {selected['final-promo-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#promo-price]
+        Final Renewal Price: {selected['final-renewal-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#renewal-price]
+        Final Regular Price: {selected['final-regular-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#regular-price]
         ======================================================
-        Press Enter to Continue
-
+        PRESS ENTER TO RETURN
+f
         """
         )
         prompt("")
@@ -974,7 +974,7 @@ def model_selectorHelper(count, x):
 
     return Choice(
         x,
-        name=f"{count+1}: {name} | end/renew date={renewed or expired or 'N/A'} | current price={x['final-current-price']}",
+        name=f"{count+1}: {name} | end/renew date: {renewed or expired or 'N/A'} | current price: {x['final-current-price']}",
     )
 
 
