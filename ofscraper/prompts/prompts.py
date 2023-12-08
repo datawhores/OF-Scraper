@@ -945,7 +945,6 @@ def model_selector(models) -> bool:
         Final Regular Price: {selected['final-regular-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#regular-price]
         ======================================================
         PRESS ENTER TO RETURN
-f
         """
         )
         prompt("")
