@@ -43,7 +43,7 @@ aiofiles = "^23.2.1"
 uvloop = { version = "^0.19.0", markers = "sys_platform == 'linux' or sys_platform == 'linux2'" }
 aiosqlite = "^0.19.0"
 speedtest-cli = "^2.1.3"
-pyinstaller = "5.13.0"
+pyinstaller = "5.13.1"
 
 
 [tool.poetry.group.dev.dependencies]
