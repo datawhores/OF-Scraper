@@ -367,7 +367,10 @@ def create_parser(input=None):
         action="extend",
     )
 
-    sort = parser.add_argument_group("sort", description="Options on how to sort list")
+    sort = parser.add_argument_group(
+        "sort",
+        description="Controls the order of the model selection list and the scraping order",
+    )
     sort.add_argument(
         "-st",
         "--sort",
