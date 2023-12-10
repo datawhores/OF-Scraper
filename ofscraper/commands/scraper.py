@@ -27,6 +27,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.interaction.like as like
+import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
@@ -39,7 +40,6 @@ import ofscraper.utils.of as OF
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
 import ofscraper.utils.stdout as stdout
-import ofscraper.utils.userselector as userselector
 
 log = logging.getLogger("shared")
 

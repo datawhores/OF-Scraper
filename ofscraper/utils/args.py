@@ -280,6 +280,15 @@ def create_parser(input=None):
         choices=["paid", "free"],
     )
 
+    # filters.add_argument(
+    #     "-mcp",
+    #     "--min-current-price",
+    #     help="Filter accounts by the min current price of the account",
+    #     default=None,
+    #     required=False,
+    #     type=int
+    # )
+
     filters.add_argument(
         "-rp",
         "--renewal-price",
@@ -338,7 +347,7 @@ def create_parser(input=None):
         choices=["active", "disabled"],
     )
     filters.add_argument(
-        "-ss",
+        "-mp",
         "--sub-status",
         help="Filter by whether or not your subscription has expired or not",
         default=False,
@@ -346,7 +355,6 @@ def create_parser(input=None):
         type=str.lower,
         choices=["active", "expired"],
     )
-
     filters.add_argument(
         "-ul",
         "--user-list",

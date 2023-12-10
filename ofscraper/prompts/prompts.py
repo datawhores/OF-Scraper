@@ -23,6 +23,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
 import ofscraper.constants as constants
+import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -894,8 +895,6 @@ def continue_prompt() -> bool:
 
 
 def model_selector(models) -> bool:
-    import ofscraper.utils.userselector as userselector
-
     choices = list(map(lambda x: model_selectorHelper(x[0], x[1]), enumerate(models)))
 
     def funct(prompt):
