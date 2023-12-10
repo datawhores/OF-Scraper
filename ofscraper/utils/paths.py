@@ -4,6 +4,7 @@ import pathlib
 import platform
 import re
 import subprocess
+import time
 import traceback
 from contextlib import contextmanager
 from pathlib import Path
@@ -173,7 +174,7 @@ def mp4decryptchecker(x):
 
 def mp4decryptpathcheck(x):
     if not pathlib.Path(x).is_file():
-        print("path to mp4decrypt is not valid")
+        log.error("path to mp4decrypt is not valid")
         return False
     return True
 
@@ -186,10 +187,11 @@ def mp4decryptexecutecheck(x):
             or re.search("mp4decrypt", t.stderr.decode()) != None
         ):
             return True
-        print("issue executing path as mp4decrypt\n")
     except Exception as E:
-        print(E)
-        print(traceback.format_exc())
+        log.error("issue executing path as mp4decrypt")
+        log.error(E)
+        log.error(traceback.format_exc())
+        time.sleep(2)
         return False
 
 
@@ -199,7 +201,7 @@ def ffmpegchecker(x):
 
 def ffmpegpathcheck(x):
     if not pathlib.Path(x).is_file():
-        print("path to ffmpeg is not valid")
+        log.error("path to ffmpeg is not valid")
         return False
     return True
 
@@ -212,10 +214,11 @@ def ffmpegexecutecheck(x):
             or re.search("ffmpeg", t.stderr.decode()) != None
         ):
             return True
-        print("issue executing path as ffmpeg")
     except Exception as E:
-        print(E)
-        print(traceback.format_exc())
+        log.error("issue executing path as ffmpeg")
+        log.error(E)
+        log.error(traceback.format_exc())
+        time.sleep(2)
         return False
 
 

@@ -395,13 +395,15 @@ def check_auth():
 
 def check_config():
     while not paths.mp4decryptchecker(config.get_mp4decrypt(config.read_config())):
-        console.get_shared_console().print("You need to select path for mp4decrypt\n\n")
+        console.get_shared_console().print(
+            "There is an issue with the mp4decrypt path\n\n"
+        )
         log.debug(
             f"[bold]current mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}"
         )
         config.update_mp4decrypt()
     while not paths.ffmpegchecker(config.get_ffmpeg(config.read_config())):
-        console.get_shared_console().print("You need to select path for ffmpeg\n\n")
+        console.get_shared_console().print("There is an issue with the ffmpeg path\n\n")
         log.debug(
             f"[bold]current ffmpeg path[/bold] {config.get_ffmpeg(config.read_config())}"
         )
