@@ -272,6 +272,12 @@ def parse_subscriptions(subscriptions: list) -> list:
             > datenow
             or (profile.get("subscribedByData", {}) or {}).get("status")
             == "Set to Expire",
+            "final-lastSeen": arrow.get(profile["lastSeen"]).float_timestamp
+            if profile["lastSeen"]
+            else arrow.now().float_timestamp + constants.DAY_SECONDS,
+            "lastSeen": profile["lastSeen"],
+            "isRealPerformer": profile.get("isRealPerformer"),
+            "isRestricted": profile.get("isRestricted"),
         }
         promo_price_helper(ele)
         all_promo_price_helper(ele)

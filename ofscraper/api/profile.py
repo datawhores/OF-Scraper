@@ -20,7 +20,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.utils.config as config_
 
-from ..constants import DAILY_EXPIRY, HOURLY_EXPIRY, NUM_TRIES, profileEP
+from ..constants import DAY_SECONDS, HOURLY_EXPIRY, NUM_TRIES, profileEP
 from ..utils import auth, encoding
 from ..utils.paths import getcachepath
 
@@ -140,7 +140,7 @@ def get_id_helper(c, username):
     with c.requests(profileEP.format(username))() as r:
         if r.ok:
             id = r.json()["id"]
-            cache.set(f"model_id_{username}", id, DAILY_EXPIRY)
+            cache.set(f"model_id_{username}", id, DAY_SECONDS)
             cache.close()
             return id
         else:

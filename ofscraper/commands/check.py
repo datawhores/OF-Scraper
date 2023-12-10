@@ -154,7 +154,7 @@ def post_checker():
                 data = timeline.get_timeline_media(model_id, user_name, after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
-                    f"timeline_check_{model_id}", data, expire=constants.CHECK_EXPIRY
+                    f"timeline_check_{model_id}", data, expire=constants.DAY_SECONDS
                 )
                 cache.close()
 
@@ -165,7 +165,7 @@ def post_checker():
                 data = archive.get_archived_media(model_id, user_name, after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
-                    f"archived_check_{model_id}", data, expire=constants.CHECK_EXPIRY
+                    f"archived_check_{model_id}", data, expire=constants.DAY_SECONDS
                 )
                 cache.close()
 
@@ -249,7 +249,7 @@ def message_checker():
         else:
             messages = messages_.get_messages(model_id, user_name, after=0)
             cache.set(
-                f"message_check_{model_id}", messages, expire=constants.CHECK_EXPIRY
+                f"message_check_{model_id}", messages, expire=constants.DAY_SECONDS
             )
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
@@ -258,9 +258,7 @@ def message_checker():
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
-            cache.set(
-                f"purchased_check_{model_id}", paid, expire=constants.CHECK_EXPIRY
-            )
+            cache.set(f"purchased_check_{model_id}", paid, expire=constants.DAY_SECONDS)
         media = get_all_found_media(user_name, messages + paid)
         unduped = []
         id_set = set()
@@ -294,9 +292,7 @@ def purchase_checker():
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
-            cache.set(
-                f"purchased_check_{model_id}", paid, expire=constants.CHECK_EXPIRY
-            )
+            cache.set(f"purchased_check_{model_id}", paid, expire=constants.DAY_SECONDS)
         downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, paid)
         ROWS.extend(row_gather(media, downloaded, user_name))
@@ -375,7 +371,7 @@ def get_paid_ids(model_id, user_name):
         paid = oldpaid
     else:
         paid = paid_.get_paid_posts(user_name, model_id)
-        cache.set(f"purchased_check_{model_id}", paid, expire=constants.CHECK_EXPIRY)
+        cache.set(f"purchased_check_{model_id}", paid, expire=constants.DAY_SECONDS)
     media = get_all_found_media(user_name, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))

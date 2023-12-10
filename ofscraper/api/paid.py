@@ -102,7 +102,7 @@ async def get_paid_posts(username, model_id):
         cache.set(
             f"purchased_check_{model_id}",
             list(outdict.values()),
-            expire=constants.CHECK_EXPIRY,
+            expire=constants.DAY_SECONDS,
         )
         cache.close()
         return list(outdict.values())

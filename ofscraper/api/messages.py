@@ -320,7 +320,7 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
             cache.set(
                 f"message_check_{model_id}",
                 list(newCheck.values()),
-                expire=constants.CHECK_EXPIRY,
+                expire=constants.DAY_SECONDS,
             )
             cache.close()
 

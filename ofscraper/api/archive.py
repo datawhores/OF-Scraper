@@ -318,7 +318,7 @@ async def get_archived_media(model_id, username, after=None):
             cache.set(
                 f"archived_check_{model_id}",
                 list(newCheck.values()),
-                expire=constants.CHECK_EXPIRY,
+                expire=constants.DAY_SECONDS,
             )
             cache.close()
         if setCache:
