@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import arrow
-from InquirerPy.utils import patched_print
 
 import ofscraper.constants as constants
 import ofscraper.utils.args as args_
@@ -174,23 +173,23 @@ def mp4decryptchecker(x):
 
 def mp4decryptpathcheck(x):
     if not pathlib.Path(x).is_file():
-        patched_print("path to mp4decrypt is not valid")
+        print("path to mp4decrypt is not valid")
         return False
     return True
 
 
 def mp4decryptexecutecheck(x):
     try:
-        t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if (
-            re.search("mp4decrypt", t.stdout.decode()) != None
-            or re.search("mp4decrypt", t.stderr.decode()) != None
-        ):
-            return True
-        patched_print("issue executing path as mp4decrypt")
+        # t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # if (
+        #     re.search("mp4decrypt", t.stdout.decode()) != None
+        #     or re.search("mp4decrypt", t.stderr.decode()) != None
+        # ):
+        #     return True
+        print("issue executing path as mp4decrypt\n")
     except Exception as E:
-        patched_print(E)
-        patched_print(traceback.format_exc())
+        print(E)
+        print(traceback.format_exc())
         return False
 
 
@@ -200,7 +199,7 @@ def ffmpegchecker(x):
 
 def ffmpegpathcheck(x):
     if not pathlib.Path(x).is_file():
-        patched_print("path to ffmpeg is not valid")
+        print("path to ffmpeg is not valid")
         return False
     return True
 
@@ -213,10 +212,10 @@ def ffmpegexecutecheck(x):
             or re.search("ffmpeg", t.stderr.decode()) != None
         ):
             return True
-        patched_print("issue executing path as ffmpeg")
+        print("issue executing path as ffmpeg")
     except Exception as E:
-        patched_print(E)
-        patched_print(traceback.format_exc())
+        print(E)
+        print(traceback.format_exc())
         return False
 
 

@@ -1644,13 +1644,13 @@ plugin = ["poetry (>=1.2.0,<2.0.0)"]
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.41"
+version = "3.0.37"
 description = "Library for building powerful interactive command lines in Python"
 optional = false
 python-versions = ">=3.7.0"
 files = [
-    {file = "prompt_toolkit-3.0.41-py3-none-any.whl", hash = "sha256:f36fe301fafb7470e86aaf90f036eef600a3210be4decf461a5b1ca8403d3cb2"},
-    {file = "prompt_toolkit-3.0.41.tar.gz", hash = "sha256:941367d97fc815548822aa26c2a269fdc4eb21e9ec05fc5d447cf09bad5d75f0"},
+    {file = "prompt_toolkit-3.0.37-py3-none-any.whl", hash = "sha256:6a2948ec427dfcc7c983027b1044b355db6aaa8be374f54ad2015471f7d81c5b"},
+    {file = "prompt_toolkit-3.0.37.tar.gz", hash = "sha256:d5d73d4b5eb1a92ba884a88962b157f49b71e06c4348b417dd622b25cdd3800b"},
 ]
 
 [package.dependencies]
@@ -2819,4 +2819,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.11,<=3.12"
-content-hash = "f7e610e8d492c87659779d5d727f9849687785d88e44d4e2baa6128728448fdf"
+content-hash = "4d821ec023952b558c012034d97d6bd3b52ea6199969deef0184a046c90a3362"
