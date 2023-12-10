@@ -180,12 +180,12 @@ def mp4decryptpathcheck(x):
 
 def mp4decryptexecutecheck(x):
     try:
-        # t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # if (
-        #     re.search("mp4decrypt", t.stdout.decode()) != None
-        #     or re.search("mp4decrypt", t.stderr.decode()) != None
-        # ):
-        #     return True
+        t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if (
+            re.search("mp4decrypt", t.stdout.decode()) != None
+            or re.search("mp4decrypt", t.stderr.decode()) != None
+        ):
+            return True
         print("issue executing path as mp4decrypt\n")
     except Exception as E:
         print(E)
