@@ -15,12 +15,6 @@ Additionally, it offers a wealth of filtering features, providing extensive cont
 
 # Documentation
 
-For information on how to
-
-- install
-- run
-- and other things you might want to know
-
 For detailed instructions on:
 
 - Installation
