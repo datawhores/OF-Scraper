@@ -23,7 +23,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
 import ofscraper.constants as constants
-import ofscraper.models.selector as userselector
+import ofscraper.filters.models.selector as userselector
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses

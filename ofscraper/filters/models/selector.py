@@ -2,11 +2,11 @@ import logging
 import time
 
 import ofscraper.constants as constants
-import ofscraper.models.flags as flags
-import ofscraper.models.price as price
-import ofscraper.models.retriver as retriver
-import ofscraper.models.sort as sort
-import ofscraper.models.subtype as subtype
+import ofscraper.filters.models.flags as flags
+import ofscraper.filters.models.price as price
+import ofscraper.filters.models.retriver as retriver
+import ofscraper.filters.models.sort as sort
+import ofscraper.filters.models.subtype as subtype
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 

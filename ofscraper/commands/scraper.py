@@ -26,15 +26,15 @@ import ofscraper.api.profile as profile
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
+import ofscraper.filters.media.main as filters
+import ofscraper.filters.models.selector as userselector
 import ofscraper.interaction.like as like
-import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config
 import ofscraper.utils.console as console
 import ofscraper.utils.exit as exit
-import ofscraper.utils.filters as filters
 import ofscraper.utils.misc as misc
 import ofscraper.utils.of as OF
 import ofscraper.utils.paths as paths

@@ -167,12 +167,17 @@ async def get_timeline_media(model_id, username, after=None):
         min_posts = 50
         responseArray = []
         page_count = 0
-        setCache = True if not args_.getargs().after else False
+        setCache = None
 
         cache = Cache(
             getcachepath(), disk=config_.get_cache_mode(config_.read_config())
         )
         if not args_.getargs().no_cache:
+            setCache = (
+                True
+                if (args_.getargs().after == 0 or not args_.getargs().after)
+                else False
+            )
             oldtimeline = cache.get(f"timeline_{model_id}", default=[])
         else:
             oldtimeline = []
@@ -191,8 +196,7 @@ async def get_timeline_media(model_id, username, after=None):
         postedAtArray = sorted(
             list(map(lambda x: float(x["postedAtPrecise"]), oldtimeline))
         )
-        if after == None:
-            after = get_after(model_id, username)
+        after = after or get_after(model_id, username)
 
         log.info(
             f"""
@@ -202,12 +206,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
                 """
         )
-        filteredArray = (
-            list(filter(lambda x: x >= after, postedAtArray))
-            if len(postedAtArray) > 0
-            else []
-        )
-
+        filteredArray = list(filter(lambda x: x >= after, postedAtArray))
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):

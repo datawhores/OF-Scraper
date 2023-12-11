@@ -1,8 +1,8 @@
 import arrow
 from pytest_check import check
 
+import ofscraper.filters.media.main as filters
 import ofscraper.utils.args as args_
-import ofscraper.utils.filters as filters
 from ofscraper.classes.posts import Post
 from test_.test_constants import *
 

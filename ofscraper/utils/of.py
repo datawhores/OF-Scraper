@@ -23,9 +23,9 @@ import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
+import ofscraper.filters.media.main as filters
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
-import ofscraper.utils.filters as filters
 import ofscraper.utils.stdout as stdout
 
 log = logging.getLogger("shared")

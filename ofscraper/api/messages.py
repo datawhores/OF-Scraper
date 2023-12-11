@@ -54,7 +54,9 @@ async def get_messages(model_id, username, after=None):
         )
         job_progress = Progress("{task.description}")
         progress_group = Group(overall_progress, Panel(Group(job_progress)))
-        setCache = True if not args_.getargs().after else False
+        setCache = (
+            True if (args_.getargs().after == 0 or not args_.getargs().after) else False
+        )
         setCache = True
 
         global tasks
