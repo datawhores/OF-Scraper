@@ -926,22 +926,21 @@ def model_selector(models) -> bool:
 
     def funct2(prompt_):
         selected = prompt_.content_control.selection["value"]
-        format = "YYYY-MM-DD"
         print(
             f"""
-        Name: {selected['name']}
-        ID: {selected['id']}
-        Renewed Date: {arrow.get(selected["renewed"]).format(format) if selected["renewed"] else None}
-        Subscribed Date: {arrow.get(selected["subscribed"]).format(format) if selected["subscribed"] else None}
-        Expired Date: {arrow.get(selected["expired"]).format(format) if selected["expired"] else None} 
-        Original Sub Price: {selected['sub-price']}     [Current Subscription Price]
-        Original Regular Price: {selected['regular-price']}     [Regular Subscription Price Set By Model]
-        Original Claimable Promo Price: {selected['promo-price']}   [Lowest Promotional Price Marked as Claimable]
-        Original Any Promo Price: {selected['all-promo-price']}     [Lowest of Any Promotional Price]
-        Final Current Price: {selected['final-current-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#current-price]
-        Final Promo Price: {selected['final-promo-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#promo-price]
-        Final Renewal Price: {selected['final-renewal-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#renewal-price]
-        Final Regular Price: {selected['final-regular-price']}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#regular-price]
+        Name: {selected.name}
+        ID: {selected.id}
+        Renewed Date: {selected.renewed}
+        Subscribed Date: {selected.subscribed}
+        Expired Date: {selected.expired} 
+        Original Sub Price: {selected.sub_price}     [Current Subscription Price]
+        Original Regular Price: {selected.regular_price}     [Regular Subscription Price Set By Model]
+        Original Claimable Promo Price: {selected.lowest_promo_claim}   [Lowest Promotional Price Marked as Claimable]
+        Original Any Promo Price: {selected.lowest_promo_all}     [Lowest of Any Promotional Price]
+        Final Current Price: {selected.final_current_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#current-price]
+        Final Promo Price: {selected.final_promo_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#promo-price]
+        Final Renewal Price: {selected.final_renewal_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#renewal-price]
+        Final Regular Price: {selected.final_regular_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#regular-price]
         ======================================================
         PRESS ENTER TO RETURN
         """
@@ -965,14 +964,9 @@ def model_selector(models) -> bool:
 
 
 def model_selectorHelper(count, x):
-    format = "YYYY-MM-DD"
-    expired = arrow.get(x["expired"]).format(format) if x["expired"] else None
-    renewed = arrow.get(x["renewed"]).format(format) if x["renewed"] else None
-    name = x["name"]
-
     return Choice(
         x,
-        name=f"{count+1}: {name} | end/renew date: {renewed or expired or 'N/A'} | current price: {x['final-current-price']}",
+        name=f"{count+1}: {x.name} | end/renew date: {x.renewed or x.expired or 'N/A'} | current price: {x.final_current_price}",
     )
 
 

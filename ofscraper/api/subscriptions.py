@@ -12,7 +12,6 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-import arrow
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
@@ -22,12 +21,7 @@ from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wai
 
 import ofscraper.constants as constants
 
-from ..constants import (
-    NUM_TRIES,
-    subscriptionsActiveEP,
-    subscriptionsEP,
-    subscriptionsExpiredEP,
-)
+from ..constants import NUM_TRIES, subscriptionsActiveEP, subscriptionsExpiredEP
 
 log = logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -225,119 +219,3 @@ async def sort_list(c) -> list:
             log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
             log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
             r.raise_for_status()
-
-
-def parse_subscriptions(subscriptions: list) -> list:
-    datenow = arrow.now()
-    data = []
-    for profile in subscriptions:
-        ele = {
-            "name": profile["username"],
-            "id": profile["id"],
-            "avatar": profile.get("avatar"),
-            "header": profile.get("header"),
-            "sub-price": profile.get("currentSubscribePrice", {}),
-            "regular-price": profile.get("subscribedByData").get("regularPrice")
-            if profile.get("subscribedByData")
-            else profile.get("subscribePrice"),
-            "promo-price": sorted(
-                list(
-                    filter(
-                        lambda x: x.get("canClaim") == True,
-                        profile.get("promotions") or [],
-                    )
-                ),
-                key=lambda x: x["price"],
-            ),
-            "all-promo-price": sorted(
-                profile.get("promotions") or [],
-                key=lambda x: x["price"],
-            ),
-            "expired": profile.get("subscribedByData").get("expiredAt")
-            if profile.get("subscribedByData")
-            else None,
-            "subscribed": (profile.get("subscribedByData").get("subscribes") or [{}])[
-                0
-            ].get("startDate")
-            if profile.get("subscribedByData")
-            else None,
-            "renewed": profile.get("subscribedByData").get("renewedAt")
-            if profile.get("subscribedByData")
-            else None,
-            "active": arrow.get(
-                profile.get("subscribedByExpireDate")
-                or (profile.get("subscribedByData", {}) or {}).get("expiredAt")
-                or 0
-            )
-            > datenow
-            or (profile.get("subscribedByData", {}) or {}).get("status")
-            == "Set to Expire",
-            "final-lastSeen": arrow.get(profile["lastSeen"]).float_timestamp
-            if profile["lastSeen"]
-            else arrow.now().float_timestamp + constants.DAY_SECONDS,
-            "lastSeen": profile["lastSeen"],
-            "isRealPerformer": profile.get("isRealPerformer"),
-            "isRestricted": profile.get("isRestricted"),
-        }
-        promo_price_helper(ele)
-        all_promo_price_helper(ele)
-        final_promo_price_helper(ele)
-        final_current_price_helper(ele)
-        final_renewal_price_helper(ele)
-        final_regular_price_helper(ele)
-        data.append(ele)
-    return data
-
-
-# Price Helpers
-
-
-def final_promo_price_helper(ele):
-    if ele.get("all-promo-price") is not None:
-        ele["final-promo-price"] = ele.get("all-promo-price")
-    elif ele.get("regular-price") is not None:
-        ele["final-promo-price"] = ele.get("regular-price")
-    else:
-        ele["final-promo-price"] = 0
-
-
-def final_renewal_price_helper(ele):
-    if ele.get("promo-price") is not None:
-        ele["final-renewal-price"] = ele.get("promo-price")
-    elif ele.get("regular-price") is not None:
-        ele["final-renewal-price"] = ele.get("regular-price")
-    else:
-        ele["final-renewal-price"] = 0
-
-
-def final_current_price_helper(ele):
-    if ele.get("sub-price") is not None:
-        ele["final-current-price"] = ele.get("sub-price")
-    elif ele.get("promo-price") is not None:
-        ele["final-current-price"] = ele.get("promo-price")
-    elif ele.get("regular-price") is not None:
-        ele["final-current-price"] = ele.get("regular-price")
-    else:
-        ele["final-current-price"] = 0
-
-
-def final_regular_price_helper(ele):
-    if ele.get("regular-price") is not None:
-        ele["final-regular-price"] = ele.get("regular-price")
-    else:
-        ele["final-regular-price"] = 0
-
-
-def promo_price_helper(ele):
-    if len(ele["promo-price"]) == 0:
-        ele["promo-price"] = None
-    else:
-        ele["promo-price"] = ele["promo-price"][0]["price"]
-
-
-def all_promo_price_helper(ele):
-    if len(ele["all-promo-price"]) == 0:
-        ele["all-promo-price"] = None
-
-    else:
-        ele["all-promo-price"] = ele["all-promo-price"][0]["price"]
