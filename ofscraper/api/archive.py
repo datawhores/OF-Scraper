@@ -164,7 +164,9 @@ async def get_archived_media(model_id, username, after=None):
         min_posts = 50
         responseArray = []
         page_count = 0
-        setCache = True if not args_.getargs().after else False
+        setCache = (
+            True if (args_.getargs().after == 0 or not args_.getargs().after) else False
+        )
 
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
