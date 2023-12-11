@@ -1,6 +1,7 @@
 import ofscraper.api.lists as lists
 import ofscraper.api.me as me
 import ofscraper.api.subscriptions as subscriptions
+import ofscraper.classes.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.stdout as stdout
@@ -27,8 +28,8 @@ def get_models() -> list:
         out.extend(other_subscriptions)
         black_list = lists.get_blacklist()
         out = list(filter(lambda x: x.get("id") not in black_list, out))
-        parsed_subscriptions = subscriptions.parse_subscriptions(out)
-        return parsed_subscriptions
+        models_objects = list(map(lambda x: models.Model(x), out))
+        return models_objects
 
 
 def get_model(parsed_subscriptions: list) -> tuple:

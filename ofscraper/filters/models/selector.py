@@ -64,7 +64,7 @@ def parsed_subscriptions_helper(force=False):
         PARSED_SUBS = filterNSort(ALL_SUBS)
     elif args_.getargs().username:
         usernameset = set(args_.getargs().username)
-        PARSED_SUBS = list(filter(lambda x: x["name"] in usernameset, ALL_SUBS))
+        PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
 
     return PARSED_SUBS
 
@@ -90,7 +90,7 @@ def filterNSort(usernames):
         filterusername = flags.promoFilterHelper(filterusername)
         filterusername = list(
             filter(
-                lambda x: x["name"] not in args_.getargs().excluded_username,
+                lambda x: x.name not in args_.getargs().excluded_username,
                 filterusername,
             )
         )

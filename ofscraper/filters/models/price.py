@@ -10,7 +10,7 @@ def pricePaidFreeFilterHelper(filterusername):
     if args_.getargs().current_price == "paid":
         filterusername = list(
             filter(
-                lambda x: x["final-current-price"] > 0,
+                lambda x: x.final_current_price > 0,
                 filterusername,
             )
         )
@@ -18,7 +18,7 @@ def pricePaidFreeFilterHelper(filterusername):
     elif args_.getargs().current_price == "free":
         filterusername = list(
             filter(
-                lambda x: x["final-current-price"] == 0,
+                lambda x: x.final_current_price == 0,
                 filterusername,
             )
         )
@@ -27,7 +27,7 @@ def pricePaidFreeFilterHelper(filterusername):
     if args_.getargs().renewal_price == "paid":
         filterusername = list(
             filter(
-                lambda x: x["final-renewal-price"] > 0,
+                lambda x: x.final_renewal_price > 0,
                 filterusername,
             ),
         )
@@ -36,7 +36,7 @@ def pricePaidFreeFilterHelper(filterusername):
     elif args_.getargs().renewal_price == "free":
         filterusername = list(
             filter(
-                lambda x: x["final-renewal-price"] == 0,
+                lambda x: x.final_renewal_price == 0,
                 filterusername,
             )
         )
@@ -44,20 +44,16 @@ def pricePaidFreeFilterHelper(filterusername):
 
     log.debug(f"Regular Price Filter: {args_.getargs().regular_price}")
     if args_.getargs().regular_price == "paid":
-        filterusername = list(
-            filter(lambda x: x["final-regular-price"], filterusername)
-        )
+        filterusername = list(filter(lambda x: x.final_regular_price, filterusername))
         log.debug(f"paid regular price filter username count: {len(filterusername)}")
     elif args_.getargs().regular_price == "free":
-        filterusername = list(
-            filter(lambda x: x["final-regular-price"]), filterusername
-        )
+        filterusername = list(filter(lambda x: x.final_regular_price), filterusername)
         log.debug(f"free regular price filter username count: {len(filterusername)}")
     log.debug(f"Promo Price Filter: {args_.getargs().promo_price}")
     if args_.getargs().promo_price == "paid":
         filterusername = list(
             filter(
-                lambda x: x["final-promo-price"] > 0,
+                lambda x: x.final_promo_price > 0,
                 filterusername,
             )
         )
@@ -66,7 +62,7 @@ def pricePaidFreeFilterHelper(filterusername):
     elif args_.getargs().promo_price == "free":
         filterusername = list(
             filter(
-                lambda x: x["final-promo-price"] == 0,
+                lambda x: x.final_promo_price == 0,
                 filterusername,
             )
         )
