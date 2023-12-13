@@ -1,7 +1,49 @@
-FROM ubuntu:latest
-RUN apt-get update -y \
-    && apt-get upgrade -y \
-    && apt-get install curl python3.11 pip git python3.11-venv -y
+FROM python:3.11 as base
+
+ENV PYTHONFAULTHANDLER=1 \
+    PYTHONHASHSEED=random \
+    PYTHONUNBUFFERED=1
+
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VERSION=1.7.1
+
+WORKDIR /app
+
+# RUN apk add --update --no-cache \
+    # curl \
+    # tar \
+    # python3 \
+    # python3-dev \
+    # py3-pip \
+    # poetry \
+    # gcc \
+    # musl-dev \
+    # linux-headers \
+    # libffi-dev \
+    # && ln -sf python3 /usr/bin/python
+RUN python -m ensurepip --upgrade
+# RUN python -m pip install --upgrade setuptools
+
+FROM base as builder
+
+RUN pip3 install "poetry==$POETRY_VERSION"
+RUN python -m venv /venv
+
+COPY poetry.lock pyproject.toml ./
+RUN poetry export -f requirements.txt | /venv/bin/pip --no-cache-dir install -r /dev/stdin
+
+COPY . .
+RUN poetry build && /venv/bin/pip install dist/*.whl
+
+
+FROM base as final
+
+COPY --from=builder /venv /venv
+
+ENV PATH="/venv/bin:${PATH}" \
+    VIRTUAL_ENV="/venv"
 
 RUN addgroup --gid 1000 ofscraper && \
     adduser --uid 1000 --ingroup ofscraper --home /home/ofscraper --shell /bin/sh --disabled-password --gecos "" ofscraper
@@ -15,21 +57,4 @@ RUN USER=ofscraper && \
     printf "user: $USER\ngroup: $GROUP\n" > /etc/fixuid/config.yml
 USER ofscraper:ofscraper
 
-ENV POETRY_HOME=/home/ofscraper/local/share/pypoetry
-RUN mkdir -p /home/ofscraper/app
-WORKDIR /home/ofscraper/app
-COPY /pyproject.toml ./ 
-COPY --chown=ofscraper:ofscraper /poetry.lock ./
-COPY --chown=ofscraper:ofscraper /.git ./.git
-COPY --chown=ofscraper:ofscraper / .
-RUN rm -rf .venv
-RUN curl -sSL https://install.python-poetry.org | python3.11 -
-
-USER ofscraper:ofscraper
-RUN python3.11 -m venv .venv
-RUN ${POETRY_HOME}/bin/poetry install --with build
-RUN ${POETRY_HOME}/bin/poetry version $(${POETRY_HOME}/bin/poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\w+)")
-
-ENV PATH="$PATH:/home/ofscraper/app/.venv/bin/"
-WORKDIR /home/ofscraper/app
 ENTRYPOINT ["fixuid","-q"]
