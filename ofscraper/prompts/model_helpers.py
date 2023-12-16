@@ -9,12 +9,12 @@ import ofscraper.utils.args as args_
 def model_selectorHelper(count, x):
     return Choice(
         x,
-        name=f"{count+1}: {x.name} |    subscribed date: {generalDated(x.subscribed)}{renewHelper(x)}{lastSeenHelper(x)} | {getPriceHelper(x)}",
+        name=f"{count+1}: {x.name}   =>  subscribed date: {generalDated(x.subscribed)}{renewHelper(x)}{lastSeenHelper(x)} | {getPriceHelper(x)}",
     )
 
 
 def renewHelper(x):
-    if args_.getargs().sort != "renewed":
+    if args_.getargs().sort != "expired":
         return ""
     return (
         " | end/renewed date: N/A"
@@ -45,8 +45,8 @@ def getPriceHelper(x):
         "_",
         args_.getargs().sort
         if args_.getargs().sort
-        in {"current_price", "renewal_price", "regular_price", "promo_price"}
-        else "current_price",
-    )
+        in {"current-price", "renewal-price", "regular-price", "promo-price"}
+        else "current-price",
+    ).replace("-", "_")
     key = f"final_{value}"
     return f"{value}: {getattr(x, key)}"

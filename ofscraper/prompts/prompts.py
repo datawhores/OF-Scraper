@@ -1103,7 +1103,7 @@ def decide_sort_prompt():
             {
                 "type": "list",
                 "name": "input",
-                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {'Ascending' if not args_.getargs().desc else 'Descending'} in {args_.getargs().sort.capitalize()} order",
+                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {args_.getargs().sort.capitalize()} in {'Ascending' if not args_.getargs().desc else 'Descending'} order",
                 "default": "No",
                 "choices": ["Yes", "No"],
             }
@@ -1125,6 +1125,7 @@ def modify_sort_prompt(args):
                     Choice("name", "By Name"),
                     Choice("subscribed", "Subscribed Date"),
                     Choice("expired", "Expiring Date"),
+                    Choice("last-seen", "Last Seen"),
                     Choice("current-price", "Current Price"),
                     Choice("promo-price", "Promotional Price"),
                     Choice("regular-price", "Regular Price"),
