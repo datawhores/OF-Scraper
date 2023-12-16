@@ -137,10 +137,7 @@ class Model:
 
     @property
     def last_seen(self):
-        if not self._model.get("lastSeen"):
-            return DATE_NOW.float_timestamp + constants.DAY_SECONDS
-        else:
-            return arrow.get(self._model["lastSeen"]).float_timestamp
+        return self._model.get("lastSeen")
 
     @property
     def isRealPerformer(self):
@@ -152,35 +149,42 @@ class Model:
 
     @property
     def final_current_price(self):
-        if self.sub_price:
+        if self.sub_price is not None:
             return self.sub_price
-        elif self.lowest_promo_claim:
+        elif self.lowest_promo_claim is not None:
             return self.lowest_promo_claim
-        elif self.regular_price:
+        elif self.regular_price is not None:
             return self.regular_price
         else:
             return 0
 
     @property
     def final_renewal_price(self):
-        if self.lowest_promo_claim:
+        if self.lowest_promo_claim is not None:
             return self.lowest_promo_claim
-        elif self.regular_price:
+        elif self.regular_price is not None:
             return self.regular_price
         else:
             return 0
 
     @property
     def final_regular_price(self):
-        if self.regular_price:
+        if self.regular_price is not None:
             return self.regular_price
         else:
             return 0
 
     @property
     def final_promo_price(self):
-        if self.lowest_promo_all:
+        if self.lowest_promo_all is not None:
             return self.lowest_promo_all
-        elif self.regular_price:
+        elif self.regular_price is not None:
             return self.regular_price
         return 0
+
+    @property
+    def final_last_seen(self):
+        if not self.last_seen:
+            return DATE_NOW.float_timestamp + constants.DAY_SECONDS
+        else:
+            return arrow.get(self.last_seen).float_timestamp

@@ -392,6 +392,7 @@ def create_parser(input=None):
             "renewal-price",
             "regular-price",
             "promo-price",
+            "last-seen",
         ],
         type=str.lower,
     )
