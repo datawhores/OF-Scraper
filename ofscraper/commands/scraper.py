@@ -191,11 +191,11 @@ def normal_post_process():
         length = len(userdata)
         for count, ele in enumerate(userdata):
             log.warning(f"Progress {count+1}/{length} model")
-            if config.get_avatar(config.read_config()) and ele["avatar"]:
-                log.warning(f"Avatar : {ele['avatar']}")
+            if config.get_avatar(config.read_config()) and ele.avatar:
+                log.warning(f"Avatar : {ele.avatar}")
             if args_.getargs().posts:
                 log.warning(
-                    f"Getting {','.join(args_.getargs().posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}"
+                    f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = profile.get_id(ele["name"])

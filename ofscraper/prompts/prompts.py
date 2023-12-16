@@ -14,7 +14,6 @@ import os
 import re
 import sys
 
-import arrow
 from diskcache import Cache
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
@@ -24,6 +23,7 @@ from rich.console import Console
 
 import ofscraper.constants as constants
 import ofscraper.filters.models.selector as userselector
+import ofscraper.prompts.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -895,7 +895,9 @@ def continue_prompt() -> bool:
 
 
 def model_selector(models) -> bool:
-    choices = list(map(lambda x: model_selectorHelper(x[0], x[1]), enumerate(models)))
+    choices = list(
+        map(lambda x: modelHelpers.model_selectorHelper(x[0], x[1]), enumerate(models))
+    )
 
     def funct(prompt):
         oldargs = copy.deepcopy(vars(args_.getargs()))
@@ -905,7 +907,10 @@ def model_selector(models) -> bool:
             nonlocal models
             models = userselector.filterNSort(userselector.ALL_SUBS)
         choices = list(
-            map(lambda x: model_selectorHelper(x[0], x[1]), enumerate(models))
+            map(
+                lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
+                enumerate(models),
+            )
         )
         selectedSet = set(
             map(
@@ -926,22 +931,29 @@ def model_selector(models) -> bool:
 
     def funct2(prompt_):
         selected = prompt_.content_control.selection["value"]
-        print(
+        console.print(
             f"""
-        Name: {selected.name}
-        ID: {selected.id}
-        Renewed Date: {selected.renewed}
-        Subscribed Date: {selected.subscribed}
-        Expired Date: {selected.expired} 
-        Original Sub Price: {selected.sub_price}     [Current Subscription Price]
-        Original Regular Price: {selected.regular_price}     [Regular Subscription Price Set By Model]
-        Original Claimable Promo Price: {selected.lowest_promo_claim}   [Lowest Promotional Price Marked as Claimable]
-        Original Any Promo Price: {selected.lowest_promo_all}     [Lowest of Any Promotional Price]
-        Final Current Price: {selected.final_current_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#current-price]
-        Final Promo Price: {selected.final_promo_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#promo-price]
-        Final Renewal Price: {selected.final_renewal_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#renewal-price]
-        Final Regular Price: {selected.final_regular_price}      [See https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort#regular-price]
+        Name: [bold blue]{selected.name}[/bold blue]
+        ID: [bold blue]{selected.id}[/bold blue]
+        Renewed Date: [bold blue]{selected.renewed}[/bold blue]
+        Subscribed Date: [bold blue]{selected.subscribed}[/bold blue]
+        Expired Date: [bold blue]{selected.expired}[/bold blue] 
+        Last Seen: {selected.last_seen}
+        Original Sub Price: [bold blue]{selected.sub_price}[/bold blue]     [Current Subscription Price]
+        Original Regular Price: [bold blue]{selected.regular_price}[/bold blue]     [Regular Subscription Price Set By Model]
+        Original Claimable Promo Price: [bold blue]{selected.lowest_promo_claim}[/bold blue]   [Lowest Promotional Price Marked as Claimable]
+        Original Any Promo Price: [bold blue]{selected.lowest_promo_all}[/bold blue]     [Lowest of Any Promotional Price]
+        
+        ------------------------------------------------------------------------------------------------------------------------------------
+        Final Current Price: [bold blue]{selected.final_current_price}[/bold blue] [Sub, Lowest Claimable Promo, or Regular Price| See Final Price Details]
+        Final Promo Price: [bold blue]{selected.final_promo_price}[/bold blue] [Lowest Promo, or Regular Price | See Final Price Details]
+        Final Renewal Price: [bold blue]{selected.final_renewal_price}[/bold blue] [Lowest Claimable Promo, or Regular Price | See Final Price Details]
+        Final Regular Price: [bold blue]{selected.final_regular_price}[/bold blue] [Regular Price | See Final Price Details]
+        
+        [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+
         ======================================================
+        
         PRESS ENTER TO RETURN
         """
         )
@@ -958,16 +970,10 @@ def model_selector(models) -> bool:
         validate=prompt_validators.emptyListValidator(),
         prompt="Filter: ",
         message="Which models do you want to scrape\n:",
+        info=True,
     )
 
     return p
-
-
-def model_selectorHelper(count, x):
-    return Choice(
-        x,
-        name=f"{count+1}: {x.name} | end/renew date: {x.renewed or x.expired or 'N/A'} | current price: {x.final_current_price}",
-    )
 
 
 def decide_filters_prompt():
