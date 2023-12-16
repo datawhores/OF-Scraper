@@ -1,8 +1,8 @@
 import arrow
 
 import ofscraper.constants as constants
+import ofscraper.utils.args as args_
 
-DATE_NOW = arrow.now()
 FORMAT = "YYYY-MM-DD"
 
 
@@ -185,6 +185,6 @@ class Model:
     @property
     def final_last_seen(self):
         if not self.last_seen:
-            return DATE_NOW.float_timestamp + constants.DAY_SECONDS
+            return args_.getargs().date_now.float_timestamp + constants.DAY_SECONDS
         else:
             return arrow.get(self.last_seen).float_timestamp

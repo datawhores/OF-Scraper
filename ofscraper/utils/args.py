@@ -646,7 +646,7 @@ def getargs(input=None):
     args.excluded_username = set(args.excluded_username or [])
     args.label = set(args.label) if args.label else args.label
     args.black_list = set(list(map(lambda x: x.lower(), args.black_list)))
-    args.dateformat = getDateHelper(args)
+    args = globalDataHelper(args)
 
     if len(args.user_list) == 0:
         args.user_list = {constants.OFSCRAPER_RESERVED_LIST}
@@ -668,6 +668,23 @@ def getargs(input=None):
             "error: argument missing --url or --file must be specified )"
         )
     return args
+
+
+def globalDataHelper(args):
+    args.dateformat = getDateHelper(args)
+    args.date_now = getDateNowHelper(args)
+    return args
+
+
+def resetGlobalDateHelper(args):
+    args.dateformat = None
+    args.date_now = None
+
+
+def getDateNowHelper(args):
+    if not vars(args).get("date_now"):
+        return arrow.now()
+    return args.date_now
 
 
 def getDateHelper(args):
