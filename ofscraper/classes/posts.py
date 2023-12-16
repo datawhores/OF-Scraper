@@ -1,6 +1,8 @@
 import logging
-
 import arrow
+import re
+
+from bs4 import BeautifulSoup
 
 import ofscraper.classes.media as Media
 import ofscraper.utils.config as config
@@ -50,8 +52,21 @@ class Post:
 
     @property
     def text(self):
-        return self._post.get("text")
+        string = self._post.get("text")
+        if string:
+            try:
+                import lxml as unused_lxml_
 
+                html_parser = "lxml"
+            except ImportError:
+                html_parser = "html.parser"
+
+            string = re.sub("<[^>]*>", "", string)
+            string = " ".join(string.split())
+            string = BeautifulSoup(string, html_parser).get_text()
+            return string
+        return string
+    
     @property
     def title(self):
         return self._post.get("title")
