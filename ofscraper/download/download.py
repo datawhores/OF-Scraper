@@ -24,7 +24,7 @@ def medialist_filter(medialist, model_id, username):
         medialist = seperate.separate_by_id(medialist, media_ids)
         log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")
         medialist = seperate.seperate_avatars(medialist)
-        log.debug(f"Removed previously downloaded avatars/headers")
+        log.debug("Removed previously downloaded avatars/headers")
         log.debug(f"Final Number of media to download {len(medialist)}")
 
     else:
