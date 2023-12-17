@@ -111,8 +111,19 @@ def edit_auth():
     make_request_auth()
 
 
+def authwarning(authFile):
+    console.print(
+        "[bold yellow]For an example of how your auth file should look see \
+            \n [bold blue]https://of-scraper.gitbook.io/of-scraper/auth#example[/bold blue][/bold yellow]"
+    )
+    console.print(
+        f"[bold yellow]If you still can't authenticate after editing from script consider manually edit the file at\n[bold blue]{authFile}[/bold blue][/bold yellow]"
+    )
+
+
 def make_auth(auth=None):
     authFile = paths.get_auth_file()
+    authwarning(authFile)
     defaultAuth = get_empty()
 
     browserSelect = prompts.browser_prompt()
