@@ -139,13 +139,11 @@ def process_post_user_first():
                 log.info(f"Progress {count+1}/{length} model")
                 if args_.getargs().posts:
                     log.info(
-                        f"Getting {','.join(args_.getargs().posts)} for [bold]{ele['name']}[/bold]\n[bold]Subscription Active:[/bold] {ele['active']}"
+                        f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                     )
                 try:
-                    model_id = profile.get_id(ele["name"])
-                    operations.write_profile_table(
-                        model_id=model_id, username=ele["name"]
-                    )
+                    model_id = ele.id
+                    operations.write_profile_table(model_id=model_id, username=ele.name)
                     output.extend(OF.process_areas(ele, model_id))
                 except Exception as e:
                     if isinstance(e, KeyboardInterrupt):
@@ -198,12 +196,12 @@ def normal_post_process():
                     f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
-                model_id = profile.get_id(ele["name"])
-                operations.create_tables(model_id, ele["name"])
-                operations.create_backup(model_id, ele["name"])
-                operations.write_profile_table(model_id=model_id, username=ele["name"])
+                model_id = ele.id
+                operations.create_tables(model_id, ele.name)
+                operations.create_backup(model_id, ele.name)
+                operations.write_profile_table(model_id=model_id, username=ele.name)
                 combined_urls = OF.process_areas(ele, model_id)
-                misc.download_picker(ele["name"], model_id, combined_urls)
+                misc.download_picker(ele.name, model_id, combined_urls)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
@@ -258,8 +256,8 @@ def process_like():
         with stdout.lowstdout():
             for count, ele in enumerate(active):
                 log.info(f"Progress {count+1}/{length} model")
-                model_id = profile.get_id(ele["name"])
-                posts = like.get_posts(model_id, ele["name"])
+                model_id = ele.id
+                posts = like.get_posts(model_id, ele.name)
                 unfavorited_posts = like.filter_for_unfavorited(posts)
                 unfavorited_posts = filters.timeline_array_filter(unfavorited_posts)
                 log.debug(
@@ -269,7 +267,7 @@ def process_like():
                 log.debug(
                     f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}"
                 )
-                like.like(model_id, ele["name"], post_ids)
+                like.like(model_id, ele.name, post_ids)
 
 
 @exit.exit_wrapper
@@ -283,7 +281,7 @@ def process_unlike():
         with stdout.lowstdout():
             for count, ele in enumerate(active):
                 log.info(f"Progress {count+1}/{length} model")
-                model_id = profile.get_id(ele["name"])
+                model_id = profile.get_id(ele.name)
                 posts = like.get_posts(model_id)
                 favorited_posts = like.filter_for_favorited(posts)
                 favorited_posts = filters.timeline_array_filter(favorited_posts)
@@ -294,7 +292,7 @@ def process_unlike():
                 log.debug(
                     f"[bold]Final Number of open and unlikable post[/bold] {len(post_ids)}"
                 )
-                like.unlike(model_id, ele["name"], post_ids)
+                like.unlike(model_id, ele.name, post_ids)
 
 
 # Adds a function to the job queue

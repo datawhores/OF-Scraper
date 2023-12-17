@@ -443,7 +443,7 @@ def process_areas(ele, model_id) -> list:
     profile_dicts = []
     labels_dicts = []
 
-    username = ele["name"]
+    username = ele.name
     included_post = (
         args_.getargs().posts
         if "All" not in args_.getargs().posts
@@ -484,7 +484,7 @@ def process_areas(ele, model_id) -> list:
     if "Stories" in final_post_areas:
         stories_dicts = process_stories(model_id, username)
 
-    if "Labels" in final_post_areas and ele["active"]:
+    if "Labels" in final_post_areas and ele.active:
         labels_dicts = process_labels(model_id, username)
     return filters.filterMedia(
         list(
