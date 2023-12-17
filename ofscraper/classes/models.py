@@ -10,6 +10,11 @@ class Model:
     def __init__(self, model):
         self._model = model
 
+    """
+    Pure properties
+    Should Return original JSON value or None
+    """
+
     # All media return from API dict
     @property
     def model(self):
@@ -88,7 +93,7 @@ class Model:
             return None
         elif not self.subscribed_data.get("expiredAt"):
             return None
-        return arrow.get(self.subscribed_data.get("expiredAt")).format(FORMAT)
+        return self.subscribed_data.get("expiredAt")
 
     @property
     def final_expired(self):
@@ -96,23 +101,18 @@ class Model:
             return 0
         return self.expired
 
+    """
+    Best values to retrive depends on how many times subscribed
+
+    """
+
     @property
     def subscribed(self):
         if not self.subscribed_data:
             return None
-        elif (
-            not self.subscribed_data.get("subscribes")
-            or len(self.subscribed_data.get("subscribes")) == 0
-        ):
-            return None
+        elif len(self.subscribed_data.get("subscribes", [])) == 0:
+            return self.subscribed_data.get("subscribeAt")
         return self.subscribed_data.get("subscribes")[0].get("startDate")
-
-    @property
-    def final_subscribed(self):
-        if self.subscribed:
-            return arrow.get(self.subscribed).float_timestamp
-        else:
-            return 0
 
     @property
     def renewed(self):
@@ -120,20 +120,29 @@ class Model:
             return None
         elif not self.subscribed_data.get("renewedAt"):
             return None
-        return arrow.get(self.subscribed_data.get("renewedAt")).format(FORMAT)
+        return self.subscribed_data.get("renewedAt")
+
+    """
+    helper properties for filtering/sorting etc
+    """
 
     @property
     def active(self):
-        if not self.subscribed_data or self.subscribed_expired_date:
+        if self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
             return False
-        elif self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
+        if not self.renewed:
+            return False
+        return True
+
+    @property
+    def account_access(self):
+        if self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
             return True
-        return (
-            arrow.get(
-                (self.subscribed_data or self.subscribed_expired_date).get("expiredAt")
-            )
-            > DATE_NOW
-        )
+        if self.renewed:
+            return True
+        if not self.subscribed:
+            return False
+        return arrow.get(self.expired) > args_.getargs().date_now
 
     @property
     def last_seen(self):
@@ -185,6 +194,31 @@ class Model:
     @property
     def final_last_seen(self):
         if not self.last_seen:
-            return args_.getargs().date_now.float_timestamp + constants.DAY_SECONDS
+            return arrow.now()
         else:
-            return arrow.get(self.last_seen).float_timestamp
+            return arrow.get(self.last_seen)
+
+    @property
+    def renewed_string(self):
+        if not self.renewed:
+            return None
+        return arrow.get(self.renewed).format(FORMAT)
+
+    @property
+    def subscribed_string(self):
+        if not self.subscribed:
+            return None
+        return arrow.get(self.subscribed).format(FORMAT)
+
+    @property
+    def expired_string(self):
+        if not self.expired:
+            return None
+        return arrow.get(self.expired).format(FORMAT)
+
+    @property
+    def final_subscribed(self):
+        if self.subscribed:
+            return arrow.get(self.subscribed).float_timestamp
+        else:
+            return 0

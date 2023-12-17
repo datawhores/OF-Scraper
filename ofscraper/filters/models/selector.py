@@ -3,6 +3,7 @@ import time
 
 import ofscraper.constants as constants
 import ofscraper.filters.models.flags as flags
+import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
 import ofscraper.filters.models.retriver as retriver
 import ofscraper.filters.models.sort as sort
@@ -88,12 +89,7 @@ def filterNSort(usernames):
         filterusername = subtype.subType(usernames)
         filterusername = price.pricePaidFreeFilterHelper(filterusername)
         filterusername = flags.promoFilterHelper(filterusername)
-        filterusername = list(
-            filter(
-                lambda x: x.name not in args_.getargs().excluded_username,
-                filterusername,
-            )
-        )
+        filterusername = other.otherFilters(filterusername)
 
         log.debug(f"final username count with all filters: {len(filterusername)}")
         # give log time to process
@@ -106,8 +102,10 @@ Change the filter settings to continue
 
 Sub Status: {args_.getargs().sub_status or 'No Filter'}
 Renewal Status: {args_.getargs().renewal or 'No Filter'}
-Account Type: {args_.getargs().account_type or 'No Filter'}
-
+Promo Price Filter: {args_.getargs().promo_price or 'No Filter'}
+Current Price Filter: {args_.getargs().current_price or 'No Filter'}
+Current Price Filter: {args_.getargs().current_price or 'No Filter'}
+Renewal Price Filter: {args_.getargs().renewal_price or 'No Filter'}
 """
         )
 

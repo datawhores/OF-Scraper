@@ -329,6 +329,43 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
+        "-lsb",
+        "--last-seen-before",
+        help="Filter Accounts by last seen being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+    filters.add_argument(
+        "-lsa",
+        "--last-seen-after",
+        help="Filter Accounts by last seen being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+
+    filters.add_argument(
+        "-ls",
+        "--last-seen",
+        help="Filter Accounts by whether last seen is visible",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["yes", "no"],
+    )
+
+    filters.add_argument(
+        "-frt",
+        "--free-trail",
+        help="Filter Accounts by whether last seen is visible",
+        default=False,
+        required=False,
+        type=str.lower,
+        choices=["yes", "no"],
+    )
+
+    filters.add_argument(
         "-pp",
         "--promo-price",
         help="Filter Free or paid accounts\npaid and free including any promotion, even if not claimable",

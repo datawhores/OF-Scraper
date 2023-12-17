@@ -10,8 +10,6 @@ r"""
 import os
 import pathlib
 
-import arrow
-
 preferences = "pref_config.py"
 configPath = ".config/ofscraper"
 configFile = "config.json"
