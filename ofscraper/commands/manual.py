@@ -9,14 +9,15 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
+import ofscraper.download.download as download
 import ofscraper.utils.args as args_
-import ofscraper.utils.misc as misc
+import ofscraper.utils.network as network
 import ofscraper.utils.of as of
 
 
 def manual_download(urls=None):
     log = logging.getLogger("shared")
-    misc.check_cdm()
+    network.check_cdm()
     media_dict = get_media_from_urls(urls)
     log.debug(f"Media dict length {len(list(media_dict.values()))}")
     args = args_.getargs()
@@ -32,7 +33,7 @@ def manual_download(urls=None):
         operations.create_tables(model_id=model_id, username=username)
         operations.create_backup(model_id, username)
         operations.write_profile_table(model_id=model_id, username=username)
-        misc.download_picker(username, model_id, value)
+        download.download_picker(username, model_id, value)
 
     log.info(f"Finished")
 

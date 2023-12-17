@@ -21,12 +21,12 @@ import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
-import ofscraper.download.download as download
+import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
-import ofscraper.utils.misc as misc
+import ofscraper.utils.network as network
 
 from ..utils.paths import getcachepath
 
@@ -58,7 +58,7 @@ def process_download_cart():
         global app
         while app and not app.row_queue.empty():
             if process_download_cart.counter == 0:
-                if not misc.check_cdm():
+                if not network.check_cdm():
                     log.info(
                         "error was raised by cdm checker\nncdm will not be check again\n\n"
                     )
@@ -104,7 +104,7 @@ def process_download_cart():
                 operations.create_tables(model_id=model_id, username=username)
                 operations.create_backup(model_id, username)
                 operations.write_profile_table(model_id=model_id, username=username)
-                values = download.process_dicts(
+                values = downloadnormal.process_dicts(
                     username,
                     model_id,
                     [media],
@@ -199,7 +199,7 @@ def post_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
-    misc.check_cdm()
+    network.check_cdm()
     thread_starters(ROWS)
 
 
@@ -272,7 +272,7 @@ def message_checker():
 
     reset_url()
     set_count(ROWS)
-    misc.check_cdm()
+    network.check_cdm()
     thread_starters(ROWS)
 
 
@@ -298,7 +298,7 @@ def purchase_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
-    misc.check_cdm()
+    network.check_cdm()
     thread_starters(ROWS)
 
 
@@ -326,7 +326,7 @@ def stories_checker():
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
-    misc.check_cdm()
+    network.check_cdm()
     thread_starters(ROWS)
 
 

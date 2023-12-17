@@ -26,6 +26,7 @@ import ofscraper.api.profile as profile
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
+import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
 import ofscraper.filters.models.selector as userselector
 import ofscraper.interaction.like as like
@@ -35,7 +36,7 @@ import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config
 import ofscraper.utils.console as console
 import ofscraper.utils.exit as exit
-import ofscraper.utils.misc as misc
+import ofscraper.utils.network as network
 import ofscraper.utils.of as OF
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
@@ -166,7 +167,7 @@ def process_post_user_first():
                 operations.create_tables(model_id=model_id, username=username)
                 operations.create_backup(model_id, username)
                 operations.write_profile_table(model_id=model_id, username=username)
-                misc.download_picker(
+                download.download_picker(
                     username,
                     model_id,
                     value,
@@ -201,7 +202,7 @@ def normal_post_process():
                 operations.create_backup(model_id, ele.name)
                 operations.write_profile_table(model_id=model_id, username=ele.name)
                 combined_urls = OF.process_areas(ele, model_id)
-                misc.download_picker(ele.name, model_id, combined_urls)
+                download.download_picker(ele.name, model_id, combined_urls)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
@@ -233,7 +234,7 @@ def normal_post_process():
                     operations.create_tables(model_id=model_id, username=username)
                     operations.create_backup(model_id, username)
                     operations.write_profile_table(model_id=model_id, username=username)
-                    misc.download_picker(
+                    download.download_picker(
                         username,
                         model_id,
                         value,
@@ -450,7 +451,7 @@ def main():
         print_start()
         paths.cleanup()
         paths.cleanDB()
-        misc.check_cdm()
+        network.check_cdm()
 
         scrapper()
         paths.cleanup()
