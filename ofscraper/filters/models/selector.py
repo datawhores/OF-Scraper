@@ -2,6 +2,7 @@ import logging
 import time
 
 import ofscraper.constants as constants
+import ofscraper.filters.models.date as date_
 import ofscraper.filters.models.flags as flags
 import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
@@ -89,6 +90,7 @@ def filterNSort(usernames):
         filterusername = subtype.subType(usernames)
         filterusername = price.pricePaidFreeFilterHelper(filterusername)
         filterusername = flags.promoFilterHelper(filterusername)
+        filterusername = date_.dateFilters(filterusername)
         filterusername = other.otherFilters(filterusername)
 
         log.debug(f"final username count with all filters: {len(filterusername)}")

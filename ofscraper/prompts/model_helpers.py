@@ -54,13 +54,29 @@ def getPriceHelper(x):
         "promo-price",
     }:
         value = re.sub("-", "_", args_.getargs().sort).replace("-", "_")
-    if args_.getargs().promo_price:
+    if (
+        args_.getargs().promo_price
+        or args_.getargs().promo_price_min
+        or args_.getargs().promo_price_max
+    ):
         value2 = "promo_price"
-    elif args_.getargs().regular_price:
+    elif (
+        args_.getargs().regular_price
+        or args_.getargs().regular_price_min
+        or args_.getargs().regular_price_max
+    ):
         value2 = "regular_price"
-    elif args_.getargs().renewal_price:
+    elif (
+        args_.getargs().renewal_price
+        or args_.getargs().renewal_price_min
+        or args_.getargs().renewal_price_max
+    ):
         value2 = "renewal_price"
-    elif args_.getargs().current_price:
+    elif (
+        args_.getargs().current_price
+        or args_.getargs().current_price_min
+        or args_.getargs().current_price_max
+    ):
         value2 = "current_price"
     final_value = value or value2 or "current_price"
     key = f"final_{final_value}"
