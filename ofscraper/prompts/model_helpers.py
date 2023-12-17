@@ -9,28 +9,33 @@ import ofscraper.utils.args as args_
 def model_selectorHelper(count, x):
     return Choice(
         x,
-        name=f"{count+1}: {x.name}   =>  subscribed date: {generalDated(x.subscribed)}{renewHelper(x)}{lastSeenHelper(x)} | {getPriceHelper(x)}",
+        name=f"{count+1}: {x.name}   =>  subscribed date: {generalDated(x.subscribed_string)}{renewHelper(x)}{lastSeenHelper(x)} | {getPriceHelper(x)}",
     )
 
 
 def renewHelper(x):
-    if args_.getargs().sort != "expired":
+    if args_.getargs().sort != "expired" and args_.getargs().renewal is None:
         return ""
     return (
         " | end/renewed date: N/A"
-        if x.renewed or x.expired is None
-        else f" | end/renewed date: {arrow.get(x.renewed or x.expired).format('YYYY-MM-DD: HH:mm')}"
+        if (x.renewed_string or x.expired_string) is None
+        else f" | end/renewed date: {arrow.get(x.renewed_string or x.expired_string).format('YYYY-MM-DD: HH:mm')}"
     )
 
 
 def generalDated(value):
     if value is None:
         return "N/A"
-    return arrow.get(value).format("YYYY-MM-DD: HH:mm")
+    return value
 
 
 def lastSeenHelper(x):
-    if args_.getargs().sort != "last-seen":
+    if (
+        args_.getargs().sort != "last-seen"
+        and not args_.getargs().last_seen
+        and not args_.getargs().last_seen_after
+        and not args_.getargs().last_seen_before
+    ):
         return ""
     return (
         " | last seen: Hidden"
@@ -40,13 +45,23 @@ def lastSeenHelper(x):
 
 
 def getPriceHelper(x):
-    value = re.sub(
-        "-",
-        "_",
-        args_.getargs().sort
-        if args_.getargs().sort
-        in {"current-price", "renewal-price", "regular-price", "promo-price"}
-        else "current-price",
-    ).replace("-", "_")
-    key = f"final_{value}"
-    return f"{value}: {getattr(x, key)}"
+    value = None
+    value2 = None
+    if args_.getargs().sort in {
+        "current-price",
+        "renewal-price",
+        "regular-price",
+        "promo-price",
+    }:
+        value = re.sub("-", "_", args_.getargs().sort).replace("-", "_")
+    if args_.getargs().promo_price:
+        value2 = "promo_price"
+    elif args_.getargs().regular_price:
+        value2 = "regular_price"
+    elif args_.getargs().renewal_price:
+        value2 = "renewal_price"
+    elif args_.getargs().current_price:
+        value2 = "current_price"
+    final_value = value or value2 or "current_price"
+    key = f"final_{final_value}"
+    return f"{final_value }: {getattr(x, key)}"

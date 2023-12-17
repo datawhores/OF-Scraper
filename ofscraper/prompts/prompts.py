@@ -935,8 +935,8 @@ def model_selector(models) -> bool:
             f"""
         Name: [bold blue]{selected.name}[/bold blue]
         ID: [bold blue]{selected.id}[/bold blue]
-        Renewed Date: [bold blue]{selected.renewed}[/bold blue]
-        Subscribed Date: [bold blue]{selected.subscribed}[/bold blue]
+        Renewed Date: [bold blue]{selected.renewed_string}[/bold blue]
+        Subscribed Date: [bold blue]{selected.subscribed_string}[/bold blue]
         Expired Date: [bold blue]{selected.expired}[/bold blue] 
         Last Seen: {selected.last_seen}
         Original Sub Price: [bold blue]{selected.sub_price}[/bold blue]     [Current Subscription Price]
@@ -1019,6 +1019,28 @@ def modify_filters_prompt(args):
             },
             {
                 "type": "list",
+                "name": "last-seen",
+                "default": False,
+                "message": "Filter Accounts By whether the account by the visability of last seen",
+                "choices": [
+                    Choice("yes", "Last seen is present"),
+                    Choice("no", "Last seen is hidden"),
+                    Choice(False, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "free-trail",
+                "default": False,
+                "message": "Filter Accounts By whether the account is a free trail",
+                "choices": [
+                    Choice("yes", "Free Trail only"),
+                    Choice("no", "Paid and always free accounts"),
+                    Choice(False, "Both"),
+                ],
+            },
+            {
+                "type": "list",
                 "name": "subscription",
                 "message": "Filter accounts by the type of a current subscription price",
                 "default": False,
@@ -1093,6 +1115,8 @@ def modify_filters_prompt(args):
     args.regular_price = answer["regular"]
     args.renewal_price = answer["future"]
     args.promo_price = answer["promo-price"]
+    args.free_trail = answer["free-trail"]
+    args.last_seen = answer["last-seen"]
 
     return args
 
