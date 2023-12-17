@@ -1,7 +1,4 @@
 import logging
-import time
-
-import httpx
 
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadbatch as batchdownloader
