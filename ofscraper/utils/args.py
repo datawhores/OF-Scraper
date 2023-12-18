@@ -310,63 +310,136 @@ def create_parser(input=None):
         choices=["paid", "free"],
     )
 
-    filters.add_argument(
-        "-pm",
-        "--promo",
-        help="Filter based on if there is a claimable promo price",
-        default=False,
+    group3 = filters.add_mutually_exclusive_group()
+    group3.add_argument(
+        "-lo",
+        "--last-seen-only",
+        help="Filter accounts to ones where last seen is visible",
+        default=None,
         required=False,
-        type=str.lower,
-        choices=["yes", "no"],
+        const=True,
+        dest="last_seen",
+        action="store_const",
     )
-    filters.add_argument(
-        "-am",
-        "--all-promo",
-        help="Filter based on if there is any promo price",
-        default=False,
-        required=False,
-        type=str.lower,
-        choices=["yes", "no"],
-    )
-
-    filters.add_argument(
+    group3.add_argument(
         "-ls",
-        "--last-seen",
-        help="Filter accounts by whether last seen is visible",
-        default=False,
+        "--last-seen-skip",
+        help="Filter accounts to ones where last seen is hidden",
+        default=None,
         required=False,
-        type=str.lower,
-        choices=["yes", "no"],
+        const=False,
+        dest="last_seen",
+        action="store_const",
     )
 
-    filters.add_argument(
-        "-frt",
-        "--free-trail",
-        help="Filter accounts currently in a free trial (normally paid)",
-        default=False,
+    group4 = filters.add_mutually_exclusive_group()
+    group4.add_argument(
+        "-fo",
+        "--free-trail-only",
+        help="Filter accounts to only those currently in a free trial (normally paid)",
+        default=None,
         required=False,
-        type=str.lower,
-        choices=["yes", "no"],
+        const=True,
+        dest="free_trail",
+        action="store_const",
+    )
+    group4.add_argument(
+        "-fs",
+        "--free-trail-skip",
+        help="Filter accounts to only those currently not in  a free trial (normally paid)",
+        default=None,
+        required=False,
+        const=False,
+        dest="free_trail",
+        action="store_const",
     )
 
-    filters.add_argument(
-        "-rw",
-        "--renewal",
-        help="Filter by whether renewal is on or off for account",
-        default=False,
+    group5 = filters.add_mutually_exclusive_group()
+    group5.add_argument(
+        "-po",
+        "-promo-only",
+        help="Filter accounts to ones with any claimable promo price",
+        default=None,
         required=False,
-        type=str.lower,
-        choices=["active", "disabled"],
+        const=True,
+        dest="promo",
+        action="store_const",
+    )
+    group5.add_argument(
+        "-ps",
+        "--promo-skip",
+        help="Filter accounts to ones without any claimable promo price",
+        default=None,
+        required=False,
+        const=False,
+        dest="promo",
+        action="store_const",
     )
 
-    filters.add_argument(
-        "-mp",
-        "--sub-status",
-        help="Filter by whether or not your subscription has expired or not",
-        default=False,
+    group6 = filters.add_mutually_exclusive_group()
+    group6.add_argument(
+        "-a-",
+        "--all-promo-only",
+        help="Filter accounts to ones with any promo price",
+        default=None,
         required=False,
-        type=str.lower,
-        choices=["active", "expired"],
+        const=True,
+        dest="all_promo",
+        action="store_const",
+    )
+    group6.add_argument(
+        "-as",
+        "--all-promo-skip",
+        help="Filter accounts to ones without any promo price",
+        default=None,
+        required=False,
+        const=False,
+        dest="all_promo",
+        action="store_const",
+    )
+
+    group7 = filters.add_mutually_exclusive_group()
+    group7.add_argument(
+        "-ts",
+        "--active-subscription",
+        help="Filter accounts to those with non-expired status",
+        default=None,
+        required=False,
+        const=True,
+        dest="sub_status",
+        action="store_const",
+    )
+    group7.add_argument(
+        "-es",
+        "--expired-subscription",
+        help="Filter accounts to those with expired status",
+        default=None,
+        required=False,
+        const=True,
+        dest="sub_status",
+        action="store_const",
+    )
+
+    group8 = filters.add_mutually_exclusive_group()
+    group8.add_argument(
+        "-ro",
+        "--renew-on",
+        help="Filter accounts to those with the renew flag on",
+        default=None,
+        required=False,
+        const=True,
+        dest="renewal",
+        action="store_const",
+    )
+    group8.add_argument(
+        "-rf",
+        "--renew-off",
+        help="Filter accounts to those with the renew flag off",
+        default=None,
+        required=False,
+        const=True,
+        dest="renewal",
+        action="store_const",
     )
 
     filters.add_argument(
@@ -391,7 +464,7 @@ def create_parser(input=None):
 
     adv_filters = parser.add_argument_group(
         "advanced filters",
-        description="Enables advanced filtering of usernames based on user-defined parameters",
+        description="Enables advanced filtering of usernames based on more presised user-defined parameters",
     )
 
     adv_filters.add_argument(
@@ -623,7 +696,7 @@ def create_parser(input=None):
     subparser = parser.add_subparsers(help="commands", dest="command")
     post_check = subparser.add_parser(
         "post_check",
-        help="Display a generated table of data with information about models post(s)\nCache lasts for 24 hours",
+        help="Generate a table of key information from model-extracted posts\nCache lasts for 24 hours",
         parents=[parent_parser],
     )
 
@@ -656,7 +729,7 @@ def create_parser(input=None):
 
     message_check = subparser.add_parser(
         "msg_check",
-        help="Display a generated table of data with information about models messages\nCache lasts for 24 hours",
+        help="Generate a table of key information from model-extracted messages\nCache lasts for 24 hours",
         parents=[parent_parser],
     )
     message_check.add_argument(
@@ -685,7 +758,7 @@ def create_parser(input=None):
 
     paid_check = subparser.add_parser(
         "paid_check",
-        help="Display a generated table of data with information purchashes from model\nCache last for 24 hours",
+        help="Generate a table of key information from model-extracted purchases\nCache last for 24 hours",
         parents=[parent_parser],
     )
     paid_check.add_argument(
@@ -714,7 +787,7 @@ def create_parser(input=None):
 
     story_check = subparser.add_parser(
         "story_check",
-        help="Parse Stories/Highlights sent from a user\nCache last for 24 hours",
+        help="Generate a table of key information from model-extracted story/highlights\nCache last for 24 hours",
         parents=[parent_parser],
     )
     story_check.add_argument(
