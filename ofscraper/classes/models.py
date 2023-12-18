@@ -1,6 +1,5 @@
 import arrow
 
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 
 FORMAT = "YYYY-MM-DD"

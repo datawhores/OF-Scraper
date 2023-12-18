@@ -43,7 +43,10 @@ def promoFilterHelper(filterusername):
     if args_.getargs().free_trail == "yes":
         filterusername = list(
             filter(
-                lambda x: (x.final_current_price == 0 and x.final_regular_price > 0),
+                lambda x: (
+                    (x.final_current_price == 0 or x.final_promo_price == 0)
+                    and x.final_regular_price > 0
+                ),
                 filterusername,
             )
         )
