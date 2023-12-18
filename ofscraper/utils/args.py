@@ -273,35 +273,17 @@ def create_parser(input=None):
     filters.add_argument(
         "-cp",
         "--current-price",
-        help="Filter Free or paid accounts\npaid and free means your original price, and not the renewal price",
+        help="Filter accounts based on either the subscription price, claimable promotions, or regular price",
         default=False,
         required=False,
         type=str.lower,
         choices=["paid", "free"],
-    )
-
-    filters.add_argument(
-        "-cpn",
-        "--current-price-min",
-        help="Filter accounts where the current regular price matches or falls above the provided value",
-        default=False,
-        required=False,
-        type=int,
-    )
-
-    filters.add_argument(
-        "-cpm",
-        "--current-price-max",
-        help="Filter accounts where the current price matches or falls below the provided value",
-        default=False,
-        required=False,
-        type=int,
     )
 
     filters.add_argument(
         "-rp",
         "--renewal-price",
-        help="Filter Free or paid accounts\npaid and free means the price at renewal including promotions",
+        help="Filter accounts based on either the subscription price, claimable promotions, or regular price",
         default=False,
         required=False,
         type=str.lower,
@@ -309,21 +291,23 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
-        "-rpn",
-        "--renewal-price-min",
-        help="Filter accounts where the renewal regular price matches or falls above the provided value",
+        "-gp",
+        "--regular-price",
+        help="Filter accounts based on the regular price",
         default=False,
         required=False,
-        type=int,
+        type=str.lower,
+        choices=["paid", "free"],
     )
 
     filters.add_argument(
-        "-rpm",
-        "--renewal-price-max",
-        help="Filter accounts where the renewal price matches or falls below the provided value",
+        "-pp",
+        "--promo-price",
+        help="Filter accounts based on either the all promos included unclaimable, or regular price",
         default=False,
         required=False,
-        type=int,
+        type=str.lower,
+        choices=["paid", "free"],
     )
 
     filters.add_argument(
@@ -346,54 +330,9 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
-        "-gp",
-        "--regular-price",
-        help="Filter Free or paid accounts\npaid and free means the price at renewal excluding promotions",
-        default=False,
-        required=False,
-        type=str.lower,
-        choices=["paid", "free"],
-    )
-
-    filters.add_argument(
-        "-gpn",
-        "--regular-price-min",
-        help="Filter accounts where the regular price matches or falls above the provided value",
-        default=False,
-        required=False,
-        type=int,
-    )
-
-    filters.add_argument(
-        "-gpm",
-        "--regular-price-max",
-        help="Filter accounts where the regular price matches or falls below the provided value",
-        default=False,
-        required=False,
-        type=int,
-    )
-
-    filters.add_argument(
-        "-lsb",
-        "--last-seen-before",
-        help="Filter Accounts by last seen being before the given date",
-        default=False,
-        required=False,
-        type=arrow_helper,
-    )
-    filters.add_argument(
-        "-lsa",
-        "--last-seen-after",
-        help="Filter Accounts by last seen being before the given date",
-        default=False,
-        required=False,
-        type=arrow_helper,
-    )
-
-    filters.add_argument(
         "-ls",
         "--last-seen",
-        help="Filter Accounts by whether last seen is visible",
+        help="Filter accounts by whether last seen is visible",
         default=False,
         required=False,
         type=str.lower,
@@ -403,40 +342,13 @@ def create_parser(input=None):
     filters.add_argument(
         "-frt",
         "--free-trail",
-        help="Filter Accounts by whether last seen is visible",
+        help="Filter accounts currently in a free trial (normally paid)",
         default=False,
         required=False,
         type=str.lower,
         choices=["yes", "no"],
     )
 
-    filters.add_argument(
-        "-pp",
-        "--promo-price",
-        help="Filter Free or paid accounts\npaid and free including any promotion, even if not claimable",
-        default=False,
-        required=False,
-        type=str.lower,
-        choices=["paid", "free"],
-    )
-
-    filters.add_argument(
-        "-ppn",
-        "--promo-price-min",
-        help="Filter accounts where the lowest promo price matches or falls above the provided value",
-        default=False,
-        required=False,
-        type=int,
-    )
-
-    filters.add_argument(
-        "-ppm",
-        "--promo-price-max",
-        help="Filter accounts where the lowest promo price matches or falls below the provided value",
-        default=False,
-        required=False,
-        type=int,
-    )
     filters.add_argument(
         "-rw",
         "--renewal",
@@ -448,22 +360,6 @@ def create_parser(input=None):
     )
 
     filters.add_argument(
-        "-ea",
-        "--expired-after",
-        help="Filter Accounts by expiration/renewal being before the given date",
-        default=False,
-        required=False,
-        type=arrow_helper,
-    )
-    filters.add_argument(
-        "-eb",
-        "--expired-before",
-        help="Filter Accounts by expiration/renewal being before the given date",
-        default=False,
-        required=False,
-        type=arrow_helper,
-    )
-    filters.add_argument(
         "-mp",
         "--sub-status",
         help="Filter by whether or not your subscription has expired or not",
@@ -471,23 +367,6 @@ def create_parser(input=None):
         required=False,
         type=str.lower,
         choices=["active", "expired"],
-    )
-
-    filters.add_argument(
-        "-sa",
-        "--subscribed-after",
-        help="Filter Accounts by subscription date being before the given date",
-        default=False,
-        required=False,
-        type=arrow_helper,
-    )
-    filters.add_argument(
-        "-sb",
-        "--subscribed-before",
-        help="Filter Accounts by sub date being before the given date",
-        default=False,
-        required=False,
-        type=arrow_helper,
     )
 
     filters.add_argument(
@@ -508,6 +387,133 @@ def create_parser(input=None):
         required=False,
         type=lambda x: x.split(","),
         action="extend",
+    )
+
+    adv_filters = parser.add_argument_group(
+        "advanced filters",
+        description="Enables advanced filtering of usernames based on user-defined parameters",
+    )
+
+    adv_filters.add_argument(
+        "-ppn",
+        "--promo-price-min",
+        help="Filter accounts where the lowest promo price matches or falls above the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-ppm",
+        "--promo-price-max",
+        help="Filter accounts where the lowest promo price matches or falls below the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-gpn",
+        "--regular-price-min",
+        help="Filter accounts where the regular price matches or falls above the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-gpm",
+        "--regular-price-max",
+        help="Filter accounts where the regular price matches or falls below the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-cpn",
+        "--current-price-min",
+        help="Filter accounts where the current regular price matches or falls above the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-cpm",
+        "--current-price-max",
+        help="Filter accounts where the current price matches or falls below the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-rpn",
+        "--renewal-price-min",
+        help="Filter accounts where the renewal regular price matches or falls above the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-rpm",
+        "--renewal-price-max",
+        help="Filter accounts where the renewal price matches or falls below the provided value",
+        default=False,
+        required=False,
+        type=int,
+    )
+
+    adv_filters.add_argument(
+        "-lsb",
+        "--last-seen-before",
+        help="Filter accounts by last seen being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+    adv_filters.add_argument(
+        "-lsa",
+        "--last-seen-after",
+        help="Filter accounts by last seen being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+
+    adv_filters.add_argument(
+        "-ea",
+        "--expired-after",
+        help="Filter accounts by expiration/renewal being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+    adv_filters.add_argument(
+        "-eb",
+        "--expired-before",
+        help="Filter accounts by expiration/renewal being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+    adv_filters.add_argument(
+        "-sa",
+        "--subscribed-after",
+        help="Filter accounts by subscription date being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
+    )
+    adv_filters.add_argument(
+        "-sb",
+        "--subscribed-before",
+        help="Filter accounts by sub date being before the given date",
+        default=False,
+        required=False,
+        type=arrow_helper,
     )
 
     sort = parser.add_argument_group(
