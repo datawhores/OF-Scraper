@@ -274,7 +274,7 @@ def create_parser(input=None):
         "-cp",
         "--current-price",
         help="Filter accounts based on either the subscription price, claimable promotions, or regular price",
-        default=False,
+        default=None,
         required=False,
         type=str.lower,
         choices=["paid", "free"],
@@ -284,7 +284,7 @@ def create_parser(input=None):
         "-rp",
         "--renewal-price",
         help="Filter accounts based on either the subscription price, claimable promotions, or regular price",
-        default=False,
+        default=None,
         required=False,
         type=str.lower,
         choices=["paid", "free"],
@@ -294,7 +294,7 @@ def create_parser(input=None):
         "-gp",
         "--regular-price",
         help="Filter accounts based on the regular price",
-        default=False,
+        default=None,
         required=False,
         type=str.lower,
         choices=["paid", "free"],
@@ -304,7 +304,7 @@ def create_parser(input=None):
         "-pp",
         "--promo-price",
         help="Filter accounts based on either the all promos included unclaimable, or regular price",
-        default=False,
+        default=None,
         required=False,
         type=str.lower,
         choices=["paid", "free"],
@@ -471,7 +471,7 @@ def create_parser(input=None):
         "-ppn",
         "--promo-price-min",
         help="Filter accounts to those where the lowest promo price matches or falls above the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -480,7 +480,7 @@ def create_parser(input=None):
         "-ppm",
         "--promo-price-max",
         help="Filter accounts where the lowest promo price matches or falls below the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -489,7 +489,7 @@ def create_parser(input=None):
         "-gpn",
         "--regular-price-min",
         help="Filter accounts where the regular price matches or falls above the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -498,7 +498,7 @@ def create_parser(input=None):
         "-gpm",
         "--regular-price-max",
         help="Filter accounts where the regular price matches or falls below the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -507,7 +507,7 @@ def create_parser(input=None):
         "-cpn",
         "--current-price-min",
         help="Filter accounts where the current regular price matches or falls above the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -516,7 +516,7 @@ def create_parser(input=None):
         "-cpm",
         "--current-price-max",
         help="Filter accounts where the current price matches or falls below the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -525,7 +525,7 @@ def create_parser(input=None):
         "-rpn",
         "--renewal-price-min",
         help="Filter accounts where the renewal regular price matches or falls above the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -534,7 +534,7 @@ def create_parser(input=None):
         "-rpm",
         "--renewal-price-max",
         help="Filter accounts where the renewal price matches or falls below the provided value",
-        default=False,
+        default=None,
         required=False,
         type=int,
     )
@@ -543,7 +543,7 @@ def create_parser(input=None):
         "-lsb",
         "--last-seen-before",
         help="Filter accounts by last seen being at or before the given date",
-        default=False,
+        default=None,
         required=False,
         type=arrow_helper,
     )
@@ -551,7 +551,7 @@ def create_parser(input=None):
         "-lsa",
         "--last-seen-after",
         help="Filter accounts by last seen being at or after the given date",
-        default=False,
+        default=None,
         required=False,
         type=arrow_helper,
     )
@@ -560,7 +560,7 @@ def create_parser(input=None):
         "-ea",
         "--expired-after",
         help="Filter accounts by expiration/renewal being at or after the given date",
-        default=False,
+        default=None,
         required=False,
         type=arrow_helper,
     )
@@ -568,7 +568,7 @@ def create_parser(input=None):
         "-eb",
         "--expired-before",
         help="Filter accounts by expiration/renewal being at or before the given date",
-        default=False,
+        default=None,
         required=False,
         type=arrow_helper,
     )
@@ -576,7 +576,7 @@ def create_parser(input=None):
         "-sa",
         "--subscribed-after",
         help="Filter accounts by subscription date being after  the given date",
-        default=False,
+        default=None,
         required=False,
         type=arrow_helper,
     )
@@ -584,7 +584,7 @@ def create_parser(input=None):
         "-sb",
         "--subscribed-before",
         help="Filter accounts by sub date being at or before the given date",
-        default=False,
+        default=None,
         required=False,
         type=arrow_helper,
     )

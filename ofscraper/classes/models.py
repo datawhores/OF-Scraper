@@ -117,31 +117,22 @@ class Model:
     def renewed(self):
         if not self.subscribed_data:
             return None
-        elif not self.subscribed_data.get("renewedAt"):
-            return None
         return self.subscribed_data.get("renewedAt")
 
     """
     helper properties for filtering/sorting etc
     """
 
+    # active subscription
     @property
     def active(self):
         if self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
-            return False
-        if not self.renewed:
-            return False
-        return True
-
-    @property
-    def account_access(self):
-        if self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
             return True
-        if self.renewed:
+        elif self.renewed:
             return True
-        if not self.subscribed:
-            return False
-        return arrow.get(self.expired) > args_.getargs().date_now
+        elif arrow.get(self.expired) > args_.getargs().date_now:
+            return True
+        return False
 
     @property
     def last_seen(self):
