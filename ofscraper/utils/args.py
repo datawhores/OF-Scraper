@@ -378,7 +378,7 @@ def create_parser(input=None):
 
     group6 = filters.add_mutually_exclusive_group()
     group6.add_argument(
-        "-a-",
+        "-ao",
         "--all-promo-only",
         help="Filter accounts to ones with any promo price",
         default=None,
@@ -415,7 +415,7 @@ def create_parser(input=None):
         help="Filter accounts to those with expired status",
         default=None,
         required=False,
-        const=True,
+        const=False,
         dest="sub_status",
         action="store_const",
     )
@@ -437,7 +437,7 @@ def create_parser(input=None):
         help="Filter accounts to those with the renew flag off",
         default=None,
         required=False,
-        const=True,
+        const=False,
         dest="renewal",
         action="store_const",
     )
@@ -464,13 +464,13 @@ def create_parser(input=None):
 
     adv_filters = parser.add_argument_group(
         "advanced filters",
-        description="Enables advanced filtering of usernames based on more presised user-defined parameters",
+        description="Advanced filtering of accounts based on more presised user-defined parameters",
     )
 
     adv_filters.add_argument(
         "-ppn",
         "--promo-price-min",
-        help="Filter accounts where the lowest promo price matches or falls above the provided value",
+        help="Filter accounts to those where the lowest promo price matches or falls above the provided value",
         default=False,
         required=False,
         type=int,
@@ -542,7 +542,7 @@ def create_parser(input=None):
     adv_filters.add_argument(
         "-lsb",
         "--last-seen-before",
-        help="Filter accounts by last seen being before the given date",
+        help="Filter accounts by last seen being at or before the given date",
         default=False,
         required=False,
         type=arrow_helper,
@@ -550,7 +550,7 @@ def create_parser(input=None):
     adv_filters.add_argument(
         "-lsa",
         "--last-seen-after",
-        help="Filter accounts by last seen being before the given date",
+        help="Filter accounts by last seen being at or after the given date",
         default=False,
         required=False,
         type=arrow_helper,
@@ -559,7 +559,7 @@ def create_parser(input=None):
     adv_filters.add_argument(
         "-ea",
         "--expired-after",
-        help="Filter accounts by expiration/renewal being before the given date",
+        help="Filter accounts by expiration/renewal being at or after the given date",
         default=False,
         required=False,
         type=arrow_helper,
@@ -567,7 +567,7 @@ def create_parser(input=None):
     adv_filters.add_argument(
         "-eb",
         "--expired-before",
-        help="Filter accounts by expiration/renewal being before the given date",
+        help="Filter accounts by expiration/renewal being at or before the given date",
         default=False,
         required=False,
         type=arrow_helper,
@@ -575,7 +575,7 @@ def create_parser(input=None):
     adv_filters.add_argument(
         "-sa",
         "--subscribed-after",
-        help="Filter accounts by subscription date being before the given date",
+        help="Filter accounts by subscription date being after  the given date",
         default=False,
         required=False,
         type=arrow_helper,
@@ -583,7 +583,7 @@ def create_parser(input=None):
     adv_filters.add_argument(
         "-sb",
         "--subscribed-before",
-        help="Filter accounts by sub date being before the given date",
+        help="Filter accounts by sub date being at or before the given date",
         default=False,
         required=False,
         type=arrow_helper,
