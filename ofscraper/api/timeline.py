@@ -178,9 +178,7 @@ async def get_timeline_media(model_id, username, after=None):
         )
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-        postedAtArray = sorted(
-            list(map(lambda x: arrow.get(x).float_timestamp, oldtimeline))
-        )
+        postedAtArray = sorted(list(oldtimeline))
         after = after or get_after(model_id, username)
 
         log.info(
@@ -321,11 +319,9 @@ def get_after(model_id, username):
         log.debug("Setting date to zero because database is empty")
         return 0
     num_missing = len(list(filter(lambda x: x[-2] == 0, curr)))
-    if num_missing == 1:
+    if num_missing == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return arrow.get(
-            operations.get_last_timeline_date(model_id=model_id, username=username)
-        ).float_timestamp
+        return operations.get_last_timeline_date(model_id=model_id, username=username)
     else:
         log.debug(
             f"Setting date to zero because {num_missing} posts in db are marked as undownloaded"

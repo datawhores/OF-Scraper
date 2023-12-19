@@ -216,3 +216,7 @@ SELECT id,post_id  FROM  labels
 postDates = """
 SELECT created_at FROM posts
 """
+
+messagesData = """
+SELECT created_at,post_id FROM messages
+"""

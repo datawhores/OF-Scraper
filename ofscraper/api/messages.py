@@ -13,7 +13,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
-from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -25,13 +24,9 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
 import ofscraper.utils.console as console
-import ofscraper.utils.paths as paths
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -40,12 +35,9 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 @run
-async def get_messages(model_id, username, after=None):
+async def get_messages(model_id, username, forced_after=None):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
-        cache = Cache(
-            paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         overall_progress = Progress(
             SpinnerColumn(
                 style=Style(color="blue"),
@@ -54,13 +46,8 @@ async def get_messages(model_id, username, after=None):
         )
         job_progress = Progress("{task.description}")
         progress_group = Group(overall_progress, Panel(Group(job_progress)))
-        setCache = (
-            True if (args_.getargs().after == 0 or not args_.getargs().after) else False
-        )
-        setCache = True
-
         global tasks
-        global after_
+        global after
         global new_tasks
 
         new_tasks = []
@@ -76,10 +63,11 @@ async def get_messages(model_id, username, after=None):
         ):
             async with sessionbuilder.sessionBuilder() as c:
                 if not args_.getargs().no_cache:
-                    oldmessages = cache.get(f"messages_{model_id}", default=[])
+                    oldmessages = operations.get_messages_data(
+                        model_id=model_id, username=username
+                    )
                 else:
                     oldmessages = []
-                    setCache = False
                 log.trace(
                     "oldmessage {posts}".format(
                         posts="\n\n".join(
@@ -93,23 +81,21 @@ async def get_messages(model_id, username, after=None):
                 log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
 
                 oldmessages = sorted(
-                    oldmessages, key=lambda x: x.get("date"), reverse=True
+                    oldmessages,
+                    key=lambda x: arrow.get(x.get("date")).float_timestamp,
+                    reverse=True,
                 )
                 oldmessages = [
                     {"date": arrow.now().float_timestamp, "id": None}
                 ] + oldmessages
 
                 before = (args_.getargs().before or arrow.now()).float_timestamp
-                if after == None:
-                    after_ = get_after(model_id, username)
-                else:
-                    after_ = after
-
-                log.debug(f"Messages after = {after_}")
+                after = forced_after or get_after(model_id, username)
+                log.debug(f"Messages after = {after}")
 
                 log.debug(f"Messages before = {before}")
 
-                if after_ > before:
+                if after > before:
                     return []
                 if len(oldmessages) <= 2:
                     filteredArray = oldmessages
@@ -129,12 +115,12 @@ async def get_messages(model_id, username, after=None):
                             - 1
                         )
 
-                    if after_ >= oldmessages[1].get("date"):
+                    if after >= oldmessages[1].get("date"):
                         j = 2
-                    elif after_ < oldmessages[-1].get("date"):
+                    elif after < oldmessages[-1].get("date"):
                         j = len(oldmessages)
                     else:
-                        temp = list(x.get("date") < after_ for x in oldmessages)
+                        temp = list(x.get("date") < after for x in oldmessages)
                         j = temp.index(True) if True in temp else len(oldmessages)
                     j = min(max(i + 2, j), len(oldmessages))
                     i = max(min(j - 2, i), 0)
@@ -144,7 +130,7 @@ async def get_messages(model_id, username, after=None):
 
                 log.info(
                     f"""
-Setting initial message scan date for {username} to {arrow.get(after_).format('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -295,73 +281,6 @@ Setting initial message scan date for {username} to {arrow.get(after_).format('Y
                 )
             )
         )
-
-        if setCache:
-            newcache = {}
-            for message in oldmessages[1:] + list(unduped.values()):
-                id = message["id"]
-                if newcache.get(id):
-                    continue
-                newcache[id] = {
-                    "id": message.get("id"),
-                    "date": arrow.get(
-                        message.get("createdAt") or message.get("postedAt")
-                    ).float_timestamp,
-                    "createdAt": message.get("createdAt") or message.get("postedAt"),
-                }
-            cache.set(
-                f"messages_{model_id}",
-                list(newcache.values()),
-                expire=constants.RESPONSE_EXPIRY,
-            )
-            newCheck = {}
-            for post in cache.get(f"message_check_{model_id}", []) + list(
-                unduped.values()
-            ):
-                newCheck[post["id"]] = post
-            cache.set(
-                f"message_check_{model_id}",
-                list(newCheck.values()),
-                expire=constants.DAY_SECONDS,
-            )
-            cache.close()
-
-        if setCache:
-            lastpost = cache.get(f"messages_{model_id}_lastpost")
-            post = sorted(newcache.values(), key=lambda x: x.get("date"), reverse=True)
-            if len(post) > 0:
-                post = post[-1]
-                if not lastpost:
-                    cache.set(
-                        f"messages_{model_id}_lastpost",
-                        (float(post["date"]), post["id"]),
-                    )
-                    cache.close()
-                if lastpost and float(post["date"]) < lastpost[0]:
-                    cache.set(
-                        f"messages_{model_id}_lastpost",
-                        (float(post["date"]), post["id"]),
-                    )
-                    cache.close()
-
-        if setCache:
-            firstpost = cache.get(f"messages_{model_id}_firstpost")
-            post = sorted(newcache.values(), key=lambda x: x.get("date"), reverse=True)
-            if len(post) > 0:
-                post = post[0]
-                if not firstpost:
-                    cache.set(
-                        f"messages_{model_id}_firstpost",
-                        (float(post["date"]), post["id"]),
-                    )
-                    cache.close()
-                if firstpost and float(post["date"]) > firstpost[0]:
-                    cache.set(
-                        f"messages_{model_id}_firstpost",
-                        (float(post["date"]), post["id"]),
-                    )
-                    cache.close()
-
         return list(unduped.values())
 
 
@@ -422,7 +341,7 @@ async def scrape_messages(
                         messages[-1].get("createdAt") or messages[-1].get("postedAt")
                     ).float_timestamp
 
-                    if timestamp < after_:
+                    if timestamp < after:
                         attempt.set(0)
                     elif required_ids == None:
                         attempt.set(0)
@@ -484,23 +403,26 @@ def get_individual_post(model_id, postid, c=None):
 
 
 def get_after(model_id, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
-    if not cache.get(f"messages_{model_id}_lastpost") or not cache.get(
-        f"messages_{model_id}_firstpost"
-    ):
-        log.debug("last date or first date not found in cache")
-        return 0
+
     curr = operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    elif len(list(filter(lambda x: x[-2] == 0, curr))) == 0:
+    missing_items = list(filter(lambda x: x[-2] == 0, curr))
+    if len(missing_items) == 0:
         log.debug(
-            "Using cache for date because,all downloads in db marked as downloaded"
+            "Using last db date because,all downloads in db are marked as downloaded"
         )
-        return cache.get(f"messages_{model_id}_firstpost")[0]
+        return arrow.get(
+            operations.get_last_message_date(model_id=model_id, username=username)
+        ).float_timestamp
+    elif len(missing_items) == 1:
+        log.debug("Setting date slightly before single missing item")
+        return arrow.get(missing_items[-1][-1]).float_timestamp - 1000
     else:
-        log.debug("Setting date to zero because all other test failed")
+        log.debug(
+            f"Setting date to zero because {len(missing_items)} messages in db are marked as undownloaded"
+        )
         return 0

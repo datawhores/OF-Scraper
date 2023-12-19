@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import psutil
+from setproctitle import setproctitle
 
 
 def is_frozen():
@@ -74,3 +75,16 @@ def set_eventloop():
         import uvloop
 
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+
+def get_dupe_ofscraper():
+    return list(
+        filter(
+            lambda x: x.name() == "OF-Scraper" and x.status() == "running",
+            list(psutil.process_iter()),
+        )
+    )
+
+
+def setName():
+    setproctitle("OF-Scraper")
