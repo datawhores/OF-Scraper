@@ -87,7 +87,7 @@ class Post:
 
     @property
     def date(self):
-        return self._post.get("createdAt") or self._post.get("postedAt")
+        return self._post.get("postedAt") or self._post.get("createdAt")
 
     # modify verison of post date
     @property

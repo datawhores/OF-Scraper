@@ -200,6 +200,14 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
 
 
 @operation_wrapper
+def get_timeline_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.postDates)
+        conn.commit()
+        return list(map(lambda x: x[0], cur.fetchall()))
+
+
+@operation_wrapper
 def create_post_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.postCreate)
@@ -377,6 +385,11 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
         data = list(map(lambda x: x, cur.fetchall()))
         conn.commit()
         return data
+
+
+def get_last_timeline_date(model_id=None, username=None):
+    data = get_timeline_postdates(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: arrow.get(x).float_timestamp)[-1]
 
 
 @operation_wrapper

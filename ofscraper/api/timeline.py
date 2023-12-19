@@ -13,7 +13,6 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
-from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -25,12 +24,9 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -167,21 +163,12 @@ async def get_timeline_media(model_id, username, after=None):
         min_posts = 50
         responseArray = []
         page_count = 0
-        setCache = None
-
-        cache = Cache(
-            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         if not args_.getargs().no_cache:
-            setCache = (
-                True
-                if (args_.getargs().after == 0 or not args_.getargs().after)
-                else False
+            oldtimeline = operations.get_timeline_postdates(
+                model_id=model_id, username=username
             )
-            oldtimeline = cache.get(f"timeline_{model_id}", default=[])
         else:
             oldtimeline = []
-            setCache = False
         log.trace(
             "oldtimeline {posts}".format(
                 posts="\n\n".join(
@@ -190,11 +177,9 @@ async def get_timeline_media(model_id, username, after=None):
             )
         )
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-        oldtimeline = list(
-            filter(lambda x: x.get("postedAtPrecise") != None, oldtimeline)
-        )
+        oldtimeline = list(filter(lambda x: x != None, oldtimeline))
         postedAtArray = sorted(
-            list(map(lambda x: float(x["postedAtPrecise"]), oldtimeline))
+            list(map(lambda x: arrow.get(x).float_timestamp, oldtimeline))
         )
         after = after or get_after(model_id, username)
 
@@ -314,68 +299,6 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             )
         )
         log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-        if setCache:
-            newcache = {}
-            for post in oldtimeline + list(unduped.values()):
-                id = post["id"]
-                if newcache.get(id):
-                    continue
-                newcache[id] = {
-                    "id": post.get("id"),
-                    "postedAtPrecise": post.get("postedAtPrecise"),
-                }
-            cache.set(
-                f"timeline_{model_id}",
-                list(newcache.values()),
-                expire=constants.RESPONSE_EXPIRY,
-            )
-            newCheck = {}
-            for post in cache.get(f"timeline_check_{model_id}", []) + list(
-                unduped.values()
-            ):
-                newCheck[post["id"]] = post
-            cache.set(
-                f"timeline_check_{model_id}",
-                list(newCheck.values()),
-                expire=constants.DAY_SECONDS,
-            )
-            cache.close()
-        if setCache:
-            lastpost = cache.get(f"timeline_{model_id}_lastpost")
-            post = sorted(newcache.values(), key=lambda x: x.get("postedAtPrecise"))
-            if len(post) > 0:
-                post = post[-1]
-                if not lastpost:
-                    cache.set(
-                        f"timeline_{model_id}_lastpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-                if lastpost and float(post["postedAtPrecise"]) > lastpost[0]:
-                    cache.set(
-                        f"timeline_{model_id}_lastpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-
-        if setCache and after == 0:
-            firstpost = cache.get(f"timeline_{model_id}_firstpost")
-            post = sorted(newcache.values(), key=lambda x: x.get("postedAtPrecise"))
-            if len(post) > 0:
-                post = post[0]
-                if not firstpost:
-                    cache.set(
-                        f"timeline_{model_id}_firstpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-                if firstpost and float(post["postedAtPrecise"]) < firstpost[0]:
-                    cache.set(
-                        f"timeline_{model_id}_firstpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-
         return list(unduped.values())
 
 
@@ -391,25 +314,20 @@ def get_individual_post(id, c=None):
 
 
 def get_after(model_id, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
-    if not cache.get(f"timeline_{model_id}_lastpost") or not cache.get(
-        f"timeline_{model_id}_firstpost"
-    ):
-        log.debug("last date or first date not found in cache")
-        return 0
-
     curr = operations.get_timeline_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-
-    elif len(list(filter(lambda x: x[-2] == 0, curr))) == 0:
-        log.debug(
-            "Using cache for date because,all downloads in db marked as downloaded"
-        )
-        return cache.get(f"timeline_{model_id}_lastpost")[0]
+    num_missing = len(list(filter(lambda x: x[-2] == 0, curr)))
+    if num_missing == 1:
+        log.debug("Using last db date because,all downloads in db marked as downloaded")
+        return arrow.get(
+            operations.get_last_timeline_date(model_id=model_id, username=username)
+        ).float_timestamp
     else:
-        log.debug("Setting date to zero because all other test failed")
+        log.debug(
+            f"Setting date to zero because {num_missing} posts in db are marked as undownloaded"
+        )
         return 0
