@@ -1001,8 +1001,8 @@ def modify_filters_prompt(args):
                 "default": None,
                 "message": "Filter account by whether it has a renewal date",
                 "choices": [
-                    Choice("active", "Active Only"),
-                    Choice("disabled", "Disabled Only"),
+                    Choice(True, "Active Only"),
+                    Choice(False, "Disabled Only"),
                     Choice(None, "Both"),
                 ],
             },
@@ -1012,8 +1012,8 @@ def modify_filters_prompt(args):
                 "default": None,
                 "message": "Filter accounts based on access to content via a subscription",
                 "choices": [
-                    Choice("active", "Active Only"),
-                    Choice("expired", "Expired Only"),
+                    Choice(True, "Active Only"),
+                    Choice(False, "Expired Only"),
                     Choice(None, "Both"),
                 ],
             },
@@ -1023,19 +1023,8 @@ def modify_filters_prompt(args):
                 "default": None,
                 "message": "Filter Accounts By whether the account by the visability of last seen",
                 "choices": [
-                    Choice("yes", "Last seen is present"),
-                    Choice("no", "Last seen is hidden"),
-                    Choice(None, "Both"),
-                ],
-            },
-            {
-                "type": "list",
-                "name": "free-trial",
-                "default": None,
-                "message": "Filter Accounts By whether the account is a free trial",
-                "choices": [
-                    Choice("yes", "Free Trial only"),
-                    Choice("no", "Paid and always free accounts"),
+                    Choice(True, "Last seen is present"),
+                    Choice(False, "Last seen is hidden"),
                     Choice(None, "Both"),
                 ],
             },
@@ -1045,8 +1034,8 @@ def modify_filters_prompt(args):
                 "message": "Filter accounts presence of claimable promotions",
                 "default": None,
                 "choices": [
-                    Choice("yes", "Promotions Only"),
-                    Choice("no", "No Promotions"),
+                    Choice(True, "Promotions Only"),
+                    Choice(False, "No Promotions"),
                     Choice(None, "Both"),
                 ],
             },
@@ -1056,9 +1045,20 @@ def modify_filters_prompt(args):
                 "message": "Filter accounts presence of any promotions",
                 "default": None,
                 "choices": [
-                    Choice("yes", "Promotions Only"),
-                    Choice("no", "No Promotions"),
+                    Choice(True, "Promotions Only"),
+                    Choice(False, "No Promotions"),
                     Choice(None, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "free-trial",
+                "default": None,
+                "message": "Filter Accounts By whether the account is a free trial",
+                "choices": [
+                    Choice(True, "Free Trial only"),
+                    Choice(False, "Paid and always free accounts"),
+                    Choice(None, "Any Account"),
                 ],
             },
         ]
@@ -1070,9 +1070,9 @@ def modify_filters_prompt(args):
     args.all_promo = answer["all-promo"]
     args.free_trial = answer["free-trial"]
     args.last_seen = answer["last-seen"]
-    if not args.free_trail:
+    if args.free_trial != "yes":
         args = modify_current_price(args)
-    if not args.free_trail and decide_price_prompt() == "yes":
+    if args.free_trial != "yes" and decide_price_prompt() == "yes":
         args = modify_other_prices(args)
     return args
 
