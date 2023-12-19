@@ -1041,6 +1041,47 @@ def modify_filters_prompt(args):
             },
             {
                 "type": "list",
+                "name": "promo",
+                "message": "Filter accounts presence of claimable promotions",
+                "default": None,
+                "choices": [
+                    Choice("yes", "Promotions Only"),
+                    Choice("no", "No Promotions"),
+                    Choice(None, "Both"),
+                ],
+            },
+            {
+                "type": "list",
+                "name": "all-promo",
+                "message": "Filter accounts presence of any promotions",
+                "default": None,
+                "choices": [
+                    Choice("yes", "Promotions Only"),
+                    Choice("no", "No Promotions"),
+                    Choice(None, "Both"),
+                ],
+            },
+        ]
+    )
+
+    args.renewal = answer["renewal"]
+    args.sub_status = answer["expire"]
+    args.promo = answer["promo"]
+    args.all_promo = answer["all-promo"]
+    args.free_trial = answer["free-trial"]
+    args.last_seen = answer["last-seen"]
+    if not args.free_trail:
+        args = modify_current_price(args)
+    if not args.free_trail and decide_price_prompt() == "yes":
+        args = modify_other_prices(args)
+    return args
+
+
+def modify_current_price(args):
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
                 "name": "subscription",
                 "message": "Filter accounts by the type of a current subscription price",
                 "default": None,
@@ -1050,6 +1091,32 @@ def modify_filters_prompt(args):
                     Choice(None, "Both"),
                 ],
             },
+        ]
+    )
+
+    args.current_price = answer["subscription"]
+    return args
+
+
+def decide_price_prompt():
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": "input",
+                "default": "No",
+                "message": "Would you like to modify other price types",
+                "choices": ["Yes", "No"],
+            }
+        ]
+    )
+
+    return answer["input"]
+
+
+def modify_other_prices(args):
+    answer = promptClasses.batchConverter(
+        *[
             {
                 "type": "list",
                 "name": "regular",
@@ -1083,41 +1150,12 @@ def modify_filters_prompt(args):
                     Choice(None, "Both"),
                 ],
             },
-            {
-                "type": "list",
-                "name": "promo",
-                "message": "Filter accounts presence of claimable promotions",
-                "default": None,
-                "choices": [
-                    Choice("yes", "Promotions Only"),
-                    Choice("no", "No Promotions"),
-                    Choice(None, "Both"),
-                ],
-            },
-            {
-                "type": "list",
-                "name": "all-promo",
-                "message": "Filter accounts presence of any promotions",
-                "default": None,
-                "choices": [
-                    Choice("yes", "Promotions Only"),
-                    Choice("no", "No Promotions"),
-                    Choice(None, "Both"),
-                ],
-            },
         ]
     )
-    args.renewal = answer["renewal"]
-    args.sub_status = answer["expire"]
-    args.promo = answer["promo"]
-    args.all_promo = answer["all-promo"]
-    args.current_price = answer["subscription"]
+
     args.regular_price = answer["regular"]
     args.renewal_price = answer["future"]
     args.promo_price = answer["promo-price"]
-    args.free_trial = answer["free-trial"]
-    args.last_seen = answer["last-seen"]
-
     return args
 
 
