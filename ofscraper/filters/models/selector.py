@@ -59,7 +59,7 @@ def parsed_subscriptions_helper(force=False):
     args = args_.getargs()
     if not args_.getargs().username:
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
-        args_.getargs().username = list(map(lambda x: x["name"], selectedusers))
+        args_.getargs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         args_.changeargs(args)
     elif "ALL" in args_.getargs().username:
