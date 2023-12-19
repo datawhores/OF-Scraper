@@ -33,7 +33,6 @@ For detailed instructions on:
 
 ## Description:
 
-<<<<<<< HEAD
 command-line program to download media, and to process other batch operations such as liking and unliking posts.
 =======
 
