@@ -318,12 +318,15 @@ def get_after(model_id, username):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    num_missing = len(list(filter(lambda x: x[-2] == 0, curr)))
-    if num_missing == 0:
+    missing_items = list(filter(lambda x: x[-2] == 0, curr))
+    if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
         return operations.get_last_timeline_date(model_id=model_id, username=username)
+    elif len(missing_items) == 1:
+        log.debug("Setting date slightly before single missing item")
+        return arrow.get(missing_items[-1][-1]).float_timestamp - 1000
     else:
         log.debug(
-            f"Setting date to zero because {num_missing} posts in db are marked as undownloaded"
+            f"Setting date to zero because {len(missing_items)} posts in db are marked as undownloaded"
         )
         return 0
