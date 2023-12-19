@@ -31,14 +31,11 @@ For detailed instructions on:
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
 
-## Description:
 
-command-line program to download media, and to process other batch operations such as liking and unliking posts.
-=======
 
 # Description:
 
-This tool functions as a command-line program enabling media downloads and executing various batch operations like liking and unliking posts on OnlyFans.
+command-line tool that lets you download media from OnlyFans and perform bulk actions like liking or unliking posts.
 
 > > > > > > > ac63182e8fa145d6655e99a21aeb32365e0040fc
 
