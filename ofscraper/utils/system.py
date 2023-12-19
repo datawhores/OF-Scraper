@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import multiprocessing
 import os
 import platform
@@ -78,12 +79,18 @@ def set_eventloop():
 
 
 def get_dupe_ofscraper():
-    return list(
+    log = logging.getLogger("shared")
+
+    found = list(
         filter(
-            lambda x: x.name() == "OF-Scraper" and x.status() == "running",
+            lambda x: x.name() == "OF-Scraper"
+            and x.status() == "running"
+            and x.pid != os.getpid(),
             list(psutil.process_iter()),
         )
     )
+    log.debug(f"Duplicated Processes {found}")
+    return found
 
 
 def setName():

@@ -23,9 +23,9 @@ def main():
     system.setName()
     try:
         system.set_mulitproc_start_type()
-        if len(system.get_dupe_ofscraper()) > 1:
+        if len(system.get_dupe_ofscraper()) > 0:
             console.get_shared_console().print(
-                "[bold yellow]Warning another OF-Scraper instance was detected[bold yellow]"
+                "[bold yellow]Warning another OF-Scraper instance was detected[bold yellow]\n\n\n"
             )
 
         logger.init_values()
@@ -38,6 +38,7 @@ def main():
         if vars(args).get("help"):
             return
         main_logger_thread = logger.start_stdout_logthread()
+        other_l
         if system.getcpu_count() >= 2:
             other_logger = logger.start_other_process()
         else:
