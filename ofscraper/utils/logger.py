@@ -18,6 +18,7 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.console as console
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.paths as paths
+import ofscraper.utils.system as system
 
 queue_ = None
 otherqueue_ = None
@@ -547,6 +548,13 @@ def start_other_process(input_=None, name=None, count=1):
     )
     process.start() if process else None
     return process
+
+
+def start_other_helper():
+    if system.getcpu_count() >= 2:
+        return start_other_process()
+    else:
+        return start_other_thread()
 
 
 # logger for subprocess that is sharable with main process via queues

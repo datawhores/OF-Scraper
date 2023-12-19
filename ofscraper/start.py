@@ -38,11 +38,7 @@ def main():
         if vars(args).get("help"):
             return
         main_logger_thread = logger.start_stdout_logthread()
-        other_l
-        if system.getcpu_count() >= 2:
-            other_logger = logger.start_other_process()
-        else:
-            other_logger = logger.start_other_thread()
+        other_logger = logger.start_other_helper()
         # allow background processes to start
         time.sleep(3)
 
