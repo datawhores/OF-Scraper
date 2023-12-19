@@ -94,4 +94,8 @@ def get_dupe_ofscraper():
 
 
 def setName():
-    setproctitle("OF-Scraper")
+    log = logging.getLogger("shared")
+    try:
+        setproctitle("OF-Scraper")
+    except Exception as E:
+        log.debug(E)

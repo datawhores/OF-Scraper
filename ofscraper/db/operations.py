@@ -407,7 +407,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
 
 def get_last_timeline_date(model_id=None, username=None):
     data = get_timeline_postdates(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x.float_timestamp)[-1]
+    return sorted(data, key=lambda x: x)[-1]
 
 
 @operation_wrapper

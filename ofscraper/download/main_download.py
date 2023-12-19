@@ -52,7 +52,7 @@ async def main_download(c, ele, path, username, model_id, progress):
     if args_.getargs().metadata:
         return await metadata(c, ele, path, username, model_id)
     result = await main_download_downloader(c, ele, path, username, model_id, progress)
-
+    # special case for zero byte files
     if len(result) == 2 and result[-1] == 0:
         return result
     total, temp, path_to_file = result
