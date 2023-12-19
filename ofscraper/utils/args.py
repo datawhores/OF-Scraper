@@ -335,22 +335,22 @@ def create_parser(input=None):
     group4 = filters.add_mutually_exclusive_group()
     group4.add_argument(
         "-fo",
-        "--free-trail-only",
+        "--free-trial-only",
         help="Filter accounts to only those currently in a free trial (normally paid)",
         default=None,
         required=False,
         const=True,
-        dest="free_trail",
+        dest="free_trial",
         action="store_const",
     )
     group4.add_argument(
         "-fs",
-        "--free-trail-skip",
+        "--free-trial-skip",
         help="Filter accounts to only those currently not in  a free trial (normally paid)",
         default=None,
         required=False,
         const=False,
-        dest="free_trail",
+        dest="free_trial",
         action="store_const",
     )
 

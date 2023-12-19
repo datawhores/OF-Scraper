@@ -1030,11 +1030,11 @@ def modify_filters_prompt(args):
             },
             {
                 "type": "list",
-                "name": "free-trail",
+                "name": "free-trial",
                 "default": None,
-                "message": "Filter Accounts By whether the account is a free trail",
+                "message": "Filter Accounts By whether the account is a free trial",
                 "choices": [
-                    Choice("yes", "Free Trail only"),
+                    Choice("yes", "Free Trial only"),
                     Choice("no", "Paid and always free accounts"),
                     Choice(None, "Both"),
                 ],
@@ -1115,7 +1115,7 @@ def modify_filters_prompt(args):
     args.regular_price = answer["regular"]
     args.renewal_price = answer["future"]
     args.promo_price = answer["promo-price"]
-    args.free_trail = answer["free-trail"]
+    args.free_trial = answer["free-trial"]
     args.last_seen = answer["last-seen"]
 
     return args

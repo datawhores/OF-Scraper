@@ -40,7 +40,7 @@ def promoFilterHelper(filterusername):
         filterusername = list(filter(lambda x: x.last_seen is None, filterusername))
         log.debug(f"Last Seen Flag No Count: {len(filterusername)}")
         log.debug(f"Last Seen Flag: {args_.getargs().last_seen}")
-    if args_.getargs().free_trail:
+    if args_.getargs().free_trial:
         filterusername = list(
             filter(
                 lambda x: (
@@ -50,14 +50,14 @@ def promoFilterHelper(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Free Trail Flag Yes Count: {len(filterusername)}")
+        log.debug(f"Free Trial Flag Yes Count: {len(filterusername)}")
 
-    elif args_.getargs().free_trail is False:
+    elif args_.getargs().free_trial is False:
         filterusername = list(
             filter(
                 lambda x: (x.final_current_price > 0 or x.final_regular_price == 0),
                 filterusername,
             )
         )
-        log.debug(f"Free Trail Flag No Count: {len(filterusername)}")
+        log.debug(f"Free Trial Flag No Count: {len(filterusername)}")
     return filterusername

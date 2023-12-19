@@ -56,14 +56,14 @@ def wrapper(funct):
         while True:
             out = prompt_.execute()
             prompt_._default = get_default(funct, prompt_)
-            if out != None:
-                break
             if "altx" in action_set:
                 prompt_ = altx_action(prompt_)
-            if "altv" in action_set:
+            elif "altv" in action_set:
                 altv_action()
-            if "alt-d" in action_set:
+            elif "alt-d" in action_set:
                 altd_action(prompt_)
+            else:
+                break
             action_set = set()
 
         return out
