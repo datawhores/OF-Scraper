@@ -80,15 +80,14 @@ def set_eventloop():
 
 def get_dupe_ofscraper():
     log = logging.getLogger("shared")
-
-    found = list(
-        filter(
-            lambda x: x.name() == "OF-Scraper"
-            and x.status() == "running"
-            and x.pid != os.getpid(),
-            list(psutil.process_iter()),
-        )
-    )
+    found = []
+    for proc in psutil.process_iter():
+        if (
+            proc.name() == "OF-Scraper"
+            and proc.status() == "running"
+            and proc.pid != os.getpid()
+        ):
+            found.append(proc)
     log.debug(f"Duplicated Processes {found}")
     return found
 

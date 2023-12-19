@@ -74,6 +74,18 @@ async def alt_download(c, ele, path, username, model_id):
 
     for m in [audio, video]:
         m["total"] = get_item_total(m)
+
+    if audio["total"] + video["total"] == 0:
+        await operations.update_media_table(
+            ele,
+            filename=None,
+            model_id=model_id,
+            username=username,
+            downloaded=True,
+        )
+        return ele.mediatype, video["total"] + audio["total"]
+
+    for m in [audio, video]:
         if not isinstance(m, dict):
             return m
         check1 = await size_checker(m["path"], ele, m["total"])

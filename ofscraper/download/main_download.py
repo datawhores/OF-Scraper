@@ -54,6 +54,13 @@ async def main_download(c, ele, path, username, model_id, progress):
     result = await main_download_downloader(c, ele, path, username, model_id, progress)
     # special case for zero byte files
     if len(result) == 2 and result[-1] == 0:
+        await operations.update_media_table(
+            ele,
+            filename=None,
+            model_id=model_id,
+            username=username,
+            downloaded=True,
+        )
         return result
     total, temp, path_to_file = result
 
