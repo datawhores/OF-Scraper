@@ -8,11 +8,9 @@
 - [Support](#support)
 
 # Intro
+At its inception, this project emerged as a fork of the original onlyfans-scraper. With invaluable support from the community and consistent script updates, we've undergone substantial architectural changes, resulting in a significantly revamped codebase compared to the original master. While some of these modifications are detailed in https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md, several remain unreported.
 
-This is a fork of the original onlyfans-scraper, is designed to facilitate effortless transitions between DIGITALCRIMINALS' script, ensuring high compatibility and smooth transfer of features
-
-Additionally, it offers a wealth of filtering features, providing extensive control over the specific types of content you wish to scrape. For a detailed breakdown of these enhancements, you can refer to the CHANGES.md file available at this link: https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md
-
+This script has been thoughtfully crafted to facilitate seamless transitions from DIGITALCRIMINALS' script, ensuring robust compatibility and smooth feature migration. Furthermore, it boasts an extensive array of filtering features, empowering users with precise control over the specific content types they aim to scrape
 # Documentation
 
 For detailed instructions on:
