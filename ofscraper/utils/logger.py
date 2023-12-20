@@ -402,6 +402,22 @@ def init_other_logger(name):
     return log
 
 
+# updates stream for main process
+def updateOtherLoggerStream():
+    args.resetGlobalDateHelper()
+    args.globalDataHelper()
+    log = logging.getLogger("other")
+    for ele in list(
+        filter(lambda x: isinstance(x, logging.StreamHandler), log.handlers)
+    ):
+        ele.stream.close()
+        ele.stream = open(
+            paths.getlogpath(),
+            encoding="utf-8",
+            mode="a",
+        )
+
+
 def add_widget(widget):
     [
         setattr(ele, "widget", widget)
