@@ -113,9 +113,9 @@ class Placeholders:
         self._variables.update({"user_name": username})
         modelid = model_id
         self._variables.update({"modelid": modelid})
-        post_id = ele.postid_
+        post_id = ele.postid
         self._variables.update({"post_id": post_id})
-        postid = ele.postid_
+        postid = ele.postid
         self._variables.update({"postid": postid})
         media_id = ele.id
         self._variables.update({"media_id": media_id})
