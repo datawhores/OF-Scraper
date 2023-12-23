@@ -142,7 +142,7 @@ class Placeholders:
         response_type = ele.responsetype
         self._variables.update({"response_type": response_type})
 
-        label = ele.label_
+        label = ele.label_string
         self._variables.update({"label": label})
         downloadtype = ele.downloadtype
         self._variables.update({"downloadtype": downloadtype})
@@ -219,7 +219,7 @@ class Placeholders:
         response_type = ele.responsetype
         self._variables.update({"response_type": response_type})
 
-        label = ele.label_
+        label = ele.label_string
         self._variables.update({"label": label})
 
         text = ele.text_

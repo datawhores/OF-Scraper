@@ -92,8 +92,8 @@ class Media:
 
     # used for placeholder
     @property
-    def label_(self):
-        return self._post.label_ or ""
+    def label_string(self):
+        return self._post.label or "None"
 
     @property
     def downloadtype(self):
@@ -101,11 +101,11 @@ class Media:
 
     @property
     def responsetype(self):
-        return self._post.responsetype
+        return self._post.modified_responsetype
 
     @property
-    def responsetype_(self):
-        return self._post.responsetype_
+    def orginal_responsetype(self):
+        return self._post.orginal_responsetype
 
     @property
     def value(self):
@@ -118,7 +118,7 @@ class Media:
     # modified verison of post date
     @property
     def postdate_(self):
-        return self._post.date_
+        return self._post.formated_date
 
     @property
     def date(self):
