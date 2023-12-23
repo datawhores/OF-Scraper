@@ -4,6 +4,7 @@ import arrow
 
 import ofscraper.classes.media as Media
 import ofscraper.utils.config as config
+import ofscraper.utils.text as text
 
 log = logging.getLogger("shared")
 
@@ -50,6 +51,11 @@ class Post:
 
     @property
     def text(self):
+        string = self._post.get("text")
+        return text.sanitize_text(string)
+
+    @property
+    def text_(self):
         return self._post.get("text")
 
     @property
