@@ -146,6 +146,7 @@ def process_post_user_first():
                     model_id = ele.id
                     operations.write_profile_table(model_id=model_id, username=ele.name)
                     output.extend(OF.process_areas(ele, model_id))
+                    #
                 except Exception as e:
                     if isinstance(e, KeyboardInterrupt):
                         raise e

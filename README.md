@@ -8,9 +8,11 @@
 - [Support](#support)
 
 # Intro
+
 At its inception, this project emerged as a fork of the original onlyfans-scraper. With invaluable support from the community and consistent script updates, we've undergone substantial architectural changes, resulting in a significantly revamped codebase compared to the original master. While some of these modifications are detailed [HERE](https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md), most are only documented in the commit history.
 
 This script has been thoughtfully crafted to facilitate seamless transitions from DIGITALCRIMINALS' script, ensuring robust compatibility and smooth feature migration. Furthermore, it boasts an extensive array of filtering features, empowering users with precise control over the specific content types they aim to scrape
+
 # Documentation
 
 For detailed instructions on:
@@ -28,8 +30,6 @@ For detailed instructions on:
     <li>
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
-
-
 
 # Description:
 

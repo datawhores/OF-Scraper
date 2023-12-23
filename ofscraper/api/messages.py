@@ -13,6 +13,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
+from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -24,9 +25,12 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
+import ofscraper.utils.config as config_
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
+
+from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -35,7 +39,7 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 @run
-async def get_messages(model_id, username, forced_after=None):
+async def get_messages(model_id, username, forced_after=None, retry=None):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -90,7 +94,9 @@ async def get_messages(model_id, username, forced_after=None):
                 ] + oldmessages
 
                 before = (args_.getargs().before or arrow.now()).float_timestamp
-                after = forced_after or get_after(model_id, username)
+                after = after = (
+                    0 if retry else forced_after or get_after(model_id, username)
+                )
                 log.debug(f"Messages after = {after}")
 
                 log.debug(f"Messages before = {before}")
@@ -403,9 +409,14 @@ def get_individual_post(model_id, postid, c=None):
 
 
 def get_after(model_id, username):
+    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
-
+    if cache.get(f"{model_id}_scrape_messages"):
+        log.debug(
+            "Used after previously scraping entire timeline to make sure content is not missing"
+        )
+        return 0
     curr = operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

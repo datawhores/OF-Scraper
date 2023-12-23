@@ -11,6 +11,8 @@ r"""
 import logging
 from itertools import chain
 
+from diskcache import Cache
+
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
 import ofscraper.api.labels as labels_api
@@ -26,14 +28,20 @@ import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
+import ofscraper.utils.config as config_
 import ofscraper.utils.stdout as stdout
+
+from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 
 
 def process_messages(model_id, username):
+    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     with stdout.lowstdout():
-        messages_ = messages.get_messages(model_id, username)
+        messages_ = messages.get_messages(
+            model_id, username, rescan=cache.get("{model_id}_scrape_messages")
+        )
         messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
         curr = set(
             operations.get_all_messages_ids(model_id=model_id, username=username)
@@ -60,6 +68,11 @@ def process_messages(model_id, username):
             model_id=model_id,
             username=username,
             downloaded=False,
+        )
+        # Update after database
+        cache.set(
+            "{model_id}_scrape_messages",
+            args_.getargs().after is not None and args_.getargs().after != 0,
         )
 
         return list(filter(lambda x: isinstance(x, media.Media), output))
@@ -161,8 +174,13 @@ def process_highlights(model_id, username):
 
 def process_timeline_posts(model_id, username, individual=False):
     with stdout.lowstdout():
+        cache = Cache(
+            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
+        )
         timeline_posts = (
-            timeline.get_timeline_media(model_id, username)
+            timeline.get_timeline_media(
+                model_id, username, rescan=cache.get("{model_id}_scrape_timeline")
+            )
             if not individual
             else timeline.get_individual_post(id)
         )
@@ -200,7 +218,7 @@ def process_timeline_posts(model_id, username, individual=False):
             username=username,
             downloaded=False,
         )
-
+        cache.set("{model_id}_scrape_timeline", args_.getargs().after is not None)
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
@@ -486,6 +504,7 @@ def process_areas(ele, model_id) -> list:
 
     if "Labels" in final_post_areas and ele.active:
         labels_dicts = process_labels(model_id, username)
+
     return filters.filterMedia(
         list(
             chain(

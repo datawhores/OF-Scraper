@@ -13,6 +13,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
+from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -24,9 +25,12 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
+import ofscraper.utils.config as config_
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
+
+from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -146,7 +150,7 @@ async def scrape_timeline_posts(
 
 
 @run
-async def get_timeline_media(model_id, username, after=None):
+async def get_timeline_media(model_id, username, forced_after=None, rescan=None):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -179,7 +183,7 @@ async def get_timeline_media(model_id, username, after=None):
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
         postedAtArray = sorted(list(oldtimeline))
-        after = after or get_after(model_id, username)
+        after = after = 0 if rescan else forced_after or get_after(model_id, username)
 
         log.info(
             f"""
@@ -312,10 +316,16 @@ def get_individual_post(id, c=None):
 
 
 def get_after(model_id, username):
+    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     curr = operations.get_timeline_media(model_id=model_id, username=username)
-    if len(curr) == 0:
+    if cache.get(f"{model_id}_scrape_timeline"):
+        log.debug(
+            "Used after previously scraping entire timeline to make sure content is not missing"
+        )
+        return 0
+    elif len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
     missing_items = list(filter(lambda x: x[-2] == 0, curr))
