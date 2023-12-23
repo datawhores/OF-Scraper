@@ -1,6 +1,8 @@
 import logging
-
 import arrow
+import re
+
+from bs4 import BeautifulSoup
 
 import ofscraper.classes.media as Media
 import ofscraper.utils.config as config
