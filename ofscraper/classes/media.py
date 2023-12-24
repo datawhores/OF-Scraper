@@ -132,7 +132,7 @@ class Media:
         if self._media.get("createdAt") or self._media.get("postedAt"):
             return arrow.get(
                 self._media.get("createdAt") or self._media.get("postedAt")
-            ).format("YYYY-MM-DD hh:mm:ss")()
+            ).format("YYYY-MM-DD hh:mm:ss")
         return None
 
     @property

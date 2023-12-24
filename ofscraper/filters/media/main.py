@@ -214,6 +214,6 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter{count}0->  all media mass message filter count: {len(media)}")
+    log.debug(f"filter{count}->  all media mass message filter count: {len(media)}")
 
     return media

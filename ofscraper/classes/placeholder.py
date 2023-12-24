@@ -108,9 +108,9 @@ class Placeholders:
     def getmediadir(self, ele, username, model_id):
         root = pathlib.Path(config_.get_save_location(config_.read_config()))
         self._variables.update({"username": username})
-        self._variables.update({"model_id": model_id})
         user_name = username
-        self._variables.update({"user_name": username})
+        self._variables.update({"user_name": user_name})
+        self._variables.update({"model_id": model_id})
         modelid = model_id
         self._variables.update({"modelid": modelid})
         post_id = ele.postid
@@ -134,14 +134,13 @@ class Placeholders:
         date = arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
         self._variables.update({"date": date})
         model_username = username
-        self._variables.update({"model_username": username})
+        self._variables.update({"model_username": model_username})
         modelusername = username
-        self._variables.update({"modelusername": username})
+        self._variables.update({"modelusername": modelusername})
         responsetype = ele.modified_responsetype
         self._variables.update({"responsetype": responsetype})
         response_type = ele.modified_responsetype
         self._variables.update({"response_type": response_type})
-
         label = ele.label_string
         self._variables.update({"label": label})
         downloadtype = ele.downloadtype
@@ -183,11 +182,10 @@ class Placeholders:
         file_name = ele.final_filename
         self._variables.update({"file_name": file_name})
         self._variables.update({"username": username})
+        user_name = username
+        self._variables.update({"user_name": user_name})
         self._variables.update({"model_id": model_id})
         self._variables.update({"ext": ext})
-
-        user_name = username
-        self._variables.update({"user_name": username})
         modelid = model_id
         self._variables.update({"modelid": modelid})
         post_id = ele.file_postid
@@ -211,9 +209,9 @@ class Placeholders:
         date = arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
         self._variables.update({"date": date})
         model_username = username
-        self._variables.update({"model_username": username})
+        self._variables.update({"model_username": model_username})
         modelusername = username
-        self._variables.update({"modelusername": username})
+        self._variables.update({"modelusername": modelusername})
         responsetype = ele.modified_responsetype
         self._variables.update({"responsetype": responsetype})
         response_type = ele.modified_responsetype
