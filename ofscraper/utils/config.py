@@ -77,35 +77,46 @@ def get_current_config_schema(config: dict = None) -> dict:
     new_config = {
         "config": {
             constants.mainProfile: get_main_profile(config),
-            "save_location": get_save_location(config),
-            "file_size_limit": get_filesize_limit(config),
-            "file_size_min": get_filesize_min(config),
-            "dir_format": get_dirformat(config),
-            "file_format": get_fileformat(config),
-            "textlength": get_textlength(config),
-            "space-replacer": get_spacereplacer(config),
-            "date": get_date(config),
             "metadata": get_metadata(config),
             "filter": get_filter(config),
-            "threads": get_threads(config),
-            "code-execution": get_allow_code_execution(config),
-            "custom": get_custom(config),
-            "mp4decrypt": get_mp4decrypt(config),
-            "ffmpeg": get_ffmpeg(config),
             "discord": get_discord(config),
-            "private-key": get_private_key(config),
-            "client-id": get_client_id(config),
-            "key-mode-default": get_key_mode(config),
-            "keydb_api": get_keydb_api(config),
-            "dynamic-mode-default": get_dynamic(config),
-            "partfileclean": get_part_file_clean(config),
-            "backend": get_backend(config),
-            "download-sems": get_download_semaphores(config),
-            "maxfile-sem": get_maxfile_semaphores(config),
-            "downloadbars": get_show_downloadprogress(config),
-            "cache-mode": cache_mode_helper(config),
-            "appendlog": get_appendlog(config),
             "avatar": get_avatar(config),
+            "file_options": {
+                "save_location": get_save_location(config),
+                "dir_format": get_dirformat(config),
+                "file_size_limit": get_filesize_limit(config),
+                "file_size_min": get_filesize_min(config),
+                "file_format": get_fileformat(config),
+                "textlength": get_textlength(config),
+                "space-replacer": get_spacereplacer(config),
+                "date": get_date(config),
+            },
+            "advanced": {
+                "code-execution": get_allow_code_execution(config),
+                "dynamic-mode-default": get_dynamic(config),
+                "partfileclean": get_part_file_clean(config),
+                "backend": get_backend(config),
+                "downloadbars": get_show_downloadprogress(config),
+                "cache-mode": cache_mode_helper(config),
+                "appendlog": get_appendlog(config),
+                "custom": get_custom(config),
+                "sanitize_db": get_sanitizeDB(config),
+            },
+            "binaries": {
+                "mp4decrypt": get_mp4decrypt(config),
+                "ffmpeg": get_ffmpeg(config),
+            },
+            "cdm": {
+                "private-key": get_private_key(config),
+                "client-id": get_client_id(config),
+                "key-mode-default": get_key_mode(config),
+                "keydb_api": get_keydb_api(config),
+            },
+            "performance": {
+                "download-sems": get_download_semaphores(config),
+                "maxfile-sem": get_maxfile_semaphores(config),
+                "threads": get_threads(config),
+            },
             "responsetype": {
                 "timeline": get_timeline_responsetype(config),
                 "message": get_messages_responsetype(config),
@@ -239,7 +250,12 @@ def update_ffmpeg():
 def get_save_location(config=None):
     if config == None:
         return constants.SAVE_PATH_DEFAULT
-    return config.get("save_location") or constants.SAVE_PATH_DEFAULT
+    return (
+        config.get("save_location")
+        or config.get("file_options", {}).get("save_location")
+        or config.get("save_location")
+        or constants.SAVE_PATH_DEFAULT
+    )
 
 
 def get_main_profile(config=None):
@@ -256,7 +272,9 @@ def get_filesize_limit(config=None):
         return constants.FILE_SIZE_LIMIT_DEFAULT
     try:
         return parse_size(
-            str(config.get("file_size_limit", constants.FILE_SIZE_LIMIT_DEFAULT))
+            str(config.get("file_size_limit"))
+            or config.get("file_options", {}).get("file_size_limit")
+            or constants.FILE_SIZE_LIMIT_DEFAULT
         )
     except:
         return 0
@@ -267,7 +285,9 @@ def get_filesize_min(config=None):
         return constants.FILE_SIZE_MIN_DEFAULT
     try:
         return parse_size(
-            str(config.get("file_size_min", constants.FILE_SIZE_MIN_DEFAULT))
+            str(config.get("file_size_min"))
+            or config.get("file_options", {}).get("file_size_min")
+            or constants.FILE_SIZE_MIN_DEFAULT
         )
     except:
         return 0
@@ -276,20 +296,32 @@ def get_filesize_min(config=None):
 def get_dirformat(config=None):
     if config == None:
         return constants.DIR_FORMAT_DEFAULT
-    return config.get("dir_format", constants.DIR_FORMAT_DEFAULT)
+    return (
+        config.get("dir_format")
+        or config.get("file_options", {}).get("dir_format")
+        or constants.DIR_FORMAT_DEFAULT
+    )
 
 
 def get_fileformat(config=None):
     if config == None:
         return constants.FILE_FORMAT_DEFAULT
-    return config.get("file_format", constants.FILE_FORMAT_DEFAULT)
+    return (
+        config.get("file_format")
+        or config.get("file_options", {}).get("file_format")
+        or constants.FILE_FORMAT_DEFAULT
+    )
 
 
 def get_textlength(config=None):
     if config == None:
         return constants.TEXTLENGTH_DEFAULT
     try:
-        return int(config.get("textlength", constants.TEXTLENGTH_DEFAULT))
+        return (
+            int(config.get("textlength"))
+            or config.get("file_options", {}).get("textlength")
+            or constants.TEXTLENGTH_DEFAULT
+        )
     except:
         return 0
 
@@ -297,13 +329,21 @@ def get_textlength(config=None):
 def get_date(config=None):
     if config == None:
         return constants.DATE_DEFAULT
-    return config.get("date", constants.DATE_DEFAULT)
+    return (
+        config.get("date")
+        or config.get("file_options", {}).get("date")
+        or constants.DATE_DEFAULT
+    )
 
 
 def get_allow_code_execution(config=None):
     if config == None:
         return constants.CODE_EXECUTION_DEFAULT
-    return config.get("code-execution", constants.CODE_EXECUTION_DEFAULT)
+    return (
+        config.get("code-execution")
+        or config.get("advanced", {}).get("code-execution")
+        or constants.CODE_EXECUTION_DEFAULT
+    )
 
 
 def get_metadata(config=None):
@@ -315,27 +355,36 @@ def get_metadata(config=None):
 def get_threads(config=None):
     if config == None:
         return constants.THREADS_DEFAULT
-    threads = config.get("threads", None)
-    if threads == None or threads == "":
+    threads = (
+        config.get("threads")
+        or config.get("performance", {}).get("threads")
+        or constants.THREADS_DEFAULT
+    )
+    try:
+        threads = int(threads)
+    except ValueError:
         threads = int(constants.THREADS_DEFAULT)
-    else:
-        try:
-            threads = int(threads)
-        except:
-            threads = int(constants.THREADS_DEFAULT)
     return threads
 
 
 def get_mp4decrypt(config=None):
     if config == None:
         return constants.MP4DECRYPT_DEFAULT
-    return config.get("mp4decrypt", constants.MP4DECRYPT_DEFAULT) or ""
+    return (
+        config.get("mp4decrypt")
+        or config.get("binaries", {}).get("mp4decrypt")
+        or constants.MP4DECRYPT_DEFAULT
+    )
 
 
 def get_ffmpeg(config=None):
     if config == None:
         return constants.FFMPEG_DEFAULT
-    return config.get("ffmpeg", constants.FFMPEG_DEFAULT) or ""
+    return (
+        config.get("ffmpeg")
+        or config.get("binaries", {}).get("ffmpeg")
+        or constants.FFMPEG_DEFAULT
+    )
 
 
 def get_discord(config=None):
@@ -442,31 +491,38 @@ def get_pinned_responsetype(config=None):
 def get_spacereplacer(config=None):
     if config == None:
         return " "
-    return config.get("space-replacer", " ") or " "
+    return (
+        config.get("space-replacer")
+        or config.get("file_options", {}).get("space-replacer")
+        or constants.SPACE_REPLACER_DEFAULT
+    )
 
 
 def get_custom(config=None):
     if config == None:
         return None
-    return config.get("custom")
+    return config.get("custom") or config.get("advanced", {}).get("custom")
 
 
 def get_private_key(config=None):
     if config == None:
         return None
-    return config.get("private-key")
+    return config.get("private-key") or config.get("cdm", {}).get("private-key")
 
 
 def get_client_id(config=None):
     if config == None:
         return None
-    return config.get("client-id")
+    return config.get("client-id") or config.get("cdm", {}).get("client-id")
 
 
 def get_key_mode(config=None):
     if config == None:
         return constants.KEY_DEFAULT
-    value = config.get("key-mode-default")
+    value = config.get("key-mode-default") or config.get("cdm", {}).get(
+        "key-mode-default"
+    )
+
     return (
         value.lower()
         if value and value.lower() in set(constants.KEY_OPTIONS)
@@ -477,13 +533,19 @@ def get_key_mode(config=None):
 def get_keydb_api(config=None):
     if config == None:
         return ""
-    return config.get("keydb_api", "") or ""
+    return (
+        config.get("keydb_api")
+        or config.get("cdm", {}).get("keydb_api")
+        or constants.KEYDB_DEFAULT
+    )
 
 
 def get_dynamic(config=None):
     if config == None:
         return constants.DYNAMIC_DEFAULT
-    value = config.get("dynamic-mode-default")
+    value = config.get("dynamic-mode-default") or config.get("advanced", {}).get(
+        "dynamic-mode-default"
+    )
     return (
         value.lower()
         if value
@@ -498,26 +560,32 @@ def get_dynamic(config=None):
 def get_part_file_clean(config=None):
     if config == None:
         return False
-    return config.get("partfileclean", False)
+    value = config.get("partfileclean", config.get("advanced", {}).get("partfileclean"))
+    return value if value is not None else False
 
 
 def get_backend(config=None):
     if config == None:
         return "aio"
-    return config.get("backend", constants.BACKEND_DEFAULT) or constants.BACKEND_DEFAULT
+    return (
+        config.get("backend")
+        or config.get("advanced", {}).get("backend")
+        or constants.BACKEND_DEFAULT
+    )
 
 
 def get_download_semaphores(config=None):
     if config == None:
         return constants.DOWNLOAD_SEM_DEFAULT
-    sems = config.get("download-sems", None)
-    if sems == None or sems == "":
+    sems = (
+        config.get("download-sems")
+        or config.get("performance", {}).get("download-sems")
+        or constants.DOWNLOAD_SEM_DEFAULT
+    )
+    try:
+        sems = int(sems)
+    except ValueError:
         sems = int(constants.DOWNLOAD_SEM_DEFAULT)
-    else:
-        try:
-            sems = int(sems)
-        except:
-            sems = int(constants.DOWNLOAD_SEM_DEFAULT)
     return sems
 
 
@@ -525,15 +593,24 @@ def get_maxfile_semaphores(config=None):
     if config == None:
         return constants.MAXFILE_SEMAPHORE
     try:
-        return int(config.get("maxfile-sem", constants.MAXFILE_SEMAPHORE))
-    except:
-        return constants.MAXFILE_SEMAPHORE
+        sems = int(
+            config.get("maxfile-sem")
+            or config.get("performance", {}).get("maxfile-sem")
+            or constants.MAXFILE_SEMAPHORE
+        )
+    except ValueError:
+        sems = int(constants.MAXFILE_SEMAPHORE)
+    return sems
 
 
 def get_show_downloadprogress(config):
     if config == None:
         return constants.PROGRESS_DEFAULT
-    return config.get("downloadbars", constants.PROGRESS_DEFAULT)
+    return (
+        config.get("downloadbars")
+        or config.get("advanced", {}).get("downloadbars")
+        or constants.PROGRESS_DEFAULT
+    )
 
 
 def get_cache_mode(config):
@@ -546,7 +623,11 @@ def get_cache_mode(config):
 def cache_mode_helper(config):
     if config == None:
         return constants.CACHEDEFAULT
-    data = config.get("cache-mode", constants.CACHEDEFAULT)
+    data = (
+        config.get("cache-mode")
+        or config.get("advanced", {}).get("cache-mode")
+        or constants.CACHEDEFAULT
+    )
     if data in [constants.CACHEDEFAULT, "json"]:
         return data
     else:
@@ -556,10 +637,20 @@ def cache_mode_helper(config):
 def get_appendlog(config):
     if config == None:
         return constants.APPEND_DEFAULT
-    return config.get("appendlog", constants.APPEND_DEFAULT)
+    return (
+        config.get("appendlog")
+        or config.get("advanced", {}).get("appendlog")
+        or constants.APPEND_DEFAULT
+    )
 
 
 def get_avatar(config):
     if config is None:
         return constants.AVATAR_DEFAULT
     return config.get("avatar", constants.AVATAR_DEFAULT)
+
+
+def get_sanitizeDB(config):
+    if config is None:
+        return constants.SANITIZE_DB_DEFAULT
+    return config.get("advanced", {}).get("appendlog") or constants.SANITIZE_DB_DEFAULT

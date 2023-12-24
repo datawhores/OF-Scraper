@@ -335,7 +335,7 @@ class Media:
     def get_text(self):
         if self.responsetype != "Profile":
             text = (
-                self._post.sanitizied_text
+                self._post.sanitized_text
                 or self.filename
                 or arrow.get(self.date).format(config.get_date(config.read_config()))
             )

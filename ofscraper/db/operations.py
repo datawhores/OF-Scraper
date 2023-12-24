@@ -152,7 +152,7 @@ def write_messages_table(messages: dict, **kwargs):
                 map(
                     lambda message: (
                         message.id,
-                        message.text,
+                        message.db_text,
                         message.price,
                         message.paid,
                         message.archived,
@@ -204,7 +204,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
             map(
                 lambda data: (
                     data.id,
-                    data.text,
+                    data.db_text,
                     data.price,
                     data.paid,
                     data.archived,
@@ -255,7 +255,7 @@ def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
             map(
                 lambda data: (
                     data.id,
-                    data.text or data.title or "",
+                    data.db_text or data.title or "",
                     data.price,
                     data.paid,
                     data.archived,

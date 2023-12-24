@@ -52,7 +52,7 @@ class Post:
         return 0
 
     @property
-    def sanitizied_text(self):
+    def sanitized_text(self):
         string = self.text
         if string:
             string = re.sub("<[^>]*>", "", string)
@@ -63,6 +63,15 @@ class Post:
     @property
     def text(self):
         return self._post.get("text")
+
+    # text for posts
+    @property
+    def db_text(self):
+        return (
+            self.text
+            if not config.get_sanitizeDB(config.read_config())
+            else self.sanitized_text
+        )
 
     @property
     def title(self):
