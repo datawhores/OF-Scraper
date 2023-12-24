@@ -78,7 +78,6 @@ def get_current_config_schema(config: dict = None) -> dict:
         "config": {
             constants.mainProfile: get_main_profile(config),
             "metadata": get_metadata(config),
-            "filter": get_filter(config),
             "discord": get_discord(config),
             "avatar": get_avatar(config),
             "file_options": {
@@ -654,7 +653,11 @@ def get_appendlog(config):
 def get_avatar(config):
     if config is None:
         return constants.AVATAR_DEFAULT
-    return config.get("avatar", constants.AVATAR_DEFAULT)
+    return (
+        config.get("avatar")
+        or config.get("advanced_options", {}).get("avatar")
+        or constants.AVATAR_DEFAULT
+    )
 
 
 def get_sanitizeDB(config):

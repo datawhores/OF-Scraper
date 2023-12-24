@@ -526,6 +526,14 @@ def config_prompt_advanced(config_) -> dict:
             },
             {
                 "type": "list",
+                "name": "code-execution",
+                "message": "Enable Code Execution:",
+                "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
+                "default": config.get_allow_code_execution(config_),
+                "long_instruction": "Be careful if turning this on this only effects file_format,metadata, and dir_format",
+            },
+            {
+                "type": "list",
                 "name": "appendlog",
                 "message": "append logs into daily log files",
                 "default": config.get_appendlog(config_),
@@ -540,8 +548,7 @@ def config_prompt_advanced(config_) -> dict:
             },
         ]
     )
-    config_.update(new_settings)
-    return config_
+    return config.get_current_config_schema(config_.update(new_settings))
 
 
 def config_prompt(config_) -> dict:
@@ -617,7 +624,6 @@ Enter 0 for no minimum
                 "message": "space-replacer: ",
                 "long_instruction": "Replace any spaces in text with this character\n",
                 "default": config.get_spacereplacer(config_),
-                "validate": EmptyInputValidator(),
             },
             {
                 "type": "input",
@@ -649,14 +655,6 @@ Enter 0 for no minimum
                     )
                 ),
                 "validate": prompt_validators.emptyListValidator(),
-            },
-            {
-                "type": "list",
-                "name": "code-execution",
-                "message": "Enable Code Execution:",
-                "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
-                "default": config.get_allow_code_execution(config_),
-                "long_instruction": "Be careful if turning this on this only effects file_format,metadata, and dir_format",
             },
             {
                 "type": "filepath",
@@ -782,7 +780,7 @@ Empty string is consider to be 'profile'
         ]
     )
     answer["responsetype"] = answer2
-    config_.update(answer)
+    config.get_current_config_schema(config_.update(answer))
     return config_
 
 
