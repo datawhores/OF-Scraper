@@ -1,3 +1,4 @@
+import importlib
 import logging
 import re
 
@@ -7,13 +8,8 @@ from bs4 import BeautifulSoup
 import ofscraper.classes.media as Media
 import ofscraper.utils.config as config
 
+html_parser = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 log = logging.getLogger("shared")
-try:
-    import lxml as unused_lxml_
-
-    html_parser = "lxml"
-except ImportError:
-    html_parser = "html.parser"
 
 
 class Post:
