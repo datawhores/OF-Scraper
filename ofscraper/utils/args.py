@@ -654,8 +654,8 @@ def create_parser(input=None):
         type=str.lower,
     )
     advanced.add_argument(
-        "-pc",
-        "--part-cleanup",
+        "-ar",
+        "--no-auto-resume",
         help="Cleanup temp .part files\nNote this removes the ability to resume from downloads",
         default=False,
         action="store_true",

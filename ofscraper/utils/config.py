@@ -563,9 +563,9 @@ def get_part_file_clean(config=None):
     if config == None:
         return False
     value = config.get(
-        "partfileclean", config.get("advanced_options", {}).get("auto_resume")
+        "partfileclean", config.get("download_options", {}).get("auto_resume")
     )
-    return value if value is not None else False
+    return value if value is not None else True
 
 
 def get_backend(config=None):

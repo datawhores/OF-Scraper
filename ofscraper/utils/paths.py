@@ -55,8 +55,8 @@ def createDir(path):
 
 def cleanup():
     if (
-        args_.getargs().part_cleanup
-        or config_.get_part_file_clean(config_.read_config())
+        args_.getargs().no_auto_resume
+        or not config_.get_part_file_clean(config_.read_config())
         or False
     ):
         log.info("Cleaning up temp files\n\n")

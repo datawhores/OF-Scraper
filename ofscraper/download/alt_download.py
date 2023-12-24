@@ -359,8 +359,8 @@ async def alt_download_downloader(item, c, ele, path, path_to_file, progress):
     temp = paths.truncate(pathlib.Path(path, f"{item['name']}.part"))
     item["path"] = temp
     pathlib.Path(temp).unlink(missing_ok=True) if (
-        args_.getargs().part_cleanup
-        or config_.get_part_file_clean(config_.read_config())
+        args_.getargs().no_auto_resume
+        or not config_.get_part_file_clean(config_.read_config())
         or False
     ) else None
 
