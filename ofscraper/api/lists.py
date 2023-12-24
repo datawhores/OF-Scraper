@@ -213,7 +213,7 @@ async def get_list_users(lists):
                 overall_progress.remove_task(page_task)
         outdict = {}
         for ele in output:
-            outdict[ele.id] = ele
+            outdict[ele["id"]] = ele
         log.trace(
             "users found {users}".format(
                 users="\n\n".join(
