@@ -422,6 +422,7 @@ def get_after(model_id, username):
         log.debug("Setting date to zero because database is empty")
         return 0
     missing_items = list(filter(lambda x: x[-2] == 0, curr))
+    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[-1])))
     if len(missing_items) == 0:
         log.debug(
             "Using last db date because,all downloads in db are marked as downloaded"
@@ -429,11 +430,8 @@ def get_after(model_id, username):
         return arrow.get(
             operations.get_last_message_date(model_id=model_id, username=username)
         ).float_timestamp
-    elif len(missing_items) == 1:
-        log.debug("Setting date slightly before single missing item")
-        return arrow.get(missing_items[-1][-1]).float_timestamp - 1000
     else:
         log.debug(
-            f"Setting date to zero because {len(missing_items)} messages in db are marked as undownloaded"
+            f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} messages in db are marked as undownloaded"
         )
-        return 0
+        return arrow.get(missing_items[0][-1]).float_timestamp - 1000
