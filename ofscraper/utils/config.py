@@ -100,7 +100,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "cache-mode": cache_mode_helper(config),
                 "appendlog": get_appendlog(config),
                 "custom": get_custom(config),
-                "sanitize_db": get_sanitizeDB(config),
+                "sanitize_text": get_sanitizeDB(config),
             },
             "binaries": {
                 "mp4decrypt": get_mp4decrypt(config),
@@ -653,4 +653,6 @@ def get_avatar(config):
 def get_sanitizeDB(config):
     if config is None:
         return constants.SANITIZE_DB_DEFAULT
-    return config.get("advanced", {}).get("appendlog") or constants.SANITIZE_DB_DEFAULT
+    return (
+        config.get("advanced", {}).get("sanitize_text") or constants.SANITIZE_DB_DEFAULT
+    )
