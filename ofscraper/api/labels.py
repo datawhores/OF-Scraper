@@ -132,7 +132,7 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
 
         else:
             log.debug(f"[bold]labels response status code:[/bold]{r.status}")
-            log.debug(f"[bold]labels response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]labels response:[/bold] {await r.file_text()}")
             log.debug(f"[bold]labels headers:[/bold] {r.headers}")
             job_progress.remove_task(task)
             r.raise_for_status()
@@ -263,7 +263,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
 
         else:
             log.debug(f"[bold]labelled posts response status code:[/bold]{r.status}")
-            log.debug(f"[bold]labelled posts response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]labelled posts response:[/bold] {await r.file_text()}")
             log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
 
             job_progress.remove_task(task)

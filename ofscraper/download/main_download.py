@@ -72,7 +72,7 @@ async def main_download(c, ele, path, username, model_id, progress):
         return check2
 
     common.log.debug(
-        f"{get_medialog(ele)} {ele.filename_} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
+        f"{get_medialog(ele)} {ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
     )
     common.log.debug(
         f"{get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
@@ -223,7 +223,7 @@ async def main_download_sendreq(c, ele, path, username, model_id, progress, tota
                         f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
                     )
                     common.log.debug(
-                        f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}"
+                        f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.file_text()}"
                     )
                     common.log.debug(
                         f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}"

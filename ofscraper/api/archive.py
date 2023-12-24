@@ -137,7 +137,7 @@ async def scrape_archived_posts(
                             )
             else:
                 log.debug(f"[bold]archived response status code:[/bold]{r.status}")
-                log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]archived response:[/bold] {await r.file_text()}")
                 log.debug(f"[bold]archived headers:[/bold] {r.headers}")
                 progress.remove_task(task)
                 r.raise_for_status()

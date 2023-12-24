@@ -49,16 +49,16 @@ class Media:
         )
 
     @property
-    def length_(self):
+    def numeric_length(self):
         if not self.length:
             return "N/A"
         return str((arrow.get(self.length) - arrow.get(0)))
 
     @property
     def url(self):
-        if self.responsetype_ == "stories" or self.responsetype_ == "highlights":
+        if self.responsetype == "stories" or self.responsetype == "highlights":
             return self._media.get("files", {}).get("source", {}).get("url")
-        elif self.responsetype_ == "profile":
+        elif self.responsetype == "profile":
             return self._media.get("url")
         else:
             return self._media.get("source", {}).get("source")
@@ -73,7 +73,7 @@ class Media:
 
     # ID for use in dynamic names
     @property
-    def postid_(self):
+    def file_postid(self):
         if self.count != None and len(self._post.post_media) > 1:
             return f"{self._post._post['id']}_{self.count}"
         return self._post._post["id"]
@@ -100,12 +100,12 @@ class Media:
         return "Protected" if self.mpd else "Normal"
 
     @property
-    def responsetype(self):
+    def modified_responsetype(self):
         return self._post.modified_responsetype
 
     @property
-    def orginal_responsetype(self):
-        return self._post.orginal_responsetype
+    def responsetype(self):
+        return self._post.responsetype
 
     @property
     def value(self):
@@ -117,8 +117,8 @@ class Media:
 
     # modified verison of post date
     @property
-    def postdate_(self):
-        return self._post.formated_date
+    def formatted_postdate(self):
+        return self._post.formatted_date
 
     @property
     def date(self):
@@ -128,12 +128,12 @@ class Media:
 
     # modified verison of media date
     @property
-    def date_(self):
+    def formatted_date(self):
         if self._media.get("createdAt") or self._media.get("postedAt"):
             return arrow.get(
                 self._media.get("createdAt") or self._media.get("postedAt")
             ).format("YYYY-MM-DD hh:mm:ss")()
-        return self.postdate_
+        return None
 
     @property
     def id(self):
@@ -201,14 +201,14 @@ class Media:
             return None
 
     @property
-    def text_(self):
-        if self.responsetype_ != "Profile":
+    def file_text(self):
+        if self.responsetype != "Profile":
             text = (
                 self.text
                 or self.filename
                 or arrow.get(self.date).format(config.get_date(config.read_config()))
             )
-        elif self.responsetype_ == "Profile":
+        elif self.responsetype == "Profile":
             text = f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
         if len(text) == 0:
             return text
@@ -254,7 +254,7 @@ class Media:
     def filename(self):
         if not self.url and not self.mpd:
             return None
-        elif not self.responsetype == "Profile":
+        elif not self.modified_responsetype == "Profile":
             return re.sub(
                 "\.mpd$",
                 "",
@@ -275,7 +275,7 @@ class Media:
             return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
 
     @property
-    def filename_(self):
+    def final_filename(self):
         filename = self.filename or self.id
         if self.mediatype == "videos":
             return filename if re.search("_source", filename) else f"{filename}_source"
@@ -316,7 +316,7 @@ class Media:
                 async with c.requests(url=self.mpd, params=params)() as r:
                     if not r.ok:
                         r.raise_for_status()
-                    return MPEGDASHParser.parse(await r.text_())
+                    return MPEGDASHParser.parse(await r.file_text())
         except Exception as E:
             log.traceback_(traceback.format_exc())
             log.traceback_(E)
@@ -337,7 +337,7 @@ class Media:
 
     # for use in dynamic names
     def _addcount(self):
-        if len(self._post.post_media) > 1 or self.responsetype_ in [
+        if len(self._post.post_media) > 1 or self.responsetype in [
             "stories",
             "highlights",
         ]:

@@ -395,7 +395,7 @@ def get_error_message(content):
 
 
 async def set_cache_helper(ele):
-    if ele.postid and ele.responsetype_ == "profile":
+    if ele.postid and ele.responsetype == "profile":
         await asyncio.get_event_loop().run_in_executor(
             cache_thread, partial(cache.set, ele.postid, True)
         )

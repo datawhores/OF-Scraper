@@ -137,9 +137,9 @@ class Placeholders:
         self._variables.update({"model_username": username})
         modelusername = username
         self._variables.update({"modelusername": username})
-        responsetype = ele.responsetype
+        responsetype = ele.modified_responsetype
         self._variables.update({"responsetype": responsetype})
-        response_type = ele.responsetype
+        response_type = ele.modified_responsetype
         self._variables.update({"response_type": response_type})
 
         label = ele.label_string
@@ -178,9 +178,9 @@ class Placeholders:
 
     @wrapper
     def createfilename(self, ele, username, model_id, ext):
-        filename = ele.filename_
+        filename = ele.final_filename
         self._variables.update({"filename": filename})
-        file_name = ele.filename_
+        file_name = ele.final_filename
         self._variables.update({"file_name": file_name})
         self._variables.update({"username": username})
         self._variables.update({"model_id": model_id})
@@ -190,9 +190,9 @@ class Placeholders:
         self._variables.update({"user_name": username})
         modelid = model_id
         self._variables.update({"modelid": modelid})
-        post_id = ele.postid_
+        post_id = ele.file_postid
         self._variables.update({"post_id": post_id})
-        postid = ele.postid_
+        postid = ele.file_postid
         self._variables.update({"postid": postid})
         media_id = ele.id
         self._variables.update({"media_id": media_id})
@@ -214,15 +214,15 @@ class Placeholders:
         self._variables.update({"model_username": username})
         modelusername = username
         self._variables.update({"modelusername": username})
-        responsetype = ele.responsetype
+        responsetype = ele.modified_responsetype
         self._variables.update({"responsetype": responsetype})
-        response_type = ele.responsetype
+        response_type = ele.modified_responsetype
         self._variables.update({"response_type": response_type})
 
         label = ele.label_string
         self._variables.update({"label": label})
 
-        text = ele.text_
+        text = ele.file_text
         self._variables.update({"text": text})
         downloadtype = ele.downloadtype
         self._variables.update({"downloadtype": downloadtype})
@@ -250,7 +250,7 @@ class Placeholders:
                 'f"""{}"""'.format(config_.get_fileformat(config_.read_config()))
             )
         else:
-            if ele.responsetype_ == "profile":
+            if ele.orginal_responsetype == "profile":
                 out = f"{filename}.{ext}"
             else:
                 out = config_.get_fileformat(config_.read_config()).format(

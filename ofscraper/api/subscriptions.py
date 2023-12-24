@@ -161,7 +161,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
             return subscriptions
         else:
             log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-            log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]subscriptions response:[/bold] {await r.file_text()}")
             log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
             r.raise_for_status()
 
@@ -195,7 +195,7 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
             return subscriptions
         else:
             log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-            log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]subscriptions response:[/bold] {await r.file_text()}")
             log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
             r.raise_for_status()
 
@@ -216,6 +216,6 @@ async def sort_list(c) -> list:
             None
         else:
             log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-            log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]subscriptions response:[/bold] {await r.file_text()}")
             log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
             r.raise_for_status()

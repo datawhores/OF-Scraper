@@ -77,7 +77,7 @@ async def alt_download(c, ele, path, username, model_id, progress):
             path_to_file=path_to_file,
         )
     temp_path = paths.truncate(
-        pathlib.Path(path, f"temp_{ele.id or ele.filename_}.mp4")
+        pathlib.Path(path, f"temp_{ele.id or ele.final_filename}.mp4")
     )
     common.log.debug(
         f"{get_medialog(ele)}  temporary path from combined audio/video {temp_path}"
@@ -163,7 +163,7 @@ async def alt_download_preparer(ele):
     @sem_wrapper(common.mpd_sem)
     async def inner(ele):
         common.log.debug(
-            f"{get_medialog(ele)} Attempting to get info for {ele.filename_} with {ele.mpd}"
+            f"{get_medialog(ele)} Attempting to get info for {ele.final_filename} with {ele.mpd}"
         )
         mpd = await ele.parse_mpd
         for period in mpd.periods:
@@ -262,7 +262,7 @@ async def alt_download_sendreq(item, c, ele, path, path_to_file, progress, total
                         f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
                     )
                     common.log.debug(
-                        f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}"
+                        f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.file_text()}"
                     )
                     common.log.debug(
                         f"[bold]  {get_medialog(ele)} alt download  headers [/bold]: {l.headers}"

@@ -13,7 +13,7 @@ class Post:
         self._post = post
         self._model_id = int(model_id)
         self._username = username
-        self._orginal_responsetype = responsetype or post.get("responseType")
+        self.responsetype = responsetype or post.get("responseType")
         self._label = label
 
     # All media return from API dict
@@ -52,9 +52,9 @@ class Post:
         return self._post.get("title")
 
     # original responsetype for database
-    @property
-    def orginal_responsetype(self):
-        return self._orginal_responsetype
+    # @property
+    # def responsetype(self):
+    #     return self.responsetype
 
     @property
     def modified_responsetype(self):
@@ -66,15 +66,13 @@ class Post:
         else:
             # remap some values
             response = (
-                config.read_config()
-                .get("responsetype", {})
-                .get(self.orginal_responsetype)
+                config.read_config().get("responsetype", {}).get(self.responsetype)
             )
 
             if response == "":
-                return self.orginal_responsetype.capitalize()
+                return self.responsetype.capitalize()
             elif response == None:
-                return self.orginal_responsetype.capitalize()
+                return self.responsetype.capitalize()
             elif response != "":
                 return response.capitalize()
 
@@ -88,7 +86,7 @@ class Post:
 
     # modify verison of post date
     @property
-    def formated_date(self):
+    def formatted_date(self):
         return arrow.get(self.date).format("YYYY-MM-DD hh:mm:ss")
 
     @property

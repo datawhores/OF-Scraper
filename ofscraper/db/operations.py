@@ -339,7 +339,7 @@ def media_insert_helper(media, filename, downloaded):
             None,
             None,
             0,
-            media.responsetype_.capitalize(),
+            media.responsetype.capitalize(),
             media.mediatype.capitalize(),
             media.preview,
             media.linked,
@@ -354,7 +354,7 @@ def media_insert_helper(media, filename, downloaded):
             str(pathlib.Path(filename).parent),
             pathlib.Path(filename).name,
             math.ceil(pathlib.Path(filename).stat().st_size),
-            media.responsetype_.capitalize(),
+            media.responsetype.capitalize(),
             media.mediatype.capitalize(),
             media.preview,
             media.linked,
@@ -382,7 +382,7 @@ def write_media_table(
                 math.ceil(pathlib.Path(filename).stat().st_size)
                 if filename
                 else filename,
-                media.responsetype_.capitalize(),
+                media.responsetype.capitalize(),
                 media.mediatype.capitalize(),
                 media.preview,
                 media.linked,
@@ -443,7 +443,7 @@ def update_response_media_table(medias, conn=None, downloaded=False, **kwargs) -
     insertData = list(
         map(
             lambda media: [
-                media.responsetype_.capitalize(),
+                media.responsetype.capitalize(),
                 media.mediatype.capitalize(),
                 media.id,
             ],

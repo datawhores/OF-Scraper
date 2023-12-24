@@ -138,7 +138,7 @@ async def scrape_timeline_posts(
                             )
             else:
                 log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]timeline response:[/bold] {await r.file_text()}")
                 log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                 progress.remove_task(task)
                 r.raise_for_status()
@@ -311,7 +311,7 @@ def get_individual_post(id, c=None):
             return r.json()
         else:
             log.debug(f"[bold]individual post response status code:[/bold]{r.status}")
-            log.debug(f"[bold]individual post response:[/bold] {r.text_()}")
+            log.debug(f"[bold]individual post response:[/bold] {r.file_text()}")
             log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 
 

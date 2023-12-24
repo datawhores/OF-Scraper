@@ -48,7 +48,7 @@ async def alt_download(c, ele, path, username, model_id):
         f"{get_medialog(ele)} Downloading with protected media downloader"
     )
     common.innerlog.get().debug(
-        f"{get_medialog(ele)} Attempting to download media {ele.filename_} with {ele.mpd}"
+        f"{get_medialog(ele)} Attempting to download media {ele.final_filename} with {ele.mpd}"
     )
     filename = (
         f'{placeholder.Placeholders().createfilename(ele,username,model_id,"mp4")}'
@@ -62,7 +62,7 @@ async def alt_download(c, ele, path, username, model_id):
         f"{get_medialog(ele)} full path trunicated from config {path_to_file}"
     )
     temp_path = paths.truncate(
-        pathlib.Path(path, f"temp_{ele.id or ele.filename_}.mp4")
+        pathlib.Path(path, f"temp_{ele.id or ele.final_filename}.mp4")
     )
     common.log.debug(
         f"Media:{ele.id} Post:{ele.postid}  temporary path from combined audio/video {temp_path}"
@@ -251,7 +251,7 @@ async def alt_download_sendreq(item, c, ele, path_to_file):
                         f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
                     )
                     common.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
+                        f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.file_text()}"
                     )
                     common.innerlog.get().debug(
                         f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}"

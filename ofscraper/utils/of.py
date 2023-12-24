@@ -189,13 +189,13 @@ def process_timeline_posts(model_id, username, individual=False):
                 lambda x: posts_.Post(x, model_id, username, "timeline"), timeline_posts
             )
         )
+
         curr = set(operations.get_all_post_ids(model_id=model_id, username=username))
         operations.write_post_table(
             list(filter(lambda x: x.id not in curr, timeline_posts)),
             model_id=model_id,
             username=username,
         )
-
         log.debug(
             f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}"
         )

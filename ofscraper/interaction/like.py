@@ -134,6 +134,6 @@ async def _like_request(c, id, model_id):
                 return id
             else:
                 log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]timeline response:[/bold] {await r.file_text()}")
                 log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                 r.raise_for_status()

@@ -6,27 +6,53 @@ log = logging.getLogger("shared")
 
 
 def filterMedia(media):
+    count = 1
     logformater = "{} data: {} id: {} postid: {}"
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 1-> all media no filter:", x.media, x.id, x.postid
+                        f"filter {count}-> all media no filter:",
+                        x.media,
+                        x.id,
+                        x.postid,
                     ),
                     media,
                 )
             )
         )
     )
-    log.debug(f"filter 1-> all media no filter count: {len(media)}")
-    media = helpers.dupefilter(media)
+    log.debug(f"filter {count}-> all media no filter count: {len(media)}")
+    media = helpers.sort_media(media)
+    count += 1
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 2-> all media dupe filter: ", x.media, x.id, x.postid
+                        f"filter {count}-> final media  from retrived post: ",
+                        x.media,
+                        x.id,
+                        x.postid,
+                    ),
+                    media,
+                )
+            )
+        )
+    )
+    log.debug(f"filter {count}->  final media count from retrived post: {len(media)}")
+    media = helpers.dupefilter(media)
+    count += 1
+    log.trace(
+        "\n\n\n".join(
+            list(
+                map(
+                    lambda x: logformater.format(
+                        f"filter {count}-> all media dupe filter: ",
+                        x.media,
+                        x.id,
+                        x.postid,
                     ),
                     media,
                 )
@@ -34,8 +60,10 @@ def filterMedia(media):
         )
     )
 
-    log.debug(f"filter 2-> all media dupe filter count: {len(media)}")
+    log.debug(f"filter {count}-> all media dupe filter count: {len(media)}")
     media = helpers.post_datesorter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
@@ -48,14 +76,16 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 3-> all media datesort count: {len(media)}")
+    log.debug(f"filter {count}-> all media datesort count: {len(media)}")
     media = helpers.posts_type_filter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 4-> all media post media type filter: ",
+                        f"filter {count}-> all media post media type filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -66,14 +96,16 @@ def filterMedia(media):
         )
     )
 
-    log.debug(f"filter 4-> all media post media type filter count: {len(media)}")
+    log.debug(f"filter {count}-> all media post media type filter count: {len(media)}")
     media = helpers.posts_date_filter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 5-> all media post date filter: ",
+                        f"filter {count}-> all media post date filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -83,14 +115,16 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 5-> all media post date filter: {len(media)}")
+    log.debug(f"filter {count}-> all media post date filter: {len(media)}")
     media = helpers.post_timed_filter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 6->  all media post timed post filter: ",
+                        f"filter {count}->  all media post timed post filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -100,14 +134,16 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 6->  all media post timed post filter count: {len(media)}")
+    log.debug(f"filter {count}->  all media post timed post filter count: {len(media)}")
     media = helpers.post_user_filter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 7-> all media post included text filter: ",
+                        f"filter {count}-> all media post included text filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -117,14 +153,18 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 7->  all media post included text filter count: {len(media)}")
+    log.debug(
+        f"filter {count}->  all media post included text filter count: {len(media)}"
+    )
     media = helpers.anti_post_user_filter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 8-> all media post excluded text filter: ",
+                        f"filter {count}-> all media post excluded text filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -134,14 +174,18 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 8->  all media post excluded text filter count: {len(media)}")
+    log.debug(
+        f"filter {count}->  all media post excluded text filter count: {len(media)}"
+    )
     media = helpers.download_type_filter(media)
+    count += 1
+
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 9->  all download type filter: ",
+                        f"filter {count}->  all download type filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -151,30 +195,16 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 9->  all media download type filter count: {len(media)}")
+    log.debug(f"filter {count}->  all media download type filter count: {len(media)}")
 
     media = helpers.mass_msg_filter(media)
+    count += 1
     log.trace(
         "\n\n\n".join(
             list(
                 map(
                     lambda x: logformater.format(
-                        "filter 10->  mass message filter: ", x.media, x.id, x.postid
-                    ),
-                    media,
-                )
-            )
-        )
-    )
-    log.debug(f"filter 10->  all media mass message filter count: {len(media)}")
-
-    media = helpers.sort_media(media)
-    log.trace(
-        "\n\n\n".join(
-            list(
-                map(
-                    lambda x: logformater.format(
-                        "filter 11-> final media  from retrived post: ",
+                        f"filter {count}->  mass message filter: ",
                         x.media,
                         x.id,
                         x.postid,
@@ -184,5 +214,6 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter 11->  final media count from retrived post: {len(media)}")
+    log.debug(f"filter{count}0->  all media mass message filter count: {len(media)}")
+
     return media

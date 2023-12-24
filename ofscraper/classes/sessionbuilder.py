@@ -151,7 +151,7 @@ class sessionBuilder:
     #         raise E
     #     t.ok=not t.is_error
     #     t.json_=lambda: self.factoryasync(t.json)
-    #     t.text_=lambda: self.factoryasync(t.text)
+    #     t.file_text=lambda: self.factoryasync(t.text)
     #     t.status=t.status_code
     #     t.iter_chunked=t.aiter_bytes
     #     yield t
@@ -163,7 +163,7 @@ class sessionBuilder:
         t = await funct()
         t.ok = not t.is_error
         t.json_ = lambda: self.factoryasync(t.json)
-        t.text_ = lambda: self.factoryasync(t.text)
+        t.file_text = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
         yield t
@@ -179,7 +179,7 @@ class sessionBuilder:
 
         t.ok = not t.is_error
         t.json_ = t.json
-        t.text_ = lambda: t.text
+        t.file_text = lambda: t.text
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
         yield t
@@ -198,7 +198,7 @@ class sessionBuilder:
         except Exception as E:
             raise E
         async with resp as r:
-            r.text_ = r.text
+            r.file_text = r.text
             r.json_ = r.json
             r.iter_chunked = r.content.iter_chunked
             yield r

@@ -61,7 +61,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
             return {"username": "modeldeleted"}
         else:
             log.debug(f"[bold]profile response status code:[/bold]{r.status}")
-            log.debug(f"[bold]profile response:[/bold] {r.text_()}")
+            log.debug(f"[bold]profile response:[/bold] {r.file_text()}")
             log.debug(f"[bold]profile headers:[/bold] {r.headers}")
             r.raise_for_status()
 
@@ -145,6 +145,6 @@ def get_id_helper(c, username):
             return id
         else:
             log.debug(f"[bold]id response status code:[/bold]{r.status}")
-            log.debug(f"[bold]id response:[/bold] {r.text_()}")
+            log.debug(f"[bold]id response:[/bold] {r.file_text()}")
             log.debug(f"[bold]id headers:[/bold] {r.headers}")
             r.raise_for_status()

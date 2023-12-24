@@ -52,7 +52,7 @@ def _scraper_user_helper(c):
             )
         else:
             log.debug(f"[bold]user request response status code:[/bold]{r.status}")
-            log.debug(f"[bold]user request response:[/bold] {r.text_()}")
+            log.debug(f"[bold]user request response:[/bold] {r.file_text()}")
             log.debug(f"[bold]user request headers:[/bold] {r.headers}")
             r.raise_for_status()
 
@@ -87,5 +87,5 @@ def parse_subscriber_count():
                 log.debug(
                     f"[bold]subscriber count response status code:[/bold]{r.status}"
                 )
-                log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")
+                log.debug(f"[bold]subscriber countresponse:[/bold] {r.file_text()}")
                 log.debug(f"[bold]subscriber count headers:[/bold] {r.headers}")

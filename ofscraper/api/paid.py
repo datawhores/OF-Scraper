@@ -154,7 +154,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
 
             else:
                 log.debug(f"[bold]paid response status code:[/bold]{r.status}")
-                log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]paid response:[/bold] {await r.file_text()}")
                 log.debug(f"[bold]paid headers:[/bold] {r.headers}")
                 job_progress.remove_task(task)
                 r.raise_for_status()
@@ -334,7 +334,7 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
 
         else:
             log.debug(f"[bold]paid response status code:[/bold]{r.status}")
-            log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]paid response:[/bold] {await r.file_text()}")
             log.debug(f"[bold]paid headers:[/bold] {r.headers}")
             job_progress.remove_task(task)
             r.raise_for_status()

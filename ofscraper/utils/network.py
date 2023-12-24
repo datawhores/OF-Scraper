@@ -49,7 +49,7 @@ def check_cdm():
                             "[red]CDM return an error\nThis may cause a lot of failed downloads\n consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]"
                         )
                         log.debug(f"[bold] cdm status[/bold]: {r.status}")
-                        log.debug(f"[bold]  cdm text [/bold]: {r.text_()}")
+                        log.debug(f"[bold]  cdm text [/bold]: {r.file_text()}")
                         log.debug(f"[bold]  cdm headers [/bold]: {r.headers}")
                         time.sleep(3.5)
                         return False

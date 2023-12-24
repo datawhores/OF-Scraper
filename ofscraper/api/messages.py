@@ -385,7 +385,7 @@ async def scrape_messages(
 
             else:
                 log.debug(f"[bold]message response status code:[/bold]{r.status}")
-                log.debug(f"[bold]message response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]message response:[/bold] {await r.file_text()}")
                 log.debug(f"[bold]message headers:[/bold] {r.headers}")
 
                 progress.remove_task(task)
@@ -404,7 +404,7 @@ def get_individual_post(model_id, postid, c=None):
             return r.json()["list"][0]
         else:
             log.debug(f"[bold]invidual message response status code:[/bold]{r.status}")
-            log.debug(f"[bold]invidual message  response:[/bold] {r.text_()}")
+            log.debug(f"[bold]invidual message  response:[/bold] {r.file_text()}")
             log.debug(f"[bold]invidual message  headers:[/bold] {r.headers}")
 
 
