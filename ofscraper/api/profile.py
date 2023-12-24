@@ -145,6 +145,6 @@ def get_id_helper(c, username):
             return id
         else:
             log.debug(f"[bold]id response status code:[/bold]{r.status}")
-            log.debug(f"[bold]id response:[/bold] {await r.text_()}")
+            log.debug(f"[bold]id response:[/bold] {r.text_()}")
             log.debug(f"[bold]id headers:[/bold] {r.headers}")
             r.raise_for_status()

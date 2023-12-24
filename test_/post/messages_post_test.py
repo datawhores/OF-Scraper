@@ -266,7 +266,7 @@ def test_messages_text_wordtruncate(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 2, post)
-    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.clean_text)))
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.file_text)))
     with check:
         assert (len(wordarray)) >= length - 1
 
@@ -297,7 +297,7 @@ def test_messages_text_wordtruncate2(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 2, post)
-    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.clean_text)))
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.file_text)))
     with check:
         assert (len(wordarray)) >= length - 1
 
@@ -328,7 +328,7 @@ def test_messages_text_wordtruncate3(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 2, post)
-    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.clean_text)))
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.file_text)))
     textarray = list(
         filter(
             lambda x: len(x) != 0,
@@ -363,7 +363,7 @@ def test_messages_text_wordtruncate4(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 0, post)
-    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.clean_text)))
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.file_text)))
     with check:
         assert (len(wordarray)) >= TEXTLENGTH_ALT2 - 1
 
@@ -394,7 +394,7 @@ def test_messages_text_wordtruncate5(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 0, post)
-    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.clean_text)))
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.file_text)))
     with check:
         assert (len(wordarray)) >= length - 1
 
@@ -425,7 +425,7 @@ def test_messages_text_wordtruncate6(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 0, post)
-    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.clean_text)))
+    wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", t.file_text)))
     assert (len(wordarray)) >= len(
         "{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
@@ -454,7 +454,7 @@ def test_messages_text_lettertruncate(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 2, post)
-    wordarray = t.clean_text
+    wordarray = t.file_text
     assert (len(wordarray)) == length
 
 
@@ -481,7 +481,7 @@ def test_messages_text_lettertruncate2(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 2, post)
-    wordarray = t.clean_text
+    wordarray = t.file_text
     assert (len(wordarray)) == length
 
 
@@ -508,7 +508,7 @@ def test_messages_text_lettertruncate3(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 2, post)
-    wordarray = t.clean_text
+    wordarray = t.file_text
     assert (len(wordarray)) == len(
         f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     ) + 2
@@ -537,7 +537,7 @@ def test_messages_text_lettertruncate4(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 0, post)
-    wordarray = t.clean_text
+    wordarray = t.file_text
     assert (len(wordarray)) == length
 
 
@@ -564,7 +564,7 @@ def test_messages_text_lettertruncate5(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 0, post)
-    wordarray = t.clean_text
+    wordarray = t.file_text
     assert (len(wordarray)) == length
 
 
@@ -591,7 +591,7 @@ def test_messages_text_lettertruncate6(mocker):
         Media, "text", new=f"{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )
     t = Media(None, 0, post)
-    wordarray = t.clean_text
+    wordarray = t.file_text
     assert (len(wordarray)) >= len(
         "{LONG_STRING}{LONG_STRING}{LONG_STRING}{LONG_STRING}"
     )

@@ -220,7 +220,7 @@ class Placeholders:
         label = ele.label_string
         self._variables.update({"label": label})
 
-        text = ele.clean_text
+        text = ele.file_text
         self._variables.update({"text": text})
         downloadtype = ele.downloadtype
         self._variables.update({"downloadtype": downloadtype})

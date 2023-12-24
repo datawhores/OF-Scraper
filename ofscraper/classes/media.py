@@ -201,22 +201,10 @@ class Media:
             return None
 
     @property
-    def clean_text(self):
-        if self.responsetype != "Profile":
-            text = (
-                self.text
-                or self.filename
-                or arrow.get(self.date).format(config.get_date(config.read_config()))
-            )
-        elif self.responsetype == "Profile":
-            text = f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
+    def file_text(self):
+        text = self.get_text()
         if len(text) == 0:
             return text
-        # this is for removing emojis
-        # text=re.sub("[^\x00-\x7F]","",text)
-        # this is for removing html tags
-        # text = re.sub("<[^>]*>", "", text)
-        # this for remove random special invalid special characters
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub(" +", " ", text)
         text = re.sub(" ", config.get_spacereplacer(config.read_config()), text)
@@ -254,7 +242,7 @@ class Media:
     def filename(self):
         if not self.url and not self.mpd:
             return None
-        elif not self.modified_responsetype == "Profile":
+        elif not self.responsetype == "Profile":
             return re.sub(
                 "\.mpd$",
                 "",
@@ -343,3 +331,14 @@ class Media:
         ]:
             return True
         return False
+
+    def get_text(self):
+        if self.responsetype != "Profile":
+            text = (
+                self._post.sanitizied_text
+                or self.filename
+                or arrow.get(self.date).format(config.get_date(config.read_config()))
+            )
+        elif self.responsetype == "Profile":
+            text = f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
+        return text

@@ -1,14 +1,19 @@
 import logging
-import arrow
 import re
 
+import arrow
 from bs4 import BeautifulSoup
 
 import ofscraper.classes.media as Media
 import ofscraper.utils.config as config
-import ofscraper.utils.text as text
 
 log = logging.getLogger("shared")
+try:
+    import lxml as unused_lxml_
+
+    html_parser = "lxml"
+except ImportError:
+    html_parser = "html.parser"
 
 
 class Post:
@@ -47,12 +52,16 @@ class Post:
         return 0
 
     @property
-    def text(self):
-        string = self._post.get("text")
-        return text.sanitize_text(string)
+    def sanitizied_text(self):
+        string = self.text
+        if string:
+            string = re.sub("<[^>]*>", "", string)
+            string = " ".join(string.split())
+            string = BeautifulSoup(string, html_parser).get_text()
+        return string
 
     @property
-    def text_(self):
+    def text(self):
         return self._post.get("text")
 
     @property
