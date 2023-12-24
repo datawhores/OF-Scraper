@@ -548,7 +548,8 @@ def config_prompt_advanced(config_) -> dict:
             },
         ]
     )
-    return config.get_current_config_schema(config_.update(new_settings))
+    config_.update(new_settings)
+    return config.get_current_config_schema({"config": config_})
 
 
 def config_prompt(config_) -> dict:
@@ -780,8 +781,8 @@ Empty string is consider to be 'profile'
         ]
     )
     answer["responsetype"] = answer2
-    config.get_current_config_schema(config_.update(answer))
-    return config_
+    config_.update(answer)
+    return config.get_current_config_schema({"config": config_})
 
 
 def reset_username_prompt() -> bool:

@@ -248,7 +248,7 @@ class Placeholders:
                 'f"""{}"""'.format(config_.get_fileformat(config_.read_config()))
             )
         else:
-            if ele.orginal_responsetype == "profile":
+            if ele.responsetype == "profile":
                 out = f"{filename}.{ext}"
             else:
                 out = config_.get_fileformat(config_.read_config()).format(

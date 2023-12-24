@@ -44,9 +44,7 @@ def read_config():
                 config = json.loads(configText)
 
             try:
-                if [*config["config"]] != [
-                    *get_current_config_schema(config)["config"]
-                ]:
+                if [*config["config"]] != [*(config)["config"]]:
                     config = auto_update_config(p, config)
             except KeyError:
                 raise FileNotFoundError
@@ -79,7 +77,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             constants.mainProfile: get_main_profile(config),
             "metadata": get_metadata(config),
             "discord": get_discord(config),
-            "avatar": get_avatar(config),
             "file_options": {
                 "save_location": get_save_location(config),
                 "dir_format": get_dirformat(config),
@@ -118,6 +115,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "appendlog": get_appendlog(config),
                 "custom": get_custom(config),
                 "sanitize_text": get_sanitizeDB(config),
+                "avatar": get_avatar(config),
             },
             "responsetype": {
                 "timeline": get_timeline_responsetype(config),
@@ -173,7 +171,7 @@ def edit_config():
             configText = f.read()
             config = json.loads(configText)
 
-        updated_config = {"config": prompts.config_prompt(config["config"])}
+        updated_config = prompts.config_prompt(config["config"])
 
         with open(p, "w") as f:
             f.write(json.dumps(updated_config, indent=4))
@@ -204,7 +202,7 @@ def edit_config_advanced():
             configText = f.read()
             config = json.loads(configText)
 
-        updated_config = {"config": prompts.config_prompt_advanced(config["config"])}
+        updated_config = prompts.config_prompt_advanced(config["config"])
 
         with open(p, "w") as f:
             f.write(json.dumps(updated_config, indent=4))

@@ -39,7 +39,7 @@ sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
 
 
 @run
-async def get_messages(model_id, username, forced_after=None, retry=None):
+async def get_messages(model_id, username, forced_after=None, rescan=None):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -95,7 +95,7 @@ async def get_messages(model_id, username, forced_after=None, retry=None):
 
                 before = (args_.getargs().before or arrow.now()).float_timestamp
                 after = after = (
-                    0 if retry else forced_after or get_after(model_id, username)
+                    0 if rescan else forced_after or get_after(model_id, username)
                 )
                 log.debug(f"Messages after = {after}")
 
