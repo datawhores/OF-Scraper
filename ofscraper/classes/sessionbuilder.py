@@ -142,28 +142,13 @@ class sessionBuilder:
 
         return funct
 
-    # # context providers are used to provide access to object before exit
-    # @contextlib.asynccontextmanager
-    # async def _httpx_funct_async(self,method,**kwargs):
-    #     try:
-    #         t=await self._session.request(method.upper(),**kwargs)
-    #     except Exception as E:
-    #         raise E
-    #     t.ok=not t.is_error
-    #     t.json_=lambda: self.factoryasync(t.json)
-    #     t.file_text=lambda: self.factoryasync(t.text)
-    #     t.status=t.status_code
-    #     t.iter_chunked=t.aiter_bytes
-    #     yield t
-    #     None
-
     # context providers are used to provide access to object before exit
     @contextlib.asynccontextmanager
     async def _httpx_funct_async(self, funct):
         t = await funct()
         t.ok = not t.is_error
         t.json_ = lambda: self.factoryasync(t.json)
-        t.file_text = lambda: self.factoryasync(t.text)
+        t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
         yield t
@@ -179,7 +164,7 @@ class sessionBuilder:
 
         t.ok = not t.is_error
         t.json_ = t.json
-        t.file_text = lambda: t.text
+        t.text_ = lambda: t.text
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
         yield t
@@ -198,7 +183,7 @@ class sessionBuilder:
         except Exception as E:
             raise E
         async with resp as r:
-            r.file_text = r.text
+            r.text_ = r.text
             r.json_ = r.json
             r.iter_chunked = r.content.iter_chunked
             yield r

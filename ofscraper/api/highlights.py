@@ -130,7 +130,7 @@ async def scrape_stories(c, user_id, job_progress) -> list:
             job_progress.remove_task(task)
         else:
             log.debug(f"[bold]stories response status code:[/bold]{r.status}")
-            log.debug(f"[bold]stories response:[/bold] {await r.file_text()}")
+            log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
             log.debug(f"[bold]stories headers:[/bold] {r.headers}")
             r.raise_for_status()
         return stories
@@ -279,7 +279,7 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
 
         else:
             log.debug(f"[bold]highlight list response status code:[/bold]{r.status}")
-            log.debug(f"[bold]highlight list response:[/bold] {await r.file_text()}")
+            log.debug(f"[bold]highlight list response:[/bold] {await r.text_()}")
             log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
     return data
 
@@ -311,7 +311,7 @@ async def scrape_highlights(c, id, job_progress) -> list:
             job_progress.remove_task(task)
         else:
             log.debug(f"[bold]highlight status code:[/bold]{r.status}")
-            log.debug(f"[bold]highlight response:[/bold] {r.file_text()}")
+            log.debug(f"[bold]highlight response:[/bold] {await r.text_()}")
             log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
     return resp_data["stories"]
 
@@ -342,7 +342,7 @@ def get_individual_highlights(id, c=None):
     #         return r.json()
     #     else:
     #         log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
-    #         log.debug(f"[bold]highlightresponse:[/bold] {r.file_text()}")
+    #         log.debug(f"[bold]highlightresponse:[/bold] {await r.text_()}")
     #         log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
 
 
@@ -353,5 +353,5 @@ def get_individual_stories(id, c=None):
             return r.json()
         else:
             log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
-            log.debug(f"[bold]highlightresponse:[/bold] {r.file_text()}")
+            log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
             log.debug(f"[bold]highlight headers:[/bold] {r.headers}")

@@ -217,7 +217,7 @@ async def main_download_sendreq(c, ele, path, username, model_id, total):
                         f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
                     )
                     common.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.file_text()}"
+                        f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}"
                     )
                     common.innerlog.get().debug(
                         f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}"

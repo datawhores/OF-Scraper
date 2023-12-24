@@ -201,7 +201,7 @@ class Media:
             return None
 
     @property
-    def file_text(self):
+    def clean_text(self):
         if self.responsetype != "Profile":
             text = (
                 self.text
@@ -316,7 +316,7 @@ class Media:
                 async with c.requests(url=self.mpd, params=params)() as r:
                     if not r.ok:
                         r.raise_for_status()
-                    return MPEGDASHParser.parse(await r.file_text())
+                    return MPEGDASHParser.parse(await r.text_())
         except Exception as E:
             log.traceback_(traceback.format_exc())
             log.traceback_(E)

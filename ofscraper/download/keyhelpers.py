@@ -107,15 +107,13 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         }
         async with c.requests(url=constants.CDRM, method="post", json=json_data)() as r:
             if r.ok:
-                httpcontent = await r.file_text()
+                httpcontent = await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, "html.parser")
                 out = soup.find("li").contents[0]
             else:
                 log.debug(f"[bold]  key helper cdrm status[/bold]: {r.status}")
-                log.debug(
-                    f"[bold]  key helper cdrm text [/bold]: {await r.file_text()}"
-                )
+                log.debug(f"[bold]  key helper cdrm text [/bold]: {await r.text_()}")
                 log.debug(f"[bold]  key helper cdrm headers [/bold]: {r.headers}")
                 r.raise_for_status()
             return out
@@ -151,15 +149,13 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             url=constants.CDRM2, method="post", json=json_data
         )() as r:
             if r.ok:
-                httpcontent = await r.file_text()
+                httpcontent = await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
                 soup = BeautifulSoup(httpcontent, "html.parser")
                 out = soup.find("li").contents[0]
             else:
                 log.debug(f"[bold]  key helper cdrm2 status[/bold]: {r.status}")
-                log.debug(
-                    f"[bold]  key helper cdrm2 text [/bold]: {await r.file_text()}"
-                )
+                log.debug(f"[bold]  key helper cdrm2 text [/bold]: {await r.text_()}")
                 log.debug(f"[bold]  key helper cdrm2 headers [/bold]: {r.headers}")
                 r.raise_for_status()
         return out
@@ -218,9 +214,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                 )
             else:
                 log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")
-                log.debug(
-                    f"[bold]  key helper keydb text [/bold]: {await r.file_text()}"
-                )
+                log.debug(f"[bold]  key helper keydb text [/bold]: {await r.text_()}")
                 log.debug(f"[bold]  key helper keydb headers [/bold]: {r.headers}")
                 r.raise_for_status()
         return out

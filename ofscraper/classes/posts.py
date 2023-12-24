@@ -51,11 +51,6 @@ class Post:
     def title(self):
         return self._post.get("title")
 
-    # original responsetype for database
-    # @property
-    # def responsetype(self):
-    #     return self.responsetype
-
     @property
     def modified_responsetype(self):
         if self.archived:

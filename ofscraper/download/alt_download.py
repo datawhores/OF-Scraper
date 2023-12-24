@@ -262,7 +262,7 @@ async def alt_download_sendreq(item, c, ele, path, path_to_file, progress, total
                         f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
                     )
                     common.log.debug(
-                        f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.file_text()}"
+                        f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}"
                     )
                     common.log.debug(
                         f"[bold]  {get_medialog(ele)} alt download  headers [/bold]: {l.headers}"

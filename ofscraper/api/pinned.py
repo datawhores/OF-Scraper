@@ -110,7 +110,7 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
                     )
             else:
                 log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.file_text()}")
+                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
                 log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                 progress.remove_task(task)
                 r.raise_for_status()

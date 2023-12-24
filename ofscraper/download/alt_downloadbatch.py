@@ -251,7 +251,7 @@ async def alt_download_sendreq(item, c, ele, path_to_file):
                         f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
                     )
                     common.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.file_text()}"
+                        f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
                     )
                     common.innerlog.get().debug(
                         f"[bold]  {get_medialog(ele)} main download data finder headeers [/bold]: {l.headers}"
