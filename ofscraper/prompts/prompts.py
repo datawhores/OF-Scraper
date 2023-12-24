@@ -500,6 +500,7 @@ def config_prompt_advanced(config_) -> dict:
                 "message": "Select Which Backend you want:\n",
                 "default": config.get_backend(config_) or "",
             },
+            # value because of legacy config values
             {
                 "type": "list",
                 "name": "partfileclean",

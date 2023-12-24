@@ -89,6 +89,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "file_size_limit": get_filesize_limit(config),
                 "file_size_min": get_filesize_min(config),
                 "filter": get_filter(config),
+                "auto_resume": get_part_file_clean(config),
             },
             "binary_options": {
                 "mp4decrypt": get_mp4decrypt(config),
@@ -108,7 +109,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "advanced_options": {
                 "code-execution": get_allow_code_execution(config),
                 "dynamic-mode-default": get_dynamic(config),
-                "partfileclean": get_part_file_clean(config),
                 "backend": get_backend(config),
                 "downloadbars": get_show_downloadprogress(config),
                 "cache-mode": cache_mode_helper(config),
@@ -563,7 +563,7 @@ def get_part_file_clean(config=None):
     if config == None:
         return False
     value = config.get(
-        "partfileclean", config.get("advanced_options", {}).get("partfileclean")
+        "partfileclean", config.get("advanced_options", {}).get("auto_resume")
     )
     return value if value is not None else False
 
