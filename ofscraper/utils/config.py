@@ -641,11 +641,10 @@ def cache_mode_helper(config):
 def get_appendlog(config):
     if config == None:
         return constants.APPEND_DEFAULT
-    return (
-        config.get("appendlog")
-        or config.get("advanced_options", {}).get("appendlog")
-        or constants.APPEND_DEFAULT
+    value = config.get("appendlog") or config.get("advanced_options", {}).get(
+        "appendlog"
     )
+    return value if value is not None else constants.APPEND_DEFAULT
 
 
 def get_avatar(config):
