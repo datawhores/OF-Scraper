@@ -22,8 +22,10 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry export -f requirements.txt | /venv/bin/pip --no-cache-dir install -r /dev/stdin
 
 COPY . .
+RUN  pip install dunamai
+RUN poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\w+)"
+RUN poetry version $(poetry run dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.\w+)")
 RUN poetry build && /venv/bin/pip install dist/*.whl
-
 
 FROM base as final
 
