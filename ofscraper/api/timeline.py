@@ -182,7 +182,7 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         )
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-        postedAtArray = sorted(list(oldtimeline))
+        postedAtArray = sorted(oldtimeline)
         after = after = 0 if rescan else forced_after or get_after(model_id, username)
 
         log.info(

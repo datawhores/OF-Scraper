@@ -220,7 +220,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
 @operation_wrapper
 def get_timeline_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.postDates)
+        cur.execute(queries.timelinePostDates)
         conn.commit()
         return list(map(lambda x: arrow.get(x[0]).float_timestamp, cur.fetchall()))
 
@@ -417,6 +417,14 @@ def get_archived_media(conn=None, **kwargs) -> list:
         data = list(map(lambda x: x, cur.fetchall()))
         conn.commit()
         return data
+
+
+@operation_wrapper
+def get_archived_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.archivedPostDates)
+        conn.commit()
+        return list(map(lambda x: arrow.get(x[0]).float_timestamp, cur.fetchall()))
 
 
 @operation_wrapper

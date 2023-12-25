@@ -449,7 +449,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         try:
             messages = funct(timeout=constants.LOGGER_TIMEOUT)
         except:
-            break
+            continue
         if not isinstance(messages, list):
             messages = [messages]
         for message in messages:
@@ -492,7 +492,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         try:
             messages = funct(timeout=constants.LOGGER_TIMEOUT)
         except:
-            break
+            continue
         if not isinstance(messages, list):
             messages = [messages]
         for message in messages:

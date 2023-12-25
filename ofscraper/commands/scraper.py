@@ -333,7 +333,7 @@ def run_helper(*functs):
             worker_thread.start()
             # Check if jobqueue has function
             while True:
-                log.debug(schedule.jobs)
+                log.debug(list(map(lambda x: x, schedule.jobs)))
                 job_func = jobqueue.get()
                 job_func()
                 jobqueue.task_done()

@@ -213,8 +213,11 @@ labelID = """
 SELECT id,post_id  FROM  labels
 """
 
-postDates = """
-SELECT created_at FROM posts
+timelinePostDates = """
+SELECT created_at FROM posts where archived=(0)
+"""
+archivedPostDates = """
+SELECT created_at FROM posts where archived=(1)
 """
 
 messagesData = """

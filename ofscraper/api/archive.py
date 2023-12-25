@@ -173,7 +173,9 @@ async def get_archived_media(model_id, username, after=None):
         ):
             async with sessionbuilder.sessionBuilder() as c:
                 if not args_.getargs().no_cache:
-                    oldarchived = cache.get(f"archived__{model_id}", default=[])
+                    oldarchived = operations.get_archived_postdates(
+                        model_id=model_id, username=username
+                    )
                 else:
                     oldarchived = []
                     setCache = False
@@ -186,12 +188,8 @@ async def get_archived_media(model_id, username, after=None):
                     )
                 )
                 log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-                oldarchived = list(
-                    filter(lambda x: x.get("postedAtPrecise") != None, oldarchived)
-                )
-                postedAtArray = sorted(
-                    list(map(lambda x: float(x["postedAtPrecise"]), oldarchived))
-                )
+                oldarchived = list(filter(lambda x: x != None, oldarchived))
+                postedAtArray = sorted(oldarchived)
                 if after == None:
                     after = get_after(model_id, username)
                 log.debug(f"setting after for archive to {after} for {username}")
