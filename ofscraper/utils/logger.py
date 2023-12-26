@@ -1,4 +1,5 @@
 import copy
+import io
 import logging
 import multiprocessing
 import re
@@ -280,6 +281,7 @@ def getNumber(input_):
     return input_
 
 
+# logger for print to console
 def init_stdout_logger(name=None):
     log = logging.getLogger(name or "ofscraper")
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
@@ -421,6 +423,7 @@ def updateOtherLoggerStream():
     )
     for ele in handlers:
         ele.setStream(stream)
+    otherqueue_.put_nowait(stream)
 
 
 def add_widget(widget):
@@ -435,7 +438,7 @@ def add_widget(widget):
     ]
 
 
-# processor for logging discord/log via queues, runnable by any process
+# logs stdout logs via a shared queue
 def logger_process(input_, name=None, stop_count=1, event=None):
     # create a logger
     log = init_stdout_logger(name)
@@ -470,7 +473,6 @@ def logger_process(input_, name=None, stop_count=1, event=None):
             if message.message != "None":
                 # log the message
                 log.handle(message)
-
         if count == stop_count:
             while True:
                 try:
@@ -503,13 +505,22 @@ def logger_other(input_, log, stop_count=1, event=None):
             # set close value
             if event and event.is_set():
                 break
-            if message == "None":
+            elif message == "None":
                 count = count + 1
                 continue
-            if message.message == "None":
+            elif isinstance(message, io.TextIOBase):
+                [
+                    ele.setStream(message)
+                    for ele in filter(
+                        lambda x: isinstance(x, logging.StreamHandler),
+                        other_log.handlers,
+                    )
+                ]
+                continue
+            elif message.message == "None":
                 count = count + 1
                 continue
-            if message.message != "None":
+            elif message.message != "None":
                 # log the message
                 log.handle(message)
         if count == stop_count:
@@ -520,7 +531,7 @@ def logger_other(input_, log, stop_count=1, event=None):
                     return
 
 
-# console log thread must be ran by main process, sharable via queues
+# process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1):
     input_ = input_ or queue_
     thread = threading.Thread(
@@ -579,7 +590,7 @@ def start_other_helper():
         return start_other_thread()
 
 
-# logger for subprocess that is sharable with main process via queues
+# logger for putting logs into queues
 def get_shared_logger(main_=None, other_=None, name=None):
     # create a logger
     logger = logging.getLogger(name or "shared")

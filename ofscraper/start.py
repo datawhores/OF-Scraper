@@ -47,7 +47,7 @@ def main():
         manager.shutdown()
 
     except KeyboardInterrupt as E:
-        print("Force closing script")
+        console.get_shared_console().print("handling force closing of script")
         try:
             with exit.DelayedKeyboardInterrupt():
                 logger.forcedClose(other_logger, main_logger_thread)

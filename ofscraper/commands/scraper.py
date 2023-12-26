@@ -314,7 +314,6 @@ def schedule_helper(functs):
     jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
     for funct in functs:
         jobqueue.put(funct)
-    log.debug(list(map(lambda x: x, schedule.jobs)))
 
 
 ## run script once or on schedule based on args
@@ -334,9 +333,9 @@ def run_helper(*functs):
     global jobqueue
     jobqueue = queue.Queue()
     worker_thread = None
+    [jobqueue.put(funct) for funct in functs]
     if args_.getargs().daemon:
         # update stream before
-        [jobqueue.put(funct) for funct in functs]
         try:
             worker_thread = threading.Thread(
                 target=set_schedule, args=[*functs], daemon=True
@@ -347,6 +346,7 @@ def run_helper(*functs):
                 job_func = jobqueue.get()
                 job_func()
                 jobqueue.task_done()
+                log.debug(list(map(lambda x: x, schedule.jobs)))
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
