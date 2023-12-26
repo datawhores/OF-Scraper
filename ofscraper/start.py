@@ -30,27 +30,25 @@ def main():
         logger.get_shared_logger()
         startvals.printStartValues()
         logger.discord_warning()
-
-        logger.init_parent_logger()
         args = args_.getargs()
         if vars(args).get("help"):
             return
-        main_logger_thread = logger.start_stdout_logthread()
-        other_logger = logger.start_other_helper()
+        logger.start_stdout_logthread()
+        logger.start_other_helper()
         # allow background processes to start
         time.sleep(3)
 
         paths.make_folders()
         picker.pick()
 
-        logger.gracefulClose(other_logger, main_logger_thread)
+        logger.gracefulClose()
         manager.shutdown()
 
     except KeyboardInterrupt as E:
         console.get_shared_console().print("handling force closing of script")
         try:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(other_logger, main_logger_thread)
+                logger.forcedClose()
                 manager.shutdown()
                 try:
                     cache = Cache(
@@ -65,7 +63,7 @@ def main():
 
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(other_logger, main_logger_thread)
+                logger.forcedClose()
                 manager.shutdown()
                 raise E
     except Exception as E:
@@ -73,7 +71,7 @@ def main():
         logging.getLogger("shared").traceback_(E)
         try:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(other_logger, main_logger_thread)
+                logger.forcedClose()
                 manager.shutdown()
                 try:
                     cache = Cache(
@@ -89,7 +87,7 @@ def main():
 
         except KeyboardInterrupt as E:
             with exit.DelayedKeyboardInterrupt():
-                logger.forcedClose(other_logger, main_logger_thread)
+                logger.forcedClose()
                 if logger.queue_:
                     logger.queue_.close()
                     logger.queue_.cancel_join_thread()

@@ -27,6 +27,8 @@ otherqueue2_ = None
 main_event = None
 other_event = None
 other_log = None
+main_log_thread = None
+other_log_thread = None
 
 
 def init_values():
@@ -325,51 +327,6 @@ def init_stdout_logger(name=None):
     return log
 
 
-def init_parent_logger(name=None, other_=None):
-    name = name or "ofscraper-download"
-    log = logging.getLogger(name)
-    format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
-    log.setLevel(1)
-    addtraceback()
-    addtrace()
-    # # #log file
-    # #discord
-    # console
-    sh = RichHandler(
-        rich_tracebacks=True,
-        markup=True,
-        tracebacks_show_locals=True,
-        show_time=False,
-        show_level=False,
-        console=console.get_shared_console(),
-    )
-    sh.setLevel(getLevel(args.getargs().output))
-    sh.setFormatter(SensitiveFormatter(format))
-    sh.addFilter(NoDebug())
-    tx = TextHandler()
-    tx.setLevel(getLevel(args.getargs().output))
-    tx.setFormatter(SensitiveFormatter(format))
-    log.addHandler(sh)
-    log.addHandler(tx)
-
-    if args.getargs().output in {"TRACE", "DEBUG"}:
-        funct = DebugOnly if args.getargs().output == "DEBUG" else TraceOnly
-        sh2 = RichHandler(
-            rich_tracebacks=True,
-            console=console.get_shared_console(),
-            markup=True,
-            tracebacks_show_locals=True,
-            show_time=False,
-        )
-        sh2.setLevel(args.getargs().output)
-        sh2.setFormatter(SensitiveFormatter(format))
-        sh2.addFilter(funct())
-        log.addHandler(sh2)
-    # other_= other_ or otherqueue_
-    # log.addHandler(QueueHandler(other_))
-    return log
-
-
 def init_other_logger(name):
     name = name or "other"
     log = logging.getLogger(name)
@@ -533,13 +490,12 @@ def logger_other(input_, log, stop_count=1, event=None):
 
 # process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1):
+    global main_log_thread
     input_ = input_ or queue_
-    thread = threading.Thread(
+    main_log_thread = threading.Thread(
         target=logger_process, args=(input_, name, count, main_event), daemon=True
     )
-    thread.start()
-
-    return thread
+    main_log_thread.start()
 
 
 # wrapper function for discord and  log, check if threads/process should start
@@ -618,14 +574,15 @@ def get_shared_logger(main_=None, other_=None, name=None):
     return logger
 
 
-def gracefulClose(other, main):
+def gracefulClose():
     sendCloseMessage()
     stdout = logging.getLogger("ofscraper")
     stdout.debug(
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
-    closeOther(other)
-    main.join()
+    closeOther()
+    if main_log_thread:
+        main_log_thread.join()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -635,11 +592,12 @@ def gracefulClose(other, main):
     )
 
 
-def forcedClose(other, main):
+def forcedClose():
     main_event.set()
     other_event.set()
-    main.join(constants.FORCED_THREAD_TIMEOUT)
-    closeOther(other)
+    if main_log_thread:
+        main_log_thread.join(constants.FORCED_THREAD_TIMEOUT)
+    closeOther()
     closeQueue()
 
 
@@ -652,21 +610,22 @@ def sendCloseMessage():
         logging.getLogger("shared").handlers[-1].queue.put("None")
 
 
-def closeOther(other):
-    if not other:
+def closeOther():
+    global other_log_thread
+    if not other_log_thread:
         return
     elif not other_event.is_set():
-        if isinstance(other, threading.Thread):
-            other.join()
+        if isinstance(other_log_thread, threading.Thread):
+            other_log_thread.join()
         else:
-            other.join()
+            other_log_thread.join()
     elif other_event.is_set():
-        if isinstance(other, threading.Thread):
-            other.join(timeout=constants.FORCED_THREAD_TIMEOUT)
+        if isinstance(other_log_thread, threading.Thread):
+            other_log_thread.join(timeout=constants.FORCED_THREAD_TIMEOUT)
         else:
-            other.join(timeout=constants.FORCED_THREAD_TIMEOUT)
-            if other.is_alive():
-                other.terminate()
+            other_log_thread.join(timeout=constants.FORCED_THREAD_TIMEOUT)
+            if other_log_thread.is_alive():
+                other_log_thread.terminate()
 
 
 def closeQueue():

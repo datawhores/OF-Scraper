@@ -40,7 +40,7 @@ async def process_dicts(username, model_id, medialist):
         progress_group, overall_progress, job_progress = setupProgressBar()
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         reset_globals()
-        common.log = logging.getLogger("ofscraper-download")
+        common.log = logging.getLogger("shared")
 
         try:
             with Live(
