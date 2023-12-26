@@ -547,6 +547,16 @@ def config_prompt_advanced(config_) -> dict:
                 "default": config.get_sanitizeDB(config_),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
+            {
+                "type": "list",
+                "name": "text_type",
+                "message": "How the textlimit should be interpreted as",
+                "default": config.get_textType(config_),
+                "choices": [
+                    Choice("word", "Word Count"),
+                    Choice("letter", "Letter Count"),
+                ],
+            },
         ]
     )
     config_.update(new_settings)

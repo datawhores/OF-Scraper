@@ -129,6 +129,7 @@ SUPPRESS_LOG_LEVEL = 21
 PROGRESS_DEFAULT = False
 APPEND_DEFAULT = True
 AVATAR_DEFAULT = True
+TEXT_TYPE_DEFAULT = "letter"
 RESPONSE_TYPE_DEFAULT = {
     "message": "Messages",
     "timeline": "Posts",

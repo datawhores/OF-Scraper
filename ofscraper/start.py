@@ -1,10 +1,7 @@
 import logging
-import platform
-import ssl
 import time
 import traceback
 
-import certifi
 from diskcache import Cache
 
 import ofscraper.commands.picker as picker
@@ -14,8 +11,8 @@ import ofscraper.utils.console as console
 import ofscraper.utils.exit as exit
 import ofscraper.utils.logger as logger
 import ofscraper.utils.manager as manager
-import ofscraper.utils.paths as paths_
 import ofscraper.utils.paths as paths
+import ofscraper.utils.startvals as startvals
 import ofscraper.utils.system as system
 
 
@@ -30,7 +27,8 @@ def main():
 
         logger.init_values()
         system.set_eventloop()
-        startvalues()
+        logger.get_shared_logger()
+        startvals.printStartValues()
         logger.discord_warning()
 
         logger.init_parent_logger()
@@ -97,22 +95,3 @@ def main():
                     logger.queue_.cancel_join_thread()
                 manager.shutdown()
                 raise
-
-
-def startvalues():
-    args = args_.getargs()
-    log = logger.get_shared_logger()
-    logger.updateSenstiveDict(f"/{paths_.get_username()}/", "/your_username/")
-    logger.updateSenstiveDict(f"\\{paths_.get_username()}\\", "\\\\your_username\\\\")
-
-    # print info
-    log.debug(args)
-    log.debug(platform.platform())
-    log.debug(config_.read_config())
-    log.info(f"config path: {str(paths_.get_config_path())}")
-    log.info(f"profile path: {str(paths_.get_profile_path())}")
-    log.info(f"log folder: {str(paths_.get_config_home()/'logging')}")
-    log.debug(f"ssl {ssl.get_default_verify_paths()}")
-    log.debug(f"python version {platform. python_version()}")
-    log.debug(f"certifi {certifi.where()}")
-    log.debug(f"number of threads available on system {system.getcpu_count()}")

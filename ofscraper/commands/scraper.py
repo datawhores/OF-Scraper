@@ -17,6 +17,7 @@ import time
 import timeit
 import traceback
 from contextlib import contextmanager
+from functools import partial
 
 import arrow
 import schedule
@@ -36,10 +37,12 @@ import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config
 import ofscraper.utils.console as console
 import ofscraper.utils.exit as exit
+import ofscraper.utils.logger as logger
 import ofscraper.utils.network as network
 import ofscraper.utils.of as OF
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
+import ofscraper.utils.startvals as startvals
 import ofscraper.utils.stdout as stdout
 
 log = logging.getLogger("shared")
@@ -299,19 +302,26 @@ def process_unlike():
 
 # Adds a function to the job queue
 def set_schedule(*functs):
-    [
-        schedule.every(args_.getargs().daemon).minutes.do(jobqueue.put, funct)
-        for funct in functs
-    ]
+    schedule.every(args_.getargs().daemon).minutes.do(schedule_helper, functs)
     while len(schedule.jobs) > 0:
         schedule.run_pending()
         time.sleep(30)
+
+
+def schedule_helper(functs):
+    jobqueue.put(logger.updateOtherLoggerStream)
+    jobqueue.put(startvals.printStartValues)
+    jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
+    for funct in functs:
+        jobqueue.put(funct)
+    log.debug(list(map(lambda x: x, schedule.jobs)))
 
 
 ## run script once or on schedule based on args
 def run(*functs):
     # get usernames prior to potentially supressing output
     check_auth()
+
     if args_.getargs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
     if args_.getargs().daemon:
@@ -323,9 +333,10 @@ def run_helper(*functs):
     # run each function once
     global jobqueue
     jobqueue = queue.Queue()
-    [jobqueue.put(funct) for funct in functs]
     worker_thread = None
     if args_.getargs().daemon:
+        # update stream before
+        [jobqueue.put(funct) for funct in functs]
         try:
             worker_thread = threading.Thread(
                 target=set_schedule, args=[*functs], daemon=True
@@ -333,11 +344,9 @@ def run_helper(*functs):
             worker_thread.start()
             # Check if jobqueue has function
             while True:
-                log.debug(list(map(lambda x: x, schedule.jobs)))
                 job_func = jobqueue.get()
                 job_func()
                 jobqueue.task_done()
-                userselector.getselected_usernames(rescan=True)
         except KeyboardInterrupt as E:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -365,6 +374,7 @@ def run_helper(*functs):
                 job_func = jobqueue.get()
                 job_func()
                 jobqueue.task_done()
+            args_.clearDate()
         except KeyboardInterrupt:
             try:
                 with exit.DelayedKeyboardInterrupt():
@@ -418,8 +428,8 @@ def check_config():
 
 @contextmanager
 def scrape_context_manager():
+    # reset stream if needed
     # Before yield as the enter method
-
     start = timeit.default_timer()
     log.warning(
         f"""

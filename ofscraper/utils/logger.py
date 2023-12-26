@@ -25,6 +25,7 @@ otherqueue_ = None
 otherqueue2_ = None
 main_event = None
 other_event = None
+other_log = None
 
 
 def init_values():
@@ -404,18 +405,22 @@ def init_other_logger(name):
 
 # updates stream for main process
 def updateOtherLoggerStream():
+    global other_log
+    if not other_log:
+        return
+    handlers = list(
+        filter(lambda x: isinstance(x, logging.StreamHandler), other_log.handlers)
+    )
+    if len(handlers) == 0:
+        return
     args.resetGlobalDateHelper()
-    args.globalDataHelper()
-    log = logging.getLogger("other")
-    for ele in list(
-        filter(lambda x: isinstance(x, logging.StreamHandler), log.handlers)
-    ):
-        ele.stream.close()
-        ele.stream = open(
-            paths.getlogpath(),
-            encoding="utf-8",
-            mode="a",
-        )
+    stream = open(
+        paths.getlogpath(),
+        encoding="utf-8",
+        mode="a",
+    )
+    for ele in handlers:
+        ele.setStream(stream)
 
 
 def add_widget(widget):
@@ -475,9 +480,8 @@ def logger_process(input_, name=None, stop_count=1, event=None):
 
 
 # processor for logging discord/log via queues, runnable by any process
-def logger_other(input_, name=None, stop_count=1, event=None):
+def logger_other(input_, log, stop_count=1, event=None):
     # create a logger
-    log = init_other_logger(name)
     count = 0
     funct = None
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
@@ -529,21 +533,23 @@ def start_stdout_logthread(input_=None, name=None, count=1):
 
 # wrapper function for discord and  log, check if threads/process should start
 def start_checker(func: abc.Callable):
-    def inner(*args_, **kwargs):
+    def inner(*args_, name=None, **kwargs):
+        global other_log
+        other_log = init_other_logger(name)
         if args.getargs().discord and args.getargs().discord != "OFF":
-            return func(*args_, **kwargs)
+            return func(other_log, *args_, **kwargs)
         elif args.getargs().log and args.getargs().log != "OFF":
-            return func(*args_, **kwargs)
+            return func(other_log, *args_, **kwargs)
 
     return inner
 
 
 # processs discord/log queues via a thread
 @start_checker
-def start_other_thread(input_=None, name=None, count=1):
+def start_other_thread(log, input_=None, count=1):
     input_ = input_ or otherqueue_
     thread = threading.Thread(
-        target=logger_other, args=(input_, name, count, other_event), daemon=True
+        target=logger_other, args=(input_, log, count, other_event), daemon=True
     )
     thread.start()
     return thread
@@ -551,16 +557,16 @@ def start_other_thread(input_=None, name=None, count=1):
 
 # processs discord/log queues via a process
 @start_checker
-def start_other_process(input_=None, name=None, count=1):
-    def inner(args_, input_=None, name=None, count=1):
+def start_other_process(log, input_=None, count=1):
+    def inner(log, args_, input_=None, count=1):
         args.changeargs(args_)
         input_ = input_ or otherqueue_
-        logger_other(input_=input_, name=name, stop_count=count)
+        logger_other(input_, log, stop_count=count)
 
     process = None
     input_ = otherqueue_
     process = aioprocessing.AioProcess(
-        target=inner, args=(args.getargs(), input_, name, count), daemon=True
+        target=inner, args=(log, args.getargs(), input_, count), daemon=True
     )
     process.start() if process else None
     return process

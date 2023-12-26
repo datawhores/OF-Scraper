@@ -116,6 +116,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "custom": get_custom(config),
                 "sanitize_text": get_sanitizeDB(config),
                 "avatar": get_avatar(config),
+                "text_type": get_textType(config),
             },
             "responsetype": {
                 "timeline": get_timeline_responsetype(config),
@@ -661,6 +662,16 @@ def get_sanitizeDB(config):
     if config is None:
         return constants.SANITIZE_DB_DEFAULT
     return (
-        config.get("advanced_options", {}).get("sanitize_text")
+        config.get("sanitize_text")
+        or config.get("advanced_options", {}).get("sanitize_text")
         or constants.SANITIZE_DB_DEFAULT
     )
+
+
+def get_textType(config):
+    if config is None:
+        return constants.TEXT_TYPE_DEFAULT
+    value = config.get("text_type") or config.get("advanced_options", {}).get(
+        "text_type"
+    )
+    return value if value in ["letter", "word"] else constants.TEXT_TYPE_DEFAULT

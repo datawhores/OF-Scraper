@@ -214,7 +214,10 @@ class Media:
         elif length == 0 and not self._addcount():
             return text
 
-        elif args_.getargs().letter_count:
+        elif (
+            args_.getargs().letter_count
+            or config.get_textType(config.read_config()) == "letter"
+        ):
             if not self._addcount():
                 return "".join(list(text))[:length]
             elif self._addcount():

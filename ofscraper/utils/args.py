@@ -860,7 +860,7 @@ def getargs(input=None):
     args.excluded_username = set(args.excluded_username or [])
     args.label = set(args.label) if args.label else args.label
     args.black_list = set(list(map(lambda x: x.lower(), args.black_list)))
-    args = globalDataHelper(args)
+    args = globalDataHelper()
 
     if len(args.user_list) == 0:
         args.user_list = {constants.OFSCRAPER_RESERVED_LIST}
@@ -884,31 +884,39 @@ def getargs(input=None):
     return args
 
 
-def globalDataHelper(args):
-    args.dateformat = getDateHelper(args)
-    args.date_now = getDateNowHelper(args)
+def globalDataHelper():
+    global args
+    now = arrow.now()
+    args.dateformat = getDateHelper(now)
+    args.date_now = getDateNowHelper(now)
     return args
 
 
-def resetGlobalDateHelper(args):
-    args.dateformat = None
+def resetGlobalDateHelper():
+    clearDate()
+    globalDataHelper()
+
+
+def clearDate():
+    global args
     args.date_now = None
+    args.dateformat = None
 
 
-def getDateNowHelper(args):
+def getDateNowHelper(now):
     if not vars(args).get("date_now"):
-        return arrow.now()
+        return now
     return args.date_now
 
 
-def getDateHelper(args):
+def getDateHelper(now):
     if not vars(args).get("dateformat"):
         from ofscraper.utils.config import get_appendlog, read_config
 
         return (
-            arrow.now().format("YYYY-MM-DD")
+            now.format("YYYY-MM-DD")
             if get_appendlog(read_config())
-            else f'{arrow.now().format("YYYY-MM-DD_hh.mm.ss")}'
+            else f'{now.format("YYYY-MM-DD_hh.mm.ss")}'
         )
     return args.dateformat
 
