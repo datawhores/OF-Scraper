@@ -33,6 +33,7 @@ from ofscraper.download.common import (
     addLocalDir,
     check_forced_skip,
     get_medialog,
+    metadata,
     moveHelper,
     path_to_file_logger,
     sem_wrapper,
@@ -47,6 +48,14 @@ async def main_download(c, ele, username, model_id):
     common.innerlog.get().debug(
         f"{get_medialog(ele)} Downloading with normal downloader"
     )
+    if args_.getargs().metadata:
+        return await metadata(
+            c,
+            ele,
+            username,
+            model_id,
+        )
+
     result = list(await main_download_downloader(c, ele, username, model_id))
     if len(result) == 2 and result[-1] == 0:
         await operations.update_media_table(

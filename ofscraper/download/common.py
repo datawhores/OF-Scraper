@@ -277,27 +277,29 @@ async def check_forced_skip(ele, path_to_file, *args):
         return "forced_skipped", 0
 
 
-async def metadata(c, ele, username, model_id, path_to_file=None):
+async def metadata(c, ele, username, model_id, placeholderObj=None):
     log.info(
         f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
     )
     data = await asyncio.get_event_loop().run_in_executor(
         cache_thread, partial(cache.get, f"{ele.id}_headers")
     )
-    if path_to_file:
+    if placeholderObj:
         if ele.id:
             await operations.update_media_table(
                 ele,
-                filename=path_to_file,
+                filename=placeholderObj.trunicated_filename,
                 model_id=model_id,
                 username=username,
-                downloaded=pathlib.Path(path_to_file).exists(),
+                downloaded=pathlib.Path(placeholderObj.trunicated_filename).exists(),
             )
         return (
-            ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",
+            ele.mediatype
+            if pathlib.Path(placeholderObj.trunicated_filename).exists()
+            else "forced_skipped",
             0,
         )
-    if data and data.get("content-length"):
+    if data and data.get("content-type"):
         content_type = data.get("content-type").split("/")[-1]
         placeholderObj = placeholder.Placeholders()
         placeholderObj.getDirs(ele, username, model_id, create=False)
@@ -325,16 +327,31 @@ async def metadata(c, ele, username, model_id, path_to_file=None):
                 reraise=True,
             ):
                 with _:
-                    return await metadata_helper(c, ele, username, model_id)
+                    try:
+                        return await metadata_helper(
+                            c, ele, username, model_id, placeholderObj
+                        )
+                    except Exception as E:
+                        raise E
         except Exception as E:
             raise E
 
 
 @sem_wrapper
-async def metadata_helper(c, ele, username, model_id):
+async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
     url = ele.url or ele.mpd
+
+    params = (
+        {
+            "Policy": ele.policy,
+            "Key-Pair-Id": ele.keypair,
+            "Signature": ele.signature,
+        }
+        if ele.mpd
+        else None
+    )
     attempt.set(attempt.get(0) + 1)
-    async with c.requests(url=url, headers=None)() as r:
+    async with c.requests(url=url, headers=None, params=params)() as r:
         if r.ok:
             data = r.headers
             await asyncio.get_event_loop().run_in_executor(
@@ -351,9 +368,9 @@ async def metadata_helper(c, ele, username, model_id):
             content_type = data.get("content-type").split("/")[-1]
             if not content_type and ele.mediatype.lower() == "videos":
                 content_type = "mp4"
-            if not content_type and ele.mediatype.lower() == "images":
+            elif not content_type and ele.mediatype.lower() == "images":
                 content_type = "jpg"
-            placeholderObj = placeholder.Placeholders()
+            placeholderObj = placeholderObj or placeholder.Placeholders()
             placeholderObj.getDirs(ele, username, model_id, create=False)
             placeholderObj.createfilename(ele, username, model_id, content_type)
             placeholderObj.set_trunicated()

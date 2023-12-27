@@ -7,13 +7,7 @@ from functools import partial
 
 import aiofiles
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
+from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -24,6 +18,7 @@ import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
+import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
@@ -34,6 +29,7 @@ from ofscraper.download.common import (
     check_forced_skip,
     get_item_total,
     get_medialog,
+    metadata,
     moveHelper,
     path_to_file_logger,
     sem_wrapper,
@@ -48,6 +44,14 @@ async def alt_download(c, ele, username, model_id):
     common.innerlog.get().debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
     )
+    if args_.getargs().metadata:
+        sharedPlaceholderObj = placeholder.Placeholders()
+        sharedPlaceholderObj.getmediadir(ele, username, model_id, create=False)
+        sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
+        sharedPlaceholderObj.set_trunicated()
+        return await metadata(
+            c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
+        )
     audio, video = await alt_download_preparer(ele)
     sharedPlaceholderObj = placeholder.Placeholders()
     sharedPlaceholderObj.getDirs(ele, username, model_id)
