@@ -40,7 +40,7 @@ def download_picker(username, model_id, medialist):
     elif (
         system.getcpu_count() > 1
         and (
-            len(medialist) >= config_.get_download_semaphores(config_.read_config()) * 0
+            len(medialist) >= config_.get_download_semaphores(config_.read_config()) * 5
         )
         and (
             args_.getargs().downloadthreads
