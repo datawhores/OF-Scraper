@@ -322,7 +322,7 @@ def get_after(model_id, username):
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     curr = operations.get_archived_media(model_id=model_id, username=username)
-    if cache.get(f"{model_id}_scrape_timeline"):
+    if cache.get(f"{model_id}_scrape_archived"):
         log.debug(
             "Used after previously scraping entire timeline to make sure content is not missing"
         )
