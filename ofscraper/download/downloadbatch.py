@@ -422,8 +422,8 @@ async def download(c, ele, model_id, username):
         try:
             if ele.url:
                 return await main_download(c, ele, username, model_id)
-            elif ele.mpd:
-                return await alt_download(c, ele, username, model_id)
+            # elif ele.mpd:
+            #     return await alt_download(c, ele, username, model_id)
         except Exception as e:
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {e}")
             common.innerlog.get().debug(
