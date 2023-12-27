@@ -231,20 +231,22 @@ async def size_checker(path, ele, total, name=None):
         raise Exception(s)
 
 
-def path_to_file_logger(placeholderObj, ele):
-    log.debug(
+def path_to_file_logger(placeholderObj, ele, innerlog=None):
+    innerlog = innerlog or log
+    innerlog.debug(
         f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {placeholderObj.filename}"
     )
-    log.debug(
+    innerlog.debug(
         f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(placeholderObj.mediadir,f'{placeholderObj.filename}')}"
     )
-    log.debug(
+    innerlog.debug(
         f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {placeholderObj.trunicated_filename}"
     )
 
 
-def temp_file_logger(placeholderObj, ele):
-    log.debug(
+def temp_file_logger(placeholderObj, ele, innerlog=None):
+    innerlog = innerlog or log
+    innerlog.debug(
         f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {placeholderObj.tempfilename}"
     )
 

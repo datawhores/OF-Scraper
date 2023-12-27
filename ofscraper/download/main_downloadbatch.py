@@ -104,59 +104,54 @@ async def main_download_downloader(c, ele, username, model_id):
             reraise=True,
         ):
             with _:
-                try:
-                    placeholderObj = placeholder.Placeholders()
-                    placeholderObj.getDirs(ele, username, model_id)
-                    placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
-                    data = await asyncio.get_event_loop().run_in_executor(
-                        common.cache_thread,
-                        partial(common.cache.get, f"{ele.id}_headers"),
+                placeholderObj = placeholder.Placeholders()
+                placeholderObj.getDirs(ele, username, model_id)
+                placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
+                data = await asyncio.get_event_loop().run_in_executor(
+                    common.cache_thread,
+                    partial(common.cache.get, f"{ele.id}_headers"),
+                )
+                if data and data.get("content-length"):
+                    content_type = data.get("content-type").split("/")[-1]
+                    total = int(data.get("content-length"))
+                    placeholderObj.createfilename(ele, username, model_id, content_type)
+                    placeholderObj.set_trunicated()
+                    resume_size = (
+                        0
+                        if not pathlib.Path(placeholderObj.tempfilename).exists()
+                        else pathlib.Path(placeholderObj.tempfilename)
+                        .absolute()
+                        .stat()
+                        .st_size
                     )
-                    if data and data.get("content-length"):
-                        content_type = data.get("content-type").split("/")[-1]
-                        total = int(data.get("content-length"))
-                        placeholderObj.createfilename(
-                            ele, username, model_id, content_type
-                        )
-                        placeholderObj.set_trunicated()
-                        resume_size = (
-                            0
-                            if not pathlib.Path(placeholderObj.tempfilename).exists()
-                            else pathlib.Path(placeholderObj.tempfilename)
-                            .absolute()
-                            .stat()
-                            .st_size
-                        )
-                        check1 = await check_forced_skip(
-                            ele, placeholderObj.trunicated_filename, total
-                        )
-                        if check1:
-                            if ele.id:
-                                await operations.update_media_table(
-                                    ele,
-                                    filename=placeholderObj.trunicated_filename,
-                                    model_id=model_id,
-                                    username=username,
-                                    downloaded=placeholderObj.trunicated_filename.exists(),
-                                )
-                            return check1
-                        elif total == resume_size:
-                            path_to_file_logger(placeholderObj, ele)
-                            return (
-                                total,
-                                placeholderObj.tempfilename,
-                                placeholderObj.trunicated_filename,
+                    check1 = await check_forced_skip(
+                        ele, placeholderObj.trunicated_filename, total
+                    )
+                    if check1:
+                        if ele.id:
+                            await operations.update_media_table(
+                                ele,
+                                filename=placeholderObj.trunicated_filename,
+                                model_id=model_id,
+                                username=username,
+                                downloaded=placeholderObj.trunicated_filename.exists(),
                             )
-                        elif total < resume_size:
-                            pathlib.Path(placeholderObj.tempfilename).unlink(
-                                missing_ok=True
-                            )
-                    else:
-                        paths.truncate(
-                            pathlib.Path(placeholderObj.tempfilename)
-                        ).unlink(missing_ok=True)
-                except Exception as E:
-                    raise E
+                        return check1
+                    elif total == resume_size:
+                        path_to_file_logger(placeholderObj, ele, common.innerlog.get())
+                        return (
+                            total,
+                            placeholderObj.tempfilename,
+                            placeholderObj.trunicated_filename,
+                        )
+                    elif total < resume_size:
+                        pathlib.Path(placeholderObj.tempfilename).unlink(
+                            missing_ok=True
+                        )
+                else:
+                    paths.truncate(pathlib.Path(placeholderObj.tempfilename)).unlink(
+                        missing_ok=True
+                    )
     except Exception as E:
         raise E
 
@@ -214,7 +209,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                             ele, username, model_id, content_type
                         )
                         placeholderObj.set_trunicated()
-                    path_to_file_logger(placeholderObj, ele)
+                    path_to_file_logger(placeholderObj, ele, common.innerlog.get())
                     check = await check_forced_skip(
                         ele, placeholderObj.trunicated_filename, total
                     )

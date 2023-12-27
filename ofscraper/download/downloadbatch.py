@@ -133,7 +133,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
                 while True:
                     newqueue_threads = list(
-                        filter(lambda x: x.is_alive(), queue_threads)
+                        filter(lambda x: x and x.is_alive(), queue_threads)
                     )
                     if len(newqueue_threads) != len(queue_threads):
                         log.debug(f"Remaining Queue Threads: {newqueue_threads}")
@@ -147,7 +147,9 @@ def process_dicts(username, model_id, filtered_medialist):
                 log.debug(f"Intial Log Threads: {log_threads}")
                 log.debug(f"Number of intial Log Threads: {len(log_threads)}")
                 while True:
-                    new_logthreads = list(filter(lambda x: x.is_alive(), log_threads))
+                    new_logthreads = list(
+                        filter(lambda x: x and x.is_alive(), log_threads)
+                    )
                     if len(new_logthreads) != len(log_threads):
                         log.debug(f"Remaining Log Threads: {new_logthreads}")
                         log.debug(f"Number of Log Threads: {len(new_logthreads)}")
@@ -160,7 +162,7 @@ def process_dicts(username, model_id, filtered_medialist):
         log.debug(f"Initial Processes: {processes}")
         log.debug(f"Initial Number of Processes: {len(processes)}")
         while True:
-            new_proceess = list(filter(lambda x: x.is_alive(), processes))
+            new_proceess = list(filter(lambda x: x and x.is_alive(), processes))
             if len(new_proceess) != len(processes):
                 log.debug(f"Remaining Processes: {new_proceess}")
                 log.debug(f"Number of Processes: {len(new_proceess)}")
@@ -422,8 +424,8 @@ async def download(c, ele, model_id, username):
         try:
             if ele.url:
                 return await main_download(c, ele, username, model_id)
-            # elif ele.mpd:
-            #     return await alt_download(c, ele, username, model_id)
+            elif ele.mpd:
+                return await alt_download(c, ele, username, model_id)
         except Exception as e:
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {e}")
             common.innerlog.get().debug(

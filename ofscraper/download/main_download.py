@@ -118,8 +118,8 @@ async def main_download_downloader(c, ele, username, model_id, progress):
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
         ):
-            common.attempt.set(common.attempt.get(0) + 1)
             with _:
+                common.attempt.set(common.attempt.get(0) + 1)
                 try:
                     placeholderObj = placeholder.Placeholders()
                     placeholderObj.getDirs(ele, username, model_id)

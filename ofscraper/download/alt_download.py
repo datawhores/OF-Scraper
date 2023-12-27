@@ -354,14 +354,14 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
 async def alt_download_downloader(
     item, c, sharedPlaceholderObj, ele, username, model_id, progress
 ):
-    async for _ in AsyncRetrying(
-        stop=stop_after_attempt(constants.NUM_TRIES),
-        wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
-        reraise=True,
-    ):
-        common.attempt.set(common.attempt.get(0) + 1)
-        with _:
-            try:
+    try:
+        async for _ in AsyncRetrying(
+            stop=stop_after_attempt(constants.NUM_TRIES),
+            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            reraise=True,
+        ):
+            with _:
+                common.attempt.set(common.attempt.get(0) + 1)
                 placeholderObj = placeholder.Placeholders()
                 placeholderObj.gettempDir(ele, username, model_id)
                 placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
@@ -401,8 +401,8 @@ async def alt_download_downloader(
 
                 else:
                     placeholderObj.tempfilename.unlink(missing_ok=True)
-            except Exception as E:
-                raise E
+    except Exception as E:
+        raise E
     _attempt = common.alt_attempt_get(item)
     _attempt.set(0)
     try:
@@ -425,5 +425,5 @@ async def alt_download_downloader(
                     )
                 except Exception as E:
                     raise E
-    except Exception:
-        pass
+    except Exception as E:
+        raise E
