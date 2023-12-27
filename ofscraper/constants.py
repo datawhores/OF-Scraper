@@ -193,7 +193,7 @@ LARGEZIP = "https://proof.ovh.net/files/100Mb.dat"
 
 CDRM2 = "http://172.106.17.134:8080/wv"
 KEYDB = "https://keysdb.net/api"
-CDRM = "https://cdrm-project.com/wv"
+CDRM = "https://cdrm-project.com"
 
 LOGGER_TIMEOUT = 180
 LOG_DISPLAY_TIMEOUT = 0.8
