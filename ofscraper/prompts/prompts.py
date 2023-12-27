@@ -588,8 +588,9 @@ def config_prompt(config_) -> dict:
                 "message": "file_size_limit: ",
                 "long_instruction": """
 File size limit
-input can be int representing bytes
+Input can be int representing bytes
 or human readable such as 10mb
+
 Enter 0 for no limit
 """,
                 "default": str(config.get_filesize_limit(config_)),
@@ -601,11 +602,26 @@ Enter 0 for no limit
                 "message": "file_size_min: ",
                 "long_instruction": """
 File size min
-input can be int representing bytes
+Input can be int representing bytes
 or human readable such as 10mb
+
 Enter 0 for no minimum
 """,
                 "default": str(config.get_filesize_min(config_)),
+                "filter": int,
+            },
+            {
+                "type": "input",
+                "name": "system_free_min",
+                "message": "minimum free space: ",
+                "long_instruction": """
+Minimum freespace for download
+Input can be int representing bytes
+or human readable such as 10mb
+
+Enter 0 for no limit
+""",
+                "default": str(config.get_system_freesize(config_)),
                 "filter": int,
             },
             {
