@@ -15,7 +15,12 @@ from functools import partial
 import aiofiles
 import arrow
 import psutil
-from tenacity import AsyncRetrying, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry_if_not_exception_message,
+    stop_after_attempt,
+    wait_random,
+)
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -31,6 +36,7 @@ import ofscraper.utils.dates as dates
 from ofscraper.download.common import (
     addGlobalDir,
     check_forced_skip,
+    downloadspace,
     get_medialog,
     metadata,
     moveHelper,
@@ -170,6 +176,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
             stop=stop_after_attempt(constants.NUM_TRIES),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
+            retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
         ):
             with _:
                 try:
@@ -187,6 +194,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
 async def main_download_sendreq(
     c, ele, placeholderObj, username, model_id, progress, total
 ):
+    downloadspace()
     common.attempt.set(common.attempt.get(0) + 1)
     total = total if common.attempt.get() == 1 else None
     try:

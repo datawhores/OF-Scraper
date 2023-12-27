@@ -165,15 +165,22 @@ def create_parser(input=None):
         required=False,
         action="store_true",
     )
-
-    post.add_argument(
-        "-dt",
-        "--download-type",
-        help="Filter to what type of download you want None==Both, protected=Files that need mp4decrpyt",
-        default=None,
+    group10 = post.add_mutually_exclusive_group()
+    group10.add_argument(
+        "-to",
+        "--protected-only",
+        help="Only download  content that requires decryption",
+        default=False,
         required=False,
-        type=str.lower,
-        choices=["protected", "normal"],
+        action="store_true",
+    )
+    group10.add_argument(
+        "-no",
+        "--normal-only",
+        help="Only download content that does not require decryption",
+        default=False,
+        required=False,
+        action="store_true",
     )
 
     post.add_argument(

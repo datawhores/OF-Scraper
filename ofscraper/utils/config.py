@@ -90,6 +90,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "file_size_min": get_filesize_min(config),
                 "filter": get_filter(config),
                 "auto_resume": get_part_file_clean(config),
+                "system_free_min": get_system_freesize(config),
             },
             "binary_options": {
                 "mp4decrypt": get_mp4decrypt(config),
@@ -274,9 +275,11 @@ def get_filesize_limit(config=None):
         return constants.FILE_SIZE_LIMIT_DEFAULT
     try:
         return parse_size(
-            str(config.get("file_size_limit"))
-            or config.get("download_options", {}).get("file_size_limit")
-            or constants.FILE_SIZE_LIMIT_DEFAULT
+            str(
+                config.get("file_size_limit")
+                or config.get("download_options", {}).get("file_size_limit")
+                or constants.FILE_SIZE_LIMIT_DEFAULT
+            )
         )
     except:
         return 0
@@ -287,11 +290,28 @@ def get_filesize_min(config=None):
         return constants.FILE_SIZE_MIN_DEFAULT
     try:
         return parse_size(
-            str(config.get("file_size_min"))
-            or config.get("download_options", {}).get("file_size_min")
-            or constants.FILE_SIZE_MIN_DEFAULT
+            str(
+                config.get("file_size_min")
+                or config.get("download_options", {}).get("file_size_min")
+                or constants.FILE_SIZE_MIN_DEFAULT
+            )
         )
-    except:
+    except Exception:
+        return 0
+
+
+def get_system_freesize(config=None):
+    if config is None:
+        return constants.SYSTEM_FREEMIN_DEFAULT
+    try:
+        return parse_size(
+            str(
+                config.get("system_free_min")
+                or config.get("download_options", {}).get("system_free_min")
+                or constants.SYSTEM_FREEMIN_DEFAULT
+            )
+        )
+    except Exception:
         return 0
 
 

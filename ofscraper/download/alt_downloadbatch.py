@@ -7,7 +7,13 @@ from functools import partial
 
 import aiofiles
 import arrow
-from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_message,
+    stop_after_attempt,
+    wait_random,
+)
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -27,6 +33,7 @@ import ofscraper.utils.system as system
 from ofscraper.download.common import (
     addLocalDir,
     check_forced_skip,
+    downloadspace,
     get_item_total,
     get_medialog,
     metadata,
@@ -41,6 +48,7 @@ from ofscraper.utils.run_async import run
 
 
 async def alt_download(c, ele, username, model_id):
+    downloadspace()
     common.innerlog.get().debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
     )
@@ -401,6 +409,7 @@ async def alt_download_downloader(
             stop=stop_after_attempt(constants.NUM_TRIES),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
+            retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
         ):
             with _:
                 try:

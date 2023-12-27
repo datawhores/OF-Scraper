@@ -141,6 +141,7 @@ RESPONSE_TYPE_DEFAULT = {
     "profile": "Profile",
     "pinned": "Posts",
 }
+SYSTEM_FREEMIN_DEFAULT = 0
 NUM_TRIES = 10
 DATABASE_TIMEOUT = 300
 
@@ -199,3 +200,4 @@ LOGGER_TIMEOUT = 180
 LOG_DISPLAY_TIMEOUT = 0.8
 FORCED_THREAD_TIMEOUT = 5
 DAY_SECONDS = 86400
+SPACE_DOWNLOAD_MESSAGE = "Skipping download because space min has been reached"

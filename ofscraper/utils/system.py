@@ -4,6 +4,7 @@ import logging
 import multiprocessing
 import os
 import platform
+import shutil
 import subprocess
 import sys
 
@@ -98,3 +99,8 @@ def setName():
         setproctitle("OF-Scraper")
     except Exception as E:
         log.debug(E)
+
+
+def get_free():
+    total, used, free = shutil.disk_usage("/")
+    return free

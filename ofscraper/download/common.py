@@ -47,6 +47,7 @@ import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths as paths
+import ofscraper.utils.system as system
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
@@ -480,3 +481,9 @@ def alt_attempt_get(item):
         return attempt
     if item["type"] == "audio":
         return attempt2
+
+
+def downloadspace():
+    space_limit = config_.get_system_freesize(config_.read_config)
+    if space_limit > 0 and space_limit > system.get_free():
+        raise Exception(constants.SPACE_DOWNLOAD_MESSAGE)

@@ -133,12 +133,12 @@ def anti_post_user_filter(media):
 
 
 def download_type_filter(media):
-    if args_.getargs().download_type is None:
-        return media
-    elif args_.getargs().download_type == "protected":
+    if args_.getargs().protected_only:
         return list(filter(lambda x: x.mpd is not None, media))
-    elif args_.getargs().download_type == "normal":
+    elif args_.getargs().normal_only:
         return list(filter(lambda x: x.url is not None, media))
+    else:
+        return media
 
 
 def mass_msg_filter(media):

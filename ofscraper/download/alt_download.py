@@ -17,7 +17,12 @@ from functools import partial
 import aiofiles
 import arrow
 import psutil
-from tenacity import AsyncRetrying, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry_if_not_exception_message,
+    stop_after_attempt,
+    wait_random,
+)
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -36,6 +41,7 @@ import ofscraper.utils.paths as paths
 from ofscraper.download.common import (
     addGlobalDir,
     check_forced_skip,
+    downloadspace,
     get_item_total,
     get_medialog,
     metadata,
@@ -208,6 +214,7 @@ async def alt_download_preparer(ele):
 async def alt_download_sendreq(
     item, c, ele, placeholderObj, sharedPlaceholderObj, progress, total
 ):
+    downloadspace()
     base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
     url = f"{base_url}{item['origname']}"
     common.log.debug(
@@ -410,6 +417,7 @@ async def alt_download_downloader(
             stop=stop_after_attempt(constants.NUM_TRIES),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
+            retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
         ):
             with _:
                 try:

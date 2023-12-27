@@ -30,12 +30,24 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.stdout as stdout
+import ofscraper.utils.system as system
 
 from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 
 
+def space_checker(func):
+    def inner(*args, **kwargs):
+        space_limit = config_.get_system_freesize(config_.read_config())
+        if space_limit > 0 and space_limit > system.get_free():
+            raise Exception("Space min has been reached")
+        return func(*args, **kwargs)
+
+    return inner
+
+
+@space_checker
 def process_messages(model_id, username):
     cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     with stdout.lowstdout():
@@ -78,6 +90,7 @@ def process_messages(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_paid_post(model_id, username):
     with stdout.lowstdout():
         paid_content = paid.get_paid_posts(username, model_id)
@@ -108,6 +121,7 @@ def process_paid_post(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_stories(model_id, username):
     with stdout.lowstdout():
         stories = highlights.get_stories_post(model_id)
@@ -140,6 +154,7 @@ def process_stories(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_highlights(model_id, username):
     with stdout.lowstdout():
         highlights_ = highlights.get_highlight_post(model_id)
@@ -172,6 +187,7 @@ def process_highlights(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_timeline_posts(model_id, username, individual=False):
     with stdout.lowstdout():
         cache = Cache(
@@ -222,6 +238,7 @@ def process_timeline_posts(model_id, username, individual=False):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_archived_posts(model_id, username):
     with stdout.lowstdout():
         cache = Cache(
@@ -269,6 +286,7 @@ def process_archived_posts(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_pinned_posts(model_id, username):
     with stdout.lowstdout():
         pinned_posts = pinned.get_pinned_post(model_id)
@@ -307,6 +325,7 @@ def process_pinned_posts(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
+@space_checker
 def process_profile(username) -> list:
     with stdout.lowstdout():
         user_profile = profile.scrape_profile(username)
@@ -328,6 +347,7 @@ def process_profile(username) -> list:
         return output
 
 
+@space_checker
 def process_all_paid():
     with stdout.lowstdout():
         paid_content = paid.get_all_paid_posts()
@@ -396,6 +416,7 @@ def process_all_paid():
         return output
 
 
+@space_checker
 def process_labels(model_id, username):
     with stdout.lowstdout():
         labels_ = labels_api.get_labels(model_id)
@@ -443,6 +464,7 @@ def process_labels(model_id, username):
         return [item for sublist in output for item in sublist]
 
 
+@space_checker
 def select_areas():
     args = args_.getargs()
     if not args_.getargs().scrape_paid and len(args_.getargs().posts or []) == 0:
