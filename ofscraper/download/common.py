@@ -51,10 +51,10 @@ from ofscraper.classes.multiprocessprogress import MultiprocessProgress as Multi
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
-attempt = contextvars.ContextVar("attempt")
-attempt2 = contextvars.ContextVar("attempt")
-total_count = contextvars.ContextVar("total")
-total_count2 = contextvars.ContextVar("total")
+attempt = contextvars.ContextVar("attempt", default=0)
+attempt2 = contextvars.ContextVar("attempt2", default=0)
+total_count = contextvars.ContextVar("total", default=0)
+total_count2 = contextvars.ContextVar("total2", default=0)
 innerlog = contextvars.ContextVar("innerlog")
 pipe = None
 log = None
@@ -231,33 +231,26 @@ async def size_checker(path, ele, total, name=None):
         raise Exception(s)
 
 
-def path_to_file_helper(filename, ele, path, logout=False):
-    if logout:
-        log.debug(
-            f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {filename}"
-        )
-    if logout:
-        log.debug(
-            f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(path,f'{filename}')}"
-        )
-    path_to_file = paths.truncate(pathlib.Path(path, f"{filename}"))
-    if logout:
-        log.debug(
-            f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {path_to_file}"
-        )
-    return path_to_file
+def path_to_file_logger(placeholderObj, ele):
+    log.debug(
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {placeholderObj.filename}"
+    )
+    log.debug(
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(placeholderObj.mediadir,f'{placeholderObj.filename}')}"
+    )
+    log.debug(
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {placeholderObj.trunicated_filename}"
+    )
+
+
+def temp_file_logger(placeholderObj, ele):
+    log.debug(
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {placeholderObj.tempfilename}"
+    )
 
 
 async def check_forced_skip(ele, path_to_file, *args):
     total = sum(map(lambda x: int(x), args))
-
-    file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(
-        config_.read_config()
-    )
-    file_size_min = args_.getargs().size_min or config_.get_filesize_limit(
-        config_.read_config()
-    )
-
     if total == 0:
         if ele.id:
             await operations.update_media_table(
@@ -268,6 +261,12 @@ async def check_forced_skip(ele, path_to_file, *args):
                 downloaded=path_to_file.exists(),
             )
         return ele.mediatype, 0
+    file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(
+        config_.read_config()
+    )
+    file_size_min = args_.getargs().size_min or config_.get_filesize_limit(
+        config_.read_config()
+    )
     if int(file_size_limit) > 0 and int(total) > int(file_size_limit):
         log.debug(f"{get_medialog(ele)} over size limit")
         return "forced_skipped", 0
@@ -276,14 +275,14 @@ async def check_forced_skip(ele, path_to_file, *args):
         return "forced_skipped", 0
 
 
-async def metadata(c, ele, path, username, model_id, filename=None, path_to_file=None):
+async def metadata(c, ele, username, model_id, path_to_file=None):
     log.info(
         f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
     )
     data = await asyncio.get_event_loop().run_in_executor(
         cache_thread, partial(cache.get, f"{ele.id}_headers")
     )
-    if filename and path_to_file:
+    if path_to_file:
         if ele.id:
             await operations.update_media_table(
                 ele,
@@ -298,14 +297,14 @@ async def metadata(c, ele, path, username, model_id, filename=None, path_to_file
         )
     if data and data.get("content-length"):
         content_type = data.get("content-type").split("/")[-1]
-        filename = placeholder.Placeholders().createfilename(
-            ele, username, model_id, content_type
-        )
-        path_to_file = paths.truncate(pathlib.Path(path, f"{filename}"))
+        placeholderObj = placeholder.Placeholders()
+        placeholderObj.getDirs(ele, username, model_id, create=False)
+        placeholderObj.createfilename(ele, username, model_id, content_type)
+        placeholderObj.set_trunicated()
         if ele.id:
             await operations.update_media_table(
                 ele,
-                filename=path_to_file,
+                filename=placeholderObj.trunicated_filename,
                 model_id=model_id,
                 username=username,
                 downloaded=pathlib.Path(path_to_file).exists(),
@@ -322,13 +321,13 @@ async def metadata(c, ele, path, username, model_id, filename=None, path_to_file
                 reraise=True,
             ):
                 with _:
-                    return await metadata_helper(c, ele, path, username, model_id)
+                    return await metadata_helper(c, ele, username, model_id)
         except Exception as E:
             raise E
 
 
 @sem_wrapper
-async def metadata_helper(c, ele, path, username, model_id):
+async def metadata_helper(c, ele, username, model_id):
     url = ele.url
     path_to_file = None
     filename = None
@@ -352,10 +351,11 @@ async def metadata_helper(c, ele, path, username, model_id):
                 content_type = "mp4"
             if not content_type and ele.mediatype.lower() == "images":
                 content_type = "jpg"
-            filename = placeholder.Placeholders().createfilename(
-                ele, username, model_id, content_type
-            )
-            path_to_file = path_to_file_helper(filename, ele, path, logout=True)
+            placeholderObj = placeholder.Placeholders()
+            placeholderObj.getDirs(ele, username, model_id, create=False)
+            placeholderObj.createfilename(ele, username, model_id, content_type)
+            placeholderObj.set_trunicated()
+            path_to_file_logger(filename, ele)
 
         else:
             r.raise_for_status()
@@ -449,3 +449,10 @@ def setDirectoriesDate():
 
 def get_item_total(item):
     return item["path"].absolute().stat().st_size
+
+
+def alt_attempt_get(item):
+    if item["type"] == "video":
+        return attempt
+    if item["type"] == "audio":
+        return attempt2

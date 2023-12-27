@@ -332,7 +332,10 @@ def get_after(model_id, username):
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[-1])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return operations.get_last_timeline_date(model_id=model_id, username=username)
+        return (
+            operations.get_last_timeline_date(model_id=model_id, username=username)
+            - 1000
+        )
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"

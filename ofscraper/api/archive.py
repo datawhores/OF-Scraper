@@ -145,7 +145,7 @@ async def scrape_archived_posts(
 
 
 @run
-async def get_archived_media(model_id, username, after=None):
+async def get_archived_media(model_id, username, forced_after=None, rescan=None):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         cache = Cache(
@@ -173,7 +173,7 @@ async def get_archived_media(model_id, username, after=None):
         ):
             async with sessionbuilder.sessionBuilder() as c:
                 if not args_.getargs().no_cache:
-                    oldarchived = operations.get_archived_postdates(
+                    oldarchived = operations.get_archived_postinfo(
                         model_id=model_id, username=username
                     )
                 else:
@@ -189,12 +189,19 @@ async def get_archived_media(model_id, username, after=None):
                 )
                 log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
                 oldarchived = list(filter(lambda x: x != None, oldarchived))
-                postedAtArray = sorted(oldarchived)
-                if after == None:
-                    after = get_after(model_id, username)
-                log.debug(f"setting after for archive to {after} for {username}")
+                postedAtArray = sorted(oldarchived, key=lambda x: x[0])
+                after = after = (
+                    0 if rescan else forced_after or get_after(model_id, username)
+                )
+                log.info(
+                    f"""
+Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+[yellow]Hint: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
+                """
+                )
                 filteredArray = (
-                    list(filter(lambda x: x >= after, postedAtArray))
+                    list(filter(lambda x: x[0] >= after, postedAtArray))
                     if len(postedAtArray) > 0
                     else []
                 )
@@ -211,7 +218,9 @@ async def get_archived_media(model_id, username, after=None):
                                 c,
                                 model_id,
                                 job_progress,
-                                required_ids=set(splitArrays[0]),
+                                required_ids=set(
+                                    list(map(lambda x: x[0], splitArrays[0]))
+                                ),
                                 timestamp=args_.getargs().after.float_timestamp
                                 if args_.getargs().after
                                 else None,
@@ -225,8 +234,10 @@ async def get_archived_media(model_id, username, after=None):
                                     c,
                                     model_id,
                                     job_progress,
-                                    required_ids=set(splitArrays[i]),
-                                    timestamp=splitArrays[i - 1][-1],
+                                    required_ids=set(
+                                        list(map(lambda x: x[0], splitArrays[i]))
+                                    ),
+                                    timestamp=splitArrays[i - 1][-1][0],
                                 )
                             )
                         )
@@ -236,7 +247,10 @@ async def get_archived_media(model_id, username, after=None):
                     tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
-                                c, model_id, job_progress, timestamp=splitArrays[-2][-1]
+                                c,
+                                model_id,
+                                job_progress,
+                                timestamp=splitArrays[-2][-1][0],
                             )
                         )
                     )
@@ -288,28 +302,6 @@ async def get_archived_media(model_id, username, after=None):
         )
         log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
         if setCache and not args_.getargs().after:
-            newcache = {}
-            for post in oldarchived + list(
-                map(
-                    lambda x: {
-                        "id": x.get("id"),
-                        "postedAtPrecise": x.get("postedAtPrecise"),
-                    },
-                    unduped.values(),
-                )
-            ):
-                id = post["id"]
-                if newcache.get(id):
-                    continue
-                newcache[id] = {
-                    "id": post.get("id"),
-                    "postedAtPrecise": post.get("postedAtPrecise"),
-                }
-            cache.set(
-                f"archived_{model_id}",
-                list(newcache.values()),
-                expire=constants.RESPONSE_EXPIRY,
-            )
             newCheck = {}
             for post in cache.get(f"archived_check_{model_id}", []) + list(
                 unduped.values()
@@ -321,55 +313,33 @@ async def get_archived_media(model_id, username, after=None):
                 expire=constants.DAY_SECONDS,
             )
             cache.close()
-        if setCache:
-            lastpost = cache.get(f"archived_{model_id}_lastpost")
-            post = sorted(newcache.values(), key=lambda x: x.get("postedAtPrecise"))
-            if len(post) > 0:
-                post = post[-1]
-                if not lastpost:
-                    cache.set(
-                        f"archived_{model_id}_lastpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-                if lastpost and float(post["postedAtPrecise"]) > lastpost[0]:
-                    cache.set(
-                        f"archived_{model_id}_lastpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-        if setCache and after == 0:
-            firstpost = cache.get(f"archived_{model_id}_firstpost")
-            post = sorted(newcache.values(), key=lambda x: x.get("postedAtPrecise"))
-            if len(post) > 0:
-                post = post[0]
-                if not firstpost:
-                    cache.set(
-                        f"archived_{model_id}_firstpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
-                if firstpost and float(post["postedAtPrecise"]) < firstpost[0]:
-                    cache.set(
-                        f"archived_{model_id}_firstpost",
-                        (float(post["postedAtPrecise"]), post["id"]),
-                    )
-                    cache.close()
 
     return list(unduped.values())
 
 
 def get_after(model_id, username):
-    return 0
-    # cache = Cache(getcachepath(),disk=config_.get_cache_mode(config_.read_config()))
-    # if args_.getargs().after:
-    #     return args_.getargs().after.float_timestamp
-    # if not cache.get(f"archived_{model_id}_last post") or not cache.get(f"archived_{model_id}_firstpost"):
-    #     log.debug("initial archived to 0")
-    #     return 0
-    # if len(list(filter(lambda x:x[-2]==0,operations.get_archived_media(model_id=model_id,username=username))))==0:
-    #     log.debug("set initial archived to last post")
-    #     return cache.get(f"archived_{model_id}_lastpost")[0]
-    # else:
-    #     log.debug("archived archived to 0")
-    #     return 0
+    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
+    if args_.getargs().after:
+        return args_.getargs().after.float_timestamp
+    curr = operations.get_archived_media(model_id=model_id, username=username)
+    if cache.get(f"{model_id}_scrape_timeline"):
+        log.debug(
+            "Used after previously scraping entire timeline to make sure content is not missing"
+        )
+        return 0
+    elif len(curr) == 0:
+        log.debug("Setting date to zero because database is empty")
+        return 0
+    missing_items = list(filter(lambda x: x[-2] == 0, curr))
+    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[-1])))
+    if len(missing_items) == 0:
+        log.debug("Using last db date because,all downloads in db marked as downloaded")
+        return (
+            operations.get_last_archived_date(model_id=model_id, username=username)
+            - 1000
+        )
+    else:
+        log.debug(
+            f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
+        )
+        return arrow.get(missing_items[0][-1]).float_timestamp - 1000

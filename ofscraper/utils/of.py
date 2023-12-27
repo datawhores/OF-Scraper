@@ -224,7 +224,12 @@ def process_timeline_posts(model_id, username, individual=False):
 
 def process_archived_posts(model_id, username):
     with stdout.lowstdout():
-        archived_posts = archive.get_archived_media(model_id, username)
+        cache = Cache(
+            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
+        )
+        archived_posts = archive.get_archived_media(
+            model_id, username, rescan=cache.get("{model_id}_scrape_archived")
+        )
         archived_posts = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, "archived"), archived_posts
@@ -260,6 +265,7 @@ def process_archived_posts(model_id, username):
             username=username,
             downloaded=False,
         )
+        cache.set("{model_id}_scrape_archived", args_.getargs().after is not None)
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 

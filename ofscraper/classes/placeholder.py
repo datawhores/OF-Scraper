@@ -17,12 +17,18 @@ log = logging.getLogger("shared")
 class Placeholders:
     def __init__(self) -> None:
         None
+        self._filename = None
+        self._mediadir = None
+        self._metadata = None
+        self._tempdir = None
+        self._trunicated_filename = None
+        self._tempfilename = None
 
     def wrapper(f):
-        def wrapper(*args):
+        def wrapper(*args, **kwargs):
             args[0]._variables = {}
             args[0].create_variables()
-            return f(args[0], *args[1:])
+            return f(args[0], *args[1:], **kwargs)
 
         return wrapper
 
@@ -85,7 +91,9 @@ class Placeholders:
                 **self._variables
             )
         data_path = pathlib.Path(formatStr, "user_data.db")
-        data_path = os.path.normpath(data_path)
+        data_path = pathlib.Path(os.path.normpath(data_path))
+        self._metadata = data_path
+        self._metadata.parent.mkdir(parents=True, exist_ok=True)
         log.trace(f"final database path {data_path}")
         return pathlib.Path(data_path)
 
@@ -105,8 +113,20 @@ class Placeholders:
         )
 
     @wrapper
-    def getmediadir(self, ele, username, model_id):
-        root = pathlib.Path(config_.get_save_location(config_.read_config()))
+    def gettempDir(self, ele, username, model_id, create=True):
+        self._tempdir = self.getmediadir(
+            ele,
+            username,
+            model_id,
+            root=(config_.get_TempDir(config_.read_config())),
+            create=create,
+        )
+        self._tempdir.mkdir(parents=True, exist_ok=True)
+        return self._tempdir
+
+    @wrapper
+    def getmediadir(self, ele, username, model_id, root=None, create=True):
+        root = pathlib.Path(root or config_.get_save_location(config_.read_config()))
         self._variables.update({"username": username})
         user_name = username
         self._variables.update({"user_name": user_name})
@@ -173,6 +193,8 @@ class Placeholders:
             )
         final_path = pathlib.Path(os.path.normpath(root / downloadDir))
         log.trace(f"final mediadir path {final_path}")
+        self._mediadir = final_path
+        self._mediadir.mkdir(parents=create, exist_ok=True)
         return final_path
 
     @wrapper
@@ -255,7 +277,65 @@ class Placeholders:
                     **self._variables
                 )
         log.trace(f"final filename path {out}")
+        self._filename = out
         return out
+
+    def set_trunicated(self):
+        self._trunicated_filename = paths.truncate(
+            pathlib.Path(self.mediadir, f"{self.filename}")
+        )
+
+    def getDirs(self, ele, username, model_id, create=True):
+        self.gettempDir(ele, username, model_id, create=create)
+        self.getmediadir(ele, username, model_id, create=create)
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @filename.setter
+    def filename(self, input):
+        self._filename = input
+
+    @property
+    def mediadir(self):
+        return self._mediadir
+
+    @mediadir.setter
+    def mediadir(self, input):
+        self._mediadir = input
+
+    @property
+    def tempdir(self):
+        return self._tempdir
+
+    @tempdir.setter
+    def tempdir(self, input):
+        self._tempdir = input
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, input):
+        self._matadata = input
+
+    @property
+    def trunicated_filename(self):
+        return self._trunicated_filename
+
+    @trunicated_filename.setter
+    def trunicated_filename(self, input):
+        self._trunicated_filename = input
+
+    @property
+    def tempfilename(self):
+        return self._tempfilename
+
+    @tempfilename.setter
+    def tempfilename(self, input):
+        self._tempfilename = paths.truncate(pathlib.Path(self._tempdir, input))
 
     def check_uniquename(self):
         format = config_.get_fileformat(config_.read_config())

@@ -130,6 +130,7 @@ PROGRESS_DEFAULT = False
 APPEND_DEFAULT = True
 AVATAR_DEFAULT = True
 TEXT_TYPE_DEFAULT = "letter"
+TEMP_FOLDER_DEFAULT = None
 RESPONSE_TYPE_DEFAULT = {
     "message": "Messages",
     "timeline": "Posts",

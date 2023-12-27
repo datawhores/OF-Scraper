@@ -117,6 +117,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "sanitize_text": get_sanitizeDB(config),
                 "avatar": get_avatar(config),
                 "text_type": get_textType(config),
+                "temp_dir": get_TempDir(config),
             },
             "responsetype": {
                 "timeline": get_timeline_responsetype(config),
@@ -675,3 +676,13 @@ def get_textType(config):
         "text_type"
     )
     return value if value in ["letter", "word"] else constants.TEXT_TYPE_DEFAULT
+
+
+def get_TempDir(config):
+    if config is None:
+        return constants.TEMP_FOLDER_DEFAULT
+    return (
+        config.get("temp_dir")
+        or config.get("advanced_options", {}).get("temp_dir")
+        or constants.TEMP_FOLDER_DEFAULT
+    )

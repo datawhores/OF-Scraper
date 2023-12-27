@@ -9,18 +9,15 @@ r"""
 """
 import asyncio
 import logging
-import pathlib
 import traceback
 
 from rich.live import Live
 
-import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.download.common as common
 import ofscraper.utils.console as console
 import ofscraper.utils.exit as exit
-import ofscraper.utils.paths as paths
 import ofscraper.utils.stdout as stdout
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common import (
@@ -141,31 +138,24 @@ async def process_dicts(username, model_id, medialist):
 
 async def download(c, ele, model_id, username, progress):
     async with common.maxfile_sem:
-        with paths.set_directory(
-            placeholder.Placeholders().getmediadir(ele, username, model_id)
-        ):
-            try:
-                if ele.url:
-                    return await main_download(
-                        c,
-                        ele,
-                        pathlib.Path(".").absolute(),
-                        username,
-                        model_id,
-                        progress,
-                    )
-                elif ele.mpd:
-                    return await alt_download(
-                        c,
-                        ele,
-                        pathlib.Path(".").absolute(),
-                        username,
-                        model_id,
-                        progress,
-                    )
-            except Exception as E:
-                common.log.debug(f"{get_medialog(ele)} exception {E}")
-                common.log.debug(
-                    f"{get_medialog(ele)} exception {traceback.format_exc()}"
+        try:
+            if ele.url:
+                return await main_download(
+                    c,
+                    ele,
+                    username,
+                    model_id,
+                    progress,
                 )
-                return "skipped", 0
+            elif ele.mpd:
+                return await alt_download(
+                    c,
+                    ele,
+                    username,
+                    model_id,
+                    progress,
+                )
+        except Exception as E:
+            common.log.debug(f"{get_medialog(ele)} exception {E}")
+            common.log.debug(f"{get_medialog(ele)} exception {traceback.format_exc()}")
+            return "skipped", 0

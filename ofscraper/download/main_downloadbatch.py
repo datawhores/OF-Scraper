@@ -34,7 +34,7 @@ from ofscraper.download.common import (
     check_forced_skip,
     get_medialog,
     moveHelper,
-    path_to_file_helper,
+    path_to_file_logger,
     sem_wrapper,
     set_cache_helper,
     set_time,
@@ -43,12 +43,11 @@ from ofscraper.download.common import (
 from ofscraper.utils.run_async import run
 
 
-async def main_download(c, ele, path, username, model_id):
-    path_to_file = None
+async def main_download(c, ele, username, model_id):
     common.innerlog.get().debug(
         f"{get_medialog(ele)} Downloading with normal downloader"
     )
-    result = list(await main_download_downloader(c, ele, path, username, model_id))
+    result = list(await main_download_downloader(c, ele, username, model_id))
     if len(result) == 2 and result[-1] == 0:
         await operations.update_media_table(
             ele,
@@ -74,7 +73,7 @@ async def main_download(c, ele, path, username, model_id):
         f"{get_medialog(ele)} renaming {pathlib.Path(temp_path).absolute()} -> {path_to_file}"
     )
     moveHelper(temp_path, path_to_file, ele, common.innerlog.get())
-    addLocalDir(path)
+    addLocalDir(placeholder.Placeholders().getmediadir(ele, username, model_id))
 
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
@@ -97,7 +96,7 @@ async def main_download(c, ele, path, username, model_id):
     return ele.mediatype, total
 
 
-async def main_download_downloader(c, ele, path, username, model_id):
+async def main_download_downloader(c, ele, username, model_id):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(constants.NUM_TRIES),
@@ -106,42 +105,56 @@ async def main_download_downloader(c, ele, path, username, model_id):
         ):
             with _:
                 try:
+                    placeholderObj = placeholder.Placeholders()
+                    placeholderObj.getDirs(ele, username, model_id)
+                    placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
                     data = await asyncio.get_event_loop().run_in_executor(
                         common.cache_thread,
                         partial(common.cache.get, f"{ele.id}_headers"),
                     )
-                    temp = paths.truncate(
-                        pathlib.Path(path, f"{ele.filename}_{ele.id}.part")
-                    )
                     if data and data.get("content-length"):
                         content_type = data.get("content-type").split("/")[-1]
                         total = int(data.get("content-length"))
-                        filename = placeholder.Placeholders().createfilename(
+                        placeholderObj.createfilename(
                             ele, username, model_id, content_type
                         )
-                        path_to_file = paths.truncate(pathlib.Path(path, f"{filename}"))
+                        placeholderObj.set_trunicated()
                         resume_size = (
                             0
-                            if not pathlib.Path(temp).exists()
-                            else pathlib.Path(temp).absolute().stat().st_size
+                            if not pathlib.Path(placeholderObj.tempfilename).exists()
+                            else pathlib.Path(placeholderObj.tempfilename)
+                            .absolute()
+                            .stat()
+                            .st_size
                         )
-                        check1 = await check_forced_skip(ele, path_to_file, total)
+                        check1 = await check_forced_skip(
+                            ele, placeholderObj.trunicated_filename, total
+                        )
                         if check1:
                             if ele.id:
                                 await operations.update_media_table(
                                     ele,
-                                    filename=path_to_file,
+                                    filename=placeholderObj.trunicated_filename,
                                     model_id=model_id,
                                     username=username,
-                                    downloaded=path_to_file.exists(),
+                                    downloaded=placeholderObj.trunicated_filename.exists(),
                                 )
                             return check1
                         elif total == resume_size:
-                            return total, temp, path_to_file
+                            path_to_file_logger(placeholderObj, ele)
+                            return (
+                                total,
+                                placeholderObj.tempfilename,
+                                placeholderObj.trunicated_filename,
+                            )
                         elif total < resume_size:
-                            pathlib.Path(temp).unlink(missing_ok=True)
+                            pathlib.Path(placeholderObj.tempfilename).unlink(
+                                missing_ok=True
+                            )
                     else:
-                        paths.truncate(pathlib.Path(temp)).unlink(missing_ok=True)
+                        paths.truncate(
+                            pathlib.Path(placeholderObj.tempfilename)
+                        ).unlink(missing_ok=True)
                 except Exception as E:
                     raise E
     except Exception as E:
@@ -157,7 +170,7 @@ async def main_download_downloader(c, ele, path, username, model_id):
                 try:
                     total = int(data.get("content-length")) if data else None
                     return await main_download_sendreq(
-                        c, ele, path, username, model_id, total
+                        c, ele, placeholderObj, username, model_id, total
                     )
                 except Exception as E:
                     raise E
@@ -166,26 +179,25 @@ async def main_download_downloader(c, ele, path, username, model_id):
 
 
 @sem_wrapper
-async def main_download_sendreq(c, ele, path, username, model_id, total):
+async def main_download_sendreq(c, ele, placeholderObj, username, model_id, total):
     common.attempt.set(common.attempt.get(0) + 1)
     total = total if common.attempt.get() == 1 else None
     try:
-        temp = paths.truncate(pathlib.Path(path, f"{ele.filename}_{ele.id}.part"))
         common.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] download temp path {temp}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
         )
         if not total:
-            temp.unlink(missing_ok=True)
+            placeholderObj.tempfilename.unlink(missing_ok=True)
         resume_size = (
             0
-            if not pathlib.Path(temp).exists()
-            else pathlib.Path(temp).absolute().stat().st_size
+            if not pathlib.Path(placeholderObj.tempfilename).exists()
+            else pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size
         )
         if not total or total > resume_size:
             url = ele.url
             headers = (
                 None
-                if not pathlib.Path(temp).exists()
+                if not pathlib.Path(placeholderObj.tempfilename).exists()
                 else {"Range": f"bytes={resume_size}-{total}"}
             )
             async with c.requests(url=url, headers=headers)() as r:
@@ -197,20 +209,30 @@ async def main_download_sendreq(c, ele, path, username, model_id, total):
                         content_type = "mp4"
                     if not content_type and ele.mediatype.lower() == "images":
                         content_type = "jpg"
-                    filename = placeholder.Placeholders().createfilename(
-                        ele, username, model_id, content_type
+                    if not placeholderObj.filename:
+                        placeholderObj.createfilename(
+                            ele, username, model_id, content_type
+                        )
+                        placeholderObj.set_trunicated()
+                    path_to_file_logger(placeholderObj, ele)
+                    check = await check_forced_skip(
+                        ele, placeholderObj.trunicated_filename, total
                     )
-                    path_to_file = path_to_file_helper(
-                        filename, ele, path, common.innerlog.get()
-                    )
-                    check = await check_forced_skip(ele, path_to_file, total)
                     if check:
-                        return 0, temp, path_to_file
+                        return (
+                            0,
+                            placeholderObj.tempfilename,
+                            placeholderObj.trunicated_filename,
+                        )
                     elif total == resume_size:
-                        return total, temp, path_to_file
+                        return (
+                            total,
+                            placeholderObj.tempfilename,
+                            placeholderObj.trunicated_filename,
+                        )
                     elif total < resume_size:
-                        temp.unlink(missing_ok=True)
-                    await main_download_datahandler(r, ele, total, temp, path_to_file)
+                        placeholderObj.tempfilename.unlink(missing_ok=True)
+                    await main_download_datahandler(r, ele, total, placeholderObj)
 
                 else:
                     common.innerlog.get().debug(
@@ -227,8 +249,8 @@ async def main_download_sendreq(c, ele, path, username, model_id, total):
                     common.cache_thread,
                     partial(common.cache.touch, f"{ele.filename}_headers", 1),
                 )
-                await size_checker(temp, ele, total)
-        return total, temp, path_to_file
+                await size_checker(placeholderObj.tempfilename, ele, total)
+        return total, placeholderObj.tempfilename, placeholderObj.trunicated_filename
     except OSError as E:
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
@@ -251,8 +273,8 @@ async def main_download_sendreq(c, ele, path, username, model_id, total):
         raise E
 
 
-async def main_download_datahandler(r, ele, total, temp, path_to_file):
-    pathstr = str(path_to_file)
+async def main_download_datahandler(r, ele, total, placeholderObj):
+    pathstr = str(placeholderObj.trunicated_filename)
     downloadprogress = (
         config_.get_show_downloadprogress(config_.read_config())
         or args_.getargs().downloadbars
@@ -271,7 +293,7 @@ async def main_download_datahandler(r, ele, total, temp, path_to_file):
             }
         )
 
-        fileobject = await aiofiles.open(temp, "ab").__aenter__()
+        fileobject = await aiofiles.open(placeholderObj.tempfilename, "ab").__aenter__()
         await common.pipe.coro_send(
             {"type": "update", "args": (ele.id,), "visible": True}
         )
@@ -280,7 +302,7 @@ async def main_download_datahandler(r, ele, total, temp, path_to_file):
             if downloadprogress:
                 count = count + 1
             common.innerlog.get().trace(
-                f"{get_medialog(ele)} Download:{(pathlib.Path(temp).absolute().stat().st_size)}/{total}"
+                f"{get_medialog(ele)} Download:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
             if count == constants.CHUNK_ITER:
@@ -288,7 +310,12 @@ async def main_download_datahandler(r, ele, total, temp, path_to_file):
                     {
                         "type": "update",
                         "args": (ele.id,),
-                        "completed": (pathlib.Path(temp).absolute().stat().st_size),
+                        "completed": (
+                            pathlib.Path(placeholderObj.tempfilename)
+                            .absolute()
+                            .stat()
+                            .st_size
+                        ),
                     }
                 )
                 count = 0

@@ -60,7 +60,12 @@ def cleanup():
         or False
     ):
         log.info("Cleaning up temp files\n\n")
-        root = pathlib.Path((config_.get_save_location(config_.read_config())))
+        root = pathlib.Path(
+            config_.get_TempDir(
+                config_.read_config()
+                or config_.get_save_location(config_.read_config())
+            )
+        )
         for file in list(
             filter(
                 lambda x: re.search("\.part$|^temp_", str(x)) != None, root.glob("**/*")

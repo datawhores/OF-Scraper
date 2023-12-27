@@ -2,7 +2,6 @@ import asyncio
 import logging
 import logging.handlers
 import os
-import pathlib
 import platform
 import random
 import threading
@@ -15,7 +14,6 @@ import psutil
 from aioprocessing import AioPipe
 from rich.live import Live
 
-import ofscraper.classes.placeholder as placeholder
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.download.common as common
@@ -25,7 +23,6 @@ import ofscraper.utils.console as console
 import ofscraper.utils.exit as exit
 import ofscraper.utils.logger as logger
 import ofscraper.utils.manager as manager_
-import ofscraper.utils.paths as paths
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
@@ -423,17 +420,10 @@ async def download(c, ele, model_id, username):
         )
         common.innerlog.set(templog_)
         try:
-            with paths.set_directory(
-                placeholder.Placeholders().getmediadir(ele, username, model_id)
-            ):
-                if ele.url:
-                    return await main_download(
-                        c, ele, pathlib.Path(".").absolute(), username, model_id
-                    )
-                elif ele.mpd:
-                    return await alt_download(
-                        c, ele, pathlib.Path(".").absolute(), username, model_id
-                    )
+            if ele.url:
+                return await main_download(c, ele, username, model_id)
+            elif ele.mpd:
+                return await alt_download(c, ele, username, model_id)
         except Exception as e:
             common.innerlog.get().debug(f"{get_medialog(ele)} exception {e}")
             common.innerlog.get().debug(
