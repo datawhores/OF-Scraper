@@ -407,29 +407,19 @@ def config_prompt_advanced(config_) -> dict:
     cache = Cache(
         paths.getcachepath(), disk=config.get_cache_mode(config.read_config())
     )
-    if (
-        not cache.get("speed_download")
-        or promptClasses.getChecklistSelection(
-            choices=[Choice(True, "Yes"), Choice(False, "No")],
-            message="Re-run speedtest",
-            long_instruction="Download Sems max value is based on calculated speed",
-            default=False,
-        )
-        == "Yes"
-    ):
-        cache.set("speed_download", get_speed(threads))
     max_allowed = cache.get("speed_download")
-    cache.close()
-
+    if not cache.get("speed_download") or promptClasses.getChecklistSelection(
+        choices=[Choice(True, "Yes"), Choice(False, "No")],
+        message="Re-run speedtest",
+        long_instruction="Download Sems max value is based on calculated speed",
+        default=False,
+    ):
+        speed = get_speed(threads)
+        max_allowed = speed
+        cache.set("speed_download", speed)
+        cache.close()
     new_settings = promptClasses.batchConverter(
         *[
-            {
-                "type": "list",
-                "name": "avatars",
-                "message": "Show Avatars in Log",
-                "default": config.get_avatar(config_),
-                "choices": [Choice(True, "Yes"), Choice(False, "No")],
-            },
             {
                 "type": "number",
                 "name": "download-sem",
@@ -439,6 +429,13 @@ def config_prompt_advanced(config_) -> dict:
                 "validate": EmptyInputValidator(),
                 "long_instruction": f"Value can be 1-{max_allowed}",
                 "default": config.get_download_semaphores(config_),
+            },
+            {
+                "type": "list",
+                "name": "avatars",
+                "message": "Show Avatars in Log",
+                "default": config.get_avatar(config_),
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "number",
@@ -507,7 +504,7 @@ def config_prompt_advanced(config_) -> dict:
                 "message": "Enable auto file resume",
                 "long_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
                 "default": config.get_part_file_clean(config_),
-                "choices": [Choice(False, "Yes"), Choice(True, "No")],
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "input",
@@ -534,8 +531,15 @@ def config_prompt_advanced(config_) -> dict:
                 "long_instruction": "Be careful if turning this on this only effects file_format,metadata, and dir_format",
             },
             {
+                "type": "filepath",
+                "name": "temp_dir",
+                "message": "Location to store temp file",
+                "default": config.get_TempDir(config_) or "",
+                "long_instruction": "Leave empty to use default location",
+            },
+            {
                 "type": "list",
-                "name": "appendlog",
+                "name": "",
                 "message": "append logs into daily log files",
                 "default": config.get_appendlog(config_),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
@@ -1338,10 +1342,11 @@ def get_speed(threads):
     speed = system.speed_test()
     thread_count = int(threads["threads"])
     if int(thread_count) == 0:
-        max_allowed = max((speed * 0.6) // constants.maxChunkSize, 3)
+        max_allowed = min(max((speed * 0.6) // constants.maxChunkSize, 3) * 2, 25)
     else:
         max_allowed = min(
-            int(max(((speed * 0.6) / thread_count) // constants.maxChunkSizeB, 3)), 25
+            int(max(((speed * 0.6) / thread_count) // constants.maxChunkSizeB, 3) * 2),
+            25,
         )
     return max_allowed
 
