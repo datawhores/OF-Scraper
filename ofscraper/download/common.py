@@ -309,10 +309,12 @@ async def metadata(c, ele, username, model_id, path_to_file=None):
                 filename=placeholderObj.trunicated_filename,
                 model_id=model_id,
                 username=username,
-                downloaded=pathlib.Path(path_to_file).exists(),
+                downloaded=pathlib.Path(placeholderObj.trunicated_filename).exists(),
             )
         return (
-            ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped",
+            ele.mediatype
+            if pathlib.Path(placeholderObj.trunicated_filename).exists()
+            else "forced_skipped",
             0,
         )
     else:
@@ -330,9 +332,7 @@ async def metadata(c, ele, username, model_id, path_to_file=None):
 
 @sem_wrapper
 async def metadata_helper(c, ele, username, model_id):
-    url = ele.url
-    path_to_file = None
-    filename = None
+    url = ele.url or ele.mpd
     attempt.set(attempt.get(0) + 1)
     async with c.requests(url=url, headers=None)() as r:
         if r.ok:
@@ -357,19 +357,24 @@ async def metadata_helper(c, ele, username, model_id):
             placeholderObj.getDirs(ele, username, model_id, create=False)
             placeholderObj.createfilename(ele, username, model_id, content_type)
             placeholderObj.set_trunicated()
-            path_to_file_logger(filename, ele)
+            path_to_file_logger(placeholderObj, ele)
 
         else:
             r.raise_for_status()
     if ele.id:
         await operations.update_media_table(
             ele,
-            filename=path_to_file,
+            filename=placeholderObj.trunicated_filename,
             model_id=model_id,
             username=username,
-            downloaded=pathlib.Path(path_to_file).exists(),
+            downloaded=pathlib.Path(placeholderObj.trunicated_filename).exists(),
         )
-    return ele.mediatype if pathlib.Path(path_to_file).exists() else "forced_skipped", 0
+    return (
+        ele.mediatype
+        if pathlib.Path(placeholderObj.trunicated_filename).exists()
+        else "forced_skipped",
+        0,
+    )
 
 
 def convert_num_bytes(num_bytes: int) -> str:
