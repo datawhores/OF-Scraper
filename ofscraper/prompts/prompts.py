@@ -1109,7 +1109,7 @@ def modify_filters_prompt(args):
     args.last_seen = answer["last-seen"]
     if args.free_trial != "yes":
         args = modify_current_price(args)
-    if args.free_trial != "yes" and decide_price_prompt() == "yes":
+    if args.free_trial != "yes" and decide_price_prompt() == "Yes":
         args = modify_other_prices(args)
     return args
 
