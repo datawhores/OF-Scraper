@@ -84,7 +84,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "textlength": get_textlength(config),
                 "space-replacer": get_spacereplacer(config),
                 "date": get_date(config),
-                "text_type": get_textType(config),
+                "text_type_default": get_textType(config),
             },
             "download_options": {
                 "file_size_limit": get_filesize_limit(config),
@@ -694,7 +694,9 @@ def get_sanitizeDB(config):
 def get_textType(config):
     if config is None:
         return constants.TEXT_TYPE_DEFAULT
-    value = config.get("text_type") or config.get("file_options", {}).get("text_type")
+    value = config.get("text_type") or config.get("file_options", {}).get(
+        "text_type_default"
+    )
     return value if value in ["letter", "word"] else constants.TEXT_TYPE_DEFAULT
 
 
