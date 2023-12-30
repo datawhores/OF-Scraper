@@ -371,7 +371,7 @@ async def alt_download_downloader(
                 common.attempt.set(common.attempt.get(0) + 1)
                 placeholderObj = placeholder.Placeholders()
                 placeholderObj.gettempDir(ele, username, model_id)
-                placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
+                placeholderObj.tempfilename = f"{item['name']}.part"
                 item["path"] = placeholderObj.tempfilename
                 data = await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
