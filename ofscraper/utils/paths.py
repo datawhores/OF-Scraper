@@ -61,10 +61,8 @@ def cleanup():
     ):
         log.info("Cleaning up temp files\n\n")
         root = pathlib.Path(
-            config_.get_TempDir(
-                config_.read_config()
-                or config_.get_save_location(config_.read_config())
-            )
+            config_.get_TempDir(config_.read_config())
+            or config_.get_save_location(config_.read_config())
         )
         for file in list(
             filter(
