@@ -202,7 +202,7 @@ HIT one of the 'SUBMIT' combinations when your auth syntax is corrected
 
 KEYS
 ===========================================================================
-   SUBMITis not NoneKEYs
+   SUBMIT
    ==============================================================================
    END+ENTER  |  HOME+ENTER   | PAGEUP+ENTER | PAGEDOWN+ENTER | SPACE+ENTER | ESC
    ================================================================================
