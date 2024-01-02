@@ -1,6 +1,5 @@
 # Table-of-contents
 
-- [Intro](#intro)
 - [Description](#description)
 - [Documentation](#documentation)
 - [Feature Requests](#feature-requests)
@@ -16,9 +15,6 @@ command-line tool that lets you download media from OnlyFans and perform bulk ac
 
 ![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
-
-
-# Intro
 
 At its inception, this project emerged as a fork of the original onlyfans-scraper. With invaluable support from the community and consistent script updates, we've undergone substantial architectural changes, resulting in a significantly revamped codebase compared to the original master. While some of these modifications are detailed [HERE](https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md), most are only documented in the commit history.
 
