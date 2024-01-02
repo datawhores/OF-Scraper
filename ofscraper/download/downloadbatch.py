@@ -12,6 +12,7 @@ import aioprocessing
 import more_itertools
 import psutil
 from aioprocessing import AioPipe
+from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -159,21 +160,21 @@ def process_dicts(username, model_id, filtered_medialist):
                     for thread in log_threads:
                         thread.join(timeout=0.1)
                     time.sleep(0.5)
-        log.debug(f"Initial Processes: {processes}")
-        log.debug(f"Initial Number of Processes: {len(processes)}")
-        while True:
-            new_proceess = list(filter(lambda x: x and x.is_alive(), processes))
-            if len(new_proceess) != len(processes):
-                log.debug(f"Remaining Processes: {new_proceess}")
-                log.debug(f"Number of Processes: {len(new_proceess)}")
-            if len(new_proceess) == 0:
-                break
-            processes = new_proceess
-            for process in processes:
-                process.join(timeout=15)
-                if process.is_alive():
-                    process.terminate()
-            time.sleep(0.5)
+                log.debug(f"Initial Processes: {processes}")
+                log.debug(f"Initial Number of Processes: {len(processes)}")
+                while True:
+                    new_proceess = list(filter(lambda x: x and x.is_alive(), processes))
+                    if len(new_proceess) != len(processes):
+                        log.debug(f"Remaining Processes: {new_proceess}")
+                        log.debug(f"Number of Processes: {len(new_proceess)}")
+                    if len(new_proceess) == 0:
+                        break
+                    processes = new_proceess
+                    for process in processes:
+                        process.join(timeout=15)
+                        if process.is_alive():
+                            process.terminate()
+                    time.sleep(0.5)
         overall_progress.remove_task(task1)
         progress_group.renderables[1].height = 0
         setDirectoriesDate()
@@ -202,7 +203,7 @@ def process_dicts(username, model_id, filtered_medialist):
             with exit.DelayedKeyboardInterrupt():
                 raise E
     log.warning(
-        f"[bold]{username}[/bold] ({common.photo_count+common.audio_count+common.video_count} \
+        f"[bold]{username}[/bold] ({format_size(common.total_bytes )}) ({common.photo_count+common.audio_count+common.video_count} \
 downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
 {common.forced_skipped} skipped, {common.skipped} failed)"
     )
@@ -406,6 +407,7 @@ async def process_dicts_split(username, model_id, medialist):
     common.log.handlers[1].queue.put("None")
     if other_thread:
         other_thread.join()
+    common.log.debug("other thread closed")
     await common.pipe.coro_send(common.localDirSet)
     await common.pipe.coro_send(None)
 

@@ -36,6 +36,7 @@ from ofscraper.download.common import (
     downloadspace,
     get_item_total,
     get_medialog,
+    get_url_log,
     metadata,
     moveHelper,
     path_to_file_logger,
@@ -50,7 +51,10 @@ from ofscraper.utils.run_async import run
 async def alt_download(c, ele, username, model_id):
     downloadspace()
     common.innerlog.get().debug(
-        f"{get_medialog(ele)} Downloading with protected media downloader"
+        f"{get_medialog(ele)} Downloading with batch protected media downloader"
+    )
+    common.innerlog.get().debug(
+        f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
     if args_.getargs().metadata:
         sharedPlaceholderObj = placeholder.Placeholders()
@@ -77,27 +81,21 @@ async def alt_download(c, ele, username, model_id):
     for m in [audio, video]:
         m["total"] = get_item_total(m)
 
-    if audio["total"] + video["total"] == 0:
-        await operations.update_media_table(
-            ele,
-            filename=None,
-            model_id=model_id,
-            username=username,
-            downloaded=True,
-        )
-        return ele.mediatype, video["total"] + audio["total"]
+    if (audio["total"] + video["total"]) <= 0:
+        if (audio["total"] + video["total"]) == 0:
+            await operations.update_media_table(
+                ele,
+                filename=None,
+                model_id=model_id,
+                username=username,
+                downloaded=True,
+            )
+        return ele.mediatype, 0
 
     for m in [audio, video]:
         if not isinstance(m, dict):
             return m
-        check1 = await size_checker(m["path"], ele, m["total"])
-        check2 = await check_forced_skip(
-            ele, sharedPlaceholderObj.trunicated_filename, m["total"]
-        )
-        if check1:
-            return check1
-        if check2:
-            return check2
+        await size_checker(m["path"], ele, m["total"])
     for item in [audio, video]:
         item = await keyhelpers.un_encrypt(item, c, ele, common.innerlog.get())
     temp_path = paths.truncate(
@@ -244,11 +242,10 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
                             },
                         ),
                     )
-                    check1 = await check_forced_skip(
-                        ele, sharedPlaceholderObj.trunicated_filename, total
-                    )
+                    check1 = await check_forced_skip(ele, total)
                     if check1:
-                        return check1
+                        item["total"] = -1
+                        return item
                     common.innerlog.get().debug(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
                     )
@@ -379,9 +376,7 @@ async def alt_download_downloader(
                 )
                 if data:
                     item["total"] = int(data.get("content-length"))
-                    check1 = await check_forced_skip(
-                        ele, sharedPlaceholderObj.trunicated_filename, item["total"]
-                    )
+                    check1 = await check_forced_skip(ele, item["total"])
                     resume_size = (
                         0
                         if not pathlib.Path(placeholderObj.tempfilename).exists()
@@ -391,7 +386,8 @@ async def alt_download_downloader(
                         .st_size
                     )
                     if check1:
-                        return check1
+                        item["total"] = -1
+                        return item
                     elif item["total"] == resume_size:
                         return item
                     elif item["total"] < resume_size:

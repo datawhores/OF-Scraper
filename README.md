@@ -15,7 +15,6 @@ command-line tool that lets you download media from OnlyFans and perform bulk ac
 
 ![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
-
 At its inception, this project emerged as a fork of the original onlyfans-scraper. With invaluable support from the community and consistent script updates, we've undergone substantial architectural changes, resulting in a significantly revamped codebase compared to the original master. While some of these modifications are detailed [HERE](https://github.com/datawhores/OF-Scraper/blob/main/CHANGES.md), most are only documented in the commit history.
 
 This script has been thoughtfully crafted to facilitate seamless transitions from DIGITALCRIMINALS' script, ensuring robust compatibility and smooth feature migration. Furthermore, it boasts an extensive array of filtering features, empowering users with precise control over the specific content types they aim to scrape
@@ -28,7 +27,7 @@ For detailed instructions on:
 - Running the tool
 - And other pertinent information you might need
 
-[Official Documention](https://of-scraper.gitbook.io/of-scraper) 
+[Official Documention](https://of-scraper.gitbook.io/of-scraper)
 
 <h3>DISCLAIMERS:</h3>
 <ol>
@@ -38,14 +37,14 @@ For detailed instructions on:
     <li>
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
-</ol>   
+</ol>
 
 # Issues
 
 Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
 
-
 # Feature Requests
+
 [ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
 
 # Migrating from DC script
@@ -56,15 +55,15 @@ The inherited metadata files from DIGITALCRIMINALS' script play a crucial role i
 
 For comprehensive guidance on making these adjustments, you can refer to the provided resources
 
-1. [Migration Guide]( https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script)
+1. [Migration Guide](https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script)
 2. [Config Options](https://of-scraper.gitbook.io/of-scraper/config-options)
 3. [Customize Save Path](https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path)
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
 # Discord
-[Discord](https://discord.gg/wN7uxEVHRK)
 
+[Discord](https://discord.gg/wN7uxEVHRK)
 
 # Support
 

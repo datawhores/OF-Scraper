@@ -13,6 +13,7 @@ import math
 import os
 import pathlib
 import platform
+import re
 import shutil
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
@@ -211,6 +212,14 @@ async def update_total(update):
         total_data += update
 
 
+def get_url_log(ele):
+    url = ele.url or ele.mpd
+    url = re.sub("/\w{5}\w+", "/{hidden}", url)
+    if ele.url:
+        url = re.sub(ele.filename, "{hidden}", url)
+    return url
+
+
 async def size_checker(path, ele, total, name=None):
     name = name or ele.filename
     if not pathlib.Path(path).exists():
@@ -252,18 +261,10 @@ def temp_file_logger(placeholderObj, ele, innerlog=None):
     )
 
 
-async def check_forced_skip(ele, path_to_file, *args):
+async def check_forced_skip(ele, *args):
     total = sum(map(lambda x: int(x), args))
     if total == 0:
-        if ele.id:
-            await operations.update_media_table(
-                ele,
-                filename=path_to_file,
-                model_id=ele.post.model_id,
-                username=ele.post.username,
-                downloaded=path_to_file.exists(),
-            )
-        return ele.mediatype, 0
+        return 0
     file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(
         config_.read_config()
     )
@@ -271,11 +272,13 @@ async def check_forced_skip(ele, path_to_file, *args):
         config_.read_config()
     )
     if int(file_size_limit) > 0 and int(total) > int(file_size_limit):
+        ele.mediatype = "forced_skip"
         log.debug(f"{get_medialog(ele)} over size limit")
-        return "forced_skipped", 0
+        return -1
     elif int(file_size_min) > 0 and int(total) < int(file_size_min):
+        ele.mediatype = "forced_skip"
         log.debug(f"{get_medialog(ele)} under size min")
-        return "forced_skipped", 0
+        return -1
 
 
 async def metadata(c, ele, username, model_id, placeholderObj=None):

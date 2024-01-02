@@ -40,6 +40,7 @@ from ofscraper.download.common import (
     check_forced_skip,
     downloadspace,
     get_medialog,
+    get_url_log,
     metadata,
     moveHelper,
     path_to_file_logger,
@@ -53,8 +54,9 @@ from ofscraper.utils.run_async import run
 
 async def main_download(c, ele, username, model_id):
     common.innerlog.get().debug(
-        f"{get_medialog(ele)} Downloading with normal downloader"
+        f"{get_medialog(ele)} Downloading with normal batch downloader"
     )
+    common.innerlog.get().debug(f"{get_medialog(ele)} download url: {get_url_log(ele)}")
     if args_.getargs().metadata:
         return await metadata(
             c,
@@ -64,24 +66,18 @@ async def main_download(c, ele, username, model_id):
         )
 
     result = list(await main_download_downloader(c, ele, username, model_id))
-    if len(result) == 2 and result[-1] == 0:
-        await operations.update_media_table(
-            ele,
-            filename=None,
-            model_id=model_id,
-            username=username,
-            downloaded=True,
-        )
-        return result
+    if result[0] <= 0:
+        if result[0] == 0:
+            await operations.update_media_table(
+                ele,
+                filename=None,
+                model_id=model_id,
+                username=username,
+                downloaded=True,
+            )
+        return ele.mediatype, 0
     total, temp_path, path_to_file = result
-
-    check1 = await size_checker(temp_path, ele, total, path_to_file)
-    check2 = await check_forced_skip(ele, path_to_file, total)
-    if check1:
-        return check1
-    if check2:
-        return check2
-
+    await size_checker(temp_path, ele, total, path_to_file)
     common.innerlog.get().debug(
         f"{get_medialog(ele)} {ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp_path).absolute().stat().st_size}"
     )
@@ -122,7 +118,7 @@ async def main_download_downloader(c, ele, username, model_id):
             with _:
                 placeholderObj = placeholder.Placeholders()
                 placeholderObj.getDirs(ele, username, model_id)
-                placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
+                placeholderObj.tempfilename = f"{ele.final_filename}_{ele.id}.part"
                 data = await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
                     partial(common.cache.get, f"{ele.id}_headers"),
@@ -140,19 +136,9 @@ async def main_download_downloader(c, ele, username, model_id):
                         .stat()
                         .st_size
                     )
-                    check1 = await check_forced_skip(
-                        ele, placeholderObj.trunicated_filename, total
-                    )
-                    if check1:
-                        if ele.id:
-                            await operations.update_media_table(
-                                ele,
-                                filename=placeholderObj.trunicated_filename,
-                                model_id=model_id,
-                                username=username,
-                                downloaded=placeholderObj.trunicated_filename.exists(),
-                            )
-                        return check1
+                    check = await check_forced_skip(ele, total)
+                    if check:
+                        return [check]
                     elif total == resume_size:
                         path_to_file_logger(placeholderObj, ele, common.innerlog.get())
                         return (
@@ -209,9 +195,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
         if not total or total > resume_size:
             url = ele.url
             headers = (
-                None
-                if not pathlib.Path(placeholderObj.tempfilename).exists()
-                else {"Range": f"bytes={resume_size}-{total}"}
+                None if resume_size == 0 else {"Range": f"bytes={resume_size}-{total}"}
             )
             async with c.requests(url=url, headers=headers)() as r:
                 if r.ok:
@@ -228,15 +212,9 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         )
                         placeholderObj.set_trunicated()
                     path_to_file_logger(placeholderObj, ele, common.innerlog.get())
-                    check = await check_forced_skip(
-                        ele, placeholderObj.trunicated_filename, total
-                    )
+                    check = await check_forced_skip(ele, total)
                     if check:
-                        return (
-                            0,
-                            placeholderObj.tempfilename,
-                            placeholderObj.trunicated_filename,
-                        )
+                        return [check]
                     elif total == resume_size:
                         return (
                             total,

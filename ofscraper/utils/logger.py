@@ -290,9 +290,6 @@ def init_stdout_logger(name=None):
     log.setLevel(1)
     addtraceback()
     addtrace()
-    # # #log file
-    # #discord
-    # console
     sh = RichHandler(
         rich_tracebacks=True,
         markup=True,

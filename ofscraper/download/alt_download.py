@@ -44,6 +44,7 @@ from ofscraper.download.common import (
     downloadspace,
     get_item_total,
     get_medialog,
+    get_url_log,
     metadata,
     moveHelper,
     path_to_file_logger,
@@ -57,6 +58,7 @@ from ofscraper.download.common import (
 
 async def alt_download(c, ele, username, model_id, progress):
     common.log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")
+    common.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     if args_.getargs().metadata:
         return await metadata(
             c,
@@ -82,26 +84,20 @@ async def alt_download(c, ele, username, model_id, progress):
     for m in [audio, video]:
         m["total"] = get_item_total(m)
 
-    if audio["total"] + video["total"] == 0:
-        await operations.update_media_table(
-            ele,
-            filename=None,
-            model_id=model_id,
-            username=username,
-            downloaded=True,
-        )
-        return ele.mediatype, video["total"] + audio["total"]
+    if (audio["total"] + video["total"]) <= 0:
+        if (audio["total"] + video["total"]) == 0:
+            await operations.update_media_table(
+                ele,
+                filename=None,
+                model_id=model_id,
+                username=username,
+                downloaded=True,
+            )
+        return ele.mediatype, 0
     for m in [audio, video]:
         if not isinstance(m, dict):
             return m
-        check1 = await size_checker(m["path"], ele, m["total"])
-        check2 = await check_forced_skip(
-            ele, sharedPlaceholderObj.trunicated_filename, m["total"]
-        )
-        if check1:
-            return check1
-        if check2:
-            return check2
+        await size_checker(m["path"], ele, m["total"])
     for item in [audio, video]:
         item = await keyhelpers.un_encrypt(item, c, ele)
 
@@ -250,9 +246,7 @@ async def alt_download_sendreq(
                     total = int(l.headers["content-length"])
                     await update_total(total)
                     temp_file_logger(placeholderObj, ele)
-                    check1 = await check_forced_skip(
-                        ele, sharedPlaceholderObj.trunicated_filename, total
-                    )
+                    check1 = await check_forced_skip(ele, total)
                     if check1:
                         return check1
                     common.log.debug(
@@ -393,9 +387,7 @@ async def alt_download_downloader(
                         .stat()
                         .st_size
                     )
-                    check1 = await check_forced_skip(
-                        ele, sharedPlaceholderObj.trunicated_filename, item["total"]
-                    )
+                    check1 = await check_forced_skip(ele, item["total"])
                     if check1:
                         return check1
                     elif item["total"] == resume_size:

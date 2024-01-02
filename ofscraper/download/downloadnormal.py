@@ -11,6 +11,7 @@ import asyncio
 import logging
 import traceback
 
+from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -122,7 +123,7 @@ async def process_dicts(username, model_id, medialist):
             overall_progress.remove_task(task1)
             setDirectoriesDate()
             common.log.warning(
-                f"[bold]{username}[/bold] ({photo_count+audio_count+video_count} downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)"
+                f"[bold]{username}[/bold] ({format_size(common.total_data)}) ({photo_count+audio_count+video_count} downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos]  {forced_skipped} skipped, {skipped} failed)"
             )
             return photo_count, video_count, audio_count, forced_skipped, skipped
 

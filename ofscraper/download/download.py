@@ -42,11 +42,8 @@ def download_picker(username, model_id, medialist):
         and (
             len(medialist) >= config_.get_download_semaphores(config_.read_config()) * 5
         )
-        and (
-            args_.getargs().downloadthreads
-            or config_.get_threads(config_.read_config())
-        )
-        > 0
+        and args_.getargs().downloadthreads != 0
+        and config_.get_threads(config_.read_config()) != 0
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:

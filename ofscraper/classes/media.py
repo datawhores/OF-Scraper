@@ -203,11 +203,9 @@ class Media:
     @property
     def file_text(self):
         text = self.get_text()
+        text = self.cleanup(text)
         if len(text) == 0:
             return text
-        text = re.sub('[\n<>:"/\|?*:;]+', "", text)
-        text = re.sub(" +", " ", text)
-        text = re.sub(" ", config.get_spacereplacer(config.read_config()), text)
         length = int(config.get_textlength(config.read_config()))
         if length == 0 and self._addcount():
             return f"{text}_{self.count}"
@@ -269,7 +267,11 @@ class Media:
     def final_filename(self):
         filename = self.filename or self.id
         if self.mediatype == "videos":
-            return filename if re.search("_source", filename) else f"{filename}_source"
+            filename = (
+                filename if re.search("_source", filename) else f"{filename}_source"
+            )
+        # cleanup
+        filename = self.cleanup(filename)
         return filename
 
     @property
@@ -326,6 +328,10 @@ class Media:
     def mass(self):
         return self._post.mass
 
+    @mediatype.setter
+    def mediatype(self, val):
+        self.mediatype = val
+
     # for use in dynamic names
     def _addcount(self):
         if len(self._post.post_media) > 1 or self.responsetype in [
@@ -344,4 +350,11 @@ class Media:
             )
         elif self.responsetype == "Profile":
             text = f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
+        return text
+
+    def cleanup(self, text):
+        text = re.sub('[\n<>:"/\|?*:;]+', "", text)
+        text = re.sub("-+", "_", text)
+        text = re.sub(" +", " ", text)
+        text = re.sub(" ", config.get_spacereplacer(config.read_config()), text)
         return text
