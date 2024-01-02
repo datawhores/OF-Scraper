@@ -32,7 +32,7 @@ Visit the following link: https://of-scraper.gitbook.io/of-scraper
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
 
-# Description:
+# Description
 
 command-line tool that lets you download media from OnlyFans and perform bulk actions like liking or unliking posts.
 
