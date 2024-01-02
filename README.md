@@ -42,14 +42,14 @@ Visit the following link: https://of-scraper.gitbook.io/of-scraper
 
 # Issues
 
-Open a issue in this repo, or you can mention your issue in the discord
-https://discord.gg/wN7uxEVHRK
+Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
+
 
 # Feature Requests
 
 https://ofscraper.clearflask.com/feedback
 
-Or the discord
+Or the [Discord](#discord)
 
 # Migrating from DC script
 
