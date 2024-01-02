@@ -42,6 +42,7 @@ Visit the following link: https://of-scraper.gitbook.io/of-scraper
     <li>
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
+</ol>   
 
 # Issues
 
