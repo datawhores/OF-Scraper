@@ -1,11 +1,22 @@
 # Table-of-contents
 
 - [Intro](#intro)
+- [Description](#description)
 - [Documentation](#documentation)
 - [Feature Requests](#feature-requests)
 - [Migrating from DC script](#migrating-from-dc-script)
 - [Discord](#discord)
 - [Support](#support)
+
+# Description
+
+command-line tool that lets you download media from OnlyFans and perform bulk actions like liking or unliking posts.
+
+> > > > > > > ac63182e8fa145d6655e99a21aeb32365e0040fc
+
+![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
+
+
 
 # Intro
 
@@ -31,14 +42,6 @@ Visit the following link: https://of-scraper.gitbook.io/of-scraper
     <li>
         This is a theoritical program only and is for educational purposes. If you choose to use it then it may or may not work. You solely accept full responsability and indemnify the creator, hostors, contributors and all other involved persons from any any all responsability.
     </li>
-
-# Description
-
-command-line tool that lets you download media from OnlyFans and perform bulk actions like liking or unliking posts.
-
-> > > > > > > ac63182e8fa145d6655e99a21aeb32365e0040fc
-
-![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
 # Issues
 
