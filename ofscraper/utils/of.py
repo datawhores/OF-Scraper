@@ -430,7 +430,7 @@ def process_labels(model_id, username):
                 )
             )
         )
-        labelled_posts_ = labels_api.get_labelled_posts(labels_, model_id)
+        DAA_ = labels_api.get_labelled_posts(labels_, model_id)
         labelled_posts_ = list(
             map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
         )

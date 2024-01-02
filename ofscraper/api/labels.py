@@ -186,6 +186,14 @@ async def get_labelled_posts(labels, username):
                             page_task, description=f"Pages Progress: {page_count}"
                         )
                         label_id_ = label["id"]
+                        log.debug(
+                            f"[bold]Label {label['name']} post count with Dupes[/bold] {len(posts)} found"
+                        )
+                        posts = label_dedupe(posts)
+                        log.debug(
+                            f"[bold]Label {label['name']} post count without Dupes[/bold] {len(posts)} found"
+                        )
+
                         label_ = output.get(label_id_, None)
                         if not label_:
                             output[label_id_] = label
@@ -211,6 +219,15 @@ async def get_labelled_posts(labels, username):
         log.debug(f"[bold]Labels count without Dupes[/bold] {len(output)} found")
 
         return list(output.values())
+
+
+def label_dedupe(posts):
+    unduped = {}
+    for post in posts:
+        id = post["id"]
+        if unduped.get(id):
+            continue
+        unduped[id] = post
 
 
 @retry(
