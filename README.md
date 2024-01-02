@@ -46,8 +46,7 @@ Open a issue in this repo, or you can mention your issue in the [Discord](#disco
 
 
 # Feature Requests
-
-[ClearFlask](https://ofscraper.clearflask.com/feedback) Or the [Discord](#discord)
+[ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
 
 # Migrating from DC script
 
@@ -57,15 +56,15 @@ The inherited metadata files from DIGITALCRIMINALS' script play a crucial role i
 
 For comprehensive guidance on making these adjustments, you can refer to the provided resources
 
-1. https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script
-2. https://of-scraper.gitbook.io/of-scraper/config-options
-3. https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path
+1. [Migration Guide]( https://of-scraper.gitbook.io/of-scraper/migrating-from-digitalcriminals-script)
+2. [Config Options](https://of-scraper.gitbook.io/of-scraper/config-options)
+3. [Customize Save Path](https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path)
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
 # Discord
+[Discord](https://discord.gg/wN7uxEVHRK)
 
-https://discord.gg/wN7uxEVHRK
 
 # Support
 
