@@ -47,9 +47,7 @@ Open a issue in this repo, or you can mention your issue in the [Discord](#disco
 
 # Feature Requests
 
-https://ofscraper.clearflask.com/feedback
-
-Or the [Discord](#discord)
+[ClearFlask](https://ofscraper.clearflask.com/feedback) Or the [Discord](#discord)
 
 # Migrating from DC script
 
