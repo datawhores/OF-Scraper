@@ -19,7 +19,8 @@ For detailed instructions on:
 
 - Installation
 - Running the tool
-- And other pertinent information you might need,
+- And other pertinent information you might need
+
   Visit the following link: https://of-scraper.gitbook.io/of-scraper
 
 <h3>DISCLAIMERS:</h3>
