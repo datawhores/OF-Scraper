@@ -28,7 +28,7 @@ For detailed instructions on:
 - Running the tool
 - And other pertinent information you might need
 
-[Offical Documention](https://of-scraper.gitbook.io/of-scraper) 
+[Official Documention](https://of-scraper.gitbook.io/of-scraper) 
 
 <h3>DISCLAIMERS:</h3>
 <ol>
