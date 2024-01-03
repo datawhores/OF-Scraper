@@ -529,10 +529,13 @@ def start_other_process( input_=None, count=1):
 
 
 def start_other_helper():
+    global other_log_thread
+    if other_log_thread:
+        return
     if system.getcpu_count() >= 2:
-        return start_other_process()
+        other_log_thread= start_other_process()
     else:
-        return start_other_thread()
+       other_log_thread= start_other_thread()
 
 
 # logger for putting logs into queues
@@ -615,6 +618,7 @@ def closeOther():
             other_log_thread.join(timeout=constants.FORCED_THREAD_TIMEOUT)
             if other_log_thread.is_alive():
                 other_log_thread.terminate()
+    other_log_thread=None
 
 
 def closeQueue():
