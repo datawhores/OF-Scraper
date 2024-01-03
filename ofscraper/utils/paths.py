@@ -226,7 +226,7 @@ def ffmpegexecutecheck(x):
 
 
 def getlogpath():
-    logDate = args_.getargs().dateformat
+    logDate = args_.getargs().log_dateformat
     path = None
     if not config_.get_appendlog(config_.read_config()):
         path = (

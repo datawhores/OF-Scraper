@@ -894,7 +894,7 @@ def getargs(input=None):
 def globalDataHelper():
     global args
     now = arrow.now()
-    args.dateformat = getDateHelper(now)
+    args.log_dateformat = getDateHelper(now)
     args.date_now = getDateNowHelper(now)
     return args
 
@@ -907,7 +907,7 @@ def resetGlobalDateHelper():
 def clearDate():
     global args
     args.date_now = None
-    args.dateformat = None
+    args.log_dateformat = None
 
 
 def getDateNowHelper(now):
@@ -917,7 +917,7 @@ def getDateNowHelper(now):
 
 
 def getDateHelper(now):
-    if not vars(args).get("dateformat"):
+    if not vars(args).get("log_dateformat"):
         from ofscraper.utils.config import get_appendlog, read_config
 
         return (
@@ -925,7 +925,7 @@ def getDateHelper(now):
             if get_appendlog(read_config())
             else f'{now.format("YYYY-MM-DD_hh.mm.ss")}'
         )
-    return args.dateformat
+    return args.log_dateformat
 
 
 def check_strhelper(x):
