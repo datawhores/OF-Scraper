@@ -89,10 +89,9 @@ class Model:
     @property
     def expired(self):
         if not self.subscribed_data:
-            return None
-        elif not self.subscribed_data.get("expiredAt"):
-            return None
-        return self.subscribed_data.get("expiredAt")
+            return self.subscribed_expired_date
+        else:
+            return self.subscribed_data.get("expiredAt") or self.subscribed_expired_date
 
     @property
     def final_expired(self):
@@ -130,7 +129,7 @@ class Model:
             return True
         elif self.renewed:
             return True
-        elif arrow.get(self.expired) > args_.getargs().date_now:
+        elif arrow.get(self.final_expired) > args_.getargs().date_now:
             return True
         return False
 
