@@ -1,6 +1,7 @@
 import logging
 import platform
 import ssl
+import sys
 
 import certifi
 
@@ -19,6 +20,7 @@ def printStartValues():
 
     # print info
     log.debug(args)
+    log.debug(sys.argv[1:]) if len(sys.argv) > 1 else None
     log.debug(platform.platform())
     log.debug(config_.read_config())
     log.info(f"config path: {str(paths_.get_config_path())}")

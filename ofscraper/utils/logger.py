@@ -235,9 +235,9 @@ def logToRoot(level):
 def addtraceback():
     level = logging.DEBUG + 1
 
-    logging.addLevelName(level, "TRACEBACK")
+    logging.addLevelName(level, "TRACEBACK_")
     logging.TRACEBACK = level
-    setattr(logging, "TRACEBACK", level)
+    setattr(logging, "TRACEBACK_", level)
     setattr(logging.getLoggerClass(), "traceback_", logForLevel(level))
     setattr(logging, "traceback_", logToRoot(level))
 

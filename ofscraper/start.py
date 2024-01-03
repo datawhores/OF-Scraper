@@ -40,7 +40,6 @@ def main():
 
         paths.make_folders()
         picker.pick()
-
         logger.gracefulClose()
         manager.shutdown()
 
