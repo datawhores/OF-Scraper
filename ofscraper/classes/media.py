@@ -330,7 +330,7 @@ class Media:
 
     @mediatype.setter
     def mediatype(self, val):
-        self.mediatype = val
+        self._media["type"] = val
 
     # for use in dynamic names
     def _addcount(self):
