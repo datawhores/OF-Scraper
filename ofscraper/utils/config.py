@@ -71,7 +71,7 @@ def config_diff(config,schema=None):
     if config==None:
         return True
     schema=schema or get_current_config_schema()
-    diff = set(config.keys()) - set(schema.keys())
+    diff =  set(schema.keys())-set(config.keys())
     if len(diff)>0:
         return True
     for key in schema.keys():
