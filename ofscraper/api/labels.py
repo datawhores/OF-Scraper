@@ -228,6 +228,7 @@ def label_dedupe(posts):
         if unduped.get(id):
             continue
         unduped[id] = post
+    return list(unduped.values())
 
 
 @retry(
