@@ -83,13 +83,16 @@ def get_dupe_ofscraper():
     log = logging.getLogger("shared")
     found = []
     for proc in psutil.process_iter():
-        if (
-            proc
-            and proc.status() == "running"
-            and proc.pid != os.getpid()
-            and proc.name() == "OF-Scraper"
-        ):
-            found.append(proc)
+        try:
+            if (
+                proc
+                and proc.status() == "running"
+                and proc.pid != os.getpid()
+                and proc.name() == "OF-Scraper"
+            ):
+                found.append(proc)
+        except psutil.NoSuchProcess:
+            pass
     log.debug(f"Duplicated Processes {found}")
     return found
 
