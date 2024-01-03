@@ -242,8 +242,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
                             },
                         ),
                     )
-                    check1 = await check_forced_skip(ele, total)
-                    if check1:
+                    if await check_forced_skip(ele, item["total"])==0:
                         item["total"] = 0
                         return item
                     common.innerlog.get().debug(
@@ -376,7 +375,6 @@ async def alt_download_downloader(
                 )
                 if data:
                     item["total"] = int(data.get("content-length"))
-                    check1 = await check_forced_skip(ele, item["total"])
                     resume_size = (
                         0
                         if not pathlib.Path(placeholderObj.tempfilename).exists()
@@ -385,7 +383,7 @@ async def alt_download_downloader(
                         .stat()
                         .st_size
                     )
-                    if check1:
+                    if await check_forced_skip(ele, item["total"])==0:
                         item["total"] = 0
                         return item
                     elif item["total"] == resume_size:

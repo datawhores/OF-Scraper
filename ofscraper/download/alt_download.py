@@ -246,8 +246,7 @@ async def alt_download_sendreq(
                     total = int(l.headers["content-length"])
                     await update_total(total)
                     temp_file_logger(placeholderObj, ele)
-                    check1 = await check_forced_skip(ele, total)
-                    if check1:
+                    if await check_forced_skip(ele, item["total"]):
                         item["total"]=0
                         return item
                     common.log.debug(
@@ -388,8 +387,7 @@ async def alt_download_downloader(
                         .stat()
                         .st_size
                     )
-                    check1 = await check_forced_skip(ele, item["total"])
-                    if check1:
+                    if await check_forced_skip(ele, item["total"]):
                         item["total"]=0
                         return item
                     elif item["total"] == resume_size:

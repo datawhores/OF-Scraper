@@ -147,9 +147,8 @@ async def main_download_downloader(c, ele, username, model_id, progress):
                             .stat()
                             .st_size
                         )
-                        check = await check_forced_skip(ele, total)
-                        if check:
-                            return [check]
+                        if await check_forced_skip(ele, total)==0:
+                            return [0]
                         elif total == resume_size:
                             path_to_file_logger(placeholderObj, ele)
                             return (
@@ -225,9 +224,8 @@ async def main_download_sendreq(
                         )
                         placeholderObj.set_trunicated()
                     path_to_file_logger(placeholderObj, ele)
-                    check = await check_forced_skip(ele, total)
-                    if check:
-                        return [check]
+                    if await check_forced_skip(ele, total):
+                        return [0]
                     elif total == resume_size:
                         return (
                             total,
