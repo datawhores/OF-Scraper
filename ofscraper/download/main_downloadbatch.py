@@ -66,8 +66,8 @@ async def main_download(c, ele, username, model_id):
         )
 
     result = list(await main_download_downloader(c, ele, username, model_id))
-    if result[0] <= 0:
-        if result[0] == 0:
+    if result[0] == 0:
+        if ele.mediatype != "forced_skipped":
             await operations.update_media_table(
                 ele,
                 filename=None,

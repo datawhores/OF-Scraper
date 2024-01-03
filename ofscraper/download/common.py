@@ -272,13 +272,13 @@ async def check_forced_skip(ele, *args):
         config_.read_config()
     )
     if int(file_size_limit) > 0 and int(total) > int(file_size_limit):
-        ele.mediatype = "forced_skip"
+        ele.mediatype = "forced_skipped"
         log.debug(f"{get_medialog(ele)} over size limit")
-        return -1
+        return 0
     elif int(file_size_min) > 0 and int(total) < int(file_size_min):
-        ele.mediatype = "forced_skip"
+        ele.mediatype = "forced_skipped"
         log.debug(f"{get_medialog(ele)} under size min")
-        return -1
+        return 0
 
 
 async def metadata(c, ele, username, model_id, placeholderObj=None):

@@ -78,11 +78,9 @@ async def alt_download(c, ele, username, model_id):
         video, c, sharedPlaceholderObj, ele, username, model_id
     )
 
-    for m in [audio, video]:
-        m["total"] = get_item_total(m)
 
-    if (audio["total"] + video["total"]) <= 0:
-        if (audio["total"] + video["total"]) == 0:
+    if (audio["total"] + video["total"]) == 0:
+        if ele.mediatype!="forced_skipped":
             await operations.update_media_table(
                 ele,
                 filename=None,
@@ -91,6 +89,8 @@ async def alt_download(c, ele, username, model_id):
                 downloaded=True,
             )
         return ele.mediatype, 0
+    for m in [audio, video]:
+        m["total"] = get_item_total(m)
 
     for m in [audio, video]:
         if not isinstance(m, dict):
@@ -244,7 +244,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
                     )
                     check1 = await check_forced_skip(ele, total)
                     if check1:
-                        item["total"] = -1
+                        item["total"] = 0
                         return item
                     common.innerlog.get().debug(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
@@ -386,7 +386,7 @@ async def alt_download_downloader(
                         .st_size
                     )
                     if check1:
-                        item["total"] = -1
+                        item["total"] = 0
                         return item
                     elif item["total"] == resume_size:
                         return item
