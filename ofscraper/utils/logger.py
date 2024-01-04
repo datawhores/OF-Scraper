@@ -482,6 +482,8 @@ def logger_other(input_,name=None, stop_count=1, event=None):
 # process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1):
     global main_log_thread
+    if main_log_thread:
+        return
     input_ = input_ or queue_
     main_log_thread = threading.Thread(
         target=logger_process, args=(input_, name, count, main_event), daemon=True
@@ -502,10 +504,10 @@ def start_checker(func: abc.Callable):
 
 # processs discord/log queues via a thread
 @start_checker
-def start_other_thread(input_=None, count=1):
+def start_other_thread(input_=None, count=1,name=None):
     input_ = input_ or otherqueue_
     thread = threading.Thread(
-        target=logger_other, args=(input_), kwargs={"stop_count":count,"name":None,"event":other_event},daemon=True
+        target=logger_other, args=(input_), kwargs={"stop_count":count,"name":name,"event":other_event},daemon=True
     )
     thread.start()
     return thread
@@ -564,7 +566,9 @@ def get_shared_logger(main_=None, other_=None, name=None):
     # log all messages, debug and up
     logger.setLevel(1)
     return logger
-
+def start_threads():
+    start_other_helper()
+    start_stdout_logthread()
 
 def gracefulClose():
     sendCloseMessage()
@@ -573,8 +577,7 @@ def gracefulClose():
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
     closeOther()
-    if main_log_thread:
-        main_log_thread.join()
+    closeMain()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -587,9 +590,8 @@ def gracefulClose():
 def forcedClose():
     main_event.set()
     other_event.set()
-    if main_log_thread:
-        main_log_thread.join(constants.FORCED_THREAD_TIMEOUT)
     closeOther()
+    closeMain()
     closeQueue()
 
 
@@ -601,7 +603,18 @@ def sendCloseMessage():
     if num_loggers > 1:
         logging.getLogger("shared").handlers[-1].queue.put("None")
 
-
+def closeThreads():
+    closeMain()
+    closeOther()
+def closeMain():
+    global main_log_thread
+    if not main_log_thread:
+        return
+    elif other_event.is_set():
+        main_log_thread.join(constants.FORCED_THREAD_TIMEOUT)
+    elif not other_event.is_set():
+        main_log_thread.join()
+    main_log_thread=None
 def closeOther():
     global other_log_thread
     if not other_log_thread:

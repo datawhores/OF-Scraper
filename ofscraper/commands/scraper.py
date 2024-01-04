@@ -309,13 +309,13 @@ def set_schedule(*functs):
 
 
 def schedule_helper(functs):
-    jobqueue.put(logger.start_other_helper)
+    jobqueue.put(logger.start_threads)
     jobqueue.put(logger.updateOtherLoggerStream)
     jobqueue.put(startvals.printStartValues)
     jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
     for funct in functs:
         jobqueue.put(funct)
-    jobqueue.put(logger.closeOther)
+    jobqueue.put(logger.closeThreads)
 
 
 ## run script once or on schedule based on args
