@@ -47,11 +47,8 @@ from ofscraper.download.common import (
     sem_wrapper,
     set_profile_cache_helper,
     set_time,
-    size_checker
+    size_checker,
 )
-import ofscraper.download.common as common
-
-
 from ofscraper.utils.run_async import run
 
 
@@ -139,7 +136,7 @@ async def main_download_downloader(c, ele, username, model_id):
                         .stat()
                         .st_size
                     )
-                    if await check_forced_skip(ele, total)==0:
+                    if await check_forced_skip(ele, total) == 0:
                         return [0]
                     elif total == resume_size:
                         path_to_file_logger(placeholderObj, ele, common.innerlog.get())
@@ -198,6 +195,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
             headers = (
                 None if resume_size == 0 else {"Range": f"bytes={resume_size}-{total}"}
             )
+
             @sem_wrapper(common.req_sem)
             async def inner():
                 async with c.requests(url=url, headers=headers)() as r:
@@ -215,7 +213,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                             )
                             placeholderObj.set_trunicated()
                         path_to_file_logger(placeholderObj, ele, common.innerlog.get())
-                        if await check_forced_skip(ele, total)==0:
+                        if await check_forced_skip(ele, total) == 0:
                             return [0]
                         elif total == resume_size:
                             return (
@@ -227,18 +225,22 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                             placeholderObj.tempfilename.unlink(missing_ok=True)
                         await main_download_datahandler(r, ele, total, placeholderObj)
                         await asyncio.get_event_loop().run_in_executor(
-                        common.cache_thread,
-                        partial(
-                            common.cache.set,
-                            f"{ele.id}_headers",
-                            {
-                                "content-length": r.headers.get("content-length"),
-                                "content-type": r.headers.get("content-type"),
-                            },
-                        ),
-                    ) 
-
+                            common.cache_thread,
+                            partial(
+                                common.cache.set,
+                                f"{ele.id}_headers",
+                                {
+                                    "content-length": r.headers.get("content-length"),
+                                    "content-type": r.headers.get("content-type"),
+                                },
+                            ),
+                        )
                         await size_checker(placeholderObj.tempfilename, ele, total)
+                        return (
+                            total,
+                            placeholderObj.tempfilename,
+                            placeholderObj.trunicated_filename,
+                        )
                     else:
                         common.innerlog.get().debug(
                             f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
@@ -254,10 +256,10 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         common.cache_thread,
                         partial(common.cache.touch, f"{ele.filename}_headers", 1),
                     )
-            out=await inner()
-            return out if out!=None else (total, placeholderObj.tempfilename, placeholderObj.trunicated_filename)
+
+            return await inner()
         await size_checker(placeholderObj.tempfilename, ele, total)
-        return  placeholderObj.tempfilename, placeholderObj.trunicated_filename
+        return placeholderObj.tempfilename, placeholderObj.trunicated_filename
     except OSError as E:
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
@@ -278,6 +280,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
             f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {E}"
         )
         raise E
+
 
 @sem_wrapper
 async def main_download_datahandler(r, ele, total, placeholderObj):

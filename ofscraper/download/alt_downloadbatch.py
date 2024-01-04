@@ -46,7 +46,6 @@ from ofscraper.download.common import (
     temp_file_logger,
 )
 from ofscraper.utils.run_async import run
-import ofscraper.download.common as common
 
 
 async def alt_download(c, ele, username, model_id):
@@ -72,16 +71,11 @@ async def alt_download(c, ele, username, model_id):
     sharedPlaceholderObj.set_trunicated()
     path_to_file_logger(sharedPlaceholderObj, ele, common.innerlog.get())
 
-    audio = await alt_download_downloader(
-        audio, c, ele, username, model_id
-    )
-    video = await alt_download_downloader(
-        video, c, ele, username, model_id
-    )
-
+    audio = await alt_download_downloader(audio, c, ele, username, model_id)
+    video = await alt_download_downloader(video, c, ele, username, model_id)
 
     if (audio["total"] + video["total"]) == 0:
-        if ele.mediatype!="forced_skipped":
+        if ele.mediatype != "forced_skipped":
             await operations.update_media_table(
                 ele,
                 filename=None,
@@ -194,7 +188,7 @@ async def alt_download_preparer(ele):
     return audio, video
 
 
-async def alt_download_sendreq(item, c, ele, placeholderObj):    
+async def alt_download_sendreq(item, c, ele, placeholderObj):
     base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
     url = f"{base_url}{item['origname']}"
     common.innerlog.get().debug(
@@ -226,6 +220,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                 "Key-Pair-Id": ele.keypair,
                 "Signature": ele.signature,
             }
+
             @sem_wrapper(common.req_sem)
             async def inner():
                 async with c.requests(url=url, headers=headers, params=params)() as l:
@@ -233,27 +228,29 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                         total = int(l.headers["content-length"])
                         await common.pipe.coro_send((None, 0, total))
                         temp_file_logger(placeholderObj, ele, common.innerlog.get())
-                        if await check_forced_skip(ele, total)==0:
+                        if await check_forced_skip(ele, total) == 0:
                             item["total"] = 0
                             return item
                         common.innerlog.get().debug(
                             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
                         )
-                        item["total"]=total
-                        await alt_download_datahandler(item, total, l, ele, placeholderObj)
+                        item["total"] = total
+                        await alt_download_datahandler(
+                            item, total, l, ele, placeholderObj
+                        )
                         await asyncio.get_event_loop().run_in_executor(
-                        common.cache_thread,
-                        partial(
-                            common.cache.set,
-                            f"{item['name']}_headers",
-                            {
-                                "content-length": l.headers.get("content-length"),
-                                "content-type": l.headers.get("content-type"),
-                            },
-                        ),
-                    )
+                            common.cache_thread,
+                            partial(
+                                common.cache.set,
+                                f"{item['name']}_headers",
+                                {
+                                    "content-length": l.headers.get("content-length"),
+                                    "content-type": l.headers.get("content-type"),
+                                },
+                            ),
+                        )
                         await size_checker(placeholderObj.tempfilename, ele, total)
-
+                        return item
 
                     else:
                         common.innerlog.get().debug(
@@ -266,11 +263,11 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                             f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
                         )
                         l.raise_for_status()
-            out=await inner()
-            return out if out!=None else item
+
+            return await inner()
         await size_checker(placeholderObj.tempfilename, ele, total)
         return item
-   
+
     except OSError as E:
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
@@ -291,6 +288,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}"
         )
         raise E
+
 
 @sem_wrapper
 async def alt_download_datahandler(item, total, l, ele, placeholderObj):
@@ -350,9 +348,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
             None
 
 
-async def alt_download_downloader(
-    item, c, ele, username, model_id
-):
+async def alt_download_downloader(item, c, ele, username, model_id):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(constants.NUM_TRIES),
@@ -379,7 +375,7 @@ async def alt_download_downloader(
                         .stat()
                         .st_size
                     )
-                    if await check_forced_skip(ele, item["total"])==0:
+                    if await check_forced_skip(ele, item["total"]) == 0:
                         item["total"] = 0
                         return item
                     elif item["total"] == resume_size:
@@ -403,9 +399,7 @@ async def alt_download_downloader(
         ):
             with _:
                 try:
-                    return await alt_download_sendreq(
-                        item, c, ele, placeholderObj
-                    )
+                    return await alt_download_sendreq(item, c, ele, placeholderObj)
                 except Exception as E:
                     raise E
     except Exception as E:
