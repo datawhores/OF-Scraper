@@ -198,7 +198,7 @@ CDRM2 = "http://172.106.17.134:8080/wv"
 KEYDB = "https://keysdb.net/api"
 CDRM = "https://cdrm-project.com"
 
-LOGGER_TIMEOUT = 180
+LOGGER_TIMEOUT = 5
 LOG_DISPLAY_TIMEOUT = 0.8
 FORCED_THREAD_TIMEOUT = 5
 DAY_SECONDS = 86400
