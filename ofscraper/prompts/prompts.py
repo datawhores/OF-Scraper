@@ -974,17 +974,17 @@ def model_selector(models) -> bool:
         ID: [bold blue]{selected.id}[/bold blue]
         Renewed Date: [bold blue]{selected.renewed_string}[/bold blue]
         Subscribed Date: [bold blue]{selected.subscribed_string}[/bold blue]
-        Expired Date: [bold blue]{selected.expired}[/bold blue] 
-        Last Seen: {selected.last_seen_formatted}
+        Expired Date: [bold blue]{selected.expired_string}[/bold blue]
+        Last Seen: [bold blue] {selected.last_seen_formatted}[/bold blue]
         Original Sub Price: [bold blue]{selected.sub_price}[/bold blue]     [Current Subscription Price]
         Original Regular Price: [bold blue]{selected.regular_price}[/bold blue]     [Regular Subscription Price Set By Model]
         Original Claimable Promo Price: [bold blue]{selected.lowest_promo_claim}[/bold blue]   [Lowest Promotional Price Marked as Claimable]
         Original Any Promo Price: [bold blue]{selected.lowest_promo_all}[/bold blue]     [Lowest of Any Promotional Price]
         
         ------------------------------------------------------------------------------------------------------------------------------------
-        Final Current Price: [bold blue]{selected.final_current_price}[/bold blue] [Sub, Lowest Claimable Promo, or Regular Price| See Final Price Details]
-        Final Promo Price: [bold blue]{selected.final_promo_price}[/bold blue] [Lowest Promo, or Regular Price | See Final Price Details]
-        Final Renewal Price: [bold blue]{selected.final_renewal_price}[/bold blue] [Lowest Claimable Promo, or Regular Price | See Final Price Details]
+        Final Current Price: [bold blue]{selected.final_current_price}[/bold blue] [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
+        Final Promo Price: [bold blue]{selected.final_promo_price}[/bold blue] [Lowest Any Promo Price or Regular Price | See Final Price Details]
+        Final Renewal Price: [bold blue]{selected.final_renewal_price}[/bold blue] [Lowest Claimable Promo or Regular Price | See Final Price Details]
         Final Regular Price: [bold blue]{selected.final_regular_price}[/bold blue] [Regular Price | See Final Price Details]
         
         [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
