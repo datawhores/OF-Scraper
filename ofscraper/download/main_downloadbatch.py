@@ -66,8 +66,8 @@ async def main_download(c, ele, username, model_id):
         )
 
     result = list(await main_download_downloader(c, ele, username, model_id))
-    if result[0] <= 0:
-        if result[0] == 0:
+    if result[0] == 0:
+        if ele.mediatype != "forced_skipped":
             await operations.update_media_table(
                 ele,
                 filename=None,
@@ -136,9 +136,8 @@ async def main_download_downloader(c, ele, username, model_id):
                         .stat()
                         .st_size
                     )
-                    check = await check_forced_skip(ele, total)
-                    if check:
-                        return [check]
+                    if await check_forced_skip(ele, total)==0:
+                        return [0]
                     elif total == resume_size:
                         path_to_file_logger(placeholderObj, ele, common.innerlog.get())
                         return (
@@ -199,7 +198,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
             )
             async with c.requests(url=url, headers=headers)() as r:
                 if r.ok:
-                    total = int(total or (r.headers["content-length"]))
+                    total = int(r.headers["content-length"])
                     await common.pipe.coro_send((None, 0, total))
                     content_type = r.headers.get("content-type").split("/")[-1]
                     if not content_type and ele.mediatype.lower() == "videos":
@@ -212,9 +211,8 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         )
                         placeholderObj.set_trunicated()
                     path_to_file_logger(placeholderObj, ele, common.innerlog.get())
-                    check = await check_forced_skip(ele, total)
-                    if check:
-                        return [check]
+                    if await check_forced_skip(ele, total)==0:
+                        return [0]
                     elif total == resume_size:
                         return (
                             total,

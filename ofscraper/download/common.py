@@ -18,7 +18,7 @@ import shutil
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, singledispatch
-
+from humanfriendly import format_size
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
@@ -271,14 +271,14 @@ async def check_forced_skip(ele, *args):
     file_size_min = args_.getargs().size_min or config_.get_filesize_limit(
         config_.read_config()
     )
-    if int(file_size_limit) > 0 and int(total) > int(file_size_limit):
-        ele.mediatype = "forced_skip"
-        log.debug(f"{get_medialog(ele)} over size limit")
-        return -1
-    elif int(file_size_min) > 0 and int(total) < int(file_size_min):
-        ele.mediatype = "forced_skip"
-        log.debug(f"{get_medialog(ele)} under size min")
-        return -1
+    if int(file_size_limit) > 0 and (int(total) > int(file_size_limit)):
+        ele.mediatype = "forced_skipped"
+        log.debug(f"{get_medialog(ele)} {format_size(total)} over size limit")
+        return 0
+    elif int(file_size_min) > 0 and (int(total) < int(file_size_min)):
+        ele.mediatype = "forced_skipped"
+        log.debug(f"{get_medialog(ele)} {format_size(total)} under size min")
+        return 0
 
 
 async def metadata(c, ele, username, model_id, placeholderObj=None):

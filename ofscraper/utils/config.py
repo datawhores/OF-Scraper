@@ -44,7 +44,7 @@ def read_config():
                 config = json.loads(configText)
 
             try:
-                if [*config["config"]] != [*(config)["config"]]:
+                if config_diff(config):
                     config = auto_update_config(p, config)
             except KeyError:
                 raise FileNotFoundError
@@ -66,6 +66,23 @@ def read_config():
                 except:
                     continue
     return config["config"]
+#basic recursion for comparing nested keys
+def config_diff(config,schema=None):
+    if config==None:
+        return True
+    schema=schema or get_current_config_schema()
+    diff =  set(schema.keys())-set(config.keys())
+    if len(diff)>0:
+        return True
+    for key in schema.keys():
+        if not isinstance(schema[key],dict):
+            continue
+        if not isinstance(config[key],dict):
+            return True
+        else:
+            return config_diff(config[key],schema[key])
+            
+
 
 
 def get_current_config_schema(config: dict = None) -> dict:

@@ -39,6 +39,8 @@ class Media:
             return "images"
         elif self._media["type"] == "gif":
             return "videos"
+        elif self._media["type"]=="forced_skipped":
+            return "forced_skipped"
         else:
             return f"{self._media['type']}s"
 
@@ -330,7 +332,7 @@ class Media:
 
     @mediatype.setter
     def mediatype(self, val):
-        self.mediatype = val
+        self._media["type"] = val
 
     # for use in dynamic names
     def _addcount(self):

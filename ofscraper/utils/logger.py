@@ -26,7 +26,6 @@ otherqueue_ = None
 otherqueue2_ = None
 main_event = None
 other_event = None
-other_log = None
 main_log_thread = None
 other_log_thread = None
 
@@ -361,13 +360,7 @@ def init_other_logger(name):
 
 # updates stream for main process
 def updateOtherLoggerStream():
-    global other_log
-    if not other_log:
-        return
-    handlers = list(
-        filter(lambda x: isinstance(x, logging.StreamHandler), other_log.handlers)
-    )
-    if len(handlers) == 0:
+    if args.getargs().discord=="OFF" and args.getargs().log == "OFF":
         return
     args.resetGlobalDateHelper()
     stream = open(
@@ -375,8 +368,6 @@ def updateOtherLoggerStream():
         encoding="utf-8",
         mode="a",
     )
-    for ele in handlers:
-        ele.setStream(stream)
     otherqueue_.put_nowait(stream)
 
 
@@ -436,10 +427,13 @@ def logger_process(input_, name=None, stop_count=1, event=None):
 
 
 # processor for logging discord/log via queues, runnable by any process
-def logger_other(input_, log, stop_count=1, event=None):
+def logger_other(input_,name=None, stop_count=1, event=None):
     # create a logger
     count = 0
     funct = None
+    #logger is not pickable
+    log= init_other_logger(name)
+
     if hasattr(input_, "get") and hasattr(input_, "put_nowait"):
         funct = input_.get
         end_funct = input_.get_nowait
@@ -467,7 +461,7 @@ def logger_other(input_, log, stop_count=1, event=None):
                     ele.setStream(message)
                     for ele in filter(
                         lambda x: isinstance(x, logging.StreamHandler),
-                        other_log.handlers,
+                        log.handlers,
                     )
                 ]
                 continue
@@ -488,6 +482,8 @@ def logger_other(input_, log, stop_count=1, event=None):
 # process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1):
     global main_log_thread
+    if main_log_thread:
+        return
     input_ = input_ or queue_
     main_log_thread = threading.Thread(
         target=logger_process, args=(input_, name, count, main_event), daemon=True
@@ -497,23 +493,21 @@ def start_stdout_logthread(input_=None, name=None, count=1):
 
 # wrapper function for discord and  log, check if threads/process should start
 def start_checker(func: abc.Callable):
-    def inner(*args_, name=None, **kwargs):
-        global other_log
-        other_log = init_other_logger(name)
+    def inner(*args_, **kwargs):
         if args.getargs().discord and args.getargs().discord != "OFF":
-            return func(other_log, *args_, **kwargs)
+            return func( *args_, **kwargs)
         elif args.getargs().log and args.getargs().log != "OFF":
-            return func(other_log, *args_, **kwargs)
+            return func( *args_, **kwargs)
 
     return inner
 
 
 # processs discord/log queues via a thread
 @start_checker
-def start_other_thread(log, input_=None, count=1):
+def start_other_thread(input_=None, count=1,name=None,other_event=None):
     input_ = input_ or otherqueue_
     thread = threading.Thread(
-        target=logger_other, args=(input_, log, count, other_event), daemon=True
+        target=logger_other, args=(input_,), kwargs={"stop_count":count,"name":name,"event":other_event},daemon=True
     )
     thread.start()
     return thread
@@ -521,26 +515,29 @@ def start_other_thread(log, input_=None, count=1):
 
 # processs discord/log queues via a process
 @start_checker
-def start_other_process(log, input_=None, count=1):
-    def inner(log, args_, input_=None, count=1):
+def start_other_process( input_=None, count=1):
+    def inner(args_, input_=None, count=1):
         args.changeargs(args_)
         input_ = input_ or otherqueue_
-        logger_other(input_, log, stop_count=count)
+        logger_other(input_,stop_count=count)
 
     process = None
     input_ = otherqueue_
     process = aioprocessing.AioProcess(
-        target=inner, args=(log, args.getargs(), input_, count), daemon=True
+        target=inner, args=(args.getargs(),),kwargs={"input_":input_,"count":count},daemon=True
     )
     process.start() if process else None
     return process
 
 
 def start_other_helper():
+    global other_log_thread
+    if other_log_thread:
+        return
     if system.getcpu_count() >= 2:
-        return start_other_process()
+        other_log_thread= start_other_process()
     else:
-        return start_other_thread()
+       other_log_thread= start_other_thread(other_event=other_event)
 
 
 # logger for putting logs into queues
@@ -569,7 +566,9 @@ def get_shared_logger(main_=None, other_=None, name=None):
     # log all messages, debug and up
     logger.setLevel(1)
     return logger
-
+def start_threads():
+    start_other_helper()
+    start_stdout_logthread()
 
 def gracefulClose():
     sendCloseMessage()
@@ -578,8 +577,7 @@ def gracefulClose():
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
     closeOther()
-    if main_log_thread:
-        main_log_thread.join()
+    closeMain()
     stdout.debug(
         f"Main Process threads after closing log threads {threading.enumerate()}"
     )
@@ -592,9 +590,8 @@ def gracefulClose():
 def forcedClose():
     main_event.set()
     other_event.set()
-    if main_log_thread:
-        main_log_thread.join(constants.FORCED_THREAD_TIMEOUT)
     closeOther()
+    closeMain()
     closeQueue()
 
 
@@ -606,7 +603,18 @@ def sendCloseMessage():
     if num_loggers > 1:
         logging.getLogger("shared").handlers[-1].queue.put("None")
 
-
+def closeThreads():
+    closeMain()
+    closeOther()
+def closeMain():
+    global main_log_thread
+    if not main_log_thread:
+        return
+    elif other_event.is_set():
+        main_log_thread.join(constants.FORCED_THREAD_TIMEOUT)
+    elif not other_event.is_set():
+        main_log_thread.join()
+    main_log_thread=None
 def closeOther():
     global other_log_thread
     if not other_log_thread:
@@ -623,6 +631,7 @@ def closeOther():
             other_log_thread.join(timeout=constants.FORCED_THREAD_TIMEOUT)
             if other_log_thread.is_alive():
                 other_log_thread.terminate()
+    other_log_thread=None
 
 
 def closeQueue():

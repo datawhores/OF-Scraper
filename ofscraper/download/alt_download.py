@@ -81,11 +81,8 @@ async def alt_download(c, ele, username, model_id, progress):
         video, c, sharedPlaceholderObj, ele, username, model_id, progress
     )
 
-    for m in [audio, video]:
-        m["total"] = get_item_total(m)
-
-    if (audio["total"] + video["total"]) <= 0:
-        if (audio["total"] + video["total"]) == 0:
+    if (audio["total"] + video["total"]) == 0:
+        if ele.mediatype!="forced_skipped":
             await operations.update_media_table(
                 ele,
                 filename=None,
@@ -94,6 +91,9 @@ async def alt_download(c, ele, username, model_id, progress):
                 downloaded=True,
             )
         return ele.mediatype, 0
+    for m in [audio, video]:
+        m["total"] = get_item_total(m)
+   
     for m in [audio, video]:
         if not isinstance(m, dict):
             return m
@@ -246,9 +246,10 @@ async def alt_download_sendreq(
                     total = int(l.headers["content-length"])
                     await update_total(total)
                     temp_file_logger(placeholderObj, ele)
-                    check1 = await check_forced_skip(ele, total)
-                    if check1:
-                        return check1
+                    if await check_forced_skip(ele, total):
+                        item["total"]=0
+                        return item
+                    item["total"]=total
                     common.log.debug(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
                     )
@@ -387,9 +388,9 @@ async def alt_download_downloader(
                         .stat()
                         .st_size
                     )
-                    check1 = await check_forced_skip(ele, item["total"])
-                    if check1:
-                        return check1
+                    if await check_forced_skip(ele, item["total"]):
+                        item["total"]=0
+                        return item
                     elif item["total"] == resume_size:
                         temp_file_logger(placeholderObj, ele)
                         return item
@@ -397,6 +398,7 @@ async def alt_download_downloader(
                         pathlib.Path(placeholderObj.tempfilename).unlink(
                             missing_ok=True
                         )
+                    
 
                 else:
                     placeholderObj.tempfilename.unlink(missing_ok=True)
