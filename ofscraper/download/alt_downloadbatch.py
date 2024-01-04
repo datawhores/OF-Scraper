@@ -46,6 +46,7 @@ from ofscraper.download.common import (
     temp_file_logger,
 )
 from ofscraper.utils.run_async import run
+import ofscraper.download.common as common
 
 
 async def alt_download(c, ele, username, model_id):
@@ -72,10 +73,10 @@ async def alt_download(c, ele, username, model_id):
     path_to_file_logger(sharedPlaceholderObj, ele, common.innerlog.get())
 
     audio = await alt_download_downloader(
-        audio, c, sharedPlaceholderObj, ele, username, model_id
+        audio, c, ele, username, model_id
     )
     video = await alt_download_downloader(
-        video, c, sharedPlaceholderObj, ele, username, model_id
+        video, c, ele, username, model_id
     )
 
 
@@ -193,8 +194,7 @@ async def alt_download_preparer(ele):
     return audio, video
 
 
-@sem_wrapper
-async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderObj):
+async def alt_download_sendreq(item, c, ele, placeholderObj):    
     base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
     url = f"{base_url}{item['origname']}"
     common.innerlog.get().debug(
@@ -226,12 +226,23 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
                 "Key-Pair-Id": ele.keypair,
                 "Signature": ele.signature,
             }
-            async with c.requests(url=url, headers=headers, params=params)() as l:
-                if l.ok:
-                    total = int(l.headers["content-length"])
-                    await common.pipe.coro_send((None, 0, total))
-                    temp_file_logger(placeholderObj, ele, common.innerlog.get())
-                    await asyncio.get_event_loop().run_in_executor(
+            @sem_wrapper(common.req_sem)
+            async def inner():
+                async with c.requests(url=url, headers=headers, params=params)() as l:
+                    if l.ok:
+                        total = int(l.headers["content-length"])
+                        await common.pipe.coro_send((None, 0, total))
+                        temp_file_logger(placeholderObj, ele, common.innerlog.get())
+                        if await check_forced_skip(ele, total)==0:
+                            item["total"] = 0
+                            return item
+                        common.innerlog.get().debug(
+                            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
+                        )
+                        item["total"]=total
+                        await alt_download_datahandler(item, total, l, ele, placeholderObj)
+                        await size_checker(placeholderObj.tempfilename, ele, total)
+                        await asyncio.get_event_loop().run_in_executor(
                         common.cache_thread,
                         partial(
                             common.cache.set,
@@ -242,40 +253,23 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
                             },
                         ),
                     )
-                    if await check_forced_skip(ele, total)==0:
-                        item["total"] = 0
-                        return item
-                    common.innerlog.get().debug(
-                        f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
-                    )
-                    item["total"]=total
-                    await alt_download_datahandler(item, total, l, ele, placeholderObj)
 
-                else:
-                    common.innerlog.get().debug(
-                        f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
-                    )
-                    common.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
-                    )
-                    common.innerlog.get().debug(
-                        f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
-                    )
-                    l.raise_for_status()
-            await asyncio.get_event_loop().run_in_executor(
-                common.cache_thread,
-                partial(
-                    common.cache.set,
-                    f"{item['name']}_headers",
-                    {
-                        "content-length": l.headers.get("content-length"),
-                        "content-type": l.headers.get("content-type"),
-                    },
-                ),
-            )
-            await size_checker(placeholderObj.tempfilename, ele, total)
-
+                    else:
+                        common.innerlog.get().debug(
+                            f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
+                        )
+                        common.innerlog.get().debug(
+                            f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
+                        )
+                        common.innerlog.get().debug(
+                            f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
+                        )
+                        l.raise_for_status()
+            out=await inner()
+            return out if out!=None else item
+        await size_checker(placeholderObj.tempfilename, ele, total)
         return item
+   
     except OSError as E:
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
@@ -297,7 +291,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
         )
         raise E
 
-
+@sem_wrapper
 async def alt_download_datahandler(item, total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilename)
     try:
@@ -356,7 +350,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
 
 
 async def alt_download_downloader(
-    item, c, sharedPlaceholderObj, ele, username, model_id
+    item, c, ele, username, model_id
 ):
     try:
         async for _ in AsyncRetrying(
@@ -409,7 +403,7 @@ async def alt_download_downloader(
             with _:
                 try:
                     return await alt_download_sendreq(
-                        item, c, ele, placeholderObj, sharedPlaceholderObj
+                        item, c, ele, placeholderObj
                     )
                 except Exception as E:
                     raise E

@@ -61,6 +61,7 @@ innerlog = contextvars.ContextVar("innerlog")
 pipe = None
 log = None
 localDirSet = None
+req_sem=None
 
 
 def reset_globals():
@@ -118,6 +119,10 @@ def reset_globals():
     console = console_.get_shared_console()
     global localDirSet
     localDirSet = set()
+    global req_sem
+    req_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*5)
+
+
 
 
 def setLogDate(args):
@@ -422,7 +427,7 @@ def get_error_message(content):
         return error_content
 
 
-async def set_cache_helper(ele):
+async def set_profile_cache_helper(ele):
     if ele.postid and ele.responsetype == "profile":
         await asyncio.get_event_loop().run_in_executor(
             cache_thread, partial(cache.set, ele.postid, True)
