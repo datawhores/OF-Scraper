@@ -257,7 +257,6 @@ async def alt_download_sendreq(
                         await alt_download_datahandler(
                             item, total, l, ele, progress, placeholderObj
                         )
-                        await size_checker(placeholderObj.tempfilename, ele, total)
                         await asyncio.get_event_loop().run_in_executor(
                             common.cache_thread,
                             partial(
@@ -268,7 +267,8 @@ async def alt_download_sendreq(
                                     "content-type": l.headers.get("content-type"),
                                 },
                             ),
-                        )                    
+                        )
+                        await size_checker(placeholderObj.tempfilename, ele, total)
                     else:
                         common.log.debug(
                             f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
@@ -312,6 +312,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
         config_.get_show_downloadprogress(config_.read_config())
         or args_.getargs().downloadbars
     )
+    
     task1 = progress.add_task(
         f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",
         total=total,

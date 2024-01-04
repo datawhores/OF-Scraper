@@ -226,7 +226,6 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         elif total < resume_size:
                             placeholderObj.tempfilename.unlink(missing_ok=True)
                         await main_download_datahandler(r, ele, total, placeholderObj)
-                        await size_checker(placeholderObj.tempfilename, ele, total)
                         await asyncio.get_event_loop().run_in_executor(
                         common.cache_thread,
                         partial(
@@ -239,6 +238,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         ),
                     ) 
 
+                        await size_checker(placeholderObj.tempfilename, ele, total)
                     else:
                         common.innerlog.get().debug(
                             f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
@@ -255,7 +255,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         partial(common.cache.touch, f"{ele.filename}_headers", 1),
                     )
             out=await inner()
-            return out if out!=None else total, placeholderObj.tempfilename, placeholderObj.trunicated_filename
+            return out if out!=None else (total, placeholderObj.tempfilename, placeholderObj.trunicated_filename)
         await size_checker(placeholderObj.tempfilename, ele, total)
         return  placeholderObj.tempfilename, placeholderObj.trunicated_filename
     except OSError as E:

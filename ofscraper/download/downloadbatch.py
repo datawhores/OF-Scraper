@@ -391,7 +391,7 @@ async def process_dicts_split(username, model_id, medialist):
                 media_type, num_bytes_downloaded = pack
                 await common.pipe.coro_send((media_type, num_bytes_downloaded, 0))
             except Exception as e:
-                common.log.traceback_(e)
+                common.log.traceback_(f"Download Failed because\n{e}")
                 common.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
                 num_bytes_downloaded = 0
@@ -429,8 +429,8 @@ async def download(c, ele, model_id, username):
             if ele.mpd:
                 return await alt_download(c, ele, username, model_id)
         except Exception as e:
-            common.innerlog.get().debug(f"{get_medialog(ele)} exception {e}")
-            common.innerlog.get().debug(
+            common.innerlog.get().traceback_(f"{get_medialog(ele)} Download Failed\n{e}")
+            common.innerlog.get().traceback_(
                 f"{get_medialog(ele)} exception {traceback.format_exc()}"
             )
             # we can put into seperate otherqueue_

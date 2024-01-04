@@ -84,7 +84,7 @@ async def process_dicts(username, model_id, medialist):
                             common.log.debug(f"unpack {pack} count {len(pack)}")
                             media_type, num_bytes_downloaded = pack
                         except Exception as e:
-                            common.log.traceback_(e)
+                            common.log.traceback_(f"Download Failed because\n{e}")
                             common.log.traceback_(traceback.format_exc())
                             media_type = "skipped"
                             num_bytes_downloaded = 0

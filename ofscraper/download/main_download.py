@@ -240,7 +240,6 @@ async def main_download_sendreq(
                         await main_download_datahandler(
                             r, progress, ele, placeholderObj, total
                         )
-                        await size_checker(placeholderObj.tempfilename, ele, total)
                         await asyncio.get_event_loop().run_in_executor(
                             common.cache_thread,
                             partial(
@@ -251,9 +250,8 @@ async def main_download_sendreq(
                                     "content-type": r.headers.get("content-type"),
                                 },
                             ),
-                        ) 
-
-
+                        )
+                        await size_checker(placeholderObj.tempfilename, ele, total)
                     else:
                         common.log.debug(
                             f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
@@ -266,7 +264,7 @@ async def main_download_sendreq(
                         )
                         r.raise_for_status()
             out=await inner()
-            return out if out!=None else total, placeholderObj.tempfilename, placeholderObj.trunicated_filename
+            return out if out!=None else (total, placeholderObj.tempfilename, placeholderObj.trunicated_filename)
         await size_checker(placeholderObj.tempfilename, ele, total)
         return  placeholderObj.tempfilename, placeholderObj.trunicated_filename
     except OSError as E:

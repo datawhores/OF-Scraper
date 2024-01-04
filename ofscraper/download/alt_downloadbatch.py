@@ -241,7 +241,6 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                         )
                         item["total"]=total
                         await alt_download_datahandler(item, total, l, ele, placeholderObj)
-                        await size_checker(placeholderObj.tempfilename, ele, total)
                         await asyncio.get_event_loop().run_in_executor(
                         common.cache_thread,
                         partial(
@@ -253,6 +252,8 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                             },
                         ),
                     )
+                        await size_checker(placeholderObj.tempfilename, ele, total)
+
 
                     else:
                         common.innerlog.get().debug(
