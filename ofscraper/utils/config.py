@@ -66,23 +66,23 @@ def read_config():
                 except:
                     continue
     return config["config"]
-#basic recursion for comparing nested keys
-def config_diff(config,schema=None):
-    if config==None:
+
+
+# basic recursion for comparing nested keys
+def config_diff(config, schema=None):
+    if config == None:
         return True
-    schema=schema or get_current_config_schema()
-    diff =  set(schema.keys())-set(config.keys())
-    if len(diff)>0:
+    schema = schema or get_current_config_schema()
+    diff = set(schema.keys()) - set(config.keys())
+    if len(diff) > 0:
         return True
     for key in schema.keys():
-        if not isinstance(schema[key],dict):
+        if not isinstance(schema[key], dict):
             continue
-        if not isinstance(config[key],dict):
+        if not isinstance(config[key], dict):
             return True
         else:
-            return config_diff(config[key],schema[key])
-            
-
+            return config_diff(config[key], schema[key])
 
 
 def get_current_config_schema(config: dict = None) -> dict:
@@ -394,11 +394,10 @@ def get_metadata(config=None):
 def get_threads(config=None):
     if config == None:
         return constants.THREADS_DEFAULT
-    threads = (
-        config.get("threads")
-        or config.get("performance_options", {}).get("threads")
-        or constants.THREADS_DEFAULT
+    threads = config.get("threads") or config.get("performance_options", {}).get(
+        "threads"
     )
+    threads = threads if threads is not None else constants.THREADS_DEFAULT
     try:
         threads = int(threads)
     except ValueError:
