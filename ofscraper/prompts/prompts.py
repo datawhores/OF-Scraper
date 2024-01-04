@@ -975,7 +975,7 @@ def model_selector(models) -> bool:
         Renewed Date: [bold blue]{selected.renewed_string}[/bold blue]
         Subscribed Date: [bold blue]{selected.subscribed_string}[/bold blue]
         Expired Date: [bold blue]{selected.expired}[/bold blue] 
-        Last Seen: {selected.last_seen}
+        Last Seen: {selected.last_seen_formatted}
         Original Sub Price: [bold blue]{selected.sub_price}[/bold blue]     [Current Subscription Price]
         Original Regular Price: [bold blue]{selected.regular_price}[/bold blue]     [Regular Subscription Price Set By Model]
         Original Claimable Promo Price: [bold blue]{selected.lowest_promo_claim}[/bold blue]   [Lowest Promotional Price Marked as Claimable]

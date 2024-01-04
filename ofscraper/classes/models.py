@@ -181,11 +181,18 @@ class Model:
         return 0
 
     @property
+    def last_seen_formatted(self):
+        last_seen = self._model.get("lastSeen")
+        if last_seen:
+            return arrow.get(last_seen).format(FORMAT)
+
+    @property
     def final_last_seen(self):
-        if not self.last_seen:
+        formatted = self.last_seen_formatted()
+        if not formatted:
             return arrow.now()
         else:
-            return arrow.get(self.last_seen)
+            return formatted
 
     @property
     def renewed_string(self):
