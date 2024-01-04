@@ -493,7 +493,7 @@ def start_stdout_logthread(input_=None, name=None, count=1):
 
 # wrapper function for discord and  log, check if threads/process should start
 def start_checker(func: abc.Callable):
-    def inner(*args_, name=None, **kwargs):
+    def inner(*args_, **kwargs):
         if args.getargs().discord and args.getargs().discord != "OFF":
             return func( *args_, **kwargs)
         elif args.getargs().log and args.getargs().log != "OFF":
@@ -504,10 +504,10 @@ def start_checker(func: abc.Callable):
 
 # processs discord/log queues via a thread
 @start_checker
-def start_other_thread(input_=None, count=1,name=None):
+def start_other_thread(input_=None, count=1,name=None,other_event=None):
     input_ = input_ or otherqueue_
     thread = threading.Thread(
-        target=logger_other, args=(input_), kwargs={"stop_count":count,"name":name,"event":other_event},daemon=True
+        target=logger_other, args=(input_,), kwargs={"stop_count":count,"name":name,"event":other_event},daemon=True
     )
     thread.start()
     return thread
@@ -537,7 +537,7 @@ def start_other_helper():
     if system.getcpu_count() >= 2:
         other_log_thread= start_other_process()
     else:
-       other_log_thread= start_other_thread()
+       other_log_thread= start_other_thread(other_event=other_event)
 
 
 # logger for putting logs into queues
