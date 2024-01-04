@@ -246,9 +246,10 @@ async def alt_download_sendreq(
                     total = int(l.headers["content-length"])
                     await update_total(total)
                     temp_file_logger(placeholderObj, ele)
-                    if await check_forced_skip(ele, item["total"]):
+                    if await check_forced_skip(ele, total):
                         item["total"]=0
                         return item
+                    item["total"]=total
                     common.log.debug(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
                     )
@@ -397,6 +398,7 @@ async def alt_download_downloader(
                         pathlib.Path(placeholderObj.tempfilename).unlink(
                             missing_ok=True
                         )
+                    
 
                 else:
                     placeholderObj.tempfilename.unlink(missing_ok=True)

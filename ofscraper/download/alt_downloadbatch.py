@@ -242,12 +242,13 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, sharedPlaceholderOb
                             },
                         ),
                     )
-                    if await check_forced_skip(ele, item["total"])==0:
+                    if await check_forced_skip(ele, total)==0:
                         item["total"] = 0
                         return item
                     common.innerlog.get().debug(
                         f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
                     )
+                    item["total"]=total
                     await alt_download_datahandler(item, total, l, ele, placeholderObj)
 
                 else:
