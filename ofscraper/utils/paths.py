@@ -87,8 +87,6 @@ def getcachepath():
 
 def truncate(path):
     path = pathlib.Path(os.path.normpath(path))
-    if args_.getargs().original:
-        return path
     if platform.system() == "Windows":
         return _windows_truncateHelper(path)
     elif platform.system() == "Linux":

@@ -71,7 +71,7 @@ async def alt_download(c, ele, username, model_id, progress):
     sharedPlaceholderObj = placeholder.Placeholders()
     sharedPlaceholderObj.getDirs(ele, username, model_id)
     sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
-    sharedPlaceholderObj.set_trunicated()
+    sharedPlaceholderObj.set_final_path()
     path_to_file_logger(sharedPlaceholderObj, ele)
 
     audio = await alt_download_downloader(audio, c, ele, username, model_id, progress)

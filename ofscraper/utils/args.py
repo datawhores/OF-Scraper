@@ -93,7 +93,7 @@ def create_parser(input=None):
         "-g",
         "--original",
         help="don't truncate long paths",
-        default=False,
+        default=None,
         action="store_true",
     )
     scraper.add_argument(

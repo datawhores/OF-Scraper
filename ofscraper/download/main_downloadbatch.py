@@ -127,7 +127,7 @@ async def main_download_downloader(c, ele, username, model_id):
                     content_type = data.get("content-type").split("/")[-1]
                     total = int(data.get("content-length"))
                     placeholderObj.createfilename(ele, username, model_id, content_type)
-                    placeholderObj.set_trunicated()
+                    placeholderObj.set_final_path()
                     resume_size = (
                         0
                         if not pathlib.Path(placeholderObj.tempfilename).exists()
@@ -211,7 +211,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                             placeholderObj.createfilename(
                                 ele, username, model_id, content_type
                             )
-                            placeholderObj.set_trunicated()
+                            placeholderObj.set_final_path()
                         path_to_file_logger(placeholderObj, ele, common.innerlog.get())
                         if await check_forced_skip(ele, total) == 0:
                             return [0]

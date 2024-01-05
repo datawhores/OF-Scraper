@@ -7,6 +7,7 @@ import arrow
 from diskcache import Cache
 
 import ofscraper.api.me as me
+import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
@@ -21,7 +22,7 @@ class Placeholders:
         self._mediadir = None
         self._metadata = None
         self._tempdir = None
-        self._trunicated_filename = None
+        self._final_path = None
         self._tempfilename = None
 
     def wrapper(f):
@@ -280,10 +281,20 @@ class Placeholders:
         self._filename = out
         return out
 
-    def set_trunicated(self):
-        self._trunicated_filename = paths.truncate(
-            pathlib.Path(self.mediadir, f"{self.filename}")
-        )
+    def set_final_path(self):
+        if (
+            args_.getargs().original or config_.get_truncation(config_.read_config())
+        ) is False:
+            self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
+        elif args_.getargs().original is False:
+            self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
+        elif (
+            args_.getargs().original is True
+            or config_.get_truncation(config_.read_config()) is True
+        ):
+            self._final_path = paths.truncate(
+                pathlib.Path(self.mediadir, f"{self.filename}")
+            )
 
     def getDirs(self, ele, username, model_id, create=True):
         self.gettempDir(ele, username, model_id, create=create)
@@ -323,11 +334,11 @@ class Placeholders:
 
     @property
     def trunicated_filename(self):
-        return self._trunicated_filename
+        return self._final_path
 
     @trunicated_filename.setter
     def trunicated_filename(self, input):
-        self._trunicated_filename = input
+        self._final_path = input
 
     @property
     def tempfilename(self):

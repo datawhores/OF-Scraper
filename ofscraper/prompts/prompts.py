@@ -561,6 +561,17 @@ def config_prompt_advanced(config_) -> dict:
                     Choice("letter", "Letter Count"),
                 ],
             },
+            {
+                "type": "list",
+                "name": "truncation_default",
+                "message": "Should the script truncate long",
+                "default": config.get_truncation(config_),
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
+                ],
+                "long_instruction": "Truncation is based on operating system",
+            },
         ]
     )
     config_.update(new_settings)

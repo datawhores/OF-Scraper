@@ -429,7 +429,9 @@ async def download(c, ele, model_id, username):
             if ele.mpd:
                 return await alt_download(c, ele, username, model_id)
         except Exception as e:
-            common.innerlog.get().traceback_(f"{get_medialog(ele)} Download Failed\n{e}")
+            common.innerlog.get().traceback_(
+                f"{get_medialog(ele)} Download Failed\n{e}"
+            )
             common.innerlog.get().traceback_(
                 f"{get_medialog(ele)} exception {traceback.format_exc()}"
             )

@@ -102,6 +102,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "space-replacer": get_spacereplacer(config),
                 "date": get_date(config),
                 "text_type_default": get_textType(config),
+                "truncation_default": get_truncation(config),
             },
             "download_options": {
                 "file_size_limit": get_filesize_limit(config),
@@ -357,12 +358,14 @@ def get_textlength(config=None):
         return constants.TEXTLENGTH_DEFAULT
     try:
         return (
-            int(config.get("textlength"))
-            or config.get("file_options", {}).get("textlength")
+            int(
+                config.get("textlength")
+                or config.get("file_options", {}).get("textlength")
+            )
             or constants.TEXTLENGTH_DEFAULT
         )
     except:
-        return 0
+        return constants.TEXTLENGTH_DEFAULT
 
 
 def get_date(config=None):
@@ -724,3 +727,14 @@ def get_TempDir(config):
         or config.get("advanced_options", {}).get("temp_dir")
         or constants.TEMP_FOLDER_DEFAULT
     )
+
+
+def get_truncation(config):
+    if config is None:
+        return constants.TRUNCATION_DEFAULT
+    val = config.get("file_options", {}).get("truncation_default") or config.get(
+        "truncation_default"
+    )
+    if val is None:
+        return constants.TRUNCATION_DEFAULT
+    return val

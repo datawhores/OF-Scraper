@@ -18,7 +18,9 @@ import shutil
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, singledispatch
+
 from humanfriendly import format_size
+
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
@@ -61,7 +63,7 @@ innerlog = contextvars.ContextVar("innerlog")
 pipe = None
 log = None
 localDirSet = None
-req_sem=None
+req_sem = None
 
 
 def reset_globals():
@@ -120,9 +122,9 @@ def reset_globals():
     global localDirSet
     localDirSet = set()
     global req_sem
-    req_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config())*5)
-
-
+    req_sem = semaphoreDelayed(
+        config_.get_download_semaphores(config_.read_config()) * 5
+    )
 
 
 def setLogDate(args):
@@ -313,7 +315,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
         placeholderObj = placeholder.Placeholders()
         placeholderObj.getDirs(ele, username, model_id, create=False)
         placeholderObj.createfilename(ele, username, model_id, content_type)
-        placeholderObj.set_trunicated()
+        placeholderObj.set_final_path()
         if ele.id:
             await operations.update_media_table(
                 ele,
@@ -382,7 +384,7 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
             placeholderObj = placeholderObj or placeholder.Placeholders()
             placeholderObj.getDirs(ele, username, model_id, create=False)
             placeholderObj.createfilename(ele, username, model_id, content_type)
-            placeholderObj.set_trunicated()
+            placeholderObj.set_final_path()
             path_to_file_logger(placeholderObj, ele)
 
         else:
