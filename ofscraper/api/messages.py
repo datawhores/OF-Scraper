@@ -91,6 +91,11 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                 ] + oldmessages
 
                 before = (args_.getargs().before or arrow.now()).float_timestamp
+                rescan = (
+                    rescan
+                    or cache.get("{model_id}_scrape_messages")
+                    and not args_.getargs().after
+                )
                 after = after = (
                     0 if rescan else forced_after or get_after(model_id, username)
                 )

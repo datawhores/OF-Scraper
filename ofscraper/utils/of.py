@@ -50,8 +50,6 @@ def process_messages(model_id, username):
         messages_ = messages.get_messages(
             model_id,
             username,
-            rescan=cache.get("{model_id}_scrape_messages")
-            and not args_.getargs().after,
         )
         messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
         curr = set(
@@ -193,8 +191,6 @@ def process_timeline_posts(model_id, username, individual=False):
             timeline.get_timeline_media(
                 model_id,
                 username,
-                rescan=cache.get("{model_id}_scrape_timeline")
-                and not args_.getargs().after,
             )
             if not individual
             else timeline.get_individual_post(id)
@@ -243,8 +239,6 @@ def process_archived_posts(model_id, username):
         archived_posts = archive.get_archived_media(
             model_id,
             username,
-            rescan=cache.get("{model_id}_scrape_archived")
-            and not args_.getargs().after,
         )
         archived_posts = list(
             map(
