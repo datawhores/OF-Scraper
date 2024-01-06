@@ -1,5 +1,6 @@
 from diskcache import Cache
 
+import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 
@@ -7,6 +8,8 @@ cache = None
 
 
 def get(*args, **kwargs):
+    if args_.getargs().no_cache:
+        return kwargs.get("default")
     global cache
     if cache is None:
         cache = Cache(
@@ -16,6 +19,8 @@ def get(*args, **kwargs):
 
 
 def set(*args, **kwargs):
+    if args_.getargs().no_cache:
+        return
     global cache
     if cache is None:
         cache = Cache(
@@ -25,6 +30,8 @@ def set(*args, **kwargs):
 
 
 def close(*args, **kwargs):
+    if args_.getargs().no_cache:
+        return None
     global cache
     if cache is None:
         cache = Cache(

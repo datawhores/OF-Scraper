@@ -99,7 +99,9 @@ class Placeholders:
         return pathlib.Path(data_path)
 
     def databasePathCopyHelper(self, model_id, model_username):
-        counter = (cache.get(f"{model_username}_{model_id}_dbcounter", 0) % 5) + 1
+        counter = (
+            cache.get(f"{model_username}_{model_id}_dbcounter", default=0) % 5
+        ) + 1
         cache.set(f"{model_username}_{model_id}_dbcounter", counter)
         cache.close()
         return pathlib.Path(

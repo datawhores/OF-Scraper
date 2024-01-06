@@ -130,7 +130,7 @@ def get_id(username):
     reraise=True,
 )
 def get_id_helper(c, username):
-    id = cache.get(f"model_id_{username}", None)
+    id = cache.get(f"model_id_{username}")
     if id:
         return id
     with c.requests(profileEP.format(username))() as r:

@@ -565,7 +565,7 @@ def create_backup(model_id, username):
     database_path = placeholder.Placeholders().databasePathHelper(model_id, username)
 
     now = arrow.now().float_timestamp
-    last = cache.get(f"{username}_{model_id}_db_backup", now)
+    last = cache.get(f"{username}_{model_id}_db_backup", default=now)
     if now - last > DBINTERVAL and database_path.exists():
         database_copy = placeholder.Placeholders().databasePathCopyHelper(
             model_id, username
