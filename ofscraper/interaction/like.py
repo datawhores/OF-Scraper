@@ -81,7 +81,7 @@ def like(model_id, username, ids: list):
 
 
 def unlike(model_id, username, ids: list):
-    like(model_id, username, ids, False)
+    _like(model_id, username, ids, False)
 
 
 @run

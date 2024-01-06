@@ -295,7 +295,7 @@ def process_unlike():
                 model_id = profile.get_id(ele.name)
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
-                posts = like.get_posts(model_id)
+                posts = like.get_posts(model_id, ele.name)
                 favorited_posts = like.filter_for_favorited(posts)
                 favorited_posts = filters.helpers.timeline_array_filter(favorited_posts)
                 log.debug(
