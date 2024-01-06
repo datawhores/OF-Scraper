@@ -274,7 +274,8 @@ def create_parser(input=None):
 
     # Filters for accounts
     filters = parser.add_argument_group(
-        "filters", description="Filters out usernames based on selected parameters"
+        "Model filters",
+        description="Filters out usernames based on selected parameters",
     )
 
     filters.add_argument(
@@ -470,7 +471,7 @@ def create_parser(input=None):
     )
 
     adv_filters = parser.add_argument_group(
-        "advanced filters",
+        "Advanced model filters",
         description="Advanced filtering of accounts based on more presised user-defined parameters",
     )
 
@@ -597,7 +598,7 @@ def create_parser(input=None):
     )
 
     sort = parser.add_argument_group(
-        "sort",
+        "Model sort",
         description="Controls the order of the model selection list and the scraping order",
     )
     sort.add_argument(
