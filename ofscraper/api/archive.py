@@ -187,7 +187,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                 rescan = (
                     rescan
                     or cache.get("{model_id}_scrape_archived")
-                    and not args_.getargs().after,
+                    and not args_.getargs().after
                 )
                 after = after = (
                     0 if rescan else forced_after or get_after(model_id, username)
