@@ -50,9 +50,9 @@ def get_posts(model_id, username):
     if "Pinned" in args.posts or "All" in args.posts:
         pinned_posts = pinned.get_pinned_post(model_id)
     if "Timeline" in args.posts or "All" in args.posts:
-        timeline_posts = timeline.get_timeline_media(model_id, username, after=0)
+        timeline_posts = timeline.get_timeline_media(model_id, username, forced_after=0)
     if "Archived" in args.posts or "All" in args.posts:
-        archived_posts = archive.get_archived_media(model_id, username, after=0)
+        archived_posts = archive.get_archived_media(model_id, username, forced_after=0)
     log.debug(
         f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}"
     )

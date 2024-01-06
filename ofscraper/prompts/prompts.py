@@ -457,7 +457,7 @@ def config_prompt_advanced(config_) -> dict:
                 "name": "cache-mode",
                 "message": "sqlite should be fine unless your using a network drive\nSee",
                 "default": config.cache_mode_helper(config_),
-                "choices": ["sqlite", "json"],
+                "choices": ["sqlite", "json", "disabled"],
             },
             {
                 "type": "list",

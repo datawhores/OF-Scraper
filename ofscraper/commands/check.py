@@ -147,7 +147,7 @@ def post_checker():
             else:
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
-                data = timeline.get_timeline_media(model_id, user_name, after=0)
+                data = timeline.get_timeline_media(model_id, user_name, forced_after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"timeline_check_{model_id}", data, expire=constants.DAY_SECONDS
@@ -158,7 +158,7 @@ def post_checker():
             if len(oldarchive) > 0 and not args_.getargs().force:
                 user_dict[user_name].extend(oldarchive)
             else:
-                data = archive.get_archived_media(model_id, user_name, after=0)
+                data = archive.get_archived_media(model_id, user_name, forced_after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"archived_check_{model_id}", data, expire=constants.DAY_SECONDS
@@ -242,7 +242,7 @@ def message_checker():
         if len(oldmessages) > 0 and not args_.getargs().force:
             messages = oldmessages
         else:
-            messages = messages_.get_messages(model_id, user_name, after=0)
+            messages = messages_.get_messages(model_id, user_name, forced_after=0)
             cache.set(
                 f"message_check_{model_id}", messages, expire=constants.DAY_SECONDS
             )

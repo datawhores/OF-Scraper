@@ -675,6 +675,8 @@ def cache_mode_helper(config):
         or config.get("advanced_options", {}).get("cache-mode")
         or constants.CACHEDEFAULT
     )
+    if data == "disabled":
+        return data
     if data in [constants.CACHEDEFAULT, "json"]:
         return data
     else:

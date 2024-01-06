@@ -8,7 +8,10 @@ cache = None
 
 
 def get(*args, **kwargs):
-    if args_.getargs().no_cache:
+    if (
+        args_.getargs().no_cache
+        or config_.get_cache_mode(config_.read_config()) == "disabled"
+    ):
         return kwargs.get("default")
     global cache
     if cache is None:
@@ -19,7 +22,10 @@ def get(*args, **kwargs):
 
 
 def set(*args, **kwargs):
-    if args_.getargs().no_cache:
+    if (
+        args_.getargs().no_cache
+        or config_.get_cache_mode(config_.read_config()) == "disabled"
+    ):
         return
     global cache
     if cache is None:
@@ -30,7 +36,10 @@ def set(*args, **kwargs):
 
 
 def close(*args, **kwargs):
-    if args_.getargs().no_cache:
+    if (
+        args_.getargs().no_cache
+        or config_.get_cache_mode(config_.read_config()) == "disabled"
+    ):
         return None
     global cache
     if cache is None:
