@@ -265,8 +265,7 @@ def process_like():
                 model_id = ele.id
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
-                posts = like.get_posts(model_id, ele.name)
-                unfavorited_posts = like.filter_for_unfavorited(posts)
+                unfavorited_posts = like.get_post_for_like(model_id, ele.name)
                 unfavorited_posts = filters.helpers.timeline_array_filter(
                     unfavorited_posts
                 )
@@ -295,8 +294,7 @@ def process_unlike():
                 model_id = profile.get_id(ele.name)
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
-                posts = like.get_posts(model_id, ele.name)
-                favorited_posts = like.filter_for_favorited(posts)
+                favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
                 favorited_posts = filters.helpers.timeline_array_filter(favorited_posts)
                 log.debug(
                     f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}"

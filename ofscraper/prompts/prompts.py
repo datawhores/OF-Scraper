@@ -71,7 +71,7 @@ def areas_prompt() -> list:
     return answers[name]
 
 
-def like_areas_prompt() -> list:
+def like_areas_prompt(like=True) -> list:
     name = "areas"
 
     answers = promptClasses.batchConverter(
@@ -80,7 +80,7 @@ def like_areas_prompt() -> list:
                 "type": "checkbox",
                 "qmark": "[?]",
                 "name": name,
-                "message": "Which area(s) would you to perform like/unlike actions on",
+                "message": f"Which area(s) would you to perform {'like' if like else 'unlike'} actions on",
                 "validate": prompt_validators.emptyListValidator(),
                 "choices": [
                     Choice("Timeline"),

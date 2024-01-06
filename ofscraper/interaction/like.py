@@ -39,14 +39,10 @@ import ofscraper.utils.args as args_
 
 
 def get_posts(model_id, username):
+    args = args_.getargs()
     pinned_posts = []
     timeline_posts = []
     archived_posts = []
-    args = args_.getargs()
-
-    args.posts = list(
-        map(lambda x: x.capitalize(), (args.posts or prompts.like_areas_prompt()))
-    )
     if "Pinned" in args.posts or "All" in args.posts:
         pinned_posts = pinned.get_pinned_post(model_id)
     if "Timeline" in args.posts or "All" in args.posts:
@@ -57,6 +53,24 @@ def get_posts(model_id, username):
         f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}"
     )
     return pinned_posts + timeline_posts + archived_posts
+
+
+def get_posts_for_unlike(model_id, username):
+    args = args_.getargs()
+    args.posts = list(
+        map(lambda x: x.capitalize(), (args.posts or prompts.like_areas_prompt(False)))
+    )
+    post = get_posts(model_id, username)
+    return filter_for_favorited(post)
+
+
+def get_post_for_like(model_id, username):
+    args = args_.getargs()
+    args.posts = list(
+        map(lambda x: x.capitalize(), (args.posts or prompts.like_areas_prompt()))
+    )
+    post = get_posts(model_id, username)
+    return filter_for_unfavorited(post)
 
 
 def filter_for_unfavorited(posts: list) -> list:
