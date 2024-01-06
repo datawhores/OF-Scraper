@@ -20,18 +20,17 @@ from functools import partial
 
 import aiosqlite
 import arrow
-from diskcache import Cache
 from filelock import FileLock
 from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.config as config
+import ofscraper.utils.cache as cache
 import ofscraper.utils.exit as exit
 from ofscraper.constants import DBINTERVAL
 from ofscraper.utils.run_async import run
 
 from ..db import queries
-from ..utils.paths import createDir, getcachepath, getDB
+from ..utils.paths import createDir, getDB
 
 console = Console()
 log = logging.getLogger("shared")
@@ -564,7 +563,6 @@ def create_tables(model_id, username):
 
 def create_backup(model_id, username):
     database_path = placeholder.Placeholders().databasePathHelper(model_id, username)
-    cache = Cache(getcachepath(), disk=config.get_cache_mode(config.read_config()))
 
     now = arrow.now().float_timestamp
     last = cache.get(f"{username}_{model_id}_db_backup", now)

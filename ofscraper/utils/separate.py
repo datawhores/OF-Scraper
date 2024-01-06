@@ -7,11 +7,8 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
-from diskcache import Cache
 
-import ofscraper.utils.config as config_
-
-from ..utils.paths import getcachepath
+import ofscraper.utils.cache as cache
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
@@ -24,7 +21,6 @@ def seperate_avatars(data):
 
 
 def seperate_avatar_helper(ele):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     # id for avatar comes from xxh32 of url
     if ele.postid and ele.responsetype == "profile":
         value = cache.get(ele.postid, False)

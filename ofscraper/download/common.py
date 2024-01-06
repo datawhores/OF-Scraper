@@ -26,7 +26,6 @@ try:
 except ModuleNotFoundError:
     pass
 import aioprocessing
-from diskcache import Cache
 from rich.console import Group
 from rich.panel import Panel
 from rich.progress import (
@@ -46,10 +45,10 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
 import ofscraper.utils.dates as dates
-import ofscraper.utils.paths as paths
 import ofscraper.utils.system as system
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -103,10 +102,6 @@ def reset_globals():
     sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
     global cache_thread
     cache_thread = ThreadPoolExecutor(max_workers=1)
-    global cache
-    cache = Cache(
-        paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-    )
     global dirSet
     dirSet = set()
     global mpd_sem

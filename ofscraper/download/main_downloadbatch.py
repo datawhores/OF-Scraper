@@ -31,6 +31,7 @@ import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths as paths
@@ -121,7 +122,7 @@ async def main_download_downloader(c, ele, username, model_id):
                 placeholderObj.tempfilename = f"{ele.final_filename}_{ele.id}.part"
                 data = await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
-                    partial(common.cache.get, f"{ele.id}_headers"),
+                    partial(cache.get, f"{ele.id}_headers"),
                 )
                 if data and data.get("content-length"):
                     content_type = data.get("content-type").split("/")[-1]
@@ -227,7 +228,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         await asyncio.get_event_loop().run_in_executor(
                             common.cache_thread,
                             partial(
-                                common.cache.set,
+                                cache.set,
                                 f"{ele.id}_headers",
                                 {
                                     "content-length": r.headers.get("content-length"),
@@ -254,7 +255,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         r.raise_for_status()
                     await asyncio.get_event_loop().run_in_executor(
                         common.cache_thread,
-                        partial(common.cache.touch, f"{ele.filename}_headers", 1),
+                        partial(cache.touch, f"{ele.filename}_headers", 1),
                     )
 
             return await inner()

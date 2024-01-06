@@ -31,6 +31,7 @@ import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.dates as dates
 from ofscraper.download.common import (
@@ -129,7 +130,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
 
                     data = await asyncio.get_event_loop().run_in_executor(
                         common.cache_thread,
-                        partial(common.cache.get, f"{ele.id}_headers"),
+                        partial(cache.get, f"{ele.id}_headers"),
                     )
 
                     if data and data.get("content-length"):
@@ -242,7 +243,7 @@ async def main_download_sendreq(
                         await asyncio.get_event_loop().run_in_executor(
                             common.cache_thread,
                             partial(
-                                common.cache.set,
+                                cache.set,
                                 f"{ele.id}_headers",
                                 {
                                     "content-length": r.headers.get("content-length"),
@@ -327,7 +328,7 @@ async def main_download_datahandler(r, progress, ele, placeholderObj, total):
                 count = 0
         await asyncio.get_event_loop().run_in_executor(
             common.cache_thread,
-            partial(common.cache.touch, f"{ele.filename}_headers", 1),
+            partial(cache.touch, f"{ele.filename}_headers", 1),
         )
     except Exception as E:
         await update_total(-total)

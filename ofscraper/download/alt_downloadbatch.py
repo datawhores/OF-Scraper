@@ -25,6 +25,7 @@ import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
@@ -241,7 +242,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                         await asyncio.get_event_loop().run_in_executor(
                             common.cache_thread,
                             partial(
-                                common.cache.set,
+                                cache.set,
                                 f"{item['name']}_headers",
                                 {
                                     "content-length": l.headers.get("content-length"),
@@ -363,7 +364,7 @@ async def alt_download_downloader(item, c, ele, username, model_id):
                 item["path"] = placeholderObj.tempfilename
                 data = await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
-                    partial(common.cache.get, f"{item['name']}_headers"),
+                    partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
                     item["total"] = int(data.get("content-length"))

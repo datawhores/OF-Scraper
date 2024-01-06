@@ -17,6 +17,7 @@ import ofscraper.constants as constants
 import ofscraper.download.common as common
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 from ofscraper.download.common import get_medialog
 
@@ -37,7 +38,7 @@ async def un_encrypt(item, c, ele, input_=None):
         or "cdrm"
     )
     past_key = await asyncio.get_event_loop().run_in_executor(
-        common.cache_thread, partial(common.cache.get, ele.license)
+        common.cache_thread, partial(cache.get, ele.license)
     )
     if past_key:
         key = past_key
@@ -54,7 +55,7 @@ async def un_encrypt(item, c, ele, input_=None):
         raise Exception(f"{get_medialog(ele)} Could not get key")
     await asyncio.get_event_loop().run_in_executor(
         common.cache_thread,
-        partial(common.cache.set, ele.license, key, expire=constants.KEY_EXPIRY),
+        partial(cache.set, ele.license, key, expire=constants.KEY_EXPIRY),
     )
     log.debug(f"{get_medialog(ele)} got key")
     newpath = pathlib.Path(re.sub("\.part$", "", str(item["path"]), re.IGNORECASE))
@@ -208,9 +209,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                     out = data["keys"][0]["key"]
                 await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
-                    partial(
-                        common.cache.set, licence_url, out, expire=constants.KEY_EXPIRY
-                    ),
+                    partial(cache.set, licence_url, out, expire=constants.KEY_EXPIRY),
                 )
             else:
                 log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")

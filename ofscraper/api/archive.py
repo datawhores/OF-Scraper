@@ -13,7 +13,6 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
-from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -25,12 +24,10 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -148,9 +145,6 @@ async def scrape_archived_posts(
 async def get_archived_media(model_id, username, forced_after=None, rescan=None):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
-        cache = Cache(
-            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),
             TextColumn("Getting archived media...\n{task.description}"),
@@ -318,7 +312,6 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 
 
 def get_after(model_id, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     curr = operations.get_archived_media(model_id=model_id, username=username)

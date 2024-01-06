@@ -7,7 +7,6 @@ import threading
 import time
 
 import arrow
-from diskcache import Cache
 
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
@@ -24,11 +23,9 @@ import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
-import ofscraper.utils.config as config_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.network as network
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -123,7 +120,6 @@ def process_download_cart():
 
 def post_checker():
     user_dict = {}
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
 
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
         links = list(url_helper())
@@ -223,7 +219,6 @@ def set_count(ROWS):
 
 def message_checker():
     links = list(url_helper())
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     ROWS = []
     for item in links:
         num_match = re.search(f"({constants.NUMBER_REGEX}+)", item) or re.search(
@@ -277,7 +272,6 @@ def message_checker():
 
 
 def purchase_checker():
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     user_dict = {}
     auth.make_headers(auth.read_auth())
     ROWS = []
@@ -363,7 +357,6 @@ def get_downloaded(user_name, model_id, paid=False):
 
 
 def get_paid_ids(model_id, user_name):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
     paid = None
 
@@ -437,8 +430,6 @@ def checkmarkhelper(ele):
 
 
 def row_gather(media, downloaded, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
-
     # fix text
 
     mediadict = {}

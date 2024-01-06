@@ -12,7 +12,6 @@ import contextvars
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -23,12 +22,10 @@ from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wai
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
-
-from ..utils.paths import getcachepath
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
@@ -42,9 +39,7 @@ attempt = contextvars.ContextVar("attempt")
 async def get_paid_posts(username, model_id):
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
-        cache = Cache(
-            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
+
         overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),
             TextColumn("Getting paid media...\n{task.description}"),
@@ -169,9 +164,6 @@ async def scrape_paid(c, username, job_progress, offset=0):
 async def get_all_paid_posts():
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
-        cache = Cache(
-            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),
             TextColumn("Getting all paid media...\n{task.description}"),

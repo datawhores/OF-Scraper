@@ -11,8 +11,6 @@ r"""
 import logging
 from itertools import chain
 
-from diskcache import Cache
-
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
 import ofscraper.api.labels as labels_api
@@ -28,11 +26,10 @@ import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.stdout as stdout
 import ofscraper.utils.system as system
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 
@@ -49,7 +46,6 @@ def space_checker(func):
 
 @space_checker
 def process_messages(model_id, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     with stdout.lowstdout():
         messages_ = messages.get_messages(
             model_id, username, rescan=cache.get("{model_id}_scrape_messages")
@@ -190,9 +186,6 @@ def process_highlights(model_id, username):
 @space_checker
 def process_timeline_posts(model_id, username, individual=False):
     with stdout.lowstdout():
-        cache = Cache(
-            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         timeline_posts = (
             timeline.get_timeline_media(
                 model_id, username, rescan=cache.get("{model_id}_scrape_timeline")
@@ -241,9 +234,6 @@ def process_timeline_posts(model_id, username, individual=False):
 @space_checker
 def process_archived_posts(model_id, username):
     with stdout.lowstdout():
-        cache = Cache(
-            getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         archived_posts = archive.get_archived_media(
             model_id, username, rescan=cache.get("{model_id}_scrape_archived")
         )

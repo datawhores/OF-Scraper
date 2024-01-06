@@ -34,6 +34,7 @@ import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
@@ -255,7 +256,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):
                         await asyncio.get_event_loop().run_in_executor(
                             common.cache_thread,
                             partial(
-                                common.cache.set,
+                                cache.set,
                                 f"{item['name']}_headers",
                                 {
                                     "content-length": l.headers.get("content-length"),
@@ -343,7 +344,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
         await asyncio.get_event_loop().run_in_executor(
             common.cache_thread,
             partial(
-                common.cache.set,
+                cache.set,
                 f"{item['name']}_headers",
                 {
                     "content-length": data.get("content-length"),
@@ -382,7 +383,7 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
                 item["path"] = placeholderObj.tempfilename
                 data = await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
-                    partial(common.cache.get, f"{item['name']}_headers"),
+                    partial(cache.get, f"{item['name']}_headers"),
                 )
                 pathlib.Path(placeholderObj.tempfilename).unlink(missing_ok=True) if (
                     args_.getargs().no_auto_resume

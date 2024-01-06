@@ -14,7 +14,6 @@ import os
 import re
 import sys
 
-from diskcache import Cache
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
@@ -28,8 +27,8 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config
-import ofscraper.utils.paths as paths
 import ofscraper.utils.system as system
 
 console = Console()
@@ -403,10 +402,6 @@ def config_prompt_advanced(config_) -> dict:
     )
 
     config_.update(threads)
-
-    cache = Cache(
-        paths.getcachepath(), disk=config.get_cache_mode(config.read_config())
-    )
     max_allowed = cache.get("speed_download")
     if not cache.get("speed_download") or promptClasses.getChecklistSelection(
         choices=[Choice(True, "Yes"), Choice(False, "No")],

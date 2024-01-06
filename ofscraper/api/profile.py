@@ -11,21 +11,19 @@ import contextvars
 import logging
 from typing import Union
 
-from diskcache import Cache
 from rich.console import Console
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 from xxhash import xxh128
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
-import ofscraper.utils.config as config_
+import ofscraper.utils.cache as cache
 
 from ..constants import DAY_SECONDS, HOURLY_EXPIRY, NUM_TRIES, profileEP
-from ..utils import auth, encoding
-from ..utils.paths import getcachepath
+from ..utils import encoding
 
-log = logging.getLogger("shared")
 console = Console()
+log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 
@@ -42,7 +40,6 @@ def scrape_profile(username: Union[int, str]) -> dict:
     reraise=True,
 )
 def scrape_profile_helper(c, username: Union[int, str]):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     id = cache.get(f"username_{username}", None)
     log.trace(f"username date: {id}")
     if id:
@@ -133,7 +130,6 @@ def get_id(username):
     reraise=True,
 )
 def get_id_helper(c, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     id = cache.get(f"model_id_{username}", None)
     if id:
         return id

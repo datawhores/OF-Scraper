@@ -4,10 +4,10 @@ import pathlib
 import re
 
 import arrow
-from diskcache import Cache
 
 import ofscraper.api.me as me
 import ofscraper.utils.args as args_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
@@ -99,9 +99,6 @@ class Placeholders:
         return pathlib.Path(data_path)
 
     def databasePathCopyHelper(self, model_id, model_username):
-        cache = Cache(
-            paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
         counter = (cache.get(f"{model_username}_{model_id}_dbcounter", 0) % 5) + 1
         cache.set(f"{model_username}_{model_id}_dbcounter", counter)
         cache.close()

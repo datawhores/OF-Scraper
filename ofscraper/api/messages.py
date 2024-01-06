@@ -13,7 +13,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
-from diskcache import Cache
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -25,12 +24,10 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
+import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -409,7 +406,6 @@ def get_individual_post(model_id, postid, c=None):
 
 
 def get_after(model_id, username):
-    cache = Cache(getcachepath(), disk=config_.get_cache_mode(config_.read_config()))
     if args_.getargs().after:
         return args_.getargs().after.float_timestamp
     if cache.get(f"{model_id}_scrape_messages"):
