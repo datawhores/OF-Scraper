@@ -256,15 +256,20 @@ def process_like():
         profiles.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
-        active = list(filter(lambda x: x["active"], userdata))
+        active = list(filter(lambda x: x.active, userdata))
         length = len(active)
+        log.debug(f"Number of Active Accounts selected {length}")
         with stdout.lowstdout():
             for count, ele in enumerate(active):
                 log.info(f"Progress {count+1}/{length} model")
                 model_id = ele.id
+                operations.create_tables(model_id, ele.name)
+                operations.create_backup(model_id, ele.name)
                 posts = like.get_posts(model_id, ele.name)
                 unfavorited_posts = like.filter_for_unfavorited(posts)
-                unfavorited_posts = filters.timeline_array_filter(unfavorited_posts)
+                unfavorited_posts = filters.helpers.timeline_array_filter(
+                    unfavorited_posts
+                )
                 log.debug(
                     f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}"
                 )
@@ -281,15 +286,18 @@ def process_unlike():
         profiles.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
-        active = list(filter(lambda x: x["active"], userdata))
+        active = list(filter(lambda x: x.active, userdata))
         length = len(active)
+        log.debug(f"Number of Active Accounts selected {length}")
         with stdout.lowstdout():
             for count, ele in enumerate(active):
                 log.info(f"Progress {count+1}/{length} model")
                 model_id = profile.get_id(ele.name)
+                operations.create_tables(model_id, ele.name)
+                operations.create_backup(model_id, ele.name)
                 posts = like.get_posts(model_id)
                 favorited_posts = like.filter_for_favorited(posts)
-                favorited_posts = filters.timeline_array_filter(favorited_posts)
+                favorited_posts = filters.helpers.timeline_array_filter(favorited_posts)
                 log.debug(
                     f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}"
                 )
