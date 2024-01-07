@@ -79,10 +79,10 @@ def config_diff(config, schema=None):
     for key in schema.keys():
         if not isinstance(schema[key], dict):
             continue
-        if not isinstance(config[key], dict):
+        elif not isinstance(config[key], dict):
             return True
-        else:
-            return config_diff(config[key], schema[key])
+        elif config_diff(config[key], schema[key]):
+            return True
 
 
 def get_current_config_schema(config: dict = None) -> dict:
@@ -110,6 +110,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "filter": get_filter(config),
                 "auto_resume": get_part_file_clean(config),
                 "system_free_min": get_system_freesize(config),
+                "number_retries": get_number_retries(config),
             },
             "binary_options": {
                 "mp4decrypt": get_mp4decrypt(config),
@@ -331,6 +332,24 @@ def get_system_freesize(config=None):
         )
     except Exception:
         return 0
+
+
+def get_number_retries(config=None):
+    if config is None:
+        return constants.DOWNLOAD_RETRIES
+    try:
+        return max(
+            int(
+                str(
+                    config.get("download_retries")
+                    or config.get("download_options", {}).get("download_retries")
+                    or constants.DOWNLOAD_RETRIES
+                )
+            ),
+            1,
+        )
+    except Exception:
+        return constants.DOWNLOAD_RETRIES
 
 
 def get_dirformat(config=None):

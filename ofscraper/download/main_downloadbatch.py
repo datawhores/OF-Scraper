@@ -112,7 +112,7 @@ async def main_download(c, ele, username, model_id):
 async def main_download_downloader(c, ele, username, model_id):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
         ):
@@ -237,6 +237,12 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                             ),
                         )
                         await size_checker(placeholderObj.tempfilename, ele, total)
+                        common.log.debug(
+                            f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                        )
+                        common.log.debug(
+                            f" Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                        )
                         return (
                             total,
                             placeholderObj.tempfilename,
@@ -265,13 +271,13 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
         )
         common.log.debug(
-            f" Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
         )
         common.log.debug(
-            f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
         )
     except Exception as E:
         common.innerlog.get().traceback_(

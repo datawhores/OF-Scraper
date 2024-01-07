@@ -24,7 +24,7 @@ class sessionBuilder:
         set_header=True,
         set_sign=True,
         set_cookies=True,
-        connect_timeout=None,
+        connect_timeout=20,
         total_timeout=None,
     ):
         self._backend = backend or config_.get_backend(config_.read_config())
@@ -42,13 +42,21 @@ class sessionBuilder:
                     total=self._total_timeout,
                     connect=self._connect_timeout,
                     sock_connect=self._connect_timeout,
-                    sock_read=None,
+                    sock_read=self._connect_timeout,
                 ),
                 connector=aiohttp.TCPConnector(),
             )
 
         elif self._backend == "httpx":
-            self._session = httpx.AsyncClient(timeout=self._total_timeout)
+            self._session = httpx.AsyncClient(
+                http2=True,
+                timeout=httpx.Timeout(
+                    self.total_timeout,
+                    connect=self._connect_timeout,
+                    pool=self._connect_timeout,
+                    read=self._connect_timeout,
+                ),
+            )
 
         return self
 
@@ -58,7 +66,15 @@ class sessionBuilder:
     def __enter__(self):
         self._async = False
         if self._backend == "httpx":
-            self._session = httpx.Client(http2=True, timeout=self._total_timeout)
+            self._session = httpx.Client(
+                http2=True,
+                timeout=httpx.Timeout(
+                    self._total_timeout,
+                    connect=self._connect_timeout,
+                    pool=self._connect_timeout,
+                    read=self._connect_timeout,
+                ),
+            )
         elif self._backend == "aio":
             raise Exception("aiohttp is async only")
         return self

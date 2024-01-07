@@ -117,7 +117,7 @@ async def main_download(c, ele, username, model_id, progress):
 async def main_download_downloader(c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
         ):
@@ -170,7 +170,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
     common.attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
             retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
@@ -277,10 +277,10 @@ async def main_download_sendreq(
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"Number of Open Files -> { len(psutil.Process().open_files())}"
+            f"[attempt {common.attempt.get()}/{constants.NUM_TRIES}] Number of Open Files -> { len(psutil.Process().open_files())}"
         )
         common.log.debug(
-            f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+            f"[attempt {common.attempt.get()}/{constants.NUM_TRIES}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
         common.log.traceback_(

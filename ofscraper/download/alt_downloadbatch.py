@@ -251,6 +251,12 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                             ),
                         )
                         await size_checker(placeholderObj.tempfilename, ele, total)
+                        common.log.debug(
+                            f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                        )
+                        common.log.debug(
+                            f" Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                        )
                         return item
 
                     else:
@@ -273,13 +279,13 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
         )
         common.log.debug(
-            f" Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
         )
         common.log.debug(
-            f"Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
         )
     except Exception as E:
         common.innerlog.get().traceback_(
@@ -352,7 +358,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
 async def alt_download_downloader(item, c, ele, username, model_id):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
         ):
@@ -393,7 +399,7 @@ async def alt_download_downloader(item, c, ele, username, model_id):
     _attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
             retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),

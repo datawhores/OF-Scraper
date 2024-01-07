@@ -286,10 +286,10 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"Number of Open Files -> { len(psutil.Process().open_files())}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Number of Open Files -> { len(psutil.Process().open_files())}"
         )
         common.log.debug(
-            f"Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+            f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
         common.log.traceback_(
@@ -371,7 +371,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
 async def alt_download_downloader(item, c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
         ):
@@ -420,7 +420,7 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
     _attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(config_.get_number_retries()),
             wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
             reraise=True,
             retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),

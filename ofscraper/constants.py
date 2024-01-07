@@ -134,6 +134,7 @@ AVATAR_DEFAULT = True
 TEXT_TYPE_DEFAULT = "letter"
 TRUNCATION_DEFAULT = True
 TEMP_FOLDER_DEFAULT = None
+DOWNLOAD_RETRIES = 10
 RESPONSE_TYPE_DEFAULT = {
     "message": "Messages",
     "timeline": "Posts",
