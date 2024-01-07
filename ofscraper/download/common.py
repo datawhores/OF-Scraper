@@ -492,3 +492,14 @@ def downloadspace():
     space_limit = config_.get_system_freesize(config_.read_config)
     if space_limit > 0 and space_limit > system.get_free():
         raise Exception(constants.SPACE_DOWNLOAD_MESSAGE)
+
+
+def log_download_progress(media_type):
+    if media_type is None:
+        return
+    if (photo_count + audio_count + video_count + forced_skipped + skipped) % 20 == 0:
+        log.debug(
+            f"In progress -> {format_size(total_bytes )}) ({photo_count+audio_count+video_count} \
+downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos], \
+            {forced_skipped} skipped, {skipped} failed)"
+        )

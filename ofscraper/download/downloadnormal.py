@@ -24,6 +24,7 @@ from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common import (
     convert_num_bytes,
     get_medialog,
+    log_download_progress,
     reset_globals,
     setDirectoriesDate,
     setupProgressBar,
@@ -104,11 +105,7 @@ async def process_dicts(username, model_id, medialist):
                         elif media_type == "forced_skipped":
                             forced_skipped += 1
                         sum += 1
-                        common.log.debug(
-                            f"In progress -> {format_size(common.total_bytes )}) ({common.photo_count+common.audio_count+common.video_count} \
-        downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
-        {common.forced_skipped} skipped, {common.skipped} failed)"
-                        )
+                        log_download_progress(media_type)
                         overall_progress.update(
                             task1,
                             description=desc.format(
