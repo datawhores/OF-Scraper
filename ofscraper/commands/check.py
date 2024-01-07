@@ -97,7 +97,9 @@ def process_download_cart():
                 media = medialist[0] if len(medialist) > 0 else []
                 model_id = media.post.model_id
                 username = media.post.username
-                log.info(f"Downloading Invidual media for {username} {media.filename}")
+                log.info(
+                    f"Downloading individual media for {username} {media.filename}"
+                )
                 operations.create_tables(model_id=model_id, username=username)
                 operations.create_backup(model_id, username)
                 operations.write_profile_table(model_id=model_id, username=username)
