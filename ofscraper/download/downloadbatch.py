@@ -267,6 +267,11 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                     common.skipped += 1
                 elif media_type == "forced_skipped":
                     common.forced_skipped += 1
+                common.log.debug(
+                    f"In progress -> {format_size(common.total_bytes )}) ({common.photo_count+common.audio_count+common.video_count} \
+        downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
+        {common.forced_skipped} skipped, {common.skipped} failed)"
+                )
                 overall_progress.update(
                     task1,
                     description=common.desc.format(
