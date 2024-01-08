@@ -15,10 +15,10 @@ import pathlib
 from diskcache import Disk, JSONDisk
 from humanfriendly import parse_size
 
-import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.binaries as binaries
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.paths as paths_
 
 console = console_.get_shared_console()
@@ -91,7 +91,7 @@ def get_current_config_schema(config: dict = None) -> dict:
 
     new_config = {
         "config": {
-            constants.mainProfile: get_main_profile(config),
+            constants.getattr("mainProfile"): get_main_profile(config),
             "metadata": get_metadata(config),
             "discord": get_discord(config),
             "file_options": {
@@ -110,7 +110,6 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "filter": get_filter(config),
                 "auto_resume": get_part_file_clean(config),
                 "system_free_min": get_system_freesize(config),
-                "number_retries": get_number_retries(config),
             },
             "binary_options": {
                 "mp4decrypt": get_mp4decrypt(config),
@@ -124,7 +123,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             },
             "performance_options": {
                 "download-sems": get_download_semaphores(config),
-                "maxfile-sem": get_maxfile_semaphores(config),
                 "threads": get_threads(config),
             },
             "advanced_options": {
@@ -271,33 +269,32 @@ def update_ffmpeg():
 
 def get_save_location(config=None):
     if config == None:
-        return constants.SAVE_PATH_DEFAULT
+        return constants.getattr("SAVE_PATH_DEFAULT")
     return (
         config.get("save_location")
         or config.get("file_options", {}).get("save_location")
         or config.get("save_location")
-        or constants.SAVE_PATH_DEFAULT
+        or constants.getattr("SAVE_PATH_DEFAULT")
     )
 
 
 def get_main_profile(config=None):
     if config == None:
-        return constants.PROFILE_DEFAULT
-    return (
-        config.get(constants.mainProfile, constants.PROFILE_DEFAULT)
-        or constants.PROFILE_DEFAULT
-    )
+        return constants.getattr("PROFILE_DEFAULT")
+    return config.get(
+        constants.getattr("mainProfile"), constants.getattr("PROFILE_DEFAULT")
+    ) or constants.getattr("PROFILE_DEFAULT")
 
 
 def get_filesize_limit(config=None):
     if config == None:
-        return constants.FILE_SIZE_LIMIT_DEFAULT
+        return constants.getattr("FILE_SIZE_LIMIT_DEFAULT")
     try:
         return parse_size(
             str(
                 config.get("file_size_limit")
                 or config.get("download_options", {}).get("file_size_limit")
-                or constants.FILE_SIZE_LIMIT_DEFAULT
+                or constants.getattr("FILE_SIZE_LIMIT_DEFAULT")
             )
         )
     except:
@@ -306,13 +303,13 @@ def get_filesize_limit(config=None):
 
 def get_filesize_min(config=None):
     if config == None:
-        return constants.FILE_SIZE_MIN_DEFAULT
+        return constants.getattr("FILE_SIZE_MIN_DEFAULT")
     try:
         return parse_size(
             str(
                 config.get("file_size_min")
                 or config.get("download_options", {}).get("file_size_min")
-                or constants.FILE_SIZE_MIN_DEFAULT
+                or constants.getattr("FILE_SIZE_MIN_DEFAULT")
             )
         )
     except Exception:
@@ -321,145 +318,123 @@ def get_filesize_min(config=None):
 
 def get_system_freesize(config=None):
     if config is None:
-        return constants.SYSTEM_FREEMIN_DEFAULT
+        return constants.getattr("SYSTEM_FREEMIN_DEFAULT")
     try:
         return parse_size(
             str(
                 config.get("system_free_min")
                 or config.get("download_options", {}).get("system_free_min")
-                or constants.SYSTEM_FREEMIN_DEFAULT
+                or constants.getattr("SYSTEM_FREEMIN_DEFAULT")
             )
         )
     except Exception:
         return 0
 
 
-def get_number_retries(config=None):
-    if config is None:
-        return constants.DOWNLOAD_RETRIES
-    try:
-        return max(
-            int(
-                str(
-                    config.get("download_retries")
-                    or config.get("download_options", {}).get("download_retries")
-                    or constants.DOWNLOAD_RETRIES
-                )
-            ),
-            1,
-        )
-    except Exception:
-        return constants.DOWNLOAD_RETRIES
-
-
 def get_dirformat(config=None):
     if config == None:
-        return constants.DIR_FORMAT_DEFAULT
+        return constants.getattr("DIR_FORMAT_DEFAULT")
     return (
         config.get("dir_format")
         or config.get("file_options", {}).get("dir_format")
-        or constants.DIR_FORMAT_DEFAULT
+        or constants.getattr("DIR_FORMAT_DEFAULT")
     )
 
 
 def get_fileformat(config=None):
     if config == None:
-        return constants.FILE_FORMAT_DEFAULT
+        return constants.getattr("FILE_FORMAT_DEFAULT")
     return (
         config.get("file_format")
         or config.get("file_options", {}).get("file_format")
-        or constants.FILE_FORMAT_DEFAULT
+        or constants.getattr("FILE_FORMAT_DEFAULT")
     )
 
 
 def get_textlength(config=None):
     if config == None:
-        return constants.TEXTLENGTH_DEFAULT
+        return constants.getattr("TEXTLENGTH_DEFAULT")
     try:
-        return (
-            int(
-                config.get("textlength")
-                or config.get("file_options", {}).get("textlength")
-            )
-            or constants.TEXTLENGTH_DEFAULT
-        )
+        return int(
+            config.get("textlength") or config.get("file_options", {}).get("textlength")
+        ) or constants.getattr("TEXTLENGTH_DEFAULT")
     except:
-        return constants.TEXTLENGTH_DEFAULT
+        return constants.getattr("TEXTLENGTH_DEFAULT")
 
 
 def get_date(config=None):
     if config == None:
-        return constants.DATE_DEFAULT
+        return constants.getattr("DATE_DEFAULT")
     return (
         config.get("date")
         or config.get("file_options", {}).get("date")
-        or constants.DATE_DEFAULT
+        or constants.getattr("DATE_DEFAULT")
     )
 
 
 def get_allow_code_execution(config=None):
     if config == None:
-        return constants.CODE_EXECUTION_DEFAULT
+        return constants.getattr("CODE_EXECUTION_DEFAULT")
     return (
         config.get("code-execution")
         or config.get("advanced_options", {}).get("code-execution")
-        or constants.CODE_EXECUTION_DEFAULT
+        or constants.getattr("CODE_EXECUTION_DEFAULT")
     )
 
 
 def get_metadata(config=None):
     if config == None:
-        return constants.METADATA_DEFAULT
-    return config.get("metadata", constants.METADATA_DEFAULT)
+        return constants.getattr("METADATA_DEFAULT")
+    return config.get("metadata", constants.getattr("METADATA_DEFAULT"))
 
 
 def get_threads(config=None):
     if config == None:
-        return constants.THREADS_DEFAULT
+        return constants.getattr("THREADS_DEFAULT")
     threads = config.get("threads") or config.get("performance_options", {}).get(
         "threads"
     )
-    threads = threads if threads is not None else constants.THREADS_DEFAULT
+    threads = threads if threads is not None else constants.getattr("THREADS_DEFAULT")
     try:
         threads = int(threads)
     except ValueError:
-        threads = int(constants.THREADS_DEFAULT)
+        threads = int(constants.getattr("THREADS_DEFAULT"))
     return threads
 
 
 def get_mp4decrypt(config=None):
     if config == None:
-        return constants.MP4DECRYPT_DEFAULT
+        return constants.getattr("MP4DECRYPT_DEFAULT")
     return (
         config.get("mp4decrypt")
         or config.get("binary_options", {}).get("mp4decrypt")
-        or constants.MP4DECRYPT_DEFAULT
+        or constants.getattr("MP4DECRYPT_DEFAULT")
     )
 
 
 def get_ffmpeg(config=None):
     if config == None:
-        return constants.FFMPEG_DEFAULT
+        return constants.getattr("FFMPEG_DEFAULT")
     return (
         config.get("ffmpeg")
         or config.get("binary_options", {}).get("ffmpeg")
-        or constants.FFMPEG_DEFAULT
+        or constants.getattr("FFMPEG_DEFAULT")
     )
 
 
 def get_discord(config=None):
     if config == None:
-        return constants.DISCORD_DEFAULT
-    return config.get("discord", constants.DISCORD_DEFAULT) or ""
+        return constants.getattr("DISCORD_DEFAULT")
+    return config.get("discord", constants.getattr("DISCORD_DEFAULT")) or ""
 
 
 def get_filter(config=None):
     if config == None:
-        return constants.FILTER_DEFAULT
+        return constants.getattr("FILTER_DEFAULT")
     filter = (
         config.get("filter")
         or config.get("download_options", {}).get("filter")
-        or constants.FILTER_DEFAULT
+        or constants.getattr("FILTER_DEFAULT")
     )
     if isinstance(filter, str):
         return list(map(lambda x: x.capitalize().strip(), filter.split(",")))
@@ -469,84 +444,84 @@ def get_filter(config=None):
 
 def get_timeline_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     return (
         config.get("responsetype", {}).get("timeline")
         or config.get("responsetype", {}).get("post")
-        or constants.RESPONSE_TYPE_DEFAULT["timeline"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
 
 
 def get_post_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     return (
         config.get("responsetype", {}).get("post")
         or config.get("responsetype", {}).get("timeline")
-        or constants.RESPONSE_TYPE_DEFAULT["timeline"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
 
 
 def get_archived_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["archived"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
     return (
         config.get("responsetype", {}).get("archived")
-        or constants.RESPONSE_TYPE_DEFAULT["archived"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
     )
 
 
 def get_stories_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["stories"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
     return (
         config.get("responsetype", {}).get("stories")
-        or constants.RESPONSE_TYPE_DEFAULT["stories"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
     )
 
 
 def get_highlights_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["highlights"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
     return (
         config.get("responsetype", {}).get("highlights")
-        or constants.RESPONSE_TYPE_DEFAULT["highlights"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
     )
 
 
 def get_paid_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["paid"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
     return (
         config.get("responsetype", {}).get("paid")
-        or constants.RESPONSE_TYPE_DEFAULT["paid"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
     )
 
 
 def get_messages_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["message"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["message"]
     return (
         config.get("responsetype", {}).get("message")
-        or constants.RESPONSE_TYPE_DEFAULT["message"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["message"]
     )
 
 
 def get_profile_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["profile"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
     return (
         config.get("responsetype", {}).get("profile")
-        or constants.RESPONSE_TYPE_DEFAULT["profile"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
     )
 
 
 def get_pinned_responsetype(config=None):
     if config == None:
-        return constants.RESPONSE_TYPE_DEFAULT["pinned"]
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     return (
         config.get("responsetype", {}).get("pinned")
-        or constants.RESPONSE_TYPE_DEFAULT["pinned"]
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
 
 
@@ -556,7 +531,7 @@ def get_spacereplacer(config=None):
     return (
         config.get("space-replacer")
         or config.get("file_options", {}).get("space-replacer")
-        or constants.SPACE_REPLACER_DEFAULT
+        or constants.getattr("SPACE_REPLACER_DEFAULT")
     )
 
 
@@ -582,15 +557,15 @@ def get_client_id(config=None):
 
 def get_key_mode(config=None):
     if config == None:
-        return constants.KEY_DEFAULT
+        return constants.getattr("KEY_DEFAULT")
     value = config.get("key-mode-default") or config.get("cdm_options", {}).get(
         "key-mode-default"
     )
 
     return (
         value.lower()
-        if value and value.lower() in set(constants.KEY_OPTIONS)
-        else constants.KEY_DEFAULT
+        if value and value.lower() in set(constants.getattr("KEY_OPTIONS"))
+        else constants.getattr("KEY_DEFAULT")
     )
 
 
@@ -600,13 +575,13 @@ def get_keydb_api(config=None):
     return (
         config.get("keydb_api")
         or config.get("cdm_options", {}).get("keydb_api")
-        or constants.KEYDB_DEFAULT
+        or constants.getattr("KEYDB_DEFAULT")
     )
 
 
 def get_dynamic(config=None):
     if config == None:
-        return constants.DYNAMIC_DEFAULT
+        return constants.getattr("DYNAMIC_DEFAULT")
     value = config.get("dynamic-mode-default") or config.get(
         "advanced_options", {}
     ).get("dynamic-mode-default")
@@ -636,46 +611,32 @@ def get_backend(config=None):
     return (
         config.get("backend")
         or config.get("advanced_options", {}).get("backend")
-        or constants.BACKEND_DEFAULT
+        or constants.getattr("BACKEND_DEFAULT")
     )
 
 
 def get_download_semaphores(config=None):
     if config == None:
-        return constants.DOWNLOAD_SEM_DEFAULT
+        return constants.getattr("DOWNLOAD_SEM_DEFAULT")
     sems = (
         config.get("download-sems")
         or config.get("performance_options", {}).get("download-sems")
-        or constants.DOWNLOAD_SEM_DEFAULT
+        or constants.getattr("DOWNLOAD_SEM_DEFAULT")
     )
     try:
         sems = int(sems)
     except ValueError:
-        sems = int(constants.DOWNLOAD_SEM_DEFAULT)
-    return sems
-
-
-def get_maxfile_semaphores(config=None):
-    if config == None:
-        return constants.MAXFILE_SEMAPHORE
-    try:
-        sems = int(
-            config.get("maxfile-sem")
-            or config.get("performance_options", {}).get("maxfile-sem")
-            or constants.MAXFILE_SEMAPHORE
-        )
-    except ValueError:
-        sems = int(constants.MAXFILE_SEMAPHORE)
+        sems = int(constants.getattr("DOWNLOAD_SEM_DEFAULT"))
     return sems
 
 
 def get_show_downloadprogress(config):
     if config == None:
-        return constants.PROGRESS_DEFAULT
+        return constants.getattr("PROGRESS_DEFAULT")
     return (
         config.get("downloadbars")
         or config.get("advanced_options", {}).get("downloadbars")
-        or constants.PROGRESS_DEFAULT
+        or constants.getattr("PROGRESS_DEFAULT")
     )
 
 
@@ -688,74 +649,76 @@ def get_cache_mode(config):
 
 def cache_mode_helper(config):
     if config == None:
-        return constants.CACHEDEFAULT
+        return constants.getattr("CACHEDEFAULT")
     data = (
         config.get("cache-mode")
         or config.get("advanced_options", {}).get("cache-mode")
-        or constants.CACHEDEFAULT
+        or constants.getattr("CACHEDEFAULT")
     )
     if data == "disabled":
         return data
-    if data in [constants.CACHEDEFAULT, "json"]:
+    if data in [constants.getattr("CACHEDEFAULT"), "json"]:
         return data
     else:
-        return constants.CACHEDEFAULT
+        return constants.getattr("CACHEDEFAULT")
 
 
 def get_appendlog(config):
     if config == None:
-        return constants.APPEND_DEFAULT
+        return constants.getattr("APPEND_DEFAULT")
     value = config.get("appendlog") or config.get("advanced_options", {}).get(
         "appendlog"
     )
-    return value if value is not None else constants.APPEND_DEFAULT
+    return value if value is not None else constants.getattr("APPEND_DEFAULT")
 
 
 def get_avatar(config):
     if config is None:
-        return constants.AVATAR_DEFAULT
+        return constants.getattr("AVATAR_DEFAULT")
     return (
         config.get("avatar")
         or config.get("advanced_options", {}).get("avatar")
-        or constants.AVATAR_DEFAULT
+        or constants.getattr("AVATAR_DEFAULT")
     )
 
 
 def get_sanitizeDB(config):
     if config is None:
-        return constants.SANITIZE_DB_DEFAULT
+        return constants.getattr("SANITIZE_DB_DEFAULT")
     return (
         config.get("sanitize_text")
         or config.get("advanced_options", {}).get("sanitize_text")
-        or constants.SANITIZE_DB_DEFAULT
+        or constants.getattr("SANITIZE_DB_DEFAULT")
     )
 
 
 def get_textType(config):
     if config is None:
-        return constants.TEXT_TYPE_DEFAULT
+        return constants.getattr("TEXT_TYPE_DEFAULT")
     value = config.get("text_type") or config.get("file_options", {}).get(
         "text_type_default"
     )
-    return value if value in ["letter", "word"] else constants.TEXT_TYPE_DEFAULT
+    return (
+        value if value in ["letter", "word"] else constants.getattr("TEXT_TYPE_DEFAULT")
+    )
 
 
 def get_TempDir(config):
     if config is None:
-        return constants.TEMP_FOLDER_DEFAULT
+        return constants.getattr("TEMP_FOLDER_DEFAULT")
     return (
         config.get("temp_dir")
         or config.get("advanced_options", {}).get("temp_dir")
-        or constants.TEMP_FOLDER_DEFAULT
+        or constants.getattr("TEMP_FOLDER_DEFAULT")
     )
 
 
 def get_truncation(config):
     if config is None:
-        return constants.TRUNCATION_DEFAULT
+        return constants.getattr("TRUNCATION_DEFAULT")
     val = config.get("file_options", {}).get("truncation_default") or config.get(
         "truncation_default"
     )
     if val is None:
-        return constants.TRUNCATION_DEFAULT
+        return constants.getattr("TRUNCATION_DEFAULT")
     return val

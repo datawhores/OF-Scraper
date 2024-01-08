@@ -13,10 +13,10 @@ from rich.logging import RichHandler
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_fixed
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.args as args
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.system as system
@@ -144,7 +144,7 @@ class DiscordHandler(logging.Handler):
     def emit(self, record):
         @retry(
             retry=retry_if_not_exception_type(KeyboardInterrupt),
-            stop=stop_after_attempt(constants.NUM_TRIES),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
             wait=wait_fixed(8),
         )
         def inner(sess):
@@ -400,7 +400,7 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         if event and event.is_set():
             return
         try:
-            messages = funct(timeout=constants.LOGGER_TIMEOUT)
+            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
         except:
             continue
         if not isinstance(messages, list):
@@ -444,7 +444,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         if event and event.is_set():
             return True
         try:
-            messages = funct(timeout=constants.LOGGER_TIMEOUT)
+            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
         except:
             continue
         if not isinstance(messages, list):
@@ -623,7 +623,7 @@ def closeMain():
     if not main_log_thread:
         return
     elif other_event.is_set():
-        main_log_thread.join(constants.FORCED_THREAD_TIMEOUT)
+        main_log_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
     elif not other_event.is_set():
         main_log_thread.join()
     main_log_thread = None
@@ -640,9 +640,9 @@ def closeOther():
             other_log_thread.join()
     elif other_event.is_set():
         if isinstance(other_log_thread, threading.Thread):
-            other_log_thread.join(timeout=constants.FORCED_THREAD_TIMEOUT)
+            other_log_thread.join(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
         else:
-            other_log_thread.join(timeout=constants.FORCED_THREAD_TIMEOUT)
+            other_log_thread.join(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
             if other_log_thread.is_alive():
                 other_log_thread.terminate()
     other_log_thread = None

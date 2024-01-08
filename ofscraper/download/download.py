@@ -5,6 +5,7 @@ import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.system as system
 
@@ -40,7 +41,9 @@ def download_picker(username, model_id, medialist):
     elif (
         system.getcpu_count() > 1
         and (
-            len(medialist) >= config_.get_download_semaphores(config_.read_config()) * 5
+            len(medialist)
+            >= config_.get_download_semaphores(config_.read_config())
+            * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
         and args_.getargs().downloadthreads != 0
         and config_.get_threads(config_.read_config()) != 0

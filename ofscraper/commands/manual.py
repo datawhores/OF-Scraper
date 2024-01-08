@@ -7,10 +7,10 @@ import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.utils.args as args_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.network as network
 import ofscraper.utils.of as of
 
@@ -124,20 +124,26 @@ def paid_failback(id, username):
 
 def get_info(url):
     search1 = re.search(
-        f"chats/chat/({constants.NUMBER_REGEX}+)/.*?({constants.NUMBER_REGEX}+)", url
+        f"chats/chat/({constants.getattr('NUMBER_REGEX')}+)/.*?({constants.getattr('NUMBER_REGEX')}+)",
+        url,
     )
-    search2 = re.search(f"/({constants.NUMBER_REGEX}+)/stories/highlights", url)
-    search3 = re.search(f"/stories/highlights/({constants.NUMBER_REGEX}+)", url)
+    search2 = re.search(
+        f"/({constants.getattr('NUMBER_REGEX')}+)/stories/highlights", url
+    )
+    search3 = re.search(
+        f"/stories/highlights/({constants.getattr('NUMBER_REGEX')}+)", url
+    )
 
-    search4 = re.search(f"/({constants.NUMBER_REGEX}+)/stories", url)
+    search4 = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)/stories", url)
     search5 = re.search(
-        f"chats/({constants.USERNAME_REGEX}+)/.*?(id|firstId)=({constants.NUMBER_REGEX}+)",
+        f"chats/({constants.getattr('USERNAME_REGEX')}+)/.*?(id|firstId)=({constants.getattr('NUMBER_REGEX')}+)",
         url,
     )
     search6 = re.search(
-        f"/({constants.NUMBER_REGEX}+)/({constants.USERNAME_REGEX}+)", url
+        f"/({constants.getattr('NUMBER_REGEX')}+)/({constants.getattr('USERNAME_REGEX')}+)",
+        url,
     )
-    search7 = re.search(f"^{constants.NUMBER_REGEX}+$", url)
+    search7 = re.search(f"^{constants.getattr('NUMBER_REGEX')}+$", url)
     # model,postid,type
 
     if search1:

@@ -15,9 +15,9 @@ from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.download.common as common
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 import ofscraper.utils.exit as exit
 import ofscraper.utils.stdout as stdout
 from ofscraper.download.alt_download import alt_download
@@ -44,7 +44,7 @@ async def process_dicts(username, model_id, medialist):
         try:
             with Live(
                 progress_group,
-                refresh_per_second=constants.refreshScreen,
+                refresh_per_second=constants.getattr("refreshScreen"),
                 console=console.shared_console,
             ):
                 aws = []

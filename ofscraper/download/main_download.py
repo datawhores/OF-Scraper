@@ -27,12 +27,12 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 from ofscraper.download.common import (
     addGlobalDir,
@@ -118,7 +118,9 @@ async def main_download_downloader(c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(config_.get_number_retries()),
-            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            wait=wait_random(
+                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+            ),
             reraise=True,
         ):
             with _:
@@ -171,9 +173,13 @@ async def main_download_downloader(c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(config_.get_number_retries()),
-            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            wait=wait_random(
+                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+            ),
             reraise=True,
-            retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
+            retry=retry_if_not_exception_message(
+                constants.getattr("SPACE_DOWNLOAD_MESSAGE")
+            ),
         ):
             with _:
                 try:
@@ -195,7 +201,7 @@ async def main_download_sendreq(
     total = total if common.attempt.get() == 1 else None
     try:
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] download temp path {placeholderObj.tempfilename}"
         )
         if not total:
             placeholderObj.tempfilename.unlink(missing_ok=True)
@@ -277,17 +283,17 @@ async def main_download_sendreq(
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"[attempt {common.attempt.get()}/{constants.NUM_TRIES}] Number of Open Files -> { len(psutil.Process().open_files())}"
+            f"[attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
         )
         common.log.debug(
-            f"[attempt {common.attempt.get()}/{constants.NUM_TRIES}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+            f"[attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] {traceback.format_exc()}"
         )
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {E}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] {E}"
         )
         raise E
 
@@ -300,7 +306,7 @@ async def main_download_datahandler(r, progress, ele, placeholderObj, total):
         or args_.getargs().downloadbars
     )
     task1 = progress.add_task(
-        f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",
+        f"{(pathstr[:constants.getattr('PATH_STR_MAX)')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
     )
@@ -309,11 +315,11 @@ async def main_download_datahandler(r, progress, ele, placeholderObj, total):
         loop = asyncio.get_event_loop()
         fileobject = await aiofiles.open(placeholderObj.tempfilename, "ab").__aenter__()
 
-        async for chunk in r.iter_chunked(constants.maxChunkSize):
+        async for chunk in r.iter_chunked(constants.getattr("maxChunkSize")):
             if downloadprogress:
                 count = count + 1
             await fileobject.write(chunk)
-            if count == constants.CHUNK_ITER:
+            if count == constants.getattr("CHUNK_ITER"):
                 await loop.run_in_executor(
                     common.thread,
                     partial(

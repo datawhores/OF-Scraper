@@ -14,7 +14,7 @@ from rich.console import Console
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
+import ofscraper.utils.constants as constants
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.logger as logger
 import ofscraper.utils.paths as paths
@@ -31,15 +31,15 @@ def scrape_user():
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
     stop=stop_after_attempt(0),
-    wait=wait_random(min=constants.OF_MAX, max=constants.OF_MAX),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
     after=lambda retry_state: print(
-        f"Trying to login attempt:{retry_state.attempt_number}/{constants.NUM_TRIES}"
+        f"Trying to login attempt:{retry_state.attempt_number}/{constants.getattr('NUM_TRIES')}"
     ),
 )
 def _scraper_user_helper(c):
     data = None
-    with c.requests(constants.meEP)() as r:
+    with c.requests(constants.getattr("meEP"))() as r:
         if r.ok:
             data = r.json_()
             logger.updateSenstiveDict(data["id"], "userid")
@@ -73,13 +73,13 @@ def print_user(name, username):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.MAX_SEMAPHORE),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("MAX_SEMAPHORE")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 def parse_subscriber_count():
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        with c.requests(constants.subscribeCountEP)() as r:
+        with c.requests(constants.getattr("subscribeCountEP"))() as r:
             if r.ok:
                 data = r.json_()
                 return data["subscriptions"]["active"], data["subscriptions"]["expired"]

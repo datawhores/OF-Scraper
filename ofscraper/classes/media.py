@@ -11,11 +11,9 @@ from mpegdash.parser import MPEGDASHParser
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config
-
-from ..constants import LICENCE_URL
+import ofscraper.utils.constants as constants
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -294,8 +292,10 @@ class Media:
     @property
     @retry(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.NUM_TRIES),
-        wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+        ),
         reraise=True,
     )
     async def parse_mpd(self):
@@ -324,7 +324,9 @@ class Media:
         responsetype = self.post.post["responseType"]
         if responsetype in ["timeline", "archived", "pinned"]:
             responsetype = "post"
-        return LICENCE_URL.format(self.id, responsetype, self.postid)
+        return constants.getattr("LICENCE_URL").format(
+            self.id, responsetype, self.postid
+        )
 
     @property
     def mass(self):

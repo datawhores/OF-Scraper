@@ -21,10 +21,8 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as c
-import ofscraper.constants as constants
-import ofscraper.utils.auth as auth
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
@@ -98,8 +96,8 @@ async def get_stories_post(model_id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_stories(c, user_id, job_progress) -> list:
@@ -109,10 +107,12 @@ async def scrape_stories(c, user_id, job_progress) -> list:
     stories = None
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} : user id -> {user_id}",
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
         visible=True,
     )
-    async with c.requests(url=constants.highlightsWithAStoryEP.format(user_id))() as r:
+    async with c.requests(
+        url=constants.getattr("highlightsWithAStoryEP").format(user_id)
+    )() as r:
         sem.release()
         if r.ok:
             attempt.set(0)
@@ -254,8 +254,8 @@ async def get_highlight_post(model_id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
@@ -264,10 +264,10 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES}", visible=True
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}", visible=True
     )
     async with c.requests(
-        url=constants.highlightsWithStoriesEP.format(user_id, offset)
+        url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     )() as r:
         sem.release()
         if r.ok:
@@ -286,8 +286,8 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_highlights(c, id, job_progress) -> list:
@@ -296,10 +296,10 @@ async def scrape_highlights(c, id, job_progress) -> list:
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} highlights id -> {id}",
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
         visible=True,
     )
-    async with c.requests(url=constants.storyEP.format(id))() as r:
+    async with c.requests(url=constants.getattr("storyEP").format(id))() as r:
         sem.release()
         if r.ok:
             attempt.set(0)
@@ -336,7 +336,7 @@ def get_highlightList(data):
 
 def get_individual_highlights(id, c=None):
     return get_individual_stories(id, c)
-    # with c.requests(constants.highlightSPECIFIC.format(id))() as r:
+    # with c.requests(constants.getattr("highlightSPECIFIC").format(id))() as r:
     #     if r.ok:
     #         log.trace(f"highlight raw highlight individua; {r.json()}")
     #         return r.json()
@@ -347,7 +347,7 @@ def get_individual_highlights(id, c=None):
 
 
 def get_individual_stories(id, c=None):
-    with c.requests(constants.storiesSPECIFIC.format(id))() as r:
+    with c.requests(constants.getattr("storiesSPECIFIC").format(id))() as r:
         if r.ok:
             log.trace(f"highlight raw highlight individua; {r.json_()}")
             return r.json()

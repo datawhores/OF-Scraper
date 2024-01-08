@@ -20,17 +20,17 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
 
 attempt = contextvars.ContextVar("attempt")
 
@@ -97,7 +97,7 @@ async def get_paid_posts(username, model_id):
         cache.set(
             f"purchased_check_{model_id}",
             list(outdict.values()),
-            expire=constants.DAY_SECONDS,
+            expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
         return list(outdict.values())
@@ -105,8 +105,8 @@ async def get_paid_posts(username, model_id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_paid(c, username, job_progress, offset=0):
@@ -119,11 +119,11 @@ async def scrape_paid(c, username, job_progress, offset=0):
     attempt.set(attempt.get(0) + 1)
     try:
         task = job_progress.add_task(
-            f"Attempt {attempt.get()}/{constants.NUM_TRIES}", visible=True
+            f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}", visible=True
         )
         await sem.acquire()
         async with c.requests(
-            url=constants.purchased_contentEP.format(offset, username)
+            url=constants.getattr("purchased_contentEP").format(offset, username)
         )() as r:
             sem.release()
             if r.ok:
@@ -252,7 +252,7 @@ async def get_all_paid_posts():
         cache.set(
             f"purchased_all",
             list(map(lambda x: x.get("id"), list(outdict.values()))),
-            expire=constants.RESPONSE_EXPIRY,
+            expire=constants.getattr("RESPONSE_EXPIRY"),
         )
         cache.close()
         # filter at user level
@@ -261,8 +261,8 @@ async def get_all_paid_posts():
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
@@ -275,9 +275,12 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} offset={offset}", visible=True
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} offset={offset}",
+        visible=True,
     )
-    async with c.requests(url=constants.purchased_contentALL.format(offset))() as r:
+    async with c.requests(
+        url=constants.getattr("purchased_contentALL").format(offset)
+    )() as r:
         sem.release()
         if r.ok:
             attempt.set(0)

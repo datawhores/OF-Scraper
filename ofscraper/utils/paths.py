@@ -11,10 +11,10 @@ from pathlib import Path
 
 import arrow
 
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 
 from .profiles import create_profile_path, get_current_config_profile
 
@@ -246,8 +246,12 @@ def getlogpath():
 
 def get_config_path():
     configPath = args_.getargs().config
-    defaultPath = pathlib.Path.home() / constants.configPath / constants.configFile
-    ofscraperHome = pathlib.Path.home() / constants.configPath
+    defaultPath = (
+        pathlib.Path.home()
+        / constants.getattr("configPath")
+        / constants.getattr("configFile")
+    )
+    ofscraperHome = pathlib.Path.home() / constants.getattr("configPath")
 
     if configPath == None or configPath == "":
         return defaultPath
@@ -256,10 +260,10 @@ def get_config_path():
     if configPath.is_file():
         return configPath
     elif configPath.is_dir():
-        return configPath / constants.configFile
+        return configPath / constants.getattr("configFile")
     # enforce that configpath needs some extension
     elif configPath.suffix == "":
-        return configPath / constants.configFile
+        return configPath / constants.getattr("configFile")
 
     elif str(configPath.parent) == ".":
         return ofscraperHome / configPath
@@ -279,7 +283,7 @@ def get_config_home():
 
 
 def get_auth_file():
-    return get_profile_path() / constants.authFile
+    return get_profile_path() / constants.getattr("authFile")
 
 
 def get_username():

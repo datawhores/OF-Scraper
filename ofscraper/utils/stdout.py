@@ -3,13 +3,13 @@ import io
 import os
 import sys
 
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
+import ofscraper.utils.constants as constants
 
 
 @contextlib.contextmanager
 def lowstdout():
-    if args_.getargs().output in constants.SUPRESS_OUTPUTS:
+    if args_.getargs().output in constants.getattr("SUPRESS_OUTPUTS"):
         save_stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
         yield
@@ -22,7 +22,7 @@ def lowstdout():
 
 # @contextlib.contextmanager
 # def lowstdout():
-#     if logging.getLogger("ofscraper").handlers[1].level>constants.SUPPRESS_LOG_LEVEL:
+#     if logging.getLogger("ofscraper").handlers[1].level>constants.getattr("SUPPRESS_LOG_LEVEL"):
 #         save_stdout = sys.stdout
 #         sys.stdout = open(os.devnull, 'w')
 #         yield

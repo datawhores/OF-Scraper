@@ -6,7 +6,7 @@ import sys
 import arrow
 from humanfriendly import parse_size
 
-import ofscraper.constants as constants
+import ofscraper.utils.constants as constants
 import ofscraper.utils.system as system
 from ofscraper.__version__ import __version__
 
@@ -472,7 +472,7 @@ def create_parser(input=None):
 
     adv_filters = parser.add_argument_group(
         "Advanced model filters",
-        description="Advanced filtering of accounts based on more presised user-defined parameters",
+        description="Advanced filtering of accounts based on more precise user-defined parameters",
     )
 
     adv_filters.add_argument(
@@ -649,7 +649,7 @@ def create_parser(input=None):
         help="key mode override",
         default=None,
         required=False,
-        choices=constants.KEY_OPTIONS,
+        choices=constants.getattr("KEY_OPTIONS"),
         type=str.lower,
     )
     advanced.add_argument(
@@ -871,7 +871,7 @@ def getargs(input=None):
     args = globalDataHelper()
 
     if len(args.user_list) == 0:
-        args.user_list = {constants.OFSCRAPER_RESERVED_LIST}
+        args.user_list = {constants.getattr("OFSCRAPER_RESERVED_LIST")}
     else:
         args.user_list = set(list(map(lambda x: x.lower(), args.user_list)))
 

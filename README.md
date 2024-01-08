@@ -1,4 +1,5 @@
 # Latest version
+
 [![PyPI version](https://badge.fury.io/py/ofscraper.svg)](https://badge.fury.io/py/ofscraper)
 
 # Table-of-contents

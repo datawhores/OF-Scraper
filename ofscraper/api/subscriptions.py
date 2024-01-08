@@ -19,14 +19,12 @@ from rich.style import Style
 console = Console()
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
-import ofscraper.constants as constants
-
-from ..constants import NUM_TRIES, subscriptionsActiveEP, subscriptionsExpiredEP
-
-log = logging.getLogger("shared")
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
+import ofscraper.utils.constants as constants
 from ofscraper.utils.run_async import run
+
+log = logging.getLogger("shared")
 
 
 @run
@@ -59,13 +57,13 @@ async def activeHelper(subscribe_count, c):
     global new_tasks
 
     if (
-        constants.OFSCRAPER_RESERVED_LIST in args_.getargs().black_list
-        or constants.OFSCRAPER_ACTIVE_LIST in args_.getargs().black_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST") in args_.getargs().black_list
+        or constants.getattr("OFSCRAPER_ACTIVE_LIST") in args_.getargs().black_list
     ):
         return []
     if (
-        constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list
-        and constants.OFSCRAPER_ACTIVE_LIST not in args_.getargs().user_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST") not in args_.getargs().user_list
+        and constants.getattr("OFSCRAPER_ACTIVE_LIST") not in args_.getargs().user_list
     ):
         return []
     funct = scrape_subscriptions_active
@@ -99,13 +97,13 @@ async def expiredHelper(subscribe_count, c):
     global new_tasks
 
     if (
-        constants.OFSCRAPER_RESERVED_LIST in args_.getargs().black_list
-        or constants.OFSCRAPER_EXPIRED_LIST in args_.getargs().black_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST") in args_.getargs().black_list
+        or constants.getattr("OFSCRAPER_EXPIRED_LIST") in args_.getargs().black_list
     ):
         return []
     if (
-        constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list
-        and constants.OFSCRAPER_EXPIRED_LIST not in args_.getargs().user_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST") not in args_.getargs().user_list
+        and constants.getattr("OFSCRAPER_EXPIRED_LIST") not in args_.getargs().user_list
     ):
         return []
     funct = scrape_subscriptions_disabled
@@ -135,12 +133,14 @@ async def expiredHelper(subscribe_count, c):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    async with c.requests(subscriptionsActiveEP.format(offset))() as r:
+    async with c.requests(
+        constants.getattr("subscriptionsActiveEP").format(offset)
+    )() as r:
         if r.ok:
             subscriptions = (await r.json_())["list"]
             log.debug(
@@ -168,12 +168,14 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
-    async with c.requests(subscriptionsExpiredEP.format(offset))() as r:
+    async with c.requests(
+        constants.getattr("subscriptionsExpiredEP").format(offset)
+    )() as r:
         if r.ok:
             subscriptions = (await r.json_())["list"]
             log.debug(
@@ -202,13 +204,13 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def sort_list(c) -> list:
     async with c.requests(
-        constants.sortSubscriptions,
+        constants.getattr("sortSubscription"),
         method="post",
         json={"order": "users.name", "direction": "desc", "type": "all"},
     )() as r:

@@ -24,14 +24,13 @@ from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wai
 import ofscraper.api.archive as archive
 import ofscraper.api.pinned as pinned
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 from ..api import timeline
-from ..constants import favoriteEP, postURL
 
 sem = semaphoreDelayed(1)
 log = logging.getLogger("shared")
@@ -136,14 +135,16 @@ async def _like(model_id, username, ids: list, like_action: bool):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def _like_request(c, id, model_id):
     global sem
     async with sem:
-        async with c.requests(favoriteEP.format(id, model_id), "post")() as r:
+        async with c.requests(
+            constants.getattr("favoriteEP").format(id, model_id), "post"
+        )() as r:
             if r.ok:
                 return id
             else:

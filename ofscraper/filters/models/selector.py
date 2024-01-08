@@ -1,7 +1,6 @@
 import logging
 import time
 
-import ofscraper.constants as constants
 import ofscraper.filters.models.date as date_
 import ofscraper.filters.models.flags as flags
 import ofscraper.filters.models.other as other
@@ -11,6 +10,7 @@ import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
+import ofscraper.utils.constants as constants
 
 ALL_SUBS = None
 PARSED_SUBS = None
@@ -18,7 +18,7 @@ log = logging.getLogger("shared")
 
 
 def getselected_usernames(rescan=False, reset=False):
-    # username list will be retrived every time reset==True
+    # username list will be retrived every time resFet==True
     global ALL_SUBS
     global PARSED_SUBS
 
@@ -47,7 +47,7 @@ def all_subs_helper():
         elif len(ALL_SUBS) == 0:
             print("No accounts found during scan")
             # give log time to process
-            time.sleep(constants.LOG_DISPLAY_TIMEOUT)
+            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
             if not prompts.retry_user_scan():
                 raise Exception("Could not find any accounts on list")
 
@@ -95,7 +95,7 @@ def filterNSort(usernames):
 
         log.debug(f"final username count with all filters: {len(filterusername)}")
         # give log time to process
-        time.sleep(constants.LOG_DISPLAY_TIMEOUT)
+        time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
         if len(filterusername) != 0:
             return sort.sort_models_helper(filterusername)
         print(

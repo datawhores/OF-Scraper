@@ -21,24 +21,24 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
 
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_timeline_posts(
@@ -55,15 +55,15 @@ async def scrape_timeline_posts(
         return []
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
-        ep = constants.timelineNextEP
+        ep = constants.getattr("timelineNextEP")
         url = ep.format(model_id, str(timestamp))
     else:
-        ep = constants.timelineEP
+        ep = constants.getattr("timelineEP")
         url = ep.format(model_id)
     log.debug(url)
     try:
         task = progress.add_task(
-            f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+            f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
             visible=True,
         )
         await sem.acquire()
@@ -303,7 +303,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
 
 def get_individual_post(id, c=None):
-    with c.requests(constants.INDVIDUAL_TIMELINE.format(id))() as r:
+    with c.requests(constants.getattr("INDVIDUAL_TIMELINE").format(id))() as r:
         if r.ok:
             log.trace(f"post raw individual {r.json()}")
             return r.json()

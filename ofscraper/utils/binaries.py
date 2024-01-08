@@ -10,7 +10,7 @@ from zipfile import ZipFile
 import httpx
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn
 
-import ofscraper.constants as constants
+import ofscraper.utils.constants as constants
 import ofscraper.utils.paths as paths_
 
 
@@ -39,7 +39,10 @@ def mp4_decrypt_windows():
             TextColumn("{task.description}"), BarColumn(), DownloadColumn()
         ) as download:
             with httpx.stream(
-                "GET", constants.MP4DECRYPT_WINDOWS, timeout=None, follow_redirects=True
+                "GET",
+                constants.getattr("MP4DECRYPT_WINDOWS"),
+                timeout=None,
+                follow_redirects=True,
             ) as r:
                 total = int(r.headers["Content-Length"])
                 task1 = download.add_task("mp4decrypt download", total=total)
@@ -69,7 +72,10 @@ def mp4_decrypt_linux():
             TextColumn("{task.description}"), BarColumn(), DownloadColumn()
         ) as download:
             with httpx.stream(
-                "GET", constants.MP4DECRYPT_LINUX, timeout=None, follow_redirects=True
+                "GET",
+                constants.getattr("MP4DECRYPT_LINUX"),
+                timeout=None,
+                follow_redirects=True,
             ) as r:
                 total = int(r.headers["Content-Length"])
                 task1 = download.add_task("mp4decrypt download", total=total)
@@ -99,7 +105,10 @@ def mp4_decrypt_mac():
             TextColumn("{task.description}"), BarColumn(), DownloadColumn()
         ) as download:
             with httpx.stream(
-                "GET", constants.MP4DECRYPT_MAC, timeout=None, follow_redirects=True
+                "GET",
+                constants.getattr("MP4DECRYPT_MAC"),
+                timeout=None,
+                follow_redirects=True,
             ) as r:
                 total = int(r.headers["Content-Length"])
                 task1 = download.add_task("mp4decrypt download", total=total)
@@ -129,7 +138,10 @@ def ffmpeg_windows():
             TextColumn("{task.description}"), BarColumn(), DownloadColumn()
         ) as download:
             with httpx.stream(
-                "GET", constants.FFMPEG_WINDOWS, timeout=None, follow_redirects=True
+                "GET",
+                constants.getattr("FFMPEG_WINDOWS"),
+                timeout=None,
+                follow_redirects=True,
             ) as r:
                 total = int(r.headers["Content-Length"])
                 task1 = download.add_task("ffmpeg download", total=total)
@@ -160,7 +172,10 @@ def ffmpeg_linux():
             TextColumn("{task.description}"), BarColumn(), DownloadColumn()
         ) as download:
             with httpx.stream(
-                "GET", constants.FFMPEG_LINUX, timeout=None, follow_redirects=True
+                "GET",
+                constants.getattr("FFMPEG_LINUX"),
+                timeout=None,
+                follow_redirects=True,
             ) as r:
                 total = int(r.headers["Content-Length"])
                 task1 = download.add_task("ffmpeg download", total=total)
@@ -191,7 +206,10 @@ def ffmpeg_mac():
             TextColumn("{task.description}"), BarColumn(), DownloadColumn()
         ) as download:
             with httpx.stream(
-                "GET", constants.FFMPEG_MAC, timeout=None, follow_redirects=True
+                "GET",
+                constants.getattr("FFMPEG_MAC"),
+                timeout=None,
+                follow_redirects=True,
             ) as r:
                 total = int(r.headers["Content-Length"])
                 task1 = download.add_task("ffmpeg download", total=total)

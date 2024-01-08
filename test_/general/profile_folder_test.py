@@ -108,7 +108,9 @@ def test_profile_count_empty_config(mocker):
         create_profile_path()
         with check():
             assert (
-                pathlib.Path(p, constants.configPath, "test_profile").exists()
+                pathlib.Path(
+                    p, constants.getattr(".configPath"), "test_profile"
+                ).exists()
             ) == True
         with check():
             assert (len(get_profiles())) == 1

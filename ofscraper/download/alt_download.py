@@ -29,13 +29,13 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
 import ofscraper.utils.paths as paths
@@ -248,7 +248,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):
                             return item
                         item["total"] = total
                         common.log.debug(
-                            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
+                            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] download temp path {placeholderObj.tempfilename}"
                         )
                         await alt_download_datahandler(
                             item, total, l, ele, progress, placeholderObj
@@ -286,17 +286,17 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Number of Open Files -> { len(psutil.Process().open_files())}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
         )
         common.log.debug(
-            f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+            f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] {traceback.format_exc()}"
         )
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.NUM_TRIES}] {E}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] {E}"
         )
         raise E
 
@@ -311,7 +311,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
     )
 
     task1 = progress.add_task(
-        f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",
+        f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
     )
@@ -320,14 +320,14 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
 
     fileobject = await aiofiles.open(placeholderObj.tempfilename, "ab").__aenter__()
     try:
-        async for chunk in l.iter_chunked(constants.maxChunkSize):
+        async for chunk in l.iter_chunked(constants.getattr("maxChunkSize")):
             if downloadprogress:
                 count = count + 1
             common.log.trace(
                 f"{get_medialog(ele)} Download:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
-            if count == constants.CHUNK_ITER:
+            if count == constants.getattr("CHUNK_ITER"):
                 await loop.run_in_executor(
                     common.thread,
                     partial(
@@ -372,7 +372,9 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(config_.get_number_retries()),
-            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            wait=wait_random(
+                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+            ),
             reraise=True,
         ):
             with _:
@@ -421,9 +423,13 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(config_.get_number_retries()),
-            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            wait=wait_random(
+                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+            ),
             reraise=True,
-            retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
+            retry=retry_if_not_exception_message(
+                constants.getattr("SPACE_DOWNLOAD_MESSAGE")
+            ),
         ):
             with _:
                 try:

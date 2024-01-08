@@ -21,11 +21,11 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
@@ -33,14 +33,17 @@ log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 
-sem = semaphoreDelayed(constants.AlT_SEM)
+sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
 
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
-    reraise=True,
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(
+        min=constants.getattr("OF_MIN"),
+        max=constants.getattr("OF_MAX"),
+        reraise=True,
+    ),
 )
 async def scrape_archived_posts(
     c, model_id, progress, timestamp=None, required_ids=None
@@ -55,15 +58,15 @@ async def scrape_archived_posts(
     ):
         return []
     if timestamp:
-        ep = constants.archivedNextEP
+        ep = constants.getattr("archivedNextEP")
         url = ep.format(model_id, str(timestamp))
     else:
-        ep = constants.archivedEP
+        ep = constants.getattr("archivedEP")
         url = ep.format(model_id)
     log.debug(url)
     async with sem:
         task = progress.add_task(
-            f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+            f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
             visible=True,
         )
         async with c.requests(url)() as r:
@@ -309,7 +312,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
             cache.set(
                 f"archived_check_{model_id}",
                 list(newCheck.values()),
-                expire=constants.DAY_SECONDS,
+                expire=constants.getattr("DAY_SECONDS"),
             )
             cache.close()
 

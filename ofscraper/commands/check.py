@@ -18,13 +18,13 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.network as network
 
 log = logging.getLogger("shared")
@@ -72,15 +72,17 @@ def process_download_cart():
                 media_id = app.row_names.index("Media_ID")
                 url = None
                 if row[restype].plain == "message":
-                    url = constants.messageTableSPECIFIC.format(
+                    url = constants.getattr("messageTableSPECIFIC").format(
                         row[username].plain, row[post_id].plain
                     )
                 elif row[restype].plain == "post":
                     url = f"{row[post_id]}"
                 elif row[restype].plain == "highlights":
-                    url = constants.storyEP.format(row[post_id].plain)
+                    url = constants.getattr("storyEP").format(row[post_id].plain)
                 elif row[restype].plain == "stories":
-                    url = constants.highlightsWithAStoryEP.format(row[post_id].plain)
+                    url = constants.getattr("highlightsWithAStoryEP").format(
+                        row[post_id].plain
+                    )
                 else:
                     log.info("URL not supported")
                     continue
@@ -126,8 +128,10 @@ def post_checker():
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
         links = list(url_helper())
         for ele in links:
-            name_match = re.search(f"onlyfans.com/({constants.USERNAME_REGEX}+$)", ele)
-            name_match2 = re.search(f"^{constants.USERNAME_REGEX}+$", ele)
+            name_match = re.search(
+                f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
+            )
+            name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
 
             if name_match:
                 user_name = name_match.group(1)
@@ -152,7 +156,9 @@ def post_checker():
                 data = timeline.get_timeline_media(model_id, user_name, forced_after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
-                    f"timeline_check_{model_id}", data, expire=constants.DAY_SECONDS
+                    f"timeline_check_{model_id}",
+                    data,
+                    expire=constants.getattr("DAY_SECONDS"),
                 )
                 cache.close()
 
@@ -163,7 +169,9 @@ def post_checker():
                 data = archive.get_archived_media(model_id, user_name, forced_after=0)
                 user_dict[user_name].extend(data)
                 cache.set(
-                    f"archived_check_{model_id}", data, expire=constants.DAY_SECONDS
+                    f"archived_check_{model_id}",
+                    data,
+                    expire=constants.getattr("DAY_SECONDS"),
                 )
                 cache.close()
 
@@ -171,14 +179,14 @@ def post_checker():
         for ele in list(
             filter(
                 lambda x: re.search(
-                    f"onlyfans.com/{constants.NUMBER_REGEX}+/{constants.USERNAME_REGEX}+$",
+                    f"onlyfans.com/{constants.getattr('NUMBER_REGEX')}+/{constants.getattr('USERNAME_REGEX')}+$",
                     x,
                 ),
                 links,
             )
         ):
-            name_match = re.search(f"/({constants.USERNAME_REGEX}+$)", ele)
-            num_match = re.search(f"/({constants.NUMBER_REGEX}+)", ele)
+            name_match = re.search(f"/({constants.getattr('USERNAME_REGEX')}+$)", ele)
+            num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
             if name_match and num_match:
                 user_name = name_match.group(1)
                 post_id = num_match.group(1)
@@ -223,10 +231,10 @@ def message_checker():
     links = list(url_helper())
     ROWS = []
     for item in links:
-        num_match = re.search(f"({constants.NUMBER_REGEX}+)", item) or re.search(
-            f"^({constants.NUMBER_REGEX}+)$", item
-        )
-        name_match = re.search(f"^{constants.USERNAME_REGEX}+$", item)
+        num_match = re.search(
+            f"({constants.getattr('NUMBER_REGEX')}+)", item
+        ) or re.search(f"^({constants.getattr('NUMBER_REGEX')}+)$", item)
+        name_match = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", item)
         if num_match:
             model_id = num_match.group(1)
             user_name = profile.scrape_profile(model_id)["username"]
@@ -246,7 +254,9 @@ def message_checker():
         else:
             messages = messages_.get_messages(model_id, user_name, forced_after=0)
             cache.set(
-                f"message_check_{model_id}", messages, expire=constants.DAY_SECONDS
+                f"message_check_{model_id}",
+                messages,
+                expire=constants.getattr("DAY_SECONDS"),
             )
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
@@ -255,7 +265,11 @@ def message_checker():
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
-            cache.set(f"purchased_check_{model_id}", paid, expire=constants.DAY_SECONDS)
+            cache.set(
+                f"purchased_check_{model_id}",
+                paid,
+                expire=constants.getattr("DAY_SECONDS"),
+            )
         media = get_all_found_media(user_name, messages + paid)
         unduped = []
         id_set = set()
@@ -288,7 +302,11 @@ def purchase_checker():
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
-            cache.set(f"purchased_check_{model_id}", paid, expire=constants.DAY_SECONDS)
+            cache.set(
+                f"purchased_check_{model_id}",
+                paid,
+                expire=constants.getattr("DAY_SECONDS"),
+            )
         downloaded = get_downloaded(user_name, model_id)
         media = get_all_found_media(user_name, paid)
         ROWS.extend(row_gather(media, downloaded, user_name))
@@ -366,7 +384,9 @@ def get_paid_ids(model_id, user_name):
         paid = oldpaid
     else:
         paid = paid_.get_paid_posts(user_name, model_id)
-        cache.set(f"purchased_check_{model_id}", paid, expire=constants.DAY_SECONDS)
+        cache.set(
+            f"purchased_check_{model_id}", paid, expire=constants.getattr("DAY_SECONDS")
+        )
     media = get_all_found_media(user_name, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
@@ -407,8 +427,8 @@ def texthelper(text):
     text = re.sub("<[^>]*>", "", text)
     text = (
         text
-        if len(text) < constants.TABLE_STR_MAX
-        else f"{text[:constants.TABLE_STR_MAX]}..."
+        if len(text) < constants.getattr("TABLE_STR_MAX")
+        else f"{text[:constants.getattr('TABLE_STR_MAX')]}..."
     )
     return text
 

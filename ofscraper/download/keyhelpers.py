@@ -13,12 +13,12 @@ from pywidevine.pssh import PSSH
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.download.common as common
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 from ofscraper.download.common import get_medialog
 
 log = None
@@ -55,7 +55,7 @@ async def un_encrypt(item, c, ele, input_=None):
         raise Exception(f"{get_medialog(ele)} Could not get key")
     await asyncio.get_event_loop().run_in_executor(
         common.cache_thread,
-        partial(cache.set, ele.license, key, expire=constants.KEY_EXPIRY),
+        partial(cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")),
     )
     log.debug(f"{get_medialog(ele)} got key")
     newpath = pathlib.Path(re.sub("\.part$", "", str(item["path"]), re.IGNORECASE))
@@ -86,8 +86,8 @@ async def un_encrypt(item, c, ele, input_=None):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def key_helper_cdrm(c, pssh, licence_url, id):
@@ -106,7 +106,9 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             "proxy": "",
             "cache": True,
         }
-        async with c.requests(url=constants.CDRM, method="post", json=json_data)() as r:
+        async with c.requests(
+            url=constants.getattr("CDRM"), method="post", json=json_data
+        )() as r:
             if r.ok:
                 httpcontent = await r.text_()
                 log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -126,8 +128,8 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def key_helper_cdrm2(c, pssh, licence_url, id):
@@ -147,7 +149,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             "cache": True,
         }
         async with c.requests(
-            url=constants.CDRM2, method="post", json=json_data
+            url=constants.getattr("CDRM2"), method="post", json=json_data
         )() as r:
             if r.ok:
                 httpcontent = await r.text_()
@@ -168,8 +170,8 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def key_helper_keydb(c, pssh, licence_url, id):
@@ -196,7 +198,10 @@ async def key_helper_keydb(c, pssh, licence_url, id):
         }
 
         async with c.requests(
-            url=constants.KEYDB, method="post", json=json_data, headers=headers
+            url=constants.getattr("KEYDB"),
+            method="post",
+            json=json_data,
+            headers=headers,
         )() as r:
             if r.ok:
                 data = await r.json_()
@@ -209,7 +214,12 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                     out = data["keys"][0]["key"]
                 await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
-                    partial(cache.set, licence_url, out, expire=constants.KEY_EXPIRY),
+                    partial(
+                        cache.set,
+                        licence_url,
+                        out,
+                        expire=constants.getattr("KEY_EXPIRY"),
+                    ),
                 )
             else:
                 log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")
@@ -225,8 +235,8 @@ async def key_helper_keydb(c, pssh, licence_url, id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def key_helper_manual(c, pssh, licence_url, id):

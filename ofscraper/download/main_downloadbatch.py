@@ -27,12 +27,12 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths as paths
 import ofscraper.utils.system as system
@@ -113,7 +113,9 @@ async def main_download_downloader(c, ele, username, model_id):
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(config_.get_number_retries()),
-            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            wait=wait_random(
+                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+            ),
             reraise=True,
         ):
             with _:
@@ -159,10 +161,14 @@ async def main_download_downloader(c, ele, username, model_id):
 
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.NUM_TRIES),
-            wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            wait=wait_random(
+                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+            ),
             reraise=True,
-            retry=retry_if_not_exception_message(constants.SPACE_DOWNLOAD_MESSAGE),
+            retry=retry_if_not_exception_message(
+                constants.getattr("SPACE_DOWNLOAD_MESSAGE")
+            ),
         ):
             with _:
                 try:
@@ -182,7 +188,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
     total = total if common.attempt.get() == 1 else None
     try:
         common.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] download temp path {placeholderObj.tempfilename}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] download temp path {placeholderObj.tempfilename}"
         )
         if not total:
             placeholderObj.tempfilename.unlink(missing_ok=True)
@@ -237,12 +243,6 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                             ),
                         )
                         await size_checker(placeholderObj.tempfilename, ele, total)
-                        common.log.debug(
-                            f" Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
-                        )
-                        common.log.debug(
-                            f" Number of unique open files across all processes-> {len(system.getOpenFiles())}"
-                        )
                         return (
                             total,
                             placeholderObj.tempfilename,
@@ -271,20 +271,20 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
         )
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
         )
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
         )
     except Exception as E:
         common.innerlog.get().traceback_(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {traceback.format_exc()}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] {traceback.format_exc()}"
         )
         common.innerlog.get().traceback_(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.NUM_TRIES}] {E}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] {E}"
         )
         raise E
 
@@ -302,7 +302,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
             {
                 "type": "add_task",
                 "args": (
-                    f"{(pathstr[:constants.PATH_STR_MAX] + '....') if len(pathstr) > constants.PATH_STR_MAX else pathstr}\n",
+                    f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                     ele.id,
                 ),
                 "total": total,
@@ -314,7 +314,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
         await common.pipe.coro_send(
             {"type": "update", "args": (ele.id,), "visible": True}
         )
-        async for chunk in r.iter_chunked(constants.maxChunkSizeB):
+        async for chunk in r.iter_chunked(constants.getattr("maxChunkSizeB")):
             count = count + 1
             if downloadprogress:
                 count = count + 1
@@ -322,7 +322,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
                 f"{get_medialog(ele)} Download:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
-            if count == constants.CHUNK_ITER:
+            if count == constants.getattr("CHUNK_ITER"):
                 await common.pipe.coro_send(
                     {
                         "type": "update",

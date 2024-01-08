@@ -21,18 +21,18 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
 
 
 @run
@@ -59,7 +59,7 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
         min_posts = 40
         with Live(
             progress_group,
-            refresh_per_second=constants.refreshScreen,
+            refresh_per_second=constants.getattr("refreshScreen"),
             console=console.get_shared_console(),
         ):
             async with sessionbuilder.sessionBuilder() as c:
@@ -294,8 +294,8 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_messages(
@@ -305,14 +305,18 @@ async def scrape_messages(
     global tasks
     messages = None
     attempt.set(attempt.get(0) + 1)
-    ep = constants.messagesNextEP if message_id else constants.messagesEP
+    ep = (
+        constants.getattr("messagesNextEP")
+        if message_id
+        else constants.getattr("messagesEP")
+    )
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'}{url}")
     try:
         await sem.acquire()
         async with c.requests(url=url)() as r:
             task = progress.add_task(
-                f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Message ID-> {message_id if message_id else 'initial'}"
+                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Message ID-> {message_id if message_id else 'initial'}"
             )
             if r.ok:
                 messages = (await r.json_())["list"]
@@ -400,7 +404,9 @@ async def scrape_messages(
 
 
 def get_individual_post(model_id, postid, c=None):
-    with c.requests(url=constants.messageSPECIFIC.format(model_id, postid))() as r:
+    with c.requests(
+        url=constants.getattr("messageSPECIFIC").format(model_id, postid)
+    )() as r:
         if r.ok:
             log.trace(f"message raw individual {r.json()}")
             return r.json()["list"][0]

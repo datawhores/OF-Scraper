@@ -25,7 +25,6 @@ import schedule
 import ofscraper.api.init as init
 import ofscraper.api.profile as profile
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
@@ -36,6 +35,7 @@ import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 import ofscraper.utils.exit as exit
 import ofscraper.utils.logger as logger
 import ofscraper.utils.network as network
@@ -131,7 +131,7 @@ def process_post_user_first():
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
             "
             )
-            time.sleep(constants.LOG_DISPLAY_TIMEOUT * 3)
+            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
 
         profiles.print_current_profile()
         init.print_sign_status()
@@ -187,7 +187,7 @@ def normal_post_process():
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]     \
             "
             )
-            time.sleep(constants.LOG_DISPLAY_TIMEOUT * 3)
+            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
         profiles.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)

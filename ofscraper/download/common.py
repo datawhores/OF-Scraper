@@ -42,12 +42,12 @@ from rich.table import Column
 from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.constants as constants
 import ofscraper.db.operations as operations
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.system as system
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
@@ -109,9 +109,7 @@ def reset_globals():
     global lock
     lock = asyncio.Lock()
     global maxfile_sem
-    maxfile_sem = semaphoreDelayed(
-        config_.get_maxfile_semaphores(config_.read_config())
-    )
+    maxfile_sem = semaphoreDelayed(constants.getattr("MAXFILE_SEMAPHORE"))
     global console
     console = console_.get_shared_console()
     global localDirSet
@@ -246,20 +244,20 @@ async def size_checker(path, ele, total, name=None):
 def path_to_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {placeholderObj.filename}"
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.filename}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path from config {pathlib.Path(placeholderObj.mediadir,f'{placeholderObj.filename}')}"
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}] full path from config {pathlib.Path(placeholderObj.mediadir,f'{placeholderObj.filename}')}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] full path trunicated from config {placeholderObj.trunicated_filename}"
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filename}"
     )
 
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.NUM_TRIES}] filename from config {placeholderObj.tempfilename}"
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.tempfilename}"
     )
 
 
@@ -328,8 +326,10 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     else:
         try:
             async for _ in AsyncRetrying(
-                stop=stop_after_attempt(constants.NUM_TRIES),
-                wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+                stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+                wait=wait_random(
+                    min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+                ),
                 reraise=True,
             ):
                 with _:
@@ -491,15 +491,18 @@ def alt_attempt_get(item):
 def downloadspace():
     space_limit = config_.get_system_freesize(config_.read_config)
     if space_limit > 0 and space_limit > system.get_free():
-        raise Exception(constants.SPACE_DOWNLOAD_MESSAGE)
+        raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
 
 def log_download_progress(media_type):
     if media_type is None:
         return
     if (photo_count + audio_count + video_count + forced_skipped + skipped) % 20 == 0:
-        log.debug(
-            f"In progress -> {format_size(total_bytes )}) ({photo_count+audio_count+video_count} \
-downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos], \
-            {forced_skipped} skipped, {skipped} failed)"
-        )
+        None
+
+
+#         log.debug(
+#             f"In progress -> {format_size(total_bytes )}) ({photo_count+audio_count+video_count} \
+# downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos], \
+#             {forced_skipped} skipped, {skipped} failed)"
+#         )

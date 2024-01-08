@@ -20,16 +20,16 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
 
 
 @run
@@ -37,7 +37,7 @@ async def get_otherlist():
     out = []
     if (
         len(args_.getargs().user_list) >= 2
-        or constants.OFSCRAPER_RESERVED_LIST not in args_.getargs().user_list
+        or constants.getattr("OFSCRAPER_RESERVED_LIST") not in args_.getargs().user_list
     ):
         out.extend(await get_lists())
     out = list(
@@ -118,8 +118,8 @@ async def get_lists():
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_lists(c, job_progress, offset=0):
@@ -129,9 +129,10 @@ async def scrape_lists(c, job_progress, offset=0):
 
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} {offset}", visible=True
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
+        visible=True,
     )
-    async with c.requests(url=constants.listEP.format(offset))() as r:
+    async with c.requests(url=constants.getattr("listEP").format(offset))() as r:
         sem.release()
         if r.ok:
             data = await r.json_()
@@ -231,8 +232,8 @@ async def get_list_users(lists):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_list(c, item, job_progress, offset=0):
@@ -242,12 +243,12 @@ async def scrape_list(c, item, job_progress, offset=0):
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} : offset -> {offset} + label -> {item.get('name')}",
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : offset -> {offset} + label -> {item.get('name')}",
         visible=True,
     )
 
     async with c.requests(
-        url=constants.listusersEP.format(item.get("id"), offset)
+        url=constants.getattr("listusersEP").format(item.get("id"), offset)
     )() as r:
         sem.release()
         log_id = f"offset:{offset} list:{item.get('name')} =>"

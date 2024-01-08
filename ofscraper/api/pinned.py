@@ -21,9 +21,9 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
@@ -32,13 +32,13 @@ from ..utils import auth
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.AlT_SEM)
+sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
 
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) -> list:
@@ -50,12 +50,12 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
         float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp
     ):
         return []
-    url = constants.timelinePinnedEP.format(model_id, count)
+    url = constants.getattr("timelinePinnedEP").format(model_id, count)
 
     log.debug(url)
     try:
         task = progress.add_task(
-            f"Attempt {attempt.get()}/{constants.NUM_TRIES}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+            f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
             visible=True,
         )
         await sem.acquire()

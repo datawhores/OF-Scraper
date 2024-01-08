@@ -4,10 +4,10 @@ import time
 import httpx
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.stdout as stdout
 
 
@@ -28,11 +28,11 @@ def check_cdm():
             )
             return True
         elif keymode == "keydb":
-            url = constants.KEYDB
+            url = constants.getattr("KEYDB")
         elif keymode == "cdrm":
-            url = constants.CDRM
+            url = constants.getattr("CDRM")
         elif keymode == "cdrm2":
-            url = constants.CDRM2
+            url = constants.getattr("CDRM2")
         try:
             with sessionbuilder.sessionBuilder(backend="httpx", total_timeout=30) as c:
                 with c.requests(url=url)() as r:

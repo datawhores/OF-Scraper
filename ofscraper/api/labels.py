@@ -20,15 +20,15 @@ from rich.style import Style
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.console as console
+import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
-sem = semaphoreDelayed(constants.MAX_SEMAPHORE)
+sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
 
 
 @run
@@ -90,8 +90,8 @@ async def get_labels(model_id):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_labels(c, model_id, job_progress, offset=0):
@@ -102,9 +102,12 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
 
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} {offset}", visible=True
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
+        visible=True,
     )
-    async with c.requests(url=constants.labelsEP.format(model_id, offset))() as r:
+    async with c.requests(
+        url=constants.getattr("labelsEP").format(model_id, offset)
+    )() as r:
         sem.release()
         if r.ok:
             data = await r.json_()
@@ -233,8 +236,8 @@ def label_dedupe(posts):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
@@ -244,11 +247,11 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
     attempt.set(attempt.get(0) + 1)
     await sem.acquire()
     task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.NUM_TRIES} : offset -> {offset} + label -> {label.get('name')}",
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : offset -> {offset} + label -> {label.get('name')}",
         visible=True,
     )
     async with c.requests(
-        url=constants.labelledPostsEP.format(model_id, offset, label["id"])
+        url=constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
     )() as r:
         sem.release()
 

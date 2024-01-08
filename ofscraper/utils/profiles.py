@@ -15,10 +15,10 @@ import shutil
 from rich import print
 from rich.console import Console
 
-import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.paths as paths_
 
 log = logging.getLogger("shared")
@@ -60,7 +60,7 @@ def get_profiles() -> list:
 def change_profile():
     print_profiles()
     profile = prompts.get_profile_prompt(get_profile_names())
-    config_.update_config(constants.mainProfile, profile)
+    config_.update_config(constants.getattr("mainProfile"), profile)
     args = args_.getargs()
     # remove profile argument
     args.profile = None
@@ -82,7 +82,7 @@ def create_profile():
     name = profile_name_fixer(prompts.create_profiles_prompt())
     create_profile_path(name)
     if prompts.change_default_profile() == "Yes":
-        config_.update_config(constants.mainProfile, name)
+        config_.update_config(constants.getattr("mainProfile"), name)
     console.print(
         "[green]Successfully created[/green] {dir_name}".format(dir_name=name)
     )
@@ -116,7 +116,7 @@ def change_current_profile(new_profile, old_profile):
         args_.changeargs(args)
     # required because name has changed
     if old_profile == get_current_config_profile():
-        config_.update_config(constants.mainProfile, new_profile)
+        config_.update_config(constants.getattr("mainProfile"), new_profile)
 
 
 def print_profiles() -> list:

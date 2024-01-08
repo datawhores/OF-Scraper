@@ -21,14 +21,12 @@ from rich.console import Console
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_fixed
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.utils.config as config
+import ofscraper.utils.constants as constants
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
-
-from ..constants import DEVIINT, DIGITALCRIMINALS, configPath, requestAuth
 
 console = Console()
 log = logging.getLogger("shared")
@@ -253,7 +251,7 @@ def create_sign(link, headers):
 def read_request_auth() -> dict:
     profile = profiles.get_active_profile()
 
-    p = paths.get_config_home() / profile / requestAuth
+    p = paths.get_config_home() / profile / constants.getattr("requestAuth")
     with open(p, "r") as f:
         content = json.load(f)
     return content
@@ -280,7 +278,7 @@ def make_request_auth():
         if not p.is_dir():
             p.mkdir(parents=True, exist_ok=True)
 
-        with open(p / requestAuth, "w") as f:
+        with open(p / constants.getattr("requestAuth"), "w") as f:
             f.write(json.dumps(request_auth, indent=4))
 
 
@@ -297,14 +295,14 @@ def get_request_auth():
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
     wait=wait_fixed(8),
 )
 def get_request_auth_deviint():
     with sessionbuilder.sessionBuilder(
         backend="httpx", set_header=False, set_cookies=False, set_sign=False
     ) as c:
-        with c.requests(DEVIINT)() as r:
+        with c.requests(constants.getattr("DEVIINT"))() as r:
             if r.ok:
                 content = r.json_()
                 static_param = content["static_param"]
@@ -318,14 +316,14 @@ def get_request_auth_deviint():
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.NUM_TRIES),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
     wait=wait_fixed(8),
 )
 def get_request_digitalcriminals():
     with sessionbuilder.sessionBuilder(
         backend="httpx", set_header=False, set_cookies=False, set_sign=False
     ) as c:
-        with c.requests(DIGITALCRIMINALS)() as r:
+        with c.requests(constants.getattr("DIGITALCRIMINALS"))() as r:
             if r.ok:
                 content = r.json_()
                 static_param = content["static_param"]

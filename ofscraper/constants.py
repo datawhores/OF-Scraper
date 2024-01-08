@@ -10,6 +10,8 @@ r"""
 import os
 import pathlib
 
+# def __getattr__(val):
+#     return globals()[val]
 preferences = "pref_config.py"
 configPath = ".config/ofscraper"
 configFile = "config.json"
@@ -148,7 +150,7 @@ RESPONSE_TYPE_DEFAULT = {
 SYSTEM_FREEMIN_DEFAULT = 0
 NUM_TRIES = 10
 DATABASE_TIMEOUT = 300
-
+KEYDB_DEFAULT = ""
 RESPONSE_EXPIRY = 5000000
 DAY_SECONDS = 86400
 HOURLY_EXPIRY = 3600
@@ -205,3 +207,5 @@ LOG_DISPLAY_TIMEOUT = 0.8
 FORCED_THREAD_TIMEOUT = 5
 DAY_SECONDS = 86400
 SPACE_DOWNLOAD_MESSAGE = "Skipping download because space min has been reached"
+
+DOWNLOAD_THREAD_MIN = 5

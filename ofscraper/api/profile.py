@@ -16,10 +16,9 @@ from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wai
 from xxhash import xxh128
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.constants as constants
 import ofscraper.utils.cache as cache
+import ofscraper.utils.constants as constants
 
-from ..constants import DAY_SECONDS, HOURLY_EXPIRY, NUM_TRIES, profileEP
 from ..utils import encoding
 
 console = Console()
@@ -35,8 +34,8 @@ def scrape_profile(username: Union[int, str]) -> dict:
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 def scrape_profile_helper(c, username: Union[int, str]):
@@ -45,11 +44,17 @@ def scrape_profile_helper(c, username: Union[int, str]):
     if id:
         return id
     attempt.set(attempt.get(0) + 1)
-    log.info(f"Attempt {attempt.get()}/{constants.NUM_TRIES} to get profile {username}")
-    with c.requests(profileEP.format(username))() as r:
+    log.info(
+        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
+    )
+    with c.requests(constants.getattr("profileEP").format(username))() as r:
         if r.ok:
             attempt.set(0)
-            cache.set(f"username_{username}", r.json(), int(HOURLY_EXPIRY * 2))
+            cache.set(
+                f"username_{username}",
+                r.json(),
+                int(constants.getattr("HOURLY_EXPIRY") * 2),
+            )
             cache.close()
             log.trace(f"username date: {r.json()}")
             return r.json()
@@ -125,18 +130,18 @@ def get_id(username):
 
 @retry(
     retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(NUM_TRIES),
-    wait=wait_random(min=constants.OF_MIN, max=constants.OF_MAX),
+    stop=stop_after_attempt(constants.getattr("favoriteEP")),
+    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
     reraise=True,
 )
 def get_id_helper(c, username):
     id = cache.get(f"model_id_{username}")
     if id:
         return id
-    with c.requests(profileEP.format(username))() as r:
+    with c.requests(constants.getattr("profileEP").format(username))() as r:
         if r.ok:
             id = r.json()["id"]
-            cache.set(f"model_id_{username}", id, DAY_SECONDS)
+            cache.set(f"model_id_{username}", id, constants.getattr("DAY_SECONDS"))
             cache.close()
             return id
         else:

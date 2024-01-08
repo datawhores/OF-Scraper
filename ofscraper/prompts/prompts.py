@@ -20,7 +20,6 @@ from InquirerPy.validator import EmptyInputValidator, PathValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
-import ofscraper.constants as constants
 import ofscraper.filters.models.selector as userselector
 import ofscraper.prompts.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
@@ -29,19 +28,20 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config
+import ofscraper.utils.constants as constants
 import ofscraper.utils.system as system
 
 console = Console()
 
 
 def main_prompt() -> int:
-    main_prompt_choices = [*constants.mainPromptChoices]
+    main_prompt_choices = [*constants.getattr("mainPromptChoices")]
     main_prompt_choices.insert(3, Separator())
     main_prompt_choices.insert(8, Separator())
     answer = promptClasses.getChecklistSelection(
         message="What would you like to do?", choices=[*main_prompt_choices]
     )
-    return constants.mainPromptChoices[answer]
+    return constants.getattr("mainPromptChoices")[answer]
 
 
 def areas_prompt() -> list:
@@ -296,12 +296,12 @@ def profiles_prompt() -> int:
                 "type": "list",
                 "name": name,
                 "message": "Select one of the following:",
-                "choices": [*constants.profilesPromptChoices],
+                "choices": [*constants.getattr("profilesPromptChoices")],
             }
         ]
     )
 
-    return constants.profilesPromptChoices.get(questions[name])
+    return constants.getattr("profilesPromptChoices").get(questions[name])
 
 
 def edit_profiles_prompt(profiles) -> str:
@@ -433,19 +433,6 @@ def config_prompt_advanced(config_) -> dict:
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
-                "type": "number",
-                "name": "maxfile-sem",
-                "message": "Max Number of open files per thread: ",
-                "min_allowed": 0,
-                "validate": EmptyInputValidator(),
-                "long_instruction": """
-             This should be set to 0 in most cases. 
-             This basically limits concurrency, and is only useful in very specific cases
-             Set to 0 for no limit
-             """,
-                "default": config.get_maxfile_semaphores(config_),
-            },
-            {
                 "type": "list",
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules\nhttps://grantjenks.com/docs/diskcache/tutorial.html#caveats",
@@ -464,7 +451,7 @@ def config_prompt_advanced(config_) -> dict:
                 "name": "key-mode-default",
                 "message": "Make selection for how to retrive long_message",
                 "default": config.get_key_mode(config_),
-                "choices": constants.KEY_OPTIONS,
+                "choices": constants.getattr("KEY_OPTIONS"),
             },
             {
                 "type": "input",
@@ -689,7 +676,7 @@ Enter 0 for no limit
                             value=x,
                             enabled=x.capitalize() in set(config.get_filter(config_)),
                         ),
-                        constants.FILTER_DEFAULT,
+                        constants.getattr("FILTER_DEFAULT"),
                     )
                 ),
                 "validate": prompt_validators.emptyListValidator(),
@@ -1348,10 +1335,19 @@ def get_speed(threads):
     speed = system.speed_test()
     thread_count = int(threads["threads"])
     if int(thread_count) == 0:
-        max_allowed = min(max((speed * 0.6) // constants.maxChunkSize, 3) * 2, 100)
+        max_allowed = min(
+            max((speed * 0.6) // constants.getattr("maxChunkSize"), 3) * 2, 100
+        )
     else:
         max_allowed = min(
-            int(max(((speed * 0.6) / thread_count) // constants.maxChunkSizeB, 3) * 2),
+            int(
+                max(
+                    ((speed * 0.6) / thread_count)
+                    // constants.getattr("maxChunkSizeB"),
+                    3,
+                )
+                * 2
+            ),
             100 // thread_count,
         )
     return max_allowed
