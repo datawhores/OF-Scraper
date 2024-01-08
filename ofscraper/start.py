@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 import traceback
 
@@ -42,7 +43,8 @@ def main():
         picker.pick()
         logger.gracefulClose()
         manager.shutdown()
-
+    except SystemExit:
+        print(f"Arguments {sys.argv}")
     except KeyboardInterrupt as E:
         console.get_shared_console().print("handling force closing of script")
         try:
