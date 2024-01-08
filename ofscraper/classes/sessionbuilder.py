@@ -24,7 +24,7 @@ class sessionBuilder:
         set_header=True,
         set_sign=True,
         set_cookies=True,
-        connect_timeout=20,
+        connect_timeout=100,
         total_timeout=None,
     ):
         self._backend = backend or config_.get_backend(config_.read_config())

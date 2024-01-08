@@ -118,7 +118,7 @@ def reset_globals():
     localDirSet = set()
     global req_sem
     req_sem = semaphoreDelayed(
-        config_.get_download_semaphores(config_.read_config()) * 5
+        min(100, config_.get_download_semaphores(config_.read_config()) * 5)
     )
 
 
