@@ -39,6 +39,8 @@ def scrape_profile(username: Union[int, str]) -> dict:
 
 
 def scrape_profile_helper(c, username: Union[int, str]):
+    attempt.set(0)
+
     id = cache.get(f"username_{username}", None)
     log.trace(f"username date: {id}")
     if id:
@@ -149,7 +151,7 @@ def get_id_helper(c, username):
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
+        attempt.set(0)
         with _:
             with c.requests(constants.getattr("profileEP").format(username))() as r:
                 if r.ok:
