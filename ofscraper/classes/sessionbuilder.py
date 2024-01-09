@@ -69,6 +69,8 @@ class sessionBuilder:
         elif self._backend == "httpx":
             self._session = httpx.AsyncClient(
                 http2=True,
+                mounts=self._proxy_mounts,
+                proxy=self._proxy,
                 limit=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
@@ -79,8 +81,6 @@ class sessionBuilder:
                     connect=self._connect_timeout,
                     pool=self._pool_connect_timeout,
                     read=self._read_timeout,
-                    mounts=self._proxy_mounts,
-                    proxy=self._proxy,
                 ),
             )
 
@@ -94,6 +94,8 @@ class sessionBuilder:
         if self._backend == "httpx":
             self._session = httpx.Client(
                 http2=True,
+                mounts=self._proxy_mounts,
+                proxy=self._proxy,
                 limit=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
@@ -104,8 +106,6 @@ class sessionBuilder:
                     connect=self._connect_timeout,
                     pool=self._pool_connect_timeout,
                     read=self._read_timeout,
-                    mounts=self._proxy_mounts,
-                    proxy=self._proxy,
                 ),
             )
         elif self._backend == "aio":
