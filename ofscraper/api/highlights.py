@@ -291,7 +291,6 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
             )() as r:
                 sem.release()
                 if r.ok:
-                    attempt.set(0)
                     resp_data = await r.json_()
                     log.trace(
                         f"highlights list: -> found highlights list data {resp_data}"

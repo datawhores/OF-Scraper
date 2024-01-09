@@ -111,7 +111,6 @@ async def scrape_timeline_posts(
                             )
                         )
                         if required_ids == None:
-                            attempt.set(0)
                             new_tasks.append(
                                 asyncio.create_task(
                                     scrape_timeline_posts(
@@ -130,7 +129,6 @@ async def scrape_timeline_posts(
                             if len(required_ids) > 0 and float((timestamp) or 0) <= max(
                                 required_ids
                             ):
-                                attempt.set(0)
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_timeline_posts(

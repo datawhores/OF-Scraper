@@ -140,7 +140,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
                 if r.ok:
                     data = await r.json_()
                     log.trace("paid raw {posts}".format(posts=data))
-                    attempt.set(0)
+
                     media = list(filter(lambda x: isinstance(x, list), data.values()))[
                         0
                     ]
@@ -324,7 +324,6 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
                         )
 
                         if required == 0:
-                            attempt.set(0)
                             new_tasks.append(
                                 asyncio.create_task(
                                     scrape_all_paid(

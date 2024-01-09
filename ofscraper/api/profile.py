@@ -68,7 +68,6 @@ def scrape_profile_helper(c, username: Union[int, str]):
                     log.trace(f"username date: {r.json()}")
                     return r.json()
                 elif r.status == 404:
-                    attempt.set(0)
                     return {"username": "modeldeleted"}
                 else:
                     log.debug(f"[bold]profile response status code:[/bold]{r.status}")

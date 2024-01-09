@@ -158,7 +158,7 @@ async def main_download_downloader(c, ele, username, model_id):
                     )
     except Exception as E:
         raise E
-
+    common.attempt.set(0)
     try:
         async for _ in AsyncRetrying(
             stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),

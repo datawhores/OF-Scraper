@@ -147,7 +147,6 @@ async def scrape_lists(c, job_progress, offset=0):
                 sem.release()
                 if r.ok:
                     data = await r.json_()
-                    attempt.set(0)
                     out_list = data["list"] or []
                     log.debug(f"offset:{offset} -> lists names found {len(out_list)}")
                     log.debug(
@@ -273,7 +272,6 @@ async def scrape_list(c, item, job_progress, offset=0):
                 log_id = f"offset:{offset} list:{item.get('name')} =>"
                 if r.ok:
                     data = await r.json_()
-                    attempt.set(0)
                     users = data.get("list") or []
                     log.debug(f"{log_id} -> names found {len(users)}")
                     log.debug(
