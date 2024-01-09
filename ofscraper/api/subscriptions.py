@@ -9,22 +9,31 @@ r"""
 """
 
 import asyncio
+import contextvars
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
-
-console = Console()
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
 import ofscraper.utils.constants as constants
+from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
+attempt = contextvars.ContextVar("attempt")
+console = Console()
+sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
 
 
 @run
@@ -131,93 +140,119 @@ async def expiredHelper(subscribe_count, c):
     return out
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    async with c.requests(
-        constants.getattr("subscriptionsActiveEP").format(offset)
-    )() as r:
-        if r.ok:
-            subscriptions = (await r.json_())["list"]
-            log.debug(
-                f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-            )
-            if len(subscriptions) == 0:
-                return subscriptions
-            elif recur == False:
-                None
-            elif (await r.json_())["hasMore"] == True:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_subscriptions_active(
-                            c, recur=True, offset=offset + len(subscriptions)
-                        )
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                constants.getattr("subscriptionsActiveEP").format(offset)
+            )() as r:
+                sem.release()
+                if r.ok:
+                    subscriptions = (await r.json_())["list"]
+                    log.debug(
+                        f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                     )
-                )
-            return subscriptions
-        else:
-            log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-            log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-            r.raise_for_status()
+                    if len(subscriptions) == 0:
+                        return subscriptions
+                    elif recur == False:
+                        None
+                    elif (await r.json_())["hasMore"] == True:
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_subscriptions_active(
+                                    c, recur=True, offset=offset + len(subscriptions)
+                                )
+                            )
+                        )
+                    return subscriptions
+                else:
+                    log.debug(
+                        f"[bold]subscriptions response status code:[/bold]{r.status}"
+                    )
+                    log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                    r.raise_for_status()
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
-    async with c.requests(
-        constants.getattr("subscriptionsExpiredEP").format(offset)
-    )() as r:
-        if r.ok:
-            subscriptions = (await r.json_())["list"]
-            log.debug(
-                f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-            )
-            if len(subscriptions) == 0:
-                return subscriptions
-            elif recur == False:
-                None
-            elif (await r.json_())["hasMore"] == True:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_subscriptions_disabled(
-                            c, recur=True, offset=offset + len(subscriptions)
-                        )
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                constants.getattr("subscriptionsExpiredEP").format(offset)
+            )() as r:
+                sem.release()
+                if r.ok:
+                    subscriptions = (await r.json_())["list"]
+                    log.debug(
+                        f"usernames offset {offset}: usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                     )
-                )
+                    if len(subscriptions) == 0:
+                        return subscriptions
+                    elif recur == False:
+                        None
+                    elif (await r.json_())["hasMore"] == True:
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_subscriptions_disabled(
+                                    c, recur=True, offset=offset + len(subscriptions)
+                                )
+                            )
+                        )
 
-            return subscriptions
-        else:
-            log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-            log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-            r.raise_for_status()
+                    return subscriptions
+                else:
+                    log.debug(
+                        f"[bold]subscriptions response status code:[/bold]{r.status}"
+                    )
+                    log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                    r.raise_for_status()
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def sort_list(c) -> list:
-    async with c.requests(
-        constants.getattr("sortSubscription"),
-        method="post",
-        json={"order": "users.name", "direction": "desc", "type": "all"},
-    )() as r:
-        if r.ok:
-            None
-        else:
-            log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-            log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-            r.raise_for_status()
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                constants.getattr("sortSubscription"),
+                method="post",
+                json={"order": "users.name", "direction": "desc", "type": "all"},
+            )() as r:
+                if r.ok:
+                    None
+                else:
+                    log.debug(
+                        f"[bold]subscriptions response status code:[/bold]{r.status}"
+                    )
+                    log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                    r.raise_for_status()

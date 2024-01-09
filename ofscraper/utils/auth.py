@@ -18,7 +18,13 @@ from urllib.parse import urlparse
 import browser_cookie3
 import requests
 from rich.console import Console
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    Retrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.prompts.prompts as prompts
@@ -293,43 +299,45 @@ def get_request_auth():
         return get_request_digitalcriminals()
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_fixed(8),
-)
 def get_request_auth_deviint():
     with sessionbuilder.sessionBuilder(
         backend="httpx", set_header=False, set_cookies=False, set_sign=False
     ) as c:
-        with c.requests(constants.getattr("DEVIINT"))() as r:
-            if r.ok:
-                content = r.json_()
-                static_param = content["static_param"]
-                fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
-                checksum_indexes = content["checksum_indexes"]
-                checksum_constant = content["checksum_constant"]
-                return (static_param, fmt, checksum_indexes, checksum_constant)
-            else:
-                r.raise_for_status()
+        for _ in Retrying(
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            wait=wait_fixed(8),
+        ):
+            with _:
+                with c.requests(constants.getattr("DEVIINT"))() as r:
+                    if r.ok:
+                        content = r.json_()
+                        static_param = content["static_param"]
+                        fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
+                        checksum_indexes = content["checksum_indexes"]
+                        checksum_constant = content["checksum_constant"]
+                        return (static_param, fmt, checksum_indexes, checksum_constant)
+                    else:
+                        r.raise_for_status()
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_fixed(8),
-)
 def get_request_digitalcriminals():
     with sessionbuilder.sessionBuilder(
         backend="httpx", set_header=False, set_cookies=False, set_sign=False
     ) as c:
-        with c.requests(constants.getattr("DIGITALCRIMINALS"))() as r:
-            if r.ok:
-                content = r.json_()
-                static_param = content["static_param"]
-                fmt = content["format"]
-                checksum_indexes = content["checksum_indexes"]
-                checksum_constant = content["checksum_constant"]
-                return (static_param, fmt, checksum_indexes, checksum_constant)
-            else:
-                r.raise_for_status()
+        for _ in Retrying(
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            wait=wait_fixed(8),
+        ):
+            with _:
+                with c.requests(constants.getattr("DIGITALCRIMINALS"))() as r:
+                    if r.ok:
+                        content = r.json_()
+                        static_param = content["static_param"]
+                        fmt = content["format"]
+                        checksum_indexes = content["checksum_indexes"]
+                        checksum_constant = content["checksum_constant"]
+                        return (static_param, fmt, checksum_indexes, checksum_constant)
+                    else:
+                        r.raise_for_status()

@@ -10,7 +10,13 @@ from threading import Event
 
 import aioprocessing
 from rich.logging import RichHandler
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    Retrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args
@@ -142,28 +148,30 @@ class DiscordHandler(logging.Handler):
         )
 
     def emit(self, record):
-        @retry(
-            retry=retry_if_not_exception_type(KeyboardInterrupt),
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-            wait=wait_fixed(8),
-        )
         def inner(sess):
             with sess:
-                with sess.requests(
-                    url,
-                    "post",
-                    headers={"Content-type": "application/json"},
-                    json={"content": log_entry},
-                )() as r:
-                    if not r.status == 204:
-                        raise Exception
+                for _ in Retrying(
+                    retry=retry_if_not_exception_type(KeyboardInterrupt),
+                    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+                    wait=wait_fixed(8),
+                ):
+                    with _:
+                        with sess.requests(
+                            url,
+                            "post",
+                            headers={"Content-type": "application/json"},
+                            json={"content": log_entry},
+                        )() as r:
+                            if not r.status == 204:
+                                raise Exception
 
-        log_entry = self.format(record)
-        url = config_.get_discord(config_.read_config())
-        log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
-        log_entry = f"{log_entry}\n\n"
-        if url == None or url == "":
-            return
+                log_entry = self.format(record)
+                url = config_.get_discord(config_.read_config())
+                log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
+                log_entry = f"{log_entry}\n\n"
+                if url == None or url == "":
+                    return
+
         inner(self.sess)
 
 

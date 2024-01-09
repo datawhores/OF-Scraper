@@ -18,7 +18,13 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
@@ -35,90 +41,96 @@ attempt = contextvars.ContextVar("attempt")
 sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) -> list:
     global tasks
     global sem
     posts = None
-    attempt.set(attempt.get(0) + 1)
     if timestamp and (
         float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp
     ):
         return []
     url = constants.getattr("timelinePinnedEP").format(model_id, count)
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            log.debug(url)
+            task = progress.add_task(
+                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                visible=True,
+            )
+            async with c.requests(url=url)() as r:
+                if r.ok:
+                    progress.remove_task(task)
 
-    log.debug(url)
-    try:
-        task = progress.add_task(
-            f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
-            visible=True,
-        )
-        await sem.acquire()
-        async with c.requests(url=url)() as r:
-            if r.ok:
-                progress.remove_task(task)
-
-                posts = (await r.json_())["list"]
-                posts = list(sorted(posts, key=lambda x: float(x["postedAtPrecise"])))
-                posts = list(
-                    filter(
-                        lambda x: float(x["postedAtPrecise"]) > float(timestamp or 0),
-                        posts,
+                    posts = (await r.json_())["list"]
+                    posts = list(
+                        sorted(posts, key=lambda x: float(x["postedAtPrecise"]))
                     )
-                )
-                log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
-                if not posts:
-                    posts = []
-                if len(posts) == 0:
-                    log.debug(f"{log_id} -> number of pinned post found 0")
-                else:
-                    log.debug(f"{log_id} -> number of pinned post found {len(posts)}")
-                    log.debug(
-                        f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
-                    )
-                    log.debug(
-                        f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-                    )
-                    log.debug(
-                        f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}"
-                    )
-                    log.trace(
-                        "{log_id} -> pinned raw {posts}".format(
-                            log_id=log_id,
-                            posts="\n\n".join(
-                                list(
-                                    map(lambda x: f"scrapeinfo pinned: {str(x)}", posts)
-                                )
-                            ),
+                    posts = list(
+                        filter(
+                            lambda x: float(x["postedAtPrecise"])
+                            > float(timestamp or 0),
+                            posts,
                         )
                     )
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_pinned_posts(
-                                c,
-                                model_id,
-                                progress,
-                                timestamp=posts[-1]["postedAtPrecise"],
-                                count=count + len(posts),
+                    log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
+                    if not posts:
+                        posts = []
+                    if len(posts) == 0:
+                        log.debug(f"{log_id} -> number of pinned post found 0")
+                    else:
+                        log.debug(
+                            f"{log_id} -> number of pinned post found {len(posts)}"
+                        )
+                        log.debug(
+                            f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
+                        )
+                        log.debug(
+                            f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
+                        )
+                        log.debug(
+                            f"{log_id} -> found pinned post IDs {list(map(lambda x:x.get('id'),posts))}"
+                        )
+                        log.trace(
+                            "{log_id} -> pinned raw {posts}".format(
+                                log_id=log_id,
+                                posts="\n\n".join(
+                                    list(
+                                        map(
+                                            lambda x: f"scrapeinfo pinned: {str(x)}",
+                                            posts,
+                                        )
+                                    )
+                                ),
                             )
                         )
-                    )
-            else:
-                log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                progress.remove_task(task)
-                r.raise_for_status()
-    except Exception as E:
-        raise E
-    finally:
-        sem.release()
-    return posts
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_pinned_posts(
+                                    c,
+                                    model_id,
+                                    progress,
+                                    timestamp=posts[-1]["postedAtPrecise"],
+                                    count=count + len(posts),
+                                )
+                            )
+                        )
+                else:
+                    log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
+                    log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                    progress.remove_task(task)
+                    r.raise_for_status()
+        return posts
 
 
 @run

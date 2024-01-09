@@ -8,7 +8,13 @@ import warnings
 import arrow
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args as args_
@@ -290,32 +296,29 @@ class Media:
         return self._media
 
     @property
-    @retry(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
-        ),
-        reraise=True,
-    )
     async def parse_mpd(self):
         if not self.mpd:
             return
-        try:
-            params = {
-                "Policy": self.policy,
-                "Key-Pair-Id": self.keypair,
-                "Signature": self.signature,
-            }
-            async with sessionbuilder.sessionBuilder() as c:
-                async with c.requests(url=self.mpd, params=params)() as r:
-                    if not r.ok:
-                        r.raise_for_status()
-                    return MPEGDASHParser.parse(await r.text_())
-        except Exception as E:
-            log.traceback_(traceback.format_exc())
-            log.traceback_(E)
-            raise E
+        params = {
+            "Policy": self.policy,
+            "Key-Pair-Id": self.keypair,
+            "Signature": self.signature,
+        }
+        async with sessionbuilder.sessionBuilder() as c:
+            async for _ in AsyncRetrying(
+                retry=retry_if_not_exception_type(KeyboardInterrupt),
+                stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+                wait=wait_random(
+                    min=constants.getattr("OF_MIN"),
+                    max=constants.getattr("OF_MAX"),
+                    reraise=True,
+                ),
+            ):
+                with _:
+                    async with c.requests(url=self.mpd, params=params)() as r:
+                        if not r.ok:
+                            r.raise_for_status()
+                        return MPEGDASHParser.parse(await r.text_())
 
     @property
     def license(self):

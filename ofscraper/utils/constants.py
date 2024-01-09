@@ -1,17 +1,15 @@
 # trunk-ignore-all(black)
-import sys
+import importlib
 
-import ofscraper.utils.config as config_
 from ofscraper.constants import *
 from test_.test_constants import *
 
-config=None
-thismodule = sys.modules[__name__]
-
+custom=None
 
 def getattr(val):
-    global config
-    if config==None:
-        config=config_.read_config()
-    return (config_.get_custom(config) or {}).get(val) or globals()[val]
+    global custom
+    if custom==None:
+        config_=importlib.import_module("ofscraper.utils.config")
+        custom=(config_.get_custom(config_.read_config()))
+    return (custom or {}).get(val) or globals()[val]
 

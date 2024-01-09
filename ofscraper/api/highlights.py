@@ -18,7 +18,13 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.console as console
@@ -94,48 +100,55 @@ async def get_stories_post(model_id):
         return list(outdict.values())
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_stories(c, user_id, job_progress) -> list:
     global sem
     global tasks
-    attempt.set(attempt.get(0) + 1)
     stories = None
-    await sem.acquire()
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
-        visible=True,
-    )
-    async with c.requests(
-        url=constants.getattr("highlightsWithAStoryEP").format(user_id)
-    )() as r:
-        sem.release()
-        if r.ok:
-            attempt.set(0)
-            stories = await r.json_()
-            log.debug(
-                f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        await sem.acquire()
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            task = job_progress.add_task(
+                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
+                visible=True,
             )
-            log.trace(
-                "stories: -> stories raw {posts}".format(
-                    posts="\n\n".join(
-                        list(map(lambda x: f"scrapeinfo stories: {str(x)}", stories))
+            async with c.requests(
+                url=constants.getattr("highlightsWithAStoryEP").format(user_id)
+            )() as r:
+                sem.release()
+                if r.ok:
+                    attempt.set(0)
+                    stories = await r.json_()
+                    log.debug(
+                        f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
                     )
-                )
-            )
-            job_progress.remove_task(task)
-        else:
-            log.debug(f"[bold]stories response status code:[/bold]{r.status}")
-            log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]stories headers:[/bold] {r.headers}")
-            r.raise_for_status()
-        return stories
-
-    r
+                    log.trace(
+                        "stories: -> stories raw {posts}".format(
+                            posts="\n\n".join(
+                                list(
+                                    map(
+                                        lambda x: f"scrapeinfo stories: {str(x)}",
+                                        stories,
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    job_progress.remove_task(task)
+                else:
+                    log.debug(f"[bold]stories response status code:[/bold]{r.status}")
+                    log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]stories headers:[/bold] {r.headers}")
+                    r.raise_for_status()
+                return stories
 
 
 @run
@@ -252,68 +265,83 @@ async def get_highlight_post(model_id):
         return list(outdict.values())
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
     global sem
     global tasks
-    attempt.set(attempt.get(0) + 1)
-    await sem.acquire()
     task = job_progress.add_task(
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}", visible=True
     )
-    async with c.requests(
-        url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
-    )() as r:
-        sem.release()
-        if r.ok:
-            attempt.set(0)
-            resp_data = await r.json_()
-            log.trace(f"highlights list: -> found highlights list data {resp_data}")
-            data = get_highlightList(resp_data)
-            log.debug(f"highlights list: -> found list ids {data}")
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
+            )() as r:
+                sem.release()
+                if r.ok:
+                    attempt.set(0)
+                    resp_data = await r.json_()
+                    log.trace(
+                        f"highlights list: -> found highlights list data {resp_data}"
+                    )
+                    data = get_highlightList(resp_data)
+                    log.debug(f"highlights list: -> found list ids {data}")
 
-        else:
-            log.debug(f"[bold]highlight list response status code:[/bold]{r.status}")
-            log.debug(f"[bold]highlight list response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
-    return data
+                else:
+                    log.debug(
+                        f"[bold]highlight list response status code:[/bold]{r.status}"
+                    )
+                    log.debug(
+                        f"[bold]highlight list response:[/bold] {await r.text_()}"
+                    )
+                    log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
+            return data
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_highlights(c, id, job_progress) -> list:
     global sem
     global tasks
-    attempt.set(attempt.get(0) + 1)
-    await sem.acquire()
     task = job_progress.add_task(
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
         visible=True,
     )
-    async with c.requests(url=constants.getattr("storyEP").format(id))() as r:
-        sem.release()
-        if r.ok:
-            attempt.set(0)
-            resp_data = await r.json_()
-            log.trace(f"highlights: -> found highlights data {resp_data}")
-            log.debug(
-                f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
-            )
-            job_progress.remove_task(task)
-        else:
-            log.debug(f"[bold]highlight status code:[/bold]{r.status}")
-            log.debug(f"[bold]highlight response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
-    return resp_data["stories"]
+
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(url=constants.getattr("storyEP").format(id))() as r:
+                sem.release()
+                if r.ok:
+                    attempt.set(0)
+                    resp_data = await r.json_()
+                    log.trace(f"highlights: -> found highlights data {resp_data}")
+                    log.debug(
+                        f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
+                    )
+                    job_progress.remove_task(task)
+                else:
+                    log.debug(f"[bold]highlight status code:[/bold]{r.status}")
+                    log.debug(f"[bold]highlight response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]h ighlight headers:[/bold] {r.headers}")
+            return resp_data["stories"]
 
 
 def get_highlightList(data):

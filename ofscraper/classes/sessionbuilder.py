@@ -7,6 +7,7 @@ import certifi
 import httpx
 
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 
 from ..utils import auth
 
@@ -24,8 +25,16 @@ class sessionBuilder:
         set_header=True,
         set_sign=True,
         set_cookies=True,
-        connect_timeout=100,
-        total_timeout=None,
+        connect_timeout=constants.getattr("CONNECT_TIMEOUT"),
+        total_timeout=constants.getattr("TOTAL_TIMEOUT"),
+        read_timeout=constants.getattr("CHUNK_READ_TIMEOUT"),
+        pool_timeout=constants.getattr("POOL_CONNECT_TIMEOUT"),
+        limit=constants.getattr("MAX_CONNECTIONS"),
+        keep_alive=constants.getattr("KEEP_ALIVE"),
+        keep_alive_exp=constants.getattr("KEEP_ALIVE_EXP"),
+        proxy=constants.getattr("PROXY"),
+        proxy_mounts=constants.getattr("PROXY_MOUNTS"),
+        proxy_auth=constants.getattr("PROXY_AUTH"),
     ):
         self._backend = backend or config_.get_backend(config_.read_config())
         self._set_cookies = set_cookies
@@ -33,6 +42,14 @@ class sessionBuilder:
         self._set_sign = set_sign
         self._connect_timeout = connect_timeout
         self._total_timeout = total_timeout
+        self._read_timeout = read_timeout
+        self._pool_connect_timeout = pool_timeout
+        self._connect_limit = limit
+        self._keep_alive = keep_alive
+        self._keep_alive_exp = keep_alive_exp
+        self._proxy = proxy
+        self._proxy_mounts = (proxy_mounts,)
+        self._proxy_auth = proxy_auth
 
     async def __aenter__(self):
         self._async = True
@@ -41,20 +58,29 @@ class sessionBuilder:
                 timeout=aiohttp.ClientTimeout(
                     total=self._total_timeout,
                     connect=self._connect_timeout,
-                    sock_connect=self._connect_timeout,
-                    sock_read=self._connect_timeout,
+                    sock_connect=self._pool_connect_timeout,
+                    sock_read=self._read_timeout,
+                    proxy=self._proxy,
+                    proxy_auth=self._proxy_auth,
                 ),
-                connector=aiohttp.TCPConnector(),
+                connector=aiohttp.TCPConnector(limit=self._connect_limit),
             )
 
         elif self._backend == "httpx":
             self._session = httpx.AsyncClient(
                 http2=True,
+                limit=httpx.Limits(
+                    max_keepalive_connections=self._keep_alive,
+                    max_connections=self._connect_limit,
+                    keepalive_expiry=self._keep_alive_exp,
+                ),
                 timeout=httpx.Timeout(
-                    self.total_timeout,
+                    self._total_timeout,
                     connect=self._connect_timeout,
-                    pool=self._connect_timeout,
-                    read=self._connect_timeout,
+                    pool=self._pool_connect_timeout,
+                    read=self._read_timeout,
+                    mounts=self._proxy_mounts,
+                    proxy=self._proxy,
                 ),
             )
 
@@ -68,11 +94,18 @@ class sessionBuilder:
         if self._backend == "httpx":
             self._session = httpx.Client(
                 http2=True,
+                limit=httpx.Limits(
+                    max_keepalive_connections=self._keep_alive,
+                    max_connections=self._connect_limit,
+                    keepalive_expiry=self._keep_alive_exp,
+                ),
                 timeout=httpx.Timeout(
                     self._total_timeout,
                     connect=self._connect_timeout,
-                    pool=self._connect_timeout,
-                    read=self._connect_timeout,
+                    pool=self._pool_connect_timeout,
+                    read=self._read_timeout,
+                    mounts=self._proxy_mounts,
+                    proxy=self._proxy,
                 ),
             )
         elif self._backend == "aio":

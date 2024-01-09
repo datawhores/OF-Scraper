@@ -19,7 +19,13 @@ from rich.progress import (
     TextColumn,
 )
 from rich.style import Style
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 
 import ofscraper.api.archive as archive
 import ofscraper.api.pinned as pinned
@@ -133,22 +139,26 @@ async def _like(model_id, username, ids: list, like_action: bool):
                 overall_progress.update(task1, advance=1, refresh=True)
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def _like_request(c, id, model_id):
     global sem
-    async with sem:
-        async with c.requests(
-            constants.getattr("favoriteEP").format(id, model_id), "post"
-        )() as r:
-            if r.ok:
-                return id
-            else:
-                log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                r.raise_for_status()
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                constants.getattr("favoriteEP").format(id, model_id), "post"
+            )() as r:
+                if r.ok:
+                    return id
+                else:
+                    log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
+                    log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                    r.raise_for_status()

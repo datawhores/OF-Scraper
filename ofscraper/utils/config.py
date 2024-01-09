@@ -8,6 +8,7 @@ r"""
                  \/     \/           \/            \/         
 """
 
+import importlib
 import json
 import logging
 import pathlib
@@ -15,14 +16,18 @@ import pathlib
 from diskcache import Disk, JSONDisk
 from humanfriendly import parse_size
 
-import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.binaries as binaries
 import ofscraper.utils.console as console_
-import ofscraper.utils.constants as constants
 import ofscraper.utils.paths as paths_
+from ofscraper.prompts.prompts import (
+    config_prompt,
+    manual_config_prompt,
+    reset_config_prompt,
+)
 
 console = console_.get_shared_console()
 log = logging.getLogger("shared")
+constants = None
 
 
 def get_config_folder():
@@ -32,6 +37,10 @@ def get_config_folder():
 
 
 def read_config():
+    global constants
+    constants
+    if not constants:
+        constants = importlib.import_module("ofscraper.utils.constants")
     p = pathlib.Path(paths_.get_config_path())
     if not p.parent.is_dir():
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -57,12 +66,12 @@ def read_config():
         except json.JSONDecodeError as e:
             print("You config.json has a syntax error")
             print(f"{e}\n\n")
-            if prompts.reset_config_prompt() == "Reset Default":
+            if reset_config_prompt() == "Reset Default":
                 make_config(p)
             else:
                 print(f"{e}\n\n")
                 try:
-                    make_config(p, prompts.manual_config_prompt(configText))
+                    make_config(p, manual_config_prompt(configText))
                 except:
                     continue
     return config["config"]
@@ -191,7 +200,7 @@ def edit_config():
             configText = f.read()
             config = json.loads(configText)
 
-        updated_config = prompts.config_prompt(config["config"])
+        updated_config = config_prompt(config["config"])
 
         with open(p, "w") as f:
             f.write(json.dumps(updated_config, indent=4))
@@ -205,7 +214,7 @@ def edit_config():
                 print("You config.json has a syntax error")
                 print(f"{e}\n\n")
                 with open(p, "w") as f:
-                    f.write(prompts.manual_config_prompt(configText))
+                    f.write(manual_config_prompt(configText))
                 with open(p, "r") as f:
                     configText = f.read()
                     config = json.loads(configText)

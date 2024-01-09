@@ -17,7 +17,13 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random
+from tenacity import (
+    AsyncRetrying,
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.console as console
@@ -88,57 +94,62 @@ async def get_labels(model_id):
         return output
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_labels(c, model_id, job_progress, offset=0):
     global sem
     global tasks
     labels = None
-    attempt.set(attempt.get(0) + 1)
-
-    await sem.acquire()
     task = job_progress.add_task(
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
         visible=True,
     )
-    async with c.requests(
-        url=constants.getattr("labelsEP").format(model_id, offset)
-    )() as r:
-        sem.release()
-        if r.ok:
-            data = await r.json_()
-            attempt.set(0)
-            labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
-            log.debug(f"offset:{offset} -> labels names found {len(labels)}")
-            log.debug(
-                f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
-            )
-            log.trace(
-                "offset:{offset} -> label names raw: {posts}".format(
-                    offset=offset, posts=data
-                )
-            )
-
-            if data.get("hasMore"):
-                offset = data.get("nextOffset")
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_labels(c, model_id, job_progress, offset=offset)
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                url=constants.getattr("labelsEP").format(model_id, offset)
+            )() as r:
+                sem.release()
+                if r.ok:
+                    data = await r.json_()
+                    attempt.set(0)
+                    labels = list(filter(lambda x: isinstance(x, list), data.values()))[
+                        0
+                    ]
+                    log.debug(f"offset:{offset} -> labels names found {len(labels)}")
+                    log.debug(
+                        f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
                     )
-                )
-            job_progress.remove_task(task)
-            return data.get("list")
+                    log.trace(
+                        "offset:{offset} -> label names raw: {posts}".format(
+                            offset=offset, posts=data
+                        )
+                    )
 
-        else:
-            log.debug(f"[bold]labels response status code:[/bold]{r.status}")
-            log.debug(f"[bold]labels response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]labels headers:[/bold] {r.headers}")
-            job_progress.remove_task(task)
-            r.raise_for_status()
+                    if data.get("hasMore"):
+                        offset = data.get("nextOffset")
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_labels(c, model_id, job_progress, offset=offset)
+                            )
+                        )
+                    job_progress.remove_task(task)
+                    return data.get("list")
+
+                else:
+                    log.debug(f"[bold]labels response status code:[/bold]{r.status}")
+                    log.debug(f"[bold]labels response:[/bold] {await r.text_()}")
+                    log.debug(f"[bold]labels headers:[/bold] {r.headers}")
+                    job_progress.remove_task(task)
+                    r.raise_for_status()
 
 
 @run
@@ -234,60 +245,73 @@ def label_dedupe(posts):
     return list(unduped.values())
 
 
-@retry(
-    retry=retry_if_not_exception_type(KeyboardInterrupt),
-    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-    wait=wait_random(min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")),
-    reraise=True,
-)
 async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
     global sem
     global tasks
     posts = None
-    attempt.set(attempt.get(0) + 1)
-    await sem.acquire()
     task = job_progress.add_task(
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : offset -> {offset} + label -> {label.get('name')}",
         visible=True,
     )
-    async with c.requests(
-        url=constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
-    )() as r:
-        sem.release()
 
-        if r.ok:
-            data = await r.json_()
-            attempt.set(0)
-            posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
-            log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
-            log.debug(
-                f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
-            )
-            log.trace(
-                "{offset} -> {posts}".format(
-                    offset=offset,
-                    posts="\n\n".join(
-                        list(map(lambda x: f"scrapeinfo label {str(x)}", posts))
-                    ),
+    async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+            reraise=True,
+        ),
+    ):
+        attempt.set(attempt.get(0) + 1)
+        with _:
+            await sem.acquire()
+            async with c.requests(
+                url=constants.getattr("labelledPostsEP").format(
+                    model_id, offset, label["id"]
                 )
-            )
-            if data.get("hasMore"):
-                offset += len(posts)
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_labelled_posts(
-                            c, label, model_id, job_progress, offset=offset
+            )() as r:
+                sem.release()
+
+                if r.ok:
+                    data = await r.json_()
+                    attempt.set(0)
+                    posts = list(filter(lambda x: isinstance(x, list), data.values()))[
+                        0
+                    ]
+                    log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
+                    log.debug(
+                        f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+                    )
+                    log.trace(
+                        "{offset} -> {posts}".format(
+                            offset=offset,
+                            posts="\n\n".join(
+                                list(map(lambda x: f"scrapeinfo label {str(x)}", posts))
+                            ),
                         )
                     )
-                )
-            job_progress.remove_task(task)
+                    if data.get("hasMore"):
+                        offset += len(posts)
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_labelled_posts(
+                                    c, label, model_id, job_progress, offset=offset
+                                )
+                            )
+                        )
+                    job_progress.remove_task(task)
 
-        else:
-            log.debug(f"[bold]labelled posts response status code:[/bold]{r.status}")
-            log.debug(f"[bold]labelled posts response:[/bold] {await r.text_()}")
-            log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
+                else:
+                    log.debug(
+                        f"[bold]labelled posts response status code:[/bold]{r.status}"
+                    )
+                    log.debug(
+                        f"[bold]labelled posts response:[/bold] {await r.text_()}"
+                    )
+                    log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
 
-            job_progress.remove_task(task)
-            r.raise_for_status()
+                    job_progress.remove_task(task)
+                    r.raise_for_status()
 
-    return label, posts
+            return label, posts
