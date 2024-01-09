@@ -70,8 +70,8 @@ async def scrape_archived_posts(
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         with sem:
             with _:

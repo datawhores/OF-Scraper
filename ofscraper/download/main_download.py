@@ -117,7 +117,7 @@ async def main_download(c, ele, username, model_id, progress):
 async def main_download_downloader(c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(config_.get_number_retries()),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),
@@ -172,7 +172,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
     common.attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(config_.get_number_retries()),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),

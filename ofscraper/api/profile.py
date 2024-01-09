@@ -53,8 +53,8 @@ def scrape_profile_helper(c, username: Union[int, str]):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         with _:
             with c.requests(constants.getattr("profileEP").format(username))() as r:
@@ -147,8 +147,8 @@ def get_id_helper(c, username):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:

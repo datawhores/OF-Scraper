@@ -147,8 +147,8 @@ async def _like_request(c, id, model_id):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         with _:
             await sem.acquire()

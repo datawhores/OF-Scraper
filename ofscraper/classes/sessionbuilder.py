@@ -33,7 +33,6 @@ class sessionBuilder:
         keep_alive=constants.getattr("KEEP_ALIVE"),
         keep_alive_exp=constants.getattr("KEEP_ALIVE_EXP"),
         proxy=constants.getattr("PROXY"),
-        proxy_mounts=constants.getattr("PROXY_MOUNTS"),
         proxy_auth=constants.getattr("PROXY_AUTH"),
     ):
         self._backend = backend or config_.get_backend(config_.read_config())
@@ -48,7 +47,6 @@ class sessionBuilder:
         self._keep_alive = keep_alive
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
-        self._proxy_mounts = (proxy_mounts,)
         self._proxy_auth = proxy_auth
 
     async def __aenter__(self):
@@ -60,8 +58,6 @@ class sessionBuilder:
                     connect=self._connect_timeout,
                     sock_connect=self._pool_connect_timeout,
                     sock_read=self._read_timeout,
-                    proxy=self._proxy,
-                    proxy_auth=self._proxy_auth,
                 ),
                 connector=aiohttp.TCPConnector(limit=self._connect_limit),
             )
@@ -69,9 +65,8 @@ class sessionBuilder:
         elif self._backend == "httpx":
             self._session = httpx.AsyncClient(
                 http2=True,
-                mounts=self._proxy_mounts,
-                proxy=self._proxy,
-                limit=httpx.Limits(
+                proxies=self._proxy,
+                limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
@@ -94,9 +89,8 @@ class sessionBuilder:
         if self._backend == "httpx":
             self._session = httpx.Client(
                 http2=True,
-                mounts=self._proxy_mounts,
-                proxy=self._proxy,
-                limit=httpx.Limits(
+                proxies=self._proxy,
+                limits=httpx.Limits(
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
@@ -154,6 +148,8 @@ class sessionBuilder:
                 headers=headers,
                 cookies=cookies,
                 allow_redirects=redirects,
+                proxy=self._proxy,
+                proxy_auth=self._proxy_auth,
                 params=params,
                 json=json,
                 data=data,

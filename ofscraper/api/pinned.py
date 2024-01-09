@@ -56,8 +56,8 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:

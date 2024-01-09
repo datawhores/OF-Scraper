@@ -149,8 +149,8 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:
@@ -193,8 +193,8 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:
@@ -240,8 +240,8 @@ async def sort_list(c) -> list:
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:

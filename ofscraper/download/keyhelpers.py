@@ -98,8 +98,8 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         with _:
             try:
@@ -148,8 +148,8 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         with _:
             try:
@@ -198,8 +198,8 @@ async def key_helper_keydb(c, pssh, licence_url, id):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         with _:
             try:

@@ -41,8 +41,8 @@ def _scraper_user_helper(c):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
         after=lambda retry_state: print(
             f"Trying to login attempt:{retry_state.attempt_number}/{constants.getattr('NUM_TRIES')}"
         ),
@@ -90,8 +90,8 @@ def parse_subscriber_count():
             wait=wait_random(
                 min=constants.getattr("OF_MIN"),
                 max=constants.getattr("OF_MAX"),
-                reraise=True,
             ),
+            reraise=True,
         ):
             with _:
                 with c.requests(constants.getattr("subscribeCountEP"))() as r:

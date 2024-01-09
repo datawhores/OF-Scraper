@@ -112,8 +112,8 @@ async def scrape_stories(c, user_id, job_progress) -> list:
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         await sem.acquire()
         attempt.set(attempt.get(0) + 1)
@@ -281,8 +281,8 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:
@@ -325,8 +325,8 @@ async def scrape_highlights(c, id, job_progress) -> list:
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:

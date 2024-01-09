@@ -127,8 +127,8 @@ async def scrape_paid(c, username, job_progress, offset=0):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:
@@ -288,8 +288,8 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
-            reraise=True,
         ),
+        reraise=True,
     ):
         attempt.set(attempt.get(0) + 1)
         with _:

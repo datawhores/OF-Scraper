@@ -371,7 +371,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
 async def alt_download_downloader(item, c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(config_.get_number_retries()),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),
@@ -422,7 +422,7 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
     _attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(config_.get_number_retries()),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),
