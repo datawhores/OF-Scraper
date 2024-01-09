@@ -490,6 +490,8 @@ def logger_other(input_, name=None, stop_count=1, event=None):
 # process main queue logs to console must be ran by main process, sharable via queues
 def start_stdout_logthread(input_=None, name=None, count=1, event=None):
     input = input_ or queue_
+    if input == queue_:
+        global main_log_thread
     main_log_thread = threading.Thread(
         target=logger_process,
         args=(input,),
@@ -497,6 +499,7 @@ def start_stdout_logthread(input_=None, name=None, count=1, event=None):
         daemon=True,
     )
     main_log_thread.start()
+    return main_log_thread
 
 
 # wrapper function for discord and  log, check if threads/process should star
