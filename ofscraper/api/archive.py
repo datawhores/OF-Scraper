@@ -113,7 +113,6 @@ async def scrape_archived_posts(
                             )
 
                             if required_ids == None:
-                                attempt.set(0)
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_archived_posts(
@@ -133,7 +132,6 @@ async def scrape_archived_posts(
                                 if len(required_ids) > 0 and float(
                                     timestamp or 0
                                 ) < max(required_ids):
-                                    attempt.set(0)
                                     new_tasks.append(
                                         asyncio.create_task(
                                             scrape_archived_posts(

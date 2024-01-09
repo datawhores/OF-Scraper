@@ -281,7 +281,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                     log.debug(f"ID:{id} licence: {licence_url}")
 
                     # prepare pssh
-                    pssh = PSSH(pssh)
+                    pssh_obj = PSSH(pssh)
 
                     # load device
                     private_key = pathlib.Path(
@@ -305,7 +305,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                     session_id = cdm.open()
 
                     keys = None
-                    challenge = cdm.get_license_challenge(session_id, pssh)
+                    challenge = cdm.get_license_challenge(session_id, pssh_obj)
                     async with c.requests(
                         url=licence_url, method="post", data=challenge
                     )() as r:

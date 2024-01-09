@@ -127,7 +127,6 @@ async def scrape_stories(c, user_id, job_progress) -> list:
             )() as r:
                 sem.release()
                 if r.ok:
-                    attempt.set(0)
                     stories = await r.json_()
                     log.debug(
                         f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
@@ -334,7 +333,6 @@ async def scrape_highlights(c, id, job_progress) -> list:
             async with c.requests(url=constants.getattr("storyEP").format(id))() as r:
                 sem.release()
                 if r.ok:
-                    attempt.set(0)
                     resp_data = await r.json_()
                     log.trace(f"highlights: -> found highlights data {resp_data}")
                     log.debug(

@@ -117,7 +117,7 @@ async def main_download(c, ele, username, model_id, progress):
 async def main_download_downloader(c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),
@@ -172,7 +172,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
     common.attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),
@@ -201,7 +201,7 @@ async def main_download_sendreq(
     total = total if common.attempt.get() == 1 else None
     try:
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] download temp path {placeholderObj.tempfilename}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {placeholderObj.tempfilename}"
         )
         if not total:
             placeholderObj.tempfilename.unlink(missing_ok=True)
@@ -283,17 +283,17 @@ async def main_download_sendreq(
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"[attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
+            f"[attempt {common.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
         )
         common.log.debug(
-            f"[attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+            f"[attempt {common.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] {traceback.format_exc()}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
         )
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] {E}"
+            f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
         )
         raise E
 

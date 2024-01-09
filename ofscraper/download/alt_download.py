@@ -248,7 +248,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):
                             return item
                         item["total"] = total
                         common.log.debug(
-                            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] download temp path {placeholderObj.tempfilename}"
+                            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {placeholderObj.tempfilename}"
                         )
                         await alt_download_datahandler(
                             item, total, l, ele, progress, placeholderObj
@@ -286,17 +286,17 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):
         common.log.traceback_(E)
         common.log.traceback_(traceback.format_exc())
         common.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
         )
         common.log.debug(
-            f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+            f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
         )
     except Exception as E:
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] {traceback.format_exc()}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
         )
         common.log.traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('NUM_TRIES')}] {E}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
         )
         raise E
 
@@ -371,7 +371,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
 async def alt_download_downloader(item, c, ele, username, model_id, progress):
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),
@@ -422,7 +422,7 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
     _attempt.set(0)
     try:
         async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
             wait=wait_random(
                 min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
             ),

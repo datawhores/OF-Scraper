@@ -121,7 +121,6 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                 sem.release()
                 if r.ok:
                     data = await r.json_()
-                    attempt.set(0)
                     labels = list(filter(lambda x: isinstance(x, list), data.values()))[
                         0
                     ]
@@ -278,7 +277,6 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
 
                 if r.ok:
                     data = await r.json_()
-                    attempt.set(0)
                     posts = list(filter(lambda x: isinstance(x, list), data.values()))[
                         0
                     ]
