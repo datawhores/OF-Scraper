@@ -135,7 +135,6 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "appendlog": get_appendlog(config),
                 "custom_values": get_custom(config),
                 "sanitize_text": get_sanitizeDB(config),
-                "avatar": get_avatar(config),
                 "temp_dir": get_TempDir(config),
             },
             "responsetype": {
@@ -671,16 +670,6 @@ def get_appendlog(config):
         "appendlog"
     )
     return value if value is not None else constants.getattr("APPEND_DEFAULT")
-
-
-def get_avatar(config):
-    if config is None:
-        return constants.getattr("AVATAR_DEFAULT")
-    return (
-        config.get("avatar")
-        or config.get("advanced_options", {}).get("avatar")
-        or constants.getattr("AVATAR_DEFAULT")
-    )
 
 
 def get_sanitizeDB(config):

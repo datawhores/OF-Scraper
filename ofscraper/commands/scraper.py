@@ -141,6 +141,8 @@ def process_post_user_first():
             length = len(userdata)
             for count, ele in enumerate(userdata):
                 log.info(f"Progress {count+1}/{length} model")
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
                 if args_.getargs().posts:
                     log.info(
                         f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
@@ -194,7 +196,7 @@ def normal_post_process():
         length = len(userdata)
         for count, ele in enumerate(userdata):
             log.warning(f"Progress {count+1}/{length} model")
-            if config.get_avatar(config.read_config()) and ele.avatar:
+            if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
             if args_.getargs().posts:
                 log.warning(
