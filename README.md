@@ -1,6 +1,8 @@
 # Latest version
 
-[![PyPI version](https://badge.fury.io/py/ofscraper.svg)](https://badge.fury.io/py/ofscraper)
+<div style="display: inline-block">
+<img src="https://badge.fury.io/py/ofscraper.svg" alt="drawing" style="width:50%"/>
+</div>
 
 # Table-of-contents
 
