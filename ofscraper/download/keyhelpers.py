@@ -272,8 +272,8 @@ async def key_helper_manual(c, pssh, licence_url, id):
             wait=wait_random(
                 min=constants.getattr("OF_MIN"),
                 max=constants.getattr("OF_MAX"),
-                reraise=True,
             ),
+            reraise=True,
         ):
             with _:
                 try:
