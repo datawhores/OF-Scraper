@@ -9,7 +9,7 @@ custom=None
 def getattr(val):
     global custom
     #can not be overwritten cause of infinite loop
-    if  val in { "configPath","configFile","KEY_OPTIONS","OFSCRAPER_RESERVED_LIST"}:
+    if  val in { "configPath","configFile"}:
         return globals()[val]
     if custom ==None:
         config_=importlib.import_module("ofscraper.utils.config")

@@ -268,15 +268,15 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
         await size_checker(placeholderObj.tempfilename, ele, total)
         return placeholderObj.tempfilename, placeholderObj.trunicated_filename
     except OSError as E:
-        common.log.traceback_(E)
-        common.log.traceback_(traceback.format_exc())
-        common.log.debug(
+        common.innerlog.get().traceback_(E)
+        common.innerlog.get().traceback_(traceback.format_exc())
+        common.innerlog.get().debug(
             f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
         )
-        common.log.debug(
+        common.innerlog.get().debug(
             f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
         )
-        common.log.debug(
+        common.innerlog.get().debug(
             f"{get_medialog(ele)} [attempt {common.attempt.get()}/{constants.getattr('NUM_TRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
         )
     except Exception as E:
