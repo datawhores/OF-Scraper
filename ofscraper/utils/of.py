@@ -32,6 +32,8 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.system as system
 
 log = logging.getLogger("shared")
+posts_areas = None
+scrape_paid = None
 
 
 def space_checker(func):
@@ -459,10 +461,19 @@ def process_labels(model_id, username):
 
 @space_checker
 def select_areas():
+    global posts_areas
+    global scrape_paid
     args = args_.getargs()
-    if not args_.getargs().scrape_paid and len(args_.getargs().posts or []) == 0:
-        args.scrape_paid = prompts.scrape_paid_prompt()
-    args.posts = list(
+
+    if (
+        posts_areas or args.scrape_paid != None
+    ) and prompts.reset_selected_areas_prompt():
+        args.posts = None
+        args.scrape_paid = None
+    scrape_paid = (
+        args_.getargs().scrape_paid if args_.getargs().scrape_paid != None else None
+    ) or (len(args_.getargs().posts or []) == 0 and prompts.scrape_paid_prompt())
+    posts_areas = list(
         map(lambda x: x.capitalize(), (args_.getargs().posts or prompts.areas_prompt()))
     )
 

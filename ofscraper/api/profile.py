@@ -45,9 +45,6 @@ def scrape_profile_helper(c, username: Union[int, str]):
     log.trace(f"username date: {id}")
     if id:
         return id
-    log.info(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
-    )
 
     for _ in Retrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -59,6 +56,10 @@ def scrape_profile_helper(c, username: Union[int, str]):
         reraise=True,
     ):
         with _:
+            log.info(
+                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
+            )
+            attempt.set(attempt.get(0) + 1)
             with c.requests(constants.getattr("profileEP").format(username))() as r:
                 if r.ok:
                     cache.set(
@@ -153,6 +154,7 @@ def get_id_helper(c, username):
     ):
         attempt.set(0)
         with _:
+            attempt.set(attempt.get(0) + 1)
             with c.requests(constants.getattr("profileEP").format(username))() as r:
                 if r.ok:
                     id = r.json()["id"]

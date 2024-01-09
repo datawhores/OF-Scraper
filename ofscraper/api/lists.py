@@ -252,7 +252,7 @@ async def scrape_list(c, item, job_progress, offset=0):
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : offset -> {offset} + label -> {item.get('name')}",
         visible=True,
     )
-
+    attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),

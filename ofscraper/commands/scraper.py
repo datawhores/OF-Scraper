@@ -135,49 +135,48 @@ def process_post_user_first():
 
         profiles.print_current_profile()
         init.print_sign_status()
-        if args_.getargs().users_first:
-            output = []
-            userdata = userselector.getselected_usernames(rescan=False)
-            length = len(userdata)
-            for count, ele in enumerate(userdata):
-                log.info(f"Progress {count+1}/{length} model")
-                if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                    log.warning(f"Avatar : {ele.avatar}")
-                if args_.getargs().posts:
-                    log.info(
-                        f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                    )
-                try:
-                    model_id = ele.id
-                    operations.write_profile_table(model_id=model_id, username=ele.name)
-                    output.extend(OF.process_areas(ele, model_id))
-                    #
-                except Exception as e:
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
-                    log.traceback_(f"failed with exception: {e}")
-                    log.traceback_(traceback.format_exc())
-            if args_.getargs().scrape_paid:
-                output.extend(OF.process_all_paid())
-            user_dict = {}
-            [
-                user_dict.update(
-                    {ele.post.model_id: user_dict.get(ele.post.model_id, []) + [ele]}
+        output = []
+        userdata = userselector.getselected_usernames(rescan=False)
+        length = len(userdata)
+        for count, ele in enumerate(userdata):
+            log.info(f"Progress {count+1}/{length} model")
+            if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                log.warning(f"Avatar : {ele.avatar}")
+            if args_.getargs().posts:
+                log.info(
+                    f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
-                for ele in output
-            ]
-            for value in user_dict.values():
-                model_id = value[0].post.model_id
-                username = value[0].post.username
+            try:
+                model_id = ele.id
+                operations.write_profile_table(model_id=model_id, username=ele.name)
+                output.extend(OF.process_areas(ele, model_id))
+                #
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise e
+                log.traceback_(f"failed with exception: {e}")
+                log.traceback_(traceback.format_exc())
+        if args_.getargs().scrape_paid:
+            output.extend(OF.process_all_paid())
+        user_dict = {}
+        [
+            user_dict.update(
+                {ele.post.model_id: user_dict.get(ele.post.model_id, []) + [ele]}
+            )
+            for ele in output
+        ]
+        for value in user_dict.values():
+            model_id = value[0].post.model_id
+            username = value[0].post.username
 
-                operations.create_tables(model_id=model_id, username=username)
-                operations.create_backup(model_id, username)
-                operations.write_profile_table(model_id=model_id, username=username)
-                download.download_picker(
-                    username,
-                    model_id,
-                    value,
-                )
+            operations.create_tables(model_id=model_id, username=username)
+            operations.create_backup(model_id, username)
+            operations.write_profile_table(model_id=model_id, username=username)
+            download.download_picker(
+                username,
+                model_id,
+                value,
+            )
 
 
 @exit.exit_wrapper
@@ -380,6 +379,7 @@ def run_helper(*functs):
     else:
         try:
             userselector.getselected_usernames(rescan=True, reset=True)
+            OF.select_areas(reset=True)
             for _ in functs:
                 job_func = jobqueue.get()
                 job_func()

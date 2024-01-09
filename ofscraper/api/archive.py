@@ -60,10 +60,7 @@ async def scrape_archived_posts(
         ep = constants.getattr("archivedEP")
         url = ep.format(model_id)
     log.debug(url)
-    task = progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
-        visible=True,
-    )
+
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -77,6 +74,10 @@ async def scrape_archived_posts(
             with _:
                 async with c.requests(url)() as r:
                     attempt.set(attempt.get(0) + 1)
+                    task = progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                        visible=True,
+                    )
                     if r.ok:
                         progress.remove_task(task)
                         posts = (await r.json_())["list"]

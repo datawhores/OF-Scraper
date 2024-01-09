@@ -10,6 +10,7 @@ r"""
 
 import asyncio
 import logging
+import traceback
 
 from rich.progress import (
     BarColumn,
@@ -152,13 +153,22 @@ async def _like_request(c, id, model_id):
     ):
         with _:
             await sem.acquire()
-            async with c.requests(
-                constants.getattr("favoriteEP").format(id, model_id), "post"
-            )() as r:
-                if r.ok:
-                    return id
-                else:
-                    log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                    log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                    r.raise_for_status()
+            try:
+                async with c.requests(
+                    constants.getattr("favoriteEP").format(id, model_id), "post"
+                )() as r:
+                    if r.ok:
+                        return id
+                    else:
+                        log.debug(
+                            f"[bold]timeline response status code:[/bold]{r.status}"
+                        )
+                        log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+            finally:
+                sem.release()

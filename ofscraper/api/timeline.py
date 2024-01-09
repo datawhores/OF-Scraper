@@ -46,7 +46,7 @@ async def scrape_timeline_posts(
     global new_tasks
     global sem
     posts = None
-    attempt.set(attempt.get(0) + 1)
+    attempt.set(0)
 
     if timestamp and (
         float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp

@@ -106,6 +106,8 @@ async def scrape_stories(c, user_id, job_progress) -> list:
     global sem
     global tasks
     stories = None
+    attempt.set(0)
+
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -115,9 +117,9 @@ async def scrape_stories(c, user_id, job_progress) -> list:
         ),
         reraise=True,
     ):
-        await sem.acquire()
-        attempt.set(attempt.get(0) + 1)
         with _:
+            await sem.acquire()
+            attempt.set(attempt.get(0) + 1)
             task = job_progress.add_task(
                 f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
                 visible=True,
@@ -271,9 +273,7 @@ async def get_highlight_post(model_id):
 async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
     global sem
     global tasks
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}", visible=True
-    )
+    attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -283,9 +283,9 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
+            attempt.set(attempt.get(0) + 1)
             async with c.requests(
                 url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
             )() as r:
@@ -312,11 +312,7 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
 async def scrape_highlights(c, id, job_progress) -> list:
     global sem
     global tasks
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
-        visible=True,
-    )
-
+    attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -326,9 +322,13 @@ async def scrape_highlights(c, id, job_progress) -> list:
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
+            attempt.set(attempt.get(0) + 1)
+            task = job_progress.add_task(
+                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
+                visible=True,
+            )
             async with c.requests(url=constants.getattr("storyEP").format(id))() as r:
                 sem.release()
                 if r.ok:

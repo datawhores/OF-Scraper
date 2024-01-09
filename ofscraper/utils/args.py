@@ -161,7 +161,7 @@ def create_parser(input=None):
         "-sp",
         "--scrape-paid",
         help="scrape the entire paid page for content. This can take a very long time",
-        default=False,
+        default=None,
         required=False,
         action="store_true",
     )

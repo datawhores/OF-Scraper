@@ -99,10 +99,8 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
     global sem
     global tasks
     labels = None
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
-        visible=True,
-    )
+    attempt.set(0)
+
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -112,9 +110,14 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
+            attempt.set(attempt.get(0) + 1)
+
+            task = job_progress.add_task(
+                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
+                visible=True,
+            )
             async with c.requests(
                 url=constants.getattr("labelsEP").format(model_id, offset)
             )() as r:
@@ -251,10 +254,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
     global sem
     global tasks
     posts = None
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : offset -> {offset} + label -> {label.get('name')}",
-        visible=True,
-    )
+    attempt.set(0)
 
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),

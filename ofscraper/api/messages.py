@@ -305,7 +305,7 @@ async def scrape_messages(
     global sem
     global tasks
     messages = None
-    attempt.set(attempt.get(0) + 1)
+    attempt.set(0)
     ep = (
         constants.getattr("messagesNextEP")
         if message_id

@@ -825,6 +825,22 @@ def reset_username_prompt() -> bool:
     return answer[name]
 
 
+def reset_selected_areas_prompt() -> bool:
+    name = "reset areas"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Do you want to reset selected posts types",
+                "choices": ["Yes", "No"],
+            }
+        ]
+    )
+
+    return answer[name]
+
+
 def mp4_prompt(config_):
     answer = promptClasses.batchConverter(
         *[

@@ -50,6 +50,7 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
     ):
         return []
     url = constants.getattr("timelinePinnedEP").format(model_id, count)
+    attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),

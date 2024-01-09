@@ -120,6 +120,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
     task = job_progress.add_task(
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}", visible=True
     )
+    attempt.set(0)
 
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -282,6 +283,7 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
         visible=True,
     )
 
+    attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
