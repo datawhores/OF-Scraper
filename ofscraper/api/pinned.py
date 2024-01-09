@@ -37,13 +37,13 @@ from ..utils import auth
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-
-sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
+sem = None
 
 
 async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) -> list:
     global tasks
     global sem
+    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     posts = None
     if timestamp and (
         float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp

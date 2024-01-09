@@ -33,11 +33,13 @@ from ofscraper.utils.run_async import run
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 console = Console()
-sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
+sem = None
 
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
+    global sem
+    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
@@ -230,6 +232,8 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
 
 
 async def sort_list(c) -> list:
+    global sem
+    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),

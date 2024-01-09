@@ -39,7 +39,7 @@ log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
 
-sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
+sem = None
 
 
 async def scrape_archived_posts(
@@ -48,7 +48,7 @@ async def scrape_archived_posts(
     global tasks
     global sem
     posts = None
-
+    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     if timestamp and (
         float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp
     ):

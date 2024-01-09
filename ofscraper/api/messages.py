@@ -37,12 +37,13 @@ from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-
-sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+sem = None
 
 
 @run
 async def get_messages(model_id, username, forced_after=None, rescan=None):
+    global sem
+    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -330,6 +331,7 @@ async def scrape_messages(
                         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Message ID-> {message_id if message_id else 'initial'}"
                     )
                     if r.ok:
+                        sem.release()
                         messages = (await r.json_())["list"]
                         log_id = f"offset messageid:{message_id if message_id else 'init id'}"
                         if not messages:

@@ -30,7 +30,6 @@ from ..utils import encoding
 console = Console()
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
 
 
 # can get profile from username or id

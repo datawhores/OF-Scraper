@@ -37,8 +37,7 @@ from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-
-sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+sem = None
 
 
 async def scrape_timeline_posts(
@@ -154,6 +153,8 @@ async def scrape_timeline_posts(
 
 @run
 async def get_timeline_media(model_id, username, forced_after=None, rescan=None):
+    global sem
+    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(

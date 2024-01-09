@@ -35,14 +35,15 @@ from ofscraper.utils.run_async import run
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
-
-sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
-
 attempt = contextvars.ContextVar("attempt")
+sem = None
 
 
 @run
 async def get_paid_posts(username, model_id):
+    global sem
+    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
@@ -170,6 +171,8 @@ async def scrape_paid(c, username, job_progress, offset=0):
 
 @run
 async def get_all_paid_posts():
+    global sem
+    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(

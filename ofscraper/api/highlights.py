@@ -33,12 +33,14 @@ from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
-sem = semaphoreDelayed(1)
+sem = None
 attempt = contextvars.ContextVar("attempt")
 
 
 @run
 async def get_stories_post(model_id):
+    global sem
+    sem = semaphoreDelayed(1)
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -153,6 +155,8 @@ async def scrape_stories(c, user_id, job_progress) -> list:
 
 @run
 async def get_highlight_post(model_id):
+    global sem
+    sem = semaphoreDelayed(1)
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 

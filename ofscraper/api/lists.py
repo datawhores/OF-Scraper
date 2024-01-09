@@ -34,8 +34,7 @@ from ofscraper.utils.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-
-sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+sem = None
 
 
 @run
@@ -125,6 +124,7 @@ async def get_lists():
 async def scrape_lists(c, job_progress, offset=0):
     global sem
     global tasks
+    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     task = job_progress.add_task(
         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
         visible=True,
@@ -178,6 +178,8 @@ async def scrape_lists(c, job_progress, offset=0):
 
 
 async def get_list_users(lists):
+    global sem
+    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     with ThreadPoolExecutor(max_workers=20) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
