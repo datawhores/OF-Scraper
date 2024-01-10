@@ -265,7 +265,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                         )
                         for i in range(1, len(splitArrays) - 1)
                     ]
-                    # keeping grabbing until nothign left
+                    # keeping grabbing until nothing left
                     tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
