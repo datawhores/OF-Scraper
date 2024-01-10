@@ -77,14 +77,16 @@ class Post:
     def modified_responsetype(self):
         if self.archived:
             if config.get_archived_responsetype(config.read_config()) == "":
-                return "archived"
+                return "Archived"
             return config.get_archived_responsetype(config.read_config())
 
         else:
             # remap some values
             response_key = self.responsetype
             response_key = (
-                "Timeline" if response_key.lower() in {"post", "post"} else response_key
+                "timeline"
+                if response_key.lower() in {"post", "posts"}
+                else response_key
             )
             response = config.read_config().get("responsetype", {}).get(response_key)
 
