@@ -66,7 +66,7 @@ def get_media_from_urls(urls):
             elif type == "msg2":
                 model_id = user_name_dict.get(model) or profile.get_id(model)
                 data = messages_.get_individual_post(model_id, postid, c=c) or {}
-                if (data).get("id") != postid:
+                if (data).get("id") != int(postid):
                     data = paid.get_individual_post(model, model_id, postid) or {}
                 id_dict[model_id] = id_dict.get(model_id, []) + [data]
             elif type == "unknown":

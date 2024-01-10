@@ -325,7 +325,7 @@ class Media:
         if not self.mpd:
             return None
         responsetype = self.post.post["responseType"]
-        if responsetype in ["timeline", "archived", "pinned"]:
+        if responsetype in ["timeline", "archived", "pinned", "posts"]:
             responsetype = "post"
         return constants.getattr("LICENCE_URL").format(
             self.id, responsetype, self.postid

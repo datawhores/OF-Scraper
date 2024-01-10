@@ -149,7 +149,6 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                                     )
                                 )
                             )
-                        job_progress.remove_task(task)
                         return data.get("list")
 
                     else:
@@ -163,6 +162,7 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
             except Exception as E:
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
+                raise E
 
             finally:
                 sem.release()

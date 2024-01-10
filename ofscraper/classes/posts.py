@@ -82,9 +82,11 @@ class Post:
 
         else:
             # remap some values
-            response = (
-                config.read_config().get("responsetype", {}).get(self.responsetype)
+            response_key = self.responsetype
+            response_key = (
+                "Timeline" if response_key.lower() in {"post", "post"} else response_key
             )
+            response = config.read_config().get("responsetype", {}).get(response_key)
 
             if response == "":
                 return self.responsetype.capitalize()
