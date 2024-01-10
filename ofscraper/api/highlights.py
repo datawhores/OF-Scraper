@@ -11,6 +11,7 @@ r"""
 import asyncio
 import contextvars
 import logging
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.console import Group
@@ -119,39 +120,49 @@ async def scrape_stories(c, user_id, job_progress) -> list:
     ):
         with _:
             await sem.acquire()
-            attempt.set(attempt.get(0) + 1)
-            task = job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
-                visible=True,
-            )
-            async with c.requests(
-                url=constants.getattr("highlightsWithAStoryEP").format(user_id)
-            )() as r:
-                sem.release()
-                if r.ok:
-                    stories = await r.json_()
-                    log.debug(
-                        f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
-                    )
-                    log.trace(
-                        "stories: -> stories raw {posts}".format(
-                            posts="\n\n".join(
-                                list(
-                                    map(
-                                        lambda x: f"scrapeinfo stories: {str(x)}",
-                                        stories,
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = job_progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
+                    visible=True,
+                )
+                async with c.requests(
+                    url=constants.getattr("highlightsWithAStoryEP").format(user_id)
+                )() as r:
+                    if r.ok:
+                        stories = await r.json_()
+                        log.debug(
+                            f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
+                        )
+                        log.trace(
+                            "stories: -> stories raw {posts}".format(
+                                posts="\n\n".join(
+                                    list(
+                                        map(
+                                            lambda x: f"scrapeinfo stories: {str(x)}",
+                                            stories,
+                                        )
                                     )
                                 )
                             )
                         )
-                    )
-                    job_progress.remove_task(task)
-                else:
-                    log.debug(f"[bold]stories response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
-                    log.debug(f"[bold]stories headers:[/bold] {r.headers}")
-                    r.raise_for_status()
-                return stories
+                    else:
+                        log.debug(
+                            f"[bold]stories response status code:[/bold]{r.status}"
+                        )
+                        log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]stories headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
+                sem.release()
+                job_progress.remove_task(task)
+
+            return stories
 
 
 @run
@@ -285,27 +296,42 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
     ):
         with _:
             await sem.acquire()
-            attempt.set(attempt.get(0) + 1)
-            async with c.requests(
-                url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
-            )() as r:
-                sem.release()
-                if r.ok:
-                    resp_data = await r.json_()
-                    log.trace(
-                        f"highlights list: -> found highlights list data {resp_data}"
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = job_progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scraping highlight list  offset-> {offset}",
+                    visible=True,
+                )
+                async with c.requests(
+                    url=constants.getattr("highlightsWithStoriesEP").format(
+                        user_id, offset
                     )
-                    data = get_highlightList(resp_data)
-                    log.debug(f"highlights list: -> found list ids {data}")
+                )() as r:
+                    if r.ok:
+                        resp_data = await r.json_()
+                        log.trace(
+                            f"highlights list: -> found highlights list data {resp_data}"
+                        )
+                        data = get_highlightList(resp_data)
+                        log.debug(f"highlights list: -> found list ids {data}")
 
-                else:
-                    log.debug(
-                        f"[bold]highlight list response status code:[/bold]{r.status}"
-                    )
-                    log.debug(
-                        f"[bold]highlight list response:[/bold] {await r.text_()}"
-                    )
-                    log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
+                    else:
+                        log.debug(
+                            f"[bold]highlight list response status code:[/bold]{r.status}"
+                        )
+                        log.debug(
+                            f"[bold]highlight list response:[/bold] {await r.text_()}"
+                        )
+                        log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
+                sem.release()
+                job_progress.remove_task(task)
+
             return data
 
 
@@ -324,24 +350,35 @@ async def scrape_highlights(c, id, job_progress) -> list:
     ):
         with _:
             await sem.acquire()
-            attempt.set(attempt.get(0) + 1)
-            task = job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
-                visible=True,
-            )
-            async with c.requests(url=constants.getattr("storyEP").format(id))() as r:
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = job_progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
+                    visible=True,
+                )
+                async with c.requests(
+                    url=constants.getattr("storyEP").format(id)
+                )() as r:
+                    if r.ok:
+                        resp_data = await r.json_()
+                        log.trace(f"highlights: -> found highlights data {resp_data}")
+                        log.debug(
+                            f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
+                        )
+                    else:
+                        log.debug(f"[bold]highlight status code:[/bold]{r.status}")
+                        log.debug(f"[bold]highlight response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]h ighlight headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
                 sem.release()
-                if r.ok:
-                    resp_data = await r.json_()
-                    log.trace(f"highlights: -> found highlights data {resp_data}")
-                    log.debug(
-                        f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
-                    )
-                    job_progress.remove_task(task)
-                else:
-                    log.debug(f"[bold]highlight status code:[/bold]{r.status}")
-                    log.debug(f"[bold]highlight response:[/bold] {await r.text_()}")
-                    log.debug(f"[bold]h ighlight headers:[/bold] {r.headers}")
+                job_progress.remove_task(task)
+
             return resp_data["stories"]
 
 

@@ -106,9 +106,11 @@ def create_parser(input=None):
     scraper.add_argument(
         "-a",
         "--action",
-        default=None,
-        help="perform like or unlike action on each post",
-        choices=["like", "unlike"],
+        help="perform batch action on users",
+        default=[],
+        required=False,
+        type=action_helper,
+        action="extend",
     )
 
     post = parser.add_argument_group("Post", description="What type of post to scrape")
@@ -160,7 +162,7 @@ def create_parser(input=None):
     post.add_argument(
         "-sp",
         "--scrape-paid",
-        help="scrape the entire paid page for content. This can take a very long time",
+        help="scrape the entire paid page for content. This can take a very long time the first time",
         default=None,
         required=False,
         action="store_true",
@@ -957,7 +959,6 @@ def posttype_helper(x):
             "Purchased",
             "Profile",
             "Labels",
-            "Skip",
         ]
     )
     if isinstance(x, str):
@@ -965,7 +966,7 @@ def posttype_helper(x):
         x = list(map(lambda x: x.capitalize(), x))
     if len(list(filter(lambda y: y not in choices, x))) > 0:
         raise argparse.ArgumentTypeError(
-            "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels','skip')"
+            "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
     return x
 
@@ -1004,6 +1005,23 @@ def mediatype_helper(x):
             "error: argument -o/--mediatype: invalid choice: (choose from 'images','audio','videos')"
         )
     return x
+
+
+def action_helper(x):
+    select = x.split(",")
+    select = list(map(lambda x: x.lower(), select))
+    if "like" in select and "unlike" in select:
+        raise argparse.ArgumentTypeError(
+            "You can not select like and unlike at the same time"
+        )
+    if (
+        len(list(filter(lambda x: x in set(["like", "unlike", "download"]), select)))
+        == 0
+    ):
+        raise argparse.ArgumentTypeError(
+            "You must select [like or unlike] and/or download for action"
+        )
+    return select
 
 
 def changeargs(newargs):

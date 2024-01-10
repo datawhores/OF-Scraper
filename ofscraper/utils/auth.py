@@ -72,7 +72,6 @@ def read_auth():
 def get_empty():
     return {
         "auth": {
-            "app-token": "33d57ade8c02dbc5a333db99ff9ae26a",
             "sess": "",
             "auth_id": "",
             "auth_uid_": "",
@@ -155,7 +154,6 @@ def make_auth(auth=None):
 
     elif browserSelect == "Paste From M-rcus' OnlyFans-Cookie-Helper":
         auth = prompts.auth_full_paste()
-        auth["auth"]["app-token"] = "33d57ade8c02dbc5a333db99ff9ae26a"
         for key in ["username", "support_2fa", "active", "email", "password", "hashed"]:
             auth["auth"].pop(key)
         auth["auth"]["x-bc"] = auth["auth"].pop("x_bc").strip()
@@ -190,7 +188,7 @@ def make_auth(auth=None):
 def make_headers(auth):
     headers = {
         "accept": "application/json, text/plain, */*",
-        "app-token": auth["auth"]["app-token"],
+        "app-token": constants.getattr("APP_TOKEN"),
         "user-id": auth["auth"]["auth_id"],
         "x-bc": auth["auth"]["x-bc"],
         "referer": "https://onlyfans.com",

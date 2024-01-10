@@ -9,6 +9,7 @@ r"""
 """
 import contextvars
 import logging
+import traceback
 from typing import Union
 
 from rich.console import Console
@@ -40,12 +41,10 @@ def scrape_profile(username: Union[int, str]) -> dict:
 
 def scrape_profile_helper(c, username: Union[int, str]):
     attempt.set(0)
-
     id = cache.get(f"username_{username}", None)
     log.trace(f"username date: {id}")
     if id:
         return id
-
     for _ in Retrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -56,27 +55,34 @@ def scrape_profile_helper(c, username: Union[int, str]):
         reraise=True,
     ):
         with _:
-            log.info(
-                f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
-            )
-            attempt.set(attempt.get(0) + 1)
-            with c.requests(constants.getattr("profileEP").format(username))() as r:
-                if r.ok:
-                    cache.set(
-                        f"username_{username}",
-                        r.json(),
-                        int(constants.getattr("HOURLY_EXPIRY") * 2),
-                    )
-                    cache.close()
-                    log.trace(f"username date: {r.json()}")
-                    return r.json()
-                elif r.status == 404:
-                    return {"username": "modeldeleted"}
-                else:
-                    log.debug(f"[bold]profile response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]profile response:[/bold] {r.text_()}")
-                    log.debug(f"[bold]profile headers:[/bold] {r.headers}")
-                    r.raise_for_status()
+            try:
+                attempt.set(attempt.get(0) + 1)
+                log.info(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
+                )
+                with c.requests(constants.getattr("profileEP").format(username))() as r:
+                    if r.ok:
+                        cache.set(
+                            f"username_{username}",
+                            r.json(),
+                            int(constants.getattr("HOURLY_EXPIRY") * 2),
+                        )
+                        cache.close()
+                        log.trace(f"username date: {r.json()}")
+                        return r.json()
+                    elif r.status == 404:
+                        return {"username": "modeldeleted"}
+                    else:
+                        log.debug(
+                            f"[bold]profile response status code:[/bold]{r.status}"
+                        )
+                        log.debug(f"[bold]profile response:[/bold] {r.text_()}")
+                        log.debug(f"[bold]profile headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
 
 
 def parse_profile(profile: dict) -> tuple:
@@ -140,6 +146,7 @@ def get_id(username):
 
 
 def get_id_helper(c, username):
+    attempt.set(0)
     id = cache.get(f"model_id_{username}")
     if id:
         return id
@@ -152,19 +159,26 @@ def get_id_helper(c, username):
         ),
         reraise=True,
     ):
-        attempt.set(0)
         with _:
-            attempt.set(attempt.get(0) + 1)
-            with c.requests(constants.getattr("profileEP").format(username))() as r:
-                if r.ok:
-                    id = r.json()["id"]
-                    cache.set(
-                        f"model_id_{username}", id, constants.getattr("DAY_SECONDS")
-                    )
-                    cache.close()
-                    return id
-                else:
-                    log.debug(f"[bold]id response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]id response:[/bold] {r.text_()}")
-                    log.debug(f"[bold]id headers:[/bold] {r.headers}")
-                    r.raise_for_status()
+            try:
+                attempt.set(attempt.get(0) + 1)
+                log.info(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get id {username}"
+                )
+                with c.requests(constants.getattr("profileEP").format(username))() as r:
+                    if r.ok:
+                        id = r.json()["id"]
+                        cache.set(
+                            f"model_id_{username}", id, constants.getattr("DAY_SECONDS")
+                        )
+                        cache.close()
+                        return id
+                    else:
+                        log.debug(f"[bold]id response status code:[/bold]{r.status}")
+                        log.debug(f"[bold]id response:[/bold] {r.text_()}")
+                        log.debug(f"[bold]id headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E

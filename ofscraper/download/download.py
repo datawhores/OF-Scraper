@@ -26,7 +26,7 @@ def medialist_filter(medialist, model_id, username):
         log.debug(f"Final Number of media to download {len(medialist)}")
 
     else:
-        log.info(f"forcing all downloads media count {len(medialist)}")
+        log.info(f"forcing all downloads media count {lense(medialist)}")
     return medialist
 
 

@@ -10,6 +10,7 @@ import asyncio
 import contextvars
 import logging
 import math
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
@@ -48,6 +49,7 @@ async def scrape_archived_posts(
     global tasks
     global sem
     posts = None
+    attempt.set(0)
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     if timestamp and (
         float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp
@@ -70,16 +72,16 @@ async def scrape_archived_posts(
         ),
         reraise=True,
     ):
-        with sem:
-            with _:
+        with _:
+            await sem.acquire()
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                    visible=True,
+                )
                 async with c.requests(url)() as r:
-                    attempt.set(attempt.get(0) + 1)
-                    task = progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
-                        visible=True,
-                    )
                     if r.ok:
-                        progress.remove_task(task)
                         posts = (await r.json_())["list"]
                         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
                         if not posts:
@@ -150,8 +152,15 @@ async def scrape_archived_posts(
                         )
                         log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
                         log.debug(f"[bold]archived headers:[/bold] {r.headers}")
-                        progress.remove_task(task)
                         r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
+                sem.release()
+                progress.remove_task(task)
             return posts
 
 
@@ -180,13 +189,13 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
             async with sessionbuilder.sessionBuilder() as c:
-                if not args_.getargs().no_cache:
-                    oldarchived = operations.get_archived_postinfo(
+                oldarchived = (
+                    operations.get_archived_postinfo(
                         model_id=model_id, username=username
                     )
-                else:
-                    oldarchived = []
-                    setCache = False
+                    if not args_.getargs().no_cache
+                    else []
+                )
 
                 log.trace(
                     "oldarchive {posts}".format(

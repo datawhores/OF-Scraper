@@ -10,6 +10,7 @@ r"""
 import asyncio
 import contextvars
 import logging
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.console import Group
@@ -26,7 +27,6 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
@@ -117,9 +117,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
     global sem
     global tasks
     media = None
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}", visible=True
-    )
+
     attempt.set(0)
 
     async for _ in AsyncRetrying(
@@ -131,42 +129,60 @@ async def scrape_paid(c, username, job_progress, offset=0):
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
-            async with c.requests(
-                url=constants.getattr("purchased_contentEP").format(offset, username)
-            )() as r:
-                sem.release()
-                if r.ok:
-                    data = await r.json_()
-                    log.trace("paid raw {posts}".format(posts=data))
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = job_progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scrape paid offset -> {offset} username -> {username}",
+                    visible=True,
+                )
 
-                    media = list(filter(lambda x: isinstance(x, list), data.values()))[
-                        0
-                    ]
-                    log.debug(f"offset:{offset} -> media found {len(media)}")
-                    log.debug(
-                        f"offset:{offset} -> hasmore value in json {data.get('hasMore','undefined') }"
+                async with c.requests(
+                    url=constants.getattr("purchased_contentEP").format(
+                        offset, username
                     )
-                    log.debug(
-                        f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}"
-                    )
-                    if data.get("hasMore"):
-                        offset += len(media)
-                        new_tasks.append(
-                            asyncio.create_task(
-                                scrape_paid(c, username, job_progress, offset=offset)
-                            )
+                )() as r:
+                    if r.ok:
+                        data = await r.json_()
+                        log.trace("paid raw {posts}".format(posts=data))
+
+                        media = list(
+                            filter(lambda x: isinstance(x, list), data.values())
+                        )[0]
+                        log.debug(f"offset:{offset} -> media found {len(media)}")
+                        log.debug(
+                            f"offset:{offset} -> hasmore value in json {data.get('hasMore','undefined') }"
                         )
-                    job_progress.remove_task(task)
+                        log.debug(
+                            f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}"
+                        )
+                        if data.get("hasMore"):
+                            offset += len(media)
+                            new_tasks.append(
+                                asyncio.create_task(
+                                    scrape_paid(
+                                        c, username, job_progress, offset=offset
+                                    )
+                                )
+                            )
+                        job_progress.remove_task(task)
 
-                else:
-                    log.debug(f"[bold]paid response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
-                    log.debug(f"[bold]paid headers:[/bold] {r.headers}")
-                    job_progress.remove_task(task)
-                    r.raise_for_status()
+                    else:
+                        log.debug(f"[bold]paid response status code:[/bold]{r.status}")
+                        log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]paid headers:[/bold] {r.headers}")
+                        job_progress.remove_task(task)
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
+                sem.release()
+                job_progress.remove_task(task)
+
         return media
 
 
@@ -194,10 +210,7 @@ async def get_all_paid_posts():
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
             async with sessionbuilder.sessionBuilder() as c:
-                if not args_.getargs().no_cache:
-                    allpaid = cache.get(f"purchased_all", default=[])
-                else:
-                    allpaid = []
+                allpaid = cache.get(f"purchased_all", default=[])
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
 
                 if len(allpaid) > min_posts:
@@ -278,10 +291,6 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
     global sem
     global new_tasks
     media = None
-    task = job_progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} offset={offset}",
-        visible=True,
-    )
 
     attempt.set(0)
     async for _ in AsyncRetrying(
@@ -293,64 +302,86 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
-            async with c.requests(
-                url=constants.getattr("purchased_contentALL").format(offset)
-            )() as r:
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = job_progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scrape entire paid page offset={offset}",
+                    visible=True,
+                )
+
+                async with c.requests(
+                    url=constants.getattr("purchased_contentALL").format(offset)
+                )() as r:
+                    if r.ok:
+                        log_id = f"offset {offset or 0}:"
+                        data = await r.json_()
+                        media = list(
+                            filter(lambda x: isinstance(x, list), data.values())
+                        )[0]
+                        if not data.get("hasMore"):
+                            media = []
+                        if not media:
+                            media = []
+                        if len(media) == 0:
+                            log.debug(f"{log_id} -> number of post found 0")
+                        elif len(media) > 0:
+                            log.debug(f"{log_id} -> number of post found {len(media)}")
+                            log.debug(
+                                f"{log_id} -> first date {media[0].get('createdAt') or media[0].get('postedAt')}"
+                            )
+                            log.debug(
+                                f"{log_id} -> last date {media[-1].get('createdAt') or media[-1].get('postedAt')}"
+                            )
+                            log.debug(
+                                f"{log_id} -> found paid content ids {list(map(lambda x:x.get('id'),media))}"
+                            )
+
+                            if required == 0:
+                                new_tasks.append(
+                                    asyncio.create_task(
+                                        scrape_all_paid(
+                                            c, job_progress, offset=offset + len(media)
+                                        )
+                                    )
+                                )
+
+                            elif len(count) < len(required):
+                                new_tasks.append(
+                                    asyncio.create_task(
+                                        scrape_all_paid(
+                                            c,
+                                            job_progress,
+                                            offset=offset + len(media),
+                                            required=required,
+                                            count=count + len(media),
+                                        )
+                                    )
+                                )
+
+                    else:
+                        log.debug(f"[bold]paid response status code:[/bold]{r.status}")
+                        log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]paid headers:[/bold] {r.headers}")
+                        job_progress.remove_task(task)
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
                 sem.release()
-                if r.ok:
-                    log_id = f"offset {offset or 0}:"
-                    data = await r.json_()
-                    job_progress.remove_task(task)
-                    media = list(filter(lambda x: isinstance(x, list), data.values()))[
-                        0
-                    ]
-                    if not data.get("hasMore"):
-                        media = []
-                    if not media:
-                        media = []
-                    if len(media) == 0:
-                        log.debug(f"{log_id} -> number of post found 0")
-                    elif len(media) > 0:
-                        log.debug(f"{log_id} -> number of post found {len(media)}")
-                        log.debug(
-                            f"{log_id} -> first date {media[0].get('createdAt') or media[0].get('postedAt')}"
-                        )
-                        log.debug(
-                            f"{log_id} -> last date {media[-1].get('createdAt') or media[-1].get('postedAt')}"
-                        )
-                        log.debug(
-                            f"{log_id} -> found paid content ids {list(map(lambda x:x.get('id'),media))}"
-                        )
+                job_progress.remove_task(task)
 
-                        if required == 0:
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_all_paid(
-                                        c, job_progress, offset=offset + len(media)
-                                    )
-                                )
-                            )
-
-                        elif len(count) < len(required):
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_all_paid(
-                                        c,
-                                        job_progress,
-                                        offset=offset + len(media),
-                                        required=required,
-                                        count=count + len(media),
-                                    )
-                                )
-                            )
-
-                else:
-                    log.debug(f"[bold]paid response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]paid response:[/bold] {await r.text_()}")
-                    log.debug(f"[bold]paid headers:[/bold] {r.headers}")
-                    job_progress.remove_task(task)
-                    r.raise_for_status()
             return media
+
+
+def get_individual_post(username, model_id, postid):
+    data = get_paid_posts(username, model_id)
+    postid = int(postid)
+    posts = list(filter(lambda x: int(x["id"]) == postid, data))
+    if len(posts) > 0:
+        return posts[0]
+    return None

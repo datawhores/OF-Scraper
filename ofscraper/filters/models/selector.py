@@ -25,16 +25,18 @@ def getselected_usernames(rescan=False, reset=False):
     if "Skip" in args_.getargs().posts:
         return []
     if reset is True and PARSED_SUBS:
-        if prompts.reset_username_prompt() == "Yes":
+        prompt = prompts.reset_username_prompt()
+        if prompt == "Selection":
             PARSED_SUBS = None
             args_.getargs().username = None
             args_.changeargs(args)
+        if prompt == "No":
+            rescan = False
     if rescan is True:
         PARSED_SUBS = None
     if not PARSED_SUBS or not args_.getargs().username:
         all_subs_helper()
         parsed_subscriptions_helper()
-
     return PARSED_SUBS
 
 

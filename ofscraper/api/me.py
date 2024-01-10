@@ -9,6 +9,7 @@ r"""
 """
 
 import logging
+import traceback
 
 from rich.console import Console
 from tenacity import (
@@ -37,7 +38,7 @@ def _scraper_user_helper(c):
     data = None
     for _ in Retrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        stop=stop_after_attempt(constants.getattr("LOGIN_NUM_TRIES")),
         wait=wait_random(
             min=constants.getattr("OF_MIN"),
             max=constants.getattr("OF_MAX"),
@@ -48,25 +49,30 @@ def _scraper_user_helper(c):
         ),
     ):
         with _:
-            with c.requests(constants.getattr("meEP"))() as r:
-                if r.ok:
-                    data = r.json_()
-                    logger.updateSenstiveDict(data["id"], "userid")
-                    logger.updateSenstiveDict(
-                        f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
-                        "username",
-                    )
-                    logger.updateSenstiveDict(
-                        f"{data['name']} | {data['name']}|\\b{data['name']}\\b", "name"
-                    )
-                else:
-                    log.debug(
-                        f"[bold]user request response status code:[/bold]{r.status}"
-                    )
-                    log.debug(f"[bold]user request response:[/bold] {r.text_()}")
-                    log.debug(f"[bold]user request headers:[/bold] {r.headers}")
-                    r.raise_for_status()
-
+            try:
+                with c.requests(constants.getattr("meEP"))() as r:
+                    if r.ok:
+                        data = r.json_()
+                        logger.updateSenstiveDict(data["id"], "userid")
+                        logger.updateSenstiveDict(
+                            f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
+                            "username",
+                        )
+                        logger.updateSenstiveDict(
+                            f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
+                            "name",
+                        )
+                    else:
+                        log.debug(
+                            f"[bold]user request response status code:[/bold]{r.status}"
+                        )
+                        log.debug(f"[bold]user request response:[/bold] {r.text_()}")
+                        log.debug(f"[bold]user request headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
             return data
 
 
@@ -94,16 +100,25 @@ def parse_subscriber_count():
             reraise=True,
         ):
             with _:
-                with c.requests(constants.getattr("subscribeCountEP"))() as r:
-                    if r.ok:
-                        data = r.json_()
-                        return (
-                            data["subscriptions"]["active"],
-                            data["subscriptions"]["expired"],
-                        )
-                    else:
-                        log.debug(
-                            f"[bold]subscriber count response status code:[/bold]{r.status}"
-                        )
-                        log.debug(f"[bold]subscriber countresponse:[/bold] {r.text_()}")
-                        log.debug(f"[bold]subscriber count headers:[/bold] {r.headers}")
+                try:
+                    with c.requests(constants.getattr("subscribeCountEP"))() as r:
+                        if r.ok:
+                            data = r.json_()
+                            return (
+                                data["subscriptions"]["active"],
+                                data["subscriptions"]["expired"],
+                            )
+                        else:
+                            log.debug(
+                                f"[bold]subscriber count response status code:[/bold]{r.status}"
+                            )
+                            log.debug(
+                                f"[bold]subscriber countresponse:[/bold] {r.text_()}"
+                            )
+                            log.debug(
+                                f"[bold]subscriber count headers:[/bold] {r.headers}"
+                            )
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    raise E

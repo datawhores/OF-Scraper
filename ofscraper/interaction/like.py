@@ -62,19 +62,11 @@ def get_posts(model_id, username):
 
 
 def get_posts_for_unlike(model_id, username):
-    args = args_.getargs()
-    args.posts = list(
-        map(lambda x: x.capitalize(), (args.posts or prompts.like_areas_prompt(False)))
-    )
     post = get_posts(model_id, username)
     return filter_for_favorited(post)
 
 
 def get_post_for_like(model_id, username):
-    args = args_.getargs()
-    args.posts = list(
-        map(lambda x: x.capitalize(), (args.posts or prompts.like_areas_prompt()))
-    )
     post = get_posts(model_id, username)
     return filter_for_unfavorited(post)
 

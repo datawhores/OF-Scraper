@@ -52,7 +52,8 @@ def areas_prompt() -> list:
                 "type": "checkbox",
                 "qmark": "[?]",
                 "name": name,
-                "message": "Which area(s) would you like to scrape?",
+                "message": "Which area(s) would you like to scape, batch like, batch unlike",
+                "long_instruction": "Hint: Select Timeline, Archived or Pinned when batching unlike/likes",
                 "validate": prompt_validators.emptyListValidator(),
                 "choices": [
                     Choice("Profile"),
@@ -816,8 +817,13 @@ def reset_username_prompt() -> bool:
             {
                 "type": "list",
                 "name": name,
-                "message": "Do you want to reset username selection",
-                "choices": ["Yes", "No"],
+                "message": "Do you want to reset username info",
+                "choices": [
+                    Choice("Selection", "Yes Update Selection"),
+                    Choice("Data", "Yes Refetch Data"),
+                    "No",
+                ],
+                "default": "No",
             }
         ]
     )
@@ -834,6 +840,7 @@ def reset_selected_areas_prompt() -> bool:
                 "name": name,
                 "message": "Do you want to reset selected posts types",
                 "choices": ["Yes", "No"],
+                "default": "No",
             }
         ]
     )

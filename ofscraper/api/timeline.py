@@ -10,6 +10,7 @@ import asyncio
 import contextvars
 import logging
 import math
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
@@ -60,10 +61,6 @@ async def scrape_timeline_posts(
         ep = constants.getattr("timelineEP")
         url = ep.format(model_id)
     log.debug(url)
-    task = progress.add_task(
-        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
-        visible=True,
-    )
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -73,62 +70,49 @@ async def scrape_timeline_posts(
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
-            async with c.requests(url=url)() as r:
-                if r.ok:
-                    progress.remove_task(task)
-                    posts = (await r.json_())["list"]
-                    log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
-                    if not posts:
-                        posts = []
-                    if len(posts) == 0:
-                        log.debug(f"{log_id} -> number of post found 0")
+            try:
+                attempt.set(attempt.get(0) + 1)
+                task = progress.add_task(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                    visible=True,
+                )
 
-                    elif len(posts) > 0:
-                        log.debug(f"{log_id} -> number of post found {len(posts)}")
-                        log.debug(
-                            f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
-                        )
-                        log.debug(
-                            f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-                        )
-                        log.debug(
-                            f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
-                        )
-                        log.trace(
-                            "{log_id} -> post raw {posts}".format(
-                                log_id=log_id,
-                                posts="\n\n".join(
-                                    list(
-                                        map(
-                                            lambda x: f"scrapeinfo timeline: {str(x)}",
-                                            posts,
-                                        )
-                                    )
-                                ),
+                async with c.requests(url=url)() as r:
+                    if r.ok:
+                        posts = (await r.json_())["list"]
+                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
+                        if not posts:
+                            posts = []
+                        if len(posts) == 0:
+                            log.debug(f"{log_id} -> number of post found 0")
+
+                        elif len(posts) > 0:
+                            log.debug(f"{log_id} -> number of post found {len(posts)}")
+                            log.debug(
+                                f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
                             )
-                        )
-                        if required_ids == None:
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_timeline_posts(
-                                        c,
-                                        model_id,
-                                        progress,
-                                        timestamp=posts[-1]["postedAtPrecise"],
-                                    )
+                            log.debug(
+                                f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
+                            )
+                            log.debug(
+                                f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
+                            )
+                            log.trace(
+                                "{log_id} -> post raw {posts}".format(
+                                    log_id=log_id,
+                                    posts="\n\n".join(
+                                        list(
+                                            map(
+                                                lambda x: f"scrapeinfo timeline: {str(x)}",
+                                                posts,
+                                            )
+                                        )
+                                    ),
                                 )
                             )
-                        else:
-                            [
-                                required_ids.discard(float(ele["postedAtPrecise"]))
-                                for ele in posts
-                            ]
-                            if len(required_ids) > 0 and float((timestamp) or 0) <= max(
-                                required_ids
-                            ):
+                            if required_ids == None:
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_timeline_posts(
@@ -136,17 +120,45 @@ async def scrape_timeline_posts(
                                             model_id,
                                             progress,
                                             timestamp=posts[-1]["postedAtPrecise"],
-                                            required_ids=required_ids,
                                         )
                                     )
                                 )
-                else:
-                    log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                    log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                    log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                    progress.remove_task(task)
-                    r.raise_for_status()
-        return posts
+                            else:
+                                [
+                                    required_ids.discard(float(ele["postedAtPrecise"]))
+                                    for ele in posts
+                                ]
+                                if len(required_ids) > 0 and float(
+                                    (timestamp) or 0
+                                ) <= max(required_ids):
+                                    new_tasks.append(
+                                        asyncio.create_task(
+                                            scrape_timeline_posts(
+                                                c,
+                                                model_id,
+                                                progress,
+                                                timestamp=posts[-1]["postedAtPrecise"],
+                                                required_ids=required_ids,
+                                            )
+                                        )
+                                    )
+                    else:
+                        log.debug(
+                            f"[bold]timeline response status code:[/bold]{r.status}"
+                        )
+                        log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+            finally:
+                sem.release()
+                progress.remove_task(task)
+
+            return posts
 
 
 @run

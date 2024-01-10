@@ -90,13 +90,14 @@ def process_download_cart():
                 log.info("Sending URLs to OF-Scraper")
                 media_dict = manual.get_media_from_urls(urls=[url])
                 # None for stories and highlights
+                matchID = int(row[media_id].plain)
                 medialist = list(
                     filter(
-                        lambda x: x.id == (int(row[media_id].plain) if x.id else None),
+                        lambda x: x.id == matchID if x.id else None,
                         list(media_dict.values())[0],
                     )
                 )
-                media = medialist[0] if len(medialist) > 0 else []
+                media = medialist[0] if len(medialist) > 0 else None
                 model_id = media.post.model_id
                 username = media.post.username
                 log.info(

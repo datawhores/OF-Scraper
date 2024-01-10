@@ -1,25 +1,24 @@
-import logging
-import sys
-import time
-import traceback
-
-from diskcache import Cache
-
-import ofscraper.commands.picker as picker
-import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
-import ofscraper.utils.console as console
-import ofscraper.utils.exit as exit
-import ofscraper.utils.logger as logger
-import ofscraper.utils.manager as manager
-import ofscraper.utils.paths as paths
-import ofscraper.utils.startvals as startvals
-import ofscraper.utils.system as system
-
-
 def main():
-    system.setName()
     try:
+        import logging
+        import sys
+        import time
+        import traceback
+
+        from diskcache import Cache
+
+        import ofscraper.commands.picker as picker
+        import ofscraper.utils.args as args_
+        import ofscraper.utils.config as config_
+        import ofscraper.utils.console as console
+        import ofscraper.utils.exit as exit
+        import ofscraper.utils.logger as logger
+        import ofscraper.utils.manager as manager
+        import ofscraper.utils.paths as paths
+        import ofscraper.utils.startvals as startvals
+        import ofscraper.utils.system as system
+
+        system.setName()
         system.set_mulitproc_start_type()
         if len(system.get_dupe_ofscraper()) > 0:
             console.get_shared_console().print(

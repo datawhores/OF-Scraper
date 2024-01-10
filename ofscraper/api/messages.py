@@ -10,6 +10,7 @@ r"""
 import asyncio
 import contextvars
 import logging
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 import arrow
@@ -70,12 +71,11 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
             console=console.get_shared_console(),
         ):
             async with sessionbuilder.sessionBuilder() as c:
-                if not args_.getargs().no_cache:
-                    oldmessages = operations.get_messages_data(
-                        model_id=model_id, username=username
-                    )
-                else:
-                    oldmessages = []
+                oldmessages = (
+                    operations.get_messages_data(model_id=model_id, username=username)
+                    if not args_.getargs().no_cache
+                    else []
+                )
                 log.trace(
                     "oldmessage {posts}".format(
                         posts="\n\n".join(
@@ -322,16 +322,16 @@ async def scrape_messages(
         ),
         reraise=True,
     ):
-        attempt.set(attempt.get(0) + 1)
         with _:
             await sem.acquire()
             try:
                 async with c.requests(url=url)() as r:
+                    attempt.set(attempt.get(0) + 1)
+
                     task = progress.add_task(
                         f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Message ID-> {message_id if message_id else 'initial'}"
                     )
                     if r.ok:
-                        sem.release()
                         messages = (await r.json_())["list"]
                         log_id = f"offset messageid:{message_id if message_id else 'init id'}"
                         if not messages:
@@ -406,7 +406,6 @@ async def scrape_messages(
                                             )
                                         )
                                     )
-                        progress.remove_task(task)
 
                     else:
                         log.debug(
@@ -415,12 +414,14 @@ async def scrape_messages(
                         log.debug(f"[bold]message response:[/bold] {await r.text_()}")
                         log.debug(f"[bold]message headers:[/bold] {r.headers}")
 
-                        progress.remove_task(task)
                         r.raise_for_status()
             except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 raise E
             finally:
                 sem.release()
+                progress.remove_task(task)
             return messages
 
 

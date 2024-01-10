@@ -46,15 +46,18 @@ import ofscraper.utils.startvals as startvals
 import ofscraper.utils.stdout as stdout
 
 log = logging.getLogger("shared")
+run_count = 0
 
 
 @exit.exit_wrapper
 def process_prompts():
+    global run_count
     while True:
         args_.getargs().posts = []
         result_main_prompt = prompts.main_prompt()
 
         # download
+        run_count = run_count + 1
         if result_main_prompt == 0:
             check_auth()
             check_config()
@@ -135,7 +138,6 @@ def process_post_user_first():
 
         profiles.print_current_profile()
         init.print_sign_status()
-        output = []
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
         for count, ele in enumerate(userdata):
@@ -156,27 +158,31 @@ def process_post_user_first():
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
-        if args_.getargs().scrape_paid:
-            output.extend(OF.process_all_paid())
-        user_dict = {}
-        [
-            user_dict.update(
-                {ele.post.model_id: user_dict.get(ele.post.model_id, []) + [ele]}
-            )
-            for ele in output
-        ]
-        for value in user_dict.values():
-            model_id = value[0].post.model_id
-            username = value[0].post.username
 
-            operations.create_tables(model_id=model_id, username=username)
-            operations.create_backup(model_id, username)
-            operations.write_profile_table(model_id=model_id, username=username)
-            download.download_picker(
-                username,
-                model_id,
-                value,
-            )
+
+def scrape_paid(user_dict=None):
+    output = []
+    user_dict = user_dict or {}
+    output.extend(OF.process_all_paid())
+    user_dict = user_dict or {}
+    [
+        user_dict.update(
+            {ele.post.model_id: user_dict.get(ele.post.model_id, []) + [ele]}
+        )
+        for ele in output
+    ]
+    for value in user_dict.values():
+        model_id = value[0].post.model_id
+        username = value[0].post.username
+
+        operations.create_tables(model_id=model_id, username=username)
+        operations.create_backup(model_id, username)
+        operations.write_profile_table(model_id=model_id, username=username)
+        download.download_picker(
+            username,
+            model_id,
+            value,
+        )
 
 
 @exit.exit_wrapper
@@ -345,6 +351,8 @@ def run_helper(*functs):
     [jobqueue.put(funct) for funct in functs]
     if args_.getargs().daemon:
         # update stream before
+        userselector.getselected_usernames(rescan=True, reset=True)
+        OF.select_areas()
         try:
             worker_thread = threading.Thread(
                 target=set_schedule, args=[*functs], daemon=True
@@ -378,8 +386,11 @@ def run_helper(*functs):
         # update selected user
     else:
         try:
-            userselector.getselected_usernames(rescan=True, reset=True)
-            OF.select_areas(reset=True)
+            if run_count > 1:
+                userselector.getselected_usernames(rescan=True, reset=True)
+                OF.select_areas(reset=True)
+            else:
+                OF.select_areas()
             for _ in functs:
                 job_func = jobqueue.get()
                 job_func()
@@ -504,23 +515,22 @@ def scrapper():
     global selectedusers
     selectedusers = None
     functs = []
-    if (
-        len(args_.getargs().posts) == 0
-        and not args_.getargs().action
-        and not args_.getargs().scrape_paid
-    ):
+    if len(args_.getargs().action) == 0 and not args_.getargs().scrape_paid:
         if args_.getargs().daemon:
             log.warning(
-                "You need to pass at least one scraping method\n--action\n--posts\n--purchase\nAre all valid options. Skipping and going to menu"
+                "You need to pass at least one --action Skipping and going to menu"
             )
         process_prompts()
         return
     check_auth()
     check_config()
-    if len(args_.getargs().posts) > 0 or args_.getargs().scrape_paid:
+    if "download" in args_.getargs().action:
         functs.append(process_post)
-    elif args_.getargs().action == "like":
+    if "like" in args_.getargs().action:
         functs.append(process_like)
-    elif args_.getargs().action == "unlike":
+    if "unlike" in args_.getargs().action:
         functs.append(process_unlike)
+    if args_.getargs().scrape_paid:
+        functs.append(scrape_paid)
+
     run(*functs)

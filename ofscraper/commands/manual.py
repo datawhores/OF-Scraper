@@ -3,6 +3,7 @@ import re
 
 import ofscraper.api.highlights as highlights_
 import ofscraper.api.messages as messages_
+import ofscraper.api.paid as paid
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
@@ -58,14 +59,16 @@ def get_media_from_urls(urls):
                 ]
             elif type == "msg":
                 model_id = model
-                id_dict[model_id] = id_dict.get(model_id, []) + [
-                    messages_.get_individual_post(model_id, postid, c=c)
-                ]
+                data = messages_.get_individual_post(model_id, postid, c=c)
+                if (data or {}).get("id") != postid:
+                    data = paid.get_individual_post(model, model_id, postid)
+                id_dict[model_id] = id_dict.get(model_id, []) + [data]
             elif type == "msg2":
                 model_id = user_name_dict.get(model) or profile.get_id(model)
-                id_dict[model_id] = id_dict.get(model_id, []) + [
-                    messages_.get_individual_post(model_id, postid, c=c)
-                ]
+                data = messages_.get_individual_post(model_id, postid, c=c) or {}
+                if (data).get("id") != postid:
+                    data = paid.get_individual_post(model, model_id, postid) or {}
+                id_dict[model_id] = id_dict.get(model_id, []) + [data]
             elif type == "unknown":
                 data = unknown_type_helper(postid, c) or {}
                 model_id = data.get("author", {}).get("id")

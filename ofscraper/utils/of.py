@@ -32,8 +32,6 @@ import ofscraper.utils.stdout as stdout
 import ofscraper.utils.system as system
 
 log = logging.getLogger("shared")
-posts_areas = None
-scrape_paid = None
 
 
 def space_checker(func):
@@ -388,7 +386,6 @@ def process_all_paid():
             for ele in all_posts:
                 new_dict[ele.id] = ele
             new_posts = new_dict.values()
-            post_array.extend(new_posts)
             curr = set(
                 operations.get_all_post_ids(model_id=model_id, username=username) or []
             )
@@ -398,12 +395,14 @@ def process_all_paid():
                 username=username,
             )
             temp = []
-            [temp.extend(post.media) for post in post_array]
+            [temp.extend(post.media) for post in new_posts]
             output.extend(temp)
             log.debug(
                 f"[bold]Paid media count {username}_{model_id}[/bold] {len(temp)}"
             )
-            log.debug(f"Added Paid {len(temp)} media items for {username}_{model_id}")
+            log.debug(f"Added Paid {len(temp)} media items from {username}_{model_id}")
+            post_array.extend(new_posts)
+
         log.debug(
             f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.media),post_array))}"
         )
@@ -460,28 +459,61 @@ def process_labels(model_id, username):
 
 
 @space_checker
-def select_areas():
-    global posts_areas
-    global scrape_paid
+def select_areas(reset=False):
     args = args_.getargs()
-
-    if (
-        posts_areas or args.scrape_paid != None
-    ) and prompts.reset_selected_areas_prompt():
+    if reset and prompts.reset_selected_areas_prompt() == "Yes":
         args.posts = None
         args.scrape_paid = None
-    scrape_paid = (
-        args_.getargs().scrape_paid if args_.getargs().scrape_paid != None else None
-    ) or (len(args_.getargs().posts or []) == 0 and prompts.scrape_paid_prompt())
-    posts_areas = list(
+
+    get_download_areas()
+    get_scrape_paid()
+    get_like_area()
+
+
+def get_download_areas():
+    args = args_.getargs()
+    if "download" not in args.action:
+        return
+    args.post = list(
         map(lambda x: x.capitalize(), (args_.getargs().posts or prompts.areas_prompt()))
     )
 
-    args_.changeargs(args)
+
+def get_scrape_paid():
+    args = args_.getargs()
+    if "download" not in args.action:
+        return
+    if args.scrape_paid == None:
+        args.scrape_paid = (
+            (len(args_.getargs().posts or []) == 0 and prompts.scrape_paid_prompt())
+            if args_.getargs().scrape_paid == None
+            else args_.getargs().scrape_paid
+        )
+
+
+def get_like_area():
+    args = args_.getargs()
+    if "like" not in args.action and "unlike" not in args.action:
+        return
+    if len(args.posts) == 0:
+        like_area = prompts.like_areas_prompt(args.action == "like")
+        args.posts = (args.posts or []) + like_area
+    if (
+        len(
+            list(
+                filter(
+                    lambda x: x in set(["Timeline", "Pinned", "Archived"]), args.posts
+                )
+            )
+        )
+        == 0
+    ):
+        like_area = prompts.like_areas_prompt(args.action == "like")
+        args.posts = (args.posts or []) + like_area
 
 
 def process_areas(ele, model_id) -> list:
-    select_areas()
+    args = args_.getargs()
     timeline_posts_dicts = []
     pinned_post_dict = []
     archived_posts_dicts = []
@@ -494,10 +526,10 @@ def process_areas(ele, model_id) -> list:
     labels_dicts = []
 
     username = ele.name
-    included_post = (
-        args_.getargs().posts
-        if "All" not in args_.getargs().posts
-        else set(
+    if "All" not in args_.getargs().posts:
+        included_post = set(args.posts)
+    else:
+        included_post = set(
             [
                 "Highlights",
                 "Archived",
@@ -510,7 +542,6 @@ def process_areas(ele, model_id) -> list:
                 "Labels",
             ]
         )
-    )
     final_post_areas = set(
         filter(lambda x: x not in args_.getargs().excluded_posts, included_post)
     )
