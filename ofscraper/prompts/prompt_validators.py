@@ -7,9 +7,10 @@ import textwrap
 
 import arrow
 from pathvalidate import validate_filename, validate_filepath
-from prompt_toolkit.validation import Validator
+from prompt_toolkit.validation import ValidationError, Validator
 
 import ofscraper.classes.placeholder as placeholders
+import ofscraper.utils.args as args_
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
 
@@ -33,8 +34,13 @@ class MultiValidator(Validator):
                 else:
                     if input(document.text) == False:
                         raise Exception()
-            except Exception as E:
+            except ValidationError as E:
                 raise E
+            except Exception as E:
+                raise ValidationError(
+                    message=E,
+                    cursor_position=document.cursor_position,
+                )
 
 
 def currentProfilesValidator():
@@ -275,6 +281,36 @@ def ffmpegexecutevalidator():
         textwrap.dedent(
             f"""
 Path is valid but the given path could not be verified to be ffmpeg
+"""
+        ).strip(),
+        move_cursor_to_end=True,
+    )
+
+
+def like_area_validator_posts():
+    def callable(x):
+        args = args_.getargs()
+        if not "like" in args.action and not "unlike" in args.action:
+            return True
+        elif len(args.like_area) > 0:
+            return True
+        elif "All" in args.like_area:
+            return True
+        elif (
+            not "Timeline" in x + args.posts
+            and not "Pinned" in x + args.posts
+            and not "Archived" in x + args.posts
+            and not "Labels" in x + args.posts
+        ):
+            return False
+        return True
+
+    return Validator.from_callable(
+        callable,
+        textwrap.dedent(
+            f"""
+You must select at least one of the following Timeline,Pinned, Archived
+When like/unlike is action is on
 """
         ).strip(),
         move_cursor_to_end=True,

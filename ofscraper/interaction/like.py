@@ -29,9 +29,10 @@ from tenacity import (
 )
 
 import ofscraper.api.archive as archive
+import ofscraper.api.labels as labels_api
 import ofscraper.api.pinned as pinned
+import ofscraper.classes.labels as labels
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -49,16 +50,24 @@ def get_posts(model_id, username):
     pinned_posts = []
     timeline_posts = []
     archived_posts = []
-    if "Pinned" in args.posts or "All" in args.posts:
+    labelled_posts = []
+    options = args.like_area
+    if "Pinned" in options or "All" in options:
         pinned_posts = pinned.get_pinned_post(model_id)
-    if "Timeline" in args.posts or "All" in args.posts:
+    if "Timeline" in options or "All" in options:
         timeline_posts = timeline.get_timeline_media(model_id, username, forced_after=0)
-    if "Archived" in args.posts or "All" in args.posts:
+    if "Archived" in options or "All" in options:
         archived_posts = archive.get_archived_media(model_id, username, forced_after=0)
+    if "Labels" in options or "All" in options:
+        labels_ = labels_api.get_labels(model_id)
+        labelled_posts_ = labels_api.get_labelled_posts(labels_, model_id)
+        labelled_posts_ = list(
+            map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
+        )
     log.debug(
         f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}"
     )
-    return pinned_posts + timeline_posts + archived_posts
+    return pinned_posts + timeline_posts + archived_posts + labelled_posts
 
 
 def get_posts_for_unlike(model_id, username):

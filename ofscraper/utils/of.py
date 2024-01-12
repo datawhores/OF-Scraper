@@ -459,61 +459,85 @@ def process_labels(model_id, username):
 
 
 @space_checker
-def select_areas(reset=False):
+def select_areas(action=None, reset=False):
     args = args_.getargs()
-    if reset and prompts.reset_selected_areas_prompt() == "Yes":
-        args.posts = None
-        args.scrape_paid = None
-
-    get_download_areas()
-    get_scrape_paid()
-    get_like_area()
-
-
-def get_download_areas():
-    args = args_.getargs()
-    if "download" not in args.action:
-        return
-    args.post = list(
-        map(lambda x: x.capitalize(), (args_.getargs().posts or prompts.areas_prompt()))
-    )
-
-
-def get_scrape_paid():
-    args = args_.getargs()
-    if "download" not in args.action:
-        return
-    if args.scrape_paid == None:
-        args.scrape_paid = (
-            (len(args_.getargs().posts or []) == 0 and prompts.scrape_paid_prompt())
-            if args_.getargs().scrape_paid == None
-            else args_.getargs().scrape_paid
-        )
-
-
-def get_like_area():
-    args = args_.getargs()
-    if "like" not in args.action and "unlike" not in args.action:
-        return
-    if len(args.posts) == 0:
-        like_area = prompts.like_areas_prompt(args.action == "like")
-        args.posts = (args.posts or []) + like_area
+    action = action or args.action
     if (
-        len(
-            list(
-                filter(
-                    lambda x: x in set(["Timeline", "Pinned", "Archived"]), args.posts
-                )
-            )
-        )
-        == 0
+        reset
+        and "download" in args.action
+        and bool(args.reset_download_areas_prompt)
+        and prompts.reset_download_areas_prompt() == "Yes"
     ):
-        like_area = prompts.like_areas_prompt(args.action == "like")
-        args.posts = (args.posts or []) + like_area
+        args.scrape_paid = None
+        args.download_area = {}
+    if (
+        reset
+        and ("like" in args.action or "unlike" in args.action)
+        and bool(args.like_area)
+        and prompts.reset_like_areas_prompt() == "Yes"
+    ):
+        args.like_area = {}
+    args_.changeargs(args)
+
+    set_post_area(action)
+    set_download_area()
+    set_scrape_paid(action)
+    set_like_area(action)
+    remove_post_area()
+
+
+def remove_post_area():
+    args = args_.getargs()
+    args.posts = None
+    args_.changeargs(args)
+
+
+# set post for primarily for download-area, secondary for like/unlike
+def set_post_area(action=None):
+    args = args_.getargs()
+    action = action or args.action or {}
+    if "download" not in action:
+        return
+    elif len(args.posts) > 0:
+        return
+    elif len(args_.get_download_area()) > 0:
+        return
+    args.posts = prompts.areas_prompt()
+    args_.changeargs(args)
+
+
+# set download_area based on posts
+def set_download_area():
+    args = args_.getargs()
+    args.download_area = args_.get_download_area()
+
+
+def set_scrape_paid(action=None):
+    args = args_.getargs()
+    action = action or args.action or {}
+    if "download" not in action:
+        return
+    args.scrape_paid = (
+        prompts.scrape_paid_prompt() if args.scrape_paid != None else args.scrape_paid
+    )
+    args_.changeargs(args)
+
+
+# set like area based primarly on posts,secondary on from prompt
+def set_like_area(action=None):
+    args = args_.getargs()
+    action = action or args.action or {}
+    if "like" not in action and "unlike" not in action:
+        return
+    args.like_area = (
+        args_.get_like_area()
+        if len(args_.get_like_area()) > 0
+        else prompts.like_areas_prompt()
+    )
+    args_.changeargs(args)
 
 
 def process_areas(ele, model_id) -> list:
-    args = args_.getargs()
     timeline_posts_dicts = []
     pinned_post_dict = []
     archived_posts_dicts = []
@@ -526,25 +550,7 @@ def process_areas(ele, model_id) -> list:
     labels_dicts = []
 
     username = ele.name
-    if "All" not in args_.getargs().posts:
-        included_post = set(args.posts)
-    else:
-        included_post = set(
-            [
-                "Highlights",
-                "Archived",
-                "Messages",
-                "Timeline",
-                "Pinned",
-                "Stories",
-                "Purchased",
-                "Profile",
-                "Labels",
-            ]
-        )
-    final_post_areas = set(
-        filter(lambda x: x not in args_.getargs().excluded_posts, included_post)
-    )
+    final_post_areas = set(args_.get_download_area())
     if "Skip" in args_.getargs().posts:
         return []
 

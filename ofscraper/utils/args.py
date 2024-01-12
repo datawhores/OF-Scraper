@@ -125,7 +125,7 @@ def create_parser(input=None):
     post.add_argument(
         "-o",
         "--posts",
-        help="Download specified content from a model",
+        help="Perform action in following areas",
         default=[],
         required=False,
         type=posttype_helper,
@@ -133,12 +133,22 @@ def create_parser(input=None):
     )
 
     post.add_argument(
-        "-eo",
-        "--excluded-posts",
-        help="Don't Download specified content from a model. Has preference over all",
+        "-da",
+        "--download-area",
+        help="Download specified content from a model",
         default=[],
         required=False,
-        type=exposttype_helper,
+        type=download_helper,
+        action="extend",
+    )
+
+    post.add_argument(
+        "-la",
+        "--like-area",
+        help="Batch unlike or likes in specific aera",
+        default=[],
+        required=False,
+        type=like_helper,
         action="extend",
     )
 
@@ -864,8 +874,6 @@ def getargs(input=None):
     args = parser.parse_args(input)
 
     # fix args
-    args.posts = list(set(args.posts or []))
-    args.excluded_post = list(set(args.excluded_posts or []))
     args.username = set(args.username or [])
     args.excluded_username = set(args.excluded_username or [])
     args.label = set(args.label) if args.label else args.label
@@ -962,19 +970,20 @@ def posttype_helper(x):
         ]
     )
     if isinstance(x, str):
-        x = x.split(",")
-        x = list(map(lambda x: x.capitalize(), x))
-    if len(list(filter(lambda y: y not in choices, x))) > 0:
+        words = x.split(",")
+        words = list(map(lambda x: str.title(x), words))
+    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
-    return x
+    return words
 
 
-def exposttype_helper(x):
+def download_helper(x):
     choices = set(
         [
             "Highlights",
+            "All",
             "Archived",
             "Messages",
             "Timeline",
@@ -986,13 +995,25 @@ def exposttype_helper(x):
         ]
     )
     if isinstance(x, str):
-        x = x.split(",")
-        x = list(map(lambda x: x.capitalize(), x))
-    if len(list(filter(lambda y: y not in choices, x))) > 0:
+        words = x.split(",")
+        words = list(map(lambda x: str.title(x), words))
+    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
         raise argparse.ArgumentTypeError(
-            "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
+            "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
-    return x
+    return words
+
+
+def like_helper(x):
+    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
+    if isinstance(x, str):
+        words = x.split(",")
+        words = list(map(lambda x: str.title(x), words))
+    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
+        raise argparse.ArgumentTypeError(
+            "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
+        )
+    return words
 
 
 def mediatype_helper(x):
@@ -1061,3 +1082,58 @@ def arrow_helper(x):
             return arw.dehumanize(x)
         except ValueError as E:
             raise E
+
+
+def get_like_area():
+    post = None
+    all_choices = [
+        "Archived",
+        "Timeline",
+        "Pinned",
+        "Labels",
+    ]
+    if len(args.like_area) == 0:
+        post = set(args.posts)
+    else:
+        post = set(args.like_area)
+    if "All" in post:
+        post.update(set(all_choices))
+    return list(
+        filter(
+            lambda x: x != "All"
+            and x[0] != "-"
+            and f"-{x}" not in post
+            and x in all_choices,
+            post,
+        )
+    )
+
+
+def get_download_area():
+    post = None
+    all_choices = [
+        "Highlights",
+        "Archived",
+        "Messages",
+        "Timeline",
+        "Pinned",
+        "Stories",
+        "Purchased",
+        "Profile",
+        "Labels",
+    ]
+    if len(args.download_area) == 0:
+        post = set(args.posts)
+    else:
+        post = set(args.download_area)
+    if "All" in post:
+        post.update(set(all_choices))
+    return list(
+        filter(
+            lambda x: x != "All"
+            and x[0] != "-"
+            and f"-{x}" not in post
+            and x in all_choices,
+            post,
+        )
+    )

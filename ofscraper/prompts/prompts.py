@@ -45,16 +45,32 @@ def main_prompt() -> int:
 
 
 def areas_prompt() -> list:
+    args = args_.getargs()
     name = "value"
+    message = (
+        "Which area(s) would you do you want to download and like"
+        if "like" in args.action and len(args.like_area) == 0
+        else "Which area(s) would you want to download and unlike"
+        if "unike" in args.action and len(args.like_area) == 0
+        else "Which area(s) would you like to download"
+    )
+    long_instruction = (
+        "Hint: Since Have Like or Unlike Set\nYou must select one or more of Timeline,Pinned,Archived, or Label "
+        if ("like" or "unlike") in args.action and len(args.like_area) == 0
+        else ""
+    )
     answers = promptClasses.batchConverter(
         *[
             {
                 "type": "checkbox",
                 "qmark": "[?]",
                 "name": name,
-                "message": "Which area(s) would you like to scape, batch like, batch unlike",
-                "long_instruction": "Hint: Select Timeline, Archived or Pinned when batching unlike/likes",
-                "validate": prompt_validators.emptyListValidator(),
+                "message": message,
+                "long_instruction": long_instruction,
+                "validate": prompt_validators.MultiValidator(
+                    prompt_validators.emptyListValidator(),
+                    prompt_validators.like_area_validator_posts(),
+                ),
                 "choices": [
                     Choice("Profile"),
                     Choice("Timeline"),
@@ -87,6 +103,7 @@ def like_areas_prompt(like=True) -> list:
                     Choice("Timeline"),
                     Choice("Pinned"),
                     Choice("Archived"),
+                    Choice("Labels"),
                 ],
             }
         ]
@@ -831,14 +848,31 @@ def reset_username_prompt() -> bool:
     return answer[name]
 
 
-def reset_selected_areas_prompt() -> bool:
+def reset__areas_prompt() -> bool:
     name = "reset areas"
     answer = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
-                "message": "Do you want to reset selected posts types",
+                "message": "Do you want to reset selected download area types",
+                "choices": ["Yes", "No"],
+                "default": "No",
+            }
+        ]
+    )
+
+    return answer[name]
+
+
+def reset_like_areas_prompt() -> bool:
+    name = "reset areas"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Do you want to reset the selected like area types",
                 "choices": ["Yes", "No"],
                 "default": "No",
             }

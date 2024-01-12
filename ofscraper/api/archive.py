@@ -218,8 +218,8 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                 log.info(
                     f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
-[yellow]Hint: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
+[yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all archived posts + download/re-download of all files[/yellow]
                 """
                 )
                 filteredArray = (
@@ -345,7 +345,7 @@ def get_after(model_id, username):
     curr = operations.get_archived_media(model_id=model_id, username=username)
     if cache.get(f"{model_id}_scrape_archived"):
         log.debug(
-            "Used after previously scraping entire timeline to make sure content is not missing"
+            "Used after previously scraping entire archive to make sure content is not missing"
         )
         return 0
     elif len(curr) == 0:

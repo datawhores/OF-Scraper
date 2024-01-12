@@ -46,33 +46,35 @@ import ofscraper.utils.startvals as startvals
 import ofscraper.utils.stdout as stdout
 
 log = logging.getLogger("shared")
-run_count = 0
 
 
 @exit.exit_wrapper
 def process_prompts():
-    global run_count
+    count = 0
     while True:
         args_.getargs().posts = []
         result_main_prompt = prompts.main_prompt()
-
+        if result_main_prompt < 3:
+            count = count + 1
         # download
-        run_count = run_count + 1
         if result_main_prompt == 0:
             check_auth()
             check_config()
+            OF.select_areas(action="download", reset=count > 1)
             run(process_post)
 
         # like a user's posts
         elif result_main_prompt == 1:
             check_auth()
             check_config()
+            OF.select_areas(action="like", reset=count > 1)
             run(process_like)
 
         # Unlike a user's posts
         elif result_main_prompt == 2:
             check_auth()
             check_config()
+            OF.select_areas(action="unlike", reset=count > 1)
             run(process_unlike)
 
         elif result_main_prompt == 3:
@@ -140,6 +142,8 @@ def process_post_user_first():
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
+        output = []
+
         for count, ele in enumerate(userdata):
             log.info(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
@@ -386,11 +390,6 @@ def run_helper(*functs):
         # update selected user
     else:
         try:
-            if run_count > 1:
-                userselector.getselected_usernames(rescan=True, reset=True)
-                OF.select_areas(reset=True)
-            else:
-                OF.select_areas()
             for _ in functs:
                 job_func = jobqueue.get()
                 job_func()
@@ -524,11 +523,15 @@ def scrapper():
         return
     check_auth()
     check_config()
+
     if "download" in args_.getargs().action:
+        OF.set_post_area()
         functs.append(process_post)
     if "like" in args_.getargs().action:
+        OF.set_like_area()
         functs.append(process_like)
     if "unlike" in args_.getargs().action:
+        OF.set_like_area()
         functs.append(process_unlike)
     if args_.getargs().scrape_paid:
         functs.append(scrape_paid)
