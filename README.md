@@ -17,7 +17,6 @@
 
 command-line tool that lets you download media from OnlyFans and perform bulk actions like liking or unliking posts.
 
-> > > > > > > ac63182e8fa145d6655e99a21aeb32365e0040fc
 
 ![CopyQ nsUBdI](https://user-images.githubusercontent.com/67020411/227816586-fb685959-cd3f-45af-adea-14773b7154f9.png)
 
