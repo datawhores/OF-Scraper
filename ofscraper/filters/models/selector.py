@@ -21,9 +21,6 @@ def getselected_usernames(rescan=False, reset=False):
     # username list will be retrived every time resFet==True
     global ALL_SUBS
     global PARSED_SUBS
-
-    if "Skip" in args_.getargs().posts:
-        return []
     if reset is True and PARSED_SUBS:
         prompt = prompts.reset_username_prompt()
         if prompt == "Selection":

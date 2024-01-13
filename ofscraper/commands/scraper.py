@@ -52,7 +52,6 @@ log = logging.getLogger("shared")
 def process_prompts():
     count = 0
     while True:
-        args_.getargs().posts = []
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt < 3:
             count = count + 1

@@ -458,27 +458,32 @@ def process_labels(model_id, username):
         return [item for sublist in output for item in sublist]
 
 
-@space_checker
-def select_areas(action=None, reset=False):
+def reset_download():
     args = args_.getargs()
-    action = action or args.action
+
     if (
-        reset
-        and "download" in args.action
-        and bool(args.reset_download_areas_prompt)
+        bool(args.reset_download_areas_prompt)
         and prompts.reset_download_areas_prompt() == "Yes"
     ):
         args.scrape_paid = None
         args.download_area = {}
-    if (
-        reset
-        and ("like" in args.action or "unlike" in args.action)
-        and bool(args.like_area)
-        and prompts.reset_like_areas_prompt() == "Yes"
-    ):
-        args.like_area = {}
-    args_.changeargs(args)
 
+
+def reset_like():
+    args = args_.getargs()
+    if bool(args.like_area) and prompts.reset_like_areas_prompt() == "Yes":
+        args.like_area = {}
+
+
+@space_checker
+def select_areas(action=None, reset=False):
+    args = args_.getargs()
+    action = action or args.action
+    if "download" in action and reset:
+        reset_download()
+    elif ("like" or "unlike") in action and reset:
+        reset_like()
+    args_.changeargs(args)
     set_post_area(action)
     set_download_area()
     set_scrape_paid(action)
@@ -492,6 +497,7 @@ def remove_post_area():
     args_.changeargs(args)
 
 
+@space_checker
 # set post for primarily for download-area, secondary for like/unlike
 def set_post_area(action=None):
     args = args_.getargs()
@@ -551,9 +557,6 @@ def process_areas(ele, model_id) -> list:
 
     username = ele.name
     final_post_areas = set(args_.get_download_area())
-    if "Skip" in args_.getargs().posts:
-        return []
-
     if "Profile" in final_post_areas:
         profile_dicts = process_profile(username)
     if "Pinned" in final_post_areas:
