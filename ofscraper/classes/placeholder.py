@@ -2,13 +2,16 @@ import logging
 import os
 import pathlib
 import re
+import string
 
 import arrow
 
 import ofscraper.api.me as me
+import ofscraper.filters.models.selector as selector
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.paths as paths
 import ofscraper.utils.profiles as profiles
 
@@ -47,8 +50,90 @@ class Placeholders:
             "root": pathlib.Path((config_.get_save_location(config_.read_config()))),
             "customval": config_.get_custom(config_.read_config()),
         }
-
+        self.add_price_variables(my_username)
         globals().update(self._variables)
+
+    def add_price_variables(self, username):
+        modelObj = selector.get_model_fromParsed(username)
+        current_price = {
+            constants.getattr("Model_Price_Placeholder")
+            if not modelObj
+            else "Free"
+            if modelObj.final_current_price == 0
+            else "Paid"
+        }
+        self._variables.update({"current_price": current_price})
+        self._variables.update({"currentprice": current_price})
+        regular_price = {
+            constants.getattr("Model_Price_Placeholder")
+            if not modelObj
+            else "Free"
+            if modelObj.final_regular_price == 0
+            else "Paid"
+        }
+        self._variables.update({"regular_price": regular_price})
+        self._variables.update({"regularprice": regular_price})
+        promo_price = {
+            constants.getattr("Model_Price_Placeholder")
+            if not modelObj
+            else "Free"
+            if modelObj.final_promo_price == 0
+            else "Paid"
+        }
+        self._variables.update({"promo_price": promo_price})
+        self._variables.update({"promoprice": promo_price})
+
+        promo_price = {
+            constants.getattr("Model_Price_Placeholder")
+            if not modelObj
+            else "Free"
+            if modelObj.final_promo_price == 0
+            else "Paid"
+        }
+        self._variables.update({"promo_price": promo_price})
+        self._variables.update({"promoprice": promo_price})
+
+    def add_common_variables(self, ele, username):
+        self._variables.update({"username": username})
+        user_name = username
+        self._variables.update({"user_name": user_name})
+        self._variables.update({"model_id": model_id})
+        modelid = model_id
+        self._variables.update({"modelid": modelid})
+        post_id = ele.postid
+        self._variables.update({"post_id": post_id})
+        postid = ele.postid
+        self._variables.update({"postid": postid})
+        media_id = ele.id
+        self._variables.update({"media_id": media_id})
+        mediaid = ele.id
+        self._variables.update({"mediaid": mediaid})
+        first_letter = username[0].capitalize()
+        self._variables.update({"first_letter": first_letter})
+        firstletter = username[0].capitalize()
+        self._variables.update({"firstletter": firstletter})
+        mediatype = ele.mediatype.capitalize()
+        self._variables.update({"mediatype": mediatype})
+        media_type = ele.mediatype.capitalize()
+        self._variables.update({"media_type": media_type})
+        value = ele.value.capitalize()
+        self._variables.update({"value": value})
+        date = arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
+        self._variables.update({"date": date})
+        model_username = username
+        self._variables.update({"model_username": model_username})
+        modelusername = username
+        self._variables.update({"modelusername": modelusername})
+        responsetype = ele.modified_responsetype
+        self._variables.update({"responsetype": responsetype})
+        response_type = ele.modified_responsetype
+        self._variables.update({"response_type": response_type})
+        label = ele.label_string
+        self._variables.update({"label": label})
+        downloadtype = ele.downloadtype
+        self._variables.update({"downloadtype": downloadtype})
+        download_type = ele.downloadtype
+        self._variables.update({"download_type": download_type})
 
     @wrapper
     def databasePathHelper(self, model_id, model_username):
@@ -127,46 +212,6 @@ class Placeholders:
     @wrapper
     def getmediadir(self, ele, username, model_id, root=None, create=True):
         root = pathlib.Path(root or config_.get_save_location(config_.read_config()))
-        self._variables.update({"username": username})
-        user_name = username
-        self._variables.update({"user_name": user_name})
-        self._variables.update({"model_id": model_id})
-        modelid = model_id
-        self._variables.update({"modelid": modelid})
-        post_id = ele.postid
-        self._variables.update({"post_id": post_id})
-        postid = ele.postid
-        self._variables.update({"postid": postid})
-        media_id = ele.id
-        self._variables.update({"media_id": media_id})
-        mediaid = ele.id
-        self._variables.update({"mediaid": mediaid})
-        first_letter = username[0].capitalize()
-        self._variables.update({"first_letter": first_letter})
-        firstletter = username[0].capitalize()
-        self._variables.update({"firstletter": firstletter})
-        mediatype = ele.mediatype.capitalize()
-        self._variables.update({"mediatype": mediatype})
-        media_type = ele.mediatype.capitalize()
-        self._variables.update({"media_type": media_type})
-        value = ele.value.capitalize()
-        self._variables.update({"value": value})
-        date = arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
-        self._variables.update({"date": date})
-        model_username = username
-        self._variables.update({"model_username": model_username})
-        modelusername = username
-        self._variables.update({"modelusername": modelusername})
-        responsetype = ele.modified_responsetype
-        self._variables.update({"responsetype": responsetype})
-        response_type = ele.modified_responsetype
-        self._variables.update({"response_type": response_type})
-        label = ele.label_string
-        self._variables.update({"label": label})
-        downloadtype = ele.downloadtype
-        self._variables.update({"downloadtype": downloadtype})
-        download_type = ele.downloadtype
-        self._variables.update({"download_type": download_type})
 
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
@@ -184,14 +229,16 @@ class Placeholders:
                         custom[key] = eval(val)
                     except:
                         custom[key] = val
-            downloadDir = eval(
-                "f'{}'".format(config_.get_dirformat(config_.read_config()))
+            downloadDir = pathlib.Path(
+                eval("f'{}'".format(config_.get_dirformat(config_.read_config())))
             )
         else:
-            downloadDir = config_.get_dirformat(config_.read_config()).format(
-                **self._variables
+            downloadDir = pathlib.Path(
+                config_.get_dirformat(config_.read_config()).format(**self._variables)
             )
-        final_path = pathlib.Path(os.path.normpath(root / downloadDir))
+        final_path = pathlib.Path(
+            os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
+        )
         log.trace(f"final mediadir path {final_path}")
         self._mediadir = final_path
         self._mediadir.mkdir(parents=create, exist_ok=True)
@@ -253,7 +300,9 @@ class Placeholders:
             f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         out = None
-        if config_.get_allow_code_execution(config_.read_config()):
+        if ele.responsetype == "profile":
+            out = f"{filename}.{ext}"
+        elif config_.get_allow_code_execution(config_.read_config()):
             if isinstance(customval, dict) == False:
                 try:
                     custom = eval(customval)
@@ -270,14 +319,30 @@ class Placeholders:
                 'f"""{}"""'.format(config_.get_fileformat(config_.read_config()))
             )
         else:
-            if ele.responsetype == "profile":
-                out = f"{filename}.{ext}"
-            else:
-                out = config_.get_fileformat(config_.read_config()).format(
-                    **self._variables
-                )
+            out = config_.get_fileformat(config_.read_config()).format(
+                **self._variables
+            )
+        out = self._addcount(ele, out)
         log.trace(f"final filename path {out}")
         self._filename = out
+        return out
+
+    def _addcount(self, ele, out):
+        if not ele.addcount():
+            return out
+        elif int(config_.get_textlength(config_.read_config())) == 0:
+            None
+        elif config_.get_textType(config_.read_config()) == "word":
+            None
+        else:
+            out = re.sub(ele.file_text, ele.file_text[: -len(f"_{ele.count}")], out)
+            out = re.sub(" $", "", out)
+            out = re.sub("( *\.(?!\.))", f".", out)
+        # insert count
+        if re.search("\.[^.]+", out):
+            out = re.sub("(\.(?!\.))", f"_{ele.count}.", out)
+        else:
+            out = f"{out}_{ele.count}"
         return out
 
     def set_final_path(self):

@@ -442,7 +442,7 @@ def test_highlight_text_lettertruncate(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT,
     }
-    args_.getargs(["--letter-count"])
+
     mocker.patch(
         "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
     )
@@ -469,7 +469,7 @@ def test_highlight_text_lettertruncate2(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT,
     }
-    args_.getargs(["--letter-count"])
+
     mocker.patch(
         "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
     )
@@ -496,7 +496,7 @@ def test_highlight_text_lettertruncate3(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT,
     }
-    args_.getargs(["--letter-count"])
+
     mocker.patch(
         "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
     )
@@ -525,7 +525,7 @@ def test_highlight_text_lettertruncate4(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT,
     }
-    args_.getargs(["--letter-count"])
+
     mocker.patch(
         "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
     )
@@ -552,7 +552,7 @@ def test_highlight_text_lettertruncate5(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT,
     }
-    args_.getargs(["--letter-count"])
+
     mocker.patch(
         "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
     )
@@ -579,7 +579,7 @@ def test_highlight_text_lettertruncate6(mocker):
         "metadata": METADATA_DEFAULT,
         "filter": FILTER_DEFAULT,
     }
-    args_.getargs(["--letter-count"])
+
     mocker.patch(
         "ofscraper.classes.posts.config.read_config", return_value=migrationConfig
     )

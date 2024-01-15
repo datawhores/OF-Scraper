@@ -1,5 +1,6 @@
 import logging
 import re
+import string
 import traceback
 
 # supress warnings
@@ -80,8 +81,6 @@ class Media:
     # ID for use in dynamic names
     @property
     def file_postid(self):
-        if self.count != None and len(self._post.post_media) > 1:
-            return f"{self._post._post['id']}_{self.count}"
         return self._post._post["id"]
 
     @property
@@ -213,32 +212,17 @@ class Media:
         if len(text) == 0:
             return text
         length = int(config.get_textlength(config.read_config()))
-        if length == 0 and self._addcount():
-            return f"{text}_{self.count}"
-        elif length == 0 and not self._addcount():
+        if length == 0:
             return text
-
-        elif (
-            args_.getargs().letter_count
-            or config.get_textType(config.read_config()) == "letter"
-        ):
-            if not self._addcount():
-                return "".join(list(text))[:length]
-            elif self._addcount():
-                append = f"_{self.count}"
-                baselength = length - len(append)
-                return f"{''.join(list(text)[:baselength])}{append}"
-        elif not args_.getargs().letter_count:
+        elif config.get_textType(config.read_config()) == "letter":
+            return f"{''.join(list(text)[:length])}"
+        else:
             # split and reduce
             wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", text)))
-            if not self._addcount():
-                return "".join(wordarray[:length])
-            elif self._addcount():
-                append = f"_{self.count}"
-                baselength = length - 1
-                splitArray = wordarray[:baselength]
-                text = f"{''.join(splitArray)}{append}"
-                return text
+            splitArray = wordarray[: length + 1]
+            text = f"{''.join(splitArray)}"
+        text = re.sub(" +$", "", text)
+        return text
 
     @property
     def count(self):
@@ -340,8 +324,19 @@ class Media:
         self._media["type"] = val
 
     # for use in dynamic names
-    def _addcount(self):
-        if len(self._post.post_media) > 1 or self.responsetype in [
+    def addcount(self):
+        if set(["filename", "file_name", "text", "postid", "post_id"]).isdisjoint(
+            [
+                name
+                for text, name, spec, conv in list(
+                    string.Formatter().parse(
+                        config.get_fileformat(config.read_config())
+                    )
+                )
+            ]
+        ):
+            return False
+        elif len(self._post.post_media) > 1 or self.responsetype in [
             "stories",
             "highlights",
         ]:

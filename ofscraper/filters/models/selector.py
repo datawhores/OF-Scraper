@@ -17,6 +17,11 @@ PARSED_SUBS = None
 log = logging.getLogger("shared")
 
 
+def get_model_fromParsed(name):
+    modelObjs = list(filter(lambda x: x.name == name, PARSED_SUBS))
+    return modelObjs[0] if len(modelObjs) > 0 else None
+
+
 def getselected_usernames(rescan=False, reset=False):
     # username list will be retrived every time resFet==True
     global ALL_SUBS

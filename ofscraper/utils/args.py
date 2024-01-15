@@ -97,13 +97,6 @@ def create_parser(input=None):
         action="store_true",
     )
     scraper.add_argument(
-        "-c",
-        "--letter-count",
-        action="store_true",
-        default=False,
-        help="intrepret config 'textlength' as max length by letter",
-    )
-    scraper.add_argument(
         "-a",
         "--action",
         help="perform batch action on users",
