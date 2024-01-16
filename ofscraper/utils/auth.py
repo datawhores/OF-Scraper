@@ -46,12 +46,17 @@ def read_auth():
             with open(authFile, "r") as f:
                 authText = f.read()
                 auth = json.loads(authText)
-                for key in auth.keys():
-                    auth[key] = str(auth[key]).strip()
-                    if auth[key] == None or auth[key] == "":
+                nested_auth = auth["auth"]
+                for key in nested_auth.keys():
+                    if nested_auth[key] == None or nested_auth[key] == "":
                         console.print("Auth Value not set retriving missing values")
                         make_auth()
                         break
+                    value = str(nested_auth[key]).strip()
+                    re.sub("^ +", "", value)
+                    value = re.sub(" +$", "", value)
+                    value = re.sub("\n+", "", value)
+                    nested_auth[key] = value
             break
         except FileNotFoundError:
             console.print("You don't seem to have an `auth.json` file")
