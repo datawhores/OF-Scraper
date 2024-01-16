@@ -482,7 +482,7 @@ def select_areas(action=None, reset=False):
         reset_like()
     args_.changeargs(args)
     set_post_area(action)
-    set_download_area()
+    set_download_area(action)
     set_scrape_paid(action)
     set_like_area(action)
     remove_post_area()
@@ -510,8 +510,11 @@ def set_post_area(action=None):
 
 
 # set download_area based on posts
-def set_download_area():
+def set_download_area(action=None):
     args = args_.getargs()
+    action = action or args.action or {}
+    if "download" not in action:
+        return
     args.download_area = args_.get_download_area()
 
 
