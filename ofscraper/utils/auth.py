@@ -46,7 +46,8 @@ def read_auth():
             with open(authFile, "r") as f:
                 authText = f.read()
                 auth = json.loads(authText)
-                for key in list(filter(lambda x: x != "auth_uid_", auth.keys())):
+                for key in auth.keys():
+                    auth[key] = str(auth[key]).strip()
                     if auth[key] == None or auth[key] == "":
                         console.print("Auth Value not set retriving missing values")
                         make_auth()
