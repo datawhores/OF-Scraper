@@ -872,7 +872,24 @@ def reset_like_areas_prompt() -> bool:
             {
                 "type": "list",
                 "name": name,
-                "message": "Do you want to reset the selected like area types",
+                "message": "Do you want to reset the selected like area",
+                "choices": ["Yes", "No"],
+                "default": "No",
+            }
+        ]
+    )
+
+    return answer[name]
+
+
+def reset_download_areas_prompt() -> bool:
+    name = "reset areas"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Do you want to reset the selected download area(s)",
                 "choices": ["Yes", "No"],
                 "default": "No",
             }

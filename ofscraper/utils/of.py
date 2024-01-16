@@ -461,10 +461,7 @@ def process_labels(model_id, username):
 def reset_download():
     args = args_.getargs()
 
-    if (
-        bool(args.reset_download_areas_prompt)
-        and prompts.reset_download_areas_prompt() == "Yes"
-    ):
+    if bool(args.download_area) and prompts.reset_download_areas_prompt() == "Yes":
         args.scrape_paid = None
         args.download_area = {}
 
@@ -493,7 +490,7 @@ def select_areas(action=None, reset=False):
 
 def remove_post_area():
     args = args_.getargs()
-    args.posts = None
+    args.posts = {}
     args_.changeargs(args)
 
 
@@ -504,9 +501,9 @@ def set_post_area(action=None):
     action = action or args.action or {}
     if "download" not in action:
         return
-    elif len(args.posts) > 0:
-        return
     elif len(args_.get_download_area()) > 0:
+        return
+    elif len(args.posts) > 0:
         return
     args.posts = prompts.areas_prompt()
     args_.changeargs(args)

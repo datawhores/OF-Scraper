@@ -31,12 +31,12 @@ class Placeholders:
     def wrapper(f):
         def wrapper(*args, **kwargs):
             args[0]._variables = {}
-            args[0].create_variables()
+            args[0].create_variables_base()
             return f(args[0], *args[1:], **kwargs)
 
         return wrapper
 
-    def create_variables(self):
+    def create_variables_base(self):
         my_profile = profiles.get_my_info()
         my_id, my_username = me.parse_user(my_profile)
         self._variables = {
@@ -50,13 +50,11 @@ class Placeholders:
             "root": pathlib.Path((config_.get_save_location(config_.read_config()))),
             "customval": config_.get_custom(config_.read_config()),
         }
-        self.add_price_variables(my_username)
-        globals().update(self._variables)
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)
         current_price = {
-            constants.getattr("Model_Price_Placeholder")
+            constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_current_price == 0
@@ -65,7 +63,7 @@ class Placeholders:
         self._variables.update({"current_price": current_price})
         self._variables.update({"currentprice": current_price})
         regular_price = {
-            constants.getattr("Model_Price_Placeholder")
+            constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_regular_price == 0
@@ -74,7 +72,7 @@ class Placeholders:
         self._variables.update({"regular_price": regular_price})
         self._variables.update({"regularprice": regular_price})
         promo_price = {
-            constants.getattr("Model_Price_Placeholder")
+            constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_promo_price == 0
@@ -82,58 +80,51 @@ class Placeholders:
         }
         self._variables.update({"promo_price": promo_price})
         self._variables.update({"promoprice": promo_price})
-
-        promo_price = {
-            constants.getattr("Model_Price_Placeholder")
+        renewal_price = {
+            constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
-            if modelObj.final_promo_price == 0
+            if modelObj.final_renewal_price == 0
             else "Paid"
         }
-        self._variables.update({"promo_price": promo_price})
-        self._variables.update({"promoprice": promo_price})
+        self._variables.update({"renewal_price": renewal_price})
+        self._variables.update({"renewalprice": renewal_price})
 
-    def add_common_variables(self, ele, username):
+    def add_common_variables(self, ele, username, model_id):
         self._variables.update({"username": username})
-        user_name = username
-        self._variables.update({"user_name": user_name})
+        self._variables.update({"user_name": username})
         self._variables.update({"model_id": model_id})
-        modelid = model_id
-        self._variables.update({"modelid": modelid})
+        self._variables.update({"modelid": model_id})
         post_id = ele.postid
         self._variables.update({"post_id": post_id})
-        postid = ele.postid
-        self._variables.update({"postid": postid})
+        self._variables.update({"postid": post_id})
         media_id = ele.id
         self._variables.update({"media_id": media_id})
-        mediaid = ele.id
-        self._variables.update({"mediaid": mediaid})
+        self._variables.update({"mediaid": media_id})
         first_letter = username[0].capitalize()
         self._variables.update({"first_letter": first_letter})
-        firstletter = username[0].capitalize()
-        self._variables.update({"firstletter": firstletter})
+        self._variables.update({"firstletter": first_letter})
         mediatype = ele.mediatype.capitalize()
         self._variables.update({"mediatype": mediatype})
-        media_type = ele.mediatype.capitalize()
-        self._variables.update({"media_type": media_type})
+        self._variables.update({"media_type": mediatype})
         value = ele.value.capitalize()
         self._variables.update({"value": value})
         date = arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
         self._variables.update({"date": date})
         model_username = username
         self._variables.update({"model_username": model_username})
-        modelusername = username
-        self._variables.update({"modelusername": modelusername})
+        self._variables.update({"modelusername": model_username})
         responsetype = ele.modified_responsetype
         self._variables.update({"responsetype": responsetype})
-        response_type = ele.modified_responsetype
-        self._variables.update({"response_type": response_type})
+        self._variables.update({"response_type": responsetype})
         label = ele.label_string
         self._variables.update({"label": label})
         downloadtype = ele.downloadtype
         self._variables.update({"downloadtype": downloadtype})
-        download_type = ele.downloadtype
-        self._variables.update({"download_type": download_type})
+        self._variables.update({"download_type": downloadtype})
+        self._variables.update({"media_id": media_id})
+        self._variables.update({"mediaid": media_id})
+        self.add_price_variables(username)
 
     @wrapper
     def databasePathHelper(self, model_id, model_username):
@@ -150,7 +141,7 @@ class Placeholders:
         self._variables.update({"model_id": model_id})
         modelid = model_id
         self._variables.update({"modelid": modelid})
-
+        globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
@@ -212,7 +203,8 @@ class Placeholders:
     @wrapper
     def getmediadir(self, ele, username, model_id, root=None, create=True):
         root = pathlib.Path(root or config_.get_save_location(config_.read_config()))
-
+        self.add_common_variables(ele, username, model_id)
+        globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
@@ -248,54 +240,11 @@ class Placeholders:
     def createfilename(self, ele, username, model_id, ext):
         filename = ele.final_filename
         self._variables.update({"filename": filename})
-        file_name = ele.final_filename
-        self._variables.update({"file_name": file_name})
-        self._variables.update({"username": username})
-        user_name = username
-        self._variables.update({"user_name": user_name})
-        self._variables.update({"model_id": model_id})
-        self._variables.update({"ext": ext})
-        modelid = model_id
-        self._variables.update({"modelid": modelid})
-        post_id = ele.file_postid
-        self._variables.update({"post_id": post_id})
-        postid = ele.file_postid
-        self._variables.update({"postid": postid})
-        media_id = ele.id
-        self._variables.update({"media_id": media_id})
-        mediaid = ele.id
-        self._variables.update({"mediaid": mediaid})
-        first_letter = username[0].capitalize()
-        self._variables.update({"first_letter": first_letter})
-        firstletter = username[0].capitalize()
-        self._variables.update({"firstletter": firstletter})
-        mediatype = ele.mediatype.capitalize()
-        self._variables.update({"mediatype": mediatype})
-        media_type = ele.mediatype.capitalize()
-        self._variables.update({"media_type": media_type})
-        value = ele.value.capitalize()
-        self._variables.update({"value": value})
-        date = arrow.get(ele.postdate).format(config_.get_date(config_.read_config()))
-        self._variables.update({"date": date})
-        model_username = username
-        self._variables.update({"model_username": model_username})
-        modelusername = username
-        self._variables.update({"modelusername": modelusername})
-        responsetype = ele.modified_responsetype
-        self._variables.update({"responsetype": responsetype})
-        response_type = ele.modified_responsetype
-        self._variables.update({"response_type": response_type})
-
-        label = ele.label_string
-        self._variables.update({"label": label})
-
+        self._variables.update({"file_name": filename})
         text = ele.file_text
         self._variables.update({"text": text})
-        downloadtype = ele.downloadtype
-        self._variables.update({"downloadtype": downloadtype})
-        download_type = ele.downloadtype
-        self._variables.update({"download_type": download_type})
-
+        self.add_common_variables(ele, username, model_id)
+        globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
