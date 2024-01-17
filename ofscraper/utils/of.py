@@ -24,7 +24,6 @@ import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args as args_
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config as config_
@@ -34,17 +33,7 @@ import ofscraper.utils.system as system
 log = logging.getLogger("shared")
 
 
-def space_checker(func):
-    def inner(*args, **kwargs):
-        space_limit = config_.get_system_freesize(config_.read_config())
-        if space_limit > 0 and space_limit > system.get_free():
-            raise Exception("Space min has been reached")
-        return func(*args, **kwargs)
-
-    return inner
-
-
-@space_checker
+@system.space_checker
 def process_messages(model_id, username):
     with stdout.lowstdout():
         messages_ = messages.get_messages(
@@ -87,7 +76,7 @@ def process_messages(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_paid_post(model_id, username):
     with stdout.lowstdout():
         paid_content = paid.get_paid_posts(username, model_id)
@@ -118,7 +107,7 @@ def process_paid_post(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_stories(model_id, username):
     with stdout.lowstdout():
         stories = highlights.get_stories_post(model_id)
@@ -151,7 +140,7 @@ def process_stories(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_highlights(model_id, username):
     with stdout.lowstdout():
         highlights_ = highlights.get_highlight_post(model_id)
@@ -184,7 +173,7 @@ def process_highlights(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_timeline_posts(model_id, username, individual=False):
     with stdout.lowstdout():
         timeline_posts = (
@@ -233,7 +222,7 @@ def process_timeline_posts(model_id, username, individual=False):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_archived_posts(model_id, username):
     with stdout.lowstdout():
         archived_posts = archive.get_archived_media(
@@ -279,7 +268,7 @@ def process_archived_posts(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_pinned_posts(model_id, username):
     with stdout.lowstdout():
         pinned_posts = pinned.get_pinned_post(model_id)
@@ -318,7 +307,7 @@ def process_pinned_posts(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@space_checker
+@system.space_checker
 def process_profile(username) -> list:
     with stdout.lowstdout():
         user_profile = profile.scrape_profile(username)
@@ -340,7 +329,7 @@ def process_profile(username) -> list:
         return output
 
 
-@space_checker
+@system.space_checker
 def process_all_paid():
     with stdout.lowstdout():
         paid_content = paid.get_all_paid_posts()
@@ -410,7 +399,7 @@ def process_all_paid():
         return output
 
 
-@space_checker
+@system.space_checker
 def process_labels(model_id, username):
     with stdout.lowstdout():
         labels_ = labels_api.get_labels(model_id)
@@ -456,91 +445,6 @@ def process_labels(model_id, username):
         )
 
         return [item for sublist in output for item in sublist]
-
-
-def reset_download():
-    args = args_.getargs()
-
-    if bool(args.download_area) and prompts.reset_download_areas_prompt() == "Yes":
-        args.scrape_paid = None
-        args.download_area = {}
-
-
-def reset_like():
-    args = args_.getargs()
-    if bool(args.like_area) and prompts.reset_like_areas_prompt() == "Yes":
-        args.like_area = {}
-
-
-@space_checker
-def select_areas(action=None, reset=False):
-    args = args_.getargs()
-    action = action or args.action
-    if "download" in action and reset:
-        reset_download()
-    elif ("like" or "unlike") in action and reset:
-        reset_like()
-    args_.changeargs(args)
-    set_post_area(action)
-    set_download_area(action)
-    set_scrape_paid(action)
-    set_like_area(action)
-    remove_post_area()
-
-
-def remove_post_area():
-    args = args_.getargs()
-    args.posts = {}
-    args_.changeargs(args)
-
-
-@space_checker
-# set post for primarily for download-area, secondary for like/unlike
-def set_post_area(action=None):
-    args = args_.getargs()
-    action = action or args.action or {}
-    if "download" not in action:
-        return
-    elif len(args_.get_download_area()) > 0:
-        return
-    elif len(args.posts) > 0:
-        return
-    args.posts = prompts.areas_prompt()
-    args_.changeargs(args)
-
-
-# set download_area based on posts
-def set_download_area(action=None):
-    args = args_.getargs()
-    action = action or args.action or {}
-    if "download" not in action:
-        return
-    args.download_area = args_.get_download_area()
-
-
-def set_scrape_paid(action=None):
-    args = args_.getargs()
-    action = action or args.action or {}
-    if "download" not in action:
-        return
-    args.scrape_paid = (
-        prompts.scrape_paid_prompt() if args.scrape_paid != None else args.scrape_paid
-    )
-    args_.changeargs(args)
-
-
-# set like area based primarly on posts,secondary on from prompt
-def set_like_area(action=None):
-    args = args_.getargs()
-    action = action or args.action or {}
-    if "like" not in action and "unlike" not in action:
-        return
-    args.like_area = (
-        args_.get_like_area()
-        if len(args_.get_like_area()) > 0
-        else prompts.like_areas_prompt()
-    )
-    args_.changeargs(args)
 
 
 def process_areas(ele, model_id) -> list:

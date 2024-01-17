@@ -1,12 +1,25 @@
 mainPromptChoices = {
-    "Download content from a user": 0,
-    "Like all of a user's posts": 1,
-    "Unlike all of a user's posts": 2,
+    "Perform Action": 0,
     "Edit auth.json file": 3,
     "Edit config.json file": 4,
     "Edit advanced config.json settings": 5,
     "Edit Profile": 6,
     "Quit": 7,
+}
+
+
+ActionPromptChoices = {
+    "Download content from a user": {"download"},
+    "Like a selection of a user's posts": {"like"},
+    "Unlike a selection of a user's posts": {"unlike"},
+    "Download content from a user + Like a selection of a user's posts": {
+        "like,download"
+    },
+    "Download content from a user + Unlike a selection of a user's posts": {
+        "unlike,download"
+    },
+    "Return": "return",
+    "Quit": "quit",
 }
 usernameOrListChoices = {
     "Select from accounts on profile": 0,

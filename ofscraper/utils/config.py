@@ -136,6 +136,7 @@ def get_current_config_schema(config: dict = None) -> dict:
                 "custom_values": get_custom(config),
                 "sanitize_text": get_sanitizeDB(config),
                 "temp_dir": get_TempDir(config),
+                "infinite_loop": get_InfiniteLoop(config),
             },
             "responsetype": {
                 "timeline": get_timeline_responsetype(config),
@@ -370,6 +371,14 @@ def get_date(config=None):
         or config.get("file_options", {}).get("date")
         or constants.getattr("DATE_DEFAULT")
     )
+
+
+def get_InfiniteLoop(config=None):
+    if config == None:
+        return constants.getattr("INFINITE_LOOP_DEFAULT")
+    return config.get("advanced_options", {}).get(
+        "INFINITE_LOOP_DEFAULT"
+    ) or constants.getattr("INFINITE_LOOP_DEFAULT")
 
 
 def get_allow_code_execution(config=None):

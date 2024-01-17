@@ -31,6 +31,7 @@ import ofscraper.filters.media.main as filters
 import ofscraper.filters.models.selector as userselector
 import ofscraper.interaction.like as like
 import ofscraper.prompts.prompts as prompts
+import ofscraper.utils.actions as actions
 import ofscraper.utils.args as args_
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config as config
@@ -46,11 +47,39 @@ import ofscraper.utils.startvals as startvals
 import ofscraper.utils.stdout as stdout
 
 log = logging.getLogger("shared")
+count = 0
+
+
+def process_selected_areas():
+    functs = []
+    global count
+    while True:
+        count = count + 1
+        if "download" in args_.getargs().action:
+            actions.set_download_area()
+            functs.append(process_post)
+        if "like" in args_.getargs().action:
+            actions.set_like_area()
+            functs.append(process_like)
+        if "unlike" in args_.getargs().action:
+            actions.set_like_area()
+            functs.append(process_unlike)
+        if args_.getargs().scrape_paid:
+            functs.append(scrape_paid)
+        run(*functs)
+        if (
+            not config.get_InfiniteLoop(config.read_config())
+            or prompts.continue_prompt() == "No"
+        ):
+            break
+        if prompts.action_prompt() == "Main Menu":
+            process_prompts()
+            break
 
 
 @exit.exit_wrapper
 def process_prompts():
-    count = 0
+    global count
     while True:
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt < 3:
@@ -59,21 +88,21 @@ def process_prompts():
         if result_main_prompt == 0:
             check_auth()
             check_config()
-            OF.select_areas(action="download", reset=count > 1)
+            actions.select_areas(action="download", reset=count > 1)
             run(process_post)
 
         # like a user's posts
         elif result_main_prompt == 1:
             check_auth()
             check_config()
-            OF.select_areas(action="like", reset=count > 1)
+            actions.select_areas(action="like", reset=count > 1)
             run(process_like)
 
         # Unlike a user's posts
         elif result_main_prompt == 2:
             check_auth()
             check_config()
-            OF.select_areas(action="unlike", reset=count > 1)
+            actions.select_areas(action="unlike", reset=count > 1)
             run(process_unlike)
 
         elif result_main_prompt == 3:
@@ -355,7 +384,7 @@ def run_helper(*functs):
     if args_.getargs().daemon:
         # update stream before
         userselector.getselected_usernames(rescan=True, reset=True)
-        OF.select_areas()
+        actions.select_areas()
         try:
             worker_thread = threading.Thread(
                 target=set_schedule, args=[*functs], daemon=True
@@ -512,27 +541,19 @@ def scrapper():
         os.system("color")
     global selectedusers
     selectedusers = None
-    functs = []
-    if len(args_.getargs().action) == 0 and not args_.getargs().scrape_paid:
-        if args_.getargs().daemon:
-            log.warning(
-                "You need to pass at least one --action Skipping and going to menu"
-            )
+    args = args_.getargs()
+    if args.daemon:
+        if len(args.action) == 0 and not args.scrape_paid:
+            if prompts.action_prompt() == "Main Menu":
+                args.daemon = False
+                args_.changeargs(args)
+                process_prompts()
+        check_auth()
+        check_config()
+        process_selected_areas()
+    elif len(args.action) > 0:
+        check_auth()
+        check_config()
+        process_selected_areas()
+    elif len(args.action) == 0:
         process_prompts()
-        return
-    check_auth()
-    check_config()
-
-    if "download" in args_.getargs().action:
-        OF.set_post_area()
-        functs.append(process_post)
-    if "like" in args_.getargs().action:
-        OF.set_like_area()
-        functs.append(process_like)
-    if "unlike" in args_.getargs().action:
-        OF.set_like_area()
-        functs.append(process_unlike)
-    if args_.getargs().scrape_paid:
-        functs.append(scrape_paid)
-
-    run(*functs)

@@ -11,6 +11,18 @@ import sys
 import psutil
 from setproctitle import setproctitle
 
+import ofscraper.utils.config as config_
+
+
+def space_checker(func):
+    def inner(*args, **kwargs):
+        space_limit = config_.get_system_freesize(config_.read_config())
+        if space_limit > 0 and space_limit > get_free():
+            raise Exception("Space min has been reached")
+        return func(*args, **kwargs)
+
+    return inner
+
 
 def is_frozen():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
