@@ -3,13 +3,13 @@ import io
 import os
 import sys
 
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.constants as constants
 
 
 @contextlib.contextmanager
 def lowstdout():
-    if args_.getargs().output in constants.getattr("SUPRESS_OUTPUTS"):
+    if global_args.getArgs().output in constants.getattr("SUPRESS_OUTPUTS"):
         save_stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
         yield

@@ -6,7 +6,7 @@ import aiohttp
 import certifi
 import httpx
 
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
 from ..utils import auth
@@ -35,7 +35,7 @@ class sessionBuilder:
         proxy=constants.getattr("PROXY"),
         proxy_auth=constants.getattr("PROXY_AUTH"),
     ):
-        self._backend = backend or config_.get_backend(config_.read_config())
+        self._backend = backend or data.get_backend()
         self._set_cookies = set_cookies
         self._set_header = set_header
         self._set_sign = set_sign

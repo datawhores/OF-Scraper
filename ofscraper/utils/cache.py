@@ -1,63 +1,43 @@
 from diskcache import Cache
 
-import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
-import ofscraper.utils.paths as paths
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.config.data as data
+import ofscraper.utils.paths.common as common_paths
 
 cache = None
 
 
 def get(*args, **kwargs):
-    if (
-        args_.getargs().no_cache
-        or config_.get_cache_mode(config_.read_config()) == "disabled"
-    ):
+    if global_args.getArgs().no_cache or data.get_cache_mode() == "disabled":
         return kwargs.get("default")
     global cache
     if cache is None:
-        cache = Cache(
-            paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
+        cache = Cache(common_paths.getcachepath(), disk=data.get_cache_mode())
     return cache.get(*args, **kwargs)
 
 
 def set(*args, **kwargs):
-    if (
-        args_.getargs().no_cache
-        or config_.get_cache_mode(config_.read_config()) == "disabled"
-    ):
+    if global_args.getArgs().no_cache or data.get_cache_mode() == "disabled":
         return
     global cache
     if cache is None:
-        cache = Cache(
-            paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
+        cache = Cache(common_paths.getcachepath(), disk=data.get_cache_mode())
     cache.set(*args, **kwargs)
 
 
 def close(*args, **kwargs):
-    if (
-        args_.getargs().no_cache
-        or config_.get_cache_mode(config_.read_config()) == "disabled"
-    ):
+    if global_args.getArgs().no_cache or data.get_cache_mode() == "disabled":
         return None
     global cache
     if cache is None:
-        cache = Cache(
-            paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
+        cache = Cache(common_paths.getcachepath(), disk=data.get_cache_mode())
     cache.close(*args, **kwargs)
 
 
 def touch(*args, **kwargs):
-    if (
-        args_.getargs().no_cache
-        or config_.get_cache_mode(config_.read_config()) == "disabled"
-    ):
+    if global_args.getArgs().no_cache or data.get_cache_mode() == "disabled":
         return None
     global cache
     if cache is None:
-        cache = Cache(
-            paths.getcachepath(), disk=config_.get_cache_mode(config_.read_config())
-        )
+        cache = Cache(common_paths.getcachepath(), disk=data.get_cache_mode())
     cache.touch(*args, **kwargs)

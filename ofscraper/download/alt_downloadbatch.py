@@ -23,14 +23,14 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
-import ofscraper.utils.paths as paths
-import ofscraper.utils.system as system
+import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.system.free as free
 from ofscraper.download.common import (
     addLocalDir,
     check_forced_skip,
@@ -46,7 +46,7 @@ from ofscraper.download.common import (
     size_checker,
     temp_file_logger,
 )
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 
 async def alt_download(c, ele, username, model_id):
@@ -57,7 +57,7 @@ async def alt_download(c, ele, username, model_id):
     common.innerlog.get().debug(
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
-    if args_.getargs().metadata:
+    if global_args.getArgs().metadata:
         sharedPlaceholderObj = placeholder.Placeholders()
         sharedPlaceholderObj.getmediadir(ele, username, model_id, create=False)
         sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
@@ -102,7 +102,7 @@ async def alt_download(c, ele, username, model_id):
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
         [
-            config_.get_ffmpeg(config_.read_config()),
+            data.get_ffmpeg(),
             "-i",
             str(video["path"]),
             "-i",

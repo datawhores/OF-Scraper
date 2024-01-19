@@ -29,9 +29,9 @@ except ModuleNotFoundError:
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 from ofscraper.download.common import (
@@ -56,7 +56,7 @@ async def main_download(c, ele, username, model_id, progress):
     common.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     # total may be none if no .part file
-    if args_.getargs().metadata:
+    if global_args.getArgs().metadata:
         return await metadata(
             c,
             ele,
@@ -302,8 +302,7 @@ async def main_download_sendreq(
 async def main_download_datahandler(r, progress, ele, placeholderObj, total):
     pathstr = str(placeholderObj.trunicated_filename)
     downloadprogress = (
-        config_.get_show_downloadprogress(config_.read_config())
-        or args_.getargs().downloadbars
+        data.get_show_downloadprogress() or global_args.getArgs().downloadbars
     )
     task1 = progress.add_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX)')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",

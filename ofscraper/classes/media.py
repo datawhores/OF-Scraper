@@ -18,8 +18,7 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args as args_
-import ofscraper.utils.config as config
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
@@ -211,10 +210,10 @@ class Media:
         text = self.cleanup(text)
         if len(text) == 0:
             return text
-        length = int(config.get_textlength(config.read_config()))
+        length = int(data.get_textlength())
         if length == 0:
             return text
-        elif config.get_textType(config.read_config()) == "letter":
+        elif data.get_textType() == "letter":
             return f"{''.join(list(text)[:length])}"
         else:
             # split and reduce
@@ -251,7 +250,7 @@ class Media:
                 .split("/")[-1]
                 .strip("/,.;!_-@#$%^&*()+\\ "),
             )
-            return f"{filename}_{arrow.get(self.date).format(config.get_date(config.read_config()))}"
+            return f"{filename}_{arrow.get(self.date).format(data.get_date())}"
 
     @property
     def final_filename(self):
@@ -324,14 +323,13 @@ class Media:
         self._media["type"] = val
 
     # for use in dynamic names
-    def addcount(self):
+    @property
+    def needs_count(self):
         if set(["filename", "file_name", "text", "postid", "post_id"]).isdisjoint(
             [
                 name
                 for text, name, spec, conv in list(
-                    string.Formatter().parse(
-                        config.get_fileformat(config.read_config())
-                    )
+                    string.Formatter().parse(data.get_fileformat())
                 )
             ]
         ):
@@ -348,15 +346,15 @@ class Media:
             text = (
                 self._post.sanitized_text
                 or self.filename
-                or arrow.get(self.date).format(config.get_date(config.read_config()))
+                or arrow.get(self.date).format(data.get_date())
             )
         elif self.responsetype == "Profile":
-            text = f"{arrow.get(self.date).format(config.get_date(config.read_config()))} {self.text or self.filename}"
+            text = f"{arrow.get(self.date).format(data.get_date())} {self.text or self.filename}"
         return text
 
     def cleanup(self, text):
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
-        text = re.sub(" ", config.get_spacereplacer(config.read_config()), text)
+        text = re.sub(" ", data.get_spacereplacer(), text)
         return text

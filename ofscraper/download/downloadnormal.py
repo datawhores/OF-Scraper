@@ -18,8 +18,8 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-import ofscraper.utils.exit as exit
-import ofscraper.utils.stdout as stdout
+import ofscraper.utils.context.exit as exit
+import ofscraper.utils.context.stdout as stdout
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common import (
     convert_num_bytes,
@@ -30,7 +30,7 @@ from ofscraper.download.common import (
     setupProgressBar,
 )
 from ofscraper.download.main_download import main_download
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 
 @run

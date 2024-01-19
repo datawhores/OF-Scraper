@@ -4,7 +4,7 @@ import ofscraper.api.subscriptions as subscriptions
 import ofscraper.classes.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
-import ofscraper.utils.stdout as stdout
+import ofscraper.utils.context.stdout as stdout
 
 
 def get_models() -> list:

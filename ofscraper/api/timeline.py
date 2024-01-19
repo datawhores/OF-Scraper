@@ -29,12 +29,12 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -50,7 +50,7 @@ async def scrape_timeline_posts(
     attempt.set(0)
 
     if timestamp and (
-        float(timestamp) > (args_.getargs().before or arrow.now()).float_timestamp
+        float(timestamp) > (global_args.getArgs().before or arrow.now()).float_timestamp
     ):
         return []
     if timestamp:
@@ -181,7 +181,7 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         min_posts = 50
         responseArray = []
         page_count = 0
-        if not args_.getargs().no_cache:
+        if not global_args.getArgs().no_cache:
             oldtimeline = operations.get_timeline_postdates(
                 model_id=model_id, username=username
             )
@@ -197,7 +197,9 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
         postedAtArray = sorted(oldtimeline)
-        rescan = cache.get("{model_id}_scrape_timeline") and not args_.getargs().after
+        rescan = (
+            cache.get("{model_id}_scrape_timeline") and not global_args.getArgs().after
+        )
         after = after = 0 if rescan else forced_after or get_after(model_id, username)
 
         log.info(
@@ -331,8 +333,8 @@ def get_individual_post(id, c=None):
 
 
 def get_after(model_id, username):
-    if args_.getargs().after:
-        return args_.getargs().after.float_timestamp
+    if global_args.getArgs().after:
+        return global_args.getArgs().after.float_timestamp
     curr = operations.get_timeline_media(model_id=model_id, username=username)
     if cache.get(f"{model_id}_scrape_timeline"):
         log.debug(

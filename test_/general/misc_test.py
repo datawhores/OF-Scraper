@@ -1,8 +1,8 @@
 from pytest_check import check
 
-import ofscraper.utils.args as args_
+import ofscraper.utils.args2.args as args_
+from ofscraper.const.test_constants import *
 from ofscraper.utils.separate import separate_by_id
-from test_.test_constants import *
 
 
 def test_seperate(mocker):

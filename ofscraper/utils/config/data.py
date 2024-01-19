@@ -8,277 +8,14 @@ r"""
                  \/     \/           \/            \/         
 """
 
-import importlib
-import json
-import logging
-import pathlib
-
 from diskcache import Disk, JSONDisk
 from humanfriendly import parse_size
 
-import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.binaries as binaries
-import ofscraper.utils.console as console_
+import ofscraper.utils.config.wrapper as wrapper
 import ofscraper.utils.constants as constants
-import ofscraper.utils.paths as paths_
-
-console = console_.get_shared_console()
-log = logging.getLogger("shared")
 
 
-def get_config_folder():
-    out = paths_.get_config_path().parent
-    out.mkdir(exist_ok=True, parents=True)
-    return out
-
-
-def read_config(update=True):
-    p = pathlib.Path(paths_.get_config_path())
-    if not p.parent.is_dir():
-        p.parent.mkdir(parents=True, exist_ok=True)
-
-    config = {}
-    while True:
-        try:
-            with open(p, "r") as f:
-                configText = f.read()
-                config = json.loads(configText)
-
-            try:
-                if update and config_diff(config):
-                    config = auto_update_config(p, config)
-            except KeyError:
-                raise FileNotFoundError
-
-            break
-        except FileNotFoundError:
-            file_not_found_message = f"You don't seem to have a `config.json` file. One has been automatically created for you at: '{p}'"
-            make_config(p)
-            console.print(file_not_found_message)
-        except json.JSONDecodeError as e:
-            print("You config.json has a syntax error")
-            print(f"{e}\n\n")
-            if prompts.reset_config_prompt() == "Reset Default":
-                make_config(p)
-            else:
-                print(f"{e}\n\n")
-                try:
-                    make_config(p, prompts.manual_config_prompt(configText))
-                except:
-                    continue
-    return config["config"]
-
-
-# basic recursion for comparing nested keys
-def config_diff(config, schema=None):
-    if config == None:
-        return True
-    schema = schema or get_current_config_schema()
-    diff = set(schema.keys()) - set(config.keys())
-    if len(diff) > 0:
-        return True
-    for key in schema.keys():
-        if not isinstance(schema[key], dict):
-            continue
-        elif not isinstance(config[key], dict):
-            return True
-        elif config_diff(config[key], schema[key]):
-            return True
-
-
-def get_current_config_schema(config: dict = None) -> dict:
-    if config:
-        config = config["config"]
-
-    new_config = {
-        "config": {
-            constants.getattr("mainProfile"): get_main_profile(config),
-            "metadata": get_metadata(config),
-            "discord": get_discord(config),
-            "file_options": {
-                "save_location": get_save_location(config),
-                "dir_format": get_dirformat(config),
-                "file_format": get_fileformat(config),
-                "textlength": get_textlength(config),
-                "space-replacer": get_spacereplacer(config),
-                "date": get_date(config),
-                "text_type_default": get_textType(config),
-                "truncation_default": get_truncation(config),
-            },
-            "download_options": {
-                "file_size_limit": get_filesize_limit(config),
-                "file_size_min": get_filesize_min(config),
-                "filter": get_filter(config),
-                "auto_resume": get_part_file_clean(config),
-                "system_free_min": get_system_freesize(config),
-            },
-            "binary_options": {
-                "mp4decrypt": get_mp4decrypt(config),
-                "ffmpeg": get_ffmpeg(config),
-            },
-            "cdm_options": {
-                "private-key": get_private_key(config),
-                "client-id": get_client_id(config),
-                "key-mode-default": get_key_mode(config),
-                "keydb_api": get_keydb_api(config),
-            },
-            "performance_options": {
-                "download-sems": get_download_semaphores(config),
-                "threads": get_threads(config),
-            },
-            "advanced_options": {
-                "code-execution": get_allow_code_execution(config),
-                "dynamic-mode-default": get_dynamic(config),
-                "backend": get_backend(config),
-                "downloadbars": get_show_downloadprogress(config),
-                "cache-mode": cache_mode_helper(config),
-                "appendlog": get_appendlog(config),
-                "custom_values": get_custom(config),
-                "sanitize_text": get_sanitizeDB(config),
-                "temp_dir": get_TempDir(config),
-                "infinite_loop": get_InfiniteLoop(config),
-            },
-            "responsetype": {
-                "timeline": get_timeline_responsetype(config),
-                "message": get_messages_responsetype(config),
-                "archived": get_archived_responsetype(config),
-                "paid": get_paid_responsetype(config),
-                "stories": get_stories_responsetype(config),
-                "highlights": get_highlights_responsetype(config),
-                "profile": get_profile_responsetype(config),
-                "pinned": get_pinned_responsetype(config),
-            },
-        }
-    }
-    return new_config
-
-
-def make_config(path, config=None):
-    config = get_current_config_schema(config)
-
-    if isinstance(config, str):
-        config = json.loads(config)
-
-    with open(path, "w") as f:
-        f.write(json.dumps(config, indent=4))
-
-
-def update_config(field: str, value):
-    p = paths_.get_config_path()
-    with open(p, "r") as f:
-        config = json.load(f)
-
-    config["config"].update({field: value})
-
-    with open(p, "w") as f:
-        f.write(json.dumps(config, indent=4))
-
-
-def auto_update_config(path, config: dict) -> dict:
-    log.warning("Auto updating config...")
-    new_config = get_current_config_schema(config)
-
-    with open(path, "w") as f:
-        f.write(json.dumps(new_config, indent=4))
-
-    return new_config
-
-
-def edit_config():
-    try:
-        p = paths_.get_config_path()
-        log.info(f"config path: {p}")
-        with open(p, "r") as f:
-            configText = f.read()
-            config = json.loads(configText)
-
-        updated_config = prompts.config_prompt(config["config"])
-
-        with open(p, "w") as f:
-            f.write(json.dumps(updated_config, indent=4))
-
-        console.print("`config.json` has been successfully edited.")
-    except FileNotFoundError:
-        make_config(p)
-    except json.JSONDecodeError as e:
-        while True:
-            try:
-                print("You config.json has a syntax error")
-                print(f"{e}\n\n")
-                with open(p, "w") as f:
-                    f.write(prompts.manual_config_prompt(configText))
-                with open(p, "r") as f:
-                    configText = f.read()
-                    config = json.loads(configText)
-                break
-            except:
-                continue
-
-
-def edit_config_advanced():
-    try:
-        p = paths_.get_config_path()
-        log.info(f"config path: {p}")
-        with open(p, "r") as f:
-            configText = f.read()
-            config = json.loads(configText)
-
-        updated_config = prompts.config_prompt_advanced(config["config"])
-
-        with open(p, "w") as f:
-            f.write(json.dumps(updated_config, indent=4))
-
-        console.print("`config.json` has been successfully edited.")
-    except FileNotFoundError:
-        make_config(p)
-    except json.JSONDecodeError as e:
-        while True:
-            try:
-                print("You config.json has a syntax error")
-                print(f"{e}\n\n")
-                with open(p, "w") as f:
-                    f.write(prompts.manual_config_prompt(configText))
-                with open(p, "r") as f:
-                    configText = f.read()
-                    config = json.loads(configText)
-                break
-            except:
-                continue
-
-
-def update_mp4decrypt():
-    config = {"config": read_config()}
-    if prompts.auto_download_mp4_decrypt() == "Yes":
-        config["config"]["mp4decrypt"] = binaries.mp4decrypt_download()
-    else:
-        config["config"]["mp4decrypt"] = prompts.mp4_prompt(config["config"])
-    p = paths_.get_config_path()
-    with open(p, "w") as f:
-        f.write(json.dumps(config, indent=4))
-
-
-def update_ffmpeg():
-    config = {"config": read_config()}
-    if prompts.auto_download_ffmpeg() == "Yes":
-        config["config"]["ffmpeg"] = binaries.ffmpeg_download()
-    else:
-        config["config"]["ffmpeg"] = prompts.ffmpeg_prompt((config["config"]))
-    p = paths_.get_config_path()
-    with open(p, "w") as f:
-        f.write(json.dumps(config, indent=4))
-
-
-def get_save_location(config=None):
-    if config == None:
-        return constants.getattr("SAVE_PATH_DEFAULT")
-    return (
-        config.get("save_location")
-        or config.get("file_options", {}).get("save_location")
-        or config.get("save_location")
-        or constants.getattr("SAVE_PATH_DEFAULT")
-    )
-
-
+@wrapper.config_reader
 def get_main_profile(config=None):
     if config == None:
         return constants.getattr("PROFILE_DEFAULT")
@@ -287,6 +24,7 @@ def get_main_profile(config=None):
     ) or constants.getattr("PROFILE_DEFAULT")
 
 
+@wrapper.config_reader
 def get_filesize_limit(config=None):
     if config == None:
         return constants.getattr("FILE_SIZE_LIMIT_DEFAULT")
@@ -302,6 +40,7 @@ def get_filesize_limit(config=None):
         return 0
 
 
+@wrapper.config_reader
 def get_filesize_min(config=None):
     if config == None:
         return constants.getattr("FILE_SIZE_MIN_DEFAULT")
@@ -317,6 +56,7 @@ def get_filesize_min(config=None):
         return 0
 
 
+@wrapper.config_reader
 def get_system_freesize(config=None):
     if config is None:
         return constants.getattr("SYSTEM_FREEMIN_DEFAULT")
@@ -332,6 +72,7 @@ def get_system_freesize(config=None):
         return 0
 
 
+@wrapper.config_reader
 def get_dirformat(config=None):
     if config == None:
         return constants.getattr("DIR_FORMAT_DEFAULT")
@@ -342,6 +83,7 @@ def get_dirformat(config=None):
     )
 
 
+@wrapper.config_reader
 def get_fileformat(config=None):
     if config == None:
         return constants.getattr("FILE_FORMAT_DEFAULT")
@@ -352,6 +94,7 @@ def get_fileformat(config=None):
     )
 
 
+@wrapper.config_reader
 def get_textlength(config=None):
     if config == None:
         return constants.getattr("TEXTLENGTH_DEFAULT")
@@ -363,6 +106,7 @@ def get_textlength(config=None):
         return constants.getattr("TEXTLENGTH_DEFAULT")
 
 
+@wrapper.config_reader
 def get_date(config=None):
     if config == None:
         return constants.getattr("DATE_DEFAULT")
@@ -373,6 +117,7 @@ def get_date(config=None):
     )
 
 
+@wrapper.config_reader
 def get_InfiniteLoop(config=None):
     if config == None:
         return constants.getattr("INFINITE_LOOP_DEFAULT")
@@ -381,6 +126,7 @@ def get_InfiniteLoop(config=None):
     ) or constants.getattr("INFINITE_LOOP_DEFAULT")
 
 
+@wrapper.config_reader
 def get_allow_code_execution(config=None):
     if config == None:
         return constants.getattr("CODE_EXECUTION_DEFAULT")
@@ -391,12 +137,14 @@ def get_allow_code_execution(config=None):
     )
 
 
+@wrapper.config_reader
 def get_metadata(config=None):
     if config == None:
         return constants.getattr("METADATA_DEFAULT")
     return config.get("metadata", constants.getattr("METADATA_DEFAULT"))
 
 
+@wrapper.config_reader
 def get_threads(config=None):
     if config == None:
         return constants.getattr("THREADS_DEFAULT")
@@ -411,6 +159,7 @@ def get_threads(config=None):
     return threads
 
 
+@wrapper.config_reader
 def get_mp4decrypt(config=None):
     if config == None:
         return constants.getattr("MP4DECRYPT_DEFAULT")
@@ -421,6 +170,7 @@ def get_mp4decrypt(config=None):
     )
 
 
+@wrapper.config_reader
 def get_ffmpeg(config=None):
     if config == None:
         return constants.getattr("FFMPEG_DEFAULT")
@@ -431,12 +181,14 @@ def get_ffmpeg(config=None):
     )
 
 
+@wrapper.config_reader
 def get_discord(config=None):
     if config == None:
         return constants.getattr("DISCORD_DEFAULT")
     return config.get("discord", constants.getattr("DISCORD_DEFAULT")) or ""
 
 
+@wrapper.config_reader
 def get_filter(config=None):
     if config == None:
         return constants.getattr("FILTER_DEFAULT")
@@ -451,6 +203,18 @@ def get_filter(config=None):
         return list(map(lambda x: x.capitalize(), filter))
 
 
+@wrapper.config_reader
+def responsetype(config=None):
+    if config == None:
+        return constants.getattr("RESPONSE_TYPE_DEFAULT")
+    return (
+        config.get("responsetype", {})
+        or config.get("responsetype", {})
+        or constants.getattr("RESPONSE_TYPE_DEFAULT")
+    )
+
+
+@wrapper.config_reader
 def get_timeline_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
@@ -461,6 +225,7 @@ def get_timeline_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_post_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
@@ -471,6 +236,7 @@ def get_post_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_archived_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
@@ -480,6 +246,7 @@ def get_archived_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_stories_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
@@ -489,6 +256,7 @@ def get_stories_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_highlights_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
@@ -498,6 +266,7 @@ def get_highlights_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_paid_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
@@ -507,6 +276,7 @@ def get_paid_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_messages_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["message"]
@@ -516,6 +286,7 @@ def get_messages_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_profile_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
@@ -525,6 +296,7 @@ def get_profile_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_pinned_responsetype(config=None):
     if config == None:
         return constants.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
@@ -534,6 +306,7 @@ def get_pinned_responsetype(config=None):
     )
 
 
+@wrapper.config_reader
 def get_spacereplacer(config=None):
     if config == None:
         return " "
@@ -544,26 +317,21 @@ def get_spacereplacer(config=None):
     )
 
 
-def get_custom(config=None):
-    if config == None:
-        return None
-    return config.get("custom") or config.get("advanced_options", {}).get(
-        "custom_values"
-    )
-
-
+@wrapper.config_reader
 def get_private_key(config=None):
     if config == None:
         return None
     return config.get("private-key") or config.get("cdm_options", {}).get("private-key")
 
 
+@wrapper.config_reader
 def get_client_id(config=None):
     if config == None:
         return None
     return config.get("client-id") or config.get("cdm_options", {}).get("client-id")
 
 
+@wrapper.config_reader
 def get_key_mode(config=None):
     if config == None:
         return constants.getattr("KEY_DEFAULT")
@@ -578,6 +346,7 @@ def get_key_mode(config=None):
     )
 
 
+@wrapper.config_reader
 def get_keydb_api(config=None):
     if config == None:
         return ""
@@ -588,6 +357,7 @@ def get_keydb_api(config=None):
     )
 
 
+@wrapper.config_reader
 def get_dynamic(config=None):
     if config == None:
         return constants.getattr("DYNAMIC_DEFAULT")
@@ -605,6 +375,7 @@ def get_dynamic(config=None):
     )
 
 
+@wrapper.config_reader
 def get_part_file_clean(config=None):
     if config == None:
         return False
@@ -614,6 +385,7 @@ def get_part_file_clean(config=None):
     return value if value is not None else True
 
 
+@wrapper.config_reader
 def get_backend(config=None):
     if config == None:
         return "aio"
@@ -624,6 +396,7 @@ def get_backend(config=None):
     )
 
 
+@wrapper.config_reader
 def get_download_semaphores(config=None):
     if config == None:
         return constants.getattr("DOWNLOAD_SEM_DEFAULT")
@@ -639,7 +412,8 @@ def get_download_semaphores(config=None):
     return sems
 
 
-def get_show_downloadprogress(config):
+@wrapper.config_reader
+def get_show_downloadprogress(config=None):
     if config == None:
         return constants.getattr("PROGRESS_DEFAULT")
     return (
@@ -649,14 +423,16 @@ def get_show_downloadprogress(config):
     )
 
 
-def get_cache_mode(config):
-    if cache_mode_helper(config) == "sqlite":
+@wrapper.config_reader
+def get_cache_mode(config=None):
+    if cache_mode_helper(config=None) == "sqlite":
         return Disk
     else:
         return JSONDisk
 
 
-def cache_mode_helper(config):
+@wrapper.config_reader
+def cache_mode_helper(config=None):
     if config == None:
         return constants.getattr("CACHEDEFAULT")
     data = (
@@ -672,7 +448,8 @@ def cache_mode_helper(config):
         return constants.getattr("CACHEDEFAULT")
 
 
-def get_appendlog(config):
+@wrapper.config_reader
+def get_appendlog(config=None):
     if config == None:
         return constants.getattr("APPEND_DEFAULT")
     value = config.get("appendlog") or config.get("advanced_options", {}).get(
@@ -681,7 +458,8 @@ def get_appendlog(config):
     return value if value is not None else constants.getattr("APPEND_DEFAULT")
 
 
-def get_sanitizeDB(config):
+@wrapper.config_reader
+def get_sanitizeDB(config=None):
     if config is None:
         return constants.getattr("SANITIZE_DB_DEFAULT")
     return (
@@ -691,7 +469,8 @@ def get_sanitizeDB(config):
     )
 
 
-def get_textType(config):
+@wrapper.config_reader
+def get_textType(config=None):
     if config is None:
         return constants.getattr("TEXT_TYPE_DEFAULT")
     value = config.get("text_type") or config.get("file_options", {}).get(
@@ -702,7 +481,8 @@ def get_textType(config):
     )
 
 
-def get_TempDir(config):
+@wrapper.config_reader
+def get_TempDir(config=None):
     if config is None:
         return constants.getattr("TEMP_FOLDER_DEFAULT")
     return (
@@ -712,7 +492,8 @@ def get_TempDir(config):
     )
 
 
-def get_truncation(config):
+@wrapper.config_reader
+def get_truncation(config=None):
     if config is None:
         return constants.getattr("TRUNCATION_DEFAULT")
     val = config.get("file_options", {}).get("truncation_default") or config.get(

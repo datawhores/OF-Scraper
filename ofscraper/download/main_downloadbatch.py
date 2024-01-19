@@ -29,13 +29,13 @@ except ModuleNotFoundError:
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.paths as paths
-import ofscraper.utils.system as system
+import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.system.free as free
 from ofscraper.download.common import (
     addLocalDir,
     check_forced_skip,
@@ -50,7 +50,7 @@ from ofscraper.download.common import (
     set_time,
     size_checker,
 )
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 
 async def main_download(c, ele, username, model_id):
@@ -58,7 +58,7 @@ async def main_download(c, ele, username, model_id):
         f"{get_medialog(ele)} Downloading with normal batch downloader"
     )
     common.innerlog.get().debug(f"{get_medialog(ele)} download url: {get_url_log(ele)}")
-    if args_.getargs().metadata:
+    if global_args.getArgs().metadata:
         return await metadata(
             c,
             ele,
@@ -293,8 +293,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
 async def main_download_datahandler(r, ele, total, placeholderObj):
     pathstr = str(placeholderObj.trunicated_filename)
     downloadprogress = (
-        config_.get_show_downloadprogress(config_.read_config())
-        or args_.getargs().downloadbars
+        data.get_show_downloadprogress() or global_args.getArgs().downloadbars
     )
     try:
         count = 0

@@ -43,16 +43,16 @@ from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.system as system
+import ofscraper.utils.paths.common as common_paths
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 attempt = contextvars.ContextVar("attempt", default=0)
 attempt2 = contextvars.ContextVar("attempt2", default=0)
@@ -95,17 +95,15 @@ def reset_globals():
 
     # global
     global thread
-    thread = ThreadPoolExecutor(
-        max_workers=config_.get_download_semaphores(config_.read_config()) * 2
-    )
+    thread = ThreadPoolExecutor(max_workers=config_data.get_download_semaphores() * 2)
     global sem
-    sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+    sem = semaphoreDelayed(config_data.get_download_semaphores())
     global cache_thread
     cache_thread = ThreadPoolExecutor(max_workers=1)
     global dirSet
     dirSet = set()
     global mpd_sem
-    mpd_sem = semaphoreDelayed(config_.get_download_semaphores(config_.read_config()))
+    mpd_sem = semaphoreDelayed(config_data.get_download_semaphores())
     global lock
     lock = asyncio.Lock()
     global maxfile_sem
@@ -118,7 +116,7 @@ def reset_globals():
     req_sem = semaphoreDelayed(
         min(
             constants.getattr("REQ_SEMAPHORE_MULTI"),
-            config_.get_download_semaphores(config_.read_config())
+            config_data.get_download_semaphores()
             * constants.getattr("REQ_SEMAPHORE_MULTI"),
         )
     )
@@ -175,8 +173,7 @@ def _(func: abc.Callable, input_sem: None | semaphoreDelayed = None):
 
 def setupProgressBar(multi=False):
     downloadprogress = (
-        config_.get_show_downloadprogress(config_.read_config())
-        or args_.getargs().downloadbars
+        config_data.get_show_downloadprogress() or global_args.getArgs().downloadbars
     )
     if not multi:
         job_progress = Progress(
@@ -269,12 +266,8 @@ async def check_forced_skip(ele, *args):
     total = sum(map(lambda x: int(x), args))
     if total == 0:
         return 0
-    file_size_limit = args_.getargs().size_max or config_.get_filesize_limit(
-        config_.read_config()
-    )
-    file_size_min = args_.getargs().size_min or config_.get_filesize_limit(
-        config_.read_config()
-    )
+    file_size_limit = global_args.getArgs().size_max or config_data.get_filesize_limit()
+    file_size_min = global_args.getArgs().size_min or config_data.get_filesize_limit()
     if int(file_size_limit) > 0 and (int(total) > int(file_size_limit)):
         ele.mediatype = "forced_skipped"
         log.debug(f"{get_medialog(ele)} {format_size(total)} over size limit")
@@ -307,8 +300,8 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             else "forced_skipped",
             0,
         )
-    if data and data.get("content-type"):
-        content_type = data.get("content-type").split("/")[-1]
+    if data and config_data.get("content-type"):
+        content_type = config_data.get("content-type").split("/")[-1]
         placeholderObj = placeholder.Placeholders()
         placeholderObj.getDirs(ele, username, model_id, create=False)
         placeholderObj.createfilename(ele, username, model_id, content_type)
@@ -370,12 +363,12 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
                     cache.set,
                     f"{ele.id}_headers",
                     {
-                        "content-length": data.get("content-length"),
-                        "content-type": data.get("content-type"),
+                        "content-length": config_data.get("content-length"),
+                        "content-type": config_data.get("content-type"),
                     },
                 ),
             )
-            content_type = data.get("content-type").split("/")[-1]
+            content_type = config_data.get("content-type").split("/")[-1]
             if not content_type and ele.mediatype.lower() == "videos":
                 content_type = "mp4"
             elif not content_type and ele.mediatype.lower() == "images":
@@ -464,7 +457,7 @@ def addLocalDir(path):
 def setDirectoriesDate():
     log.info("Setting Date for modified directories")
     output = set()
-    rootDir = pathlib.Path(config_.get_save_location(config_.read_config()))
+    rootDir = pathlib.Path(common_paths.get_save_location())
     log.debug(f"Original DirSet {list(dirSet)}")
     log.debug(f"rooDir {rootDir}")
 
@@ -493,7 +486,7 @@ def alt_attempt_get(item):
 
 
 def downloadspace():
-    space_limit = config_.get_system_freesize(config_.read_config)
+    space_limit = config_data.get_system_freesize()
     if space_limit > 0 and space_limit > system.get_free():
         raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
 

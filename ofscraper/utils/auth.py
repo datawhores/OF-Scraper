@@ -28,18 +28,18 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args as args_
-import ofscraper.utils.config as config
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-import ofscraper.utils.paths as paths
-import ofscraper.utils.profiles as profiles
+import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.profiles.data as profiles_data
 
 console = Console()
 log = logging.getLogger("shared")
 
 
 def read_auth():
-    authFile = paths.get_auth_file()
+    authFile = common_paths.get_auth_file()
 
     while True:
         try:
@@ -88,7 +88,7 @@ def get_empty():
 
 
 def edit_auth():
-    authFile = paths.get_auth_file()
+    authFile = common_paths.get_auth_file()
     log.info(f"Auth Path {authFile}")
     try:
         with open(authFile, "r") as f:
@@ -131,7 +131,7 @@ def authwarning(authFile):
 
 
 def make_auth(auth=None):
-    authFile = paths.get_auth_file()
+    authFile = common_paths.get_auth_file()
     authwarning(authFile)
     defaultAuth = get_empty()
 
@@ -204,7 +204,7 @@ def make_headers(auth):
 
 
 def add_cookies():
-    authFile = paths.get_auth_file()
+    authFile = common_paths.get_auth_file()
     with open(authFile, "r") as f:
         auth = json.load(f)
 
@@ -219,7 +219,7 @@ def add_cookies():
 
 
 def get_cookies():
-    authFile = paths.get_auth_file()
+    authFile = common_paths.get_auth_file()
 
     with open(authFile, "r") as f:
         auth = json.load(f)
@@ -259,9 +259,9 @@ def create_sign(link, headers):
 
 
 def read_request_auth() -> dict:
-    profile = profiles.get_active_profile()
+    profile = profiles_data.get_active_profile()
 
-    p = paths.get_config_home() / profile / constants.getattr("requestAuth")
+    p = common_paths.get_config_home() / profile / constants.getattr("requestAuth")
     with open(p, "r") as f:
         content = json.load(f)
     return content
@@ -282,9 +282,9 @@ def make_request_auth():
 
         request_auth.update(zip(request_auth.keys(), values))
 
-        profile = profiles.get_active_profile()
+        profile = profiles_data.get_active_profile()
 
-        p = paths.get_config_home() / profile
+        p = common_paths.get_config_home() / profile
         if not p.is_dir():
             p.mkdir(parents=True, exist_ok=True)
 
@@ -293,11 +293,11 @@ def make_request_auth():
 
 
 def get_request_auth():
-    if (
-        args_.getargs().dynamic_rules
-        or config.get_dynamic(config.read_config())
-        or "deviint"
-    ) in {"deviint", "dv", "dev"}:
+    if (global_args.getArgs().dynamic_rules or data.get_dynamic() or "deviint") in {
+        "deviint",
+        "dv",
+        "dev",
+    }:
         return get_request_auth_deviint()
     else:
         return get_request_digitalcriminals()

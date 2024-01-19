@@ -31,7 +31,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")

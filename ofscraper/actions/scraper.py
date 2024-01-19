@@ -24,16 +24,15 @@ import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
-import ofscraper.utils.stdout as stdout
-import ofscraper.utils.system as system
+import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.system.free as free
 
 log = logging.getLogger("shared")
 
 
-@system.space_checker
+@free.space_checker
 def process_messages(model_id, username):
     with stdout.lowstdout():
         messages_ = messages.get_messages(
@@ -70,13 +69,14 @@ def process_messages(model_id, username):
         # Update after database
         cache.set(
             "{model_id}_scrape_messages",
-            args_.getargs().after is not None and args_.getargs().after != 0,
+            global_args.getArgs().after is not None
+            and global_args.getArgs().after != 0,
         )
 
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_paid_post(model_id, username):
     with stdout.lowstdout():
         paid_content = paid.get_paid_posts(username, model_id)
@@ -107,7 +107,7 @@ def process_paid_post(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_stories(model_id, username):
     with stdout.lowstdout():
         stories = highlights.get_stories_post(model_id)
@@ -140,7 +140,7 @@ def process_stories(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_highlights(model_id, username):
     with stdout.lowstdout():
         highlights_ = highlights.get_highlight_post(model_id)
@@ -173,7 +173,7 @@ def process_highlights(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_timeline_posts(model_id, username, individual=False):
     with stdout.lowstdout():
         timeline_posts = (
@@ -218,11 +218,11 @@ def process_timeline_posts(model_id, username, individual=False):
             username=username,
             downloaded=False,
         )
-        cache.set("{model_id}_scrape_timeline", args_.getargs().after is not None)
+        cache.set("{model_id}_scrape_timeline", global_args.getArgs().after is not None)
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_archived_posts(model_id, username):
     with stdout.lowstdout():
         archived_posts = archive.get_archived_media(
@@ -264,11 +264,11 @@ def process_archived_posts(model_id, username):
             username=username,
             downloaded=False,
         )
-        cache.set("{model_id}_scrape_archived", args_.getargs().after is not None)
+        cache.set("{model_id}_scrape_archived", global_args.getArgs().after is not None)
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_pinned_posts(model_id, username):
     with stdout.lowstdout():
         pinned_posts = pinned.get_pinned_post(model_id)
@@ -307,7 +307,7 @@ def process_pinned_posts(model_id, username):
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
-@system.space_checker
+@free.space_checker
 def process_profile(username) -> list:
     with stdout.lowstdout():
         user_profile = profile.scrape_profile(username)
@@ -329,7 +329,7 @@ def process_profile(username) -> list:
         return output
 
 
-@system.space_checker
+@free.space_checker
 def process_all_paid():
     with stdout.lowstdout():
         paid_content = paid.get_all_paid_posts()
@@ -399,17 +399,18 @@ def process_all_paid():
         return output
 
 
-@system.space_checker
+@free.space_checker
 def process_labels(model_id, username):
     with stdout.lowstdout():
         labels_ = labels_api.get_labels(model_id)
 
         labels_ = (
             labels_
-            if not args_.getargs().label
+            if not global_args.getArgs().label
             else list(
                 filter(
-                    lambda x: x.get("name").lower() in args_.getargs().label, labels_
+                    lambda x: x.get("name").lower() in global_args.getArgs().label,
+                    labels_,
                 )
             )
         )

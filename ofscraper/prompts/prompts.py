@@ -25,11 +25,12 @@ import ofscraper.prompts.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config
+import ofscraper.utils.config.data as data
+import ofscraper.utils.config.schema as schema
 import ofscraper.utils.constants as constants
-import ofscraper.utils.system as system
+import ofscraper.utils.paths.common as common_paths
 
 console = Console()
 
@@ -51,7 +52,7 @@ def action_prompt() -> int:
     answer = promptClasses.getChecklistSelection(
         message="What would you like to do?", choices=[*action_prompt_choices]
     )
-    args = args_.getargs()
+    args = global_args.getArgs()
     action = constants.getattr("ActionPromptChoices")[answer]
     if action == "Main Menu":
         return action
@@ -60,7 +61,7 @@ def action_prompt() -> int:
 
 
 def areas_prompt() -> list:
-    args = args_.getargs()
+    args = global_args.getArgs()
     name = "value"
     message = (
         "Which area(s) would you do you want to download and like"
@@ -418,7 +419,8 @@ def get_profile_prompt(profiles: list) -> str:
     return profile
 
 
-def config_prompt_advanced(config_) -> dict:
+def config_prompt_advanced() -> dict:
+    custom = {}
     threads = promptClasses.batchConverter(
         *[
             {
@@ -429,12 +431,12 @@ def config_prompt_advanced(config_) -> dict:
                 "max_allowed": os.cpu_count() - 1,
                 "validate": EmptyInputValidator(),
                 "long_instruction": f"Value can be 1-{os.cpu_count()-1}",
-                "default": config.get_threads(config_),
+                "default": data.get_threads(),
             },
         ]
     )
 
-    config_.update(threads)
+    custom.update(threads)
     max_allowed = cache.get("speed_download")
     if not cache.get("speed_download") or promptClasses.getChecklistSelection(
         choices=[Choice(True, "Yes"), Choice(False, "No")],
@@ -456,34 +458,34 @@ def config_prompt_advanced(config_) -> dict:
                 "max_allowed": max_allowed,
                 "validate": EmptyInputValidator(),
                 "long_instruction": f"Value can be 1-{max_allowed}",
-                "default": config.get_download_semaphores(config_),
+                "default": data.get_download_semaphores(),
             },
             {
                 "type": "list",
                 "name": "avatars",
                 "message": "Show Avatars in Log",
-                "default": config.get_avatar(config_),
+                "default": data.get_avatar(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "list",
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules\nhttps://grantjenks.com/docs/diskcache/tutorial.html#caveats",
-                "default": config.get_dynamic(config_),
+                "default": data.get_dynamic(),
                 "choices": ["deviint", "digitalcriminals"],
             },
             {
                 "type": "list",
                 "name": "cache-mode",
                 "message": "sqlite should be fine unless your using a network drive\nSee",
-                "default": config.cache_mode_helper(config_),
+                "default": data.cache_mode_helper(),
                 "choices": ["sqlite", "json", "disabled"],
             },
             {
                 "type": "list",
                 "name": "key-mode-default",
                 "message": "Make selection for how to retrive long_message",
-                "default": config.get_key_mode(config_),
+                "default": data.get_key_mode(),
                 "choices": constants.getattr("KEY_OPTIONS"),
             },
             {
@@ -491,26 +493,26 @@ def config_prompt_advanced(config_) -> dict:
                 "name": "keydb_api",
                 "message": "keydb api key:\n",
                 "long_instruction": "Required if your using keydb for key-mode",
-                "default": config.get_keydb_api(config_) or "",
+                "default": data.get_keydb_api() or "",
             },
             {
                 "type": "filepath",
                 "name": "client-id",
                 "message": "Enter path to client id file",
-                "default": config.get_client_id(config_) or "",
+                "default": data.get_client_id() or "",
             },
             {
                 "type": "filepath",
                 "name": "private-key",
                 "message": "Enter path to private-key",
-                "default": config.get_private_key(config_) or "",
+                "default": data.get_private_key() or "",
             },
             {
                 "type": "list",
                 "name": "backend",
                 "choices": [Choice("aio", "aiohttp"), Choice("httpx", "httpx")],
                 "message": "Select Which Backend you want:\n",
-                "default": config.get_backend(config_) or "",
+                "default": data.get_backend() or "",
             },
             # value because of legacy config values
             {
@@ -518,7 +520,7 @@ def config_prompt_advanced(config_) -> dict:
                 "name": "partfileclean",
                 "message": "Enable auto file resume",
                 "long_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
-                "default": config.get_part_file_clean(config_),
+                "default": data.get_part_file_clean(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
@@ -526,15 +528,15 @@ def config_prompt_advanced(config_) -> dict:
                 "name": "custom",
                 "message": "edit custom value:\n",
                 "long_instruction": "This is a helper value for remapping placeholder values",
-                "default": json.dumps(config.get_custom(config_))
-                if not isinstance(config.get_custom(config_), str)
-                else config.get_custom(config_) or "",
+                "default": json.dumps(custom.get_custom())
+                if not isinstance(custom.get_custom(), str)
+                else custom.get_custom() or "",
             },
             {
                 "type": "list",
                 "name": "downloadbars",
                 "message": "show download progress bars\nThis can have a negative effect on performance with lower threads",
-                "default": config.get_show_downloadprogress(config_),
+                "default": data.get_show_downloadprogress(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
@@ -542,35 +544,35 @@ def config_prompt_advanced(config_) -> dict:
                 "name": "code-execution",
                 "message": "Enable Code Execution:",
                 "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
-                "default": config.get_allow_code_execution(config_),
+                "default": data.get_allow_code_execution(),
                 "long_instruction": "Be careful if turning this on this only effects file_format,metadata, and dir_format",
             },
             {
                 "type": "filepath",
                 "name": "temp_dir",
                 "message": "Location to store temp file",
-                "default": config.get_TempDir(config_) or "",
+                "default": data.get_TempDir() or "",
                 "long_instruction": "Leave empty to use default location",
             },
             {
                 "type": "list",
                 "name": "",
                 "message": "append logs into daily log files",
-                "default": config.get_appendlog(config_),
+                "default": data.get_appendlog(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "list",
                 "name": "sanitize_text",
                 "message": "Remove special characters when inserting text in db",
-                "default": config.get_sanitizeDB(config_),
+                "default": data.get_sanitizeDB(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "list",
                 "name": "text_type",
                 "message": "How the textlimit should be interpreted as",
-                "default": config.get_textType(config_),
+                "default": data.get_textType(),
                 "choices": [
                     Choice("word", "Word Count"),
                     Choice("letter", "Letter Count"),
@@ -580,7 +582,7 @@ def config_prompt_advanced(config_) -> dict:
                 "type": "list",
                 "name": "truncation_default",
                 "message": "Should the script truncate long",
-                "default": config.get_truncation(config_),
+                "default": data.get_truncation(),
                 "choices": [
                     Choice(True, "Yes"),
                     Choice(False, "No"),
@@ -589,18 +591,20 @@ def config_prompt_advanced(config_) -> dict:
             },
         ]
     )
-    config_.update(new_settings)
-    return config.get_current_config_schema({"config": config_})
+    custom.update(new_settings)
+    schema.get_current_config_schema({"config": custom})
+    return custom
 
 
-def config_prompt(config_) -> dict:
+def config_prompt() -> dict:
+    custom = {}
     answer = promptClasses.batchConverter(
         *[
             {
                 "type": "input",
                 "name": "main_profile",
                 "message": "What would you like your main profile to be?",
-                "default": config.get_main_profile(config_),
+                "default": data.get_main_profile(),
                 "validate": EmptyInputValidator(),
             },
             {
@@ -608,7 +612,7 @@ def config_prompt(config_) -> dict:
                 "name": "save_location",
                 "message": "save_location: ",
                 "long_instruction": "Where would you like to set as the root save downloaded directory?",
-                "default": config.get_save_location(config_),
+                "default": common_paths.get_save_location(),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
                 "validate": PathValidator(is_dir=True),
             },
@@ -623,7 +627,7 @@ or human readable such as 10mb
 
 Enter 0 for no limit
 """,
-                "default": str(config.get_filesize_limit(config_)),
+                "default": str(data.get_filesize_limit()),
                 "filter": int,
             },
             {
@@ -637,7 +641,7 @@ or human readable such as 10mb
 
 Enter 0 for no minimum
 """,
-                "default": str(config.get_filesize_min(config_)),
+                "default": str(data.get_filesize_min()),
                 "filter": int,
             },
             {
@@ -651,7 +655,7 @@ or human readable such as 10mb
 
 Enter 0 for no limit
 """,
-                "default": str(config.get_system_freesize(config_)),
+                "default": str(data.get_system_freesize()),
                 "filter": int,
             },
             {
@@ -659,20 +663,20 @@ Enter 0 for no limit
                 "name": "dir_format",
                 "message": "dir_format: ",
                 "long_instruction": "What format do you want for download directories",
-                "default": config.get_dirformat(config_),
+                "default": data.get_dirformat(),
             },
             {
                 "type": "input",
                 "name": "file_format",
                 "message": "What format do you want for downloaded files",
-                "default": config.get_fileformat(config_),
+                "default": data.get_fileformat(),
             },
             {
                 "type": "number",
                 "name": "textlength",
                 "message": "textlength: ",
                 "long_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
-                "default": config.get_textlength(config_),
+                "default": data.get_textlength(),
                 "min_allowed": 0,
                 "validate": EmptyInputValidator(),
             },
@@ -681,14 +685,14 @@ Enter 0 for no limit
                 "name": "space-replacer",
                 "message": "space-replacer: ",
                 "long_instruction": "Replace any spaces in text with this character\n",
-                "default": config.get_spacereplacer(config_),
+                "default": data.get_spacereplacer(),
             },
             {
                 "type": "input",
                 "name": "date",
                 "message": "date: ",
                 "long_instruction": "Enter Date format",
-                "default": config.get_date(config_),
+                "default": data.get_date(),
                 "validate": prompt_validators.dateplaceholdervalidator(),
             },
             {
@@ -696,7 +700,7 @@ Enter 0 for no limit
                 "name": "metadata",
                 "message": "metadata: ",
                 "long_instruction": "Where should metadata files be saved",
-                "default": config.get_metadata(config_),
+                "default": data.get_metadata(),
             },
             {
                 "type": "checkbox",
@@ -707,7 +711,7 @@ Enter 0 for no limit
                         lambda x: Choice(
                             name=x,
                             value=x,
-                            enabled=x.capitalize() in set(config.get_filter(config_)),
+                            enabled=x.capitalize() in set(data.get_filter()),
                         ),
                         constants.getattr("FILTER_DEFAULT"),
                     )
@@ -723,7 +727,7 @@ Enter 0 for no limit
                     prompt_validators.mp4decryptpathvalidator(),
                     prompt_validators.mp4decryptexecutevalidator(),
                 ),
-                "default": config.get_mp4decrypt(config_),
+                "default": data.get_mp4decrypt(),
                 "long_instruction": """
 Certain content requires decryption to process please provide the full path to mp4decrypt
 """,
@@ -740,14 +744,14 @@ Certain content requires decryption to process please provide the full path to m
                 "long_instruction": """
 Certain content requires decryption to process please provide the full path to ffmpeg
 """,
-                "default": config.get_ffmpeg(config_),
+                "default": data.get_ffmpeg(),
             },
             {
                 "type": "input",
                 "name": "discord",
                 "message": "discord webhook: ",
                 "validate": prompt_validators.DiscordValidator(),
-                "default": config.get_discord(config_),
+                "default": data.get_discord(),
             },
         ]
     )
@@ -762,7 +766,7 @@ Certain content requires decryption to process please provide the full path to f
 set responsetype for timeline posts
 Empty string is consider to be 'posts'
             """,
-                "default": config.get_timeline_responsetype(config_),
+                "default": data.get_timeline_responsetype(),
                 "message": "timeline responsetype mapping: ",
             },
             {
@@ -772,7 +776,7 @@ Empty string is consider to be 'posts'
 set responsetype for archived posts
 Empty string is consider to be 'archived'
             """,
-                "default": config.get_archived_responsetype(config_),
+                "default": data.get_archived_responsetype(),
                 "message": "archived responsetype mapping: ",
             },
             {
@@ -782,7 +786,7 @@ Empty string is consider to be 'archived'
 set responsetype for pinned posts
 Empty string is consider to be 'pinned'
             """,
-                "default": config.get_pinned_responsetype(config_),
+                "default": data.get_pinned_responsetype(),
                 "message": "pinned responsetype mapping: ",
             },
             {
@@ -792,7 +796,7 @@ Empty string is consider to be 'pinned'
 set responsetype for message posts
 Empty string is consider to be 'message'
             """,
-                "default": config.get_messages_responsetype(config_),
+                "default": data.get_messages_responsetype(),
                 "message": "message responstype mapping: ",
             },
             {
@@ -802,7 +806,7 @@ Empty string is consider to be 'message'
 set responsetype for paid posts
 Empty string is consider to be 'paid'
             """,
-                "default": config.get_paid_responsetype(config_),
+                "default": data.get_paid_responsetype(),
                 "message": "paid responsetype mapping: ",
             },
             {
@@ -812,7 +816,7 @@ Empty string is consider to be 'paid'
 set responsetype for stories
 Empty string is consider to be 'stories'
             """,
-                "default": config.get_stories_responsetype(config_),
+                "default": data.get_stories_responsetype(),
                 "message": "stories responsetype mapping: ",
             },
             {
@@ -822,7 +826,7 @@ Empty string is consider to be 'stories'
 set responsetype for highlights
 Empty string is consider to be 'highlights'
             """,
-                "default": config.get_highlights_responsetype(config_),
+                "default": data.get_highlights_responsetype(),
                 "message": "highlight responsetype mapping: ",
             },
             {
@@ -832,14 +836,15 @@ Empty string is consider to be 'highlights'
 set responsetype for profile
 Empty string is consider to be 'profile'
             """,
-                "default": config.get_profile_responsetype(config_),
+                "default": data.get_profile_responsetype(),
                 "message": "profile responsetype mapping: ",
             },
         ]
     )
     answer["responsetype"] = answer2
-    config_.update(answer)
-    return config.get_current_config_schema({"config": config_})
+    custom.update(answer)
+    schema.get_current_config_schema({"config": custom})
+    return custom
 
 
 def reset_username_prompt() -> bool:
@@ -914,7 +919,7 @@ def reset_download_areas_prompt() -> bool:
     return answer[name]
 
 
-def mp4_prompt(config_):
+def mp4_prompt():
     answer = promptClasses.batchConverter(
         *[
             {
@@ -932,7 +937,7 @@ Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in 
 
 https://www.bento4.com/documentation/mp4decrypt/
 """,
-                "default": config.get_mp4decrypt(config_),
+                "default": data.get_mp4decrypt(),
             },
         ]
     )
@@ -940,7 +945,7 @@ https://www.bento4.com/documentation/mp4decrypt/
     return answer["mp4decrypt"]
 
 
-def ffmpeg_prompt(config_):
+def ffmpeg_prompt():
     answer = promptClasses.batchConverter(
         *[
             {
@@ -958,7 +963,7 @@ Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo
 
 https://ffmpeg.org/download.html
 """,
-                "default": config.get_ffmpeg(config_),
+                "default": data.get_ffmpeg(),
             },
         ]
     )
@@ -1019,10 +1024,10 @@ def model_selector(models) -> bool:
     )
 
     def funct(prompt):
-        oldargs = copy.deepcopy(vars(args_.getargs()))
+        oldargs = copy.deepcopy(vars(global_args.getArgs()))
         userselector.setfilter()
         userselector.setsort()
-        if oldargs != vars(args_.getargs()):
+        if oldargs != vars(global_args.getArgs()):
             nonlocal models
             models = userselector.filterNSort(userselector.ALL_SUBS)
         choices = list(
@@ -1284,7 +1289,7 @@ def decide_sort_prompt():
             {
                 "type": "list",
                 "name": "input",
-                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {args_.getargs().sort.capitalize()} in {'Ascending' if not args_.getargs().desc else 'Descending'} order",
+                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {global_args.getArgs().sort.capitalize()} in {'Ascending' if not global_args.getArgs().desc else 'Descending'} order",
                 "default": "No",
                 "choices": ["Yes", "No"],
             }
@@ -1390,7 +1395,7 @@ def manual_config_prompt(configText) -> str:
                 "multiline": True,
                 "name": name,
                 "default": configText,
-                "long_message": prompt_strings.CONFIG_MULTI,
+                "long_message": prompt_strings.MULTI,
                 "message": "Edit config text\n===========\n",
             }
         ]

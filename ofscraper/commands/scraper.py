@@ -22,6 +22,8 @@ from functools import partial
 import arrow
 import schedule
 
+import ofscraper.actions.like as like
+import ofscraper.actions.scraper as OF
 import ofscraper.api.init as init
 import ofscraper.api.profile as profile
 import ofscraper.classes.placeholder as placeholder
@@ -29,52 +31,61 @@ import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
 import ofscraper.filters.models.selector as userselector
-import ofscraper.interaction.like as like
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.auth as auth
-import ofscraper.utils.config as config
+import ofscraper.utils.config.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-import ofscraper.utils.exit as exit
+import ofscraper.utils.context.exit as exit
+import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.logger as logger
-import ofscraper.utils.network as network
-import ofscraper.utils.of as OF
-import ofscraper.utils.paths as paths
-import ofscraper.utils.profiles as profiles
+import ofscraper.utils.paths.check as check
+import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.profiles.manage as profiles_manage
+import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.startvals as startvals
-import ofscraper.utils.stdout as stdout
+import ofscraper.utils.system.network as network
 
 log = logging.getLogger("shared")
 count = 0
 
 
-def process_selected_areas():
+def add_selected_areas(count=None):
     functs = []
+    count = count or 0
+    if "download" in global_args.getArgs().action:
+        actions.set_download_area()
+        functs.append(process_post)
+    if "like" in global_args.getArgs().action:
+        actions.set_like_area()
+        functs.append(process_like)
+    if "unlike" in global_args.getArgs().action:
+        actions.set_like_area()
+        functs.append(process_unlike)
+    if global_args.getArgs().scrape_paid:
+        functs.append(scrape_paid)
+    return functs
+
+
+def process_selected_areas():
     global count
     while True:
         count = count + 1
-        if "download" in args_.getargs().action:
-            actions.set_download_area()
-            functs.append(process_post)
-        if "like" in args_.getargs().action:
-            actions.set_like_area()
-            functs.append(process_like)
-        if "unlike" in args_.getargs().action:
-            actions.set_like_area()
-            functs.append(process_unlike)
-        if args_.getargs().scrape_paid:
-            functs.append(scrape_paid)
-        run(*functs)
-        if (
-            not config.get_InfiniteLoop(config.read_config())
-            or prompts.continue_prompt() == "No"
-        ):
+        functs = add_selected_areas()
+        run_helper(*functs)
+        if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
         if prompts.action_prompt() == "Main Menu":
             process_prompts()
             break
+
+
+def daemon_process():
+    functs = add_selected_areas()
+    daemon_run_helper(functs)
 
 
 @exit.exit_wrapper
@@ -82,74 +93,62 @@ def process_prompts():
     global count
     while True:
         result_main_prompt = prompts.main_prompt()
-        if result_main_prompt < 3:
-            count = count + 1
-        # download
-        if result_main_prompt == 0:
-            check_auth()
-            check_config()
-            actions.select_areas(action="download", reset=count > 1)
-            run(process_post)
-
-        # like a user's posts
-        elif result_main_prompt == 1:
-            check_auth()
-            check_config()
-            actions.select_areas(action="like", reset=count > 1)
-            run(process_like)
-
-        # Unlike a user's posts
-        elif result_main_prompt == 2:
-            check_auth()
-            check_config()
-            actions.select_areas(action="unlike", reset=count > 1)
-            run(process_unlike)
-
-        elif result_main_prompt == 3:
-            # Edit `auth.json` file
-            auth.edit_auth()
-
-        elif result_main_prompt == 4:
-            # Edit `config.json` file
-            config.edit_config()
-
-        elif result_main_prompt == 5:
-            # Edit `config.json` file
-            config.edit_config_advanced()
-
-        elif result_main_prompt == 6:
-            # Display  `Profiles` menu
-            result_profiles_prompt = prompts.profiles_prompt()
-
-            if result_profiles_prompt == 0:
-                # Change profiles
-                profiles.change_profile()
-
-            elif result_profiles_prompt == 1:
-                # Edit a profile
-                profiles.edit_profile_name()
-
-            elif result_profiles_prompt == 2:
-                # Create a new profile
-
-                profiles.create_profile()
-
-            elif result_profiles_prompt == 3:
-                # Delete a profile
-                profiles.delete_profile()
-
-            elif result_profiles_prompt == 4:
-                # View profiles
-                profiles.print_profiles()
-        elif result_main_prompt == 7:
+        if main_prompt_action(result_main_prompt):
             break
         if prompts.continue_prompt() == "No":
             break
 
 
+def main_prompt_action(result_main_prompt):
+    if result_main_prompt == 0:
+        count = count + 1
+        prompts.action_prompt()
+        functs = add_selected_areas(count=count)
+        run_helper(functs)
+
+    elif result_main_prompt == 1:
+        # Edit `auth.json` file
+        auth.edit_auth()
+
+    elif result_main_prompt == 2:
+        # Edit `data.json` file
+        data.edit_config()
+
+    elif result_main_prompt == 3:
+        # Edit `data.json` file
+        data.edit_config_advanced()
+
+    elif result_main_prompt == 4:
+        # Display  `Profiles` menu
+        result_profiles_prompt = prompts.profiles_prompt()
+
+        if result_profiles_prompt == 0:
+            # Change profiles
+            profiles_manage.change_profile()
+
+        elif result_profiles_prompt == 1:
+            # Edit a profile
+            profiles_manage.edit_profile_name()
+
+        elif result_profiles_prompt == 2:
+            # Create a new profile
+
+            profiles_manage.create_profile()
+
+        elif result_profiles_prompt == 3:
+            # Delete a profile
+            profiles_manage.delete_profile()
+
+        elif result_profiles_prompt == 4:
+            # View profiles
+            profile_tools.print_profiles()
+    elif result_main_prompt == 5:
+        return True
+
+
 @exit.exit_wrapper
 def process_post():
-    if args_.getargs().users_first:
+    if global_args.getArgs().users_first:
         process_post_user_first()
     else:
         normal_post_process()
@@ -166,7 +165,7 @@ def process_post_user_first():
             )
             time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
 
-        profiles.print_current_profile()
+        profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
@@ -176,9 +175,9 @@ def process_post_user_first():
             log.info(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if args_.getargs().posts:
+            if global_args.getArgs().posts:
                 log.info(
-                    f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                    f"Getting {','.join(global_args.getArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = ele.id
@@ -227,7 +226,7 @@ def normal_post_process():
             "
             )
             time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
-        profiles.print_current_profile()
+        profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
@@ -235,9 +234,9 @@ def normal_post_process():
             log.warning(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if args_.getargs().posts:
+            if global_args.getArgs().posts:
                 log.warning(
-                    f"Getting {','.join(args_.getargs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                    f"Getting {','.join(global_args.getArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = ele.id
@@ -252,7 +251,7 @@ def normal_post_process():
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
 
-        if args_.getargs().scrape_paid:
+        if global_args.getArgs().scrape_paid:
             user_dict = {}
             [
                 user_dict.update(
@@ -292,7 +291,7 @@ def normal_post_process():
 @exit.exit_wrapper
 def process_like():
     with scrape_context_manager():
-        profiles.print_current_profile()
+        profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
         active = list(filter(lambda x: x.active, userdata))
@@ -321,7 +320,7 @@ def process_like():
 @exit.exit_wrapper
 def process_unlike():
     with scrape_context_manager():
-        profiles.print_current_profile()
+        profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
         active = list(filter(lambda x: x.active, userdata))
@@ -347,7 +346,7 @@ def process_unlike():
 
 # Adds a function to the job queue
 def set_schedule(*functs):
-    schedule.every(args_.getargs().daemon).minutes.do(schedule_helper, functs)
+    schedule.every(global_args.getArgs().daemon).minutes.do(schedule_helper, functs)
     while len(schedule.jobs) > 0:
         schedule.run_pending()
         time.sleep(30)
@@ -363,81 +362,76 @@ def schedule_helper(functs):
     jobqueue.put(logger.closeThreads)
 
 
-## run script once or on schedule based on args
-def run(*functs):
-    # get usernames prior to potentially supressing output
-    check_auth()
-
-    if args_.getargs().output == "PROMPT":
+def daemon_run_helper(*functs):
+    global jobqueue
+    jobqueue = queue.Queue()
+    worker_thread = None
+    [jobqueue.put(funct) for funct in functs]
+    if global_args.getArgs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
-    if args_.getargs().daemon:
-        log.info(f"[bold]daemon mode on[/bold]")
-    run_helper(*functs)
+    check_auth()
+    log.info(f"[bold]daemon mode on[/bold]")
+    userselector.getselected_usernames(rescan=True, reset=True)
+    actions.select_areas()
+    try:
+        worker_thread = threading.Thread(
+            target=set_schedule, args=[*functs], daemon=True
+        )
+        worker_thread.start()
+        # Check if jobqueue has function
+        while True:
+            job_func = jobqueue.get()
+            job_func()
+            jobqueue.task_done()
+            log.debug(list(map(lambda x: x, schedule.jobs)))
+    except KeyboardInterrupt as E:
+        try:
+            with exit.DelayedKeyboardInterrupt():
+                schedule.clear()
+            raise KeyboardInterrupt
+        except KeyboardInterrupt:
+            with exit.DelayedKeyboardInterrupt():
+                schedule.clear()
+                raise E
+    except Exception as E:
+        try:
+            with exit.DelayedKeyboardInterrupt():
+                schedule.clear()
+            raise E
+        except KeyboardInterrupt:
+            with exit.DelayedKeyboardInterrupt():
+                schedule.clear()
+                raise E
 
 
 def run_helper(*functs):
     # run each function once
     global jobqueue
     jobqueue = queue.Queue()
-    worker_thread = None
     [jobqueue.put(funct) for funct in functs]
-    if args_.getargs().daemon:
-        # update stream before
-        userselector.getselected_usernames(rescan=True, reset=True)
-        actions.select_areas()
+    if global_args.getArgs().output == "PROMPT":
+        log.info(f"[bold]silent-mode on[/bold]")
+    try:
+        for _ in functs:
+            job_func = jobqueue.get()
+            job_func()
+            jobqueue.task_done()
+        args_.clearDate()
+    except KeyboardInterrupt:
         try:
-            worker_thread = threading.Thread(
-                target=set_schedule, args=[*functs], daemon=True
-            )
-            worker_thread.start()
-            # Check if jobqueue has function
-            while True:
-                job_func = jobqueue.get()
-                job_func()
-                jobqueue.task_done()
-                log.debug(list(map(lambda x: x, schedule.jobs)))
-        except KeyboardInterrupt as E:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
+            with exit.DelayedKeyboardInterrupt():
                 raise KeyboardInterrupt
-            except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                    raise E
-        except Exception as E:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                raise E
-            except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                    raise E
-
-        # update selected user
-    else:
-        try:
-            for _ in functs:
-                job_func = jobqueue.get()
-                job_func()
-                jobqueue.task_done()
-            args_.clearDate()
         except KeyboardInterrupt:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    raise KeyboardInterrupt
-            except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    schedule.clear()
-                    raise KeyboardInterrupt
-        except Exception as E:
-            try:
-                with exit.DelayedKeyboardInterrupt():
-                    raise E
-            except KeyboardInterrupt:
-                with exit.DelayedKeyboardInterrupt():
-                    raise E
+            with exit.DelayedKeyboardInterrupt():
+                schedule.clear()
+                raise KeyboardInterrupt
+    except Exception as E:
+        try:
+            with exit.DelayedKeyboardInterrupt():
+                raise E
+        except KeyboardInterrupt:
+            with exit.DelayedKeyboardInterrupt():
+                raise E
 
 
 def check_auth():
@@ -452,26 +446,18 @@ def check_auth():
 
 
 def check_config():
-    while not paths.mp4decryptchecker(config.get_mp4decrypt(config.read_config())):
+    while not check.mp4decryptchecker(data.get_mp4decrypt()):
         console.get_shared_console().print(
             "There is an issue with the mp4decrypt path\n\n"
         )
-        log.debug(
-            f"[bold]current mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}"
-        )
-        config.update_mp4decrypt()
-    while not paths.ffmpegchecker(config.get_ffmpeg(config.read_config())):
+        log.debug(f"[bold]current mp4decrypt path[/bold] {data.get_mp4decrypt()}")
+        config_.update_mp4decrypt()
+    while not check.ffmpegchecker(data.get_ffmpeg()):
         console.get_shared_console().print("There is an issue with the ffmpeg path\n\n")
-        log.debug(
-            f"[bold]current ffmpeg path[/bold] {config.get_ffmpeg(config.read_config())}"
-        )
-        config.update_ffmpeg()
-    log.debug(
-        f"[bold]final mp4decrypt path[/bold] {config.get_mp4decrypt(config.read_config())}"
-    )
-    log.debug(
-        f"[bold]final ffmpeg path[/bold] {config.get_ffmpeg(config.read_config())}"
-    )
+        log.debug(f"[bold]current ffmpeg path[/bold] {data.get_ffmpeg()}")
+        config_.update_ffmpeg()
+    log.debug(f"[bold]final mp4decrypt path[/bold] {data.get_mp4decrypt()}")
+    log.debug(f"[bold]final ffmpeg path[/bold] {data.get_ffmpeg()}")
 
 
 @contextmanager
@@ -501,7 +487,7 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green] Welcome to OF-Scraper Version {args_.getargs().version}[/bold green]"
+            f"[bold green] Welcome to OF-Scraper Version {global_args.getArgs().version}[/bold green]"
         )
 
 
@@ -541,16 +527,13 @@ def scrapper():
         os.system("color")
     global selectedusers
     selectedusers = None
-    args = args_.getargs()
+    args = global_args.getArgs()
     if args.daemon:
         if len(args.action) == 0 and not args.scrape_paid:
-            if prompts.action_prompt() == "Main Menu":
-                args.daemon = False
-                args_.changeargs(args)
-                process_prompts()
+            prompts.action_prompt()
         check_auth()
         check_config()
-        process_selected_areas()
+        daemon_process()
     elif len(args.action) > 0:
         check_auth()
         check_config()

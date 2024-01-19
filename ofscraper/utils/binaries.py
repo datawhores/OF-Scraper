@@ -11,7 +11,7 @@ import httpx
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn
 
 import ofscraper.utils.constants as constants
-import ofscraper.utils.paths as paths_
+import ofscraper.utils.paths.paths as paths_
 
 
 def mp4decrypt_download():

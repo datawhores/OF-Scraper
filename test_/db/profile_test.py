@@ -4,9 +4,9 @@ import pytest
 
 from ofscraper.classes.media import Media
 from ofscraper.classes.posts import Post
+from ofscraper.const.test_constants import *
 from ofscraper.db.operations import *
-from ofscraper.utils.paths import cleanDB
-from test_.test_constants import *
+from ofscraper.utils.paths.paths import cleanDB
 
 
 def test_profile_create(mocker):

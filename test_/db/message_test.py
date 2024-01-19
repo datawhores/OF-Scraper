@@ -4,8 +4,8 @@ import pytest
 
 from ofscraper.classes.media import Media
 from ofscraper.classes.posts import Post
+from ofscraper.const.test_constants import *
 from ofscraper.db.operations import *
-from test_.test_constants import *
 
 
 def test_message_create(mocker):

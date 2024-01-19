@@ -2,7 +2,7 @@
 import multiprocessing
 
 import ofscraper.start as start
-import ofscraper.utils.system as system
+import ofscraper.utils.system.system as system
 
 
 def main():

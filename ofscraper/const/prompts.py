@@ -1,10 +1,10 @@
 mainPromptChoices = {
     "Perform Action": 0,
-    "Edit auth.json file": 3,
-    "Edit config.json file": 4,
-    "Edit advanced config.json settings": 5,
-    "Edit Profile": 6,
-    "Quit": 7,
+    "Edit auth.json file": 1,
+    "Edit config.json file": 2,
+    "Edit advanced config.json settings": 3,
+    "Edit Profile": 4,
+    "Quit": 5,
 }
 
 

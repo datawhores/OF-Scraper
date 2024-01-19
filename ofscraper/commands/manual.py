@@ -1,6 +1,7 @@
 import logging
 import re
 
+import ofscraper.actions.scraper as of
 import ofscraper.api.highlights as highlights_
 import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid
@@ -10,10 +11,9 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.network as network
-import ofscraper.utils.of as of
+import ofscraper.utils.system.network as network
 
 
 def manual_download(urls=None):
@@ -21,7 +21,7 @@ def manual_download(urls=None):
     network.check_cdm()
     media_dict = get_media_from_urls(urls)
     log.debug(f"Media dict length {len(list(media_dict.values()))}")
-    args = args_.getargs()
+    args = global_args.getArgs()
     args.dupe = True
     args_.changeargs(args)
 
@@ -40,7 +40,7 @@ def manual_download(urls=None):
 
 
 def get_media_from_urls(urls):
-    args = args_.getargs()
+    args = global_args.getArgs()
     args.dupe = True
     args_.changeargs(args)
     user_name_dict = {}
@@ -169,7 +169,7 @@ def get_info(url):
 
 
 def url_helper(urls):
-    args = args_.getargs()
+    args = global_args.getArgs()
     args = vars(args)
     out = []
     out.extend(args.get("file", []) or [])

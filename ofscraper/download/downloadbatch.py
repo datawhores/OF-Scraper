@@ -17,15 +17,15 @@ from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
-import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-import ofscraper.utils.exit as exit
+import ofscraper.utils.context.exit as exit
+import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.logger as logger
 import ofscraper.utils.manager as manager_
-import ofscraper.utils.stdout as stdout
-import ofscraper.utils.system as system
+import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.common import (
     addGlobalDir,
@@ -38,7 +38,7 @@ from ofscraper.download.common import (
     subProcessVariableInit,
 )
 from ofscraper.download.main_downloadbatch import main_download
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 platform_name = platform.system()
 
@@ -82,7 +82,7 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    args_.getargs(),
+                    global_args.getArgs(),
                 ),
             )
             for i in range(num_proc)
@@ -220,8 +220,7 @@ downloads total [{common.video_count} videos, {common.audio_count} audios, {comm
 def queue_process(pipe_, overall_progress, job_progress, task1, total):
     count = 0
     downloadprogress = (
-        config_.get_show_downloadprogress(config_.read_config())
-        or args_.getargs().downloadbars
+        global_args.getArgs().downloadbars or config_data.get_show_downloadprogress()
     )
     # shared globals
 
@@ -296,9 +295,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
 
 
 def get_mediasplits(medialist):
-    user_count = config_.get_threads(
-        config_.read_config() or args_.getargs().downloadthreads
-    )
+    user_count = global_args.getArgs().downloadthreads or config_data.get_threads()
     final_count = min(user_count, system.getcpu_count(), len(medialist) // 5)
     if final_count == 0:
         final_count = 1

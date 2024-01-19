@@ -19,13 +19,13 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args as args
-import ofscraper.utils.config as config_
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager_
-import ofscraper.utils.paths as paths
-import ofscraper.utils.system as system
+import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.system.system as system
 
 queue_ = None
 otherqueue_ = None
@@ -166,7 +166,7 @@ class DiscordHandler(logging.Handler):
                                 raise Exception
 
                 log_entry = self.format(record)
-                url = config_.get_discord(config_.read_config())
+                url = data.get_discord()
                 log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
                 log_entry = f"{log_entry}\n\n"
                 if url == None or url == "":
@@ -305,17 +305,17 @@ def init_stdout_logger(name=None):
         show_level=False,
         console=console.get_shared_console(),
     )
-    sh.setLevel(getLevel(args.getargs().output))
+    sh.setLevel(getLevel(global_args.getArgs().output))
     sh.setFormatter(SensitiveFormatter(format))
     sh.addFilter(NoDebug())
     tx = TextHandler()
-    tx.setLevel(getLevel(args.getargs().output))
+    tx.setLevel(getLevel(global_args.getArgs().output))
     tx.setFormatter(SensitiveFormatter(format))
     log.addHandler(sh)
     log.addHandler(tx)
 
-    if args.getargs().output in {"TRACE", "DEBUG"}:
-        funct = DebugOnly if args.getargs().output == "DEBUG" else TraceOnly
+    if global_args.getArgs().output in {"TRACE", "DEBUG"}:
+        funct = DebugOnly if global_args.getArgs().output == "DEBUG" else TraceOnly
         sh2 = RichHandler(
             rich_tracebacks=True,
             console=console.get_shared_console(),
@@ -323,7 +323,7 @@ def init_stdout_logger(name=None):
             tracebacks_show_locals=True,
             show_time=False,
         )
-        sh2.setLevel(args.getargs().output)
+        sh2.setLevel(global_args.getArgs().output)
         sh2.setFormatter(SensitiveFormatter(format))
         sh2.addFilter(funct())
         log.addHandler(sh2)
@@ -341,25 +341,25 @@ def init_other_logger(name):
     # # #log file
     # #discord
     cord = DiscordHandler()
-    cord.setLevel(getLevel(args.getargs().discord))
+    cord.setLevel(getLevel(global_args.getArgs().discord))
     cord.setFormatter(SensitiveFormatter("%(message)s"))
     # console
     log.addHandler(cord)
-    if args.getargs().log != "OFF":
+    if global_args.getArgs().log != "OFF":
         stream = open(
-            paths.getlogpath(),
+            common_paths.getlogpath(),
             encoding="utf-8",
             mode="a",
         )
         fh = logging.StreamHandler(stream)
-        fh.setLevel(getLevel(args.getargs().log))
+        fh.setLevel(getLevel(global_args.getArgs().log))
         fh.setFormatter(LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh.addFilter(NoDebug())
         log.addHandler(fh)
-    if args.getargs().log in {"TRACE", "DEBUG"}:
-        funct = DebugOnly if args.getargs().output == "DEBUG" else TraceOnly
+    if global_args.getArgs().log in {"TRACE", "DEBUG"}:
+        funct = DebugOnly if global_args.getArgs().output == "DEBUG" else TraceOnly
         fh2 = logging.StreamHandler(stream)
-        fh2.setLevel(getLevel(args.getargs().log))
+        fh2.setLevel(getLevel(global_args.getArgs().log))
         fh2.setFormatter(LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(funct())
         log.addHandler(fh2)
@@ -368,11 +368,11 @@ def init_other_logger(name):
 
 # updates stream for main process
 def updateOtherLoggerStream():
-    if args.getargs().discord == "OFF" and args.getargs().log == "OFF":
+    if global_args.getArgs().discord == "OFF" and global_args.getArgs().log == "OFF":
         return
     args.resetGlobalDateHelper()
     stream = open(
-        paths.getlogpath(),
+        common_paths.getlogpath(),
         encoding="utf-8",
         mode="a",
     )
@@ -505,9 +505,9 @@ def start_stdout_logthread(input_=None, name=None, count=1, event=None):
 # wrapper function for discord and  log, check if threads/process should star
 def start_checker(func: abc.Callable):
     def inner(*args_, **kwargs):
-        if args.getargs().discord and args.getargs().discord != "OFF":
+        if global_args.getArgs().discord and global_args.getArgs().discord != "OFF":
             return func(*args_, **kwargs)
-        elif args.getargs().log and args.getargs().log != "OFF":
+        elif global_args.getArgs().log and global_args.getArgs().log != "OFF":
             return func(*args_, **kwargs)
 
     return inner
@@ -539,7 +539,7 @@ def start_other_process(input_=None, count=1):
     input_ = otherqueue_
     process = aioprocessing.AioProcess(
         target=inner,
-        args=(args.getargs(),),
+        args=(global_args.getArgs(),),
         kwargs={"input_": input_, "count": count},
         daemon=True,
     )
@@ -568,11 +568,11 @@ def get_shared_logger(main_=None, other_=None, name=None):
         mainhandle = QueueHandler(main_)
     elif hasattr(main_, "send"):
         mainhandle = PipeHandler(main_)
-    mainhandle.setLevel(getLevel(args.getargs().output))
+    mainhandle.setLevel(getLevel(global_args.getArgs().output))
     # add a handler that uses the shared queue
     logger.addHandler(mainhandle)
-    discord_level = getNumber(args.getargs().discord)
-    file_level = getNumber(args.getargs().log)
+    discord_level = getNumber(global_args.getArgs().discord)
+    file_level = getNumber(global_args.getArgs().log)
     other_ = other_ or otherqueue_
     if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
         otherhandle = QueueHandler(other_)
@@ -666,7 +666,7 @@ def closeQueue():
 
 
 def discord_warning():
-    if args.getargs().discord == "DEBUG":
+    if global_args.getArgs().discord == "DEBUG":
         console.get_shared_console().print(
             "[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]"
         )

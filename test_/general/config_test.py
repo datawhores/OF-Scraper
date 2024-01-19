@@ -3,11 +3,13 @@ import tempfile
 
 from pytest_check import check
 
-import ofscraper.utils.config as config_
-import ofscraper.utils.paths as paths_
-from ofscraper.utils.config import *
-from ofscraper.utils.profiles import *
-from test_.test_constants import *
+import ofscraper.config.config as config_
+import ofscraper.config.data as data
+import ofscraper.utils.paths.paths as paths_
+from ofscraper.config.config import *
+from ofscraper.config.data import *
+from ofscraper.const.test_constants import *
+from ofscraper.utils.profiles2.profiles import *
 
 # def test_current_schema(mocker):
 #     migrationConfig={"config":{
@@ -23,9 +25,9 @@ from test_.test_constants import *
 #         "mp4decrypt":MP4DECRYPT_DEFAULT
 #     }}
 
-#     currentConfig=get_current_config_schema(migrationConfig)
+#     currentConfig=get_current_data.schema(migrationConfig)
 
-#     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(CONFIG_KEYS))
+#     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(data.KEYS))
 
 
 def test_new_config_location(mocker):
@@ -59,9 +61,9 @@ def test_new_config_location(mocker):
 #         "save_location": SAVE_PATH_DEFAULT,
 #         "file_size_limit": FILE_SIZE_LIMIT_DEFAULT,
 #     }}
-#     currentConfig=get_current_config_schema(migrationConfig)
+#     currentConfig=get_current_data.schema(migrationConfig)
 
-#     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(CONFIG_KEYS))
+#     assert(sorted(set(currentConfig["config"].keys())))==sorted(set(data.KEYS))
 
 
 def test_savelocation(mocker):

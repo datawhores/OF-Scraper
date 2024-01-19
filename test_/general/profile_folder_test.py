@@ -2,11 +2,11 @@ import tempfile
 
 from pytest_check import check
 
-import ofscraper.utils.config as config_
-import ofscraper.utils.paths as paths_
-from ofscraper.utils.config import *
-from ofscraper.utils.profiles import *
-from test_.test_constants import *
+import ofscraper.utils.paths.paths as paths_
+from ofscraper.config.config import *
+from ofscraper.config.data import *
+from ofscraper.const.test_constants import *
+from ofscraper.utils.profiles2.profiles import *
 
 
 def test_configarg_path_single_file(mocker):

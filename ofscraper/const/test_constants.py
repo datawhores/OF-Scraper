@@ -2,9 +2,6 @@
 ADD SOME ADDITIONAL CONSTANTS FOR TESTING
 """
 
-
-from ofscraper.constants import *
-
 DIR_FORMAT_INVALID = "{model_username}/{responsetype}/{mediatype2}/"
 DIR_FORMAT_ALLVALID = "{model_username}{date}{responsetype}{mediatype}{value}{model_id}{first_letter}{sitename}{model_username}"
 DIR_FORMAT_ALLWTHINVALID = "{invalid}{model_username}{date}{responsetype}{mediatype}{value}{model_id}{first_letter}{sitename}{model_username}"

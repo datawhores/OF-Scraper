@@ -20,10 +20,10 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.auth as auth
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.download.common import get_medialog
 
@@ -38,11 +38,7 @@ def setLog(input_):
 async def un_encrypt(item, c, ele, input_=None):
     setLog(input_ or common.log)
     key = None
-    keymode = (
-        args_.getargs().key_mode
-        or config_.get_key_mode(config_.read_config())
-        or "cdrm"
-    )
+    keymode = global_args.getArgs().key_mode or data.get_key_mode() or "cdrm"
     past_key = await asyncio.get_event_loop().run_in_executor(
         common.cache_thread, partial(cache.get, ele.license)
     )
@@ -70,7 +66,7 @@ async def un_encrypt(item, c, ele, input_=None):
     )
     r = subprocess.run(
         [
-            config_.get_mp4decrypt(config_.read_config()),
+            data.get_mp4decrypt(),
             "--key",
             key,
             str(item["path"]),
@@ -220,7 +216,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                 headers = {
                     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Ktesttemp, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
                     "Content-Type": "application/json",
-                    "X-API-Key": config_.get_keydb_api(config_.read_config()),
+                    "X-API-Key": data.get_keydb_api(),
                 }
 
                 async with c.requests(
@@ -284,12 +280,8 @@ async def key_helper_manual(c, pssh, licence_url, id):
                     pssh_obj = PSSH(pssh)
 
                     # load device
-                    private_key = pathlib.Path(
-                        config_.get_private_key(config_.read_config())
-                    ).read_bytes()
-                    client_id = pathlib.Path(
-                        config_.get_client_id(config_.read_config())
-                    ).read_bytes()
+                    private_key = pathlib.Path(data.get_private_key()).read_bytes()
+                    client_id = pathlib.Path(data.get_client_id()).read_bytes()
                     device = Device(
                         security_level=3,
                         private_key=private_key,

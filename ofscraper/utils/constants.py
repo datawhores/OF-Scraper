@@ -1,8 +1,7 @@
 # trunk-ignore-all(black)
-import importlib
-
-from ofscraper.constants import *
-from test_.test_constants import *
+import ofscraper.utils.config.custom as custom_
+from ofscraper.const.constants import *
+from ofscraper.const.test_constants import *
 
 custom=None
 
@@ -12,7 +11,6 @@ def getattr(val):
     if  val in { "configPath","configFile"}:
         return globals()[val]
     if custom ==None:
-        config_=importlib.import_module("ofscraper.utils.config")
-        custom=(config_.get_custom(config_.read_config(update=False)))
+        custom=custom_.get_custom()
     return (custom or {}).get(val) or globals()[val]
 

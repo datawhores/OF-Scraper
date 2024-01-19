@@ -1,9 +1,9 @@
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 
 
 def sort_models_helper(models):
-    sort = args_.getargs().sort
-    reverse = args_.getargs().desc
+    sort = global_args.getArgs().sort
+    reverse = global_args.getArgs().desc
     if sort == "name":
         return sorted(models, reverse=reverse, key=lambda x: x.name)
 

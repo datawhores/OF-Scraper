@@ -32,13 +32,13 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config as config_
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
-import ofscraper.utils.paths as paths
+import ofscraper.utils.paths.paths as paths
 from ofscraper.download.common import (
     addGlobalDir,
     check_forced_skip,
@@ -60,7 +60,7 @@ from ofscraper.download.common import (
 async def alt_download(c, ele, username, model_id, progress):
     common.log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")
     common.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
-    if args_.getargs().metadata:
+    if global_args.getArgs().metadata:
         return await metadata(
             c,
             ele,
@@ -106,7 +106,7 @@ async def alt_download(c, ele, username, model_id, progress):
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
         [
-            config_.get_ffmpeg(config_.read_config()),
+            data.get_ffmpeg(),
             "-i",
             str(video["path"]),
             "-i",
@@ -306,8 +306,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
     pathstr = str(placeholderObj.tempfilename)
 
     downloadprogress = (
-        config_.get_show_downloadprogress(config_.read_config())
-        or args_.getargs().downloadbars
+        data.get_show_downloadprogress() or global_args.getArgs().downloadbars
     )
 
     task1 = progress.add_task(
@@ -388,8 +387,8 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 pathlib.Path(placeholderObj.tempfilename).unlink(missing_ok=True) if (
-                    args_.getargs().no_auto_resume
-                    or not config_.get_part_file_clean(config_.read_config())
+                    global_args.getArgs().no_auto_resume
+                    or not data.get_part_file_clean()
                     or False
                 ) else None
 

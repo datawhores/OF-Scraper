@@ -2,7 +2,6 @@ import logging
 import re
 
 import arrow
-from diskcache import Cache
 from rich.text import Text
 from textual import events
 from textual.app import App, ComposeResult
@@ -17,10 +16,7 @@ from textual.widgets import (
     TextLog,
 )
 
-import ofscraper.utils.console as console_
 import ofscraper.utils.logger as logger
-
-from ..utils.paths import getcachepath
 
 log = logging.getLogger("shared")
 

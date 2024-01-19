@@ -26,10 +26,10 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -69,13 +69,16 @@ async def activeHelper(subscribe_count, c):
     global new_tasks
 
     if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST") in args_.getargs().black_list
-        or constants.getattr("OFSCRAPER_ACTIVE_LIST") in args_.getargs().black_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST") in global_args.getArgs().black_list
+        or constants.getattr("OFSCRAPER_ACTIVE_LIST")
+        in global_args.getArgs().black_list
     ):
         return []
     if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST") not in args_.getargs().user_list
-        and constants.getattr("OFSCRAPER_ACTIVE_LIST") not in args_.getargs().user_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST")
+        not in global_args.getArgs().user_list
+        and constants.getattr("OFSCRAPER_ACTIVE_LIST")
+        not in global_args.getArgs().user_list
     ):
         return []
     funct = scrape_subscriptions_active
@@ -108,13 +111,16 @@ async def expiredHelper(subscribe_count, c):
     global new_tasks
 
     if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST") in args_.getargs().black_list
-        or constants.getattr("OFSCRAPER_EXPIRED_LIST") in args_.getargs().black_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST") in global_args.getArgs().black_list
+        or constants.getattr("OFSCRAPER_EXPIRED_LIST")
+        in global_args.getArgs().black_list
     ):
         return []
     if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST") not in args_.getargs().user_list
-        and constants.getattr("OFSCRAPER_EXPIRED_LIST") not in args_.getargs().user_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST")
+        not in global_args.getArgs().user_list
+        and constants.getattr("OFSCRAPER_EXPIRED_LIST")
+        not in global_args.getArgs().user_list
     ):
         return []
     funct = scrape_subscriptions_disabled

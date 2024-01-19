@@ -9,7 +9,7 @@ import ofscraper.filters.models.retriver as retriver
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.constants as constants
 
 ALL_SUBS = None
@@ -30,13 +30,13 @@ def getselected_usernames(rescan=False, reset=False):
         prompt = prompts.reset_username_prompt()
         if prompt == "Selection":
             PARSED_SUBS = None
-            args_.getargs().username = None
+            global_args.getArgs().username = None
             args_.changeargs(args)
         if prompt == "No":
             rescan = False
     if rescan is True:
         PARSED_SUBS = None
-    if not PARSED_SUBS or not args_.getargs().username:
+    if not PARSED_SUBS or not global_args.getArgs().username:
         all_subs_helper()
         parsed_subscriptions_helper()
     return PARSED_SUBS
@@ -60,16 +60,16 @@ def parsed_subscriptions_helper(force=False):
     global ALL_SUBS
     global PARSED_SUBS
     global args
-    args = args_.getargs()
-    if not args_.getargs().username:
+    args = global_args.getArgs()
+    if not global_args.getArgs().username:
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
-        args_.getargs().username = list(map(lambda x: x.name, selectedusers))
+        global_args.getArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         args_.changeargs(args)
-    elif "ALL" in args_.getargs().username:
+    elif "ALL" in global_args.getArgs().username:
         PARSED_SUBS = filterNSort(ALL_SUBS)
-    elif args_.getargs().username:
-        usernameset = set(args_.getargs().username)
+    elif global_args.getArgs().username:
+        usernameset = set(global_args.getArgs().username)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
 
     return PARSED_SUBS
@@ -106,12 +106,12 @@ def filterNSort(usernames):
             f"""You have filtered the user list to zero
 Change the filter settings to continue
 
-Sub Status: {args_.getargs().sub_status or 'No Filter'}
-Renewal Status: {args_.getargs().renewal or 'No Filter'}
-Promo Price Filter: {args_.getargs().promo_price or 'No Filter'}
-Current Price Filter: {args_.getargs().current_price or 'No Filter'}
-Current Price Filter: {args_.getargs().current_price or 'No Filter'}
-Renewal Price Filter: {args_.getargs().renewal_price or 'No Filter'}
+Sub Status: {global_args.getArgs().sub_status or 'No Filter'}
+Renewal Status: {global_args.getArgs().renewal or 'No Filter'}
+Promo Price Filter: {global_args.getArgs().promo_price or 'No Filter'}
+Current Price Filter: {global_args.getArgs().current_price or 'No Filter'}
+Current Price Filter: {global_args.getArgs().current_price or 'No Filter'}
+Renewal Price Filter: {global_args.getArgs().renewal_price or 'No Filter'}
 """
         )
 

@@ -10,9 +10,10 @@ from pathvalidate import validate_filename, validate_filepath
 from prompt_toolkit.validation import ValidationError, Validator
 
 import ofscraper.classes.placeholder as placeholders
-import ofscraper.utils.args as args_
-import ofscraper.utils.paths as paths
-import ofscraper.utils.profiles as profiles
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.paths.check as paths_check
+import ofscraper.utils.profiles.data as profiles_data
+import ofscraper.utils.profiles.tools as profiles_tools
 
 
 class MultiValidator(Validator):
@@ -45,8 +46,8 @@ class MultiValidator(Validator):
 
 def currentProfilesValidator():
     def callable(x):
-        x = profiles.profile_name_fixer(x)
-        return x not in set(profiles.get_profile_names())
+        x = profiles_tools.profile_name_fixer(x)
+        return x not in set(profiles_data.get_profile_names())
 
     return Validator.from_callable(
         callable, "You can not change name to a current profile name"
@@ -55,15 +56,17 @@ def currentProfilesValidator():
 
 def currentProfilesCreationValidator():
     def callable(x):
-        x = profiles.profile_name_fixer(x)
-        return x not in set(profiles.get_profile_names())
+        x = profiles_tools.profile_name_fixer(x)
+        return x not in set(profiles_data.get_profile_names())
 
     return Validator.from_callable(callable, "This Profile already exists")
 
 
 def currentProfileDeleteValidator():
     def callable(x):
-        return profiles.profile_name_fixer(x) != profiles.get_active_profile()
+        return (
+            profiles_tools.profile_name_fixer(x) != profiles_data.get_active_profile()
+        )
 
     return Validator.from_callable(callable, "You can not delete the active profile")
 
@@ -229,7 +232,7 @@ def dateplaceholdervalidator():
 
 def mp4decryptpathvalidator():
     def callable(x):
-        return paths.mp4decryptpathcheck(x)
+        return paths_check.mp4decryptpathcheck(x)
 
     return Validator.from_callable(
         callable,
@@ -244,7 +247,7 @@ Path to mp4decrypt is not valid filepath or does not exists
 
 def mp4decryptexecutevalidator():
     def callable(x):
-        return paths.mp4decryptexecutecheck(x)
+        return paths_check.mp4decryptexecutecheck(x)
 
     return Validator.from_callable(
         callable,
@@ -259,7 +262,7 @@ Path is valid but the given path could not be verified to be mp4decrypt
 
 def ffmpegpathvalidator():
     def callable(x):
-        return paths.ffmpegpathcheck(x)
+        return paths_check.ffmpegpathcheck(x)
 
     return Validator.from_callable(
         callable,
@@ -274,7 +277,7 @@ Path to ffmpeg is not valid filepath or does not exists
 
 def ffmpegexecutevalidator():
     def callable(x):
-        return paths.ffmpegexecutecheck(x)
+        return paths_check.ffmpegexecutecheck(x)
 
     return Validator.from_callable(
         callable,
@@ -289,7 +292,7 @@ Path is valid but the given path could not be verified to be ffmpeg
 
 def like_area_validator_posts():
     def callable(x):
-        args = args_.getargs()
+        args = global_args.getArgs()
         if not "like" in args.action and not "unlike" in args.action:
             return True
         elif len(args.like_area) > 0:

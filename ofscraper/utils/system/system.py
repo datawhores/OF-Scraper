@@ -4,24 +4,11 @@ import logging
 import multiprocessing
 import os
 import platform
-import shutil
 import subprocess
 import sys
 
 import psutil
 from setproctitle import setproctitle
-
-import ofscraper.utils.config as config_
-
-
-def space_checker(func):
-    def inner(*args, **kwargs):
-        space_limit = config_.get_system_freesize(config_.read_config())
-        if space_limit > 0 and space_limit > get_free():
-            raise Exception("Space min has been reached")
-        return func(*args, **kwargs)
-
-    return inner
 
 
 def is_frozen():
@@ -115,8 +102,3 @@ def setName():
         setproctitle("OF-Scraper")
     except Exception as E:
         log.debug(E)
-
-
-def get_free():
-    total, used, free = shutil.disk_usage("/")
-    return free

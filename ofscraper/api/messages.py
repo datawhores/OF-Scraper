@@ -29,12 +29,12 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -73,7 +73,7 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
             async with sessionbuilder.sessionBuilder() as c:
                 oldmessages = (
                     operations.get_messages_data(model_id=model_id, username=username)
-                    if not args_.getargs().no_cache
+                    if not global_args.getArgs().no_cache
                     else []
                 )
                 log.trace(
@@ -97,11 +97,11 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                     {"date": arrow.now().float_timestamp, "id": None}
                 ] + oldmessages
 
-                before = (args_.getargs().before or arrow.now()).float_timestamp
+                before = (global_args.getArgs().before or arrow.now()).float_timestamp
                 rescan = (
                     rescan
                     or cache.get("{model_id}_scrape_messages")
-                    and not args_.getargs().after
+                    and not global_args.getArgs().after
                 )
                 after = after = (
                     0 if rescan else forced_after or get_after(model_id, username)
@@ -441,8 +441,8 @@ def get_individual_post(model_id, postid, c=None):
 
 
 def get_after(model_id, username):
-    if args_.getargs().after:
-        return args_.getargs().after.float_timestamp
+    if global_args.getArgs().after:
+        return global_args.getArgs().after.float_timestamp
     if cache.get(f"{model_id}_scrape_messages"):
         log.debug(
             "Used after previously scraping entire timeline to make sure content is not missing"

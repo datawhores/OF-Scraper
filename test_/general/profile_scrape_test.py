@@ -1,6 +1,6 @@
 import ofscraper.api.me as me
 import ofscraper.api.profile as profile
-from test_.test_constants import *
+from ofscraper.const.test_constants import *
 
 
 def test_me():

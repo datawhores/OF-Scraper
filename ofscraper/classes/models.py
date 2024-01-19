@@ -1,6 +1,6 @@
 import arrow
 
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 
 FORMAT = "YYYY-MM-DD"
 
@@ -129,7 +129,7 @@ class Model:
             return True
         elif self.renewed:
             return True
-        elif arrow.get(self.final_expired) > args_.getargs().date_now:
+        elif arrow.get(self.final_expired) > global_args.getArgs().date_now:
             return True
         return False
 

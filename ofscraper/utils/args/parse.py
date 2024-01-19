@@ -1,19 +1,23 @@
 import argparse
-import pathlib
 import re
 import sys
 
-import arrow
 from humanfriendly import parse_size
 
-import ofscraper.constants as constants
-import ofscraper.utils.system as system
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
-
-args = None
+from ofscraper.const.constants import KEY_OPTIONS, OFSCRAPER_RESERVED_LIST
 
 
 def create_parser(input=None):
+    if "pytest" in sys.modules and input == None:
+        input = []
+    elif input == None:
+        input = sys.argv[1:]
+    if not system.get_parent():
+        input = []
     parent_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=True)
     general = parent_parser.add_argument_group("Program", description="Program Args")
     general.add_argument(
@@ -70,14 +74,14 @@ def create_parser(input=None):
         "-u",
         "--username",
         help="select which username to process (name,name2)\nSet to ALL for all users",
-        type=username_helper,
+        type=helpers.username_helper,
         action="extend",
     )
     scraper.add_argument(
         "-eu",
         "--excluded-username",
         help="select which usernames to exclude  (name,name2)\nThis has preference over --username",
-        type=username_helper,
+        type=helpers.username_helper,
         action="extend",
     )
 
@@ -102,7 +106,7 @@ def create_parser(input=None):
         help="perform batch action on users",
         default=[],
         required=False,
-        type=action_helper,
+        type=helpers.action_helper,
         action="extend",
     )
 
@@ -121,7 +125,7 @@ def create_parser(input=None):
         help="Perform action in following areas",
         default=[],
         required=False,
-        type=posttype_helper,
+        type=helpers.posttype_helper,
         action="extend",
     )
 
@@ -131,7 +135,7 @@ def create_parser(input=None):
         help="Download specified content from a model",
         default=[],
         required=False,
-        type=download_helper,
+        type=helpers.download_helper,
         action="extend",
     )
 
@@ -141,7 +145,7 @@ def create_parser(input=None):
         help="Batch unlike or likes in specific aera",
         default=[],
         required=False,
-        type=like_helper,
+        type=helpers.like_helper,
         action="extend",
     )
 
@@ -194,20 +198,20 @@ def create_parser(input=None):
         help="Filter by label",
         default=None,
         required=False,
-        type=label_helper,
+        type=helpers.label_helper,
         action="extend",
     )
     post.add_argument(
         "-be",
         "--before",
         help="Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts",
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
     post.add_argument(
         "-af",
         "--after",
         help="Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts",
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
     post.add_argument(
         "-mt",
@@ -215,7 +219,7 @@ def create_parser(input=None):
         help="Filter by media",
         default=[],
         required=False,
-        type=mediatype_helper,
+        type=helpers.mediatype_helper,
         action="extend",
     )
     post.add_argument(
@@ -558,7 +562,7 @@ def create_parser(input=None):
         help="Filter accounts by last seen being at or before the given date",
         default=None,
         required=False,
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
     adv_filters.add_argument(
         "-lsa",
@@ -566,7 +570,7 @@ def create_parser(input=None):
         help="Filter accounts by last seen being at or after the given date",
         default=None,
         required=False,
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
 
     adv_filters.add_argument(
@@ -575,7 +579,7 @@ def create_parser(input=None):
         help="Filter accounts by expiration/renewal being at or after the given date",
         default=None,
         required=False,
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
     adv_filters.add_argument(
         "-eb",
@@ -583,7 +587,7 @@ def create_parser(input=None):
         help="Filter accounts by expiration/renewal being at or before the given date",
         default=None,
         required=False,
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
     adv_filters.add_argument(
         "-sa",
@@ -591,7 +595,7 @@ def create_parser(input=None):
         help="Filter accounts by subscription date being after  the given date",
         default=None,
         required=False,
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
     adv_filters.add_argument(
         "-sb",
@@ -599,7 +603,7 @@ def create_parser(input=None):
         help="Filter accounts by sub date being at or before the given date",
         default=None,
         required=False,
-        type=arrow_helper,
+        type=helpers.arrow_helper,
     )
 
     sort = parser.add_argument_group(
@@ -654,7 +658,7 @@ def create_parser(input=None):
         help="key mode override",
         default=None,
         required=False,
-        choices=constants.KEY_OPTIONS,
+        choices=KEY_OPTIONS,
         type=str.lower,
     )
     advanced.add_argument(
@@ -719,7 +723,7 @@ def create_parser(input=None):
         help="Scan posts via url",
         default=None,
         required=False,
-        type=check_strhelper,
+        type=helpers.check_strhelper,
         action="extend",
     )
 
@@ -729,7 +733,7 @@ def create_parser(input=None):
         help="Scan posts via file\nWith line seperated URL(s)",
         default=None,
         required=False,
-        type=check_filehelper,
+        type=helpers.check_filehelper,
     )
 
     post_check.add_argument(
@@ -758,14 +762,14 @@ def create_parser(input=None):
         help="Scan messages via file\nWith line seperated URL(s)",
         default=None,
         required=False,
-        type=check_filehelper,
+        type=helpers.check_filehelper,
     )
 
     message_check.add_argument(
         "-u",
         "--url",
         help="scan messages via file",
-        type=check_strhelper,
+        type=helpers.check_strhelper,
         action="extend",
     )
 
@@ -787,14 +791,14 @@ def create_parser(input=None):
         help="Scan purchases via file\nWith line seperated usernames(s)",
         default=None,
         required=False,
-        type=check_filehelper,
+        type=helpers.check_filehelper,
     )
 
     paid_check.add_argument(
         "-u",
         "--username",
         help="Scan purchases via usernames",
-        type=check_strhelper,
+        type=helpers.check_strhelper,
         action="extend",
     )
 
@@ -816,14 +820,14 @@ def create_parser(input=None):
         help="Scan mevia file",
         default=None,
         required=False,
-        type=check_filehelper,
+        type=helpers.check_filehelper,
     )
 
     story_check.add_argument(
         "-u",
         "--username",
         help="link to conversation",
-        type=check_strhelper,
+        type=helpers.check_strhelper,
         action="extend",
     )
 
@@ -838,30 +842,20 @@ def create_parser(input=None):
         help="Pass links/IDs to download via file",
         default=None,
         required=False,
-        type=check_filehelper,
+        type=helpers.check_filehelper,
     )
     manual.add_argument(
         "-u",
         "--url",
         help="pass links to download via url",
-        type=check_strhelper,
+        type=helpers.check_strhelper,
         action="extend",
     )
 
     return parser
 
 
-def getargs(input=None):
-    global args
-    if args and input == None:
-        return args
-    if "pytest" in sys.modules and input == None:
-        input = []
-    elif input == None:
-        input = sys.argv[1:]
-    if not system.get_parent():
-        input = []
-
+def parse_args(input=None):
     parser = create_parser(input)
 
     args = parser.parse_args(input)
@@ -871,10 +865,10 @@ def getargs(input=None):
     args.excluded_username = set(args.excluded_username or [])
     args.label = set(args.label) if args.label else args.label
     args.black_list = set(list(map(lambda x: x.lower(), args.black_list)))
-    args = globalDataHelper()
+    args = helpers.globalDataHelper()
 
     if len(args.user_list) == 0:
-        args.user_list = {constants.OFSCRAPER_RESERVED_LIST}
+        args.user_list = {OFSCRAPER_RESERVED_LIST}
     else:
         args.user_list = set(list(map(lambda x: x.lower(), args.user_list)))
 
@@ -892,241 +886,5 @@ def getargs(input=None):
         raise argparse.ArgumentTypeError(
             "error: argument missing --url or --file must be specified )"
         )
+    global_args.setArgs(args)
     return args
-
-
-def globalDataHelper():
-    global args
-    now = arrow.now()
-    args.log_dateformat = getDateHelper(now)
-    args.date_now = getDateNowHelper(now)
-    return args
-
-
-def resetGlobalDateHelper():
-    clearDate()
-    globalDataHelper()
-
-
-def clearDate():
-    global args
-    args.date_now = None
-    args.log_dateformat = None
-
-
-def getDateNowHelper(now):
-    if not vars(args).get("date_now"):
-        return now
-    return args.date_now
-
-
-def getDateHelper(now):
-    if not vars(args).get("log_dateformat"):
-        from ofscraper.utils.config import get_appendlog, read_config
-
-        return (
-            now.format("YYYY-MM-DD")
-            if get_appendlog(read_config())
-            else f'{now.format("YYYY-MM-DD_hh.mm.ss")}'
-        )
-    return args.log_dateformat
-
-
-def check_strhelper(x):
-    temp = None
-    if isinstance(x, list):
-        temp = x
-    elif isinstance(x, str):
-        temp = x.split(",")
-    return temp
-
-
-def check_filehelper(x):
-    if isinstance(x, str) and pathlib.Path(x).exists():
-        with open(x, "r") as _:
-            return _.readlines()
-
-
-def posttype_helper(x):
-    choices = set(
-        [
-            "Highlights",
-            "All",
-            "Archived",
-            "Messages",
-            "Timeline",
-            "Pinned",
-            "Stories",
-            "Purchased",
-            "Profile",
-            "Labels",
-        ]
-    )
-    if isinstance(x, str):
-        words = x.split(",")
-        words = list(map(lambda x: str.title(x), words))
-    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
-        raise argparse.ArgumentTypeError(
-            "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
-        )
-    return words
-
-
-def download_helper(x):
-    choices = set(
-        [
-            "Highlights",
-            "All",
-            "Archived",
-            "Messages",
-            "Timeline",
-            "Pinned",
-            "Stories",
-            "Purchased",
-            "Profile",
-            "Labels",
-        ]
-    )
-    if isinstance(x, str):
-        words = x.split(",")
-        words = list(map(lambda x: str.title(x), words))
-    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
-        raise argparse.ArgumentTypeError(
-            "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
-        )
-    return words
-
-
-def like_helper(x):
-    choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
-    if isinstance(x, str):
-        words = x.split(",")
-        words = list(map(lambda x: str.title(x), words))
-    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
-        raise argparse.ArgumentTypeError(
-            "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
-        )
-    return words
-
-
-def mediatype_helper(x):
-    choices = set(["Videos", "Audio", "Images"])
-    if isinstance(x, str):
-        x = x.split(",")
-        x = list(map(lambda x: x.capitalize(), x))
-    if len(list(filter(lambda y: y not in choices, x))) > 0:
-        raise argparse.ArgumentTypeError(
-            "error: argument -o/--mediatype: invalid choice: (choose from 'images','audio','videos')"
-        )
-    return x
-
-
-def action_helper(x):
-    select = x.split(",")
-    select = list(map(lambda x: x.lower(), select))
-    if "like" in select and "unlike" in select:
-        raise argparse.ArgumentTypeError(
-            "You can not select like and unlike at the same time"
-        )
-    if (
-        len(list(filter(lambda x: x in set(["like", "unlike", "download"]), select)))
-        == 0
-    ):
-        raise argparse.ArgumentTypeError(
-            "You must select [like or unlike] and/or download for action"
-        )
-    return select
-
-
-def changeargs(newargs):
-    global args
-    args = newargs
-
-
-def username_helper(x):
-    temp = None
-    if isinstance(x, list):
-        temp = x
-    elif isinstance(x, str):
-        temp = x.split(",")
-
-    return list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
-
-
-def label_helper(x):
-    temp = None
-    if isinstance(x, list):
-        temp = x
-    elif isinstance(x, str):
-        temp = x.split(",")
-    return list(map(lambda x: x.lower(), temp))
-
-
-def arrow_helper(x):
-    try:
-        return arrow.get(x)
-    except arrow.parser.ParserError as E:
-        try:
-            x = re.sub("\\byear\\b", "years", x)
-            x = re.sub("\\bday\\b", "days", x)
-            x = re.sub("\\bmonth\\b", "months", x)
-            x = re.sub("\\bweek\\b", "weeks", x)
-            arw = arrow.utcnow()
-            return arw.dehumanize(x)
-        except ValueError as E:
-            raise E
-
-
-def get_like_area():
-    post = None
-    all_choices = [
-        "Archived",
-        "Timeline",
-        "Pinned",
-        "Labels",
-    ]
-    if len(args.like_area) == 0:
-        post = set(args.posts)
-    else:
-        post = set(args.like_area)
-    if "All" in post:
-        post.update(set(all_choices))
-    return list(
-        filter(
-            lambda x: x != "All"
-            and x[0] != "-"
-            and f"-{x}" not in post
-            and x in all_choices,
-            post,
-        )
-    )
-
-
-def get_download_area():
-    post = None
-    all_choices = [
-        "Highlights",
-        "Archived",
-        "Messages",
-        "Timeline",
-        "Pinned",
-        "Stories",
-        "Purchased",
-        "Profile",
-        "Labels",
-    ]
-    if len(args.download_area) == 0:
-        post = set(args.posts)
-    else:
-        post = set(args.download_area)
-    if "All" in post:
-        post.update(set(all_choices))
-    return list(
-        filter(
-            lambda x: x != "All"
-            and x[0] != "-"
-            and f"-{x}" not in post
-            and x in all_choices,
-            post,
-        )
-    )

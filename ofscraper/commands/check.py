@@ -20,12 +20,12 @@ import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.auth as auth
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-import ofscraper.utils.network as network
+import ofscraper.utils.system.network as network
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -149,7 +149,7 @@ def post_checker():
             oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
             user_dict[user_name] = {}
             user_dict[user_name] = user_dict[user_name] or []
-            if len(oldtimeline) > 0 and not args_.getargs().force:
+            if len(oldtimeline) > 0 and not global_args.getArgs().force:
                 user_dict[user_name].extend(oldtimeline)
             else:
                 user_dict[user_name] = {}
@@ -164,7 +164,7 @@ def post_checker():
                 cache.close()
 
             oldarchive = cache.get(f"archived_check_{model_id}", default=[])
-            if len(oldarchive) > 0 and not args_.getargs().force:
+            if len(oldarchive) > 0 and not global_args.getArgs().force:
                 user_dict[user_name].extend(oldarchive)
             else:
                 data = archive.get_archived_media(model_id, user_name, forced_after=0)
@@ -212,14 +212,14 @@ def post_checker():
 
 def reset_url():
     # clean up args once check modes are ready to launch
-    args = args_.getargs()
+    args = global_args.getArgs()
     argdict = vars(args)
     if argdict.get("url"):
-        args_.getargs().url = None
+        global_args.getArgs().url = None
     if argdict.get("file"):
-        args_.getargs().file = None
+        global_args.getArgs().file = None
     if argdict.get("username"):
-        args_.getargs().username = None
+        global_args.getArgs().username = None
     args_.changeargs(args)
 
 
@@ -250,7 +250,7 @@ def message_checker():
         oldmessages = cache.get(f"message_check_{model_id}", default=[])
         log.debug(f"Number of messages in cache {len(oldmessages)}")
 
-        if len(oldmessages) > 0 and not args_.getargs().force:
+        if len(oldmessages) > 0 and not global_args.getArgs().force:
             messages = oldmessages
         else:
             messages = messages_.get_messages(model_id, user_name, forced_after=0)
@@ -262,7 +262,7 @@ def message_checker():
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
         # paid content
-        if len(oldpaid) > 0 and not args_.getargs().force:
+        if len(oldpaid) > 0 and not global_args.getArgs().force:
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
@@ -292,14 +292,14 @@ def purchase_checker():
     user_dict = {}
     auth.make_headers(auth.read_auth())
     ROWS = []
-    for user_name in args_.getargs().username:
+    for user_name in global_args.getArgs().username:
         user_name = profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id(user_name)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
 
-        if len(oldpaid) > 0 and not args_.getargs().force:
+        if len(oldpaid) > 0 and not global_args.getArgs().force:
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
@@ -320,7 +320,7 @@ def purchase_checker():
 def stories_checker():
     user_dict = {}
     ROWS = []
-    for user_name in args_.getargs().username:
+    for user_name in global_args.getArgs().username:
         user_name = profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id(user_name)
@@ -347,8 +347,8 @@ def stories_checker():
 
 def url_helper():
     out = []
-    out.extend(args_.getargs().file or [])
-    out.extend(args_.getargs().url or [])
+    out.extend(global_args.getArgs().file or [])
+    out.extend(global_args.getArgs().url or [])
     return map(lambda x: x.strip(), out)
 
 
@@ -381,7 +381,7 @@ def get_paid_ids(model_id, user_name):
     oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
     paid = None
 
-    if len(oldpaid) > 0 and not args_.getargs().force:
+    if len(oldpaid) > 0 and not global_args.getArgs().force:
         paid = oldpaid
     else:
         paid = paid_.get_paid_posts(user_name, model_id)

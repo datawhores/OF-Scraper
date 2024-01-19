@@ -3,16 +3,16 @@ import logging
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader
-import ofscraper.utils.args as args_
-import ofscraper.utils.config as config_
+import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.separate as seperate
-import ofscraper.utils.system as system
+import ofscraper.utils.system.system as system
 
 
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
-    if not args_.getargs().dupe:
+    if not global_args.getArgs().dupe:
         media_ids = set(
             operations.get_media_ids_downloaded(model_id=model_id, username=username)
         )
@@ -42,11 +42,10 @@ def download_picker(username, model_id, medialist):
         system.getcpu_count() > 1
         and (
             len(medialist)
-            >= config_.get_download_semaphores(config_.read_config())
-            * constants.getattr("DOWNLOAD_THREAD_MIN")
+            >= data.get_download_semaphores() * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
-        and args_.getargs().downloadthreads != 0
-        and config_.get_threads(config_.read_config()) != 0
+        and global_args.getArgs().downloadthreads != 0
+        and data.get_threads() != 0
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:

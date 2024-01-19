@@ -22,9 +22,9 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
+import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.logger as logger
-import ofscraper.utils.stdout as stdout
 
 log = logging.getLogger("shared")
 

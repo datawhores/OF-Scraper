@@ -36,17 +36,17 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 from ..api import timeline
 
 sem = semaphoreDelayed(1)
 log = logging.getLogger("shared")
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 
 
 def get_posts(model_id, username):
-    args = args_.getargs()
+    args = global_args.getArgs()
     pinned_posts = []
     timeline_posts = []
     archived_posts = []

@@ -1,6 +1,6 @@
 import asyncio
 
-import ofscraper.utils.exit as exit
+import ofscraper.utils.context.exit as exit
 
 
 def run(coro):

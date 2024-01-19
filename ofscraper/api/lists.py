@@ -27,11 +27,11 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args as args_
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
-from ofscraper.utils.run_async import run
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -42,12 +42,13 @@ sem = None
 async def get_otherlist():
     out = []
     if (
-        len(args_.getargs().user_list) >= 2
-        or constants.getattr("OFSCRAPER_RESERVED_LIST") not in args_.getargs().user_list
+        len(global_args.getArgs().user_list) >= 2
+        or constants.getattr("OFSCRAPER_RESERVED_LIST")
+        not in global_args.getArgs().user_list
     ):
         out.extend(await get_lists())
     out = list(
-        filter(lambda x: x.get("name").lower() in args_.getargs().user_list, out)
+        filter(lambda x: x.get("name").lower() in global_args.getArgs().user_list, out)
     )
     log.debug(
         f"User lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
@@ -58,10 +59,10 @@ async def get_otherlist():
 @run
 async def get_blacklist():
     out = []
-    if len(args_.getargs().black_list) >= 1:
+    if len(global_args.getArgs().black_list) >= 1:
         out.extend(await get_lists())
     out = list(
-        filter(lambda x: x.get("name").lower() in args_.getargs().black_list, out)
+        filter(lambda x: x.get("name").lower() in global_args.getArgs().black_list, out)
     )
     log.debug(
         f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"

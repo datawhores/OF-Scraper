@@ -6,7 +6,7 @@ import arrow
 from bs4 import BeautifulSoup
 
 import ofscraper.classes.media as Media
-import ofscraper.utils.config as config
+import ofscraper.utils.config.data as data
 
 html_parser = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 log = logging.getLogger("shared")
@@ -63,11 +63,7 @@ class Post:
     # text for posts
     @property
     def db_text(self):
-        return (
-            self.text
-            if not config.get_sanitizeDB(config.read_config())
-            else self.sanitized_text
-        )
+        return self.text if not data.get_sanitizeDB() else self.sanitized_text
 
     @property
     def title(self):
@@ -76,9 +72,9 @@ class Post:
     @property
     def modified_responsetype(self):
         if self.archived:
-            if config.get_archived_responsetype(config.read_config()) == "":
+            if data.get_archived_responsetype() == "":
                 return "Archived"
-            return config.get_archived_responsetype(config.read_config())
+            return data.get_archived_responsetype()
 
         else:
             # remap some values
@@ -88,7 +84,7 @@ class Post:
                 if response_key.lower() in {"post", "posts"}
                 else response_key
             )
-            response = config.read_config().get("responsetype", {}).get(response_key)
+            response = data.responsetype().get(response_key)
 
             if response == "":
                 return self.responsetype.capitalize()

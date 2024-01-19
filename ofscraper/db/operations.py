@@ -18,19 +18,18 @@ from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
-import aiosqlite
 import arrow
 from filelock import FileLock
 from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.cache as cache
-import ofscraper.utils.exit as exit
-from ofscraper.constants import DBINTERVAL
-from ofscraper.utils.run_async import run
+import ofscraper.utils.context.exit as exit
+import ofscraper.utils.paths.common as common_paths
+from ofscraper.const.constants import DBINTERVAL
+from ofscraper.utils.context.run_async import run
 
 from ..db import queries
-from ..utils.paths import createDir, getDB
 
 console = Console()
 log = logging.getLogger("shared")
@@ -47,13 +46,13 @@ def operation_wrapper_async(func: abc.Callable):
         try:
             LOCK_POOL = ThreadPoolExecutor(max_workers=1)
             PROCESS_POOL = ThreadPoolExecutor(max_workers=1)
-            lock = FileLock(getDB(), timeout=-1)
+            lock = FileLock(common_paths.getDB(), timeout=-1)
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(LOCK_POOL, lock.acquire)
             database_path = placeholder.Placeholders().databasePathHelper(
                 kwargs.get("model_id"), kwargs.get("username")
             )
-            createDir(database_path.parent)
+            database_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(database_path, check_same_thread=False, timeout=10)
             return await loop.run_in_executor(
                 PROCESS_POOL, partial(func, *args, **kwargs, conn=conn)
@@ -91,7 +90,7 @@ def operation_wrapper_async(func: abc.Callable):
 def operation_wrapper(func: abc.Callable):
     def inner(*args, **kwargs):
         try:
-            lock = FileLock(getDB(), timeout=-1)
+            lock = FileLock(common_paths.getDB(), timeout=-1)
         except Exception as E:
             raise E
         try:
@@ -99,7 +98,7 @@ def operation_wrapper(func: abc.Callable):
             database_path = placeholder.Placeholders().databasePathHelper(
                 kwargs.get("model_id"), kwargs.get("username")
             )
-            createDir(database_path.parent)
+            database_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(database_path, check_same_thread=True, timeout=10)
             return func(*args, **kwargs, conn=conn)
         except sqlite3.OperationalError as E:
@@ -570,7 +569,7 @@ def create_backup(model_id, username):
         database_copy = placeholder.Placeholders().databasePathCopyHelper(
             model_id, username
         )
-        createDir(database_copy.parent)
+        database_copy.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
     elif (
@@ -580,7 +579,7 @@ def create_backup(model_id, username):
         database_copy = placeholder.Placeholders().databasePathCopyHelper(
             model_id, username
         )
-        createDir(database_copy.parent)
+        database_copy.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
     cache.close()
