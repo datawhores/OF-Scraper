@@ -43,7 +43,8 @@ from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
@@ -122,8 +123,8 @@ def reset_globals():
     )
 
 
-def setLogDate(args):
-    args_.changeargs(args)
+def setLogDate(date):
+    dates.setLogDate(date)
 
 
 def get_medialog(ele):
@@ -137,9 +138,10 @@ def process_split_globals(pipeCopy, logCopy):
     log = logCopy
 
 
-def subProcessVariableInit(argsCopy, pipeCopy, logCopy):
+def subProcessVariableInit(date, pipeCopy, logCopy, argsCopy):
     reset_globals()
-    setLogDate(argsCopy)
+    write_args.setArgs(argsCopy)
+    setLogDate(date)
     process_split_globals(pipeCopy, logCopy)
 
 
@@ -173,7 +175,7 @@ def _(func: abc.Callable, input_sem: None | semaphoreDelayed = None):
 
 def setupProgressBar(multi=False):
     downloadprogress = (
-        config_data.get_show_downloadprogress() or global_args.getArgs().downloadbars
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
     if not multi:
         job_progress = Progress(
@@ -266,8 +268,10 @@ async def check_forced_skip(ele, *args):
     total = sum(map(lambda x: int(x), args))
     if total == 0:
         return 0
-    file_size_limit = global_args.getArgs().size_max or config_data.get_filesize_limit()
-    file_size_min = global_args.getArgs().size_min or config_data.get_filesize_limit()
+    file_size_limit = (
+        read_args.retriveArgs().size_max or config_data.get_filesize_limit()
+    )
+    file_size_min = read_args.retriveArgs().size_min or config_data.get_filesize_limit()
     if int(file_size_limit) > 0 and (int(total) > int(file_size_limit)):
         ele.mediatype = "forced_skipped"
         log.debug(f"{get_medialog(ele)} {format_size(total)} over size limit")

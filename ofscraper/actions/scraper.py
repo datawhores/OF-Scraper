@@ -24,7 +24,8 @@ import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.areas as areas
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.system.free as free
@@ -69,8 +70,8 @@ def process_messages(model_id, username):
         # Update after database
         cache.set(
             "{model_id}_scrape_messages",
-            global_args.getArgs().after is not None
-            and global_args.getArgs().after != 0,
+            read_args.retriveArgs().after is not None
+            and read_args.retriveArgs().after != 0,
         )
 
         return list(filter(lambda x: isinstance(x, media.Media), output))
@@ -218,7 +219,9 @@ def process_timeline_posts(model_id, username, individual=False):
             username=username,
             downloaded=False,
         )
-        cache.set("{model_id}_scrape_timeline", global_args.getArgs().after is not None)
+        cache.set(
+            "{model_id}_scrape_timeline", read_args.retriveArgs().after is not None
+        )
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
@@ -264,7 +267,9 @@ def process_archived_posts(model_id, username):
             username=username,
             downloaded=False,
         )
-        cache.set("{model_id}_scrape_archived", global_args.getArgs().after is not None)
+        cache.set(
+            "{model_id}_scrape_archived", read_args.retriveArgs().after is not None
+        )
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
 
@@ -406,10 +411,10 @@ def process_labels(model_id, username):
 
         labels_ = (
             labels_
-            if not global_args.getArgs().label
+            if not read_args.retriveArgs().label
             else list(
                 filter(
-                    lambda x: x.get("name").lower() in global_args.getArgs().label,
+                    lambda x: x.get("name").lower() in read_args.retriveArgs().label,
                     labels_,
                 )
             )
@@ -461,7 +466,7 @@ def process_areas(ele, model_id) -> list:
     labels_dicts = []
 
     username = ele.name
-    final_post_areas = set(args_.get_download_area())
+    final_post_areas = set(areas.get_download_area())
     if "Profile" in final_post_areas:
         profile_dicts = process_profile(username)
     if "Pinned" in final_post_areas:

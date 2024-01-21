@@ -12,6 +12,10 @@ from datetime import datetime
 
 import arrow
 
+import ofscraper.utils.manager as manager
+
+dateFormat = None
+
 
 def convert_date_to_mdyhms(date: str):
     datetime_obj = datetime.fromisoformat(date)
@@ -34,3 +38,26 @@ def convert_local_time(date: str):
 
 def get_current_time():
     return arrow.get(tzinfo="UTC").to("local").float_timestamp
+
+
+def setLogDate(dateDict=None):
+    global dateFormat
+    if not dateDict:
+        dateDict = {
+            "day": arrow.now().format("YYYY-MM-DD"),
+            "now": arrow.now().format("YYYY-MM-DD_hh.mm.ss"),
+        }
+    dateFormat = manager.get_manager().dict(dateDict)
+
+
+def getLogDate():
+    global dateFormat
+    if not dateFormat:
+        setLogDate()
+    return dateFormat
+
+
+def resetLogdate():
+    global dateFormat
+    dateFormat = None
+    setLogDate()

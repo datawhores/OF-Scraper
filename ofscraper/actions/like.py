@@ -42,11 +42,11 @@ from ..api import timeline
 
 sem = semaphoreDelayed(1)
 log = logging.getLogger("shared")
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 
 
 def get_posts(model_id, username):
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     pinned_posts = []
     timeline_posts = []
     archived_posts = []

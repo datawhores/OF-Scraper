@@ -1,11 +1,11 @@
 import ofscraper.commands.check as check
 import ofscraper.commands.manual as manual
 import ofscraper.commands.scraper as scraper
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 
 
 def pick():
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     if args.command == "post_check":
         check.post_checker()
     elif args.command == "msg_check":

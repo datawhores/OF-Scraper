@@ -4,7 +4,8 @@ import shutil
 from rich import print
 
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.write as write_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
@@ -23,10 +24,10 @@ def change_profile():
     tools.print_profiles()
     profile = prompts.get_profile_prompt(profile_data.get_profile_names())
     data.update_config(constants.getattr("mainProfile"), profile)
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     # remove profile argument
     args.profile = None
-    args_.changeargs(args)
+    write_args.setArgs(args)
     print(f"[green]Successfully changed profile to[/green] {profile}")
 
 
@@ -72,10 +73,10 @@ def edit_profile_name():
 
 
 def change_current_profile(new_profile, old_profile):
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     if args.profile == old_profile:
         args.profile = new_profile
-        args_.changeargs(args)
+        write_args.setArgs(args)
     # required because name has changed
     if old_profile == profile_data.get_current_config_profile():
         data.update_config(constants.getattr("mainProfile"), new_profile)

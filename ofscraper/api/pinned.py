@@ -28,7 +28,7 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -49,7 +49,8 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
     attempt.set(0)
 
     if timestamp and (
-        float(timestamp) > (global_args.getArgs().before or arrow.now()).float_timestamp
+        float(timestamp)
+        > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
     url = constants.getattr("timelinePinnedEP").format(model_id, count)
@@ -172,8 +173,8 @@ async def get_pinned_post(model_id):
                             c,
                             model_id,
                             job_progress,
-                            timestamp=global_args.getArgs().after.float_timestamp
-                            if global_args.getArgs().after
+                            timestamp=read_args.retriveArgs().after.float_timestamp
+                            if read_args.retriveArgs().after
                             else None,
                         )
                     )

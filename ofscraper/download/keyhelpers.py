@@ -20,7 +20,7 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.auth as auth
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
@@ -38,7 +38,7 @@ def setLog(input_):
 async def un_encrypt(item, c, ele, input_=None):
     setLog(input_ or common.log)
     key = None
-    keymode = global_args.getArgs().key_mode or data.get_key_mode() or "cdrm"
+    keymode = read_args.retriveArgs().key_mode or data.get_key_mode() or "cdrm"
     past_key = await asyncio.get_event_loop().run_in_executor(
         common.cache_thread, partial(cache.get, ele.license)
     )

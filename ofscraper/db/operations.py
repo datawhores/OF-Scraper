@@ -24,9 +24,9 @@ from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.cache as cache
+import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.paths.common as common_paths
-from ofscraper.const.constants import DBINTERVAL
 from ofscraper.utils.context.run_async import run
 
 from ..db import queries
@@ -565,7 +565,7 @@ def create_backup(model_id, username):
 
     now = arrow.now().float_timestamp
     last = cache.get(f"{username}_{model_id}_db_backup", default=now)
-    if now - last > DBINTERVAL and database_path.exists():
+    if now - last > constants.getattr("DBINTERVAL") and database_path.exists():
         database_copy = placeholder.Placeholders().databasePathCopyHelper(
             model_id, username
         )

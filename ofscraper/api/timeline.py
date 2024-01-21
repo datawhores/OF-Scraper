@@ -29,7 +29,7 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
@@ -50,7 +50,8 @@ async def scrape_timeline_posts(
     attempt.set(0)
 
     if timestamp and (
-        float(timestamp) > (global_args.getArgs().before or arrow.now()).float_timestamp
+        float(timestamp)
+        > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
     if timestamp:
@@ -181,7 +182,7 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         min_posts = 50
         responseArray = []
         page_count = 0
-        if not global_args.getArgs().no_cache:
+        if not read_args.retriveArgs().no_cache:
             oldtimeline = operations.get_timeline_postdates(
                 model_id=model_id, username=username
             )
@@ -198,7 +199,8 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
         postedAtArray = sorted(oldtimeline)
         rescan = (
-            cache.get("{model_id}_scrape_timeline") and not global_args.getArgs().after
+            cache.get("{model_id}_scrape_timeline")
+            and not read_args.retriveArgs().after
         )
         after = after = 0 if rescan else forced_after or get_after(model_id, username)
 
@@ -333,8 +335,8 @@ def get_individual_post(id, c=None):
 
 
 def get_after(model_id, username):
-    if global_args.getArgs().after:
-        return global_args.getArgs().after.float_timestamp
+    if read_args.retriveArgs().after:
+        return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_timeline_media(model_id=model_id, username=username)
     if cache.get(f"{model_id}_scrape_timeline"):
         log.debug(

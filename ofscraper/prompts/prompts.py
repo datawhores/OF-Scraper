@@ -25,7 +25,8 @@ import ofscraper.prompts.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.schema as schema
@@ -52,16 +53,16 @@ def action_prompt() -> int:
     answer = promptClasses.getChecklistSelection(
         message="What would you like to do?", choices=[*action_prompt_choices]
     )
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     action = constants.getattr("ActionPromptChoices")[answer]
     if action == "Main Menu":
         return action
     args.action = action
-    args_.changeargs(args)
+    write_args.setArgs(args)
 
 
 def areas_prompt() -> list:
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     name = "value"
     message = (
         "Which area(s) would you do you want to download and like"
@@ -1024,10 +1025,10 @@ def model_selector(models) -> bool:
     )
 
     def funct(prompt):
-        oldargs = copy.deepcopy(vars(global_args.getArgs()))
+        oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
         userselector.setfilter()
         userselector.setsort()
-        if oldargs != vars(global_args.getArgs()):
+        if oldargs != vars(read_args.retriveArgs()):
             nonlocal models
             models = userselector.filterNSort(userselector.ALL_SUBS)
         choices = list(
@@ -1289,7 +1290,7 @@ def decide_sort_prompt():
             {
                 "type": "list",
                 "name": "input",
-                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {global_args.getArgs().sort.capitalize()} in {'Ascending' if not global_args.getArgs().desc else 'Descending'} order",
+                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {read_args.retriveArgs().sort.capitalize()} in {'Ascending' if not read_args.retriveArgs().desc else 'Descending'} order",
                 "default": "No",
                 "choices": ["Yes", "No"],
             }

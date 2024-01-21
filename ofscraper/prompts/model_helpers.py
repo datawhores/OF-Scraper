@@ -3,7 +3,7 @@ import re
 import arrow
 from InquirerPy.base import Choice
 
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 
 
 def model_selectorHelper(count, x):
@@ -15,8 +15,8 @@ def model_selectorHelper(count, x):
 
 def renewHelper(x):
     if (
-        global_args.getArgs().sort != "expired"
-        and global_args.getArgs().renewal is None
+        read_args.retriveArgs().sort != "expired"
+        and read_args.retriveArgs().renewal is None
     ):
         return ""
     return (
@@ -34,10 +34,10 @@ def generalDated(value):
 
 def lastSeenHelper(x):
     if (
-        global_args.getArgs().sort != "last-seen"
-        and not global_args.getArgs().last_seen
-        and not global_args.getArgs().last_seen_after
-        and not global_args.getArgs().last_seen_before
+        read_args.retriveArgs().sort != "last-seen"
+        and not read_args.retriveArgs().last_seen
+        and not read_args.retriveArgs().last_seen_after
+        and not read_args.retriveArgs().last_seen_before
     ):
         return ""
     return (
@@ -50,35 +50,35 @@ def lastSeenHelper(x):
 def getPriceHelper(x):
     value = None
     value2 = None
-    if global_args.getArgs().sort in {
+    if read_args.retriveArgs().sort in {
         "current-price",
         "renewal-price",
         "regular-price",
         "promo-price",
     }:
-        value = re.sub("-", "_", global_args.getArgs().sort).replace("-", "_")
+        value = re.sub("-", "_", read_args.retriveArgs().sort).replace("-", "_")
     if (
-        global_args.getArgs().promo_price
-        or global_args.getArgs().promo_price_min
-        or global_args.getArgs().promo_price_max
+        read_args.retriveArgs().promo_price
+        or read_args.retriveArgs().promo_price_min
+        or read_args.retriveArgs().promo_price_max
     ):
         value2 = "promo_price"
     elif (
-        global_args.getArgs().regular_price
-        or global_args.getArgs().regular_price_min
-        or global_args.getArgs().regular_price_max
+        read_args.retriveArgs().regular_price
+        or read_args.retriveArgs().regular_price_min
+        or read_args.retriveArgs().regular_price_max
     ):
         value2 = "regular_price"
     elif (
-        global_args.getArgs().renewal_price
-        or global_args.getArgs().renewal_price_min
-        or global_args.getArgs().renewal_price_max
+        read_args.retriveArgs().renewal_price
+        or read_args.retriveArgs().renewal_price_min
+        or read_args.retriveArgs().renewal_price_max
     ):
         value2 = "renewal_price"
     elif (
-        global_args.getArgs().current_price
-        or global_args.getArgs().current_price_min
-        or global_args.getArgs().current_price_max
+        read_args.retriveArgs().current_price
+        or read_args.retriveArgs().current_price_min
+        or read_args.retriveArgs().current_price_max
     ):
         value2 = "current_price"
     final_value = value or value2 or "current_price"

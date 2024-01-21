@@ -17,12 +17,13 @@ from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.system.system as system
@@ -82,7 +83,8 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    global_args.getArgs(),
+                    dates.getLogDate(),
+                    read_args.retriveArgs(),
                 ),
             )
             for i in range(num_proc)
@@ -220,7 +222,7 @@ downloads total [{common.video_count} videos, {common.audio_count} audios, {comm
 def queue_process(pipe_, overall_progress, job_progress, task1, total):
     count = 0
     downloadprogress = (
-        global_args.getArgs().downloadbars or config_data.get_show_downloadprogress()
+        read_args.retriveArgs().downloadbars or config_data.get_show_downloadprogress()
     )
     # shared globals
 
@@ -295,7 +297,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
 
 
 def get_mediasplits(medialist):
-    user_count = global_args.getArgs().downloadthreads or config_data.get_threads()
+    user_count = read_args.retriveArgs().downloadthreads or config_data.get_threads()
     final_count = min(user_count, system.getcpu_count(), len(medialist) // 5)
     if final_count == 0:
         final_count = 1
@@ -303,14 +305,15 @@ def get_mediasplits(medialist):
 
 
 def process_dict_starter(
-    username, model_id, ele, p_logqueue_, p_otherqueue_, pipe_, argsCopy
+    username, model_id, ele, p_logqueue_, p_otherqueue_, pipe_, date, argsCopy
 ):
     subProcessVariableInit(
-        argsCopy,
+        date,
         pipe_,
         logger.get_shared_logger(
             main_=p_logqueue_, other_=p_otherqueue_, name=f"shared_{os.getpid()}"
         ),
+        argsCopy,
     )
     setpriority()
     plat = platform.system()

@@ -2,7 +2,7 @@ import re
 
 from rich import print
 
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.paths.common as common_paths
 
@@ -42,6 +42,6 @@ def get_current_config_profile():
 
 
 def get_active_profile():
-    if global_args.getArgs().profile:
-        return global_args.getArgs().profile
+    if read_args.retriveArgs().profile:
+        return read_args.retriveArgs().profile
     return get_current_config_profile()

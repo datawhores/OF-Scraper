@@ -9,7 +9,8 @@ import ofscraper.filters.models.retriver as retriver
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 
 ALL_SUBS = None
@@ -30,13 +31,13 @@ def getselected_usernames(rescan=False, reset=False):
         prompt = prompts.reset_username_prompt()
         if prompt == "Selection":
             PARSED_SUBS = None
-            global_args.getArgs().username = None
-            args_.changeargs(args)
+            read_args.retriveArgs().username = None
+            write_args.setArgs(args)
         if prompt == "No":
             rescan = False
     if rescan is True:
         PARSED_SUBS = None
-    if not PARSED_SUBS or not global_args.getArgs().username:
+    if not PARSED_SUBS or not read_args.retriveArgs().username:
         all_subs_helper()
         parsed_subscriptions_helper()
     return PARSED_SUBS
@@ -60,16 +61,16 @@ def parsed_subscriptions_helper(force=False):
     global ALL_SUBS
     global PARSED_SUBS
     global args
-    args = global_args.getArgs()
-    if not global_args.getArgs().username:
+    args = read_args.retriveArgs()
+    if not read_args.retriveArgs().username:
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
-        global_args.getArgs().username = list(map(lambda x: x.name, selectedusers))
+        read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
-        args_.changeargs(args)
-    elif "ALL" in global_args.getArgs().username:
+        write_args.setArgs(args)
+    elif "ALL" in read_args.retriveArgs().username:
         PARSED_SUBS = filterNSort(ALL_SUBS)
-    elif global_args.getArgs().username:
-        usernameset = set(global_args.getArgs().username)
+    elif read_args.retriveArgs().username:
+        usernameset = set(read_args.retriveArgs().username)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
 
     return PARSED_SUBS
@@ -106,12 +107,12 @@ def filterNSort(usernames):
             f"""You have filtered the user list to zero
 Change the filter settings to continue
 
-Sub Status: {global_args.getArgs().sub_status or 'No Filter'}
-Renewal Status: {global_args.getArgs().renewal or 'No Filter'}
-Promo Price Filter: {global_args.getArgs().promo_price or 'No Filter'}
-Current Price Filter: {global_args.getArgs().current_price or 'No Filter'}
-Current Price Filter: {global_args.getArgs().current_price or 'No Filter'}
-Renewal Price Filter: {global_args.getArgs().renewal_price or 'No Filter'}
+Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
+Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
+Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
+Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
+Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
+Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
 """
         )
 

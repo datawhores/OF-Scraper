@@ -1,50 +1,11 @@
 import argparse
 import pathlib
 import re
-import sys
 
 import arrow
 from humanfriendly import parse_size
 
-import ofscraper.utils.config.data as config_data
-import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
-from ofscraper.const.constants import KEY_OPTIONS, OFSCRAPER_RESERVED_LIST
-
-
-def globalDataHelper():
-    global args
-    now = arrow.now()
-    args.log_dateformat = getDateHelper(now)
-    args.date_now = getDateNowHelper(now)
-    return args
-
-
-def resetGlobalDateHelper():
-    clearDate()
-    globalDataHelper()
-
-
-def clearDate():
-    global args
-    args.date_now = None
-    args.log_dateformat = None
-
-
-def getDateNowHelper(now):
-    if not vars(args).get("date_now"):
-        return now
-    return args.date_now
-
-
-def getDateHelper(now):
-    if not vars(args).get("log_dateformat"):
-        return (
-            now.format("YYYY-MM-DD")
-            if config_data.get_appendlog()
-            else f'{now.format("YYYY-MM-DD_hh.mm.ss")}'
-        )
-    return args.log_dateformat
 
 
 def check_strhelper(x):

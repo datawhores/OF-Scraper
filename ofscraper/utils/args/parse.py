@@ -4,8 +4,8 @@ import sys
 
 from humanfriendly import parse_size
 
-import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.args.helpers as helpers
+import ofscraper.utils.args.write as write_args
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
 from ofscraper.const.constants import KEY_OPTIONS, OFSCRAPER_RESERVED_LIST
@@ -865,7 +865,6 @@ def parse_args(input=None):
     args.excluded_username = set(args.excluded_username or [])
     args.label = set(args.label) if args.label else args.label
     args.black_list = set(list(map(lambda x: x.lower(), args.black_list)))
-    args = helpers.globalDataHelper()
 
     if len(args.user_list) == 0:
         args.user_list = {OFSCRAPER_RESERVED_LIST}
@@ -886,5 +885,5 @@ def parse_args(input=None):
         raise argparse.ArgumentTypeError(
             "error: argument missing --url or --file must be specified )"
         )
-    global_args.setArgs(args)
+    write_args.setArgs(args)
     return args

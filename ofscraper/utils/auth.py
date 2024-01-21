@@ -28,7 +28,7 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.prompts.prompts as prompts
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
@@ -293,7 +293,7 @@ def make_request_auth():
 
 
 def get_request_auth():
-    if (global_args.getArgs().dynamic_rules or data.get_dynamic() or "deviint") in {
+    if (read_args.retriveArgs().dynamic_rules or data.get_dynamic() or "deviint") in {
         "deviint",
         "dv",
         "dev",

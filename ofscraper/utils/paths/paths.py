@@ -6,7 +6,7 @@ import re
 from contextlib import contextmanager
 from pathlib import Path
 
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
 import ofscraper.utils.paths.common as common_paths
@@ -37,7 +37,11 @@ def set_directory(path: Path):
 
 
 def cleanup():
-    if global_args.getArgs().no_auto_resume or not data.get_part_file_clean() or False:
+    if (
+        read_args.retriveArgs().no_auto_resume
+        or not data.get_part_file_clean()
+        or False
+    ):
         log.info("Cleaning up temp files\n\n")
         root = pathlib.Path(data.get_TempDir() or common_paths.get_save_location())
         for file in list(

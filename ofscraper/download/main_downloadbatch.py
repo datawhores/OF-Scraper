@@ -29,7 +29,7 @@ except ModuleNotFoundError:
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
@@ -58,7 +58,7 @@ async def main_download(c, ele, username, model_id):
         f"{get_medialog(ele)} Downloading with normal batch downloader"
     )
     common.innerlog.get().debug(f"{get_medialog(ele)} download url: {get_url_log(ele)}")
-    if global_args.getArgs().metadata:
+    if read_args.retriveArgs().metadata:
         return await metadata(
             c,
             ele,
@@ -293,7 +293,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
 async def main_download_datahandler(r, ele, total, placeholderObj):
     pathstr = str(placeholderObj.trunicated_filename)
     downloadprogress = (
-        data.get_show_downloadprogress() or global_args.getArgs().downloadbars
+        data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
     try:
         count = 0

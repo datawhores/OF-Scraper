@@ -23,7 +23,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
@@ -57,7 +57,7 @@ async def alt_download(c, ele, username, model_id):
     common.innerlog.get().debug(
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
-    if global_args.getArgs().metadata:
+    if read_args.retriveArgs().metadata:
         sharedPlaceholderObj = placeholder.Placeholders()
         sharedPlaceholderObj.getmediadir(ele, username, model_id, create=False)
         sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")

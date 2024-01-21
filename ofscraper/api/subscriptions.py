@@ -26,7 +26,7 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
@@ -69,16 +69,17 @@ async def activeHelper(subscribe_count, c):
     global new_tasks
 
     if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST") in global_args.getArgs().black_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST")
+        in read_args.retriveArgs().black_list
         or constants.getattr("OFSCRAPER_ACTIVE_LIST")
-        in global_args.getArgs().black_list
+        in read_args.retriveArgs().black_list
     ):
         return []
     if (
         constants.getattr("OFSCRAPER_RESERVED_LIST")
-        not in global_args.getArgs().user_list
+        not in read_args.retriveArgs().user_list
         and constants.getattr("OFSCRAPER_ACTIVE_LIST")
-        not in global_args.getArgs().user_list
+        not in read_args.retriveArgs().user_list
     ):
         return []
     funct = scrape_subscriptions_active
@@ -111,16 +112,17 @@ async def expiredHelper(subscribe_count, c):
     global new_tasks
 
     if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST") in global_args.getArgs().black_list
+        constants.getattr("OFSCRAPER_RESERVED_LIST")
+        in read_args.retriveArgs().black_list
         or constants.getattr("OFSCRAPER_EXPIRED_LIST")
-        in global_args.getArgs().black_list
+        in read_args.retriveArgs().black_list
     ):
         return []
     if (
         constants.getattr("OFSCRAPER_RESERVED_LIST")
-        not in global_args.getArgs().user_list
+        not in read_args.retriveArgs().user_list
         and constants.getattr("OFSCRAPER_EXPIRED_LIST")
-        not in global_args.getArgs().user_list
+        not in read_args.retriveArgs().user_list
     ):
         return []
     funct = scrape_subscriptions_disabled

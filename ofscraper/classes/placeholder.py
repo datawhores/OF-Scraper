@@ -7,7 +7,7 @@ import arrow
 
 import ofscraper.api.me as me
 import ofscraper.filters.models.selector as selector
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom_
 import ofscraper.utils.config.data as data
@@ -234,6 +234,7 @@ class Placeholders:
         filename = ele.final_filename
         self._variables.update({"filename": filename})
         self._variables.update({"file_name": filename})
+        self._variables.update({"ext": ext})
         text = ele.file_text
         self._variables.update({"text": text})
         self.add_common_variables(ele, username, model_id)
@@ -278,11 +279,11 @@ class Placeholders:
         return out
 
     def set_final_path(self):
-        if (global_args.getArgs().original or data.get_truncation()) is False:
+        if (read_args.retriveArgs().original or data.get_truncation()) is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif global_args.getArgs().original is False:
+        elif read_args.retriveArgs().original is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif global_args.getArgs().original is True or data.get_truncation() is True:
+        elif read_args.retriveArgs().original is True or data.get_truncation() is True:
             self._final_path = paths.truncate(
                 pathlib.Path(self.mediadir, f"{self.filename}")
             )

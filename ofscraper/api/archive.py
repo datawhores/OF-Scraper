@@ -29,7 +29,7 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
@@ -52,7 +52,8 @@ async def scrape_archived_posts(
     attempt.set(0)
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     if timestamp and (
-        float(timestamp) > (global_args.getArgs().before or arrow.now()).float_timestamp
+        float(timestamp)
+        > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
     if timestamp:
@@ -183,7 +184,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
         page_count = 0
         setCache = (
             True
-            if (global_args.getArgs().after == 0 or not global_args.getArgs().after)
+            if (read_args.retriveArgs().after == 0 or not read_args.retriveArgs().after)
             else False
         )
 
@@ -195,7 +196,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                     operations.get_archived_postinfo(
                         model_id=model_id, username=username
                     )
-                    if not global_args.getArgs().no_cache
+                    if not read_args.retriveArgs().no_cache
                     else []
                 )
 
@@ -212,7 +213,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                 rescan = (
                     rescan
                     or cache.get("{model_id}_scrape_archived")
-                    and not global_args.getArgs().after
+                    and not read_args.retriveArgs().after
                 )
                 after = after = (
                     0 if rescan else forced_after or get_after(model_id, username)
@@ -245,8 +246,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                 required_ids=set(
                                     list(map(lambda x: x[0], splitArrays[0]))
                                 ),
-                                timestamp=global_args.getArgs().after.float_timestamp
-                                if global_args.getArgs().after
+                                timestamp=read_args.retriveArgs().after.float_timestamp
+                                if read_args.retriveArgs().after
                                 else None,
                             )
                         )
@@ -325,7 +326,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
             )
         )
         log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-        if setCache and not global_args.getArgs().after:
+        if setCache and not read_args.retriveArgs().after:
             newCheck = {}
             for post in cache.get(f"archived_check_{model_id}", []) + list(
                 unduped.values()
@@ -342,8 +343,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 
 
 def get_after(model_id, username):
-    if global_args.getArgs().after:
-        return global_args.getArgs().after.float_timestamp
+    if read_args.retriveArgs().after:
+        return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_archived_media(model_id=model_id, username=username)
     if cache.get(f"{model_id}_scrape_archived"):
         log.debug(

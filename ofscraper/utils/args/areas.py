@@ -1,4 +1,4 @@
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 
 
 def get_like_area():
@@ -9,10 +9,10 @@ def get_like_area():
         "Pinned",
         "Labels",
     ]
-    if len(global_args.getArgs().like_area) == 0:
-        post = set(global_args.getArgs().posts)
+    if len(read_args.retriveArgs().like_area) == 0:
+        post = set(read_args.retriveArgs().posts)
     else:
-        post = set(global_args.getArgs().like_area)
+        post = set(read_args.retriveArgs().like_area)
     if "All" in post:
         post.update(set(all_choices))
     return list(
@@ -39,10 +39,10 @@ def get_download_area():
         "Profile",
         "Labels",
     ]
-    if len(global_args.getArgs().download_area) == 0:
-        post = set(global_args.getArgs().posts)
+    if len(read_args.retriveArgs().download_area) == 0:
+        post = set(read_args.retriveArgs().posts)
     else:
-        post = set(global_args.getArgs().download_area)
+        post = set(read_args.retriveArgs().download_area)
     if "All" in post:
         post.update(set(all_choices))
     return list(

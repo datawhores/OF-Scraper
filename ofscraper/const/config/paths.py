@@ -1,7 +1,7 @@
 import pathlib
 
 import ofscraper.const.constants as consts
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 
 
 def get_config_home():
@@ -9,7 +9,7 @@ def get_config_home():
 
 
 def get_config_path():
-    configPath = global_args.getArgs().config
+    configPath = read_args.retriveArgs().config
     defaultPath = pathlib.Path.home() / consts.configPath / consts.configFile
     ofscraperHome = pathlib.Path.home() / consts.configPath
 

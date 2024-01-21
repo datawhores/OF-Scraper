@@ -4,7 +4,7 @@ import time
 import httpx
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
@@ -16,7 +16,7 @@ def check_cdm():
         console = console_.get_shared_console()
         log = logging.getLogger("shared")
 
-        keymode = global_args.getArgs().key_mode or data.get_key_mode() or "cdrm"
+        keymode = read_args.retriveArgs().key_mode or data.get_key_mode() or "cdrm"
         console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
         if keymode == "manual":
             console.print(

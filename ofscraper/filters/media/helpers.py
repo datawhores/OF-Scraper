@@ -3,7 +3,7 @@ import re
 
 import arrow
 
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 
 log = logging.getLogger("shared")
@@ -33,17 +33,18 @@ def timeline_array_filter(posts):
     undated = list(filter(lambda x: x.get("postedAt") is None, posts))
     dated = list(filter(lambda x: x.get("postedAt") is not None, posts))
     dated = sorted(dated, key=lambda x: arrow.get(x.get("postedAt")))
-    if global_args.getArgs().before:
+    if read_args.retriveArgs().before:
         dated = list(
             filter(
-                lambda x: arrow.get(x.get("postedAt")) <= global_args.getArgs().before,
+                lambda x: arrow.get(x.get("postedAt"))
+                <= read_args.retriveArgs().before,
                 dated,
             )
         )
-    if global_args.getArgs().after:
+    if read_args.retriveArgs().after:
         dated = list(
             filter(
-                lambda x: arrow.get(x.get("postedAt")) >= global_args.getArgs().after,
+                lambda x: arrow.get(x.get("postedAt")) >= read_args.retriveArgs().after,
                 dated,
             )
         )
@@ -53,7 +54,7 @@ def timeline_array_filter(posts):
 
 
 def posts_type_filter(media):
-    filtersettings = global_args.getArgs().mediatype or data.get_filter()
+    filtersettings = read_args.retriveArgs().mediatype or data.get_filter()
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
     if isinstance(filtersettings, list):
@@ -70,19 +71,19 @@ def posts_type_filter(media):
 
 
 def posts_date_filter(media):
-    if global_args.getArgs().before:
+    if read_args.retriveArgs().before:
         media = list(
             filter(
                 lambda x: x.postdate is None
-                or arrow.get(x.postdate) <= global_args.getArgs().before,
+                or arrow.get(x.postdate) <= read_args.retriveArgs().before,
                 media,
             )
         )
-    if global_args.getArgs().after:
+    if read_args.retriveArgs().after:
         media = list(
             filter(
                 lambda x: x.postdate is None
-                or arrow.get(x.postdate) >= global_args.getArgs().after,
+                or arrow.get(x.postdate) >= read_args.retriveArgs().after,
                 media,
             )
         )
@@ -90,15 +91,15 @@ def posts_date_filter(media):
 
 
 def post_timed_filter(media):
-    if global_args.getArgs().timed_only is False:
+    if read_args.retriveArgs().timed_only is False:
         return list(filter(lambda x: not x.expires, media))
-    elif global_args.getArgs().timed_only is True:
+    elif read_args.retriveArgs().timed_only is True:
         return list(filter(lambda x: x.expires, media))
     return media
 
 
 def post_user_filter(media):
-    userfilter = global_args.getArgs().filter
+    userfilter = read_args.retriveArgs().filter
     if not userfilter:
         return media
     elif not userfilter.islower():
@@ -116,7 +117,7 @@ def post_user_filter(media):
 
 
 def anti_post_user_filter(media):
-    userfilter = global_args.getArgs().neg_filter
+    userfilter = read_args.retriveArgs().neg_filter
     if not userfilter:
         return media
     elif not userfilter.islower():
@@ -133,18 +134,18 @@ def anti_post_user_filter(media):
 
 
 def download_type_filter(media):
-    if global_args.getArgs().protected_only:
+    if read_args.retriveArgs().protected_only:
         return list(filter(lambda x: x.mpd is not None, media))
-    elif global_args.getArgs().normal_only:
+    elif read_args.retriveArgs().normal_only:
         return list(filter(lambda x: x.url is not None, media))
     else:
         return media
 
 
 def mass_msg_filter(media):
-    if global_args.getArgs().mass_msg is None:
+    if read_args.retriveArgs().mass_msg is None:
         return media
-    elif global_args.getArgs().mass_msg is True:
+    elif read_args.retriveArgs().mass_msg is True:
         return list((filter(lambda x: x.mass is True, media)))
-    elif global_args.getArgs().mass_msg is False:
+    elif read_args.retriveArgs().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))

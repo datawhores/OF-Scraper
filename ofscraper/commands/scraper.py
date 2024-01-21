@@ -33,7 +33,7 @@ import ofscraper.filters.media.main as filters
 import ofscraper.filters.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.config.data as data
@@ -41,6 +41,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.dates as dates
 import ofscraper.utils.logger as logger
 import ofscraper.utils.paths.check as check
 import ofscraper.utils.paths.paths as paths
@@ -56,16 +57,16 @@ count = 0
 def add_selected_areas(count=None):
     functs = []
     count = count or 0
-    if "download" in global_args.getArgs().action:
+    if "download" in read_args.retriveArgs().action:
         actions.set_download_area()
         functs.append(process_post)
-    if "like" in global_args.getArgs().action:
+    if "like" in read_args.retriveArgs().action:
         actions.set_like_area()
         functs.append(process_like)
-    if "unlike" in global_args.getArgs().action:
+    if "unlike" in read_args.retriveArgs().action:
         actions.set_like_area()
         functs.append(process_unlike)
-    if global_args.getArgs().scrape_paid:
+    if read_args.retriveArgs().scrape_paid:
         functs.append(scrape_paid)
     return functs
 
@@ -148,7 +149,7 @@ def main_prompt_action(result_main_prompt):
 
 @exit.exit_wrapper
 def process_post():
-    if global_args.getArgs().users_first:
+    if read_args.retriveArgs().users_first:
         process_post_user_first()
     else:
         normal_post_process()
@@ -175,9 +176,9 @@ def process_post_user_first():
             log.info(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if global_args.getArgs().posts:
+            if read_args.retriveArgs().posts:
                 log.info(
-                    f"Getting {','.join(global_args.getArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                    f"Getting {','.join(read_args.retriveArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = ele.id
@@ -234,9 +235,9 @@ def normal_post_process():
             log.warning(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if global_args.getArgs().posts:
+            if read_args.retriveArgs().posts:
                 log.warning(
-                    f"Getting {','.join(global_args.getArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                    f"Getting {','.join(read_args.retriveArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = ele.id
@@ -251,7 +252,7 @@ def normal_post_process():
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
 
-        if global_args.getArgs().scrape_paid:
+        if read_args.retriveArgs().scrape_paid:
             user_dict = {}
             [
                 user_dict.update(
@@ -346,7 +347,7 @@ def process_unlike():
 
 # Adds a function to the job queue
 def set_schedule(*functs):
-    schedule.every(global_args.getArgs().daemon).minutes.do(schedule_helper, functs)
+    schedule.every(read_args.retriveArgs().daemon).minutes.do(schedule_helper, functs)
     while len(schedule.jobs) > 0:
         schedule.run_pending()
         time.sleep(30)
@@ -367,7 +368,7 @@ def daemon_run_helper(*functs):
     jobqueue = queue.Queue()
     worker_thread = None
     [jobqueue.put(funct) for funct in functs]
-    if global_args.getArgs().output == "PROMPT":
+    if read_args.retriveArgs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
     check_auth()
     log.info(f"[bold]daemon mode on[/bold]")
@@ -409,14 +410,14 @@ def run_helper(*functs):
     global jobqueue
     jobqueue = queue.Queue()
     [jobqueue.put(funct) for funct in functs]
-    if global_args.getArgs().output == "PROMPT":
+    if read_args.retriveArgs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
     try:
         for _ in functs:
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
-        args_.clearDate()
+        dates.resetLogdate()
     except KeyboardInterrupt:
         try:
             with exit.DelayedKeyboardInterrupt():
@@ -487,7 +488,7 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green] Welcome to OF-Scraper Version {global_args.getArgs().version}[/bold green]"
+            f"[bold green] Welcome to OF-Scraper Version {read_args.retriveArgs().version}[/bold green]"
         )
 
 
@@ -527,7 +528,7 @@ def scrapper():
         os.system("color")
     global selectedusers
     selectedusers = None
-    args = global_args.getArgs()
+    args = read_args.retriveArgs()
     if args.daemon:
         if len(args.action) == 0 and not args.scrape_paid:
             prompts.action_prompt()

@@ -10,7 +10,7 @@ from pathvalidate import validate_filename, validate_filepath
 from prompt_toolkit.validation import ValidationError, Validator
 
 import ofscraper.classes.placeholder as placeholders
-import ofscraper.utils.args.globals as global_args
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.paths.check as paths_check
 import ofscraper.utils.profiles.data as profiles_data
 import ofscraper.utils.profiles.tools as profiles_tools
@@ -292,7 +292,7 @@ Path is valid but the given path could not be verified to be ffmpeg
 
 def like_area_validator_posts():
     def callable(x):
-        args = global_args.getArgs()
+        args = read_args.retriveArgs()
         if not "like" in args.action and not "unlike" in args.action:
             return True
         elif len(args.like_area) > 0:
