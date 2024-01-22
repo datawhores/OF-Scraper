@@ -130,6 +130,34 @@ def like_areas_prompt(like=True) -> list:
     return answers[name]
 
 
+def download_areas_prompt() -> list:
+    name = "areas"
+
+    answers = promptClasses.batchConverter(
+        *[
+            {
+                "type": "checkbox",
+                "qmark": "[?]",
+                "name": name,
+                "message": f"Which area(s) would you to perform download actions on",
+                "validate": prompt_validators.emptyListValidator(),
+                "choices": [
+                    Choice("Profile"),
+                    Choice("Timeline"),
+                    Choice("Pinned"),
+                    Choice("Archived"),
+                    Choice("Highlights"),
+                    Choice("Stories"),
+                    Choice("Messages"),
+                    Choice("Purchased"),
+                    Choice("Labels"),
+                ],
+            }
+        ]
+    )
+    return answers[name]
+
+
 def scrape_paid_prompt():
     name = "value"
     answer = promptClasses.batchConverter(
@@ -871,7 +899,7 @@ def reset_username_prompt() -> bool:
     return answer[name]
 
 
-def reset__areas_prompt() -> bool:
+def reset_areas_prompt() -> bool:
     name = "reset areas"
     answer = promptClasses.batchConverter(
         *[

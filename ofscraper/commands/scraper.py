@@ -140,13 +140,13 @@ def main_prompt_action():
             elif result_profiles_prompt == 4:
                 # View profiles
                 profile_tools.print_profiles()
-        elif result_main_prompt == 5:
+        if result_main_prompt == 5:
             functs = add_selected_areas(count=count)
-            run_helper(functs)
+            run_helper(*functs)
             count = count + 1
-        if result_main_prompt == 6:
+        elif result_main_prompt == 6:
             return True
-        if result_main_prompt == 7:
+        elif result_main_prompt == 7:
             continue
 
         break

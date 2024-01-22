@@ -65,24 +65,17 @@ def set_post_area(action=None):
     write_args.setArgs(args)
 
 
-# set download_area based on posts
+# set download area area based primarly on posts,secondary on  prompt
 def set_download_area(action=None):
     args = read_args.retriveArgs()
     action = action or args.action or {}
     if "download" not in action:
         return
-    args.download_area = areas.get_download_area()
-
-
-def set_scrape_paid(action=None):
-    args = read_args.retriveArgs()
-    action = action or args.action or {}
-    if "download" not in action:
-        return
-    args.scrape_paid = (
-        prompts.scrape_paid_prompt() if args.scrape_paid != None else args.scrape_paid
+    args.download_area = (
+        areas.get_download_area()
+        if len(areas.get_download_area()) > 0
+        else prompts.download_areas_prompt()
     )
-    write_args.setArgs(args)
 
 
 # set like area based primarly on posts,secondary on from prompt
@@ -95,5 +88,16 @@ def set_like_area(action=None):
         areas.get_like_area()
         if len(areas.get_like_area()) > 0
         else prompts.like_areas_prompt()
+    )
+    write_args.setArgs(args)
+
+
+def set_scrape_paid(action=None):
+    args = read_args.retriveArgs()
+    action = action or args.action or {}
+    if "download" not in action:
+        return
+    args.scrape_paid = (
+        prompts.scrape_paid_prompt() if args.scrape_paid != None else args.scrape_paid
     )
     write_args.setArgs(args)
