@@ -27,24 +27,32 @@ def getselected_usernames(rescan=False, reset=False):
     # username list will be retrived every time resFet==True
     global ALL_SUBS
     global PARSED_SUBS
-    if reset is True and PARSED_SUBS:
+    if reset == True and rescan == True:
+        all_subs_helper()
+        parsed_subscriptions_helper(reset=True)
+    elif reset is True and PARSED_SUBS:
         prompt = prompts.reset_username_prompt()
         if prompt == "Selection":
-            PARSED_SUBS = None
-            read_args.retriveArgs().username = None
-            write_args.setArgs(args)
-        if prompt == "No":
-            rescan = False
-    if rescan is True:
-        PARSED_SUBS = None
-    if not PARSED_SUBS or not read_args.retriveArgs().username:
+            all_subs_helper()
+            parsed_subscriptions_helper(reset=True)
+        elif prompt == "Data":
+            all_subs_helper()
+            parsed_subscriptions_helper()
+        elif prompt == "Selection_Strict":
+            parsed_subscriptions_helper(reset=True)
+    elif rescan == True:
         all_subs_helper()
+        parsed_subscriptions_helper()
+    else:
+        all_subs_helper(refetch=False)
         parsed_subscriptions_helper()
     return PARSED_SUBS
 
 
-def all_subs_helper():
+def all_subs_helper(refetch=True):
     global ALL_SUBS
+    if bool(ALL_SUBS) and not refetch:
+        return
     while True:
         ALL_SUBS = retriver.get_models()
         if len(ALL_SUBS) > 0:
@@ -57,12 +65,14 @@ def all_subs_helper():
                 raise Exception("Could not find any accounts on list")
 
 
-def parsed_subscriptions_helper(force=False):
+def parsed_subscriptions_helper(reset=False):
     global ALL_SUBS
     global PARSED_SUBS
-    global args
     args = read_args.retriveArgs()
-    if not read_args.retriveArgs().username:
+    if reset == True:
+        args.username = None
+        write_args.setArgs(args)
+    if not bool(read_args.retriveArgs().username):
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
         read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
@@ -72,7 +82,6 @@ def parsed_subscriptions_helper(force=False):
     elif read_args.retriveArgs().username:
         usernameset = set(read_args.retriveArgs().username)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
-
     return PARSED_SUBS
 
 

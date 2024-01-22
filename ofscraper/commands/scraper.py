@@ -33,6 +33,7 @@ import ofscraper.filters.media.main as filters
 import ofscraper.filters.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
+import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config.config as config_
@@ -202,9 +203,9 @@ def process_post_user_first():
             log.info(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if read_args.retriveArgs().posts:
+            if bool(areas.get_download_area()):
                 log.info(
-                    f"Getting {','.join(read_args.retriveArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = ele.id
@@ -261,7 +262,7 @@ def normal_post_process():
             log.warning(f"Progress {count+1}/{length} model")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if read_args.retriveArgs().posts:
+            if bool(areas.get_download_area()):
                 log.warning(
                     f"Getting {','.join(read_args.retriveArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )

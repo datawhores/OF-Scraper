@@ -889,7 +889,8 @@ def reset_username_prompt() -> bool:
                 "message": "Do you want to reset username info",
                 "choices": [
                     Choice("Selection", "Yes Update Selection"),
-                    Choice("Data", "Yes Refetch Data"),
+                    Choice("Data", "Yes Refetch Data Only"),
+                    Choice("Selection_Strict", "Yes Update Selection (No Data Fetch)"),
                     "No",
                 ],
                 "default": "No",
