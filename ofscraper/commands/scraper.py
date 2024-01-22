@@ -42,12 +42,12 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.startvals as startvals
 import ofscraper.utils.paths.check as check
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.startvals as startvals
 import ofscraper.utils.system.network as network
 
 log = logging.getLogger("shared")

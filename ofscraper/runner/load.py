@@ -6,7 +6,7 @@ import ofscraper.runner.run as run
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.paths.manage as paths_manage
 import ofscraper.utils.system.system as system
 

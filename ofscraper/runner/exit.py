@@ -1,7 +1,7 @@
 from diskcache import Cache
 
 import ofscraper.utils.config.data as data
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.manager as manager
 import ofscraper.utils.paths.common as common_paths
 

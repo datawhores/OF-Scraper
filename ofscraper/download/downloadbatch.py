@@ -24,7 +24,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download

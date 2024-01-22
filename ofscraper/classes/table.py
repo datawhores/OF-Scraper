@@ -16,7 +16,7 @@ from textual.widgets import (
     TextLog,
 )
 
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
 
 log = logging.getLogger("shared")
 

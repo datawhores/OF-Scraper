@@ -28,7 +28,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.system.free as free
 from ofscraper.download.common import (

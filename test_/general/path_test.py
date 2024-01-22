@@ -14,7 +14,7 @@ from random_unicode_emoji import random_emoji
 import ofscraper.classes.placeholder
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.downloadbatch as downloadbatch
-import ofscraper.utils.logger as logger
+import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.paths.paths as paths
 from ofscraper.classes.media import Media
 from ofscraper.classes.posts import Post
