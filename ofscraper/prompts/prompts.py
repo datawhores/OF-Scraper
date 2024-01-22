@@ -49,13 +49,15 @@ def main_prompt() -> int:
 def action_prompt() -> int:
     action_prompt_choices = [*constants.getattr("ActionPromptChoices")]
     action_prompt_choices.insert(3, Separator())
-    action_prompt_choices.insert(8, Separator())
+    action_prompt_choices.insert(6, Separator())
+    action_prompt_choices.insert(9, Separator())
     answer = promptClasses.getChecklistSelection(
-        message="What would you like to do?", choices=[*action_prompt_choices]
+        message="What action(s) would you like to take?",
+        choices=[*action_prompt_choices],
     )
     args = read_args.retriveArgs()
     action = constants.getattr("ActionPromptChoices")[answer]
-    if action == "Main Menu":
+    if isinstance(action, str):
         return action
     args.action = action
     write_args.setArgs(args)

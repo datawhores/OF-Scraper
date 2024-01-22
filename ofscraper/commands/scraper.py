@@ -91,60 +91,74 @@ def daemon_process():
 
 @exit.exit_wrapper
 def process_prompts():
+    while True:
+        if main_prompt_action():
+            break
+        elif prompts.continue_prompt() == "No":
+            break
+
+
+def main_prompt_action():
     global count
     while True:
         result_main_prompt = prompts.main_prompt()
-        if main_prompt_action(result_main_prompt):
-            break
-        if prompts.continue_prompt() == "No":
-            break
+        if result_main_prompt == 0:
+            result_main_prompt = action_result_helper(prompts.action_prompt())
+        elif result_main_prompt == 1:
+            # Edit `auth.json` file
+            auth.edit_auth()
+
+        elif result_main_prompt == 2:
+            # Edit `data.json` file
+            data.edit_config()
+
+        elif result_main_prompt == 3:
+            # Edit `data.json` file
+            data.edit_config_advanced()
+
+        elif result_main_prompt == 4:
+            # Display  `Profiles` menu
+            result_profiles_prompt = prompts.profiles_prompt()
+
+            if result_profiles_prompt == 0:
+                # Change profiles
+                profiles_manage.change_profile()
+
+            elif result_profiles_prompt == 1:
+                # Edit a profile
+                profiles_manage.edit_profile_name()
+
+            elif result_profiles_prompt == 2:
+                # Create a new profile
+
+                profiles_manage.create_profile()
+
+            elif result_profiles_prompt == 3:
+                # Delete a profile
+                profiles_manage.delete_profile()
+
+            elif result_profiles_prompt == 4:
+                # View profiles
+                profile_tools.print_profiles()
+        elif result_main_prompt == 5:
+            functs = add_selected_areas(count=count)
+            run_helper(functs)
+            count = count + 1
+        if result_main_prompt == 6:
+            return True
+        if result_main_prompt == 7:
+            continue
+
+        break
 
 
-def main_prompt_action(result_main_prompt):
-    if result_main_prompt == 0:
-        count = count + 1
-        prompts.action_prompt()
-        functs = add_selected_areas(count=count)
-        run_helper(functs)
-
-    elif result_main_prompt == 1:
-        # Edit `auth.json` file
-        auth.edit_auth()
-
-    elif result_main_prompt == 2:
-        # Edit `data.json` file
-        data.edit_config()
-
-    elif result_main_prompt == 3:
-        # Edit `data.json` file
-        data.edit_config_advanced()
-
-    elif result_main_prompt == 4:
-        # Display  `Profiles` menu
-        result_profiles_prompt = prompts.profiles_prompt()
-
-        if result_profiles_prompt == 0:
-            # Change profiles
-            profiles_manage.change_profile()
-
-        elif result_profiles_prompt == 1:
-            # Edit a profile
-            profiles_manage.edit_profile_name()
-
-        elif result_profiles_prompt == 2:
-            # Create a new profile
-
-            profiles_manage.create_profile()
-
-        elif result_profiles_prompt == 3:
-            # Delete a profile
-            profiles_manage.delete_profile()
-
-        elif result_profiles_prompt == 4:
-            # View profiles
-            profile_tools.print_profiles()
-    elif result_main_prompt == 5:
-        return True
+def action_result_helper(input):
+    if not input:
+        return 5
+    elif input == "quit":
+        return 6
+    elif input == "return":
+        return 7
 
 
 @exit.exit_wrapper
