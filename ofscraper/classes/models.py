@@ -1,6 +1,6 @@
 import arrow
 
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.dates as dates
 
 FORMAT = "YYYY-MM-DD"
 
@@ -129,7 +129,7 @@ class Model:
             return True
         elif self.renewed:
             return True
-        elif arrow.get(self.final_expired) > read_args.retriveArgs().date_now:
+        elif arrow.get(self.final_expired) > dates.getDateNow():
             return True
         return False
 

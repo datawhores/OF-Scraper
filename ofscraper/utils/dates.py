@@ -15,6 +15,19 @@ import arrow
 import ofscraper.utils.manager as manager
 
 dateFormat = None
+dateNow = None
+
+
+def setDateNow():
+    global dateNow
+    dateNow = arrow.now()
+
+
+def getDateNow():
+    global dateNow
+    if not dateNow:
+        setDateNow()
+    return dateNow
 
 
 def convert_date_to_mdyhms(date: str):
@@ -43,9 +56,11 @@ def get_current_time():
 def setLogDate(dateDict=None):
     global dateFormat
     if not dateDict:
+        global dateNow
+        setDateNow()
         dateDict = {
-            "day": arrow.now().format("YYYY-MM-DD"),
-            "now": arrow.now().format("YYYY-MM-DD_hh.mm.ss"),
+            "day": dateNow.format("YYYY-MM-DD"),
+            "now": dateNow.format("YYYY-MM-DD_hh.mm.ss"),
         }
     dateFormat = manager.get_manager().dict(dateDict)
 

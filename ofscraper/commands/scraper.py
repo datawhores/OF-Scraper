@@ -264,7 +264,7 @@ def normal_post_process():
                 log.warning(f"Avatar : {ele.avatar}")
             if bool(areas.get_download_area()):
                 log.warning(
-                    f"Getting {','.join(read_args.retriveArgs().posts)} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
             try:
                 model_id = ele.id
