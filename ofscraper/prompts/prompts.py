@@ -25,6 +25,7 @@ import ofscraper.prompts.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
@@ -901,18 +902,24 @@ def reset_username_prompt() -> bool:
 
 def reset_areas_prompt() -> bool:
     name = "reset areas"
+    print(f"Download Area: {areas.get_download_area()}")
+    print(f"Like Area: {areas.get_like_area()}")
     answer = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
-                "message": "Do you want to reset selected download area types",
-                "choices": ["Yes", "No"],
+                "message": "Do you want to reset selected area(s)",
+                "choices": [
+                    Choice("Download", "Download area only"),
+                    Choice("Like", "Like area only"),
+                    "Both",
+                    "No",
+                ],
                 "default": "No",
             }
         ]
     )
-
     return answer[name]
 
 

@@ -44,6 +44,18 @@ def select_areas(action=None, reset=False):
     remove_post_area()
 
 
+def remove_like_area():
+    args = read_args.retriveArgs()
+    args.like_area = {}
+    write_args.setArgs(args)
+
+
+def remove_download_area():
+    args = read_args.retriveArgs()
+    args.download_area = {}
+    write_args.setArgs(args)
+
+
 def remove_post_area():
     args = read_args.retriveArgs()
     args.posts = {}

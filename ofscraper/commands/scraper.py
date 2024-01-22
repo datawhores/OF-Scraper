@@ -54,9 +54,8 @@ log = logging.getLogger("shared")
 count = 0
 
 
-def add_selected_areas(count=None):
+def add_selected_areas():
     functs = []
-    count = count or 0
     if "download" in read_args.retriveArgs().action:
         actions.set_download_area()
         functs.append(process_post)
@@ -96,6 +95,18 @@ def process_prompts():
             break
         elif prompts.continue_prompt() == "No":
             break
+
+
+def prompt_reset_helper():
+    reset = prompts.reset_areas_prompt()
+    if reset == "Both":
+        actions.remove_download_area()
+        actions.remove_like_area()
+    elif reset == "Download":
+        actions.remove_download_area()
+    elif reset == "Like":
+        actions.remove_like_area()
+    userselector.getselected_usernames(reset=True)
 
 
 def main_prompt_action():
@@ -141,7 +152,8 @@ def main_prompt_action():
                 # View profiles
                 profile_tools.print_profiles()
         if result_main_prompt == 5:
-            functs = add_selected_areas(count=count)
+            count > 0 and prompt_reset_helper()
+            functs = add_selected_areas()
             run_helper(*functs)
             count = count + 1
         elif result_main_prompt == 6:
