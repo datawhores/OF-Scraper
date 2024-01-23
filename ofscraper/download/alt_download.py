@@ -37,7 +37,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.paths as paths
 from ofscraper.download.common import (
     addGlobalDir,
@@ -187,7 +187,7 @@ async def alt_download_preparer(ele):
                 for prot in adapt_set.content_protections:
                     if prot.value == None:
                         kId = prot.pssh[0].pssh
-                        logger.updateSenstiveDict(kId, "pssh_code")
+                        log_helpers.updateSenstiveDict(kId, "pssh_code")
                         break
                 for repr in adapt_set.representations:
                     origname = f"{repr.base_urls[0].base_url_value}"

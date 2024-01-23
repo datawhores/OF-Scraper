@@ -44,7 +44,7 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logger as logger
-import ofscraper.utils.logs.startvals as startvals
+import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.paths.check as check
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.manage as profiles_manage
@@ -411,7 +411,7 @@ def set_schedule(*functs):
 def schedule_helper(functs):
     jobqueue.put(logger.start_threads)
     jobqueue.put(logger.updateOtherLoggerStream)
-    jobqueue.put(startvals.printStartValues)
+    jobqueue.put(logs.printStartValues)
     jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
     for funct in functs:
         jobqueue.put(funct)

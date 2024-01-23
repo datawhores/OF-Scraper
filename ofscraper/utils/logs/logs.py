@@ -7,7 +7,8 @@ import certifi
 
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.file as config_file
-import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.console as console
+import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.system.system as system
 
@@ -15,8 +16,10 @@ import ofscraper.utils.system.system as system
 def printStartValues():
     args = read_args.retriveArgs()
     log = logging.getLogger("shared")
-    logger.updateSenstiveDict(f"/{common_paths.get_username()}/", "/your_username/")
-    logger.updateSenstiveDict(
+    log_helpers.updateSenstiveDict(
+        f"/{common_paths.get_username()}/", "/your_username/"
+    )
+    log_helpers.updateSenstiveDict(
         f"\\{common_paths.get_username()}\\", "\\\\your_username\\\\"
     )
 
@@ -32,3 +35,10 @@ def printStartValues():
     log.debug(f"python version {platform. python_version()}")
     log.debug(f"certifi {certifi.where()}")
     log.debug(f"number of threads available on system {system.getcpu_count()}")
+
+
+def discord_warning():
+    if read_args.retriveArgs().discord == "DEBUG":
+        console.get_shared_console().print(
+            "[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]"
+        )

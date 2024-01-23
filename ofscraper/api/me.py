@@ -24,7 +24,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.encoding as encoding
-import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.helpers as log_helpers
 
 log = logging.getLogger("shared")
 
@@ -53,12 +53,12 @@ def _scraper_user_helper(c):
                 with c.requests(constants.getattr("meEP"))() as r:
                     if r.ok:
                         data = r.json_()
-                        logger.updateSenstiveDict(data["id"], "userid")
-                        logger.updateSenstiveDict(
+                        log_helpers.updateSenstiveDict(data["id"], "userid")
+                        log_helpers.updateSenstiveDict(
                             f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
                             "username",
                         )
-                        logger.updateSenstiveDict(
+                        log_helpers.updateSenstiveDict(
                             f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
                             "name",
                         )

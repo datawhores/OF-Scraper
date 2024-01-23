@@ -7,7 +7,7 @@ import ofscraper.runner.exit as exit_manager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit_context
-import ofscraper.utils.logs.startvals as startvals
+import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.system.system as system
 
 
@@ -51,4 +51,4 @@ def initLogs():
         console.get_shared_console().print(
             "[bold yellow]Warning another OF-Scraper instance was detected[bold yellow]\n\n\n"
         )
-    startvals.printStartValues()
+    logs.printStartValues()
