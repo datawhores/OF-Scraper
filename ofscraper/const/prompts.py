@@ -20,7 +20,7 @@ ActionPromptChoices = {
         "unlike",
         "download",
     },
-    "Main Menu": "main",
+    "Go to main menu": "main",
     "Quit": "quit",
 }
 usernameOrListChoices = {
