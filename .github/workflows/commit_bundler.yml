@@ -4,7 +4,7 @@ on:
 jobs:
   create_version:
     runs-on: ubuntu-20.04
-    name: create version doc
+    name: create version docadd
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -134,9 +134,7 @@ jobs:
       - name: active env
         run: poetry env use  .venv/Scripts/python3
       - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: poetry add pyinstaller==5.13.0
+        run: poetry install --with build
       # - name: temp deactive
       #   run: deactive
       - name: create-one-file
