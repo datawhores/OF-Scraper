@@ -72,29 +72,28 @@ def parsed_subscriptions_helper(reset=False):
     if reset == True:
         args.username = None
         write_args.setArgs(args)
-    if not bool(read_args.retriveArgs().username):
+    if not bool(args.username):
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
         read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         write_args.setArgs(args)
-    elif "ALL" in read_args.retriveArgs().username:
+    elif "ALL" in args.username:
         PARSED_SUBS = filterNSort(ALL_SUBS)
-    elif read_args.retriveArgs().username:
-        usernameset = set(read_args.retriveArgs().username)
+    elif args.username:
+        usernameset = set(args.username)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
     return PARSED_SUBS
 
 
 def setfilter(forced=False):
     if forced or prompts.decide_filters_prompt() == "Yes":
-        global args
-        args = prompts.modify_filters_prompt(args)
+        args = prompts.modify_filters_prompt(read_args.retriveArgs())
 
 
 def setsort(forced=False):
     if forced or prompts.decide_sort_prompt() == "Yes":
         global args
-        args = prompts.modify_sort_prompt(args)
+        args = prompts.modify_sort_prompt(read_args.retriveArgs())
 
 
 def filterNSort(usernames):
