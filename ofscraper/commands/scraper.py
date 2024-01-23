@@ -209,7 +209,7 @@ def process_post_user_first():
         output = []
 
         for count, ele in enumerate(userdata):
-            log.info(f"Progress {count+1}/{length} model")
+            log.info(f"Data retrival progressing on model {count+1}/{length}")
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
             if bool(areas.get_download_area()):
@@ -268,13 +268,14 @@ def normal_post_process():
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
         for count, ele in enumerate(userdata):
-            log.warning(f"Progress {count+1}/{length} model")
+            log.warning(
+                f"Download action progressing on model {count+1}/{length} models "
+            )
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
-            if bool(areas.get_download_area()):
-                log.warning(
-                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                )
+            log.warning(
+                f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+            )
             try:
                 model_id = ele.id
                 operations.create_tables(model_id, ele.name)
@@ -336,7 +337,12 @@ def process_like():
         log.debug(f"Number of Active Accounts selected {length}")
         with stdout.lowstdout():
             for count, ele in enumerate(active):
-                log.info(f"Progress {count+1}/{length} model")
+                log.info(f"Like action progressing on model {count+1}/{length}")
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
+                log.warning(
+                    f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                )
                 model_id = ele.id
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
@@ -365,7 +371,12 @@ def process_unlike():
         log.debug(f"Number of Active Accounts selected {length}")
         with stdout.lowstdout():
             for count, ele in enumerate(active):
-                log.info(f"Progress {count+1}/{length} model")
+                log.info(f"Unlike action progressing on model {count+1}/{length}")
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
+                log.warning(
+                    f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                )
                 model_id = profile.get_id(ele.name)
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
