@@ -70,7 +70,7 @@ def edit_config():
         config = config_file.open_config()
         updated_config = prompts.config_prompt()
         config.update(updated_config)
-
+        p = common_paths.get_config_path()
         with open(p, "w") as f:
             f.write(json.dumps(updated_config, indent=4))
 

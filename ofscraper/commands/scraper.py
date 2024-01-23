@@ -148,11 +148,11 @@ def main_prompt_action():
 
         elif result_main_prompt == 2:
             # Edit `data.json` file
-            data.edit_config()
+            config_.edit_config()
 
         elif result_main_prompt == 3:
             # Edit `data.json` file
-            data.edit_config_advanced()
+            config_.edit_config_advanced()
 
         elif result_main_prompt == 4:
             # Display  `Profiles` menu
