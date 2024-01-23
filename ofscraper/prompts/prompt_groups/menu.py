@@ -1,0 +1,59 @@
+r"""
+                                                             
+        _____                                               
+  _____/ ____\______ ________________    ____   ___________ 
+ /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
+(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
+ \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
+                 \/     \/           \/            \/         
+"""
+from InquirerPy.separator import Separator
+from prompt_toolkit.shortcuts import prompt as prompt
+
+import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.write as write_args
+import ofscraper.utils.constants as constants
+
+
+def main_prompt() -> int:
+    main_prompt_choices = [*constants.getattr("mainPromptChoices")]
+    main_prompt_choices.insert(3, Separator())
+    main_prompt_choices.insert(8, Separator())
+    answer = promptClasses.getChecklistSelection(
+        message="What would you like to do?", choices=[*main_prompt_choices]
+    )
+    return constants.getattr("mainPromptChoices")[answer]
+
+
+def action_prompt() -> int:
+    action_prompt_choices = [*constants.getattr("ActionPromptChoices")]
+    action_prompt_choices.insert(3, Separator())
+    action_prompt_choices.insert(6, Separator())
+    action_prompt_choices.insert(9, Separator())
+    answer = promptClasses.getChecklistSelection(
+        message="What action(s) would you like to take?",
+        choices=[*action_prompt_choices],
+    )
+    args = read_args.retriveArgs()
+    action = constants.getattr("ActionPromptChoices")[answer]
+    if isinstance(action, str):
+        return action
+    args.action = action
+    write_args.setArgs(args)
+
+
+def continue_prompt() -> bool:
+    name = "continue"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Do you want to continue with script",
+                "choices": ["Yes", "No"],
+            }
+        ]
+    )
+
+    return answer[name]

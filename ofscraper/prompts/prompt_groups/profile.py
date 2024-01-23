@@ -1,0 +1,129 @@
+r"""
+                                                             
+        _____                                               
+  _____/ ____\______ ________________    ____   ___________ 
+ /  _ \   __\/  ___// ___\_  __ \__  \  /  _ \_/ __ \_  __ \
+(  <_> )  |  \___ \\  \___|  | \// __ \(  <_> )  ___/|  | \/
+ \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
+                 \/     \/           \/            \/         
+"""
+from InquirerPy.validator import EmptyInputValidator
+from prompt_toolkit.shortcuts import prompt as prompt
+
+import ofscraper.prompts.prompt_validators as prompt_validators
+import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.utils.constants as constants
+
+
+def profiles_prompt() -> int:
+    name = "profile"
+
+    questions = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Select one of the following:",
+                "choices": [*constants.getattr("profilesPromptChoices")],
+            }
+        ]
+    )
+
+    return constants.getattr("profilesPromptChoices").get(questions[name])
+
+
+def edit_profiles_prompt(profiles) -> str:
+    name = "edit"
+
+    profile_names = [profile.stem for profile in profiles]
+
+    questions = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Which profile would you like to edit?",
+                "choices": [*profile_names],
+            }
+        ]
+    )
+
+    return questions[name]
+
+
+def new_name_edit_profiles_prompt(old_profile_name) -> str:
+    name = "new_name"
+
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "input",
+                "name": name,
+                "message": f"What would you like to rename {old_profile_name} to?",
+                "validate": prompt_validators.MultiValidator(
+                    EmptyInputValidator(), prompt_validators.currentProfilesValidator()
+                ),
+            }
+        ]
+    )
+
+    return answer[name]
+
+
+def create_profiles_prompt() -> str:
+    name = "create"
+
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "input",
+                "name": name,
+                "message": """
+What would you like to name your new profile?
+only letters, numbers, and underscores are allowed
+""",
+                "validate": prompt_validators.MultiValidator(
+                    prompt_validators.namevalitator(),
+                    prompt_validators.currentProfilesCreationValidator(),
+                ),
+            }
+        ]
+    )
+
+    return answer[name]
+
+
+def get_profile_prompt(profiles: list) -> str:
+    name = "get_profile"
+
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Select Profile",
+                "choices": profiles,
+                "validate": prompt_validators.MultiValidator(
+                    prompt_validators.emptyListValidator()
+                ),
+            }
+        ]
+    )
+    profile = answer[name]
+    return profile
+
+
+def change_default_profile() -> bool:
+    name = "reset username"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message": "Set this as the new default profile",
+                "choices": ["Yes", "No"],
+            }
+        ]
+    )
+
+    return answer[name]
