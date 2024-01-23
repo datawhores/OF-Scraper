@@ -13,10 +13,12 @@ ActionPromptChoices = {
     "Like a selection of a user's posts": {"like"},
     "Unlike a selection of a user's posts": {"unlike"},
     "Download content from a user + Like a selection of a user's posts": {
-        "like,download"
+        "like",
+        "download",
     },
     "Download content from a user + Unlike a selection of a user's posts": {
-        "unlike,download"
+        "unlike",
+        "download",
     },
     "Return": "return",
     "Quit": "quit",

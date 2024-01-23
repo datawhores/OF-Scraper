@@ -57,14 +57,23 @@ count = 0
 
 def add_selected_areas():
     functs = []
-    if "download" in read_args.retriveArgs().action:
-        actions.set_download_area()
+    action = read_args.retriveArgs().action
+    if "like" in action and "download" in action:
+        actions.select_areas()
         functs.append(process_post)
-    if "like" in read_args.retriveArgs().action:
-        actions.set_like_area()
         functs.append(process_like)
-    if "unlike" in read_args.retriveArgs().action:
-        actions.set_like_area()
+    elif "unlike" in action and "download" in action:
+        actions.select_areas()
+        functs.append(process_post)
+        functs.append(process_unlike)
+    elif "download" in action:
+        actions.select_areas()
+        functs.append(process_post)
+    elif "like" in action:
+        actions.select_areas()
+        functs.append(process_like)
+    elif "unlike" in action:
+        actions.select_areas()
         functs.append(process_unlike)
     if read_args.retriveArgs().scrape_paid:
         functs.append(scrape_paid)

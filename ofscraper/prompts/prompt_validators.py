@@ -300,10 +300,10 @@ def like_area_validator_posts():
         elif "All" in args.like_area:
             return True
         elif (
-            not "Timeline" in x + args.posts
-            and not "Pinned" in x + args.posts
-            and not "Archived" in x + args.posts
-            and not "Labels" in x + args.posts
+            not "Timeline" in x + list(args.posts)
+            and not "Pinned" in x + list(args.posts)
+            and not "Archived" in x + list(args.posts)
+            and not "Labels" in x + list(args.posts)
         ):
             return False
         return True
