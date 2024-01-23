@@ -211,8 +211,8 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install package
-        run: poetry install
-      - name: Install builder
+        run: poetry install --all-extras
+      - name: Install pyinstaller
         run: python -m pip install pyinstaller
       - name: create-one-file
         id: create-one-file

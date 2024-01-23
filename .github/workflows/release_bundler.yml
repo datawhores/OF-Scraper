@@ -89,6 +89,7 @@ jobs:
             cd work
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
+            source .venv/bin/activate
             /root/.local/bin/poetry install --all-extras
             python -m pip install pyinstaller
             echo "install run pyinstaller"
@@ -110,6 +111,7 @@ jobs:
             cd work
             apt-get install zip libxml2-dev libxslt-dev zip -y
             python3.11 -m venv .venv
+            source .venv/bin/activate
             /root/.local/bin/poetry install --all-extras
             python -m pip install pyinstaller
             echo "install run pyinstaller"
@@ -158,9 +160,9 @@ jobs:
       - name: active env
         run: poetry env use  .venv/Scripts/python3
       - name: Install package
-        run: poetry install
-      - name: Install builder
-        run: poetry add pyinstaller==5.13.0
+        run: poetry install --all-extras
+      - name: Install pyinstaller
+        run: pip install pyinstaller
       # - name: temp deactive
       #   run: deactive
       - name: create-one-file
@@ -233,8 +235,8 @@ jobs:
           poetry-version: 1.4.1
       - name: Install package
         run: poetry install
-      - name: Install builder
-        run: python -m pip install pyinstaller==5.13.0
+      - name: Install pyinstaller
+        run: python -m pip install pyinstaller
       - name: create-one-file
         id: create-one-file
         run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
