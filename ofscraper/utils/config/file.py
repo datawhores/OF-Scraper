@@ -28,13 +28,30 @@ def make_config(config=None):
 
 
 def open_config():
+    configText = config_string()
+    config = json.loads(configText)
+    return config["config"]
+
+
+def config_string():
     p = pathlib.Path(common_paths.get_config_path())
     if not p.parent.is_dir():
         p.parent.mkdir(parents=True, exist_ok=True)
     with open(p, "r") as f:
         configText = f.read()
-        config = json.loads(configText)
-        return config["config"]
+    return configText
+
+
+def write_config(updated_config):
+    if isinstance(updated_config, str):
+        updated_config = json.loads(updated_config)
+    if not "config" in updated_config:
+        temp = {}
+        temp["config"] = updated_config
+        updated_config = temp
+    p = common_paths.get_config_path()
+    with open(p, "w") as f:
+        f.write(json.dumps(updated_config, indent=4))
 
 
 def auto_update_config(config: dict) -> dict:

@@ -467,7 +467,7 @@ def manual_config_prompt(configText) -> str:
                 "multiline": True,
                 "name": name,
                 "default": configText,
-                "long_message": prompt_strings.MULTI,
+                "long_message": prompt_strings.MULTI_LINE,
                 "message": "Edit config text\n===========\n",
             }
         ]
