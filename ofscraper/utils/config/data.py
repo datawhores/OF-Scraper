@@ -121,9 +121,11 @@ def get_date(config=None):
 def get_InfiniteLoop(config=None):
     if config == None:
         return constants.getattr("INFINITE_LOOP_DEFAULT")
-    return config.get("advanced_options", {}).get(
-        "INFINITE_LOOP_DEFAULT"
-    ) or constants.getattr("INFINITE_LOOP_DEFAULT")
+    return (
+        config.get("advanced_options", {}).get("infinite_loop")
+        if config.get("advanced_options", {}).get("infinite_loop") != None
+        else constants.getattr("INFINITE_LOOP_DEFAULT")
+    )
 
 
 @wrapper.config_reader

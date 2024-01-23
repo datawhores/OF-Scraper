@@ -82,15 +82,21 @@ def add_selected_areas():
 
 def process_selected_areas():
     global count
+    functs = add_selected_areas()
+    run_helper(*functs)
+    count = 1
     while True:
-        count = count + 1
-        functs = add_selected_areas()
-        run_helper(*functs)
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
-        if prompts.action_prompt() == "Main Menu":
+        action = prompts.action_prompt()
+        if action == "main":
             process_prompts()
             break
+        else:
+            count > 0 and prompt_reset_helper()
+            functs = add_selected_areas()
+            run_helper(*functs)
+            count = count + 1
 
 
 def daemon_process():
@@ -124,7 +130,16 @@ def main_prompt_action():
     while True:
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt == 0:
-            result_main_prompt = action_result_helper(prompts.action_prompt())
+            action_result_prompt = action_result_helper(prompts.action_prompt())
+            if action_result_prompt == 0:
+                count > 0 and prompt_reset_helper()
+                functs = add_selected_areas()
+                run_helper(*functs)
+                count = count + 1
+            elif action_result_prompt == 1:
+                return True
+            elif action_result_prompt == 2:
+                continue
         elif result_main_prompt == 1:
             # Edit `auth.json` file
             auth.edit_auth()
@@ -161,17 +176,8 @@ def main_prompt_action():
             elif result_profiles_prompt == 4:
                 # View profiles
                 profile_tools.print_profiles()
-        if result_main_prompt == 5:
-            count > 0 and prompt_reset_helper()
-            functs = add_selected_areas()
-            run_helper(*functs)
-            count = count + 1
-        elif result_main_prompt == 6:
+        elif result_main_prompt == 5:
             return True
-        elif result_main_prompt == 7:
-            continue
-
-        break
 
 
 def action_result_helper(input):
@@ -179,7 +185,7 @@ def action_result_helper(input):
         return 5
     elif input == "quit":
         return 6
-    elif input == "return":
+    elif input == "main":
         return 7
 
 
