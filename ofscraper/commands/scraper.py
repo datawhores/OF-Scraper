@@ -92,6 +92,8 @@ def process_selected_areas():
         if action == "main":
             process_prompts()
             break
+        elif action == "quit":
+            break
         else:
             count > 0 and prompt_reset_helper()
             functs = add_selected_areas()
