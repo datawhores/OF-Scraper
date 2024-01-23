@@ -48,7 +48,9 @@ def read_auth():
                 auth = json.loads(authText)
                 nested_auth = auth["auth"]
                 for key in nested_auth.keys():
-                    if nested_auth[key] == None or nested_auth[key] == "":
+                    if key == "auth_uid_":
+                        continue
+                    elif nested_auth[key] == None or nested_auth[key] == "":
                         console.print("Auth Value not set retriving missing values")
                         make_auth()
                         break
@@ -211,10 +213,7 @@ def add_cookies():
     cookies = {}
     cookies.update({"sess": auth["auth"]["sess"]})
     cookies.update({"auth_id": auth["auth"]["auth_id"]})
-
-    if auth["auth"]["auth_uid_"]:
-        cookies.update({"auth_uid_": auth["auth"]["auth_uid_"]})
-
+    cookies.update({"auth_uid_": auth["auth"]["auth_uid_"] or auth["auth"]["auth_id"]})
     return cookies
 
 
