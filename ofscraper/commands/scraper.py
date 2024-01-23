@@ -182,11 +182,11 @@ def main_prompt_action():
 
 def action_result_helper(input):
     if not input:
-        return 5
+        return 0
     elif input == "quit":
-        return 6
+        return 1
     elif input == "main":
-        return 7
+        return 2
 
 
 @exit.exit_wrapper
