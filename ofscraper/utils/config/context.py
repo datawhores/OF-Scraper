@@ -17,11 +17,14 @@ def config_context():
             try:
                 print("You config.json has a syntax error")
                 print(f"{e}\n\n")
-                configStr = prompts.manual_config_prompt(
-                    configStr or config_file.config_string()
-                )
-                config_file.write_config(configStr)
-                config = config_file.open_config()
+                if prompts.reset_config_prompt() == "Manual":
+                    configStr = prompts.manual_config_prompt(
+                        configStr or config_file.config_string()
+                    )
+                    config_file.write_config(configStr)
+                    config = config_file.open_config()
+                else:
+                    config_file.make_config_original()
                 break
-            except:
+            except Exception as E:
                 continue

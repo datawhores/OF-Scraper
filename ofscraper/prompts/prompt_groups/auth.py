@@ -15,6 +15,7 @@ from InquirerPy.validator import EmptyInputValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
+import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 
@@ -67,6 +68,26 @@ def auth_prompt(auth) -> dict:
     )
 
     return answers
+
+
+def manual_auth_prompt(authText) -> str:
+    name = "input"
+
+    questions = promptClasses.batchConverter(
+        *[
+            {
+                "name": name,
+                "type": "input",
+                "multiline": True,
+                "default": authText,
+                "message": "Edit auth text\n===========\n",
+                "long_message": prompt_strings.AUTH_MULTI,
+                "validate": EmptyInputValidator(),
+            }
+        ]
+    )
+
+    return questions[name]
 
 
 def ask_make_auth_prompt() -> bool:

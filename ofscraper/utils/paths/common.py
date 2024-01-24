@@ -3,10 +3,10 @@ import pathlib
 
 import arrow
 
-import ofscraper.const.constants as consts
+import ofscraper.const.constants as constants
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
-import ofscraper.utils.constants as constants
+import ofscraper.utils.constants as constants_attr
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.profiles.data as profile_data
 
@@ -21,7 +21,7 @@ def getcachepath():
 
 
 def get_auth_file():
-    return get_profile_path() / constants.getattr("authFile")
+    return get_profile_path() / constants_attr.getattr("authFile")
 
 
 def get_username():
@@ -38,8 +38,8 @@ def get_config_home():
 
 def get_config_path():
     configPath = read_args.retriveArgs().config
-    defaultPath = pathlib.Path.home() / consts.configPath / consts.configFile
-    ofscraperHome = pathlib.Path.home() / consts.configPath
+    defaultPath = pathlib.Path.home() / constants.configPath / constants.configFile
+    ofscraperHome = pathlib.Path.home() / constants.configPath
 
     if configPath == None or configPath == "":
         return defaultPath
@@ -48,10 +48,10 @@ def get_config_path():
     if configPath.is_file():
         return configPath
     elif configPath.is_dir():
-        return configPath / consts.configFile
+        return configPath / constants.configFile
     # enforce that configpath needs some extension
     elif configPath.suffix == "":
-        return configPath / consts.configFile
+        return configPath / constants.configFile
 
     elif str(configPath.parent) == ".":
         return ofscraperHome / configPath
@@ -88,12 +88,14 @@ def get_profile_path(name=None):
 
 def get_save_location(config=None):
     if config == None:
-        return constants.getattr("SAVE_PATH_DEFAULT")
+        return constants_attr.getattr("SAVE_PATH_DEFAULT")
+    elif config == False:
+        return constants.SAVE_PATH_DEFAULT
     return (
         config.get("save_location")
         or config.get("file_options", {}).get("save_location")
         or config.get("save_location")
-        or constants.getattr("SAVE_PATH_DEFAULT")
+        or constants_attr.getattr("SAVE_PATH_DEFAULT")
     )
 
 

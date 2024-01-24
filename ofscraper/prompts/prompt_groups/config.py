@@ -20,6 +20,7 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.cache as cache
+import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.constants as constants
@@ -30,7 +31,7 @@ console = Console()
 
 
 def config_prompt_advanced() -> dict:
-    custom = {}
+    out = {}
     threads = promptClasses.batchConverter(
         *[
             {
@@ -46,7 +47,7 @@ def config_prompt_advanced() -> dict:
         ]
     )
 
-    custom.update(threads)
+    out.update(threads)
     max_allowed = cache.get("speed_download")
     if not cache.get("speed_download") or promptClasses.getChecklistSelection(
         choices=[Choice(True, "Yes"), Choice(False, "No")],
@@ -62,20 +63,13 @@ def config_prompt_advanced() -> dict:
         *[
             {
                 "type": "number",
-                "name": "download-sem",
+                "name": "download-sems",
                 "message": "Number of semaphores per thread: ",
                 "min_allowed": 1,
                 "max_allowed": max_allowed,
                 "validate": EmptyInputValidator(),
                 "long_instruction": f"Value can be 1-{max_allowed}",
                 "default": data.get_download_semaphores(),
-            },
-            {
-                "type": "list",
-                "name": "avatars",
-                "message": "Show Avatars in Log",
-                "default": data.get_avatar(),
-                "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
             {
                 "type": "list",
@@ -94,7 +88,7 @@ def config_prompt_advanced() -> dict:
             {
                 "type": "list",
                 "name": "key-mode-default",
-                "message": "Make selection for how to retrive long_message",
+                "message": "Select default key mode for decryption",
                 "default": data.get_key_mode(),
                 "choices": constants.getattr("KEY_OPTIONS"),
             },
@@ -109,12 +103,14 @@ def config_prompt_advanced() -> dict:
                 "type": "filepath",
                 "name": "client-id",
                 "message": "Enter path to client id file",
+                "long_instruction": "Required if your using manual for key-mode",
                 "default": data.get_client_id() or "",
             },
             {
                 "type": "filepath",
                 "name": "private-key",
                 "message": "Enter path to private-key",
+                "long_instruction": "Required if your using manual for key-mode",
                 "default": data.get_private_key() or "",
             },
             {
@@ -127,7 +123,7 @@ def config_prompt_advanced() -> dict:
             # value because of legacy config values
             {
                 "type": "list",
-                "name": "partfileclean",
+                "name": "auto_resume",
                 "message": "Enable auto file resume",
                 "long_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
                 "default": data.get_part_file_clean(),
@@ -155,7 +151,7 @@ def config_prompt_advanced() -> dict:
                 "message": "Enable Code Execution:",
                 "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
                 "default": data.get_allow_code_execution(),
-                "long_instruction": "Be careful if turning this on this only effects file_format,metadata, and dir_format",
+                "long_instruction": "Allows for use of eval to evaluate custom values in placeholders",
             },
             {
                 "type": "filepath",
@@ -166,7 +162,7 @@ def config_prompt_advanced() -> dict:
             },
             {
                 "type": "list",
-                "name": "",
+                "name": "appendlog",
                 "message": "append logs into daily log files",
                 "default": data.get_appendlog(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
@@ -191,7 +187,7 @@ def config_prompt_advanced() -> dict:
             {
                 "type": "list",
                 "name": "truncation_default",
-                "message": "Should the script truncate long",
+                "message": "Should the script truncate long filenames",
                 "default": data.get_truncation(),
                 "choices": [
                     Choice(True, "Yes"),
@@ -201,13 +197,13 @@ def config_prompt_advanced() -> dict:
             },
         ]
     )
-    custom.update(new_settings)
-    schema.get_current_config_schema({"config": custom})
-    return custom
+    out.update(new_settings)
+    out = schema.get_current_config_schema(out)
+    return out
 
 
 def config_prompt() -> dict:
-    custom = {}
+    out = {}
     answer = promptClasses.batchConverter(
         *[
             {
@@ -452,9 +448,9 @@ Empty string is consider to be 'profile'
         ]
     )
     answer["responsetype"] = answer2
-    custom.update(answer)
-    schema.get_current_config_schema({"config": custom})
-    return custom
+    out.update(answer)
+    out = schema.get_current_config_schema({"config": out})
+    return out
 
 
 def manual_config_prompt(configText) -> str:
@@ -469,26 +465,6 @@ def manual_config_prompt(configText) -> str:
                 "default": configText,
                 "long_message": prompt_strings.MULTI_LINE,
                 "message": "Edit config text\n===========\n",
-            }
-        ]
-    )
-
-    return questions[name]
-
-
-def manual_auth_prompt(authText) -> str:
-    name = "input"
-
-    questions = promptClasses.batchConverter(
-        *[
-            {
-                "name": name,
-                "type": "input",
-                "multiline": True,
-                "default": authText,
-                "message": "Edit auth text\n===========\n",
-                "long_message": prompt_strings.AUTH_MULTI,
-                "validate": EmptyInputValidator(),
             }
         ]
     )
@@ -536,7 +512,10 @@ def reset_config_prompt() -> bool:
                 "type": "list",
                 "name": name,
                 "message": "How do you want to fix this issue",
-                "choices": ["Reset Default", "Manually Edit Config"],
+                "choices": [
+                    Choice("Reset", "Reset Default"),
+                    Choice("Manual", "Manually Edit Config"),
+                ],
             }
         ]
     )

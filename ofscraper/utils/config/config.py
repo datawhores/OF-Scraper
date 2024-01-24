@@ -30,6 +30,8 @@ def read_config(update=True):
         config = config_file.open_config()
         if update and schema.config_diff(config):
             config = config_file.auto_update_config(config)
+        if config.get("config"):
+            config = config["config"]
         return config
 
 
@@ -47,7 +49,7 @@ def edit_config():
     with config_context.config_context():
         config = config_file.open_config()
         updated_config = prompts.config_prompt()
-        config.update(updated_config)
+        config = update_config_full(config, updated_config)
         config_file.write_config(config)
         console.print("`config.json` has been successfully edited.")
 
@@ -56,9 +58,19 @@ def edit_config_advanced():
     with config_context.config_context():
         config = config_file.open_config()
         updated_config = prompts.config_prompt_advanced()
-        config.update(updated_config)
+        config = update_config_full(config, updated_config)
         config_file.write_config(config)
         console.print("`config.json` has been successfully edited.")
+
+
+def update_config_full(config, updated_config):
+    config = config_file.open_config()
+    if config.get("config"):
+        config = config["config"]
+    if updated_config.get("config"):
+        updated_config = updated_config["config"]
+    config.update(updated_config)
+    return config
 
 
 def update_mp4decrypt():

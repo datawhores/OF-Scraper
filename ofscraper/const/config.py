@@ -3,8 +3,9 @@ import pathlib
 
 SANITIZE_DB_DEFAULT = False
 SUPPRESS_LOG_LEVEL = 21
+RESUME_DEFAULT = True
 CACHEDEFAULT = "sqlite"
-KEY_DEFAULT = "cdrm2"
+KEY_DEFAULT = "cdrm"
 DIR_FORMAT_DEFAULT = "{model_username}/{responsetype}/{mediatype}/"
 FILE_FORMAT_DEFAULT = "{filename}.{ext}"
 METADATA_DEFAULT = "{configpath}/{profile}/.data/{model_username}_{model_id}"

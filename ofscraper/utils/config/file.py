@@ -13,7 +13,7 @@ log = logging.getLogger("shared")
 
 
 def make_config(config=None):
-    config = config or schema.get_current_config_schema()
+    config = schema.get_current_config_schema(config=config)
 
     if isinstance(config, str):
         config = json.loads(config)
@@ -27,10 +27,16 @@ def make_config(config=None):
     console.print(f"config file created at {p}")
 
 
+def make_config_original():
+    make_config(config=False)
+
+
 def open_config():
     configText = config_string()
     config = json.loads(configText)
-    return config["config"]
+    if config.get("config"):
+        return config.get("config")
+    return config
 
 
 def config_string():
@@ -45,10 +51,8 @@ def config_string():
 def write_config(updated_config):
     if isinstance(updated_config, str):
         updated_config = json.loads(updated_config)
-    if not "config" in updated_config:
-        temp = {}
-        temp["config"] = updated_config
-        updated_config = temp
+    if updated_config.get("config"):
+        updated_config = updated_config["config"]
     p = common_paths.get_config_path()
     with open(p, "w") as f:
         f.write(json.dumps(updated_config, indent=4))

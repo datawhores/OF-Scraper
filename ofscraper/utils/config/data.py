@@ -11,29 +11,34 @@ r"""
 from diskcache import Disk, JSONDisk
 from humanfriendly import parse_size
 
+import ofscraper.const.constants as constants
 import ofscraper.utils.config.wrapper as wrapper
-import ofscraper.utils.constants as constants
+import ofscraper.utils.constants as constants_attr
 
 
 @wrapper.config_reader
 def get_main_profile(config=None):
     if config == None:
-        return constants.getattr("PROFILE_DEFAULT")
+        return constants_attr.getattr("PROFILE_DEFAULT")
+    elif config == False:
+        return constants.PROFILE_DEFAULT
     return config.get(
-        constants.getattr("mainProfile"), constants.getattr("PROFILE_DEFAULT")
-    ) or constants.getattr("PROFILE_DEFAULT")
+        constants_attr.getattr("mainProfile"), constants_attr.getattr("PROFILE_DEFAULT")
+    ) or constants_attr.getattr("PROFILE_DEFAULT")
 
 
 @wrapper.config_reader
 def get_filesize_limit(config=None):
     if config == None:
-        return constants.getattr("FILE_SIZE_LIMIT_DEFAULT")
+        return constants_attr.getattr("FILE_SIZE_LIMIT_DEFAULT")
+    elif config == False:
+        return constants.FILE_SIZE_LIMIT_DEFAULT
     try:
         return parse_size(
             str(
                 config.get("file_size_limit")
                 or config.get("download_options", {}).get("file_size_limit")
-                or constants.getattr("FILE_SIZE_LIMIT_DEFAULT")
+                or constants_attr.getattr("FILE_SIZE_LIMIT_DEFAULT")
             )
         )
     except:
@@ -43,13 +48,15 @@ def get_filesize_limit(config=None):
 @wrapper.config_reader
 def get_filesize_min(config=None):
     if config == None:
-        return constants.getattr("FILE_SIZE_MIN_DEFAULT")
+        return constants_attr.getattr("FILE_SIZE_MIN_DEFAULT")
+    elif config == False:
+        return constants.FILE_SIZE_MIN_DEFAULT
     try:
         return parse_size(
             str(
                 config.get("file_size_min")
                 or config.get("download_options", {}).get("file_size_min")
-                or constants.getattr("FILE_SIZE_MIN_DEFAULT")
+                or constants_attr.getattr("FILE_SIZE_MIN_DEFAULT")
             )
         )
     except Exception:
@@ -59,13 +66,15 @@ def get_filesize_min(config=None):
 @wrapper.config_reader
 def get_system_freesize(config=None):
     if config is None:
-        return constants.getattr("SYSTEM_FREEMIN_DEFAULT")
+        return constants_attr.getattr("SYSTEM_FREEMIN_DEFAULT")
+    elif config == False:
+        return constants.SYSTEM_FREEMIN_DEFAULT
     try:
         return parse_size(
             str(
                 config.get("system_free_min")
                 or config.get("download_options", {}).get("system_free_min")
-                or constants.getattr("SYSTEM_FREEMIN_DEFAULT")
+                or constants_attr.getattr("SYSTEM_FREEMIN_DEFAULT")
             )
         )
     except Exception:
@@ -75,129 +84,156 @@ def get_system_freesize(config=None):
 @wrapper.config_reader
 def get_dirformat(config=None):
     if config == None:
-        return constants.getattr("DIR_FORMAT_DEFAULT")
+        return constants_attr.getattr("DIR_FORMAT_DEFAULT")
+    elif config == False:
+        return constants.DIR_FORMAT_DEFAULT
     return (
         config.get("dir_format")
         or config.get("file_options", {}).get("dir_format")
-        or constants.getattr("DIR_FORMAT_DEFAULT")
+        or constants_attr.getattr("DIR_FORMAT_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_fileformat(config=None):
     if config == None:
-        return constants.getattr("FILE_FORMAT_DEFAULT")
+        return constants_attr.getattr("FILE_FORMAT_DEFAULT")
+    elif config == False:
+        return constants.FILE_FORMAT_DEFAULT
     return (
         config.get("file_format")
         or config.get("file_options", {}).get("file_format")
-        or constants.getattr("FILE_FORMAT_DEFAULT")
+        or constants_attr.getattr("FILE_FORMAT_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_textlength(config=None):
     if config == None:
-        return constants.getattr("TEXTLENGTH_DEFAULT")
+        return constants_attr.getattr("TEXTLENGTH_DEFAULT")
+    elif config == False:
+        return constants.TEXTLENGTH_DEFAULT
     try:
         return int(
             config.get("textlength") or config.get("file_options", {}).get("textlength")
-        ) or constants.getattr("TEXTLENGTH_DEFAULT")
+        ) or constants_attr.getattr("TEXTLENGTH_DEFAULT")
     except:
-        return constants.getattr("TEXTLENGTH_DEFAULT")
+        return constants_attr.getattr("TEXTLENGTH_DEFAULT")
 
 
 @wrapper.config_reader
 def get_date(config=None):
     if config == None:
-        return constants.getattr("DATE_DEFAULT")
+        return constants_attr.getattr("DATE_DEFAULT")
+    elif config == False:
+        return constants.DATE_DEFAULT
     return (
         config.get("date")
         or config.get("file_options", {}).get("date")
-        or constants.getattr("DATE_DEFAULT")
+        or constants_attr.getattr("DATE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_InfiniteLoop(config=None):
     if config == None:
-        return constants.getattr("INFINITE_LOOP_DEFAULT")
+        return constants_attr.getattr("INFINITE_LOOP_DEFAULT")
+    elif config == False:
+        return constants.INFINITE_LOOP_DEFAULT
     return (
         config.get("advanced_options", {}).get("infinite_loop")
         if config.get("advanced_options", {}).get("infinite_loop") != None
-        else constants.getattr("INFINITE_LOOP_DEFAULT")
+        else constants_attr.getattr("INFINITE_LOOP_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_allow_code_execution(config=None):
     if config == None:
-        return constants.getattr("CODE_EXECUTION_DEFAULT")
-    return (
+        return constants_attr.getattr("CODE_EXECUTION_DEFAULT")
+    elif config == False:
+        return constants.CODE_EXECUTION_DEFAULT
+    val = (
         config.get("code-execution")
-        or config.get("advanced_options", {}).get("code-execution")
-        or constants.getattr("CODE_EXECUTION_DEFAULT")
+        if config.get("code-execution") != None
+        else config.get("advanced_options", {}).get("code-execution")
     )
+    return val if val != None else constants_attr.getattr("CODE_EXECUTION_DEFAULT")
 
 
 @wrapper.config_reader
 def get_metadata(config=None):
     if config == None:
-        return constants.getattr("METADATA_DEFAULT")
-    return config.get("metadata", constants.getattr("METADATA_DEFAULT"))
+        return constants_attr.getattr("METADATA_DEFAULT")
+    elif config == False:
+        return constants.METADATA_DEFAULT
+    return config.get("metadata", constants_attr.getattr("METADATA_DEFAULT"))
 
 
 @wrapper.config_reader
 def get_threads(config=None):
     if config == None:
-        return constants.getattr("THREADS_DEFAULT")
+        return constants_attr.getattr("THREADS_DEFAULT")
+    elif config == False:
+        return constants.THREADS_DEFAULT
     threads = config.get("threads") or config.get("performance_options", {}).get(
         "threads"
     )
-    threads = threads if threads is not None else constants.getattr("THREADS_DEFAULT")
+    threads = (
+        threads if threads is not None else constants_attr.getattr("THREADS_DEFAULT")
+    )
     try:
         threads = int(threads)
     except ValueError:
-        threads = int(constants.getattr("THREADS_DEFAULT"))
+        threads = int(constants_attr.getattr("THREADS_DEFAULT"))
     return threads
 
 
 @wrapper.config_reader
 def get_mp4decrypt(config=None):
     if config == None:
-        return constants.getattr("MP4DECRYPT_DEFAULT")
+        return constants_attr.getattr("MP4DECRYPT_DEFAULT")
+    elif config == False:
+        return constants.MP4DECRYPT_DEFAULT
     return (
         config.get("mp4decrypt")
         or config.get("binary_options", {}).get("mp4decrypt")
-        or constants.getattr("MP4DECRYPT_DEFAULT")
+        or constants_attr.getattr("MP4DECRYPT_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_ffmpeg(config=None):
     if config == None:
-        return constants.getattr("FFMPEG_DEFAULT")
+        return constants_attr.getattr("FFMPEG_DEFAULT")
+    elif config == False:
+        return constants.FFMPEG_DEFAULT
     return (
         config.get("ffmpeg")
         or config.get("binary_options", {}).get("ffmpeg")
-        or constants.getattr("FFMPEG_DEFAULT")
+        or constants_attr.getattr("FFMPEG_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_discord(config=None):
     if config == None:
-        return constants.getattr("DISCORD_DEFAULT")
-    return config.get("discord", constants.getattr("DISCORD_DEFAULT")) or ""
+        return constants_attr.getattr("DISCORD_DEFAULT")
+    elif config == False:
+        return constants.DISCORD_DEFAULT
+    return config.get("discord", constants_attr.getattr("DISCORD_DEFAULT")) or ""
 
 
 @wrapper.config_reader
 def get_filter(config=None):
     if config == None:
-        return constants.getattr("FILTER_DEFAULT")
+        return constants_attr.getattr("FILTER_DEFAULT")
+    elif config == False:
+        return constants.FILTER_DEFAULT
     filter = (
         config.get("filter")
         or config.get("download_options", {}).get("filter")
-        or constants.getattr("FILTER_DEFAULT")
+        or constants_attr.getattr("FILTER_DEFAULT")
     )
     if isinstance(filter, str):
         return list(map(lambda x: x.capitalize().strip(), filter.split(",")))
@@ -208,103 +244,123 @@ def get_filter(config=None):
 @wrapper.config_reader
 def responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT
     return (
         config.get("responsetype", {})
         or config.get("responsetype", {})
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_timeline_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return (
         config.get("responsetype", {}).get("timeline")
         or config.get("responsetype", {}).get("post")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
 
 
 @wrapper.config_reader
 def get_post_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return (
         config.get("responsetype", {}).get("post")
         or config.get("responsetype", {}).get("timeline")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
 
 
 @wrapper.config_reader
 def get_archived_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["archived"]
     return (
         config.get("responsetype", {}).get("archived")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
     )
 
 
 @wrapper.config_reader
 def get_stories_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["stories"]
     return (
         config.get("responsetype", {}).get("stories")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
     )
 
 
 @wrapper.config_reader
 def get_highlights_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["highlights"]
     return (
         config.get("responsetype", {}).get("highlights")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
     )
 
 
 @wrapper.config_reader
 def get_paid_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["paid"]
     return (
         config.get("responsetype", {}).get("paid")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
     )
 
 
 @wrapper.config_reader
 def get_messages_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["message"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["message"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["message"]
     return (
         config.get("responsetype", {}).get("message")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["message"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["message"]
     )
 
 
 @wrapper.config_reader
 def get_profile_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["profile"]
     return (
         config.get("responsetype", {}).get("profile")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
     )
 
 
 @wrapper.config_reader
 def get_pinned_responsetype(config=None):
     if config == None:
-        return constants.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
+        return constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
+    elif config == False:
+        return constants.RESPONSE_TYPE_DEFAULT["pinned"]
     return (
         config.get("responsetype", {}).get("pinned")
-        or constants.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
+        or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
 
 
@@ -312,23 +368,25 @@ def get_pinned_responsetype(config=None):
 def get_spacereplacer(config=None):
     if config == None:
         return " "
+    elif config == False:
+        return constants.SPACE_REPLACER_DEFAULT
     return (
         config.get("space-replacer")
         or config.get("file_options", {}).get("space-replacer")
-        or constants.getattr("SPACE_REPLACER_DEFAULT")
+        or constants_attr.getattr("SPACE_REPLACER_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_private_key(config=None):
-    if config == None:
+    if config == None or config == False:
         return None
     return config.get("private-key") or config.get("cdm_options", {}).get("private-key")
 
 
 @wrapper.config_reader
 def get_client_id(config=None):
-    if config == None:
+    if config == None or config == False:
         return None
     return config.get("client-id") or config.get("cdm_options", {}).get("client-id")
 
@@ -336,15 +394,17 @@ def get_client_id(config=None):
 @wrapper.config_reader
 def get_key_mode(config=None):
     if config == None:
-        return constants.getattr("KEY_DEFAULT")
+        return constants_attr.getattr("KEY_DEFAULT")
+    elif config == False:
+        return constants.KEY_DEFAULT
     value = config.get("key-mode-default") or config.get("cdm_options", {}).get(
         "key-mode-default"
     )
 
     return (
         value.lower()
-        if value and value.lower() in set(constants.getattr("KEY_OPTIONS"))
-        else constants.getattr("KEY_DEFAULT")
+        if value and value.lower() in set(constants_attr.getattr("KEY_OPTIONS"))
+        else constants_attr.getattr("KEY_DEFAULT")
     )
 
 
@@ -352,17 +412,21 @@ def get_key_mode(config=None):
 def get_keydb_api(config=None):
     if config == None:
         return ""
+    elif config == False:
+        return constants.KEYDB_DEFAULT
     return (
         config.get("keydb_api")
         or config.get("cdm_options", {}).get("keydb_api")
-        or constants.getattr("KEYDB_DEFAULT")
+        or constants_attr.getattr("KEYDB_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_dynamic(config=None):
     if config == None:
-        return constants.getattr("DYNAMIC_DEFAULT")
+        return constants_attr.getattr("DYNAMIC_DEFAULT")
+    elif config == False:
+        return constants.DYNAMIC_DEFAULT
     value = config.get("dynamic-mode-default") or config.get(
         "advanced_options", {}
     ).get("dynamic-mode-default")
@@ -381,126 +445,154 @@ def get_dynamic(config=None):
 def get_part_file_clean(config=None):
     if config == None:
         return False
-    value = config.get(
-        "partfileclean", config.get("download_options", {}).get("auto_resume")
-    )
-    return value if value is not None else True
+    elif config == False:
+        return constants.RESUME_DEFAULT
+    if config.get("auto_resume"):
+        return config.get("auto_resume")
+    elif config.get("download_options", {}).get("auto_resume") != None:
+        return config.get("download_options", {}).get("auto_resume")
+    elif config.get("partfileclean") != None:
+        return config.get("partfileclean") == False
+    return constants_attr.getattr("RESUME_DEFAULT")
 
 
 @wrapper.config_reader
 def get_backend(config=None):
     if config == None:
         return "aio"
+    elif config == False:
+        return constants.BACKEND_DEFAULT
     return (
         config.get("backend")
         or config.get("advanced_options", {}).get("backend")
-        or constants.getattr("BACKEND_DEFAULT")
+        or constants_attr.getattr("BACKEND_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_download_semaphores(config=None):
     if config == None:
-        return constants.getattr("DOWNLOAD_SEM_DEFAULT")
+        return constants_attr.getattr("DOWNLOAD_SEM_DEFAULT")
+    elif config == False:
+        return constants.DOWNLOAD_SEM_DEFAULT
     sems = (
         config.get("download-sems")
         or config.get("performance_options", {}).get("download-sems")
-        or constants.getattr("DOWNLOAD_SEM_DEFAULT")
+        or constants_attr.getattr("DOWNLOAD_SEM_DEFAULT")
     )
     try:
         sems = int(sems)
     except ValueError:
-        sems = int(constants.getattr("DOWNLOAD_SEM_DEFAULT"))
+        sems = int(constants_attr.getattr("DOWNLOAD_SEM_DEFAULT"))
     return sems
 
 
 @wrapper.config_reader
 def get_show_downloadprogress(config=None):
     if config == None:
-        return constants.getattr("PROGRESS_DEFAULT")
-    return (
+        return constants_attr.getattr("PROGRESS_DEFAULT")
+    elif config == False:
+        return constants.PROGRESS_DEFAULT
+    val = (
         config.get("downloadbars")
-        or config.get("advanced_options", {}).get("downloadbars")
-        or constants.getattr("PROGRESS_DEFAULT")
+        if config.get("downloadbars") != None
+        else config.get("advanced_options", {}).get("downloadbars")
     )
+    return val if val != None else constants_attr.getattr("PROGRESS_DEFAULT")
 
 
 @wrapper.config_reader
 def get_cache_mode(config=None):
-    if cache_mode_helper(config=None) == "sqlite":
+    if cache_mode_helper(config=config) == "sqlite":
         return Disk
     else:
         return JSONDisk
 
 
-@wrapper.config_reader
 def cache_mode_helper(config=None):
     if config == None:
-        return constants.getattr("CACHEDEFAULT")
+        return constants_attr.getattr("CACHEDEFAULT")
+    elif config == False:
+        return constants.CACHEDEFAULT
     data = (
         config.get("cache-mode")
         or config.get("advanced_options", {}).get("cache-mode")
-        or constants.getattr("CACHEDEFAULT")
+        or constants_attr.getattr("CACHEDEFAULT")
     )
     if data == "disabled":
         return data
-    if data in [constants.getattr("CACHEDEFAULT"), "json"]:
+    if data in [constants_attr.getattr("CACHEDEFAULT"), "json"]:
         return data
     else:
-        return constants.getattr("CACHEDEFAULT")
+        return constants_attr.getattr("CACHEDEFAULT")
 
 
 @wrapper.config_reader
 def get_appendlog(config=None):
     if config == None:
-        return constants.getattr("APPEND_DEFAULT")
-    value = config.get("appendlog") or config.get("advanced_options", {}).get(
-        "appendlog"
+        return constants_attr.getattr("APPEND_DEFAULT")
+    elif config == False:
+        return constants.APPEND_DEFAULT
+    value = (
+        config.get("appendlog")
+        if config.get("appendlog") != None
+        else config.get("advanced_options", {}).get("appendlog")
     )
-    return value if value is not None else constants.getattr("APPEND_DEFAULT")
+    return value if value is not None else constants_attr.getattr("APPEND_DEFAULT")
 
 
 @wrapper.config_reader
 def get_sanitizeDB(config=None):
     if config is None:
-        return constants.getattr("SANITIZE_DB_DEFAULT")
-    return (
+        return constants_attr.getattr("SANITIZE_DB_DEFAULT")
+    elif config == False:
+        return constants.SANITIZE_DB_DEFAULT
+    val = (
         config.get("sanitize_text")
-        or config.get("advanced_options", {}).get("sanitize_text")
-        or constants.getattr("SANITIZE_DB_DEFAULT")
+        if config.get("sanitize_text")
+        else config.get("advanced_options", {}).get("sanitize_text")
     )
+    return val if val is not None else constants_attr.getattr("SANITIZE_DB_DEFAULT")
 
 
 @wrapper.config_reader
 def get_textType(config=None):
     if config is None:
-        return constants.getattr("TEXT_TYPE_DEFAULT")
+        return constants_attr.getattr("TEXT_TYPE_DEFAULT")
+    elif config == False:
+        return constants.TEXT_TYPE_DEFAULT
     value = config.get("text_type") or config.get("file_options", {}).get(
         "text_type_default"
     )
     return (
-        value if value in ["letter", "word"] else constants.getattr("TEXT_TYPE_DEFAULT")
+        value
+        if value in ["letter", "word"]
+        else constants_attr.getattr("TEXT_TYPE_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_TempDir(config=None):
     if config is None:
-        return constants.getattr("TEMP_FOLDER_DEFAULT")
+        return constants_attr.getattr("TEMP_FOLDER_DEFAULT")
+    elif config == False:
+        return constants.TEMP_FOLDER_DEFAULT
     return (
         config.get("temp_dir")
         or config.get("advanced_options", {}).get("temp_dir")
-        or constants.getattr("TEMP_FOLDER_DEFAULT")
+        or constants_attr.getattr("TEMP_FOLDER_DEFAULT")
     )
 
 
 @wrapper.config_reader
 def get_truncation(config=None):
     if config is None:
-        return constants.getattr("TRUNCATION_DEFAULT")
-    val = config.get("file_options", {}).get("truncation_default") or config.get(
-        "truncation_default"
+        return constants_attr.getattr("TRUNCATION_DEFAULT")
+    elif config == False:
+        return constants.TRUNCATION_DEFAULT
+    val = (
+        config.get("file_options", {}).get("truncation_default")
+        if config.get("file_options", {}).get("truncation_default") != None
+        else config.get("truncation_default")
     )
-    if val is None:
-        return constants.getattr("TRUNCATION_DEFAULT")
-    return val
+    return val if val is not None else constants_attr.getattr("TRUNCATION_DEFAULT")
