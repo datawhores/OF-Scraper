@@ -7,6 +7,7 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 
@@ -17,14 +18,16 @@ import ofscraper.utils.constants as constants
 
 def profiles_prompt() -> int:
     name = "profile"
+    profile_prompt_choices = [*constants.getattr("profilesPromptChoices")]
+    profile_prompt_choices.insert(5, Separator())
 
     questions = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
-                "message": "Select one of the following:",
-                "choices": [*constants.getattr("profilesPromptChoices")],
+                "message": "Profile Menu: Select one of the following:",
+                "choices": profile_prompt_choices,
             }
         ]
     )

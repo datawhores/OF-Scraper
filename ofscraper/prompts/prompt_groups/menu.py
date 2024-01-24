@@ -18,10 +18,10 @@ import ofscraper.utils.constants as constants
 
 def main_prompt() -> int:
     main_prompt_choices = [*constants.getattr("mainPromptChoices")]
-    main_prompt_choices.insert(3, Separator())
-    main_prompt_choices.insert(8, Separator())
+    main_prompt_choices.insert(1, Separator())
+    main_prompt_choices.insert(6, Separator())
     answer = promptClasses.getChecklistSelection(
-        message="What would you like to do?", choices=[*main_prompt_choices]
+        message="Main Menu: What would you like to do?", choices=[*main_prompt_choices]
     )
     return constants.getattr("mainPromptChoices")[answer]
 
@@ -32,7 +32,7 @@ def action_prompt() -> int:
     action_prompt_choices.insert(6, Separator())
     action_prompt_choices.insert(9, Separator())
     answer = promptClasses.getChecklistSelection(
-        message="What action(s) would you like to take?",
+        message="Action Menu: What action(s) would you like to take?",
         choices=[*action_prompt_choices],
     )
     args = read_args.retriveArgs()

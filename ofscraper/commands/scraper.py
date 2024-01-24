@@ -141,9 +141,9 @@ def main_prompt_action():
                 functs = add_selected_areas()
                 run_helper(*functs)
                 count = count + 1
-            elif action_result_prompt == 1:
+            elif action_result_prompt == "quit":
                 return True
-            elif action_result_prompt == 2:
+            elif action_result_prompt == "main":
                 continue
         elif result_main_prompt == 1:
             # Edit `auth.json` file
@@ -181,7 +181,11 @@ def main_prompt_action():
             elif result_profiles_prompt == 4:
                 # View profiles
                 profile_tools.print_profiles()
-        elif result_main_prompt == 5:
+            elif result_profiles_prompt == "quit":
+                return True
+            elif result_profiles_prompt == "main":
+                continue
+        elif result_main_prompt == "quit":
             return True
 
 
@@ -189,9 +193,9 @@ def action_result_helper(input):
     if not input:
         return 0
     elif input == "quit":
-        return 1
+        return "quit"
     elif input == "main":
-        return 2
+        return "main"
 
 
 @exit.exit_wrapper

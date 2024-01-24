@@ -4,7 +4,7 @@ mainPromptChoices = {
     "Edit config.json file": 2,
     "Edit advanced config.json settings": 3,
     "Edit Profile": 4,
-    "Quit": 5,
+    "Quit": "quit",
 }
 
 
@@ -34,4 +34,6 @@ profilesPromptChoices = {
     "Create a profile": 2,
     "Delete a profile": 3,
     "View profiles": 4,
+    "Go to main menu": "main",
+    "Quit": "quit",
 }
