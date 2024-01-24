@@ -429,7 +429,7 @@ def daemon_run_helper(*functs):
     if read_args.retriveArgs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
     check_auth()
-    log.info(f"[bold]daemon mode on[/bold]")
+    log.info(f"[bold]Daemon mode on[/bold]")
     userselector.getselected_usernames(rescan=True, reset=True)
     actions.select_areas()
     try:
