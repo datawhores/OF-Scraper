@@ -22,6 +22,7 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom
 import ofscraper.utils.config.data as data
+import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
@@ -195,11 +196,24 @@ def config_prompt_advanced() -> dict:
                 ],
                 "long_instruction": "Truncation is based on operating system",
             },
+            {
+                "type": "list",
+                "name": "infinite_loop_action_mode",
+                "message": "Run Program in infinite loop when in action mode",
+                "default": data.get_InfiniteLoop(),
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
+                ],
+                "long_instruction": "Action Mode is when at least one --action is based as an arg or --scrape-paid",
+            },
         ]
     )
     out.update(new_settings)
-    out = schema.get_current_config_schema(out)
-    return out
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema(config)
+    return final
 
 
 def config_prompt() -> dict:
@@ -449,8 +463,10 @@ Empty string is consider to be 'profile'
     )
     answer["responsetype"] = answer2
     out.update(answer)
-    out = schema.get_current_config_schema({"config": out})
-    return out
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
 
 
 def manual_config_prompt(configText) -> str:

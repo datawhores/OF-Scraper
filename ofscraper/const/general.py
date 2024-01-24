@@ -13,3 +13,4 @@ disclaimers = [
     "This tool is for educational purposes only and is not intended for actual use. Should you choose to actually use it you accept all consequences and agree that you are not using it to redistribute content or  for any other action that will cause loss of revenue to creators or platforms scraped.",
 ]
 APP_TOKEN = "33d57ade8c02dbc5a333db99ff9ae26a"
+CONTINUE_BOOL = True

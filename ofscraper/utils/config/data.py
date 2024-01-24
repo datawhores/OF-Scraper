@@ -140,11 +140,12 @@ def get_InfiniteLoop(config=None):
         return constants_attr.getattr("INFINITE_LOOP_DEFAULT")
     elif config == False:
         return constants.INFINITE_LOOP_DEFAULT
-    return (
-        config.get("advanced_options", {}).get("infinite_loop")
-        if config.get("advanced_options", {}).get("infinite_loop") != None
-        else constants_attr.getattr("INFINITE_LOOP_DEFAULT")
+    val = (
+        config.get("infinite_loop_action_mode")
+        if config.get("infinite_loop_action_mode") != None
+        else config.get("advanced_options", {}).get("infinite_loop_action_mode")
     )
+    return val if val != None else constants_attr.getattr("INFINITE_LOOP_DEFAULT")
 
 
 @wrapper.config_reader

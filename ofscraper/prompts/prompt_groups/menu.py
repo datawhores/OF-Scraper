@@ -44,6 +44,8 @@ def action_prompt() -> int:
 
 
 def continue_prompt() -> bool:
+    if not constants.getattr("CONTINUE_BOOL"):
+        return False
     name = "continue"
     answer = promptClasses.batchConverter(
         *[
