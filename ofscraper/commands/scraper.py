@@ -81,6 +81,8 @@ def add_selected_areas():
 
 
 def process_selected_areas():
+    log.debug(f"[bold blue] Running Action Mode [/bold blue]")
+
     global count
     functs = add_selected_areas()
     run_helper(*functs)
@@ -129,6 +131,7 @@ def prompt_reset_helper():
 
 def main_prompt_action():
     global count
+    log.debug(f"[bold blue] Running Prompt Menu Mode[/bold blue]")
     while True:
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt == 0:

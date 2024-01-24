@@ -28,7 +28,7 @@ def areas_prompt() -> list:
         else "Which area(s) would you like to download"
     )
     long_instruction = (
-        "Hint: Since Have Like or Unlike Set\nYou must select one or more of Timeline,Pinned,Archived, or Label "
+        "Hint: Since you have Like or Unlike Set\nYou must select one or more of Timeline,Pinned,Archived, or Label "
         if ("like" or "unlike") in args.action and len(args.like_area) == 0
         else ""
     )
@@ -132,8 +132,8 @@ def scrape_paid_prompt():
 
 def reset_areas_prompt() -> bool:
     name = "reset areas"
-    print(f"Download Area: {areas.get_download_area()}")
-    print(f"Like Area: {areas.get_like_area()}")
+    print(f"\n\nDownload Area: {areas.get_download_area()}")
+    print(f"Like Area: {areas.get_like_area()}\n\n")
     answer = promptClasses.batchConverter(
         *[
             {
