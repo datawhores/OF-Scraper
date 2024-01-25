@@ -20,6 +20,7 @@ import ofscraper.classes.table as table
 import ofscraper.commands.manual as manual
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
+import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.auth as auth
@@ -58,10 +59,13 @@ def process_download_cart():
             if process_download_cart.counter == 0:
                 if not network.check_cdm():
                     log.info(
-                        "error was raised by cdm checker\nncdm will not be check again\n\n"
+                        "error was raised by cdm checker\ncdm will not be check again\n\n"
                     )
                 else:
                     log.info("cdm checker was fine\ncdm will not be check again\n\n")
+                # should be done once before downloads
+                log.info("Getting Models")
+                selector.all_subs_helper()
 
             process_download_cart.counter = process_download_cart.counter + 1
             log.info("Getting items from queue")

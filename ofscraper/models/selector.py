@@ -19,6 +19,7 @@ log = logging.getLogger("shared")
 
 
 def get_model_fromParsed(name):
+    global ALL_SUBS
     if not ALL_SUBS:
         all_subs_helper()
     modelObjs = list(filter(lambda x: x.name == name, ALL_SUBS))

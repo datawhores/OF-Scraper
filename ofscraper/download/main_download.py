@@ -308,7 +308,7 @@ async def main_download_datahandler(r, progress, ele, placeholderObj, total):
         data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
     task1 = progress.add_task(
-        f"{(pathstr[:constants.getattr('PATH_STR_MAX)')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+        f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
     )

@@ -215,9 +215,11 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                     or cache.get("{model_id}_scrape_archived")
                     and not read_args.retriveArgs().after
                 )
-                after = after = (
-                    0 if rescan else forced_after or get_after(model_id, username)
-                )
+                if forced_after != None:
+                    after = forced_after
+                else:
+                    after = get_after() if rescan == None else 0
+
                 log.info(
                     f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}

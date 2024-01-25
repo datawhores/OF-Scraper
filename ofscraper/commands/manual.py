@@ -26,6 +26,7 @@ def manual_download(urls=None):
     args = read_args.retriveArgs()
     args.dupe = True
     write_args.setArgs(args)
+    # should be done before downloads
     selector.all_subs_helper()
     for value in media_dict.values():
         if len(value) == 0:
