@@ -17,7 +17,7 @@ from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
-import ofscraper.filters.models.selector as userselector
+import ofscraper.models.selector as userselector
 import ofscraper.prompts.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators

@@ -33,7 +33,7 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
-import ofscraper.filters.models.selector as userselector
+import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.areas as areas

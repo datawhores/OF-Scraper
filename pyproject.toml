@@ -6,7 +6,7 @@ authors = ["datawhores <datawhores@riseup.net>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<=3.13"
+python = ">=3.11,<3.13"
 
 
 httpx = { extras = ["http2"], version = "^0.23.3" }

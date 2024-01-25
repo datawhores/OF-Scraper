@@ -5,9 +5,9 @@ import ofscraper.filters.models.date as date_
 import ofscraper.filters.models.flags as flags
 import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
-import ofscraper.filters.models.retriver as retriver
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
+import ofscraper.models.retriver as retriver
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
@@ -19,7 +19,9 @@ log = logging.getLogger("shared")
 
 
 def get_model_fromParsed(name):
-    modelObjs = list(filter(lambda x: x.name == name, PARSED_SUBS))
+    if not ALL_SUBS:
+        all_subs_helper()
+    modelObjs = list(filter(lambda x: x.name == name, ALL_SUBS))
     return modelObjs[0] if len(modelObjs) > 0 else None
 
 

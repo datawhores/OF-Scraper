@@ -5,7 +5,10 @@ import ofscraper.utils.context.exit as exit
 
 def run(coro):
     def inner(*args, **kwargs):
-        loop = asyncio.new_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             tasks = loop.run_until_complete(coro(*args, **kwargs))

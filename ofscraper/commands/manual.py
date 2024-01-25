@@ -11,6 +11,7 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
+import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
@@ -21,11 +22,11 @@ def manual_download(urls=None):
     log = logging.getLogger("shared")
     network.check_cdm()
     media_dict = get_media_from_urls(urls)
-    log.debug(f"Media dict length {len(list(media_dict.values()))}")
+    log.debug(f"Number of values from media dict  {len(list(media_dict.values()))}")
     args = read_args.retriveArgs()
     args.dupe = True
     write_args.setArgs(args)
-
+    selector.all_subs_helper()
     for value in media_dict.values():
         if len(value) == 0:
             continue
