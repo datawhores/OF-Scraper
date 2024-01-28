@@ -8,7 +8,7 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       # change the host path to wherever your config dir/file is
-      - /home/john/.config/ofscraper:/ofscraper/.config/ofscraper
+      - /home/john/.config/ofscraper:/home/ofscraper/.config/ofscraper
       # you can use any path for the following, so long as
       # you update your config file accordingly, and ensure that
       # permissions are correct
