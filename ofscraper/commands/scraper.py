@@ -74,7 +74,7 @@ def process_prompts():
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green] Welcome to OF-Scraper Version {read_args.retriveArgs().version}[/bold green]"
+            f"[bold green]Version {read_args.retriveArgs().version}[/bold green]"
         )
 
 
