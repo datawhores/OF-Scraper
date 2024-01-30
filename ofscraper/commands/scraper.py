@@ -137,7 +137,7 @@ def main_prompt_action():
     log.debug(f"[bold blue] Running Prompt Menu Mode[/bold blue]")
     while True:
         result_main_prompt = prompts.main_prompt()
-        if result_main_prompt == 0:
+        if result_main_prompt == "action":
             action_result_prompt = action_result_helper(prompts.action_prompt())
             if action_result_prompt == 0:
                 count > 0 and prompt_reset_helper()
@@ -148,19 +148,15 @@ def main_prompt_action():
                 return True
             elif action_result_prompt == "main":
                 continue
-        elif result_main_prompt == 1:
+        elif result_main_prompt == "auth":
             # Edit `auth.json` file
             auth.edit_auth()
 
-        elif result_main_prompt == 2:
+        elif result_main_prompt == "config":
             # Edit `data.json` file
             config_.edit_config()
 
-        elif result_main_prompt == 3:
-            # Edit `data.json` file
-            config_.edit_config_advanced()
-
-        elif result_main_prompt == 4:
+        elif result_main_prompt == "profile":
             # Display  `Profiles` menu
             result_profiles_prompt = prompts.profiles_prompt()
 
