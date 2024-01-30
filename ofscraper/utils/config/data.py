@@ -152,6 +152,20 @@ def get_InfiniteLoop(config=None):
 
 
 @wrapper.config_reader
+def get_disable_after(config=None):
+    if config == None:
+        return constants_attr.getattr("disable_after_check")
+    elif config == False:
+        return constants.DISABLE_AFTER_DEFAULT
+    val = (
+        config.get("disable_after_check")
+        if config.get("infinite_loop_action_mode") != None
+        else config.get("advanced_options", {}).get("disable_after_check")
+    )
+    return val if val != None else constants_attr.getattr("DISABLE_AFTER_DEFAULT")
+
+
+@wrapper.config_reader
 def get_allow_code_execution(config=None):
     if config == None:
         return constants_attr.getattr("CODE_EXECUTION_DEFAULT")

@@ -31,6 +31,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -198,14 +199,20 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
         postedAtArray = sorted(oldtimeline)
-        rescan = (
-            cache.get("{model_id}_scrape_timeline")
+        if rescan or (
+            cache.get("{model_id}_full_timeline_scrape")
             and not read_args.retriveArgs().after
-        )
-        if forced_after != None:
+            and not data.get_disable_after()
+        ):
+            log.info(
+                "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
+            )
+            after = 0
+
+        elif forced_after != None:
             after = forced_after
         else:
-            after = get_after() if rescan == None else 0
+            after = get_after(model_id, username)
 
         log.info(
             f"""
@@ -341,12 +348,7 @@ def get_after(model_id, username):
     if read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_timeline_media(model_id=model_id, username=username)
-    if cache.get(f"{model_id}_scrape_timeline"):
-        log.debug(
-            "Used after previously scraping entire timeline to make sure content is not missing"
-        )
-        return 0
-    elif len(curr) == 0:
+    if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
     missing_items = list(filter(lambda x: x[-2] == 0, curr))

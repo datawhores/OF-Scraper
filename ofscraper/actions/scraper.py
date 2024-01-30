@@ -223,7 +223,7 @@ def process_timeline_posts(model_id, username, individual=False):
             downloaded=False,
         )
         cache.set(
-            "{model_id}_scrape_timeline", read_args.retriveArgs().after is not None
+            "{model_id}_full_timeline_scrape", read_args.retriveArgs().after is not None
         )
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
@@ -271,7 +271,7 @@ def process_archived_posts(model_id, username):
             downloaded=False,
         )
         cache.set(
-            "{model_id}_scrape_archived", read_args.retriveArgs().after is not None
+            "{model_id}_full_archived_scrape", read_args.retriveArgs().after is not None
         )
         return list(filter(lambda x: isinstance(x, media.Media), output))
 

@@ -55,6 +55,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "sanitize_text": data.get_sanitizeDB(config=config),
             "temp_dir": data.get_TempDir(config=config),
             "infinite_loop_action_mode": data.get_InfiniteLoop(config=config),
+            "disable_after_check": data.get_disable_after(config=config),
         },
         "responsetype": {
             "timeline": data.get_timeline_responsetype(config=config),

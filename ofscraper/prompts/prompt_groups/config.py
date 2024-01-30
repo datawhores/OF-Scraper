@@ -452,6 +452,17 @@ def advanced_config() -> dict:
                 ],
                 "long_instruction": "Action Mode is when at least one --action is based as an arg or --scrape-paid",
             },
+            {
+                "type": "list",
+                "name": "disable_after_check",
+                "message": "Disable After Check",
+                "default": data.get_disable_after(),
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
+                ],
+                "long_instruction": "This will disable full scan on when previous scan used --after",
+            },
         ]
     )
     out.update(new_settings)
