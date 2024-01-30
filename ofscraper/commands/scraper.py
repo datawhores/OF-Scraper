@@ -160,24 +160,24 @@ def main_prompt_action():
             # Display  `Profiles` menu
             result_profiles_prompt = prompts.profiles_prompt()
 
-            if result_profiles_prompt == 0:
+            if result_profiles_prompt == "default":
                 # Change profiles
                 profiles_manage.change_profile()
 
-            elif result_profiles_prompt == 1:
+            elif result_profiles_prompt == "name":
                 # Edit a profile
                 profiles_manage.edit_profile_name()
 
-            elif result_profiles_prompt == 2:
+            elif result_profiles_prompt == "create":
                 # Create a new profile
 
                 profiles_manage.create_profile()
 
-            elif result_profiles_prompt == 3:
+            elif result_profiles_prompt == "delete":
                 # Delete a profile
                 profiles_manage.delete_profile()
 
-            elif result_profiles_prompt == 4:
+            elif result_profiles_prompt == "view":
                 # View profiles
                 profile_tools.print_profiles()
             elif result_profiles_prompt == "quit":
