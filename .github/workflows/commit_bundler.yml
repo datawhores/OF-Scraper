@@ -4,7 +4,7 @@ on:
 jobs:
   create_version:
     runs-on: ubuntu-20.04
-    name: create version doc
+    name: create version docadd
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -18,8 +18,7 @@ jobs:
         run: pip install dunamai
       - name: replace_version
         run: |
-          sed -i -e s/'from dunamai import Version,Pattern'// ofscraper/__version__.py 
-          sed -i -e  s/'Version.from_git(pattern=.*'/\""$(git  from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.(\d+\.\w+)|\w+")"\"/ ofscraper/__version__.py
+          sed -i -e s/__hardcoded__=None/__hardcoded__="\"$(dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.(\d+\.\w+)|\w+)")\""/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py
       - name: upload file

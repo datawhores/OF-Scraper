@@ -18,10 +18,11 @@ __license__ = "GNU General Public License v3 or later (GPLv3+)"
 __copyright__ = "Copyright 2023"
 
 try:
-    from dunamai import Pattern, Version
+    from dunamai import Version
 
-    __version__ = Version.from_git(
-        pattern="(?P<base>\d+\.\d+\.\w+|\d+\.\w+)"
+    __hardcoded__ = None
+    __version__ = __hardcoded__ or Version.from_git(
+        pattern="(?P<base>\d+\.\d+\.(\d+\.\w+)|\w+)"
     ).serialize(format="{base}+{branch}.{commit}", metadata=False)
 except:
     import pkg_resources
