@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 
 import httpx
 
@@ -53,11 +54,13 @@ def check_cdm():
             console.print(
                 f"[red]CDM service {keymode} timed out and seems to be down\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]"
             )
+            log.debug(traceback.format_exc())
             time.sleep(3.5)
 
         except Exception as E:
             console.print(
                 f"[red]CDM service {keymode} has an issue {E}\nThis may cause a lot of failed downloads\nPlease confirm by checking the url:{url}\n Consider switching\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/red]"
             )
+            log.debug(traceback.format_exc())
             time.sleep(3.5)
         return False

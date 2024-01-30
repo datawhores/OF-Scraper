@@ -150,6 +150,7 @@ def reset_areas_prompt() -> bool:
                     "No",
                 ],
                 "default": "No",
+                "long_instruction": "like area is used for like and unlike\ndownload area is used for download",
             }
         ]
     )

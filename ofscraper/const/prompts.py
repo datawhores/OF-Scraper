@@ -1,5 +1,5 @@
 mainPromptChoices = {
-    "Perform Action": "action",
+    "Perform Action(s)": "action",
     "Edit auth.json file": "auth",
     "Edit config.json file": "config",
     "Edit Profile": "profile",
