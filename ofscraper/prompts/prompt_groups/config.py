@@ -40,7 +40,7 @@ def config_prompt() -> int:
     config_prompt_choices.insert(6, Separator())
     config_prompt_choices.insert(9, Separator())
     answer = promptClasses.getChecklistSelection(
-        message="Config Menu: Which Area would you like to change?",
+        message="Config Menu: Which area would you like to change?",
         choices=[*config_prompt_choices],
     )
     return constants.getattr("configPromptChoices")[answer]
