@@ -28,6 +28,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{inputs.version}}
+          fetch-tags: ""
       - name: update line
         run: sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml
       - name: Set up Python 3.11.5
@@ -38,7 +39,7 @@ jobs:
         run: pip install dunamai
       - name: replace_version
         run: |
-          sed -i -e s/'__hardcoded__.*None'/__hardcoded__="\"$(dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.(\d+\.\w+)|\w+)")\""/ ofscraper/__version__.py
+          sed -i -e s/'__hardcoded__.*None'/__hardcoded__="\"$(dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")\""/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py
       - name: upload file
@@ -341,7 +342,7 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Build
         run: |
-          poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+\.(\d+\.\w+)|\w+)")
+          poetry version $(dunamai from git --format "{base}" --pattern="(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")
           poetry build
       - name: Push to pypi
         env:
