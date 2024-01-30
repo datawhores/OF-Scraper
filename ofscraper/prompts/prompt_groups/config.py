@@ -15,6 +15,7 @@ import logging
 import os
 
 from InquirerPy.base import Choice
+from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
@@ -34,61 +35,220 @@ import ofscraper.utils.system.system as system
 console = Console()
 
 
-def config_prompt_advanced() -> dict:
+def config_prompt() -> int:
+    config_prompt_choices = [*constants.getattr("configPromptChoices")]
+    config_prompt_choices.insert(6, Separator())
+    config_prompt_choices.insert(9, Separator())
+    answer = promptClasses.getChecklistSelection(
+        message="Config Menu: Which Area would you like to change?",
+        choices=[*config_prompt_choices],
+    )
+    return constants.getattr("configPromptChoices")[answer]
+
+
+def download_config():
     out = {}
-    threads = promptClasses.batchConverter(
+    answer = promptClasses.batchConverter(
         *[
             {
-                "type": "number",
-                "name": "threads",
-                "message": "Number of Download processes/threads: ",
-                "min_allowed": 0,
-                "max_allowed": os.cpu_count() - 1,
-                "validate": EmptyInputValidator(),
-                "long_instruction": f"Value can be 1-{os.cpu_count()-1}",
-                "default": data.get_threads(),
+                "type": "input",
+                "name": "file_size_limit",
+                "message": "file_size_limit: ",
+                "long_instruction": """
+File size limit
+Input can be int representing bytes
+or human readable such as 10mb
+
+Enter 0 for no limit
+""",
+                "default": str(data.get_filesize_limit()),
+                "filter": int,
+            },
+            {
+                "type": "input",
+                "name": "file_size_min",
+                "message": "file_size_min: ",
+                "long_instruction": """
+File size min
+Input can be int representing bytes
+or human readable such as 10mb
+
+Enter 0 for no minimum
+""",
+                "default": str(data.get_filesize_min()),
+                "filter": int,
+            },
+            {
+                "type": "input",
+                "name": "system_free_min",
+                "message": "minimum free space: ",
+                "long_instruction": """
+Minimum freespace for download
+Input can be int representing bytes
+or human readable such as 10mb
+
+Enter 0 for no limit
+""",
+                "default": str(data.get_system_freesize()),
+                "filter": int,
+            },
+            {
+                "type": "checkbox",
+                "name": "filter",
+                "message": "filter: ",
+                "choices": list(
+                    map(
+                        lambda x: Choice(
+                            name=x,
+                            value=x,
+                            enabled=x.capitalize() in set(data.get_filter()),
+                        ),
+                        constants.getattr("FILTER_DEFAULT"),
+                    )
+                ),
+                "validate": prompt_validators.emptyListValidator(),
+            },
+            {
+                "type": "list",
+                "name": "auto_resume",
+                "message": "Enable auto file resume",
+                "long_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
+                "default": data.get_part_file_clean(),
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
         ]
     )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
 
-    out.update(threads)
-    max_allowed = cache.get("speed_download")
-    if not cache.get("speed_download") or promptClasses.getChecklistSelection(
-        choices=[Choice(True, "Yes"), Choice(False, "No")],
-        message="Re-run speedtest",
-        long_instruction="Download Sems max value is based on calculated speed",
-        default=False,
-    ):
-        speed = get_speed(threads)
-        max_allowed = speed
-        cache.set("speed_download", speed)
-        cache.close()
-    new_settings = promptClasses.batchConverter(
+
+def file_config():
+    out = {}
+    answer = promptClasses.batchConverter(
         *[
             {
+                "type": "filepath",
+                "name": "save_location",
+                "message": "save_location: ",
+                "long_instruction": "Where would you like to set as the root save downloaded directory?",
+                "default": common_paths.get_save_location(),
+                "filter": lambda x: prompt_validators.cleanTextInput(x),
+                "validate": PathValidator(is_dir=True),
+            },
+            {
+                "type": "input",
+                "name": "dir_format",
+                "message": "dir_format: ",
+                "long_instruction": "What format do you want for download directories",
+                "default": data.get_dirformat(),
+            },
+            {
+                "type": "input",
+                "name": "file_format",
+                "message": "What format do you want for downloaded files",
+                "default": data.get_fileformat(),
+            },
+            {
                 "type": "number",
-                "name": "download-sems",
-                "message": "Number of semaphores per thread: ",
-                "min_allowed": 1,
-                "max_allowed": max_allowed,
+                "name": "textlength",
+                "message": "textlength: ",
+                "long_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
+                "default": data.get_textlength(),
+                "min_allowed": 0,
                 "validate": EmptyInputValidator(),
-                "long_instruction": f"Value can be 1-{max_allowed}",
-                "default": data.get_download_semaphores(),
+            },
+            {
+                "type": "input",
+                "name": "space-replacer",
+                "message": "space-replacer: ",
+                "long_instruction": "Replace any spaces in text with this character\n",
+                "default": data.get_spacereplacer(),
+            },
+            {
+                "type": "input",
+                "name": "date",
+                "message": "date: ",
+                "long_instruction": "Enter Date format",
+                "default": data.get_date(),
+                "validate": prompt_validators.dateplaceholdervalidator(),
             },
             {
                 "type": "list",
-                "name": "dynamic-mode-default",
-                "message": "What would you like to use for dynamic rules\nhttps://grantjenks.com/docs/diskcache/tutorial.html#caveats",
-                "default": data.get_dynamic(),
-                "choices": ["deviint", "digitalcriminals"],
+                "name": "text_type_default",
+                "message": "date: ",
+                "long_instruction": "How should textlength be interpreted",
+                "default": data.get_textType(),
+                "choices": [Choice("letter", "Letter"), Choice("word", "Word")],
+                "validate": prompt_validators.emptyListValidator(),
             },
             {
                 "type": "list",
-                "name": "cache-mode",
-                "message": "sqlite should be fine unless your using a network drive\nSee",
-                "default": data.cache_mode_helper(),
-                "choices": ["sqlite", "json", "disabled"],
+                "name": "truncation_default",
+                "message": "Should the script truncate long filenames",
+                "default": data.get_truncation(),
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
+                ],
+                "long_instruction": "Truncation is based on operating system",
             },
+        ]
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+def binary_config():
+    out = {}
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "filepath",
+                "name": "mp4decrypt",
+                "message": "mp4decrypt path: ",
+                "validate": prompt_validators.MultiValidator(
+                    EmptyInputValidator(),
+                    prompt_validators.mp4decryptpathvalidator(),
+                    prompt_validators.mp4decryptexecutevalidator(),
+                ),
+                "default": data.get_mp4decrypt(),
+                "long_instruction": """
+Certain content requires decryption to process please provide the full path to mp4decrypt
+""",
+            },
+            {
+                "type": "filepath",
+                "name": "ffmpeg",
+                "message": "ffmpeg path: ",
+                "validate": prompt_validators.MultiValidator(
+                    EmptyInputValidator(),
+                    prompt_validators.ffmpegpathvalidator(),
+                    prompt_validators.ffmpegexecutevalidator(),
+                ),
+                "long_instruction": """
+Certain content requires decryption to process please provide the full path to ffmpeg
+""",
+                "default": data.get_ffmpeg(),
+            },
+        ]
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+def cdm_config():
+    out = {}
+    answer = promptClasses.batchConverter(
+        *[
             {
                 "type": "list",
                 "name": "key-mode-default",
@@ -117,6 +277,117 @@ def config_prompt_advanced() -> dict:
                 "long_instruction": "Required if your using manual for key-mode",
                 "default": data.get_private_key() or "",
             },
+        ]
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+def performance_config():
+    out = {}
+    threads = promptClasses.batchConverter(
+        *[
+            {
+                "type": "number",
+                "name": "threads",
+                "message": "Number of Download processes/threads: ",
+                "min_allowed": 0,
+                "max_allowed": os.cpu_count() - 1,
+                "validate": EmptyInputValidator(),
+                "long_instruction": f"Value can be 1-{os.cpu_count()-1}",
+                "default": data.get_threads(),
+            },
+        ]
+    )
+
+    out.update(threads)
+    max_allowed = cache.get("speed_download")
+    if not cache.get("speed_download") or promptClasses.getChecklistSelection(
+        choices=[Choice(True, "Yes"), Choice(False, "No")],
+        message="Re-run speedtest",
+        long_instruction="Download Sems max value is based on calculated speed",
+        default=False,
+    ):
+        speed = get_speed(threads)
+        max_allowed = speed
+        cache.set("speed_download", speed)
+        cache.close()
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "number",
+                "name": "download-sems",
+                "message": "Number of semaphores per thread: ",
+                "min_allowed": 1,
+                "max_allowed": max_allowed,
+                "validate": EmptyInputValidator(),
+                "long_instruction": f"Value can be 1-{max_allowed}",
+                "default": data.get_download_semaphores(),
+            }
+        ]
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+def general_config():
+    out = {}
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "input",
+                "name": "main_profile",
+                "message": "What would you like your main profile to be?",
+                "default": data.get_main_profile(),
+                "validate": EmptyInputValidator(),
+            },
+            {
+                "type": "input",
+                "name": "metadata",
+                "message": "metadata: ",
+                "long_instruction": "Where should metadata files be saved",
+                "default": data.get_metadata(),
+            },
+            {
+                "type": "input",
+                "name": "discord",
+                "message": "discord webhook: ",
+                "validate": prompt_validators.DiscordValidator(),
+                "default": data.get_discord(),
+            },
+        ]
+    )
+    out.update(answer)
+    config = config_file.open_config()
+    config.update(out)
+    final = schema.get_current_config_schema({"config": config})
+    return final
+
+
+def advanced_config() -> dict:
+    out = {}
+    new_settings = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": "dynamic-mode-default",
+                "message": "What would you like to use for dynamic rules\nhttps://grantjenks.com/docs/diskcache/tutorial.html#caveats",
+                "default": data.get_dynamic(),
+                "choices": ["deviint", "digitalcriminals"],
+            },
+            {
+                "type": "list",
+                "name": "cache-mode",
+                "message": "sqlite should be fine unless your using a network drive\nSee",
+                "default": data.cache_mode_helper(),
+                "choices": ["sqlite", "json", "disabled"],
+            },
             {
                 "type": "list",
                 "name": "backend",
@@ -125,14 +396,6 @@ def config_prompt_advanced() -> dict:
                 "default": data.get_backend() or "",
             },
             # value because of legacy config values
-            {
-                "type": "list",
-                "name": "auto_resume",
-                "message": "Enable auto file resume",
-                "long_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
-                "default": data.get_part_file_clean(),
-                "choices": [Choice(True, "Yes"), Choice(False, "No")],
-            },
             {
                 "type": "input",
                 "name": "custom",
@@ -180,27 +443,6 @@ def config_prompt_advanced() -> dict:
             },
             {
                 "type": "list",
-                "name": "text_type",
-                "message": "How the textlimit should be interpreted as",
-                "default": data.get_textType(),
-                "choices": [
-                    Choice("word", "Word Count"),
-                    Choice("letter", "Letter Count"),
-                ],
-            },
-            {
-                "type": "list",
-                "name": "truncation_default",
-                "message": "Should the script truncate long filenames",
-                "default": data.get_truncation(),
-                "choices": [
-                    Choice(True, "Yes"),
-                    Choice(False, "No"),
-                ],
-                "long_instruction": "Truncation is based on operating system",
-            },
-            {
-                "type": "list",
                 "name": "infinite_loop_action_mode",
                 "message": "Run Program in infinite loop when in action mode",
                 "default": data.get_InfiniteLoop(),
@@ -219,168 +461,9 @@ def config_prompt_advanced() -> dict:
     return final
 
 
-def config_prompt() -> dict:
+def response_type() -> dict:
     out = {}
     answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "input",
-                "name": "main_profile",
-                "message": "What would you like your main profile to be?",
-                "default": data.get_main_profile(),
-                "validate": EmptyInputValidator(),
-            },
-            {
-                "type": "filepath",
-                "name": "save_location",
-                "message": "save_location: ",
-                "long_instruction": "Where would you like to set as the root save downloaded directory?",
-                "default": common_paths.get_save_location(),
-                "filter": lambda x: prompt_validators.cleanTextInput(x),
-                "validate": PathValidator(is_dir=True),
-            },
-            {
-                "type": "input",
-                "name": "file_size_limit",
-                "message": "file_size_limit: ",
-                "long_instruction": """
-File size limit
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no limit
-""",
-                "default": str(data.get_filesize_limit()),
-                "filter": int,
-            },
-            {
-                "type": "input",
-                "name": "file_size_min",
-                "message": "file_size_min: ",
-                "long_instruction": """
-File size min
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no minimum
-""",
-                "default": str(data.get_filesize_min()),
-                "filter": int,
-            },
-            {
-                "type": "input",
-                "name": "system_free_min",
-                "message": "minimum free space: ",
-                "long_instruction": """
-Minimum freespace for download
-Input can be int representing bytes
-or human readable such as 10mb
-
-Enter 0 for no limit
-""",
-                "default": str(data.get_system_freesize()),
-                "filter": int,
-            },
-            {
-                "type": "input",
-                "name": "dir_format",
-                "message": "dir_format: ",
-                "long_instruction": "What format do you want for download directories",
-                "default": data.get_dirformat(),
-            },
-            {
-                "type": "input",
-                "name": "file_format",
-                "message": "What format do you want for downloaded files",
-                "default": data.get_fileformat(),
-            },
-            {
-                "type": "number",
-                "name": "textlength",
-                "message": "textlength: ",
-                "long_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
-                "default": data.get_textlength(),
-                "min_allowed": 0,
-                "validate": EmptyInputValidator(),
-            },
-            {
-                "type": "input",
-                "name": "space-replacer",
-                "message": "space-replacer: ",
-                "long_instruction": "Replace any spaces in text with this character\n",
-                "default": data.get_spacereplacer(),
-            },
-            {
-                "type": "input",
-                "name": "date",
-                "message": "date: ",
-                "long_instruction": "Enter Date format",
-                "default": data.get_date(),
-                "validate": prompt_validators.dateplaceholdervalidator(),
-            },
-            {
-                "type": "input",
-                "name": "metadata",
-                "message": "metadata: ",
-                "long_instruction": "Where should metadata files be saved",
-                "default": data.get_metadata(),
-            },
-            {
-                "type": "checkbox",
-                "name": "filter",
-                "message": "filter: ",
-                "choices": list(
-                    map(
-                        lambda x: Choice(
-                            name=x,
-                            value=x,
-                            enabled=x.capitalize() in set(data.get_filter()),
-                        ),
-                        constants.getattr("FILTER_DEFAULT"),
-                    )
-                ),
-                "validate": prompt_validators.emptyListValidator(),
-            },
-            {
-                "type": "filepath",
-                "name": "mp4decrypt",
-                "message": "mp4decrypt path: ",
-                "validate": prompt_validators.MultiValidator(
-                    EmptyInputValidator(),
-                    prompt_validators.mp4decryptpathvalidator(),
-                    prompt_validators.mp4decryptexecutevalidator(),
-                ),
-                "default": data.get_mp4decrypt(),
-                "long_instruction": """
-Certain content requires decryption to process please provide the full path to mp4decrypt
-""",
-            },
-            {
-                "type": "filepath",
-                "name": "ffmpeg",
-                "message": "ffmpeg path: ",
-                "validate": prompt_validators.MultiValidator(
-                    EmptyInputValidator(),
-                    prompt_validators.ffmpegpathvalidator(),
-                    prompt_validators.ffmpegexecutevalidator(),
-                ),
-                "long_instruction": """
-Certain content requires decryption to process please provide the full path to ffmpeg
-""",
-                "default": data.get_ffmpeg(),
-            },
-            {
-                "type": "input",
-                "name": "discord",
-                "message": "discord webhook: ",
-                "validate": prompt_validators.DiscordValidator(),
-                "default": data.get_discord(),
-            },
-        ]
-    )
-    console.print("Set mapping for {responsetype} placeholder\n\n")
-
-    answer2 = promptClasses.batchConverter(
         *[
             {
                 "type": "input",
@@ -464,7 +547,6 @@ Empty string is consider to be 'profile'
             },
         ]
     )
-    answer["responsetype"] = answer2
     out.update(answer)
     config = config_file.open_config()
     config.update(out)

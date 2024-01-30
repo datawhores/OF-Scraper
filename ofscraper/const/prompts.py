@@ -1,5 +1,5 @@
 mainPromptChoices = {
-    "Perform Action": "actiion",
+    "Perform Action": "action",
     "Edit auth.json file": "auth",
     "Edit config.json file": "config",
     "Edit Profile": "profile",
@@ -7,16 +7,20 @@ mainPromptChoices = {
 }
 
 configPromptChoices = {
-    "Perform Action": 0,
-    "Edit auth.json file": 1,
-    "Edit config.json file": 2,
-    "Edit advanced config.json settings": 3,
-    "Go to main menu": "menu",
+    "General Options": "general",
+    "File Options": "file",
+    "Download Options": "download",
+    "Binary Options": "binary",
+    "CDM Options": "cdm",
+    "Performance Options": "performance",
+    "Response Type": "response",
+    "Advanced Options": "advanced",
+    "Go to main menu": "main",
     "Quit": "quit",
 }
 
 
-ActionPromptChoices = {
+actionPromptChoices = {
     "Download content from a user": {"download"},
     "Like a selection of a user's posts": {"like"},
     "Unlike a selection of a user's posts": {"unlike"},
@@ -32,9 +36,9 @@ ActionPromptChoices = {
     "Quit": "quit",
 }
 usernameOrListChoices = {
-    "Select from accounts on profile": 0,
-    "Enter a username": 1,
-    "Scrape all users that I'm subscribed to": 2,
+    "Select from accounts on profile": "select",
+    "Enter a username": "enter",
+    "Scrape all users that I'm subscribed to": "sub",
 }
 profilesPromptChoices = {
     "Change default profile": "default",

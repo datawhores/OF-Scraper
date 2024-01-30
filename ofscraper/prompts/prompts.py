@@ -11,6 +11,7 @@ r"""
                                                                                       
 """
 
+from ofscraper.prompts.prompt_groups.actions import *
 from ofscraper.prompts.prompt_groups.area import *
 from ofscraper.prompts.prompt_groups.auth import *
 from ofscraper.prompts.prompt_groups.binary import *

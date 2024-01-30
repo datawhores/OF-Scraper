@@ -10,8 +10,6 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-
-import json
 import logging
 
 from humanfriendly import parse_size
@@ -44,24 +42,6 @@ def update_config(field: str, value):
     config.update({field: value})
     new_config = schema.get_current_config_schema(config)
     config_file.write_config(new_config)
-
-
-def edit_config():
-    with config_context.config_context():
-        config = config_file.open_config()
-        updated_config = prompts.config_prompt()
-        config = update_config_full(config, updated_config)
-        config_file.write_config(config)
-        console.print("`config.json` has been successfully edited.")
-
-
-def edit_config_advanced():
-    with config_context.config_context():
-        config = config_file.open_config()
-        updated_config = prompts.config_prompt_advanced()
-        config = update_config_full(config, updated_config)
-        config_file.write_config(config)
-        console.print("`config.json` has been successfully edited.")
 
 
 def update_config_full(config, updated_config):

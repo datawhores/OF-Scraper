@@ -265,7 +265,9 @@ def get_timeline_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return (
-        config.get("responsetype", {}).get("timeline")
+        config.get("timeline")
+        or config.get("post")
+        or config.get("responsetype", {}).get("timeline")
         or config.get("responsetype", {}).get("post")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
@@ -278,7 +280,9 @@ def get_post_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return (
-        config.get("responsetype", {}).get("post")
+        config.get("post")
+        or config.get("timeline")
+        or config.get("responsetype", {}).get("post")
         or config.get("responsetype", {}).get("timeline")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
     )
@@ -291,7 +295,8 @@ def get_archived_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["archived"]
     return (
-        config.get("responsetype", {}).get("archived")
+        config.get("archived")
+        or config.get("responsetype", {}).get("archived")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
     )
 
@@ -303,7 +308,8 @@ def get_stories_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["stories"]
     return (
-        config.get("responsetype", {}).get("stories")
+        config.get("stories")
+        or config.get("responsetype", {}).get("stories")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
     )
 
@@ -315,7 +321,8 @@ def get_highlights_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["highlights"]
     return (
-        config.get("responsetype", {}).get("highlights")
+        config.get("highlights")
+        or config.get("responsetype", {}).get("highlights")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
     )
 
@@ -327,7 +334,8 @@ def get_paid_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["paid"]
     return (
-        config.get("responsetype", {}).get("paid")
+        config.get("paid")
+        or config.get("responsetype", {}).get("paid")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
     )
 
@@ -339,7 +347,8 @@ def get_messages_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["message"]
     return (
-        config.get("responsetype", {}).get("message")
+        config.get("message")
+        or config.get("responsetype", {}).get("message")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["message"]
     )
 
@@ -351,7 +360,8 @@ def get_profile_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["profile"]
     return (
-        config.get("responsetype", {}).get("profile")
+        config.get("profile")
+        or config.get("responsetype", {}).get("profile")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
     )
 
@@ -363,7 +373,8 @@ def get_pinned_responsetype(config=None):
     elif config == False:
         return constants.RESPONSE_TYPE_DEFAULT["pinned"]
     return (
-        config.get("responsetype", {}).get("pinned")
+        config.get("pinned")
+        or config.get("responsetype", {}).get("pinned")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
 
@@ -553,7 +564,7 @@ def get_sanitizeDB(config=None):
         return constants.SANITIZE_DB_DEFAULT
     val = (
         config.get("sanitize_text")
-        if config.get("sanitize_text")
+        if config.get("sanitize_text") != None
         else config.get("advanced_options", {}).get("sanitize_text")
     )
     return val if val is not None else constants_attr.getattr("SANITIZE_DB_DEFAULT")
@@ -565,7 +576,7 @@ def get_textType(config=None):
         return constants_attr.getattr("TEXT_TYPE_DEFAULT")
     elif config == False:
         return constants.TEXT_TYPE_DEFAULT
-    value = config.get("text_type") or config.get("file_options", {}).get(
+    value = config.get("text_type_default") or config.get("file_options", {}).get(
         "text_type_default"
     )
     return (

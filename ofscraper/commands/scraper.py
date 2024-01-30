@@ -41,6 +41,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.auth as auth
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.config.data as data
+import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -138,63 +139,85 @@ def main_prompt_action():
     while True:
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt == "action":
-            action_result_prompt = action_result_helper(prompts.action_prompt())
-            if action_result_prompt == 0:
+            action_result_prompt = prompts.action_prompt()
+            if action_result_prompt == "quit":
+                return True
+            elif action_result_prompt == "main":
+                continue
+            else:
                 count > 0 and prompt_reset_helper()
                 functs = add_selected_areas()
                 run_helper(*functs)
                 count = count + 1
-            elif action_result_prompt == "quit":
-                return True
-            elif action_result_prompt == "main":
-                continue
         elif result_main_prompt == "auth":
             # Edit `auth.json` file
             auth.edit_auth()
 
         elif result_main_prompt == "config":
             # Edit `data.json` file
-            config_.edit_config()
+            while True:
+                config_result_prompt = prompts.config_prompt()
+                if config_result_prompt == "quit":
+                    return True
+                elif config_result_prompt == "main":
+                    break
+                else:
+                    config_prompt_helper(config_result_prompt)
 
         elif result_main_prompt == "profile":
             # Display  `Profiles` menu
-            result_profiles_prompt = prompts.profiles_prompt()
-
-            if result_profiles_prompt == "default":
-                # Change profiles
-                profiles_manage.change_profile()
-
-            elif result_profiles_prompt == "name":
-                # Edit a profile
-                profiles_manage.edit_profile_name()
-
-            elif result_profiles_prompt == "create":
-                # Create a new profile
-
-                profiles_manage.create_profile()
-
-            elif result_profiles_prompt == "delete":
-                # Delete a profile
-                profiles_manage.delete_profile()
-
-            elif result_profiles_prompt == "view":
-                # View profiles
-                profile_tools.print_profiles()
-            elif result_profiles_prompt == "quit":
-                return True
-            elif result_profiles_prompt == "main":
-                continue
+            while True:
+                result_profiles_prompt = prompts.profiles_prompt()
+                if result_profiles_prompt == "quit":
+                    return True
+                elif result_profiles_prompt == "main":
+                    break
+                else:
+                    profile_prompt_helper(result_profiles_prompt)
         elif result_main_prompt == "quit":
             return True
 
 
-def action_result_helper(input):
-    if not input:
-        return 0
-    elif input == "quit":
-        return "quit"
-    elif input == "main":
-        return "main"
+def profile_prompt_helper(result_profiles_prompt):
+    if result_profiles_prompt == "default":
+        # Change profiles
+        profiles_manage.change_profile()
+
+    elif result_profiles_prompt == "name":
+        # Edit a profile
+        profiles_manage.edit_profile_name()
+
+    elif result_profiles_prompt == "create":
+        # Create a new profile
+
+        profiles_manage.create_profile()
+
+    elif result_profiles_prompt == "delete":
+        # Delete a profile
+        profiles_manage.delete_profile()
+
+    elif result_profiles_prompt == "view":
+        # View profiles
+        profile_tools.print_profiles()
+
+
+def config_prompt_helper(result_config_prompt):
+    if result_config_prompt == "download":
+        config_menu.download_config()
+    elif result_config_prompt == "file":
+        config_menu.file_config()
+    elif result_config_prompt == "general":
+        config_menu.general_config()
+    elif result_config_prompt == "binary":
+        config_menu.binary_config()
+    elif result_config_prompt == "cdm":
+        config_menu.cdm_config()
+    elif result_config_prompt == "performance":
+        config_menu.performance_config()
+    elif result_config_prompt == "advanced":
+        config_menu.advanced_config()
+    elif result_config_prompt == "response":
+        config_menu.response_type()
 
 
 @exit.exit_wrapper
