@@ -30,6 +30,7 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
@@ -71,18 +72,32 @@ async def activeHelper(subscribe_count, c):
     global tasks
     global new_tasks
 
-    if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST")
-        in read_args.retriveArgs().black_list
-        or constants.getattr("OFSCRAPER_ACTIVE_LIST")
-        in read_args.retriveArgs().black_list
+    if any(
+        x in get_black_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_RESERVED_LIST"),
+            constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) or any(
+        x in get_black_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_ACTIVE_LIST"),
+            constants.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
+        ]
     ):
         return []
-    if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST")
-        not in read_args.retriveArgs().user_list
-        and constants.getattr("OFSCRAPER_ACTIVE_LIST")
-        not in read_args.retriveArgs().user_list
+    if all(
+        x not in get_user_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_RESERVED_LIST"),
+            constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) and all(
+        x not in get_user_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_ACTIVE_LIST"),
+            constants.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
+        ]
     ):
         return []
     funct = scrape_subscriptions_active
@@ -114,18 +129,32 @@ async def expiredHelper(subscribe_count, c):
     global tasks
     global new_tasks
 
-    if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST")
-        in read_args.retriveArgs().black_list
-        or constants.getattr("OFSCRAPER_EXPIRED_LIST")
-        in read_args.retriveArgs().black_list
+    if any(
+        x in get_black_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_RESERVED_LIST"),
+            constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) or any(
+        x in get_black_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_EXPIRED_LIST"),
+            constants.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
+        ]
     ):
         return []
-    if (
-        constants.getattr("OFSCRAPER_RESERVED_LIST")
-        not in read_args.retriveArgs().user_list
-        and constants.getattr("OFSCRAPER_EXPIRED_LIST")
-        not in read_args.retriveArgs().user_list
+    if all(
+        x not in get_user_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_RESERVED_LIST"),
+            constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+        ]
+    ) and all(
+        x not in get_user_list_helper()
+        for x in [
+            constants.getattr("OFSCRAPER_EXPIRED_LIST"),
+            constants.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
+        ]
     ):
         return []
     funct = scrape_subscriptions_disabled
@@ -316,3 +345,17 @@ async def sort_list(c) -> list:
 
             finally:
                 sem.release()
+
+
+def get_user_list_helper():
+    out = read_args.retriveArgs().user_list or data.get_default_userlist()
+    if isinstance(out, str):
+        out = out.split(",")
+    return set(map(lambda x: x.lower().strip(), out))
+
+
+def get_black_list_helper():
+    out = read_args.retriveArgs().black_list or data.get_default_blacklist()
+    if isinstance(out, str):
+        out = out.split(",")
+    return set(map(lambda x: x.lower().strip(), out))

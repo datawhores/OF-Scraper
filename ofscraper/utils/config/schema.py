@@ -56,6 +56,8 @@ def get_current_config_schema(config: dict = None) -> dict:
             "temp_dir": data.get_TempDir(config=config),
             "infinite_loop_action_mode": data.get_InfiniteLoop(config=config),
             "disable_after_check": data.get_disable_after(config=config),
+            "default_user_list": data.get_default_userlist(config=config),
+            "default_black_list": data.get_default_blacklist(config=config),
         },
         "responsetype": {
             "timeline": data.get_timeline_responsetype(config=config),

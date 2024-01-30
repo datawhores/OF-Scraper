@@ -1,8 +1,11 @@
 SUPRESS_OUTPUTS = {"CRITICAL", "ERROR", "WARNING", "OFF", "LOW", "PROMPT"}
 KEY_OPTIONS = ["cdrm", "cdrm2", "manual", "keydb"]
 OFSCRAPER_RESERVED_LIST = "ofscraper.main"
+OFSCRAPER_RESERVED_LIST_ALT = "main"
 OFSCRAPER_ACTIVE_LIST = "ofscraper.active"
+OFSCRAPER_ACTIVE_LIST_ALT = "active"
 OFSCRAPER_EXPIRED_LIST = "ofscraper.expired"
+OFSCRAPER_EXPIRED_LIST_ALT = "expired"
 refreshScreen = 50
 NUMBER_REGEX = "[0-9]"
 USERNAME_REGEX = "[^/]"

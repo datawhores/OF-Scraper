@@ -463,6 +463,32 @@ def advanced_config() -> dict:
                 ],
                 "long_instruction": "This will disable full scan on when previous scan used --after",
             },
+            {
+                "type": "input",
+                "name": "default_user_list",
+                "message": "Default User Lists",
+                "default": data.get_default_userlist(),
+                "long_instruction": """
+A comma seperated list of userlists to set as default when retriving users
+Main user list with all active+expired users can be called main or ofscraper.main
+Active user list can be called active or ofscraper.active
+Expired user list can be called expired or ofscraper.expired
+List are case insensitive",
+""",
+            },
+            {
+                "type": "input",
+                "name": "default_black_list",
+                "message": "Default User Black Lists",
+                "default": data.get_default_blacklist(),
+                "long_instruction": """
+A comma seperated list of userlists to set as black listed
+Main user list with all active+expired users can be called main or ofscraper.main
+Active user list can be called active or ofscraper.active
+Expired user list can be called expired or ofscraper.expired
+List are case insensitive",
+""",
+            },
         ]
     )
     out.update(new_settings)

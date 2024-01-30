@@ -864,13 +864,6 @@ def parse_args(input=None):
     args.username = set(args.username or [])
     args.excluded_username = set(args.excluded_username or [])
     args.label = set(args.label) if args.label else args.label
-    args.black_list = set(list(map(lambda x: x.lower(), args.black_list)))
-
-    if len(args.user_list) == 0:
-        args.user_list = {OFSCRAPER_RESERVED_LIST}
-    else:
-        args.user_list = set(list(map(lambda x: x.lower(), args.user_list)))
-
     if args.command in set(["post_check", "msg_check"]) and not (args.url or args.file):
         raise argparse.ArgumentTypeError(
             "error: argument missing --url or --file must be specified )"

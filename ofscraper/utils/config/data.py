@@ -166,6 +166,42 @@ def get_disable_after(config=None):
 
 
 @wrapper.config_reader
+def get_default_userlist(config=None):
+    if config == None:
+        return constants_attr.getattr("default_user_list")
+    elif config == False:
+        return constants.DEFAULT_USER_LIST
+    val = (
+        config.get("default_user_list")
+        if not any(x == config.get("default_user_list") for x in [None, ""])
+        else config.get("advanced_options", {}).get("default_user_list")
+    )
+    return (
+        val
+        if not any(x == val for x in [None, ""])
+        else constants_attr.getattr("DEFAULT_USER_LIST")
+    )
+
+
+@wrapper.config_reader
+def get_default_blacklist(config=None):
+    if config == None:
+        return constants_attr.getattr("default_black_list")
+    elif config == False:
+        return constants.DEFAULT_BLACK_LIST
+    val = (
+        config.get("default_black_list")
+        if not any(x == config.get("default_black_list") for x in [None, ""])
+        else config.get("advanced_options", {}).get("default_black_list")
+    )
+    return (
+        val
+        if not any(x == val for x in [None, ""])
+        else constants_attr.getattr("DEFAULT_BLACK_LIST")
+    )
+
+
+@wrapper.config_reader
 def get_allow_code_execution(config=None):
     if config == None:
         return constants_attr.getattr("CODE_EXECUTION_DEFAULT")
