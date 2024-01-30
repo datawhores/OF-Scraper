@@ -1,12 +1,16 @@
-# Latest version
-
+# Releases
+[Releases Page](https://pypi.org/project/ofscraper/#history)
+```
+Docker and binary releases also availible
+```
+## Stable
 <div style="display: inline-block">
 <a href="https://pypi.org/project/ofscraper/">
 <img src="https://img.shields.io/pypi/v/ofscraper.svg?color=dark_green&label=Stable-Release" alt="drawing" style="height:75px"/>
 </div>
 </a>
 
-# Latest dev version
+## Dev
 <div style="display: inline-block">
 <a href="https://pypi.org/project/ofscraper/3.7.0.dev0/">
 <img src="https://img.shields.io/badge/Pre--Release-v3.70.dev-dark_green.svg" alt="drawing" style="height:75px"/>
