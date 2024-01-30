@@ -21,8 +21,6 @@ def main():
         readConfig()
         make_folder()
         run.main()
-    except SystemExit:
-        raise Exception(f"Arguments {sys.argv}")
     except Exception as E:
         try:
             logging.getLogger("shared").debug(traceback.format_exc())
