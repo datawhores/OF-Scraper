@@ -6,6 +6,7 @@ import arrow
 import ofscraper.const.constants as constants
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
+import ofscraper.utils.config.file as config_file
 import ofscraper.utils.constants as constants_attr
 import ofscraper.utils.dates as dates_manager
 import ofscraper.utils.profiles.data as profile_data
@@ -87,14 +88,12 @@ def get_profile_path(name=None):
 
 
 def get_save_location(config=None):
-    if config == None:
-        return constants_attr.getattr("SAVE_PATH_DEFAULT")
-    elif config == False:
+    if config == False:
         return constants.SAVE_PATH_DEFAULT
+    config = config or config_file.open_config()
     return (
         config.get("save_location")
         or config.get("file_options", {}).get("save_location")
-        or config.get("save_location")
         or constants_attr.getattr("SAVE_PATH_DEFAULT")
     )
 
