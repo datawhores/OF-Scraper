@@ -1,8 +1,7 @@
 import json
 import logging
 import pathlib
-
-from humanfriendly import parse_size
+import re
 
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.console as console_
@@ -12,13 +11,10 @@ console = console_.get_shared_console()
 log = logging.getLogger("shared")
 
 
-def make_config(
-    config=False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,
-):
+def make_config(config=False):
     config = schema.get_current_config_schema(config=config)
-
     if isinstance(config, str):
-        config = json.loads(config)
+        config = json_loads(config)
 
     p = pathlib.Path(common_paths.get_config_path())
     if not p.parent.is_dir():
@@ -35,7 +31,7 @@ def make_config_original():
 
 def open_config():
     configText = config_string()
-    config = json.loads(configText)
+    config = json_loads(configText)
     if config.get("config"):
         return config.get("config")
     return config
@@ -52,7 +48,7 @@ def config_string():
 
 def write_config(updated_config):
     if isinstance(updated_config, str):
-        updated_config = json.loads(updated_config)
+        updated_config = json_loads(updated_config)
     if updated_config.get("config"):
         updated_config = updated_config["config"]
     p = common_paths.get_config_path()
@@ -72,3 +68,12 @@ def auto_update_config(config: dict) -> dict:
         f.write(json.dumps(new_config, indent=4))
 
     return new_config
+
+
+def json_loads(configText):
+    try:
+        config = json.loads(configText)
+    except json.JSONDecodeError:
+        configText = re.sub("\\\\+", "/", configText)
+        config = json.loads(configText)
+    return config
