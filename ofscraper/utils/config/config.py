@@ -59,7 +59,7 @@ def update_mp4decrypt():
     if prompts.auto_download_mp4_decrypt() == "Yes":
         config["config"]["mp4decrypt"] = binaries.mp4decrypt_download()
     else:
-        config["config"]["mp4decrypt"] = prompts.mp4_prompt(config["config"])
+        config["config"]["mp4decrypt"] = prompts.mp4_prompt()
     config_file.write_config(config)
 
 
@@ -68,5 +68,5 @@ def update_ffmpeg():
     if prompts.auto_download_ffmpeg() == "Yes":
         config["config"]["ffmpeg"] = binaries.ffmpeg_download()
     else:
-        config["config"]["ffmpeg"] = prompts.ffmpeg_prompt((config["config"]))
+        config["config"]["ffmpeg"] = prompts.ffmpeg_prompt()
     config_file.write_config(config)
