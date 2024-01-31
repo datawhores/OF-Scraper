@@ -25,47 +25,44 @@ import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args.read as read_args
 
 console = Console()
+models = None
 
 
-def model_selector(models) -> bool:
+def funct(prompt):
+    oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
+    userselector.setfilter()
+    userselector.setsort()
+    if oldargs != vars(read_args.retriveArgs()):
+        global models
+        models = userselector.filterNSort(userselector.ALL_SUBS)
     choices = list(
-        map(lambda x: modelHelpers.model_selectorHelper(x[0], x[1]), enumerate(models))
+        map(
+            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
+            enumerate(models),
+        )
     )
+    selectedSet = set(
+        map(
+            lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+            prompt.selected_choices or [],
+        )
+    )
+    for model in choices:
+        name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+        if name in selectedSet:
+            model.enabled = True
+    prompt.content_control._raw_choices = choices
+    prompt.content_control.choices = prompt.content_control._get_choices(
+        prompt.content_control._raw_choices, prompt.content_control._default
+    )
+    prompt.content_control._format_choices()
+    return prompt
 
-    def funct(prompt):
-        oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
-        userselector.setfilter()
-        userselector.setsort()
-        if oldargs != vars(read_args.retriveArgs()):
-            nonlocal models
-            models = userselector.filterNSort(userselector.ALL_SUBS)
-        choices = list(
-            map(
-                lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-                enumerate(models),
-            )
-        )
-        selectedSet = set(
-            map(
-                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
-                prompt.selected_choices or [],
-            )
-        )
-        for model in choices:
-            name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
-            if name in selectedSet:
-                model.enabled = True
-        prompt.content_control._raw_choices = choices
-        prompt.content_control.choices = prompt.content_control._get_choices(
-            prompt.content_control._raw_choices, prompt.content_control._default
-        )
-        prompt.content_control._format_choices()
-        return prompt
 
-    def funct2(prompt_):
-        selected = prompt_.content_control.selection["value"]
-        console.print(
-            f"""
+def funct2(prompt_):
+    selected = prompt_.content_control.selection["value"]
+    console.print(
+        f"""
         Name: [bold blue]{selected.name}[/bold blue]
         ID: [bold blue]{selected.id}[/bold blue]
         Renewed Date: [bold blue]{selected.renewed_string}[/bold blue]
@@ -89,8 +86,17 @@ def model_selector(models) -> bool:
         
         PRESS ENTER TO RETURN
         """
-        )
-        prompt("")
+    )
+    prompt("")
+    return prompt_
+
+
+def model_selector(models_) -> bool:
+    global models
+    models = models_
+    choices = list(
+        map(lambda x: modelHelpers.model_selectorHelper(x[0], x[1]), enumerate(models))
+    )
 
     p = promptClasses.getFuzzySelection(
         choices=choices,

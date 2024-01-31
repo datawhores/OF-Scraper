@@ -45,8 +45,9 @@ def main_menu_action():
                 count = count + 1
         elif result_main_prompt == "auth":
             # Edit `auth.json` file
-            auth.edit_auth()
-
+            auth_result_prompt = auth.edit_auth()
+            if auth_result_prompt == "quit":
+                return True
         elif result_main_prompt == "config":
             # Edit `data.json` file
             while True:

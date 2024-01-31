@@ -35,13 +35,83 @@ import ofscraper.utils.system.system as system
 console = Console()
 
 
+def funct(prompt_):
+    console.print(
+        f"""
+    For more Details => https://of-scraper.gitbook.io/of-scraper/config-options
+    
+    [General Options]
+    main_profile: default profile attached to config
+    metadata: path to save db files
+    discord: discord hook for logging
+    -----------------------------------
+    [File Options]
+    save_location: root directory for files
+    dir_format: format of directories
+    file_format: format of filenames
+    textlength: max length of text placeholder
+    space-replacer: space replacement for filenames
+    date: date format for placeholders
+    text_type_default: toggle for word count type
+    trunication_default: toggle for trunicating filenames
+    -----------------------------------
+    [Download Options]
+    file_size_limit: max size allowed for download
+    file_size_min: min size required for download
+    filter: which media to download
+    auto_resume: toggle for resuming downloads
+    system_free_min: stops downloads when bypass
+    -----------------------------------
+    [Binary Options]
+    mp4decrypt: path to mp4decrypt binary
+    ffmeg: path to ffmpeg binary
+    -----------------------------------
+    [CDM Options]
+    private-key: for manual cdm
+    client-id: for manual cdm
+    key-mode-default: which cdm
+    keydb_api: for keydb cdm
+    -----------------------------------
+    [Performance Options]
+    download-sems: number of downloads per processor/worker
+    threads: number of processors/workers
+    -----------------------------------
+    [Advanced Options]
+    code-execution: allow eval on custom_val
+    dynamic-mode-default: source of signed header values
+    backend: which downloader to utilize
+    downloadbars: toggle for download-bars
+    cache-mode: cache type for Disk Cache
+    appendlog: toggle for appending log values
+    custom_values: custom values/functions for placeholders
+    sanitize_text: toggle for cleaning text for db
+    temp_dir: directory for storing temp files
+    infinite_loop_action_mode: toggle for infinite loop via action mode
+    disable_after_check: toggle for safe --after usage
+    default_user_list: default user list for --action
+    default_black_list: default black list for --action
+    ----------------------------------------------------------
+    [Response Type]
+    values that remap responsetypes for downloads
+    ======================================================
+    
+    PRESS ENTER TO RETURN
+    """
+    )
+    prompt("")
+    return prompt_
+
+
 def config_prompt() -> int:
     config_prompt_choices = [*constants.getattr("configPromptChoices")]
     config_prompt_choices.insert(6, Separator())
     config_prompt_choices.insert(9, Separator())
+
     answer = promptClasses.getChecklistSelection(
         message="Config Menu: Which area would you like to change?",
         choices=[*config_prompt_choices],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     return constants.getattr("configPromptChoices")[answer]
 
@@ -116,7 +186,9 @@ Enter 0 for no limit
                 "default": data.get_part_file_clean(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -195,7 +267,9 @@ def file_config():
                 ],
                 "long_instruction": "Truncation is based on operating system",
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -236,7 +310,9 @@ Certain content requires decryption to process please provide the full path to f
 """,
                 "default": data.get_ffmpeg(),
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -277,7 +353,9 @@ def cdm_config():
                 "long_instruction": "Required if your using manual for key-mode",
                 "default": data.get_private_key() or "",
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -300,7 +378,9 @@ def performance_config():
                 "long_instruction": f"Value can be 1-{os.cpu_count()-1}",
                 "default": data.get_threads(),
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
 
     out.update(threads)
@@ -327,7 +407,9 @@ def performance_config():
                 "long_instruction": f"Value can be 1-{max_allowed}",
                 "default": data.get_download_semaphores(),
             }
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -361,7 +443,9 @@ def general_config():
                 "validate": prompt_validators.DiscordValidator(),
                 "default": data.get_discord(),
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -489,7 +573,9 @@ Expired user list can be called expired or ofscraper.expired
 List are case insensitive",
 """,
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(new_settings)
     config = config_file.open_config()
@@ -582,7 +668,9 @@ Empty string is consider to be 'profile'
                 "default": data.get_profile_responsetype(),
                 "message": "profile responsetype mapping: ",
             },
-        ]
+        ],
+        altx=funct,
+        long_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()

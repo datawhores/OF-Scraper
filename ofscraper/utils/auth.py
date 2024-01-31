@@ -99,19 +99,18 @@ def edit_auth():
         with open(authFile, "r") as f:
             authText = f.read()
             auth = json.loads(authText)
-        print("Hint: Select 'Enter Each Field Manually' to edit your current config\n")
-        make_auth(auth)
+        return make_auth(auth)
 
         console.print("Your `auth.json` file has been edited.")
     except FileNotFoundError:
         if prompts.ask_make_auth_prompt():
-            make_auth()
+            return make_auth()
     except json.JSONDecodeError as e:
         while True:
             try:
                 print("Your auth.json has a syntax error")
                 if prompts.reset_auth_prompt() == "Reset Default":
-                    make_auth()
+                    return make_auth()
                 else:
                     with open(authFile, "w") as f:
                         f.write(prompts.manual_auth_prompt(authText))
@@ -122,7 +121,6 @@ def edit_auth():
                 break
             except Exception:
                 continue
-    make_request_auth()
 
 
 def authwarning(authFile):
@@ -143,7 +141,9 @@ def make_auth(auth=None):
     browserSelect = prompts.browser_prompt()
 
     auth = auth or defaultAuth
-    if (
+    if browserSelect in {"quit", "main"}:
+        return browserSelect
+    elif (
         browserSelect != "Enter Each Field Manually"
         and browserSelect != "Paste From M-rcus' OnlyFans-Cookie-Helper"
     ):

@@ -114,10 +114,12 @@ def browser_prompt() -> str:
     name = "browser"
     answer = None
 
-    if pythonver < 3.9 or pythonver >= 3.11:
-        msg = "Select how to retrive auth information"
+    if pythonver < 3.9:
+        msg = "Auth Menu: Select how to retrive auth information"
         console.print(
-            "\nNote: Browser Extractions only works with default browser profile\n\n"
+            "\nNote: Browser Extractions only works with default browser profile\n\n\
+Hint: Select 'Enter Each Field Manually' to edit your current config\n\n\
+            "
         )
         answer = promptClasses.batchConverter(
             *[
@@ -139,6 +141,9 @@ def browser_prompt() -> str:
                         "Brave",
                         "Vivaldi",
                         "Safari",
+                        Separator(line="-----------"),
+                        Choice("main", "Go to Main Menu"),
+                        Choice("quit", "Quit"),
                     ],
                     "default": "Enter Each Field Manually",
                 }
@@ -147,9 +152,11 @@ def browser_prompt() -> str:
 
     else:
         console.print(
-            "\nNote:To enable automatic extraction install ofscraper with python 3.9 or 3.10\n\n"
+            "\nNote:To enable automatic extraction install ofscraper with python3.9 or greater\n\n\
+Hint: Select 'Enter Each Field Manually' to edit your current config\n\n\
+            "
         )
-        msg = "Select how to retrive auth information"
+        msg = "Auth Menu: Select how to retrive auth information"
         answer = promptClasses.batchConverter(
             *[
                 {
@@ -158,6 +165,9 @@ def browser_prompt() -> str:
                     "choices": [
                         "Enter Each Field Manually",
                         "Paste From Cookie Helper",
+                        Separator(line="-----------"),
+                        Choice("main", "Go to Main Menu"),
+                        Choice("quit", "Quit"),
                     ],
                     "default": "Enter Each Field Manually",
                 }

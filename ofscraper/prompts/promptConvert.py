@@ -209,17 +209,18 @@ def getType(input_type):
         return number_type
 
 
-def batchConverterHelper(ele):
+def batchConverterHelper(ele, kwargs):
     ele_type = ele.pop("type")
     ele_type = "multiline" if ele.get("multiline") else ele_type
     ele_type = "fuzzy" if ele.get("fuzzy") else ele_type
     name = ele.pop("name")
-    return name, getType(ele_type)(**ele)
+    kwargs = kwargs or {}
+    return name, getType(ele_type)(**kwargs, **ele)
 
 
-def batchConverter(*args):
+def batchConverter(*args, **kwargs):
     outDict = {}
-    outDict.update(list(map(lambda x: batchConverterHelper(x), args)))
+    outDict.update(list(map(lambda x: batchConverterHelper(x, kwargs), args)))
     return outDict
 
 

@@ -256,3 +256,8 @@ PRESS ENTER TO RETURN
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
+
+CONFIG_MENU = """
+SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+CONFIG SECTIONS DETAILS: [ALT+X]
+"""
