@@ -6,6 +6,7 @@ import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth as auth
+import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
@@ -37,6 +38,7 @@ def main_menu_action():
             elif action_result_prompt == "main":
                 continue
             else:
+                checkers.check_config()
                 count > 0 and reset_menu_helper()
                 functs = process_actions.add_selected_areas()
                 run.run_helper(*functs)

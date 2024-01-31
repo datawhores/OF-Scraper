@@ -12,7 +12,9 @@ console = console_.get_shared_console()
 log = logging.getLogger("shared")
 
 
-def make_config(config=False):
+def make_config(
+    config=False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,
+):
     config = schema.get_current_config_schema(config=config)
 
     if isinstance(config, str):
