@@ -240,8 +240,9 @@ def reset_auth_prompt() -> bool:
                 "name": name,
                 "message": "How do you want to fix this issue",
                 "choices": [
-                    Choice("Reset Default", "Reset Default"),
-                    Choice("Manually Edit Auth Config", "Manually Edit Auth Config"),
+                    Choice("reset", "Reset Default"),
+                    Choice("manual", "Fix Through Script"),
+                    Choice("again", "File was fixed manually"),
                 ],
             }
         ]

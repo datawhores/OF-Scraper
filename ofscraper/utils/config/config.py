@@ -42,15 +42,18 @@ def update_config(field: str, value):
     config.update({field: value})
     new_config = schema.get_current_config_schema(config)
     config_file.write_config(new_config)
+    log.debug(f"new config: {config}")
+    return new_config
 
 
 def update_config_full(config, updated_config):
-    config = config_file.open_config()
     if config.get("config"):
         config = config["config"]
     if updated_config.get("config"):
         updated_config = updated_config["config"]
     config.update(updated_config)
+    log.debug(f"new config: {config}")
+    config_file.write_config(config)
     return config
 
 

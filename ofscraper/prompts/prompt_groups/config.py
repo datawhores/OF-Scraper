@@ -739,8 +739,9 @@ def reset_config_prompt() -> bool:
                 "name": name,
                 "message": "How do you want to fix this issue",
                 "choices": [
-                    Choice("Reset", "Reset Default"),
-                    Choice("Manual", "Manually Edit Config"),
+                    Choice("reset", "Reset Default"),
+                    Choice("manual", "Through script Edit Config"),
+                    Choice("again", "File was fixed manually"),
                 ],
             }
         ]

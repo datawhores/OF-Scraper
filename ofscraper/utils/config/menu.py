@@ -14,8 +14,7 @@ log = logging.getLogger("shared")
 
 def update_config_helper(updated_config):
     current_config = config_file.open_config()
-    config = config_.update_config_full(current_config, updated_config)
-    config_file.write_config(config)
+    config_.update_config_full(current_config, updated_config)
     console.print("`config.json` has been successfully edited.")
 
 

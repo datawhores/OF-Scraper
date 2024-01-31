@@ -43,7 +43,6 @@ log = logging.getLogger("shared")
 
 def read_auth():
     authFile = common_paths.get_auth_file()
-
     while True:
         try:
             with open(authFile, "r") as f:
@@ -69,10 +68,11 @@ def read_auth():
         except json.JSONDecodeError as e:
             print("Your auth.json has a syntax error")
             print(f"{e}\n\n")
-            if prompts.reset_auth_prompt():
+            auth_prompt = prompts.reset_auth_prompt()
+            if auth_prompt == "manual":
                 with open(authFile, "w") as f:
                     f.write(prompts.manual_auth_prompt(authText))
-            else:
+            elif auth_prompt == "reset":
                 with open(authFile, "w") as f:
                     f.write(json.dumps(get_empty()))
 
@@ -109,9 +109,10 @@ def edit_auth():
         while True:
             try:
                 print("Your auth.json has a syntax error")
-                if prompts.reset_auth_prompt() == "Reset Default":
+                auth_prompt = prompts.reset_auth_prompt()
+                if auth_prompt == "reset":
                     return make_auth()
-                else:
+                elif auth_prompt == "manual":
                     with open(authFile, "w") as f:
                         f.write(prompts.manual_auth_prompt(authText))
 

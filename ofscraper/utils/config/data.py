@@ -15,6 +15,7 @@ from diskcache import Disk, JSONDisk
 from humanfriendly import parse_size
 
 import ofscraper.const.constants as constants
+import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.wrapper as wrapper
 import ofscraper.utils.constants as constants_attr
 
@@ -503,6 +504,8 @@ def get_cache_mode(config=None):
 def cache_mode_helper(config=None):
     if config == False:
         return constants.CACHEDEFAULT
+    if config == None:
+        config = config_file.open_config()
     data = (
         config.get("cache-mode")
         or config.get("advanced_options", {}).get("cache-mode")

@@ -215,6 +215,9 @@ def batchConverterHelper(ele, kwargs):
     ele_type = "fuzzy" if ele.get("fuzzy") else ele_type
     name = ele.pop("name")
     kwargs = kwargs or {}
+    ele["long_instruction"] = ele.get("long_instruction", "") + kwargs.pop(
+        "long_instruction", ""
+    )
     return name, getType(ele_type)(**kwargs, **ele)
 
 
