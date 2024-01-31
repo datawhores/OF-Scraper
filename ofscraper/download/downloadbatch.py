@@ -27,6 +27,7 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.system.system as system
+import ofscraper.models.selector as selector
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.common import (
     addGlobalDir,
@@ -83,7 +84,8 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    dates.getLogDate(),
+                    dates.getLogDateVManager(),
+                    selector.get_ALL_SUBSVManger()
                     read_args.retriveArgs(),
                 ),
             )
@@ -305,10 +307,11 @@ def get_mediasplits(medialist):
 
 
 def process_dict_starter(
-    username, model_id, ele, p_logqueue_, p_otherqueue_, pipe_, date, argsCopy
+    username, model_id, ele, p_logqueue_, p_otherqueue_, pipe_, dateDict,userNameList, argsCopy
 ):
     subProcessVariableInit(
-        date,
+        dateDict,
+        userNameList,
         pipe_,
         logger.get_shared_logger(
             main_=p_logqueue_, other_=p_otherqueue_, name=f"shared_{os.getpid()}"

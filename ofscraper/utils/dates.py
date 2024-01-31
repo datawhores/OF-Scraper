@@ -19,6 +19,7 @@ import ofscraper.utils.manager as manager
 
 dateFormat = None
 dateNow = None
+dateDict=None
 
 
 def setDateNow():
@@ -56,8 +57,10 @@ def get_current_time():
     return arrow.get(tzinfo="UTC").to("local").float_timestamp
 
 
-def setLogDate(dateDict=None):
+def setLogDateVManger(dateDict_=None):
     global dateFormat
+    global dateDict
+    dateDict=dateDict_
     if not dateDict:
         global dateNow
         setDateNow()
@@ -65,17 +68,25 @@ def setLogDate(dateDict=None):
             "day": dateNow.format("YYYY-MM-DD"),
             "now": dateNow.format("YYYY-MM-DD_hh.mm.ss"),
         }
-    dateFormat = manager.get_manager().dict(dateDict)
+    dateFormat = manager.update_dict(dateDict)
+
+def getDateDict():
+    global dateDict
+    return dateDict
+
+def setDateDict(dateDict_):
+    global dateDict
+    dateDict=dateDict_
 
 
-def getLogDate():
+def getLogDateVManager():
     global dateFormat
     if not dateFormat:
-        setLogDate()
+        setLogDateVManger()
     return dateFormat
 
 
-def resetLogdate():
+def resetLogDateVManger():
     global dateFormat
     dateFormat = None
-    setLogDate()
+    setLogDateVManger()

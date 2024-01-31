@@ -53,6 +53,7 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
+import ofscraper.models.selector as selector
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -126,9 +127,10 @@ def reset_globals():
     )
 
 
-def setLogDate(date):
-    dates.setLogDate(date)
-
+def setDateDict(date):
+    dates.setDateDict(date)
+def set_ALL_SUBS(userlist):
+    selector.set_ALL_SUBS(userlist)
 
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
@@ -141,10 +143,11 @@ def process_split_globals(pipeCopy, logCopy):
     log = logCopy
 
 
-def subProcessVariableInit(date, pipeCopy, logCopy, argsCopy):
+def subProcessVariableInit(dateDict,userList pipeCopy, logCopy, argsCopy):
     reset_globals()
     write_args.setArgs(argsCopy)
-    setLogDate(date)
+    setDateDict(dateDict)
+    set_ALL_SUBS(userList)
     process_split_globals(pipeCopy, logCopy)
 
 

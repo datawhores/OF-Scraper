@@ -102,7 +102,7 @@ def run_helper(*functs):
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
-        dates.resetLogdate()
+        dates.resetLogDateVManger()
     except KeyboardInterrupt:
         try:
             with exit.DelayedKeyboardInterrupt():

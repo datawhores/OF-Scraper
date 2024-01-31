@@ -35,7 +35,7 @@ def args_loader():
 
 
 def setdate():
-    dates.setLogDate()
+    dates.setLogDateVManger()
 
 
 def setLogger():

@@ -12,6 +12,8 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
+import ofscraper.utils.manager as manager
+
 
 ALL_SUBS = None
 PARSED_SUBS = None
@@ -20,10 +22,23 @@ log = logging.getLogger("shared")
 
 def get_model_fromParsed(name):
     global ALL_SUBS
-    if not ALL_SUBS:
-        all_subs_helper()
     modelObjs = list(filter(lambda x: x.name == name, ALL_SUBS))
     return modelObjs[0] if len(modelObjs) > 0 else None
+def set_ALL_SUBS(val):
+    global ALL_SUBS
+    ALL_SUBS=val
+
+def set_ALL_SUBSVManger():
+    global ALL_SUBS
+    if not ALL_SUBS:
+        all_subs_helper()
+    manager.update_dict({"subs":ALL_SUBS})
+
+def get_ALL_SUBSVManger():
+    global ALL_SUBS
+    if not ALL_SUBS:
+        set_ALL_SUBSVManger()
+    return manager.get_manager().dict().get("subs")
 
 
 def getselected_usernames(rescan=False, reset=False):

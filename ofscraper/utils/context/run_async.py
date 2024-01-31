@@ -1,5 +1,4 @@
 import asyncio
-
 import ofscraper.utils.context.exit as exit
 
 
@@ -21,6 +20,8 @@ def run(coro):
                     tasks.exception()
                 except Exception:
                     None
+            raise E
+        except Exception as E:
             raise E
         finally:
             try:

@@ -65,14 +65,14 @@ def getlogpath():
         path = (
             get_config_home()
             / "logging"
-            / f'{data.get_main_profile()}_{dates_manager.getLogDate().get("day")}'
-            / f'ofscraper_{data.get_main_profile()}_{dates_manager.getLogDate().get("now")}.log'
+            / f'{data.get_main_profile()}_{dates_manager.getDateDict().get("day")}'
+            / f'ofscraper_{data.get_main_profile()}_{dates_manager.getDateDict().get("now")}.log'
         )
     else:
         path = (
             get_config_home()
             / "logging"
-            / f'ofscraper_{data.get_main_profile()}_{dates_manager.getLogDate().get("now")}.log'
+            / f'ofscraper_{data.get_main_profile()}_{dates_manager.getDateDict().get("now")}.log'
         )
     path = pathlib.Path(path).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)

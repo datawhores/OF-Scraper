@@ -131,7 +131,7 @@ def updateOtherLoggerStream():
         and read_args.retriveArgs().log == "OFF"
     ):
         return
-    dates.resetLogdate()
+    dates.resetLogDateVManger()
     stream = open(
         common_paths.getlogpath(),
         encoding="utf-8",
@@ -291,8 +291,9 @@ def start_other_thread(input_=None, count=1, name=None, other_event=None):
 # processs discord/log queues via a process
 @start_checker
 def start_other_process(input_=None, count=1):
-    def inner(args_, input_=None, count=1):
+    def inner(args_,date, input_=None, count=1):
         write_args.setArgs(args_)
+        dates.setDateDict(date)
         input_ = input_ or otherqueue_
         logger_other(input_, stop_count=count)
 
@@ -300,7 +301,7 @@ def start_other_process(input_=None, count=1):
     input_ = otherqueue_
     process = aioprocessing.AioProcess(
         target=inner,
-        args=(read_args.retriveArgs(),),
+        args=(read_args.retriveArgs(),dates.getDateDict()),
         kwargs={"input_": input_, "count": count},
         daemon=True,
     )
