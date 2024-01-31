@@ -12,7 +12,7 @@ console = console_.get_shared_console()
 log = logging.getLogger("shared")
 
 
-def make_config(config=None):
+def make_config(config=False):
     config = schema.get_current_config_schema(config=config)
 
     if isinstance(config, str):
