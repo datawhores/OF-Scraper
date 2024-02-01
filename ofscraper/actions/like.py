@@ -49,7 +49,7 @@ import ofscraper.utils.args.read as read_args
 
 
 def get_posts(model_id, username):
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     pinned_posts = []
     timeline_posts = []
     archived_posts = []

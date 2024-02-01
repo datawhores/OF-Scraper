@@ -14,7 +14,7 @@ import ofscraper.utils.system.system as system
 
 
 def printStartValues():
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     log = logging.getLogger("shared")
     log_helpers.updateSenstiveDict(
         f"/{common_paths.get_username()}/", "/your_username/"
@@ -38,7 +38,7 @@ def printStartValues():
 
 
 def discord_warning():
-    if read_args.retriveArgs().discord == "DEBUG":
+    if read_args.retriveArgsVManager().discord == "DEBUG":
         console.get_shared_console().print(
             "[bold red]Warning Discord with DEBUG is not recommended\nAs processing messages is much slower compared to other[/bold red]"
         )

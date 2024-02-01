@@ -42,6 +42,6 @@ def get_current_config_profile():
 
 
 def get_active_profile():
-    if read_args.retriveArgs().profile:
-        return read_args.retriveArgs().profile
+    if read_args.retriveArgsVManager().profile:
+        return read_args.retriveArgsVManager().profile
     return get_current_config_profile()

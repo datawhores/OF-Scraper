@@ -38,7 +38,7 @@ def set_directory(path: Path):
 
 def cleanup():
     if (
-        read_args.retriveArgs().no_auto_resume
+        read_args.retriveArgsVManager().no_auto_resume
         or not data.get_part_file_clean()
         or False
     ):

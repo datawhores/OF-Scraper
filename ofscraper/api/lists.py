@@ -44,17 +44,19 @@ sem = None
 @run
 async def get_otherlist():
     out = []
-    if len(read_args.retriveArgs().user_list) >= 2 or (
+    if len(read_args.retriveArgsVManager().user_list) >= 2 or (
         (
             constants.getattr("OFSCRAPER_RESERVED_LIST")
             or constants.getattr("OFSCRAPER_RESERVED_LIST_ALT")
         )
-        not in read_args.retriveArgs().user_list
+        not in read_args.retriveArgsVManager().user_list
     ):
         out.extend(await get_lists())
     out = list(
         filter(
-            lambda x: x.get("name").lower() in read_args.retriveArgs().user_list, out
+            lambda x: x.get("name").lower()
+            in read_args.retriveArgsVManager().user_list,
+            out,
         )
     )
     log.debug(
@@ -66,11 +68,13 @@ async def get_otherlist():
 @run
 async def get_blacklist():
     out = []
-    if len(read_args.retriveArgs().black_list) >= 1:
+    if len(read_args.retriveArgsVManager().black_list) >= 1:
         out.extend(await get_lists())
     out = list(
         filter(
-            lambda x: x.get("name").lower() in read_args.retriveArgs().black_list, out
+            lambda x: x.get("name").lower()
+            in read_args.retriveArgsVManager().black_list,
+            out,
         )
     )
     log.debug(

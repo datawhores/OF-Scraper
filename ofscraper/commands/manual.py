@@ -23,9 +23,9 @@ def manual_download(urls=None):
     network.check_cdm()
     media_dict = get_media_from_urls(urls)
     log.debug(f"Number of values from media dict  {len(list(media_dict.values()))}")
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     args.dupe = True
-    write_args.setArgs(args)
+    write_args.setArgsVManager(args)
     # should be done before downloads
     selector.all_subs_helper()
     for value in media_dict.values():
@@ -43,9 +43,9 @@ def manual_download(urls=None):
 
 
 def get_media_from_urls(urls):
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     args.dupe = True
-    write_args.setArgs(args)
+    write_args.setArgsVManager(args)
     user_name_dict = {}
     id_dict = {}
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
@@ -172,7 +172,7 @@ def get_info(url):
 
 
 def url_helper(urls):
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     args = vars(args)
     out = []
     out.extend(args.get("file", []) or [])

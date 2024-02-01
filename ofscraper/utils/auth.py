@@ -296,7 +296,9 @@ def make_request_auth():
 
 
 def get_request_auth():
-    if (read_args.retriveArgs().dynamic_rules or data.get_dynamic() or "deviint") in {
+    if (
+        read_args.retriveArgsVManager().dynamic_rules or data.get_dynamic() or "deviint"
+    ) in {
         "deviint",
         "dv",
         "dev",

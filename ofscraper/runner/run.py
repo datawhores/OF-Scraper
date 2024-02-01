@@ -39,7 +39,7 @@ def main():
 
 
 def main_helper():
-    if vars(read_args.retriveArgs()).get("help"):
+    if vars(read_args.retriveArgsVManager()).get("help"):
         return
     initLogs()
     time.sleep(3)

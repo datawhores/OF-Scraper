@@ -2,8 +2,8 @@ import ofscraper.utils.args.read as read_args
 
 
 def sort_models_helper(models):
-    sort = read_args.retriveArgs().sort
-    reverse = read_args.retriveArgs().desc
+    sort = read_args.retriveArgsVManager().sort
+    reverse = read_args.retriveArgsVManager().desc
     if sort == "name":
         return sorted(models, reverse=reverse, key=lambda x: x.name)
 

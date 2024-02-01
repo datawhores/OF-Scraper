@@ -154,7 +154,7 @@ def post_checker():
             oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
             user_dict[user_name] = {}
             user_dict[user_name] = user_dict[user_name] or []
-            if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
+            if len(oldtimeline) > 0 and not read_args.retriveArgsVManager().force:
                 user_dict[user_name].extend(oldtimeline)
             else:
                 user_dict[user_name] = {}
@@ -169,7 +169,7 @@ def post_checker():
                 cache.close()
 
             oldarchive = cache.get(f"archived_check_{model_id}", default=[])
-            if len(oldarchive) > 0 and not read_args.retriveArgs().force:
+            if len(oldarchive) > 0 and not read_args.retriveArgsVManager().force:
                 user_dict[user_name].extend(oldarchive)
             else:
                 data = archive.get_archived_media(model_id, user_name, forced_after=0)
@@ -217,15 +217,15 @@ def post_checker():
 
 def reset_url():
     # clean up args once check modes are ready to launch
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     argdict = vars(args)
     if argdict.get("url"):
-        read_args.retriveArgs().url = None
+        read_args.retriveArgsVManager().url = None
     if argdict.get("file"):
-        read_args.retriveArgs().file = None
+        read_args.retriveArgsVManager().file = None
     if argdict.get("username"):
-        read_args.retriveArgs().username = None
-    write_args.setArgs(args)
+        read_args.retriveArgsVManager().username = None
+    write_args.setArgsVManager(args)
 
 
 def set_count(ROWS):
@@ -255,7 +255,7 @@ def message_checker():
         oldmessages = cache.get(f"message_check_{model_id}", default=[])
         log.debug(f"Number of messages in cache {len(oldmessages)}")
 
-        if len(oldmessages) > 0 and not read_args.retriveArgs().force:
+        if len(oldmessages) > 0 and not read_args.retriveArgsVManager().force:
             messages = oldmessages
         else:
             messages = messages_.get_messages(model_id, user_name, forced_after=0)
@@ -267,7 +267,7 @@ def message_checker():
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
         # paid content
-        if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+        if len(oldpaid) > 0 and not read_args.retriveArgsVManager().force:
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
@@ -297,14 +297,14 @@ def purchase_checker():
     user_dict = {}
     auth.make_headers(auth.read_auth())
     ROWS = []
-    for user_name in read_args.retriveArgs().username:
+    for user_name in read_args.retriveArgsVManager().username:
         user_name = profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id(user_name)
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
 
-        if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+        if len(oldpaid) > 0 and not read_args.retriveArgsVManager().force:
             paid = oldpaid
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
@@ -325,7 +325,7 @@ def purchase_checker():
 def stories_checker():
     user_dict = {}
     ROWS = []
-    for user_name in read_args.retriveArgs().username:
+    for user_name in read_args.retriveArgsVManager().username:
         user_name = profile.scrape_profile(user_name)["username"]
         user_dict[user_name] = user_dict.get(user_name, [])
         model_id = profile.get_id(user_name)
@@ -352,8 +352,8 @@ def stories_checker():
 
 def url_helper():
     out = []
-    out.extend(read_args.retriveArgs().file or [])
-    out.extend(read_args.retriveArgs().url or [])
+    out.extend(read_args.retriveArgsVManager().file or [])
+    out.extend(read_args.retriveArgsVManager().url or [])
     return map(lambda x: x.strip(), out)
 
 
@@ -386,7 +386,7 @@ def get_paid_ids(model_id, user_name):
     oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
     paid = None
 
-    if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+    if len(oldpaid) > 0 and not read_args.retriveArgsVManager().force:
         paid = oldpaid
     else:
         paid = paid_.get_paid_posts(user_name, model_id)

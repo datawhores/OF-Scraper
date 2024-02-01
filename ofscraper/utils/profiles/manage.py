@@ -24,10 +24,10 @@ def change_profile():
     tools.print_profiles()
     profile = prompts.get_profile_prompt(profile_data.get_profile_names())
     config_.update_config(constants.getattr("mainProfile"), profile)
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     # remove profile argument
     args.profile = None
-    write_args.setArgs(args)
+    write_args.setArgsVManager(args)
     print(f"[green]Successfully changed profile to[/green] {profile}")
 
 
@@ -73,10 +73,10 @@ def edit_profile_name():
 
 
 def change_current_profile(new_profile, old_profile):
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     if args.profile == old_profile:
         args.profile = new_profile
-        write_args.setArgs(args)
+        write_args.setArgsVManager(args)
     # required because name has changed
     if old_profile == profile_data.get_current_config_profile():
         config_.update_config(constants.getattr("mainProfile"), new_profile)

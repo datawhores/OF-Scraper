@@ -14,31 +14,48 @@ import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager
 
-
 ALL_SUBS = None
 PARSED_SUBS = None
+ALL_SUBS_DICT = None
 log = logging.getLogger("shared")
 
 
 def get_model_fromParsed(name):
-    global ALL_SUBS
-    modelObjs = list(filter(lambda x: x.name == name, ALL_SUBS))
-    return modelObjs[0] if len(modelObjs) > 0 else None
-def set_ALL_SUBS(val):
-    global ALL_SUBS
-    ALL_SUBS=val
+    global ALL_SUBS_DICT
+    return ALL_SUBS_DICT.get(name)
 
-def set_ALL_SUBSVManger():
+
+def set_ALL_SUBS_DICT(val):
+    global ALL_SUBS
+    global ALL_SUBS_DICT
+    ALL_SUBS_DICT = {}
+    [ALL_SUBS_DICT.update({ele.name: ele}) for ele in ALL_SUBS]
+    ALL_SUBS = val
+
+
+def get_ALL_SUBS_DICT():
+    global ALL_SUBS_DICT
+    return ALL_SUBS_DICT
+
+
+def set_ALL_SUBS_DICTVManger():
     global ALL_SUBS
     if not ALL_SUBS:
         all_subs_helper()
-    manager.update_dict({"subs":ALL_SUBS})
+    manager.update_dict({"subs": ALL_SUBS})
+    set_ALL_SUBS_DICT(ALL_SUBS)
 
-def get_ALL_SUBSVManger():
+
+def get_ALL_SUBS():
     global ALL_SUBS
-    if not ALL_SUBS:
-        set_ALL_SUBSVManger()
-    return manager.get_manager().dict().get("subs")
+    return ALL_SUBS
+
+
+def get_ALL_SUBS_DICTVManger():
+    global ALL_SUBS
+    if not manager.get_manager_dict().get("subs"):
+        set_ALL_SUBS_DICTVManger()
+    return manager.get_manager_dict().get("subs")
 
 
 def getselected_usernames(rescan=False, reset=False):
@@ -86,15 +103,17 @@ def all_subs_helper(refetch=True):
 def parsed_subscriptions_helper(reset=False):
     global ALL_SUBS
     global PARSED_SUBS
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     if reset == True:
         args.username = None
-        write_args.setArgs(args)
+        write_args.setArgsVManager(args)
     if not bool(args.username):
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
-        read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
+        read_args.retriveArgsVManager().username = list(
+            map(lambda x: x.name, selectedusers)
+        )
         PARSED_SUBS = selectedusers
-        write_args.setArgs(args)
+        write_args.setArgsVManager(args)
     elif "ALL" in args.username:
         PARSED_SUBS = filterNSort(ALL_SUBS)
     elif args.username:
@@ -105,13 +124,13 @@ def parsed_subscriptions_helper(reset=False):
 
 def setfilter(forced=False):
     if forced or prompts.decide_filters_prompt() == "Yes":
-        args = prompts.modify_filters_prompt(read_args.retriveArgs())
+        args = prompts.modify_filters_prompt(read_args.retriveArgsVManager())
 
 
 def setsort(forced=False):
     if forced or prompts.decide_sort_prompt() == "Yes":
         global args
-        args = prompts.modify_sort_prompt(read_args.retriveArgs())
+        args = prompts.modify_sort_prompt(read_args.retriveArgsVManager())
 
 
 def filterNSort(usernames):
@@ -133,12 +152,12 @@ def filterNSort(usernames):
             f"""You have filtered the user list to zero
 Change the filter settings to continue
 
-Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
-Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
-Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
-Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
-Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
-Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
+Sub Status: {read_args.retriveArgsVManager().sub_status or 'No Filter'}
+Renewal Status: {read_args.retriveArgsVManager().renewal or 'No Filter'}
+Promo Price Filter: {read_args.retriveArgsVManager().promo_price or 'No Filter'}
+Current Price Filter: {read_args.retriveArgsVManager().current_price or 'No Filter'}
+Current Price Filter: {read_args.retriveArgsVManager().current_price or 'No Filter'}
+Renewal Price Filter: {read_args.retriveArgsVManager().renewal_price or 'No Filter'}
 """
         )
 

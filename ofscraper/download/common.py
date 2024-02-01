@@ -46,6 +46,7 @@ from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
+import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
@@ -53,8 +54,8 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.models.selector as selector
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.system as system
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
@@ -127,11 +128,6 @@ def reset_globals():
     )
 
 
-def setDateDict(date):
-    dates.setDateDict(date)
-def set_ALL_SUBS(userlist):
-    selector.set_ALL_SUBS(userlist)
-
 def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
@@ -143,11 +139,11 @@ def process_split_globals(pipeCopy, logCopy):
     log = logCopy
 
 
-def subProcessVariableInit(dateDict,userList pipeCopy, logCopy, argsCopy):
+def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
     reset_globals()
     write_args.setArgs(argsCopy)
-    setDateDict(dateDict)
-    set_ALL_SUBS(userList)
+    dates.setLogDate(dateDict)
+    selector.set_ALL_SUBS_DICT(userList)
     process_split_globals(pipeCopy, logCopy)
 
 
@@ -181,7 +177,8 @@ def _(func: abc.Callable, input_sem: None | semaphoreDelayed = None):
 
 def setupProgressBar(multi=False):
     downloadprogress = (
-        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+        config_data.get_show_downloadprogress()
+        or read_args.retriveArgsVManager().downloadbars
     )
     if not multi:
         job_progress = Progress(

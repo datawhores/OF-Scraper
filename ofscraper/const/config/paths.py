@@ -9,7 +9,7 @@ def get_config_home():
 
 
 def get_config_path():
-    configPath = read_args.retriveArgs().config
+    configPath = read_args.retriveArgsVManager().config
     defaultPath = pathlib.Path.home() / consts.configPath / consts.configFile
     ofscraperHome = pathlib.Path.home() / consts.configPath
 

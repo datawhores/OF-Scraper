@@ -9,10 +9,10 @@ def get_like_area():
         "Pinned",
         "Labels",
     ]
-    if len(read_args.retriveArgs().like_area) == 0:
-        post = set(read_args.retriveArgs().posts)
+    if len(read_args.retriveArgsVManager().like_area) == 0:
+        post = set(read_args.retriveArgsVManager().posts)
     else:
-        post = set(read_args.retriveArgs().like_area)
+        post = set(read_args.retriveArgsVManager().like_area)
     if "All" in post:
         post.update(set(all_choices))
     return list(
@@ -39,10 +39,10 @@ def get_download_area():
         "Profile",
         "Labels",
     ]
-    if len(read_args.retriveArgs().download_area) == 0:
-        post = set(read_args.retriveArgs().posts)
+    if len(read_args.retriveArgsVManager().download_area) == 0:
+        post = set(read_args.retriveArgsVManager().posts)
     else:
-        post = set(read_args.retriveArgs().download_area)
+        post = set(read_args.retriveArgsVManager().download_area)
     if "All" in post:
         post.update(set(all_choices))
     return list(

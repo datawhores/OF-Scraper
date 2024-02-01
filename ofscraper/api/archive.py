@@ -54,7 +54,7 @@ async def scrape_archived_posts(
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     if timestamp and (
         float(timestamp)
-        > (read_args.retriveArgs().before or arrow.now()).float_timestamp
+        > (read_args.retriveArgsVManager().before or arrow.now()).float_timestamp
     ):
         return []
     if timestamp:
@@ -185,7 +185,10 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
         page_count = 0
         setCache = (
             True
-            if (read_args.retriveArgs().after == 0 or not read_args.retriveArgs().after)
+            if (
+                read_args.retriveArgsVManager().after == 0
+                or not read_args.retriveArgsVManager().after
+            )
             else False
         )
 
@@ -197,7 +200,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                     operations.get_archived_postinfo(
                         model_id=model_id, username=username
                     )
-                    if not read_args.retriveArgs().no_cache
+                    if not read_args.retriveArgsVManager().no_cache
                     else []
                 )
 
@@ -213,7 +216,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                 postedAtArray = sorted(oldarchived, key=lambda x: x[0])
                 if rescan or (
                     cache.get("{model_id}_full_archived_scrape")
-                    and not read_args.retriveArgs().after
+                    and not read_args.retriveArgsVManager().after
                     and not data.get_disable_after()
                 ):
                     log.info(
@@ -254,8 +257,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                 required_ids=set(
                                     list(map(lambda x: x[0], splitArrays[0]))
                                 ),
-                                timestamp=read_args.retriveArgs().after.float_timestamp
-                                if read_args.retriveArgs().after
+                                timestamp=read_args.retriveArgsVManager().after.float_timestamp
+                                if read_args.retriveArgsVManager().after
                                 else None,
                             )
                         )
@@ -334,7 +337,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
             )
         )
         log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-        if setCache and not read_args.retriveArgs().after:
+        if setCache and not read_args.retriveArgsVManager().after:
             newCheck = {}
             for post in cache.get(f"archived_check_{model_id}", []) + list(
                 unduped.values()
@@ -351,8 +354,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 
 
 def get_after(model_id, username):
-    if read_args.retriveArgs().after:
-        return read_args.retriveArgs().after.float_timestamp
+    if read_args.retriveArgsVManager().after:
+        return read_args.retriveArgsVManager().after.float_timestamp
     curr = operations.get_archived_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

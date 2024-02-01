@@ -16,9 +16,9 @@ def action_prompt() -> int:
         message="Action Menu: What action(s) would you like to take?",
         choices=[*action_prompt_choices],
     )
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     action = constants.getattr("actionPromptChoices")[answer]
     if isinstance(action, str):
         return action
     args.action = action
-    write_args.setArgs(args)
+    write_args.setArgsVManager(args)

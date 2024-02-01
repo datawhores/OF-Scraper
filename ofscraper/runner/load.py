@@ -31,7 +31,7 @@ def main():
 
 
 def args_loader():
-    read_args.retriveArgs()
+    read_args.retriveArgsVManager()
 
 
 def setdate():

@@ -8,7 +8,7 @@ cache = None
 
 
 def get(*args, **kwargs):
-    if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+    if read_args.retriveArgsVManager().no_cache or data.get_cache_mode() == "disabled":
         return kwargs.get("default")
     global cache
     if cache is None:
@@ -17,7 +17,7 @@ def get(*args, **kwargs):
 
 
 def set(*args, **kwargs):
-    if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+    if read_args.retriveArgsVManager().no_cache or data.get_cache_mode() == "disabled":
         return
     global cache
     if cache is None:
@@ -26,7 +26,7 @@ def set(*args, **kwargs):
 
 
 def close(*args, **kwargs):
-    if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+    if read_args.retriveArgsVManager().no_cache or data.get_cache_mode() == "disabled":
         return None
     global cache
     if cache is None:
@@ -35,7 +35,7 @@ def close(*args, **kwargs):
 
 
 def touch(*args, **kwargs):
-    if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+    if read_args.retriveArgsVManager().no_cache or data.get_cache_mode() == "disabled":
         return None
     global cache
     if cache is None:

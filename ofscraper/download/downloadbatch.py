@@ -17,6 +17,7 @@ from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
+import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
@@ -27,7 +28,6 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.system.system as system
-import ofscraper.models.selector as selector
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.common import (
     addGlobalDir,
@@ -84,8 +84,8 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    dates.getLogDateVManager(),
-                    selector.get_ALL_SUBSVManger()
+                    dates.getLogDate(),
+                    selector.get_ALL_SUBS(),
                     read_args.retriveArgs(),
                 ),
             )
@@ -224,7 +224,8 @@ downloads total [{common.video_count} videos, {common.audio_count} audios, {comm
 def queue_process(pipe_, overall_progress, job_progress, task1, total):
     count = 0
     downloadprogress = (
-        read_args.retriveArgs().downloadbars or config_data.get_show_downloadprogress()
+        read_args.retriveArgsVManager().downloadbars
+        or config_data.get_show_downloadprogress()
     )
     # shared globals
 
@@ -299,15 +300,23 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
 
 
 def get_mediasplits(medialist):
-    user_count = read_args.retriveArgs().downloadthreads or config_data.get_threads()
-    final_count = min(user_count, system.getcpu_count(), len(medialist) // 5)
-    if final_count == 0:
-        final_count = 1
+    user_count = (
+        read_args.retriveArgsVManager().downloadthreads or config_data.get_threads()
+    )
+    final_count = max(min(user_count, system.getcpu_count(), len(medialist) // 5), 1)
     return more_itertools.divide(final_count, medialist)
 
 
 def process_dict_starter(
-    username, model_id, ele, p_logqueue_, p_otherqueue_, pipe_, dateDict,userNameList, argsCopy
+    username,
+    model_id,
+    ele,
+    p_logqueue_,
+    p_otherqueue_,
+    pipe_,
+    dateDict,
+    userNameList,
+    argsCopy,
 ):
     subProcessVariableInit(
         dateDict,

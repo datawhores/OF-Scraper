@@ -348,14 +348,14 @@ async def sort_list(c) -> list:
 
 
 def get_user_list_helper():
-    out = read_args.retriveArgs().user_list or data.get_default_userlist()
+    out = read_args.retriveArgsVManager().user_list or data.get_default_userlist()
     if isinstance(out, str):
         out = out.split(",")
     return set(map(lambda x: x.lower().strip(), out))
 
 
 def get_black_list_helper():
-    out = read_args.retriveArgs().black_list or data.get_default_blacklist()
+    out = read_args.retriveArgsVManager().black_list or data.get_default_blacklist()
     if isinstance(out, str):
         out = out.split(",")
     return set(map(lambda x: x.lower().strip(), out))

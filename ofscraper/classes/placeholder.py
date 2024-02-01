@@ -279,11 +279,14 @@ class Placeholders:
         return out
 
     def set_final_path(self):
-        if (read_args.retriveArgs().original or data.get_truncation()) is False:
+        if (read_args.retriveArgsVManager().original or data.get_truncation()) is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif read_args.retriveArgs().original is False:
+        elif read_args.retriveArgsVManager().original is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif read_args.retriveArgs().original is True or data.get_truncation() is True:
+        elif (
+            read_args.retriveArgsVManager().original is True
+            or data.get_truncation() is True
+        ):
             self._final_path = paths.truncate(
                 pathlib.Path(self.mediadir, f"{self.filename}")
             )

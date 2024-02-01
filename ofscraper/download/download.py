@@ -12,7 +12,7 @@ import ofscraper.utils.system.system as system
 
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
-    if not read_args.retriveArgs().dupe:
+    if not read_args.retriveArgsVManager().dupe:
         media_ids = set(
             operations.get_media_ids_downloaded(model_id=model_id, username=username)
         )
@@ -44,7 +44,7 @@ def download_picker(username, model_id, medialist):
             len(medialist)
             >= data.get_download_semaphores() * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
-        and read_args.retriveArgs().downloadthreads != 0
+        and read_args.retriveArgsVManager().downloadthreads != 0
         and data.get_threads() != 0
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)

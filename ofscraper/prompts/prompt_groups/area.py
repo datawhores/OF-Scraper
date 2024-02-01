@@ -21,7 +21,7 @@ import ofscraper.utils.args.read as read_args
 
 
 def areas_prompt() -> list:
-    args = read_args.retriveArgs()
+    args = read_args.retriveArgsVManager()
     name = "value"
     message = (
         "Which area(s) would you do you want to download and like"
