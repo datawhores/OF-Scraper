@@ -5,7 +5,7 @@ import ofscraper.utils.args.read as read_args
 
 
 def pick():
-    args = read_args.retriveArgsVManager()
+    args = read_args.retriveArgs()
     if args.command == "post_check":
         check.post_checker()
     elif args.command == "msg_check":

@@ -65,7 +65,7 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 
 @exit.exit_wrapper
 def process_post():
-    if read_args.retriveArgsVManager().users_first:
+    if read_args.retriveArgs().users_first:
         process_post_user_first()
     else:
         normal_post_process()
@@ -169,7 +169,7 @@ def normal_post_process():
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
 
-        if read_args.retriveArgsVManager().scrape_paid:
+        if read_args.retriveArgs().scrape_paid:
             user_dict = {}
             [
                 user_dict.update(
@@ -274,7 +274,7 @@ def process_unlike():
 
 def add_selected_areas():
     functs = []
-    action = read_args.retriveArgsVManager().action
+    action = read_args.retriveArgs().action
     if "like" in action and "download" in action:
         actions.select_areas()
         functs.append(process_post)
@@ -292,6 +292,6 @@ def add_selected_areas():
     elif "unlike" in action:
         actions.select_areas()
         functs.append(process_unlike)
-    if read_args.retriveArgsVManager().scrape_paid:
+    if read_args.retriveArgs().scrape_paid:
         functs.append(scrape_paid)
     return functs

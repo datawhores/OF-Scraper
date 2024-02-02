@@ -74,7 +74,7 @@ def process_prompts():
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green]Version {read_args.retriveArgsVManager().version}[/bold green]"
+            f"[bold green]Version {read_args.retriveArgs().version}[/bold green]"
         )
 
 
@@ -114,7 +114,7 @@ def scrapper():
         os.system("color")
     global selectedusers
     selectedusers = None
-    args = read_args.retriveArgsVManager()
+    args = read_args.retriveArgs()
     if args.daemon:
         if len(args.action) == 0 and not args.scrape_paid:
             prompts.action_prompt()

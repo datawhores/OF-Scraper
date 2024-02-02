@@ -2,7 +2,7 @@ import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.manager as manager
 
 
-def setArgsVManager(changed):
+def setArgsV(changed):
     manager.get_manager_dict().update({"args": changed})
     setArgs(changed)
 

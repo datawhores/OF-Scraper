@@ -878,5 +878,5 @@ def parse_args(input=None):
         raise argparse.ArgumentTypeError(
             "error: argument missing --url or --file must be specified )"
         )
-    write_args.setArgsVManager(args)
+    write_args.setArgs(args)
     return args

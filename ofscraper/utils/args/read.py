@@ -16,4 +16,10 @@ def retriveArgsVManager():
 
 
 def retriveArgs():
-    return global_args.args
+    try:
+        if not global_args.args:
+            global_args.args = parse_args.parse_args()
+        return global_args.args
+    except SystemExit as E:
+        print(f"Passed Args {sys.argv[1:]}")
+        raise E

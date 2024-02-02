@@ -9,7 +9,7 @@ import ofscraper.utils.constants as constants
 
 @contextlib.contextmanager
 def lowstdout():
-    if read_args.retriveArgsVManager().output in constants.getattr("SUPRESS_OUTPUTS"):
+    if read_args.retriveArgs().output in constants.getattr("SUPRESS_OUTPUTS"):
         save_stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
         yield

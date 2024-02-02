@@ -55,19 +55,19 @@ def init_stdout_logger(name=None):
         show_level=False,
         console=console.get_shared_console(),
     )
-    sh.setLevel(log_helpers.getLevel(read_args.retriveArgsVManager().output))
+    sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
     sh.addFilter(log_class.NoDebug())
     tx = log_class.TextHandler()
-    tx.setLevel(log_helpers.getLevel(read_args.retriveArgsVManager().output))
+    tx.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     tx.setFormatter(log_class.SensitiveFormatter(format))
     log.addHandler(sh)
     log.addHandler(tx)
 
-    if read_args.retriveArgsVManager().output in {"TRACE", "DEBUG"}:
+    if read_args.retriveArgs().output in {"TRACE", "DEBUG"}:
         funct = (
             log_class.DebugOnly
-            if read_args.retriveArgsVManager().output == "DEBUG"
+            if read_args.retriveArgs().output == "DEBUG"
             else log_class.TraceOnly
         )
         sh2 = RichHandler(
@@ -77,7 +77,7 @@ def init_stdout_logger(name=None):
             tracebacks_show_locals=True,
             show_time=False,
         )
-        sh2.setLevel(read_args.retriveArgsVManager().output)
+        sh2.setLevel(read_args.retriveArgs().output)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
         sh2.addFilter(funct())
         log.addHandler(sh2)
@@ -95,29 +95,29 @@ def init_other_logger(name):
     # # #log file
     # #discord
     cord = log_class.DiscordHandler()
-    cord.setLevel(log_helpers.getLevel(read_args.retriveArgsVManager().discord))
+    cord.setLevel(log_helpers.getLevel(read_args.retriveArgs().discord))
     cord.setFormatter(log_class.SensitiveFormatter("%(message)s"))
     # console
     log.addHandler(cord)
-    if read_args.retriveArgsVManager().log != "OFF":
+    if read_args.retriveArgs().log != "OFF":
         stream = open(
             common_paths.getlogpath(),
             encoding="utf-8",
             mode="a",
         )
         fh = logging.StreamHandler(stream)
-        fh.setLevel(log_helpers.getLevel(read_args.retriveArgsVManager().log))
+        fh.setLevel(log_helpers.getLevel(read_args.retriveArgs().log))
         fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh.addFilter(log_class.NoDebug())
         log.addHandler(fh)
-    if read_args.retriveArgsVManager().log in {"TRACE", "DEBUG"}:
+    if read_args.retriveArgs().log in {"TRACE", "DEBUG"}:
         funct = (
             log_class.DebugOnly
-            if read_args.retriveArgsVManager().output == "DEBUG"
+            if read_args.retriveArgs().output == "DEBUG"
             else log_class.TraceOnly
         )
         fh2 = logging.StreamHandler(stream)
-        fh2.setLevel(log_helpers.getLevel(read_args.retriveArgsVManager().log))
+        fh2.setLevel(log_helpers.getLevel(read_args.retriveArgs().log))
         fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(funct())
         log.addHandler(fh2)
@@ -127,11 +127,11 @@ def init_other_logger(name):
 # updates stream for main process
 def updateOtherLoggerStream():
     if (
-        read_args.retriveArgsVManager().discord == "OFF"
-        and read_args.retriveArgsVManager().log == "OFF"
+        read_args.retriveArgs().discord == "OFF"
+        and read_args.retriveArgs().log == "OFF"
     ):
         return
-    dates.resetLogDateVManger()
+    dates.resetLogDateVManager()
     stream = open(
         common_paths.getlogpath(),
         encoding="utf-8",
@@ -266,15 +266,9 @@ def start_stdout_logthread(input_=None, name=None, count=1, event=None):
 # wrapper function for discord and  log, check if threads/process should star
 def start_checker(func: abc.Callable):
     def inner(*args_, **kwargs):
-        if (
-            read_args.retriveArgsVManager().discord
-            and read_args.retriveArgsVManager().discord != "OFF"
-        ):
+        if read_args.retriveArgs().discord and read_args.retriveArgs().discord != "OFF":
             return func(*args_, **kwargs)
-        elif (
-            read_args.retriveArgsVManager().log
-            and read_args.retriveArgsVManager().log != "OFF"
-        ):
+        elif read_args.retriveArgs().log and read_args.retriveArgs().log != "OFF":
             return func(*args_, **kwargs)
 
     return inner
@@ -307,7 +301,7 @@ def start_other_process(input_=None, count=1):
     input_ = otherqueue_
     process = aioprocessing.AioProcess(
         target=inner,
-        args=(read_args.retriveArgsVManager(), dates.getLogDate()),
+        args=(read_args.retriveArgs(), dates.getLogDate()),
         kwargs={"input_": input_, "count": count},
         daemon=True,
     )
@@ -336,11 +330,11 @@ def get_shared_logger(main_=None, other_=None, name=None):
         mainhandle = QueueHandler(main_)
     elif hasattr(main_, "send"):
         mainhandle = log_class.PipeHandler(main_)
-    mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgsVManager().output))
+    mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     # add a handler that uses the shared queue
     logger.addHandler(mainhandle)
-    discord_level = log_helpers.getNumber(read_args.retriveArgsVManager().discord)
-    file_level = log_helpers.getNumber(read_args.retriveArgsVManager().log)
+    discord_level = log_helpers.getNumber(read_args.retriveArgs().discord)
+    file_level = log_helpers.getNumber(read_args.retriveArgs().log)
     other_ = other_ or otherqueue_
     if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
         otherhandle = QueueHandler(other_)

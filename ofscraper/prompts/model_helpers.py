@@ -15,8 +15,8 @@ def model_selectorHelper(count, x):
 
 def renewHelper(x):
     if (
-        read_args.retriveArgsVManager().sort != "expired"
-        and read_args.retriveArgsVManager().renewal is None
+        read_args.retriveArgs().sort != "expired"
+        and read_args.retriveArgs().renewal is None
     ):
         return ""
     return (
@@ -34,10 +34,10 @@ def generalDated(value):
 
 def lastSeenHelper(x):
     if (
-        read_args.retriveArgsVManager().sort != "last-seen"
-        and not read_args.retriveArgsVManager().last_seen
-        and not read_args.retriveArgsVManager().last_seen_after
-        and not read_args.retriveArgsVManager().last_seen_before
+        read_args.retriveArgs().sort != "last-seen"
+        and not read_args.retriveArgs().last_seen
+        and not read_args.retriveArgs().last_seen_after
+        and not read_args.retriveArgs().last_seen_before
     ):
         return ""
     return (
@@ -50,35 +50,35 @@ def lastSeenHelper(x):
 def getPriceHelper(x):
     value = None
     value2 = None
-    if read_args.retriveArgsVManager().sort in {
+    if read_args.retriveArgs().sort in {
         "current-price",
         "renewal-price",
         "regular-price",
         "promo-price",
     }:
-        value = re.sub("-", "_", read_args.retriveArgsVManager().sort).replace("-", "_")
+        value = re.sub("-", "_", read_args.retriveArgs().sort).replace("-", "_")
     if (
-        read_args.retriveArgsVManager().promo_price
-        or read_args.retriveArgsVManager().promo_price_min
-        or read_args.retriveArgsVManager().promo_price_max
+        read_args.retriveArgs().promo_price
+        or read_args.retriveArgs().promo_price_min
+        or read_args.retriveArgs().promo_price_max
     ):
         value2 = "promo_price"
     elif (
-        read_args.retriveArgsVManager().regular_price
-        or read_args.retriveArgsVManager().regular_price_min
-        or read_args.retriveArgsVManager().regular_price_max
+        read_args.retriveArgs().regular_price
+        or read_args.retriveArgs().regular_price_min
+        or read_args.retriveArgs().regular_price_max
     ):
         value2 = "regular_price"
     elif (
-        read_args.retriveArgsVManager().renewal_price
-        or read_args.retriveArgsVManager().renewal_price_min
-        or read_args.retriveArgsVManager().renewal_price_max
+        read_args.retriveArgs().renewal_price
+        or read_args.retriveArgs().renewal_price_min
+        or read_args.retriveArgs().renewal_price_max
     ):
         value2 = "renewal_price"
     elif (
-        read_args.retriveArgsVManager().current_price
-        or read_args.retriveArgsVManager().current_price_min
-        or read_args.retriveArgsVManager().current_price_max
+        read_args.retriveArgs().current_price
+        or read_args.retriveArgs().current_price_min
+        or read_args.retriveArgs().current_price_max
     ):
         value2 = "current_price"
     final_value = value or value2 or "current_price"

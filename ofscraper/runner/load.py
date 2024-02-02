@@ -25,17 +25,17 @@ def main():
         try:
             logging.getLogger("shared").debug(traceback.format_exc())
             logging.getLogger("shared").debug(E)
-        except:
+        except Exception as E:
             print(E)
             print(traceback.format_exc())
 
 
 def args_loader():
-    read_args.retriveArgsVManager()
+    read_args.retriveArgs()
 
 
 def setdate():
-    dates.setLogDateVManger()
+    dates.resetLogDateVManager()
 
 
 def setLogger():

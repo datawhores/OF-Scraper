@@ -56,10 +56,11 @@ def get_current_time():
     return arrow.get(tzinfo="UTC").to("local").float_timestamp
 
 
-def setLogDateVManger():
-    dateDict = getLogDate()
-    if not dateDict:
-        global dateNow
+def setLogDateVManager(dateDict_=None):
+    global dateDict
+    if dateDict_:
+        dateDict = dateDict_
+    elif not getLogDate():
         setDateNow()
         dateDict = {
             "day": dateNow.format("YYYY-MM-DD"),
@@ -74,18 +75,29 @@ def getLogDate():
     return dateDict
 
 
-def setLogDate(dateDict_):
+def setLogDate(dateDict_=None):
     global dateDict
-    dateDict = dateDict_
+    if dateDict_:
+        dateDict = dateDict
+    elif not getLogDate():
+        setDateNow()
+        dateDict = {
+            "day": dateNow.format("YYYY-MM-DD"),
+            "now": dateNow.format("YYYY-MM-DD_HH.mm.ss"),
+        }
 
 
 def getLogDateVManager():
-    if not dateDict:
-        setLogDateVManger()
     return dateDict
 
 
-def resetLogDateVManger():
+def resetLogDateVManager():
     global dateDict
     dateDict = None
-    setLogDateVManger()
+    setLogDateVManager()
+
+
+def resetLogDate():
+    global dateDict
+    dateDict = None
+    setLogDate()

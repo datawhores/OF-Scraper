@@ -33,9 +33,7 @@ log = logging.getLogger("shared")
 
 # Adds a function to the job queue
 def set_schedule(*functs):
-    schedule.every(read_args.retriveArgsVManager().daemon).minutes.do(
-        schedule_helper, functs
-    )
+    schedule.every(read_args.retriveArgs().daemon).minutes.do(schedule_helper, functs)
     while len(schedule.jobs) > 0:
         schedule.run_pending()
         time.sleep(30)
@@ -56,7 +54,7 @@ def daemon_run_helper(*functs):
     jobqueue = queue.Queue()
     worker_thread = None
     [jobqueue.put(funct) for funct in functs]
-    if read_args.retriveArgsVManager().output == "PROMPT":
+    if read_args.retriveArgs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
     log.info(f"[bold]Daemon mode on[/bold]")
     userselector.getselected_usernames(rescan=True, reset=True)
@@ -97,14 +95,14 @@ def run_helper(*functs):
     global jobqueue
     jobqueue = queue.Queue()
     [jobqueue.put(funct) for funct in functs]
-    if read_args.retriveArgsVManager().output == "PROMPT":
+    if read_args.retriveArgs().output == "PROMPT":
         log.info(f"[bold]silent-mode on[/bold]")
     try:
         for _ in functs:
             job_func = jobqueue.get()
             job_func()
             jobqueue.task_done()
-        dates.resetLogDateVManger()
+        dates.resetLogDateVManager()
     except KeyboardInterrupt:
         try:
             with exit.DelayedKeyboardInterrupt():

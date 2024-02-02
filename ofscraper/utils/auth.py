@@ -247,7 +247,7 @@ def create_sign(link, headers):
     msg = "\n".join(a)
 
     message = msg.encode("utf-8")
-    hash_object = hashlib.sha1(message)
+    hash_object = hashlib.sha1(message, usedforsecurity=False)
     sha_1_sign = hash_object.hexdigest()
     sha_1_b = sha_1_sign.encode("ascii")
 
@@ -296,9 +296,7 @@ def make_request_auth():
 
 
 def get_request_auth():
-    if (
-        read_args.retriveArgsVManager().dynamic_rules or data.get_dynamic() or "deviint"
-    ) in {
+    if (read_args.retriveArgs().dynamic_rules or data.get_dynamic() or "deviint") in {
         "deviint",
         "dv",
         "dev",

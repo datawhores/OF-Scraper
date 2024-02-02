@@ -73,7 +73,6 @@ def process_dicts(username, model_id, filtered_medialist):
             )
             for i in range(len(shared))
         ]
-
         processes = [
             aioprocessing.AioProcess(
                 target=process_dict_starter,
@@ -84,9 +83,9 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    dates.getLogDate(),
-                    selector.get_ALL_SUBS(),
-                    read_args.retriveArgs(),
+                    dates.getLogDateVManager(),
+                    selector.get_ALL_SUBS_DICTVManger(),
+                    read_args.retriveArgsVManager(),
                 ),
             )
             for i in range(num_proc)
@@ -224,8 +223,7 @@ downloads total [{common.video_count} videos, {common.audio_count} audios, {comm
 def queue_process(pipe_, overall_progress, job_progress, task1, total):
     count = 0
     downloadprogress = (
-        read_args.retriveArgsVManager().downloadbars
-        or config_data.get_show_downloadprogress()
+        read_args.retriveArgs().downloadbars or config_data.get_show_downloadprogress()
     )
     # shared globals
 
@@ -300,9 +298,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
 
 
 def get_mediasplits(medialist):
-    user_count = (
-        read_args.retriveArgsVManager().downloadthreads or config_data.get_threads()
-    )
+    user_count = read_args.retriveArgs().downloadthreads or config_data.get_threads()
     final_count = max(min(user_count, system.getcpu_count(), len(medialist) // 5), 1)
     return more_itertools.divide(final_count, medialist)
 

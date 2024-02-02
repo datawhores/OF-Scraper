@@ -73,8 +73,8 @@ def process_messages(model_id, username):
         # Update after database
         cache.set(
             "{model_id}_scrape_messages",
-            read_args.retriveArgsVManager().after is not None
-            and read_args.retriveArgsVManager().after != 0,
+            read_args.retriveArgs().after is not None
+            and read_args.retriveArgs().after != 0,
         )
 
         return list(filter(lambda x: isinstance(x, media.Media), output))
@@ -224,7 +224,7 @@ def process_timeline_posts(model_id, username, individual=False):
         )
         cache.set(
             "{model_id}_full_timeline_scrape",
-            read_args.retriveArgsVManager().after is not None,
+            read_args.retriveArgs().after is not None,
         )
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
@@ -273,7 +273,7 @@ def process_archived_posts(model_id, username):
         )
         cache.set(
             "{model_id}_full_archived_scrape",
-            read_args.retriveArgsVManager().after is not None,
+            read_args.retriveArgs().after is not None,
         )
         return list(filter(lambda x: isinstance(x, media.Media), output))
 
@@ -416,11 +416,10 @@ def process_labels(model_id, username):
 
         labels_ = (
             labels_
-            if not read_args.retriveArgsVManager().label
+            if not read_args.retriveArgs().label
             else list(
                 filter(
-                    lambda x: x.get("name").lower()
-                    in read_args.retriveArgsVManager().label,
+                    lambda x: x.get("name").lower() in read_args.retriveArgs().label,
                     labels_,
                 )
             )

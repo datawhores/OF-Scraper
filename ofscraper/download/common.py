@@ -177,8 +177,7 @@ def _(func: abc.Callable, input_sem: None | semaphoreDelayed = None):
 
 def setupProgressBar(multi=False):
     downloadprogress = (
-        config_data.get_show_downloadprogress()
-        or read_args.retriveArgsVManager().downloadbars
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
     if not multi:
         job_progress = Progress(

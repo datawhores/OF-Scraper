@@ -76,7 +76,7 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
             async with sessionbuilder.sessionBuilder() as c:
                 oldmessages = (
                     operations.get_messages_data(model_id=model_id, username=username)
-                    if not read_args.retriveArgsVManager().no_cache
+                    if not read_args.retriveArgs().no_cache
                     else []
                 )
                 log.trace(
@@ -100,13 +100,11 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                     {"date": arrow.now().float_timestamp, "id": None}
                 ] + oldmessages
 
-                before = (
-                    read_args.retriveArgsVManager().before or arrow.now()
-                ).float_timestamp
+                before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
                 if (
                     rescan
                     or cache.get("{model_id}_scrape_messages")
-                    and not read_args.retriveArgsVManager().after
+                    and not read_args.retriveArgs().after
                 ):
                     log.debug(
                         "Used --after previously. Scraping all messages required to make sure content is not missing"
@@ -452,8 +450,8 @@ def get_individual_post(model_id, postid, c=None):
 
 
 def get_after(model_id, username):
-    if read_args.retriveArgsVManager().after:
-        return read_args.retriveArgsVManager().after.float_timestamp
+    if read_args.retriveArgs().after:
+        return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

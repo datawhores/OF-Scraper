@@ -52,7 +52,7 @@ async def scrape_timeline_posts(
 
     if timestamp and (
         float(timestamp)
-        > (read_args.retriveArgsVManager().before or arrow.now()).float_timestamp
+        > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
     if timestamp:
@@ -183,7 +183,7 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         min_posts = 50
         responseArray = []
         page_count = 0
-        if not read_args.retriveArgsVManager().no_cache:
+        if not read_args.retriveArgs().no_cache:
             oldtimeline = operations.get_timeline_postdates(
                 model_id=model_id, username=username
             )
@@ -201,7 +201,7 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         postedAtArray = sorted(oldtimeline)
         if rescan or (
             cache.get("{model_id}_full_timeline_scrape")
-            and not read_args.retriveArgsVManager().after
+            and not read_args.retriveArgs().after
             and not data.get_disable_after()
         ):
             log.info(
@@ -345,8 +345,8 @@ def get_individual_post(id, c=None):
 
 
 def get_after(model_id, username):
-    if read_args.retriveArgsVManager().after:
-        return read_args.retriveArgsVManager().after.float_timestamp
+    if read_args.retriveArgs().after:
+        return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_timeline_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

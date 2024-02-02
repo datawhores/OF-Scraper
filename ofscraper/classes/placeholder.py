@@ -40,6 +40,7 @@ class Placeholders:
     def create_variables_base(self):
         my_profile = profile_data.get_my_info()
         my_id, my_username = me.parse_user(my_profile)
+
         self._variables = {
             "configpath": common_paths.get_config_home(),
             "profile": profile_data.get_active_profile(),
@@ -54,40 +55,41 @@ class Placeholders:
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)
-        current_price = {
+        current_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_current_price == 0
             else "Paid"
-        }
+        )
+
         self._variables.update({"current_price": current_price})
         self._variables.update({"currentprice": current_price})
-        regular_price = {
+        regular_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_regular_price == 0
             else "Paid"
-        }
+        )
         self._variables.update({"regular_price": regular_price})
         self._variables.update({"regularprice": regular_price})
-        promo_price = {
+        promo_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_promo_price == 0
             else "Paid"
-        }
+        )
         self._variables.update({"promo_price": promo_price})
         self._variables.update({"promoprice": promo_price})
-        renewal_price = {
+        renewal_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
             else "Free"
             if modelObj.final_renewal_price == 0
             else "Paid"
-        }
+        )
         self._variables.update({"renewal_price": renewal_price})
         self._variables.update({"renewalprice": renewal_price})
 
@@ -125,6 +127,7 @@ class Placeholders:
         self._variables.update({"download_type": downloadtype})
         self._variables.update({"media_id": media_id})
         self._variables.update({"mediaid": media_id})
+        self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
         self.add_price_variables(username)
 
     @wrapper
@@ -279,14 +282,11 @@ class Placeholders:
         return out
 
     def set_final_path(self):
-        if (read_args.retriveArgsVManager().original or data.get_truncation()) is False:
+        if (read_args.retriveArgs().original or data.get_truncation()) is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif read_args.retriveArgsVManager().original is False:
+        elif read_args.retriveArgs().original is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif (
-            read_args.retriveArgsVManager().original is True
-            or data.get_truncation() is True
-        ):
+        elif read_args.retriveArgs().original is True or data.get_truncation() is True:
             self._final_path = paths.truncate(
                 pathlib.Path(self.mediadir, f"{self.filename}")
             )

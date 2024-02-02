@@ -292,7 +292,7 @@ Path is valid but the given path could not be verified to be ffmpeg
 
 def like_area_validator_posts():
     def callable(x):
-        args = read_args.retriveArgsVManager()
+        args = read_args.retriveArgs()
         if not "like" in args.action and not "unlike" in args.action:
             return True
         elif len(args.like_area) > 0:

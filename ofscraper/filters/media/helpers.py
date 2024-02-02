@@ -33,19 +33,18 @@ def timeline_array_filter(posts):
     undated = list(filter(lambda x: x.get("postedAt") is None, posts))
     dated = list(filter(lambda x: x.get("postedAt") is not None, posts))
     dated = sorted(dated, key=lambda x: arrow.get(x.get("postedAt")))
-    if read_args.retriveArgsVManager().before:
+    if read_args.retriveArgs().before:
         dated = list(
             filter(
                 lambda x: arrow.get(x.get("postedAt"))
-                <= read_args.retriveArgsVManager().before,
+                <= read_args.retriveArgs().before,
                 dated,
             )
         )
-    if read_args.retriveArgsVManager().after:
+    if read_args.retriveArgs().after:
         dated = list(
             filter(
-                lambda x: arrow.get(x.get("postedAt"))
-                >= read_args.retriveArgsVManager().after,
+                lambda x: arrow.get(x.get("postedAt")) >= read_args.retriveArgs().after,
                 dated,
             )
         )
@@ -55,7 +54,7 @@ def timeline_array_filter(posts):
 
 
 def posts_type_filter(media):
-    filtersettings = read_args.retriveArgsVManager().mediatype or data.get_filter()
+    filtersettings = read_args.retriveArgs().mediatype or data.get_filter()
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
     if isinstance(filtersettings, list):
@@ -72,19 +71,19 @@ def posts_type_filter(media):
 
 
 def posts_date_filter(media):
-    if read_args.retriveArgsVManager().before:
+    if read_args.retriveArgs().before:
         media = list(
             filter(
                 lambda x: x.postdate is None
-                or arrow.get(x.postdate) <= read_args.retriveArgsVManager().before,
+                or arrow.get(x.postdate) <= read_args.retriveArgs().before,
                 media,
             )
         )
-    if read_args.retriveArgsVManager().after:
+    if read_args.retriveArgs().after:
         media = list(
             filter(
                 lambda x: x.postdate is None
-                or arrow.get(x.postdate) >= read_args.retriveArgsVManager().after,
+                or arrow.get(x.postdate) >= read_args.retriveArgs().after,
                 media,
             )
         )
@@ -92,15 +91,15 @@ def posts_date_filter(media):
 
 
 def post_timed_filter(media):
-    if read_args.retriveArgsVManager().timed_only is False:
+    if read_args.retriveArgs().timed_only is False:
         return list(filter(lambda x: not x.expires, media))
-    elif read_args.retriveArgsVManager().timed_only is True:
+    elif read_args.retriveArgs().timed_only is True:
         return list(filter(lambda x: x.expires, media))
     return media
 
 
 def post_user_filter(media):
-    userfilter = read_args.retriveArgsVManager().filter
+    userfilter = read_args.retriveArgs().filter
     if not userfilter:
         return media
     elif not userfilter.islower():
@@ -118,7 +117,7 @@ def post_user_filter(media):
 
 
 def anti_post_user_filter(media):
-    userfilter = read_args.retriveArgsVManager().neg_filter
+    userfilter = read_args.retriveArgs().neg_filter
     if not userfilter:
         return media
     elif not userfilter.islower():
@@ -135,18 +134,18 @@ def anti_post_user_filter(media):
 
 
 def download_type_filter(media):
-    if read_args.retriveArgsVManager().protected_only:
+    if read_args.retriveArgs().protected_only:
         return list(filter(lambda x: x.mpd is not None, media))
-    elif read_args.retriveArgsVManager().normal_only:
+    elif read_args.retriveArgs().normal_only:
         return list(filter(lambda x: x.url is not None, media))
     else:
         return media
 
 
 def mass_msg_filter(media):
-    if read_args.retriveArgsVManager().mass_msg is None:
+    if read_args.retriveArgs().mass_msg is None:
         return media
-    elif read_args.retriveArgsVManager().mass_msg is True:
+    elif read_args.retriveArgs().mass_msg is True:
         return list((filter(lambda x: x.mass is True, media)))
-    elif read_args.retriveArgsVManager().mass_msg is False:
+    elif read_args.retriveArgs().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))

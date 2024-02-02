@@ -29,10 +29,10 @@ models = None
 
 
 def funct(prompt):
-    oldargs = copy.deepcopy(vars(read_args.retriveArgsVManager()))
+    oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
     userselector.setfilter()
     userselector.setsort()
-    if oldargs != vars(read_args.retriveArgsVManager()):
+    if oldargs != vars(read_args.retriveArgs()):
         global models
         models = userselector.filterNSort(userselector.ALL_SUBS)
     choices = list(
@@ -304,7 +304,7 @@ def decide_sort_prompt():
             {
                 "type": "list",
                 "name": "input",
-                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {read_args.retriveArgsVManager().sort.capitalize()} in {'Ascending' if not read_args.retriveArgsVManager().desc else 'Descending'} order",
+                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {read_args.retriveArgs().sort.capitalize()} in {'Ascending' if not read_args.retriveArgs().desc else 'Descending'} order",
                 "default": "No",
                 "choices": ["Yes", "No"],
             }

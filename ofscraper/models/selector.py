@@ -25,12 +25,18 @@ def get_model_fromParsed(name):
     return ALL_SUBS_DICT.get(name)
 
 
-def set_ALL_SUBS_DICT(val):
+def set_ALL_SUBS_DICT(subsDict=None):
     global ALL_SUBS
     global ALL_SUBS_DICT
-    ALL_SUBS_DICT = {}
-    [ALL_SUBS_DICT.update({ele.name: ele}) for ele in ALL_SUBS]
-    ALL_SUBS = val
+    if subsDict and isinstance(subsDict, dict):
+        ALL_SUBS_DICT = subsDict
+    else:
+        subList = subsDict or ALL_SUBS
+        if not subList:
+            all_subs_helper()
+        if not ALL_SUBS_DICT:
+            ALL_SUBS_DICT = {}
+            [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
 
 
 def get_ALL_SUBS_DICT():
@@ -38,12 +44,19 @@ def get_ALL_SUBS_DICT():
     return ALL_SUBS_DICT
 
 
-def set_ALL_SUBS_DICTVManger():
+def set_ALL_SUBS_DICTVManger(subsDict=None):
     global ALL_SUBS
-    if not ALL_SUBS:
-        all_subs_helper()
-    manager.update_dict({"subs": ALL_SUBS})
-    set_ALL_SUBS_DICT(ALL_SUBS)
+    global ALL_SUBS_DICT
+    if subsDict and isinstance(subsDict, dict):
+        ALL_SUBS_DICT = subsDict
+    else:
+        subList = subsDict or ALL_SUBS
+        if not subList:
+            all_subs_helper()
+        if not ALL_SUBS_DICT:
+            ALL_SUBS_DICT = {}
+            [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
+    manager.update_dict({"subs": ALL_SUBS_DICT})
 
 
 def get_ALL_SUBS():
@@ -52,9 +65,6 @@ def get_ALL_SUBS():
 
 
 def get_ALL_SUBS_DICTVManger():
-    global ALL_SUBS
-    if not manager.get_manager_dict().get("subs"):
-        set_ALL_SUBS_DICTVManger()
     return manager.get_manager_dict().get("subs")
 
 
@@ -91,7 +101,8 @@ def all_subs_helper(refetch=True):
     while True:
         ALL_SUBS = retriver.get_models()
         if len(ALL_SUBS) > 0:
-            return
+            set_ALL_SUBS_DICTVManger()
+            break
         elif len(ALL_SUBS) == 0:
             print("No accounts found during scan")
             # give log time to process
@@ -103,17 +114,15 @@ def all_subs_helper(refetch=True):
 def parsed_subscriptions_helper(reset=False):
     global ALL_SUBS
     global PARSED_SUBS
-    args = read_args.retriveArgsVManager()
+    args = read_args.retriveArgs()
     if reset == True:
         args.username = None
-        write_args.setArgsVManager(args)
+        write_args.setArgs(args)
     if not bool(args.username):
         selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
-        read_args.retriveArgsVManager().username = list(
-            map(lambda x: x.name, selectedusers)
-        )
+        read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
-        write_args.setArgsVManager(args)
+        write_args.setArgs(args)
     elif "ALL" in args.username:
         PARSED_SUBS = filterNSort(ALL_SUBS)
     elif args.username:
@@ -124,13 +133,13 @@ def parsed_subscriptions_helper(reset=False):
 
 def setfilter(forced=False):
     if forced or prompts.decide_filters_prompt() == "Yes":
-        args = prompts.modify_filters_prompt(read_args.retriveArgsVManager())
+        args = prompts.modify_filters_prompt(read_args.retriveArgs())
 
 
 def setsort(forced=False):
     if forced or prompts.decide_sort_prompt() == "Yes":
         global args
-        args = prompts.modify_sort_prompt(read_args.retriveArgsVManager())
+        args = prompts.modify_sort_prompt(read_args.retriveArgs())
 
 
 def filterNSort(usernames):
@@ -152,12 +161,12 @@ def filterNSort(usernames):
             f"""You have filtered the user list to zero
 Change the filter settings to continue
 
-Sub Status: {read_args.retriveArgsVManager().sub_status or 'No Filter'}
-Renewal Status: {read_args.retriveArgsVManager().renewal or 'No Filter'}
-Promo Price Filter: {read_args.retriveArgsVManager().promo_price or 'No Filter'}
-Current Price Filter: {read_args.retriveArgsVManager().current_price or 'No Filter'}
-Current Price Filter: {read_args.retriveArgsVManager().current_price or 'No Filter'}
-Renewal Price Filter: {read_args.retriveArgsVManager().renewal_price or 'No Filter'}
+Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
+Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
+Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
+Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
+Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
+Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
 """
         )
 

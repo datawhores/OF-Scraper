@@ -13,5 +13,6 @@ def getattr(val):
             custom=custom_.get_custom()
         except Exception as E:
             print(E)
+            raise E
     return (custom or {}).get(val) or globals()[val]
 

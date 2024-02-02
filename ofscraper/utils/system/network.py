@@ -17,9 +17,7 @@ def check_cdm():
         console = console_.get_shared_console()
         log = logging.getLogger("shared")
 
-        keymode = (
-            read_args.retriveArgsVManager().key_mode or data.get_key_mode() or "cdrm"
-        )
+        keymode = read_args.retriveArgs().key_mode or data.get_key_mode() or "cdrm"
         console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
         if keymode == "manual":
             console.print(
