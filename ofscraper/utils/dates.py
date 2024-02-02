@@ -78,7 +78,7 @@ def getLogDate():
 def setLogDate(dateDict_=None):
     global dateDict
     if dateDict_:
-        dateDict = dateDict
+        dateDict = dateDict_
     elif not getLogDate():
         setDateNow()
         dateDict = {
