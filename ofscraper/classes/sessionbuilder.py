@@ -35,14 +35,14 @@ class sessionBuilder:
         proxy=None,
         proxy_auth=None,
     ):
-        connect_timeout = (connect_timeout or constants.getattr("CONNECT_TIMEOUT"),)
-        total_timeout = (total_timeout or constants.getattr("TOTAL_TIMEOUT"),)
-        read_timeout = (read_timeout or constants.getattr("CHUNK_READ_TIMEOUT"),)
-        pool_timeout = (pool_timeout or constants.getattr("POOL_CONNECT_TIMEOUT"),)
-        limit = (limit or constants.getattr("MAX_CONNECTIONS"),)
-        keep_alive = (keep_alive or constants.getattr("KEEP_ALIVE"),)
-        keep_alive_exp = (keep_alive_exp or constants.getattr("KEEP_ALIVE_EXP"),)
-        proxy = (proxy or constants.getattr("PROXY"),)
+        connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
+        total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
+        read_timeout = read_timeout or constants.getattr("CHUNK_READ_TIMEOUT")
+        pool_timeout = pool_timeout or constants.getattr("POOL_CONNECT_TIMEOUT")
+        limit = limit or constants.getattr("MAX_CONNECTIONS")
+        keep_alive = keep_alive or constants.getattr("KEEP_ALIVE")
+        keep_alive_exp = keep_alive_exp or constants.getattr("KEEP_ALIVE_EXP")
+        proxy = proxy or constants.getattr("PROXY")
         proxy_auth = proxy_auth or constants.getattr("PROXY_AUTH")
         self._backend = backend or data.get_backend()
         self._set_cookies = set_cookies
