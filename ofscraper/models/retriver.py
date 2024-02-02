@@ -5,6 +5,7 @@ import ofscraper.classes.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.me as me_util
 
 
 def get_models() -> list:
@@ -43,7 +44,7 @@ def get_model(parsed_subscriptions: list) -> tuple:
 # check if auth is valid
 def process_me():
     my_profile = me.scrape_user()
-    name, username = me.parse_user(my_profile)
+    name, username = me_util.parse_user(my_profile)
     subscribe_count = me.parse_subscriber_count()
-    me.print_user(name, username)
+    me_util.print_user(name, username)
     return subscribe_count

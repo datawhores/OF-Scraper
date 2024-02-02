@@ -6,6 +6,7 @@ import ofscraper.runner.run as run
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.dates as dates
+import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.paths.manage as paths_manage
@@ -39,11 +40,10 @@ def setdate():
 
 
 def setLogger():
-    logger.init_values()
+    log_globals.init_values()
     logger.get_shared_logger()
     logs.discord_warning()
-    logger.start_stdout_logthread()
-    logger.start_other_helper()
+    logger.start_threads()
 
 
 def systemSet():

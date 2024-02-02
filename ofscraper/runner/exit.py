@@ -1,18 +1,18 @@
 from diskcache import Cache
 
 import ofscraper.utils.config.data as data
-import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.close as close_log
 import ofscraper.utils.manager as manager
 import ofscraper.utils.paths.common as common_paths
 
 
 def shutdown():
-    logger.gracefulClose()
+    close_log.gracefulClose()
     manager.shutdown()
 
 
 def forcedShutDown():
-    logger.forcedClose()
+    close_log.forcedClose()
     manager.shutdown()
 
 

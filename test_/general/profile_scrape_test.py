@@ -1,5 +1,6 @@
 import ofscraper.api.me as me
 import ofscraper.api.profile as profile
+import ofscraper.utils.me as me
 from ofscraper.const.test_constants import *
 
 

@@ -14,7 +14,6 @@ r"""
 import logging
 import traceback
 
-from rich.console import Console
 from tenacity import (
     Retrying,
     retry,
@@ -25,8 +24,6 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
-import ofscraper.utils.context.stdout as stdout
-import ofscraper.utils.encoding as encoding
 import ofscraper.utils.logs.helpers as log_helpers
 
 log = logging.getLogger("shared")
@@ -77,18 +74,6 @@ def _scraper_user_helper(c):
                 log.traceback_(traceback.format_exc())
                 raise E
             return data
-
-
-def parse_user(profile):
-    name = encoding.encode_utf_16(profile["name"])
-    username = profile["username"]
-
-    return (name, username)
-
-
-def print_user(name, username):
-    with stdout.lowstdout():
-        Console().print(f"Welcome, {name} | {username}")
 
 
 def parse_subscriber_count():
