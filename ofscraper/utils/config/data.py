@@ -34,11 +34,15 @@ def get_filesize_limit(config=None):
     if config == False:
         return constants.FILE_SIZE_LIMIT_DEFAULT
     try:
+        if config.get("file_size_max") != None:
+            size = config.get("file_size_max")
+        elif config.get("download_options", {}).get("file_size_max"):
+            size = config.get("download_options", {}).get("file_size_max")
         return parse_size(
             str(
-                config.get("file_size_limit")
-                or config.get("download_options", {}).get("file_size_limit")
-                or constants_attr.getattr("FILE_SIZE_LIMIT_DEFAULT")
+                size
+                if size != None
+                else constants_attr.getattr("FILE_SIZE_MAX_DEFAULT")
             )
         )
     except:
@@ -50,11 +54,16 @@ def get_filesize_min(config=None):
     if config == False:
         return constants.FILE_SIZE_MIN_DEFAULT
     try:
+        size = None
+        if config.get("file_size_min") != None:
+            size = config.get("file_size_min")
+        elif config.get("download_options", {}).get("file_size_min"):
+            size = config.get("download_options", {}).get("file_size_min")
         return parse_size(
             str(
-                config.get("file_size_min")
-                or config.get("download_options", {}).get("file_size_min")
-                or constants_attr.getattr("FILE_SIZE_MIN_DEFAULT")
+                size
+                if size != None
+                else constants_attr.getattr("FILE_SIZE_MIN_DEFAULT")
             )
         )
     except Exception:

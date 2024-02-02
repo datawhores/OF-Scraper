@@ -132,7 +132,6 @@ or human readable such as 10mb
 Enter 0 for no limit
 """,
                 "default": str(data.get_filesize_limit()),
-                "filter": int,
             },
             {
                 "type": "input",
@@ -146,7 +145,6 @@ or human readable such as 10mb
 Enter 0 for no minimum
 """,
                 "default": str(data.get_filesize_min()),
-                "filter": int,
             },
             {
                 "type": "input",
