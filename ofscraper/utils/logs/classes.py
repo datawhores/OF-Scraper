@@ -130,12 +130,12 @@ class DiscordHandler(logging.Handler):
                             if not r.status == 204:
                                 raise Exception
 
-                log_entry = self.format(record)
-                url = data.get_discord()
-                log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
-                log_entry = f"{log_entry}\n\n"
-                if url == None or url == "":
-                    return
+        log_entry = self.format(record)
+        url = data.get_discord()
+        log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
+        log_entry = f"{log_entry}\n\n"
+        if url == None or url == "":
+            return
 
         inner(self.sess)
 
