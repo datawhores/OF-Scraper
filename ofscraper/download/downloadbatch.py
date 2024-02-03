@@ -26,6 +26,8 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.other as other_logs
+import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
@@ -66,7 +68,7 @@ def process_dicts(username, model_id, filtered_medialist):
 
         # start stdout/main queues consumers
         log_threads = [
-            logger.start_stdout_logthread(
+            stdout_logs.start_stdout_logthread(
                 input_=logqueues_[i],
                 name=f"ofscraper_{model_id}_{i+1}",
                 count=len(shared[i]),
@@ -377,7 +379,7 @@ async def process_dicts_split(username, model_id, medialist):
     common.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
     # set variables based on parent process
     # start consumer for other
-    other_thread = logger.start_other_thread(
+    other_thread = other_logs.start_other_thread(
         input_=common.log.handlers[1].queue, name=str(os.getpid()), count=1
     )
     medialist = list(medialist)
