@@ -20,7 +20,6 @@ import ofscraper.utils.system.network as network
 
 def manual_download(urls=None):
     log = logging.getLogger("shared")
-    urls = urls or read_args.retriveArgs().url
     network.check_cdm()
     media_dict = get_media_from_urls(urls)
     log.debug(f"Number of values from media dict  {len(list(media_dict.values()))}")

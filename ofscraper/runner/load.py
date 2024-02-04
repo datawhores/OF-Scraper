@@ -1,5 +1,4 @@
 import logging
-import sys
 import traceback
 
 import ofscraper.runner.run as run
