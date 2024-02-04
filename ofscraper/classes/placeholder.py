@@ -265,7 +265,7 @@ class Placeholders:
         else:
             out = data.get_fileformat().format(**self._variables)
         out = self._addcount(ele, out)
-        log.trace(f"final filename path {out}")
+        log.debug(f"final filename path {out}")
         self._filename = out
         return out
 

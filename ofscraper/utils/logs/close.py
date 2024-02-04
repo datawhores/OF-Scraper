@@ -45,33 +45,35 @@ def closeThreads():
 
 
 def closeMain():
-    global main_log_thread
-    if not main_log_thread:
+    if not log_globals.main_log_thread:
         return
     elif log_globals.other_event.is_set():
-        main_log_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
+        log_globals.main_log_thread.join(constants.getattr("FORCED_THREAD_TIMEOUT"))
     elif not log_globals.other_event.is_set():
-        main_log_thread.join()
-    main_log_thread = None
+        log_globals.main_log_thread.join()
+    log_globals.main_log_thread = None
 
 
 def closeOther():
-    global other_log_thread
-    if not other_log_thread:
+    if not log_globals.other_log_thread:
         return
     elif not log_globals.other_event.is_set():
-        if isinstance(other_log_thread, threading.Thread):
-            other_log_thread.join()
+        if isinstance(log_globals.other_log_thread, threading.Thread):
+            log_globals.other_log_thread.join()
         else:
-            other_log_thread.join()
+            log_globals.other_log_thread.join()
     elif log_globals.other_event.is_set():
-        if isinstance(other_log_thread, threading.Thread):
-            other_log_thread.join(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
+        if isinstance(log_globals.other_log_thread, threading.Thread):
+            log_globals.other_log_thread.join(
+                timeout=constants.getattr("FORCED_THREAD_TIMEOUT")
+            )
         else:
-            other_log_thread.join(timeout=constants.getattr("FORCED_THREAD_TIMEOUT"))
-            if other_log_thread.is_alive():
-                other_log_thread.terminate()
-    other_log_thread = None
+            log_globals.other_log_thread.join(
+                timeout=constants.getattr("FORCED_THREAD_TIMEOUT")
+            )
+            if log_globals.other_log_thread.is_alive():
+                log_globals.other_log_thread.terminate()
+    log_globals.other_log_thread = None
 
 
 def closeQueue():
