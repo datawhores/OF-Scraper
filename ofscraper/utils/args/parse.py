@@ -710,6 +710,31 @@ def create_parser(input=None):
         action="store_true",
     )
 
+    advanced.add_argument(
+        "-fp",
+        "--force-profile",
+        help="force retrival of up to date profile data",
+        default=False,
+        action="store_true",
+    )
+    group11 = advanced.add_mutually_exclusive_group()
+
+    group11.add_argument(
+        "-fi",
+        "--force-individual",
+        help="Forces direct retrival of model data via username rather then as part of a list\nIgnored if --usernames is not passed",
+        default=False,
+        action="store_true",
+    )
+
+    group11.add_argument(
+        "-fl",
+        "--force-list",
+        help="Forces direct retrival of model data via lists rather then as part of a list\nIgnored if --usernames is not passed",
+        default=False,
+        action="store_true",
+    )
+
     subparser = parser.add_subparsers(help="commands", dest="command")
     post_check = subparser.add_parser(
         "post_check",

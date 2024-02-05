@@ -26,7 +26,7 @@ def manual_download(urls=None):
     args = read_args.retriveArgs()
     args.dupe = True
     write_args.setArgs(args)
-    # should be done before downloads
+    get_manual_usernames(media_dict)
     selector.all_subs_helper()
     for value in media_dict.values():
         if len(value) == 0:
@@ -37,9 +37,20 @@ def manual_download(urls=None):
         operations.create_tables(model_id=model_id, username=username)
         operations.create_backup(model_id, username)
         operations.write_profile_table(model_id=model_id, username=username)
-        download.download_picker(username, model_id, value)
+    download.download_picker(username, model_id, value)
 
     log.info(f"Finished")
+
+
+def get_manual_usernames(media_dict):
+    usernames = []
+    for value in media_dict.values():
+        if len(value) == 0:
+            continue
+        usernames.append(value[0].post.username)
+    args = read_args.retriveArgs()
+    args.username = set(usernames)
+    write_args.setArgs(args)
 
 
 def get_media_from_urls(urls):

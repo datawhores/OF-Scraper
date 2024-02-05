@@ -28,9 +28,8 @@ from tenacity import (
     wait_random,
 )
 
+import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
@@ -73,13 +72,13 @@ async def activeHelper(subscribe_count, c):
     global new_tasks
 
     if any(
-        x in get_black_list_helper()
+        x in helpers.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) or any(
-        x in get_black_list_helper()
+        x in helpers.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_ACTIVE_LIST"),
             constants.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
@@ -87,13 +86,13 @@ async def activeHelper(subscribe_count, c):
     ):
         return []
     if all(
-        x not in get_user_list_helper()
+        x not in helpers.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) and all(
-        x not in get_user_list_helper()
+        x not in helpers.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_ACTIVE_LIST"),
             constants.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
@@ -130,13 +129,13 @@ async def expiredHelper(subscribe_count, c):
     global new_tasks
 
     if any(
-        x in get_black_list_helper()
+        x in helpers.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) or any(
-        x in get_black_list_helper()
+        x in helpers.get_black_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_EXPIRED_LIST"),
             constants.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
@@ -144,13 +143,13 @@ async def expiredHelper(subscribe_count, c):
     ):
         return []
     if all(
-        x not in get_user_list_helper()
+        x not in helpers.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_RESERVED_LIST"),
             constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
         ]
     ) and all(
-        x not in get_user_list_helper()
+        x not in helpers.get_user_list_helper()
         for x in [
             constants.getattr("OFSCRAPER_EXPIRED_LIST"),
             constants.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
@@ -303,59 +302,3 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
 
             finally:
                 sem.release()
-
-
-async def sort_list(c) -> list:
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
-    attempt.set(0)
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            await sem.acquire()
-            try:
-                attempt.set(attempt.get(0) + 1)
-                async with c.requests(
-                    constants.getattr("sortSubscription"),
-                    method="post",
-                    json={"order": "users.name", "direction": "desc", "type": "all"},
-                )() as r:
-                    if r.ok:
-                        None
-                    else:
-                        log.debug(
-                            f"[bold]subscriptions response status code:[/bold]{r.status}"
-                        )
-                        log.debug(
-                            f"[bold]subscriptions response:[/bold] {await r.text_()}"
-                        )
-                        log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
-
-            finally:
-                sem.release()
-
-
-def get_user_list_helper():
-    out = read_args.retriveArgs().user_list or data.get_default_userlist()
-    if isinstance(out, str):
-        out = out.split(",")
-    return set(map(lambda x: x.lower().strip(), out))
-
-
-def get_black_list_helper():
-    out = read_args.retriveArgs().black_list or data.get_default_blacklist()
-    if isinstance(out, str):
-        out = out.split(",")
-    return set(map(lambda x: x.lower().strip(), out))

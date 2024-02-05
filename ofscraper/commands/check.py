@@ -65,7 +65,6 @@ def process_download_cart():
                     log.info("cdm checker was fine\ncdm will not be check again\n\n")
                 # should be done once before downloads
                 log.info("Getting Models")
-                selector.all_subs_helper()
 
             process_download_cart.counter = process_download_cart.counter + 1
             log.info("Getting items from queue")
@@ -105,6 +104,10 @@ def process_download_cart():
                 media = medialist[0] if len(medialist) > 0 else None
                 model_id = media.post.model_id
                 username = media.post.username
+                args = read_args.retriveArgs()
+                args.username = set([username])
+                write_args.setArgs(args)
+                selector.all_subs_helper()
                 log.info(
                     f"Downloading individual media for {username} {media.filename}"
                 )

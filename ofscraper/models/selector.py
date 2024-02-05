@@ -119,7 +119,7 @@ def parsed_subscriptions_helper(reset=False):
         args.username = None
         write_args.setArgs(args)
     if not bool(args.username):
-        selectedusers = retriver.get_model(filterNSort((ALL_SUBS)))
+        selectedusers = retriver.get_selected_model(filterNSort((ALL_SUBS)))
         read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         write_args.setArgs(args)

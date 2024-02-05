@@ -26,6 +26,7 @@ from tenacity import (
 from xxhash import xxh128
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 
@@ -44,10 +45,10 @@ def scrape_profile(username: Union[int, str]) -> dict:
 
 def scrape_profile_helper(c, username: Union[int, str]):
     attempt.set(0)
-    id = cache.get(f"username_{username}", None)
-    log.trace(f"username date: {id}")
-    if id:
-        return id
+    data = cache.get(f"username_{username}", None)
+    log.trace(f"username date: {data}")
+    if data and not read_args.retriveArgs().force_profile:
+        return data
     for _ in Retrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -68,7 +69,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                         cache.set(
                             f"username_{username}",
                             r.json(),
-                            int(constants.getattr("HOURLY_EXPIRY") * 2),
+                            int(constants.getattr("PROFILE_DATA_EXPIRY")),
                         )
                         cache.close()
                         log.trace(f"username date: {r.json()}")
@@ -80,6 +81,54 @@ def scrape_profile_helper(c, username: Union[int, str]):
                             f"[bold]profile response status code:[/bold]{r.status}"
                         )
                         log.debug(f"[bold]profile response:[/bold] {r.text_()}")
+                        log.debug(f"[bold]profile headers:[/bold] {r.headers}")
+                        r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                raise E
+
+
+async def scrape_profile_helper_async(c, username: Union[int, str]):
+    attempt.set(0)
+    data = cache.get(f"username_{username}", None)
+    log.trace(f"username date: {data}")
+    if data and not read_args.retriveArgs().force_profile:
+        return data
+    for _ in Retrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"),
+            max=constants.getattr("OF_MAX"),
+        ),
+        reraise=True,
+    ):
+        with _:
+            try:
+                attempt.set(attempt.get(0) + 1)
+                log.info(
+                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
+                )
+                async with c.requests(
+                    constants.getattr("profileEP").format(username)
+                )() as r:
+                    if r.ok:
+                        cache.set(
+                            f"username_{username}",
+                            await r.json(),
+                            int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
+                        )
+                        cache.close()
+                        log.trace(f"username date: {await r.json()}")
+                        return await r.json()
+                    elif r.status == 404:
+                        return {"username": "modeldeleted"}
+                    else:
+                        log.debug(
+                            f"[bold]profile response status code:[/bold]{r.status}"
+                        )
+                        log.debug(f"[bold]profile response:[/bold] {await r.text_()}")
                         log.debug(f"[bold]profile headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
