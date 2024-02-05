@@ -163,7 +163,10 @@ async def scrape_lists(c, job_progress, offset=0):
                         data = await r.json_()
                         out_list = data["list"] or []
                         log.debug(
-                            f"offset:{offset} -> lists names found {len(out_list)}"
+                            f"offset:{offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
+                        )
+                        log.debug(
+                            f"offset:{offset} -> number of lists found {len(out_list)}"
                         )
                         log.debug(
                             f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"

@@ -9,6 +9,7 @@ from pathlib import Path
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
 
 console = console_.get_shared_console()
@@ -54,6 +55,7 @@ def cleanup():
 
 def truncate(path):
     path = pathlib.Path(os.path.normpath(path))
+    return _windows_truncateHelper(path)
     if platform.system() == "Windows":
         return _windows_truncateHelper(path)
     elif platform.system() == "Linux":
@@ -66,7 +68,7 @@ def truncate(path):
 
 def _windows_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
-    if len(str(path)) <= 256:
+    if len(str(path)) <= constants.getattr("WINDOWS_MAX_PATH"):
         return path
     path = pathlib.Path(path)
     dir = path.parent
@@ -79,7 +81,7 @@ def _windows_truncateHelper(path):
     else:
         ext = ""
     # -1 is for / between parentdirs and file
-    fileLength = 256 - len(ext) - len(str(dir)) - 1
+    fileLength = constants.getattr("WINDOWS_MAX_PATH") - len(ext) - len(str(dir)) - 1
     newFile = f"{re.sub(ext,'',file)[:fileLength]}{ext}"
     final = pathlib.Path(dir, newFile)
     log.debug(f"path: {final} path size: {len(str(final))}")
@@ -88,13 +90,15 @@ def _windows_truncateHelper(path):
 
 def _mac_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
+    if len(str(path)) <= constants.getattr("MAC_MAX_PATH"):
+        return path
     dir = path.parent
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
         "\.[a-z4]*$", path.name, re.IGNORECASE
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    maxlength = 255 - len(ext)
+    maxlength = constants.getattr("MAC_MAX_PATH") - len(ext)
     newFile = f"{file[:maxlength]}{ext}"
     final = pathlib.Path(dir, newFile)
     log.debug(f"path: {final} path size: {len(str(final))}")
@@ -110,11 +114,11 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    maxbytes = 254 - len(ext.encode("utf8"))
+    maxbytes = constants.getattr("LINUX_MAX_FILE") - len(ext.encode("utf8"))
     small = 0
     large = len(file)
     target = None
-    maxLength = 254 - len(ext)
+    maxLength = constants.getattr("LINUX_MAX_FILE") - len(ext)
     if len(path.name.encode("utf8")) <= maxbytes:
         target = large
     while True and not target:

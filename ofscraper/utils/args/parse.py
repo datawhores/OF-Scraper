@@ -711,9 +711,9 @@ def create_parser(input=None):
     )
 
     advanced.add_argument(
-        "-fp",
-        "--force-profile",
-        help="force retrival of up to date profile data",
+        "-up",
+        "--update-profile",
+        help="get up to date profile info instead of using cache",
         default=False,
         action="store_true",
     )
@@ -722,7 +722,7 @@ def create_parser(input=None):
     group11.add_argument(
         "-fi",
         "--force-individual",
-        help="Forces direct retrival of model data via username rather then as part of a list\nIgnored if --usernames is not passed",
+        help="When --username arg is provided searches each username as a seperate request",
         default=False,
         action="store_true",
     )
@@ -730,7 +730,8 @@ def create_parser(input=None):
     group11.add_argument(
         "-fl",
         "--force-list",
-        help="Forces direct retrival of model data via lists rather then as part of a list\nIgnored if --usernames is not passed",
+        help="When --username arg is provided searches entire list based on the currently enabled\
+config settings for userlist or the --user-list arg",
         default=False,
         action="store_true",
     )

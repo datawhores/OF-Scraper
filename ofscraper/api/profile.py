@@ -47,7 +47,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
     attempt.set(0)
     data = cache.get(f"username_{username}", None)
     log.trace(f"username date: {data}")
-    if data and not read_args.retriveArgs().force_profile:
+    if data and not read_args.retriveArgs().update_profile:
         return data
     for _ in Retrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -93,7 +93,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
     attempt.set(0)
     data = cache.get(f"username_{username}", None)
     log.trace(f"username date: {data}")
-    if data and not read_args.retriveArgs().force_profile:
+    if data and not read_args.retriveArgs().update_profile:
         return data
     for _ in Retrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
