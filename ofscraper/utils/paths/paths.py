@@ -55,7 +55,6 @@ def cleanup():
 
 def truncate(path):
     path = pathlib.Path(os.path.normpath(path))
-    return _windows_truncateHelper(path)
     if platform.system() == "Windows":
         return _windows_truncateHelper(path)
     elif platform.system() == "Linux":
