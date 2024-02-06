@@ -40,8 +40,11 @@ def posttype_helper(x):
     )
     if isinstance(x, str):
         words = x.split(",")
-        words = list(map(lambda x: str.title(x), words))
-    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
+        words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
+    if (
+        len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
+        > 0
+    ):
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
@@ -65,8 +68,11 @@ def download_helper(x):
     )
     if isinstance(x, str):
         words = x.split(",")
-        words = list(map(lambda x: str.title(x), words))
-    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
+        words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
+    if (
+        len(list(filter(lambda y: y not in choices and y[1:] not in choices), words))
+        > 0
+    ):
         raise argparse.ArgumentTypeError(
             "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
@@ -77,8 +83,11 @@ def like_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
     if isinstance(x, str):
         words = x.split(",")
-        words = list(map(lambda x: str.title(x), words))
-    if len(list(filter(lambda y: y not in choices and y[0] != "-", words))) > 0:
+        words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
+    if (
+        len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
+        > 0
+    ):
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )

@@ -306,9 +306,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                     downloaded=downloaded,
                 )
             return (
-                ele.mediatype
-                if pathlib.Path(placeholderObj.trunicated_filename).exists()
-                else "forced_skipped",
+                ele.mediatype if downloaded else "forced_skipped",
                 0,
             )
         elif download_data and download_data.get("content-type"):
@@ -371,18 +369,19 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
     attempt.set(attempt.get(0) + 1)
     async with c.requests(url=url, headers=None, params=params)() as r:
         if r.ok:
+            headers = r.headers
             await asyncio.get_event_loop().run_in_executor(
                 cache_thread,
                 partial(
                     cache.set,
                     f"{ele.id}_headers",
                     {
-                        "content-length": config_data.get("content-length"),
-                        "content-type": config_data.get("content-type"),
+                        "content-length": headers.get("content-length"),
+                        "content-type": headers.get("content-type"),
                     },
                 ),
             )
-            content_type = config_data.get("content-type").split("/")[-1]
+            content_type = headers.get("content-type").split("/")[-1]
             if not content_type and ele.mediatype.lower() == "videos":
                 content_type = "mp4"
             elif not content_type and ele.mediatype.lower() == "images":
