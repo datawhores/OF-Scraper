@@ -62,11 +62,13 @@ def logger_other(input_, name=None, stop_count=1, event=None):
                 # log the message
                 log.handle(message)
         if count == stop_count:
-            while True:
-                try:
-                    end_funct()
-                except:
-                    return
+            break
+    while True:
+        try:
+            end_funct()
+        except:
+            break
+    log.handlers.clear()
 
 
 # wrapper function for discord and  log, check if threads/process should star

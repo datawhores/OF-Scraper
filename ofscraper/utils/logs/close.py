@@ -30,6 +30,13 @@ def forcedClose():
     closeQueue()
 
 
+def daemonClose():
+    sendCloseMessage()
+    closeOther()
+    closeMain()
+    clearHandlers()
+
+
 def sendCloseMessage():
     logging.getLogger("shared").error("Finished Script")
     num_loggers = len(logging.getLogger("shared").handlers)
@@ -37,11 +44,6 @@ def sendCloseMessage():
         logging.getLogger("shared").handlers[0].queue.put("None")
     if num_loggers > 1:
         logging.getLogger("shared").handlers[-1].queue.put("None")
-
-
-def closeThreads():
-    closeMain()
-    closeOther()
 
 
 def closeMain():
@@ -80,3 +82,8 @@ def closeQueue():
     if log_globals.queue_:
         log_globals.queue_.close()
         log_globals.queue_.cancel_join_thread()
+
+
+def clearHandlers():
+    logging.getLogger("shared").handlers.clear()
+    logging.getLogger("ofscraper").handlers.clear()

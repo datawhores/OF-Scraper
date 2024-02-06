@@ -59,7 +59,7 @@ def daemon_process():
     checkers.check_auth()
     checkers.check_config()
     functs = process_actions.add_selected_areas()
-    run.daemon_run_helper(functs)
+    run.daemon_run_helper(*functs)
 
 
 @exit.exit_wrapper
