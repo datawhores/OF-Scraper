@@ -63,7 +63,7 @@ from ofscraper.download.common import (
 async def alt_download(c, ele, username, model_id, progress):
     common.log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")
     common.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
-    if read_args.retriveArgs().metadata:
+    if read_args.retriveArgs().metadata != None:
         return await metadata(
             c,
             ele,

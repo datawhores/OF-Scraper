@@ -229,7 +229,7 @@ class Placeholders:
         )
         log.trace(f"final mediadir path {final_path}")
         self._mediadir = final_path
-        self._mediadir.mkdir(parents=create, exist_ok=True)
+        self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
         return final_path
 
     @wrapper

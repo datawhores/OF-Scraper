@@ -703,14 +703,6 @@ def create_parser(input=None):
     )
 
     advanced.add_argument(
-        "-md",
-        "--metadata",
-        help="Skip all media downloads and gathers metadata only",
-        default=False,
-        action="store_true",
-    )
-
-    advanced.add_argument(
         "-up",
         "--update-profile",
         help="get up to date profile info instead of using cache",
@@ -734,6 +726,26 @@ def create_parser(input=None):
 config settings for userlist or the --user-list arg",
         default=False,
         action="store_true",
+    )
+
+    group12 = advanced.add_mutually_exclusive_group()
+    group12.add_argument(
+        "-md",
+        "--metadata",
+        help="Skip all media downloads and gathers metadata only",
+        default=None,
+        action="store_const",
+        dest="metadata",
+        const=False,
+    )
+    group12.add_argument(
+        "-mc",
+        "--metadata-complete",
+        help="Skip all media downloads and gathers metadata only\nAdditonally marks each media item as downloaded",
+        default=None,
+        action="store_const",
+        dest="metadata",
+        const=True,
     )
 
     subparser = parser.add_subparsers(help="commands", dest="command")

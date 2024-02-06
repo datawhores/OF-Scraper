@@ -11,12 +11,10 @@ import pytest
 from pytest_check import check
 from random_unicode_emoji import random_emoji
 
-import ofscraper.classes.placeholder
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.downloadbatch as downloadbatch
+import ofscraper.download.downloadbatch as downloadbatch
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.paths.paths as paths
-from ofscraper.classes.media import Media
 from ofscraper.classes.posts import Post
 from ofscraper.const.test_constants import *
 from ofscraper.utils.dates import convert_local_time

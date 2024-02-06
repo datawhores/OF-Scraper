@@ -60,7 +60,7 @@ async def main_download(c, ele, username, model_id):
         f"{get_medialog(ele)} Downloading with normal batch downloader"
     )
     common.innerlog.get().debug(f"{get_medialog(ele)} download url: {get_url_log(ele)}")
-    if read_args.retriveArgs().metadata:
+    if read_args.retriveArgs().metadata != None:
         return await metadata(
             c,
             ele,

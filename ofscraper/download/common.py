@@ -288,17 +288,21 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     log.info(
         f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
     )
-    data = await asyncio.get_event_loop().run_in_executor(
+    download_data = await asyncio.get_event_loop().run_in_executor(
         cache_thread, partial(cache.get, f"{ele.id}_headers")
     )
     if placeholderObj:
+        downloaded = (
+            pathlib.Path(placeholderObj.trunicated_filename).exists()
+            or read_args.retriveArgs().metadata
+        )
         if ele.id:
             await operations.update_media_table(
                 ele,
                 filename=placeholderObj.trunicated_filename,
                 model_id=model_id,
                 username=username,
-                downloaded=pathlib.Path(placeholderObj.trunicated_filename).exists(),
+                downloaded=downloaded,
             )
         return (
             ele.mediatype
@@ -306,19 +310,23 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             else "forced_skipped",
             0,
         )
-    if data and config_data.get("content-type"):
-        content_type = config_data.get("content-type").split("/")[-1]
+    elif download_data and download_data.get("content-type"):
+        content_type = download_data.get("content-type").split("/")[-1]
         placeholderObj = placeholder.Placeholders()
         placeholderObj.getDirs(ele, username, model_id, create=False)
         placeholderObj.createfilename(ele, username, model_id, content_type)
         placeholderObj.set_final_path()
+        downloaded = (
+            pathlib.Path(placeholderObj.trunicated_filename).exists()
+            or read_args.retriveArgs().metadata
+        )
         if ele.id:
             await operations.update_media_table(
                 ele,
                 filename=placeholderObj.trunicated_filename,
                 model_id=model_id,
                 username=username,
-                downloaded=pathlib.Path(placeholderObj.trunicated_filename).exists(),
+                downloaded=downloaded,
             )
         return (
             ele.mediatype

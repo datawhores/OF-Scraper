@@ -56,7 +56,7 @@ async def alt_download(c, ele, username, model_id):
     common.innerlog.get().debug(
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
-    if read_args.retriveArgs().metadata:
+    if read_args.retriveArgs().metadata != None:
         sharedPlaceholderObj = placeholder.Placeholders()
         sharedPlaceholderObj.getmediadir(ele, username, model_id, create=False)
         sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")

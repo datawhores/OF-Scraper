@@ -59,7 +59,7 @@ async def main_download(c, ele, username, model_id, progress):
     common.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     # total may be none if no .part file
-    if read_args.retriveArgs().metadata:
+    if read_args.retriveArgs().metadata != None:
         return await metadata(
             c,
             ele,
