@@ -36,25 +36,23 @@ log = logging.getLogger("shared")
 
 # Adds a function to the job queue
 def set_schedule(*functs):
+    sleep = min(max(read_args.retriveArgs().daemon / 5, 1), 60)
     while True:
         jobqueue.join()
         next = arrow.now().shift(minutes=read_args.retriveArgs().daemon)
-        log.debug(f"Next run at {next.format('MM-DD hh:mm:ss A')}")
+        log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
         schedule.every().day.at(next.format("HH:mm:ss")).do(schedule_helper, *functs)
         while len(schedule.jobs) > 0:
             schedule.run_pending()
-            time.sleep(20)
+            time.sleep(sleep)
 
 
 def schedule_helper(*functs):
-    # jobqueue.put(close.daemonClose)
-    # jobqueue.put(logger.start_threads)
     jobqueue.put(other_logger.updateOtherLoggerStream)
     jobqueue.put(logs.printStartValues)
     jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
     for funct in functs:
         jobqueue.put(funct)
-    jobqueue.put(set_schedule, *functs)
     return schedule.CancelJob
 
 

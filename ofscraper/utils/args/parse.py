@@ -89,7 +89,7 @@ def create_parser(input=None):
         "-d",
         "--daemon",
         help="run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes",
-        type=int,
+        type=float,
         default=None,
     )
 
@@ -465,7 +465,7 @@ def create_parser(input=None):
         help='Filter by userlist\n Note:  the lists "ofscraper.main,ofscraper.expired,ofscraper.active" are reserved  and should not be the name of any list you have on OF',
         default=[],
         required=False,
-        type=lambda x: x.split(","),
+        type=lambda x: list(map(lambda x: x.lower(), x.split(","))),
         action="extend",
     )
 
@@ -475,7 +475,7 @@ def create_parser(input=None):
         help='Remove all users from selected list\n Note: the lists "ofscraper.main,ofscraper.expired,ofscraper.active" are reserved should not be the name of any list you have on OF',
         default=[],
         required=False,
-        type=lambda x: x.split(","),
+        type=lambda x: list(map(lambda x: x.lower(), x.split(","))),
         action="extend",
     )
 
