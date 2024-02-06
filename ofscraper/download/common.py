@@ -291,67 +291,68 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     download_data = await asyncio.get_event_loop().run_in_executor(
         cache_thread, partial(cache.get, f"{ele.id}_headers")
     )
-    if placeholderObj:
-        downloaded = (
-            pathlib.Path(placeholderObj.trunicated_filename).exists()
-            or read_args.retriveArgs().metadata
-        )
-        if ele.id:
-            await operations.update_media_table(
-                ele,
-                filename=placeholderObj.trunicated_filename,
-                model_id=model_id,
-                username=username,
-                downloaded=downloaded,
+    for _ in range(2):
+        if placeholderObj:
+            downloaded = (
+                pathlib.Path(placeholderObj.trunicated_filename).exists()
+                or read_args.retriveArgs().metadata
             )
-        return (
-            ele.mediatype
-            if pathlib.Path(placeholderObj.trunicated_filename).exists()
-            else "forced_skipped",
-            0,
-        )
-    elif download_data and download_data.get("content-type"):
-        content_type = download_data.get("content-type").split("/")[-1]
-        placeholderObj = placeholder.Placeholders()
-        placeholderObj.getDirs(ele, username, model_id, create=False)
-        placeholderObj.createfilename(ele, username, model_id, content_type)
-        placeholderObj.set_final_path()
-        downloaded = (
-            pathlib.Path(placeholderObj.trunicated_filename).exists()
-            or read_args.retriveArgs().metadata
-        )
-        if ele.id:
-            await operations.update_media_table(
-                ele,
-                filename=placeholderObj.trunicated_filename,
-                model_id=model_id,
-                username=username,
-                downloaded=downloaded,
+            if ele.id:
+                await operations.update_media_table(
+                    ele,
+                    filename=placeholderObj.trunicated_filename,
+                    model_id=model_id,
+                    username=username,
+                    downloaded=downloaded,
+                )
+            return (
+                ele.mediatype
+                if pathlib.Path(placeholderObj.trunicated_filename).exists()
+                else "forced_skipped",
+                0,
             )
-        return (
-            ele.mediatype
-            if pathlib.Path(placeholderObj.trunicated_filename).exists()
-            else "forced_skipped",
-            0,
-        )
-    else:
-        try:
-            async for _ in AsyncRetrying(
-                stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-                wait=wait_random(
-                    min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
-                ),
-                reraise=True,
-            ):
-                with _:
-                    try:
-                        return await metadata_helper(
-                            c, ele, username, model_id, placeholderObj
-                        )
-                    except Exception as E:
-                        raise E
-        except Exception as E:
-            raise E
+        elif download_data and download_data.get("content-type"):
+            content_type = download_data.get("content-type").split("/")[-1]
+            placeholderObj = placeholder.Placeholders()
+            placeholderObj.getDirs(ele, username, model_id, create=False)
+            placeholderObj.createfilename(ele, username, model_id, content_type)
+            placeholderObj.set_final_path()
+            downloaded = (
+                pathlib.Path(placeholderObj.trunicated_filename).exists()
+                or read_args.retriveArgs().metadata
+            )
+            if ele.id:
+                await operations.update_media_table(
+                    ele,
+                    filename=placeholderObj.trunicated_filename,
+                    model_id=model_id,
+                    username=username,
+                    downloaded=downloaded,
+                )
+            return (
+                ele.mediatype if downloaded else "forced_skipped",
+                0,
+            )
+        elif _ == 1:
+            break
+        else:
+            try:
+                async for _ in AsyncRetrying(
+                    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+                    wait=wait_random(
+                        min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+                    ),
+                    reraise=True,
+                ):
+                    with _:
+                        try:
+                            placeholderObj = await metadata_helper(
+                                c, ele, username, model_id, placeholderObj
+                            )
+                        except Exception as E:
+                            raise E
+            except Exception as E:
+                raise E
 
 
 @sem_wrapper
@@ -370,7 +371,6 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
     attempt.set(attempt.get(0) + 1)
     async with c.requests(url=url, headers=None, params=params)() as r:
         if r.ok:
-            data = r.headers
             await asyncio.get_event_loop().run_in_executor(
                 cache_thread,
                 partial(
@@ -391,24 +391,10 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
             placeholderObj.getDirs(ele, username, model_id, create=False)
             placeholderObj.createfilename(ele, username, model_id, content_type)
             placeholderObj.set_final_path()
-            path_to_file_logger(placeholderObj, ele)
+            return placeholderObj
 
         else:
             r.raise_for_status()
-    if ele.id:
-        await operations.update_media_table(
-            ele,
-            filename=placeholderObj.trunicated_filename,
-            model_id=model_id,
-            username=username,
-            downloaded=pathlib.Path(placeholderObj.trunicated_filename).exists(),
-        )
-    return (
-        ele.mediatype
-        if pathlib.Path(placeholderObj.trunicated_filename).exists()
-        else "forced_skipped",
-        0,
-    )
 
 
 def convert_num_bytes(num_bytes: int) -> str:
