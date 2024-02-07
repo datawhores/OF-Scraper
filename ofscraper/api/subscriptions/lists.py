@@ -44,12 +44,15 @@ sem = None
 @run
 async def get_otherlist():
     out = []
-    if len(read_args.retriveArgs().user_list) >= 2 or (
-        (
-            constants.getattr("OFSCRAPER_RESERVED_LIST")
-            or constants.getattr("OFSCRAPER_RESERVED_LIST_ALT")
-        )
-        not in read_args.retriveArgs().user_list
+    if any(
+        [
+            ele
+            not in [
+                constants.getattr("OFSCRAPER_RESERVED_LIST"),
+                constants.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+            ]
+            for ele in read_args.retriveArgs().user_list
+        ]
     ):
         out.extend(await get_lists())
     out = list(
