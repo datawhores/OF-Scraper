@@ -34,7 +34,7 @@ import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as data
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.paths as paths
@@ -295,7 +295,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
 async def main_download_datahandler(r, ele, total, placeholderObj):
     pathstr = str(placeholderObj.trunicated_filename)
     downloadprogress = (
-        data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
     try:
         count = 0

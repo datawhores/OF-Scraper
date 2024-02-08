@@ -34,7 +34,7 @@ import ofscraper.db.operations as operations
 import ofscraper.download.common as common
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as data
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 from ofscraper.download.common import (
@@ -305,7 +305,7 @@ async def main_download_sendreq(
 async def main_download_datahandler(r, progress, ele, placeholderObj, total):
     pathstr = str(placeholderObj.trunicated_filename)
     downloadprogress = (
-        data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
     task1 = progress.add_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",

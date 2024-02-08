@@ -25,7 +25,7 @@ import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as data
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.helpers as log_helpers
@@ -101,7 +101,7 @@ async def alt_download(c, ele, username, model_id):
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
         [
-            data.get_ffmpeg(),
+            config_data.get_ffmpeg(),
             "-i",
             str(video["path"]),
             "-i",
