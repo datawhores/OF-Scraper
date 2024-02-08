@@ -18,6 +18,7 @@ import pathlib
 import platform
 import re
 import shutil
+import traceback
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, singledispatch
@@ -346,7 +347,12 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                         except Exception as E:
                             raise E
             except Exception as E:
-                raise E
+                log.traceback_(f"{get_medialog(ele)} Could not get placeholderObj {E}")
+                log.traceback_(
+                    f"{get_medialog(ele)} Could not get placeholderObj {traceback.format_exc()}"
+                )
+                log.debug(f"{get_medialog(ele)} using a generic placeholderObj")
+                placeholderObj = meta_data_placeholder(ele, username, model_id)
 
 
 def metadata_downloaded_helper(placeholderObj):
@@ -374,6 +380,9 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
         else None
     )
     attempt.set(attempt.get(0) + 1)
+    log.debug(
+        f"{get_medialog(ele)} [attempt {attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}]  Getting data for metadata insert"
+    )
     async with c.requests(url=url, headers=None, params=params)() as r:
         if r.ok:
             headers = r.headers
@@ -401,6 +410,20 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
 
         else:
             r.raise_for_status()
+
+
+def meta_data_placeholder(ele, username, model_id):
+    if ele.mediatype.lower() == "videos":
+        content_type = "mp4"
+    elif ele.mediatype.lower() == "images":
+        content_type = "jpg"
+    elif ele.mediatype.lower() == "audios":
+        content_type = "mp3"
+    placeholderObj = placeholder.Placeholders()
+    placeholderObj.getDirs(ele, username, model_id, create=False)
+    placeholderObj.createfilename(ele, username, model_id, content_type)
+    placeholderObj.set_final_path()
+    return placeholderObj
 
 
 def convert_num_bytes(num_bytes: int) -> str:

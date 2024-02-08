@@ -64,11 +64,12 @@ async def alt_download(c, ele, username, model_id, progress):
     common.log.debug(f"{get_medialog(ele)} Downloading with protected media downloader")
     common.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     if read_args.retriveArgs().metadata != None:
+        sharedPlaceholderObj = placeholder.Placeholders()
+        sharedPlaceholderObj.getmediadir(ele, username, model_id, create=False)
+        sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
+        sharedPlaceholderObj.set_final_path()
         return await metadata(
-            c,
-            ele,
-            username,
-            model_id,
+            c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
         )
 
     audio, video = await alt_download_preparer(ele)
