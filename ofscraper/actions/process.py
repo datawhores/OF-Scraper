@@ -186,7 +186,7 @@ def normal_post_process():
                     )
                     operations.batch_mediainsert(
                         value,
-                        operations.write_media_table,
+                        operations.write_media_table_batch,
                         model_id=model_id,
                         username=username,
                         downloaded=False,

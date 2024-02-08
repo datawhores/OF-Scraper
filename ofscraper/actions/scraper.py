@@ -65,7 +65,7 @@ def process_messages(model_id, username):
 
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,
@@ -102,7 +102,7 @@ def process_paid_post(model_id, username):
 
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,
@@ -135,7 +135,7 @@ def process_stories(model_id, username):
         [output.extend(stories.media) for stories in stories]
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,
@@ -168,7 +168,7 @@ def process_highlights(model_id, username):
         [output.extend(stories.media) for stories in highlights_]
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,
@@ -210,7 +210,7 @@ def process_timeline_posts(model_id, username, individual=False):
 
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,
@@ -258,7 +258,7 @@ def process_archived_posts(model_id, username):
 
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,
@@ -301,7 +301,7 @@ def process_pinned_posts(model_id, username):
 
         operations.batch_mediainsert(
             output,
-            operations.write_media_table,
+            operations.write_media_table_batch,
             model_id=model_id,
             username=username,
             downloaded=False,

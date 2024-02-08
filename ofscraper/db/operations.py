@@ -320,76 +320,67 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
 
 @operation_wrapper_async
 def update_media_table(
-    media, filename=None, conn=None, downloaded=False, **kwargs
+    media, filename=None, conn=None, downloaded=None, **kwargs
 ) -> list:
-    insertData = media_insert_helper(media, filename, downloaded)
-    if len(conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()) == 0:
+    prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
+    if len(prevData) == 0:
+        insertData = media_insert_helper(media, filename, downloaded)
         conn.execute(queries.mediaInsert, insertData)
     else:
+        insertData = media_insert_helper(media, filename, downloaded, prevData)
         insertData.append(media.id)
         conn.execute(queries.mediaUpdate, insertData)
     conn.commit()
 
 
-def media_insert_helper(media, filename, downloaded):
-    if not filename or not pathlib.Path(filename).exists():
-        insertData = [
-            media.id,
-            media.postid,
-            media.url,
-            None,
-            None,
-            0,
-            media.responsetype.capitalize(),
-            media.mediatype.capitalize(),
-            media.preview,
-            media.linked,
-            1 if downloaded else 0,
-            media.date,
-        ]
-    elif downloaded or pathlib.Path(filename).exists():
-        insertData = [
-            media.id,
-            media.postid,
-            media.url,
-            str(pathlib.Path(filename).parent),
-            pathlib.Path(filename).name,
-            math.ceil(pathlib.Path(filename).stat().st_size),
-            media.responsetype.capitalize(),
-            media.mediatype.capitalize(),
-            media.preview,
-            media.linked,
-            1 if downloaded else 0,
-            media.date,
-        ]
+def media_insert_helper(media, filename, downloaded, prevData=None):
+    prevData = prevData[0] if isinstance(prevData, list) else prevData
+    directory = None
+    filename_path = None
+    size = None
+    if filename and pathlib.Path(filename).exists():
+        directory = str(pathlib.Path(filename).parent)
+        filename_path = str(pathlib.Path(filename))
+        size = math.ceil(pathlib.Path(filename).stat().st_size)
+    elif filename:
+        directory = str(pathlib.Path(filename).parent)
+        filename_path = str(pathlib.Path(filename))
+    elif prevData:
+        directory = prevData[3]
+        filename_path = prevData[4]
+        size = prevData[5]
+    downloaded = downloaded
+    if prevData:
+        downloaded = prevData[-2] if downloaded == None else downloaded
+    elif filename:
+        downloaded = (
+            pathlib.Path(filename).exists() if downloaded == None else downloaded
+        )
+    insertData = [
+        media.id,
+        media.postid,
+        media.url,
+        directory,
+        filename_path,
+        size,
+        media.responsetype.capitalize(),
+        media.mediatype.capitalize(),
+        media.preview,
+        media.linked,
+        downloaded,
+        media.date,
+    ]
     return insertData
 
 
 @operation_wrapper_async
-def write_media_table(
-    medias, filename=None, conn=None, downloaded=False, **kwargs
-) -> list:
+def write_media_table_batch(medias, conn=None, **kwargs) -> list:
     medias = converthelper(medias)
     if len(medias) == 0:
         return
     insertData = list(
         map(
-            lambda media: [
-                media.id,
-                media.postid,
-                media.url,
-                str(pathlib.Path(filename).parent) if filename else filename,
-                pathlib.Path(filename).name if filename else filename,
-                math.ceil(pathlib.Path(filename).stat().st_size)
-                if filename
-                else filename,
-                media.responsetype.capitalize(),
-                media.mediatype.capitalize(),
-                media.preview,
-                media.linked,
-                1 if downloaded else 0,
-                media.date,
-            ],
+            lambda media: media_insert_helper(media, None, None),
             medias,
         )
     )

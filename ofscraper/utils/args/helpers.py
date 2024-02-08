@@ -113,8 +113,20 @@ def action_helper(x):
         raise argparse.ArgumentTypeError(
             "You can not select like and unlike at the same time"
         )
-    if (
-        len(list(filter(lambda x: x in set(["like", "unlike", "download"]), select)))
+    elif "download" in select and "metadata" in select:
+        raise argparse.ArgumentTypeError(
+            "You can not select metadata and download at the same time"
+        )
+
+    elif (
+        len(
+            list(
+                filter(
+                    lambda x: x in set(["like", "unlike", "download", "metadata"]),
+                    select,
+                )
+            )
+        )
         == 0
     ):
         raise argparse.ArgumentTypeError(

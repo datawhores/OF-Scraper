@@ -732,20 +732,29 @@ config settings for userlist or the --user-list arg",
     group12.add_argument(
         "-md",
         "--metadata",
-        help="Skip all media downloads and gathers metadata only",
+        help="Skip all media downloads and gathers metadata only\nNo change to download status",
         default=None,
         action="store_const",
         dest="metadata",
-        const=False,
+        const="none",
+    )
+    group12.add_argument(
+        "-mu",
+        "--metadata-update",
+        help="Skip all media downloads and gathers metadata only\nUpdates downloads based on file presence",
+        default=None,
+        action="store_const",
+        dest="metadata",
+        const="file",
     )
     group12.add_argument(
         "-mc",
         "--metadata-complete",
-        help="Skip all media downloads and gathers metadata only\nAdditonally marks each media item as downloaded",
+        help="Skip all media downloads and gathers metadata only\nMarks each media item as downloaded",
         default=None,
         action="store_const",
         dest="metadata",
-        const=True,
+        const="complete",
     )
 
     subparser = parser.add_subparsers(help="commands", dest="command")

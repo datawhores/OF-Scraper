@@ -293,20 +293,18 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     )
     for _ in range(2):
         if placeholderObj:
-            downloaded = (
-                pathlib.Path(placeholderObj.trunicated_filename).exists()
-                or read_args.retriveArgs().metadata
-            )
             if ele.id:
                 await operations.update_media_table(
                     ele,
                     filename=placeholderObj.trunicated_filename,
                     model_id=model_id,
                     username=username,
-                    downloaded=downloaded,
+                    downloaded=metadata_downloaded_helper(placeholderObj),
                 )
             return (
-                ele.mediatype if downloaded else "forced_skipped",
+                ele.mediatype
+                if metadata_downloaded_helper(placeholderObj)
+                else "forced_skipped",
                 0,
             )
         elif download_data and download_data.get("content-type"):
@@ -315,20 +313,18 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             placeholderObj.getDirs(ele, username, model_id, create=False)
             placeholderObj.createfilename(ele, username, model_id, content_type)
             placeholderObj.set_final_path()
-            downloaded = (
-                pathlib.Path(placeholderObj.trunicated_filename).exists()
-                or read_args.retriveArgs().metadata
-            )
             if ele.id:
                 await operations.update_media_table(
                     ele,
                     filename=placeholderObj.trunicated_filename,
                     model_id=model_id,
                     username=username,
-                    downloaded=downloaded,
+                    downloaded=metadata_downloaded_helper(placeholderObj),
                 )
             return (
-                ele.mediatype if downloaded else "forced_skipped",
+                ele.mediatype
+                if metadata_downloaded_helper(placeholderObj)
+                else "forced_skipped",
                 0,
             )
         elif _ == 1:
@@ -351,6 +347,17 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                             raise E
             except Exception as E:
                 raise E
+
+
+def metadata_downloaded_helper(placeholderObj):
+    if read_args.retriveArgs().metadata == "none":
+        return None
+
+    elif read_args.retriveArgs().metadata == "complete":
+        return 1
+    elif pathlib.Path(placeholderObj.trunicated_filename).exists():
+        return 1
+    return 0
 
 
 @sem_wrapper

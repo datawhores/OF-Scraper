@@ -4,7 +4,7 @@ import ofscraper.db.operations as operations
 import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as data
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.system.system as system
@@ -41,10 +41,11 @@ def download_picker(username, model_id, medialist):
         system.getcpu_count() > 1
         and (
             len(medialist)
-            >= data.get_download_semaphores() * constants.getattr("DOWNLOAD_THREAD_MIN")
+            >= config_data.get_download_semaphores()
+            * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
         and read_args.retriveArgs().downloadthreads != 0
-        and data.get_threads() != 0
+        and config_data.get_threads() != 0
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
