@@ -314,7 +314,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
         async for chunk in l.iter_chunked(constants.getattr("maxChunkSizeB")):
             count = count + 1
             common.innerlog.get().trace(
-                f"{get_medialog(ele)} Download:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
+                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
             if count == constants.getattr("CHUNK_ITER"):

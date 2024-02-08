@@ -37,7 +37,7 @@ import ofscraper.download.common as common
 import ofscraper.download.keyhelpers as keyhelpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as data
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.helpers as log_helpers
@@ -109,7 +109,7 @@ async def alt_download(c, ele, username, model_id, progress):
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
         [
-            data.get_ffmpeg(),
+            config_data.get_ffmpeg(),
             "-i",
             str(video["path"]),
             "-i",
@@ -309,7 +309,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
     pathstr = str(placeholderObj.tempfilename)
 
     downloadprogress = (
-        data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
     )
 
     task1 = progress.add_task(
@@ -326,7 +326,7 @@ async def alt_download_datahandler(item, total, l, ele, progress, placeholderObj
             if downloadprogress:
                 count = count + 1
             common.log.trace(
-                f"{get_medialog(ele)} Download:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
+                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
             if count == constants.getattr("CHUNK_ITER"):
@@ -391,7 +391,7 @@ async def alt_download_downloader(item, c, ele, username, model_id, progress):
                 )
                 pathlib.Path(placeholderObj.tempfilename).unlink(missing_ok=True) if (
                     read_args.retriveArgs().no_auto_resume
-                    or not data.get_part_file_clean()
+                    or not config_data.get_part_file_clean()
                     or False
                 ) else None
 

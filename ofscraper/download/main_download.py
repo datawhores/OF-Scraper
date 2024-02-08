@@ -321,6 +321,9 @@ async def main_download_datahandler(r, progress, ele, placeholderObj, total):
             if downloadprogress:
                 count = count + 1
             await fileobject.write(chunk)
+            common.log.trace(
+                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
+            )
             if count == constants.getattr("CHUNK_ITER"):
                 await loop.run_in_executor(
                     common.thread,
