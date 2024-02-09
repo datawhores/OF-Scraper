@@ -69,7 +69,7 @@ jobs:
             cd work
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
-            python -m pip install pyinstaller==6.3.0
+            python3.11 -m pip install pyinstaller==6.3.0
             source .venv/bin/activate
             /root/.local/bin/poetry install --all-extras
             echo "install run pyinstaller"
