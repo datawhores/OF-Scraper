@@ -42,7 +42,6 @@ async def un_encrypt(item, c, ele, input_=None):
     past_key = await asyncio.get_event_loop().run_in_executor(
         common.cache_thread, partial(cache.get, ele.license)
     )
-    past_key = None
     if past_key:
         key = past_key
         log.debug(f"{get_medialog(ele)} got key from cache")
