@@ -89,9 +89,9 @@ jobs:
             cd work
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
+            python -m pip install pyinstaller==6.3.0
             source .venv/bin/activate
             /root/.local/bin/poetry install --all-extras
-            python -m pip install pyinstaller
             echo "install run pyinstaller"
             echo "ls files"
             ls .
@@ -111,9 +111,9 @@ jobs:
             cd work
             apt-get install zip libxml2-dev libxslt-dev zip -y
             python3.11 -m venv .venv
+            python -m pip install pyinstaller==6.3.0
             source .venv/bin/activate
             /root/.local/bin/poetry install --all-extras
-            python -m pip install pyinstaller
             echo "install run pyinstaller"
             echo "ls files"
             ls .
@@ -162,7 +162,7 @@ jobs:
       - name: Install package
         run: poetry install --all-extras
       - name: Install pyinstaller
-        run: pip install pyinstaller
+        run: pip install pyinstaller==6.3.0
       # - name: temp deactive
       #   run: deactive
       - name: create-one-file
