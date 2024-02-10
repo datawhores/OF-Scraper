@@ -18,7 +18,7 @@ jobs:
       - name: install dunamai
         run: pip install dunamai
       - name: print version
-        run: dunamai from git --format "{base}+{branch}.{commit}" -attern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))"
+        run: dunamai from git --format "{base}+{branch}.{commit}" -pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))"
       - name: replace_version
         run: |
           sed -i -e s/'[^ ]*hardcoded__.*None'/__hardcoded__="\"$(dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")\""/ ofscraper/__version__.py
