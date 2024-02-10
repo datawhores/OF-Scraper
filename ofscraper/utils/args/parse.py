@@ -8,7 +8,7 @@ import ofscraper.utils.args.helpers as helpers
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __version__
-from ofscraper.const.constants import KEY_OPTIONS, OFSCRAPER_RESERVED_LIST
+from ofscraper.const.constants import KEY_OPTIONS
 
 
 def create_parser(input=None):
@@ -722,8 +722,7 @@ def create_parser(input=None):
     group11.add_argument(
         "-fl",
         "--force-list",
-        help="When --username arg is provided searches entire list based on the currently enabled\
-config settings for userlist or the --user-list arg",
+        help="When --username arg is provided searches entire enabled list(s) before filtering for usernames",
         default=False,
         action="store_true",
     )
