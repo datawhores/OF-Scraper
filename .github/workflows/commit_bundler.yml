@@ -67,16 +67,19 @@ jobs:
           shell: bash
           run: |
             cd work
+            rm -rf ./ofscraper/dist
+            rm -rf ./ofscraper/build
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
-            python3.11 -m pip install pyinstaller==6
             source .venv/bin/activate
+            python3.11 -m pip install pyinstaller==6.4.0
             /root/.local/bin/poetry install --all-extras
-            echo "install run pyinstaller"
             echo "ls files"
             ls .
+            echo "install run pyinstaller dir"
             pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
-
+            echo "list files dir"
+            list dist
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -90,15 +93,19 @@ jobs:
           shell: bash
           run: |
             cd work
+            rm -rf ./ofscraper/dist
+            rm -rf ./ofscraper/build
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
-            python3.11 -m pip install pyinstaller==6
             source .venv/bin/activate
+            python3.11 -m pip install pyinstaller==6.4.0
             /root/.local/bin/poetry install --all-extras
-            echo "install run pyinstaller"
             echo "ls files"
             ls .
+            echo "run pyinstaller onefike"
             pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+            echo "list one file"
+            ls dist
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
         uses: actions/upload-artifact@v3
