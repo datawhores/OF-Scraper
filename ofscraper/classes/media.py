@@ -325,7 +325,7 @@ class Media:
     # for use in dynamic names
     @property
     def needs_count(self):
-        if set(["filename", "file_name", "text", "postid", "post_id"]).isdisjoint(
+        if set(["text", "postid", "post_id"]).isdisjoint(
             [
                 name
                 for text, name, spec, conv in list(
