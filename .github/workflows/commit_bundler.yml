@@ -79,7 +79,7 @@ jobs:
             echo "install run pyinstaller dir"
             pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
             echo "list files dir"
-            list dist
+            ls dist
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
