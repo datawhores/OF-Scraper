@@ -11,9 +11,8 @@ def retriveArgsVManager():
             manager.get_manager_dict()["args"] = parse_args.parse_args()
         return manager.get_manager_dict().get("args")
     except SystemExit as E:
-        if any(ele == sys.argv[1] for ele in ["-h", "-v"]):
-            return
-        print(f"Passed Args {sys.argv[1:]}")
+        if not any(ele in sys.argv[1:] for ele in ["-h", "-v"]):
+            print(f"Passed Args {sys.argv[1:]}")
         raise E
 
 
@@ -23,7 +22,6 @@ def retriveArgs():
             global_args.args = parse_args.parse_args()
         return global_args.args
     except SystemExit as E:
-        if any(ele == sys.argv[1] for ele in ["-h", "-v"]):
-            return
-        print(f"Passed Args {sys.argv[1:]}")
+        if not any(ele in sys.argv[1:] for ele in ["-h", "-v"]):
+            print(f"Passed Args {sys.argv[1:]}")
         raise E
