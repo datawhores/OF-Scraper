@@ -214,6 +214,8 @@ jobs:
           python-version: "3.11.5"
       - name: create virtualenv
         run: python3 -m venv .venv
+      - name: activate venv
+        run: source .venv/bin/activate
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
