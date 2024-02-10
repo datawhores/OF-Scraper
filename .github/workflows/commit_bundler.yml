@@ -143,7 +143,7 @@ jobs:
         run: poetry install --all-extras   
       - name: create-one-file
         id: create-one-file
-        run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}} -p D:\a\OF-Scraper\OF-Scraper"
+        run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper
         continue-on-error: true
       - name: active env for createfile2
         if: steps.create-one-file.outcome != 'success'
@@ -151,7 +151,7 @@ jobs:
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
-        run: pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}} -p D:\a\OF-Scraper\OF-Scraper"
+        run: pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}} -p D:\a\OF-Scraper\OF-Scraper
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
@@ -161,7 +161,7 @@ jobs:
       #   run: deactive
       - name: create-dir
         id: create-dir
-        run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}} -p D:\a\OF-Scraper\OF-Scraper"
+        run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper
         continue-on-error: true
       - name: active env for create-dir2
         if: steps.create-dir.outcome != 'success'
@@ -169,7 +169,7 @@ jobs:
       - name: create-dir2
         id: create-one-dir2
         if: steps.create-dir.outcome != 'success'
-        run: pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{steps.commit.outputs.short}} -p D:\a\OF-Scraper\OF-Scraper"
+        run: pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
