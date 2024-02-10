@@ -77,7 +77,7 @@ jobs:
             echo "ls files"
             ls .
             echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
             echo "list files dir"
             ls dist
       - name: upload one file
@@ -103,7 +103,7 @@ jobs:
             echo "ls files"
             ls .
             echo "run pyinstaller onefike"
-            pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
             echo "list one file"
             ls dist
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
