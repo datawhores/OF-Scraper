@@ -131,6 +131,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11.5"
+      - name: Install pyinstaller
+        run: pip install pyinstaller==6
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -141,8 +143,6 @@ jobs:
         run: poetry env use  .venv/Scripts/python3
       - name: Install package
         run: poetry install --all-extras
-      - name: Install pyinstaller
-        run: pip install pyinstaller==6
       # - name: temp deactive
       #   run: deactive
       - name: create-one-file
