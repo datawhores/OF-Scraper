@@ -102,9 +102,9 @@ jobs:
             /root/.local/bin/poetry install --all-extras
             echo "ls files"
             ls .
-            echo "run pyinstaller onefike"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
-            echo "list one file"
+            echo "run pyinstaller dir"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
+            echo "list one dir"
             ls dist
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
