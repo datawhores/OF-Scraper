@@ -132,7 +132,7 @@ jobs:
         with:
           python-version: "3.11.5"
       - name: Install pyinstaller
-        run: pip install pyinstaller==6
+        run: pip install pyinstaller==6.3.0
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -145,11 +145,13 @@ jobs:
         run: poetry install --all-extras
       # - name: temp deactive
       #   run: deactive
+      
       - name: create-one-file
         id: create-one-file
         run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
         continue-on-error: true
       - name: active env for createfile2
+        if: steps.create-one-file.outcome != 'success'
         run: poetry env use  .venv/Scripts/python3
       - name: create-one-file2
         id: create-one-file2
@@ -167,6 +169,7 @@ jobs:
         run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}"
         continue-on-error: true
       - name: active env for create-dir2
+        if: steps.create-dir.outcome != 'success'
         run: poetry env use  .venv/Scripts/python3
       - name: create-dir2
         id: create-one-dir2
