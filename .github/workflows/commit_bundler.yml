@@ -139,13 +139,8 @@ jobs:
           poetry-version: 1.4.1
       - name: create virtualenv
         run: python3 -m venv .venv
-      - name: active env
-        run: poetry env use  .venv/Scripts/python3
       - name: Install package
-        run: poetry install --all-extras
-      # - name: temp deactive
-      #   run: deactive
-      
+        run: poetry install --all-extras   
       - name: create-one-file
         id: create-one-file
         run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}"
