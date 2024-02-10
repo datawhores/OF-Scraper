@@ -143,7 +143,7 @@ jobs:
         run: |
               poetry env use  .venv/Scripts/python3
               poetry install --all-extras   
-              deactivate
+              .venv\Scripts\deactivate.bat
       - name: create-one-file
         id: create-one-file
         run: pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean
