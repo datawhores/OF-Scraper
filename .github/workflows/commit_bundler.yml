@@ -223,7 +223,7 @@ jobs:
       - name: Install package
         run: poetry install --all-extras
       - name: Install pyinstaller
-        run: python -m pip install pyinstaller==6
+        run: python -m pip install pyinstaller==6.4.0
       - name: create-one-file
         id: create-one-file
         run: pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
@@ -231,20 +231,20 @@ jobs:
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
-      - name: upload fille
+        run: poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+      - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
           path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
       - name: create-dir
         id: create-dir
-        run: pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+        run: pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
         continue-on-error: true
       - name: create-dir2
         id: create-dir2
         if: steps.create-dir.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+        run: poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
