@@ -139,11 +139,15 @@ jobs:
           poetry-version: 1.4.1
       - name: create virtualenv
         run: python3 -m venv .venv
+      - name: active env for createfile2
+        run: poetry env use  .venv/Scripts/python3
       - name: Install package
         run: poetry install --all-extras   
+      - name: deactive
+        run: deactivate
       - name: create-one-file
         id: create-one-file
-        run: pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean
+        run: pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean
         continue-on-error: true
       - name: active env for createfile2
         if: steps.create-one-file.outcome != 'success'
