@@ -131,8 +131,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11.5"
-      - name: Install pyinstaller
-        run: pip install pyinstaller==6.3.0
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -144,9 +142,16 @@ jobs:
               poetry env use  .venv/Scripts/python3
               poetry install --all-extras   
               .venv\Scripts\deactivate.bat
+      - name: Install pyinstaller
+        run: |
+            poetry env use  .venv/Scripts/python3
+            pip install pyinstaller==6.3.0
+            .venv\Scripts\deactivate.bat
       - name: create-one-file
         id: create-one-file
-        run: pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean
+        run: |
+          poetry env use  .venv/Scripts/python3
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
