@@ -287,7 +287,7 @@ jobs:
       - name: Install package
         run: |
           source .venv/bin/activate
-          pip install .
+          pip install . -vvv
           deactivate
       - name: Install pyinstaller
         run: |
