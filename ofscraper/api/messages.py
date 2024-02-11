@@ -306,12 +306,12 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 )
             )
         )
-        set_check(unduped, model_id)
+        set_check(unduped, model_id, after)
         return list(unduped.values())
 
 
-def set_check(unduped, model_id):
-    if not read_args.retriveArgs().after:
+def set_check(unduped, model_id, after):
+    if not after:
         newCheck = {}
         for post in cache.get(f"message_check_{model_id}", []) + list(unduped.values()):
             newCheck[post["id"]] = post

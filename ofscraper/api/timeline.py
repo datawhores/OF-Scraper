@@ -330,12 +330,12 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             )
         )
         log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-        set_check(unduped, model_id)
+        set_check(unduped, model_id, after)
         return list(unduped.values())
 
 
-def set_check(unduped, model_id):
-    if not read_args.retriveArgs().after:
+def set_check(unduped, model_id, after):
+    if not after:
         newCheck = {}
         for post in cache.get(f"timeline_check_{model_id}", []) + list(
             unduped.values()

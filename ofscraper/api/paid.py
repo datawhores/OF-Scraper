@@ -110,18 +110,15 @@ async def get_paid_posts(username, model_id):
 
 
 def set_check(unduped, model_id):
-    if not read_args.retriveArgs().after:
-        newCheck = {}
-        for post in cache.get(f"purchased_check_{model_id}", []) + list(
-            unduped.values()
-        ):
-            newCheck[post["id"]] = post
-        cache.set(
-            f"purchased_check_{model_id}",
-            list(newCheck.values()),
-            expire=constants.getattr("DAY_SECONDS"),
-        )
-        cache.close()
+    newCheck = {}
+    for post in cache.get(f"purchased_check_{model_id}", []) + list(unduped.values()):
+        newCheck[post["id"]] = post
+    cache.set(
+        f"purchased_check_{model_id}",
+        list(newCheck.values()),
+        expire=constants.getattr("DAY_SECONDS"),
+    )
+    cache.close()
 
 
 async def scrape_paid(c, username, job_progress, offset=0):
