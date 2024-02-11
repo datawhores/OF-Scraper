@@ -30,6 +30,7 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
@@ -104,13 +105,23 @@ async def get_paid_posts(username, model_id):
                 )
             )
         )
+        set_check(outdict, model_id)
+        return list(outdict.values())
+
+
+def set_check(unduped, model_id):
+    if not read_args.retriveArgs().after:
+        newCheck = {}
+        for post in cache.get(f"purchased_check_{model_id}", []) + list(
+            unduped.values()
+        ):
+            newCheck[post["id"]] = post
         cache.set(
             f"purchased_check_{model_id}",
-            list(outdict.values()),
+            list(newCheck.values()),
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
-        return list(outdict.values())
 
 
 async def scrape_paid(c, username, job_progress, offset=0):

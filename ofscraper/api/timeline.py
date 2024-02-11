@@ -213,13 +213,6 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
             after = forced_after
         else:
             after = get_after(model_id, username)
-        # set check
-        if not after and not read_args.retriveArgs().before:
-            cache.set(
-                f"timeline_check_{model_id}",
-                data,
-                expire=constants.getattr("DAY_SECONDS"),
-            )
 
         log.info(
             f"""
@@ -337,7 +330,23 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             )
         )
         log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
+        set_check(unduped, model_id)
         return list(unduped.values())
+
+
+def set_check(unduped, model_id):
+    if not read_args.retriveArgs().after:
+        newCheck = {}
+        for post in cache.get(f"timeline_check_{model_id}", []) + list(
+            unduped.values()
+        ):
+            newCheck[post["id"]] = post
+        cache.set(
+            f"timeline_check_{model_id}",
+            list(newCheck.values()),
+            expire=constants.getattr("DAY_SECONDS"),
+        )
+        cache.close()
 
 
 def get_individual_post(id, c=None):

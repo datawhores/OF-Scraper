@@ -115,6 +115,7 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                     after = forced_after
                 else:
                     after = get_after(model_id, username)
+
                 log.debug(f"Messages after = {after}")
 
                 log.debug(f"Messages before = {before}")
@@ -305,7 +306,21 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 )
             )
         )
+        set_check(unduped, model_id)
         return list(unduped.values())
+
+
+def set_check(unduped, model_id):
+    if not read_args.retriveArgs().after:
+        newCheck = {}
+        for post in cache.get(f"message_check_{model_id}", []) + list(unduped.values()):
+            newCheck[post["id"]] = post
+        cache.set(
+            f"message_check_{model_id}",
+            list(newCheck.values()),
+            expire=constants.getattr("DAY_SECONDS"),
+        )
+        cache.close()
 
 
 async def scrape_messages(

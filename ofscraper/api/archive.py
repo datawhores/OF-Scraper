@@ -183,11 +183,6 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
         min_posts = 50
         responseArray = []
         page_count = 0
-        setCache = (
-            True
-            if (read_args.retriveArgs().after == 0 or not read_args.retriveArgs().after)
-            else False
-        )
 
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
@@ -226,13 +221,6 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                 else:
                     after = get_after(model_id, username)
                     # set check
-                if not after and not read_args.retriveArgs().before:
-                    cache.set(
-                        f"timeline_check_{model_id}",
-                        data,
-                        expire=constants.getattr("DAY_SECONDS"),
-                    )
-
                 log.info(
                     f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
@@ -341,7 +329,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
             )
         )
         log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-        if setCache and not read_args.retriveArgs().after:
+        if not read_args.retriveArgs().after:
             newCheck = {}
             for post in cache.get(f"archived_check_{model_id}", []) + list(
                 unduped.values()
