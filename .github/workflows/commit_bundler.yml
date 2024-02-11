@@ -113,7 +113,7 @@ jobs:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
 
-  windows_dir:
+  windows:
     needs: [create_version]
     runs-on: windows-latest
     name: create windows release
