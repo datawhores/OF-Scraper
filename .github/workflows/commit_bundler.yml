@@ -158,13 +158,13 @@ jobs:
         id: create-dir
         run: |
           poetry env use  .venv/Scripts/python3
-          pyinstaller ofscraper\__main__.py --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths=ofscraper --clean --log DEBUG
         continue-on-error: true
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: |
             poetry env use  .venv/Scripts/python3
-            pyinstaller .venv/Scripts/ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
+            pyinstaller .venv/Scripts/ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths=ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
