@@ -111,10 +111,8 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                     )
                     after = 0
 
-                elif forced_after != None:
-                    after = forced_after
                 else:
-                    after = get_after(model_id, username)
+                    after = get_after(model_id, username, forced_after)
 
                 log.debug(f"Messages after = {after}")
 
@@ -464,7 +462,9 @@ def get_individual_post(model_id, postid, c=None):
             log.debug(f"[bold]Individual message  headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username):
+def get_after(model_id, username, forced_after=None):
+    if forced_after != None:
+        return forced_after
     if read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_messages_media(model_id=model_id, username=username)

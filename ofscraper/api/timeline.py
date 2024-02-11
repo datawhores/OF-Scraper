@@ -208,11 +208,8 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
                 "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
             )
             after = 0
-
-        elif forced_after != None:
-            after = forced_after
         else:
-            after = get_after(model_id, username)
+            after = get_after(model_id, username, forced_after)
 
         log.info(
             f"""
@@ -360,7 +357,9 @@ def get_individual_post(id, c=None):
             log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username):
+def get_after(model_id, username, forced_after=None):
+    if forced_after != None:
+        return forced_after
     if read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_timeline_media(model_id=model_id, username=username)

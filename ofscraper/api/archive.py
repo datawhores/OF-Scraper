@@ -216,10 +216,8 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                     )
                     after = 0
 
-                elif forced_after != None:
-                    after = forced_after
                 else:
-                    after = get_after(model_id, username)
+                    after = get_after(model_id, username, forced_after)
                     # set check
                 log.info(
                     f"""
@@ -346,7 +344,9 @@ def set_check(unduped, model_id, after):
     cache.close()
 
 
-def get_after(model_id, username):
+def get_after(model_id, username, forced_after=None):
+    if forced_after != None:
+        return forced_after
     if read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     curr = operations.get_archived_media(model_id=model_id, username=username)
