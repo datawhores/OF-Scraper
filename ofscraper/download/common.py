@@ -524,11 +524,8 @@ def log_download_progress(media_type):
     if media_type is None:
         return
     if (photo_count + audio_count + video_count + forced_skipped + skipped) % 20 == 0:
-        None
-
-
-#         log.debug(
-#             f"In progress -> {format_size(total_bytes )}) ({photo_count+audio_count+video_count} \
-# downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos], \
-#             {forced_skipped} skipped, {skipped} failed)"
-#         )
+        log.debug(
+            f"In progress -> {format_size(total_bytes )}) ({photo_count+audio_count+video_count} \
+downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos], \
+            {forced_skipped} skipped, {skipped} failed)"
+        )

@@ -334,14 +334,16 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 def set_check(unduped, model_id, after):
     if not after:
         newCheck = {}
-    for post in cache.get(f"archived_check_{model_id}", []) + list(unduped.values()):
-        newCheck[post["id"]] = post
-    cache.set(
-        f"archived_check_{model_id}",
-        list(newCheck.values()),
-        expire=constants.getattr("DAY_SECONDS"),
-    )
-    cache.close()
+        for post in cache.get(f"archived_check_{model_id}", []) + list(
+            unduped.values()
+        ):
+            newCheck[post["id"]] = post
+        cache.set(
+            f"archived_check_{model_id}",
+            list(newCheck.values()),
+            expire=constants.getattr("DAY_SECONDS"),
+        )
+        cache.close()
 
 
 def get_after(model_id, username, forced_after=None):

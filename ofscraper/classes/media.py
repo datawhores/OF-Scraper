@@ -18,6 +18,7 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
@@ -36,6 +37,12 @@ class Media:
     @property
     def expires(self):
         return self._post.expires
+
+    @property
+    def media_source(self):
+        None
+        # if not read_args.quality:
+        #     return "source"
 
     @property
     def mediatype(self):
