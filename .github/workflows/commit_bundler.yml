@@ -11,7 +11,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
       - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: install dunamai
@@ -138,7 +138,7 @@ jobs:
           name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: install poetry
@@ -204,7 +204,7 @@ jobs:
           name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: install poetry
@@ -275,7 +275,7 @@ jobs:
           name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: create virtualenv
