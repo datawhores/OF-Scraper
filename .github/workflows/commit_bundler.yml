@@ -298,7 +298,7 @@ jobs:
         run: |
           source .venv/bin/activate
           pip show -f ofscraper
-          pip uninstall ofscraper -y
+          pip uninstall ofscraper
           deactivate     
       - name: test ofscraper
         run: |
