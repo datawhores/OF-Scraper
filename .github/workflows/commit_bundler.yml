@@ -216,7 +216,7 @@ jobs:
       - name: install ofscraper windows
         run: |
           .venv\Scripts\activate.bat
-          poetry install  
+          pip install .
           .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
@@ -230,18 +230,19 @@ jobs:
         run: |
           .venv\Scripts\activate.bat
           pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
+          .venv\Scripts\deactivate.bat
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
           pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
+          .venv\Scripts\deactivate.bat
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
-
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
@@ -279,18 +280,20 @@ jobs:
           python-version: "3.11.5"
       - name: create virtualenv
         run: python3 -m venv .venv
-      - name: activate venv
-        run: source .venv/bin/activate
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: 1.4.1
       - name: Install package
-        run: poetry install
+        run: |
+          source .venv/bin/activate
+          pip install .
+          source .venv/bin/deactivate
       - name: Install pyinstaller
         run: |
           source .venv/bin/activate
           python -m pip install pyinstaller==6.4.0
+          source .venv/bin/deactivate
       - name: test ofscraper
         run: ofscraper -h
       - name: create-one-file
@@ -300,6 +303,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          source .venv/bin/deactivate
         continue-on-error: true
       - name: create-one-file2
         id: create-one-file2
@@ -309,6 +313,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          source .venv/bin/deactivate
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
@@ -321,6 +326,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          source .venv/bin/deactivate
         continue-on-error: true
       - name: create-dir2
         id: create-dir2
@@ -330,6 +336,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          source .venv/bin/deactivate
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
