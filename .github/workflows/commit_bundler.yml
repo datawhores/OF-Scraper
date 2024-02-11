@@ -75,6 +75,8 @@ jobs:
             /root/.local/bin/poetry install
             echo "ls files"
             ls .
+            echo "test ofscraper"
+            ofscraper -h
             echo "install run pyinstaller dir"
             pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
             echo "list files dir"
@@ -101,6 +103,8 @@ jobs:
             /root/.local/bin/poetry install
             echo "ls files"
             ls .
+            echo "test ofscraper"
+            ofscraper -h
             echo "run pyinstaller dir"
             pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
             echo "list one dir"
@@ -145,16 +149,16 @@ jobs:
         run: python3 -m venv .venv
       - name: install ofscraper windows
         run: |
-              .venv\Scripts\activate.bat
-              pip install .
-              .venv\Scripts\deactivate.bat
+          .venv\Scripts\activate.bat
+          pip install .
+          .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
-            .venv\Scripts\activate.bat
-            pip install pyinstaller==6.4.0
-            .venv\Scripts\deactivate.bat
+          .venv\Scripts\activate.bat
+          pip install pyinstaller==6.4.0
+          .venv\Scripts\deactivate.bat
       - name: test ofscraper
-        run: | 
+        run: |
           .venv\Scripts\activate.bat
           ofscraper -h
       - name: create-dir
@@ -166,8 +170,8 @@ jobs:
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: |
-            .venv\Scripts\activate.bat
-            pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths ofscraper --clean --log DEBUG
+          .venv\Scripts\activate.bat
+          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
@@ -211,14 +215,16 @@ jobs:
         run: python3 -m venv .venv
       - name: install ofscraper windows
         run: |
-              .venv\Scripts\activate.bat
-              poetry install  
-              .venv\Scripts\deactivate.bat
+          .venv\Scripts\activate.bat
+          poetry install  
+          .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
-            .venv\Scripts\activate.bat
-             pip install pyinstaller==6.4.0
-            .venv\Scripts\deactivate.bat
+          .venv\Scripts\activate.bat
+           pip install pyinstaller==6.4.0
+          .venv\Scripts\deactivate.bat
+      - name: test ofscraper
+        run: ofscraper -h
       - name: create-one-file
         id: create-one-file
         run: |
@@ -228,14 +234,14 @@ jobs:
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
-            .venv\Scripts\activate.bat
-            pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
+          .venv\Scripts\activate.bat
+          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
-     
+
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
@@ -245,8 +251,7 @@ jobs:
         with:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
-  
-  
+
   mac:
     needs: [create_version]
     runs-on: macos-latest
@@ -286,6 +291,8 @@ jobs:
         run: |
           source .venv/bin/activate
           python -m pip install pyinstaller==6.4.0
+      - name: test ofscraper
+        run: ofscraper -h
       - name: create-one-file
         id: create-one-file
         run: |
@@ -336,7 +343,7 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [mac, windows_dir,windows_file, linux]
+    needs: [mac, windows_dir, windows_file, linux]
     permissions:
       contents: write
     steps:
