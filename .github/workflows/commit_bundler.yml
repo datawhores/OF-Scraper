@@ -287,12 +287,12 @@ jobs:
       - name: Install package
         run: |
           source .venv/bin/activate
-          pip install .
+          python3 -m pip install .
           deactivate
       - name: Install pyinstaller
         run: |
           source .venv/bin/activate
-          python -m pip install pyinstaller==6.4.0
+          python3 -m pip install pyinstaller==6.4.0
           deactivate
       - name: test ofscraper
         run: ofscraper -h
