@@ -168,7 +168,7 @@ jobs:
             rm -rf dist
             rm -rf build
             poetry env use  .venv/Scripts/python3
-            pyinstaller .venv/Scripts/ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}} -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
+            pyinstaller .venv/Scripts/ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
