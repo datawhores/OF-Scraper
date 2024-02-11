@@ -73,7 +73,7 @@ jobs:
             python3.11 -m venv .venv
             source .venv/bin/activate
             python3.11 -m pip install pyinstaller==6.4.0
-            /root/.local/bin/poetry install --all-extras
+            /root/.local/bin/poetry install
             echo "ls files"
             ls .
             echo "install run pyinstaller dir"
@@ -99,7 +99,7 @@ jobs:
             python3.11 -m venv .venv
             source .venv/bin/activate
             python3.11 -m pip install pyinstaller==6.4.0
-            /root/.local/bin/poetry install --all-extras
+            /root/.local/bin/poetry install
             echo "ls files"
             ls .
             echo "run pyinstaller dir"
@@ -147,7 +147,7 @@ jobs:
       - name: install ofscraper windows
         run: |
               .venv\Scripts\activate.bat
-              poetry install --all-extras   
+              pip install   
               .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
