@@ -156,8 +156,7 @@ jobs:
             .venv\Scripts\deactivate.bat
       - name: test ofscraper
         run: | 
-           .venv\Scripts\activate.bat
-          .venv\Scripts\deactivate.bat
+          .venv\Scripts\activate.bat
           ofscraper -h
       - name: create-dir
         id: create-dir
