@@ -113,7 +113,7 @@ jobs:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
 
-  windows:
+  windows_dir:
     needs: [create_version]
     runs-on: windows-latest
     name: create windows release
@@ -157,16 +157,16 @@ jobs:
       - name: create-one-file
         id: create-one-file
         run: |
-          RMDIR /s /q dist
-          RMDIR /s /q build
+          rmdir "dist" /s /q
+          rmdir "build" /s /q
           poetry env use  .venv/Scripts/python3
           pyinstaller ofscraper\__main__.py --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
-            RMDIR /s /q dist
-            RMDIR /s /q build
+            rmdir "dist" /s /q
+            rmdir "build" /s /q
             poetry env use  .venv/Scripts/python3
             pyinstaller .venv/Scripts/ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
       - name: upload file
@@ -177,16 +177,16 @@ jobs:
       - name: create-dir
         id: create-dir
         run: |
-          RMDIR /s /q dist
-          RMDIR /s /q build
+          rmdir "dist" /s /q
+          rmdir "build" /s /q
           poetry env use  .venv/Scripts/python3
           pyinstaller ofscraper\__main__.py --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
         continue-on-error: true
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: |
-            RMDIR /s /q dist
-            RMDIR /s /q build
+            rmdir "dist" /s /q
+            rmdir "build" /s /q
             poetry env use  .venv/Scripts/python3
             pyinstaller .venv/Scripts/ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
