@@ -217,7 +217,7 @@ jobs:
       - name: Install pyinstaller
         run: |
             .venv\Scripts\activate.bat
-            poetry install pyinstaller==6.4.0
+            poetry add pyinstaller==6.4.0
             .venv\Scripts\deactivate.bat
       - name: create-one-file
         id: create-one-file
