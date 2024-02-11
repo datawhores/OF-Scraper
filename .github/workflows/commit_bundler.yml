@@ -113,10 +113,72 @@ jobs:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
 
-  windows:
+  windows_dir:
     needs: [create_version]
     runs-on: windows-latest
-    name: create windows release
+    name: create windows release dir
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: list files
+        run: ls .
+      - name: list files2
+        run: ls ofscraper
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
+      - name: replace version.py
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_version
+          path: ofscraper
+      - name: Set up Python 3.11.5
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11.5"
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install ofscraper windows
+        run: |
+              poetry env use  .venv/Scripts/python3
+              poetry install --all-extras   
+              .venv\Scripts\deactivate.bat
+      - name: Install pyinstaller
+        run: |
+            poetry env use  .venv/Scripts/python3
+            pip install pyinstaller==6.3.0
+            .venv\Scripts\deactivate.bat
+      - name: create-dir
+        id: create-dir
+        run: |
+          poetry env use  .venv/Scripts/python3
+          pyinstaller ofscraper\__main__.py --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
+        continue-on-error: true
+      - name: create-dir2
+        if: steps.create-dir.outcome != 'success'
+        run: |
+            poetry env use  .venv/Scripts/python3
+            pyinstaller .venv/Scripts/ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
+          dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows_zip
+          path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+
+  windows_file:
+    needs: [create_version]
+    runs-on: windows-latest
+    name: create windows release file
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -157,16 +219,12 @@ jobs:
       - name: create-one-file
         id: create-one-file
         run: |
-          rmdir "dist" /s /q
-          rmdir "build" /s /q
           poetry env use  .venv/Scripts/python3
           pyinstaller ofscraper\__main__.py --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
-            rmdir "dist" /s /q
-            rmdir "build" /s /q
             poetry env use  .venv/Scripts/python3
             pyinstaller .venv/Scripts/ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
       - name: upload file
@@ -174,21 +232,7 @@ jobs:
         with:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
-      - name: create-dir
-        id: create-dir
-        run: |
-          rmdir "dist" /s /q
-          rmdir "build" /s /q
-          poetry env use  .venv/Scripts/python3
-          pyinstaller ofscraper\__main__.py --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
-        continue-on-error: true
-      - name: create-dir2
-        if: steps.create-dir.outcome != 'success'
-        run: |
-            rmdir "dist" /s /q
-            rmdir "build" /s /q
-            poetry env use  .venv/Scripts/python3
-            pyinstaller .venv/Scripts/ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" -p D:\a\OF-Scraper\OF-Scraper --clean --log DEBUG
+     
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
@@ -198,6 +242,8 @@ jobs:
         with:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+  
+  
   mac:
     needs: [create_version]
     runs-on: macos-latest
@@ -281,7 +327,7 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [mac, windows, linux]
+    needs: [mac, windows_dir,windows_file, linux]
     permissions:
       contents: write
     steps:
