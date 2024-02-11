@@ -1,4 +1,3 @@
-visuname: package builder commit
 on:
   push:
 jobs:
