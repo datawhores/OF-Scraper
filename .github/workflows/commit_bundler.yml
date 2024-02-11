@@ -1,4 +1,4 @@
-name: package builder commit
+visuname: package builder commit
 on:
   push:
 jobs:
@@ -147,7 +147,7 @@ jobs:
       - name: install ofscraper windows
         run: |
               .venv\Scripts\activate.bat
-              pip install   
+              pip install .
               .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
