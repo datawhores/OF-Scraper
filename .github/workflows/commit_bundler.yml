@@ -152,7 +152,7 @@ jobs:
       - name: Install pyinstaller
         run: |
             poetry env use  .venv/Scripts/python3
-            pip install pyinstaller==6.3.0
+            pip install pyinstaller==6.4.0
             .venv\Scripts\deactivate.bat
       - name: create-dir
         id: create-dir
@@ -214,7 +214,7 @@ jobs:
       - name: Install pyinstaller
         run: |
             poetry env use  .venv/Scripts/python3
-            pip install pyinstaller==6.3.0
+            pip install pyinstaller==6.4.0
             .venv\Scripts\deactivate.bat
       - name: create-one-file
         id: create-one-file
