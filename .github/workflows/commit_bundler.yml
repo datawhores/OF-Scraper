@@ -146,24 +146,29 @@ jobs:
         run: python3 -m venv .venv
       - name: install ofscraper windows
         run: |
-              poetry env use  .venv/Scripts/python3
+              .venv\Scripts\activate.bat
               poetry install --all-extras   
               .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
-            poetry env use  .venv/Scripts/python3
+            .venv\Scripts\activate.bat
             pip install pyinstaller==6.4.0
             .venv\Scripts\deactivate.bat
+      - name: test ofscraper
+        run: | 
+          poetry env use  .venv/Scripts/python3
+          .venv\Scripts\deactivate.bat
+          ofscraper -h
       - name: create-dir
         id: create-dir
         run: |
-          poetry env use  .venv/Scripts/python3
+          .venv\Scripts\activate.bat
           pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths . --clean --log DEBUG
         continue-on-error: true
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: |
-            poetry env use  .venv/Scripts/python3
+            .venv\Scripts\activate.bat
             pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
@@ -208,24 +213,24 @@ jobs:
         run: python3 -m venv .venv
       - name: install ofscraper windows
         run: |
-              poetry env use  .venv/Scripts/python3
+              .venv\Scripts\activate.bat
               poetry install --all-extras   
               .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
         run: |
-            poetry env use  .venv/Scripts/python3
+            .venv\Scripts\activate.bat
             pip install pyinstaller==6.4.0
             .venv\Scripts\deactivate.bat
       - name: create-one-file
         id: create-one-file
         run: |
-          poetry env use  .venv/Scripts/python3
+          .venv\Scripts\activate.bat
           pyinstaller ofscraper\__main__.py --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
-            poetry env use  .venv/Scripts/python3
+            .venv\Scripts\activate.bat
             pyinstaller .venv/Scripts/ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
       - name: upload file
         uses: actions/upload-artifact@v3
