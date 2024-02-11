@@ -213,6 +213,13 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
             after = forced_after
         else:
             after = get_after(model_id, username)
+        # set check
+        if not after and not read_args.retriveArgs().before:
+            cache.set(
+                f"timeline_check_{model_id}",
+                data,
+                expire=constants.getattr("DAY_SECONDS"),
+            )
 
         log.info(
             f"""
