@@ -33,6 +33,7 @@ class Media:
         self._media = media
         self._count = count
         self._post = post
+        self._final_url = None
 
     @property
     def expires(self):
@@ -78,12 +79,15 @@ class Media:
 
     @property
     def url(self):
+        if self._final_url:
+            return self._final_url
         if self.responsetype == "stories" or self.responsetype == "highlights":
-            return self.files_source.get("url")
+            self._final_url = self.files_source.get("url")
         elif self.responsetype == "profile":
-            return self._media.get("url")
+            self._final_url = self._media.get("url")
         else:
-            return self._url_source_helper()
+            self._final_url = self._url_source_helper()
+        return self._final_url
 
     def _url_source_helper(self):
         allowed = quality.get_allowed_qualities()
