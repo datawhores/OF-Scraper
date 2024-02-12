@@ -128,6 +128,12 @@ class Placeholders:
         self._variables.update({"media_id": media_id})
         self._variables.update({"mediaid": media_id})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
+        self._variables.update({"quality": ele.selected_quality})
+        self._variables.update({"filename": ele.final_filename})
+        self._variables.update({"file_name": ele.final_filename})
+        self._variables.update({"only_file_name": ele.no_quality_final_filename})
+        self._variables.update({"only_filename": ele.no_quality_final_filename})
+        self._variables.update({"text": ele.file_text})
         self.add_price_variables(username)
 
     @wrapper
@@ -235,11 +241,7 @@ class Placeholders:
     @wrapper
     def createfilename(self, ele, username, model_id, ext):
         filename = ele.final_filename
-        self._variables.update({"filename": filename})
-        self._variables.update({"file_name": filename})
         self._variables.update({"ext": ext})
-        text = ele.file_text
-        self._variables.update({"text": text})
         self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(

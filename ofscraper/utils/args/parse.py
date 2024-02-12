@@ -121,20 +121,13 @@ def create_parser(input=None):
     )
 
     post.add_argument(
-        "-mn",
-        "--min-quality",
+        "-q",
+        "--quality",
         default="source",
         help="Set the minimum allowed quality for videos",
         choices=["240", "720", "source"],
     )
 
-    post.add_argument(
-        "-mx",
-        "--max-quality",
-        default="source",
-        help="Set the maximum allowed quality for videos",
-        choices=["240", "720", "source"],
-    )
     post.add_argument(
         "-o",
         "--posts",

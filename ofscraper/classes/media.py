@@ -90,16 +90,10 @@ class Media:
         return self._final_url
 
     def _url_source_helper(self):
-        allowed = quality.get_allowed_qualities()
-        if self.mediatype != "videos":
+        quality = self.selected_quality
+        if quality == "source":
             return self._media.get("source", {}).get("source")
-        elif "source" in allowed:
-            return self._media.get("source", {}).get("source")
-        for ele in ["240", "720"]:
-            if ele in allowed and self._media.get("videoSources", {}).get(ele):
-                return self._media.get("videoSources", {}).get(ele)
-        # failback for things without quality select
-        return self._media.get("source", {}).get("source")
+        return self._media.get("videoSources", {}).get(quality)
 
     @property
     def post(self):
@@ -288,9 +282,17 @@ class Media:
     def final_filename(self):
         filename = self.filename or self.id
         if self.mediatype == "videos":
-            filename = (
-                filename if re.search("_source", filename) else f"{filename}_source"
-            )
+            filename = re.sub("_[a-z0-9]+$", f"", filename)
+            filename = f"{filename}_{self.selected_quality}"
+        # cleanup
+        filename = self.cleanup(filename)
+        return filename
+
+    @property
+    def no_quality_final_filename(self):
+        filename = self.filename or self.id
+        if self.mediatype == "videos":
+            filename = re.sub("_[a-z]+", f"", filename)
         # cleanup
         filename = self.cleanup(filename)
         return filename
@@ -353,6 +355,16 @@ class Media:
     @mediatype.setter
     def mediatype(self, val):
         self._media["type"] = val
+
+    @property
+    def selected_quality(self):
+        allowed = quality.get_allowed_qualities()
+        if self.mediatype != "videos":
+            return "source"
+        for ele in ["240", "720"]:
+            if ele in allowed and self._media.get("videoSources", {}).get(ele):
+                return ele
+        return "source"
 
     # for use in dynamic names
     @property
