@@ -366,7 +366,7 @@ jobs:
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [linux, windows_dir,windows_file mac]
+    needs: [linux, windows_dir,windows_file,mac]
     permissions:
       contents: write
     steps:
