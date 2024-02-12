@@ -119,7 +119,7 @@ def scrapper():
         if len(args.action) == 0 and not args.scrape_paid:
             prompts.action_prompt()
         daemon_process()
-    elif len(args.action) > 0:
+    elif len(args.action) > 0 or args.scrape_paid:
         process_selected_areas()
     elif len(args.action) == 0:
         process_prompts()

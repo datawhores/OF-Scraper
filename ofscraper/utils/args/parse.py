@@ -119,6 +119,22 @@ def create_parser(input=None):
         default=False,
         help="Bypass the dupe check and redownload all files",
     )
+
+    post.add_argument(
+        "-mn",
+        "--min-quality",
+        default="source",
+        help="Set the minimum allowed quality for videos",
+        choices=["240", "720", "source"],
+    )
+
+    post.add_argument(
+        "-mx",
+        "--max-quality",
+        default="source",
+        help="Set the maximum allowed quality for videos",
+        choices=["240", "720", "source"],
+    )
     post.add_argument(
         "-o",
         "--posts",

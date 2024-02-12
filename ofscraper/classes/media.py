@@ -18,7 +18,7 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
@@ -40,9 +40,20 @@ class Media:
 
     @property
     def media_source(self):
-        None
-        # if not read_args.quality:
-        #     return "source"
+        return self._media.get("source", {})
+
+    @property
+    def files_source(self):
+        return self._media.get("files", {}).get("source", {})
+        allowed = quality.get_allowed_qualities()
+        for ele in ["240", "720", "source"]:
+            if ele in allowed and self._media.get("files", {}).get(ele):
+                return self._media.get("files", {}).get(ele)
+        return {}
+
+    @property
+    def quality(self):
+        return self._media.get("videoSources", {})
 
     @property
     def mediatype(self):
@@ -57,9 +68,7 @@ class Media:
 
     @property
     def length(self):
-        return self._media.get("duration") or self._media.get("source", {}).get(
-            "duration"
-        )
+        return self._media.get("duration") or self.media_source.get("duration")
 
     @property
     def numeric_length(self):
@@ -70,11 +79,22 @@ class Media:
     @property
     def url(self):
         if self.responsetype == "stories" or self.responsetype == "highlights":
-            return self._media.get("files", {}).get("source", {}).get("url")
+            return self.files_source.get("url")
         elif self.responsetype == "profile":
             return self._media.get("url")
         else:
+            return self._url_source_helper()
+
+    def _url_source_helper(self):
+        allowed = quality.get_allowed_qualities()
+        if self.mediatype != "videos":
             return self._media.get("source", {}).get("source")
+        elif "source" in allowed:
+            return self._media.get("source", {}).get("source")
+        for ele in ["240", "720"]:
+            if ele in allowed and self._media.get("videoSources", {}).get(ele):
+                return self._media.get("videoSources", {}).get(ele)
+        return None
 
     @property
     def post(self):

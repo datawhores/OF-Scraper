@@ -149,3 +149,7 @@ def mass_msg_filter(media):
         return list((filter(lambda x: x.mass is True, media)))
     elif read_args.retriveArgs().mass_msg is False:
         return list((filter(lambda x: x.mass is False, media)))
+
+
+def url_filter(media):
+    return list((filter(lambda x: not x.url and not x.mpd, media)))

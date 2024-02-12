@@ -214,6 +214,24 @@ def filterMedia(media):
             )
         )
     )
-    log.debug(f"filter{count}->  all media mass message filter count: {len(media)}")
+
+    media = helpers.url_filter(media)
+    count += 1
+    log.trace(
+        "\n\n\n".join(
+            list(
+                map(
+                    lambda x: logformater.format(
+                        f"filter {count}->  valid url filter: ",
+                        x.media,
+                        x.id,
+                        x.postid,
+                    ),
+                    media,
+                )
+            )
+        )
+    )
+    log.debug(f"filter{count}->  all media valid url filter count {len(media)}")
 
     return media
