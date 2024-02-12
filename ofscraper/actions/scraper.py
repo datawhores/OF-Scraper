@@ -406,7 +406,7 @@ def process_all_paid():
             f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.media),post_array))}"
         )
 
-        return output
+        return filters.filterMedia(output)
 
 
 @free.space_checker

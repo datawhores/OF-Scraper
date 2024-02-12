@@ -23,11 +23,13 @@ import ofscraper.actions.like as like
 import ofscraper.actions.scraper as OF
 import ofscraper.api.init as init
 import ofscraper.api.profile as profile
+import ofscraper.classes.models as models
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
 import ofscraper.models.selector as userselector
+import ofscraper.models.selector as selector
 import ofscraper.utils.actions as actions
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
@@ -119,10 +121,13 @@ def scrape_paid(user_dict=None):
         )
         for ele in output
     ]
+    oldUsers = selector.get_ALL_SUBS_DICT()
     for value in user_dict.values():
         model_id = value[0].post.model_id
         username = value[0].post.username
-
+        selector.set_ALL_SUBS_DICTVManger(
+            {username: models.Model(profile.scrape_profile(model_id))}
+        )
         operations.create_tables(model_id=model_id, username=username)
         operations.create_backup(model_id, username)
         operations.write_profile_table(model_id=model_id, username=username)
@@ -131,6 +136,8 @@ def scrape_paid(user_dict=None):
             model_id,
             value,
         )
+    # restore og users
+    selector.set_ALL_SUBS_DICT(oldUsers)
 
 
 @exit.exit_wrapper
@@ -168,42 +175,6 @@ def normal_post_process():
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
-
-        if read_args.retriveArgs().scrape_paid:
-            user_dict = {}
-            [
-                user_dict.update(
-                    {ele.post.model_id: user_dict.get(ele.post.model_id, []) + [ele]}
-                )
-                for ele in OF.process_all_paid()
-            ]
-            for value in user_dict.values():
-                try:
-                    model_id = value[0].post.model_id
-                    username = value[0].post.username
-                    log.info(
-                        f"inserting {len(value)} items into  into media table for {username}"
-                    )
-                    operations.batch_mediainsert(
-                        value,
-                        operations.write_media_table_batch,
-                        model_id=model_id,
-                        username=username,
-                        downloaded=False,
-                    )
-                    operations.create_tables(model_id=model_id, username=username)
-                    operations.create_backup(model_id, username)
-                    operations.write_profile_table(model_id=model_id, username=username)
-                    download.download_picker(
-                        username,
-                        model_id,
-                        value,
-                    )
-                except Exception as E:
-                    if isinstance(e, KeyboardInterrupt):
-                        raise E
-                    log.traceback_(f"failed with exception: {E}")
-                    log.traceback_(traceback.format_exc())
 
 
 @exit.exit_wrapper

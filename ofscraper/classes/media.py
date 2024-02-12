@@ -94,7 +94,8 @@ class Media:
         for ele in ["240", "720"]:
             if ele in allowed and self._media.get("videoSources", {}).get(ele):
                 return self._media.get("videoSources", {}).get(ele)
-        return None
+        # failback for things without quality select
+        return self._media.get("source", {}).get("source")
 
     @property
     def post(self):

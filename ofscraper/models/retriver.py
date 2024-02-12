@@ -10,7 +10,7 @@ import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.me as me_util
 
 
-def get_models(accounts=None) -> list:
+def get_models(main=False) -> list:
     """
     Get user's subscriptions in form of a list.
     """
@@ -46,6 +46,17 @@ def get_via_list(count):
     out = list(filter(lambda x: x.get("id") not in black_list, out))
     models_objects = list(map(lambda x: models.Model(x), out))
     return models_objects
+
+
+def get_main_list(count):
+    out = []
+    active_subscriptions = subscriptions.get_subscriptions(count[0], forced=True)
+    expired_subscriptions = subscriptions.get_subscriptions(
+        count[1], account="expired", forced=True
+    )
+    out.extend(active_subscriptions)
+    out.extend(expired_subscriptions)
+    return out
 
 
 def get_via_individual():

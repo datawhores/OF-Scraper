@@ -152,4 +152,4 @@ def mass_msg_filter(media):
 
 
 def url_filter(media):
-    return list((filter(lambda x: not x.url and not x.mpd, media)))
+    return list((filter(lambda x: x.url or x.mpd, media)))

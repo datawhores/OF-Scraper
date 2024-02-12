@@ -34,9 +34,8 @@ def set_ALL_SUBS_DICT(subsDict=None):
         subList = subsDict or ALL_SUBS
         if not subList:
             all_subs_helper()
-        if not ALL_SUBS_DICT:
-            ALL_SUBS_DICT = {}
-            [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
+        ALL_SUBS_DICT = {}
+        [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
 
 
 def get_ALL_SUBS_DICT():
@@ -45,17 +44,8 @@ def get_ALL_SUBS_DICT():
 
 
 def set_ALL_SUBS_DICTVManger(subsDict=None):
-    global ALL_SUBS
     global ALL_SUBS_DICT
-    if subsDict and isinstance(subsDict, dict):
-        ALL_SUBS_DICT = subsDict
-    else:
-        subList = subsDict or ALL_SUBS
-        if not subList:
-            all_subs_helper()
-        if not ALL_SUBS_DICT:
-            ALL_SUBS_DICT = {}
-            [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
+    set_ALL_SUBS_DICT(subsDict)
     manager.update_dict({"subs": ALL_SUBS_DICT})
 
 
@@ -94,12 +84,12 @@ def getselected_usernames(rescan=False, reset=False):
     return PARSED_SUBS
 
 
-def all_subs_helper(refetch=True):
+def all_subs_helper(refetch=True, main=False):
     global ALL_SUBS
     if bool(ALL_SUBS) and not refetch:
         return
     while True:
-        ALL_SUBS = retriver.get_models()
+        ALL_SUBS = retriver.get_models(main)
         if len(ALL_SUBS) > 0:
             set_ALL_SUBS_DICTVManger()
             break
