@@ -70,9 +70,6 @@ jobs:
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
@@ -87,15 +84,21 @@ jobs:
           shell: bash
           run: |
             cd work
+            rm -rf ./ofscraper/dist
+            rm -rf ./ofscraper/build
             apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
-            python -m pip install pyinstaller==6
             source .venv/bin/activate
-            /root/.local/bin/poetry install --all-extras
-            echo "install run pyinstaller"
+            python3.11 -m pip install pyinstaller==6.4.0
+            /root/.local/bin/poetry install
             echo "ls files"
             ls .
-            /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+            echo "test ofscraper"
+            ofscraper -h
+            echo "install run pyinstaller dir"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ inputs.version}}" --onefile
+            echo "list files dir"
+            ls dist
       - name: upload one file
         uses: actions/upload-artifact@v3
         with:
@@ -109,46 +112,48 @@ jobs:
           shell: bash
           run: |
             cd work
-            apt-get install zip libxml2-dev libxslt-dev zip -y
+            rm -rf ./ofscraper/dist
+            rm -rf ./ofscraper/build
+            apt-get install zip libxml2-dev libxslt-dev -y
             python3.11 -m venv .venv
-            python -m pip install pyinstaller==6
             source .venv/bin/activate
-            /root/.local/bin/poetry install --all-extras
-            echo "install run pyinstaller"
+            python3.11 -m pip install pyinstaller==6.4.0
+            /root/.local/bin/poetry install
             echo "ls files"
             ls .
-            /root/.local/bin/poetry run pyinstaller ./ofscraper/__main__.py --collect-submodules application --name "ofscraper_linux_${{ inputs.version}}" --onefile
+            echo "test ofscraper"
+            ofscraper -h
+            echo "run pyinstaller dir"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ inputs.version}}"
+            echo "list one dir"
+            ls dist
             zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload zip
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ inputs.version}}.zip"
-
-  windows:
+  windows_dir:
     needs: [create_version]
     runs-on: windows-latest
-    name: create windows release
+    name: create windows release dir
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
       - name: list files
         run: ls .
       - name: list files2
         run: ls ofscraper
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
+
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: install poetry
@@ -157,41 +162,31 @@ jobs:
           poetry-version: 1.4.1
       - name: create virtualenv
         run: python3 -m venv .venv
-      - name: active env
-        run: poetry env use  .venv/Scripts/python3
-      - name: Install package
-        run: poetry install --all-extras
+      - name: install ofscraper windows
+        run: |
+          .venv\Scripts\activate.bat
+          pip install .
+          .venv\Scripts\deactivate.bat
       - name: Install pyinstaller
-        run: pip install pyinstaller==6
-      # - name: temp deactive
-      #   run: deactive
-      - name: create-one-file
-        id: create-one-file
-        run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ inputs.version}}"
-        continue-on-error: true
-      - name: active env for createfile2
-        run: poetry env use  .venv/Scripts/python3
-      - name: create-one-file2
-        id: create-one-file2
-        if: steps.create-one-file.outcome != 'success'
-        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --onefile --name "ofscraper_windows_${{ inputs.version}}"
-      - name: upload file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_windows
-          path: 'dist\ofscraper_windows_${{ inputs.version}}.exe'
-      # - name: temp deactive
-      #   run: deactive
+        run: |
+          .venv\Scripts\activate.bat
+          pip install pyinstaller==6.4.0
+          .venv\Scripts\deactivate.bat
+      - name: test ofscraper
+        run: |
+          .venv\Scripts\activate.bat
+          ofscraper -h
       - name: create-dir
         id: create-dir
-        run: poetry run pyinstaller D:\a\OF-Scraper\OF-Scraper\ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}"
+        run: |
+          .venv\Scripts\activate.bat
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" --paths . --clean --log DEBUG
         continue-on-error: true
-      - name: active env for create-dir2
-        run: poetry env use  .venv/Scripts/python3
       - name: create-dir2
-        id: create-one-dir2
         if: steps.create-dir.outcome != 'success'
-        run: poetry run pyinstaller .venv/Scripts/ofscraper --collect-submodules application --name "ofscraper_windows_${{inputs.version}}"
+        run: |
+          .venv\Scripts\activate.bat
+          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{inputs.version}}" --paths ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{inputs.version}}"
@@ -201,6 +196,76 @@ jobs:
         with:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+
+  windows_file:
+    needs: [create_version]
+    runs-on: windows-latest
+    name: create windows release file
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: list files
+        run: ls .
+      - name: list files2
+        run: ls ofscraper
+
+      - name: replace version.py
+        uses: actions/download-artifact@v3
+        with:
+          name: ofscraper_version
+          path: ofscraper
+      - name: Set up Python 3.11.5
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.5"
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install ofscraper windows
+        run: |
+          .venv\Scripts\activate.bat
+          pip install .
+          .venv\Scripts\deactivate.bat
+      - name: Install pyinstaller
+        run: |
+          .venv\Scripts\activate.bat
+           pip install pyinstaller==6.4.0
+          .venv\Scripts\deactivate.bat
+      - name: test ofscraper
+        run: ofscraper -h
+      - name: create-one-file
+        id: create-one-file
+        run: |
+          .venv\Scripts\activate.bat
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ inputs.version}}" -p ofscraper --clean --log DEBUG
+          .venv\Scripts\deactivate.bat
+        continue-on-error: true
+      - name: create-one-file2
+        if: steps.create-one-file.outcome != 'success'
+        run: |
+          .venv\Scripts\activate.bat
+          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ inputs.version}}" -p ofscraper --clean --log DEBUG
+          .venv\Scripts\deactivate.bat
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows
+          path: 'dist\ofscraper_windows_${{ inputs.version}}.exe'
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_windows_${{inputs.version}}"
+          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
+      - name: upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ofscraper_windows_zip
+          path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+
   mac:
     needs: [create_version]
     runs-on: macos-latest
@@ -210,21 +275,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
+
       - name: replace version.py
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_version
           path: ofscraper
       - name: Set up Python 3.11.5
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11.5"
       - name: create virtualenv
@@ -234,30 +296,61 @@ jobs:
         with:
           poetry-version: 1.4.1
       - name: Install package
-        run: poetry install
+        run: |
+          source .venv/bin/activate
+          pip install . -vvv
+          deactivate
       - name: Install pyinstaller
-        run: python -m pip install pyinstaller
+        run: |
+          source .venv/bin/activate
+          pip install pyinstaller==6.4.0
+          deactivate   
+      - name: test ofscraper
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
       - name: create-one-file
         id: create-one-file
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          export PATH=$PATH:/usr/local/bin
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
+          deactivate
         continue-on-error: true
       - name: create-one-file2
         id: create-one-file2
         if: steps.create-one-file.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --onefile --name "ofscraper_macos_${{ inputs.version}}"
-      - name: upload fille
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
+          deactivate
+      - name: upload file
         uses: actions/upload-artifact@v3
         with:
           name: ofscraper_macos
           path: "dist/ofscraper_macos_${{ inputs.version}}"
       - name: create-dir
         id: create-dir
-        run: poetry run pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules ofscraper --name "ofscraper_macos_${{ inputs.version}}"
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ inputs.version}}"
+          deactivate
         continue-on-error: true
       - name: create-dir2
         id: create-dir2
         if: steps.create-dir.outcome != 'success'
-        run: poetry run pyinstaller .venv/bin/ofscraper --collect-submodules application --name "ofscraper_macos_${{ inputs.version}}"
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ inputs.version}}"
+          deactivate
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{ inputs.version}}"
@@ -268,10 +361,12 @@ jobs:
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{inputs.version}}.zip"
 
+
+
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [linux, windows, mac]
+    needs: [linux, windows_dir,windows_file mac]
     permissions:
       contents: write
     steps:
@@ -301,9 +396,7 @@ jobs:
         with:
           name: ofscraper_windows_zip
 
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
+
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper
       - name: Get current date
