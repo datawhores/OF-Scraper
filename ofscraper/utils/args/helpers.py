@@ -161,7 +161,7 @@ def label_helper(x):
 
 def arrow_helper(x):
     try:
-        return arrow.get(x)
+        t = arrow.get(x)
     except arrow.parser.ParserError as E:
         try:
             x = re.sub("\\byear\\b", "years", x)
@@ -169,6 +169,7 @@ def arrow_helper(x):
             x = re.sub("\\bmonth\\b", "months", x)
             x = re.sub("\\bweek\\b", "weeks", x)
             arw = arrow.utcnow()
-            return arw.dehumanize(x)
+            t = arw.dehumanize(x)
         except ValueError as E:
             raise E
+    return t if t > arrow.get("2006.6.30") else 0

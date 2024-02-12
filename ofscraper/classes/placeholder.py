@@ -10,6 +10,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.custom as custom_
 import ofscraper.utils.config.data as data
+import ofscraper.utils.config.file as config_file
 import ofscraper.utils.constants as constants
 import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
@@ -134,6 +135,9 @@ class Placeholders:
         self._variables.update({"only_file_name": ele.no_quality_final_filename})
         self._variables.update({"only_filename": ele.no_quality_final_filename})
         self._variables.update({"text": ele.file_text})
+        self._variables.update({"config": config_file.open_config()})
+        self._variables.update({"args": read_args.retriveArgs()})
+
         self.add_price_variables(username)
 
     @wrapper
@@ -240,7 +244,6 @@ class Placeholders:
 
     @wrapper
     def createfilename(self, ele, username, model_id, ext):
-        filename = ele.final_filename
         self._variables.update({"ext": ext})
         self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
@@ -249,7 +252,7 @@ class Placeholders:
         )
         out = None
         if ele.responsetype == "profile":
-            out = f"{filename}.{ext}"
+            out = f"{ele.final_filename}.{ext}"
         elif data.get_allow_code_execution():
             if isinstance(customval, dict) == False:
                 try:
