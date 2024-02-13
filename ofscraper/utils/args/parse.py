@@ -192,6 +192,24 @@ def create_parser(input=None):
         type=int,
     )
 
+    post.add_argument(
+        "-dt",
+        "--download-sort",
+        help="change the order of downloads. Default is by date asc or random depending on which downloader is used",
+        default=None,
+        required=False,
+        type=str,
+        choices=[
+            "random",
+            "text-asc",
+            "text-desc",
+            "date-asc",
+            "date-desc",
+            "filename-asc",
+            "filename-desc",
+        ],
+    )
+
     group10 = post.add_mutually_exclusive_group()
     group10.add_argument(
         "-to",

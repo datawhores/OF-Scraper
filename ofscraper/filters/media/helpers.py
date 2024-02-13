@@ -1,4 +1,5 @@
 import logging
+import random
 import re
 
 import arrow
@@ -153,3 +154,25 @@ def mass_msg_filter(media):
 
 def url_filter(media):
     return list((filter(lambda x: x.url or x.mpd, media)))
+
+
+def final_post_sort(media):
+    download_sort = read_args.retriveArgs().download_sort
+    log.debug(f"Using download sort {download_sort}")
+    if not download_sort:
+        return media
+    elif download_sort == "date-asc":
+        return media
+    elif download_sort == "date-desc":
+        return list(reversed(media))
+    elif download_sort == "random":
+        random.shuffle(media)
+        return media
+    elif download_sort == "text-asc":
+        return sorted(media, key=lambda x: x.text)
+    elif download_sort == "text-desc":
+        return sorted(media, key=lambda x: x.text, reverse=True)
+    elif download_sort == "filename-asc":
+        return sorted(media, key=lambda x: x.filename)
+    elif download_sort == "filename-desc":
+        return sorted(media, key=lambda x: x.filename, reverse=True)
