@@ -199,18 +199,7 @@ async def get_timeline_media(model_id, username, forced_after=None, rescan=None)
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
         postedAtArray = sorted(oldtimeline)
-        if rescan or (
-            cache.get("{model_id}_full_timeline_scrape")
-            and not read_args.retriveArgs().after
-            and not data.get_disable_after()
-        ):
-            log.info(
-                "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
-            )
-            after = 0
-        else:
-            after = get_after(model_id, username, forced_after)
-
+        after = get_after(model_id, username, forced_after, rescan)
         log.info(
             f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
@@ -357,11 +346,22 @@ def get_individual_post(id, c=None):
             log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username, forced_after=None):
+def get_after(model_id, username, forced_after=None, rescan=None):
     if forced_after != None:
         return forced_after
-    if read_args.retriveArgs().after:
+    elif read_args.retriveArgs().after == 0:
+        return 0
+    elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
+    elif rescan or (
+        cache.get("{model_id}_full_timeline_scrape")
+        and not read_args.retriveArgs().after
+        and not data.get_disable_after()
+    ):
+        log.info(
+            "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
+        )
+        return 0
     curr = operations.get_timeline_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

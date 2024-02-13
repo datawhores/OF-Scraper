@@ -593,8 +593,11 @@ def get_truncation(config=None):
 def get_max_post_count(config=None):
     if config == False:
         return constants.MAX_COUNT_DEFAULT
-    if config.get("max_post_count") != None:
-        return config.get("max_post_count")
-    elif config.get("download_options", {}).get("max_post_count") != None:
-        return config.get("download_options", {}).get("max_post_count")
-    return constants_attr.getattr("MAX_COUNT_DEFAULT")
+    try:
+        if config.get("max_post_count") != None:
+            return int(config.get("max_post_count"))
+        elif config.get("download_options", {}).get("max_post_count") != None:
+            return config.get("download_options", {}).get("max_post_count")
+        return int(constants_attr.getattr("MAX_COUNT_DEFAULT"))
+    except:
+        return constants_attr.getattr("MAX_COUNT_DEFAULT")

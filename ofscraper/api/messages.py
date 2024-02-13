@@ -101,18 +101,7 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                 ] + oldmessages
 
                 before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-                if (
-                    rescan
-                    or cache.get("{model_id}_scrape_messages")
-                    and not read_args.retriveArgs().after
-                ):
-                    log.debug(
-                        "Used --after previously. Scraping all messages required to make sure content is not missing"
-                    )
-                    after = 0
-
-                else:
-                    after = get_after(model_id, username, forced_after)
+                after = get_after(model_id, username, forced_after, rescan)
 
                 log.debug(f"Messages after = {after}")
 
@@ -462,11 +451,22 @@ def get_individual_post(model_id, postid, c=None):
             log.debug(f"[bold]Individual message  headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username, forced_after=None):
+def get_after(model_id, username, forced_after=None, rescan=None):
     if forced_after != None:
         return forced_after
-    if read_args.retriveArgs().after:
+    elif read_args.retriveArgs().after == 0:
+        return 0
+    elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
+    elif (
+        rescan
+        or cache.get("{model_id}_scrape_messages")
+        and not read_args.retriveArgs().after
+    ):
+        log.debug(
+            "Used --after previously. Scraping all messages required to make sure content is not missing"
+        )
+        return 0
     curr = operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")

@@ -186,11 +186,12 @@ def create_parser(input=None):
     post.add_argument(
         "-xc",
         "--max-count",
-        help="Max number of post to download for a specific model",
+        help="Max number of post to download for a specific model starting from the oldest non-duped",
         default=0,
         required=False,
-        type=str,
+        type=int,
     )
+
     group10 = post.add_mutually_exclusive_group()
     group10.add_argument(
         "-to",
