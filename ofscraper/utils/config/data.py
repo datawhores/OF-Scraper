@@ -587,3 +587,14 @@ def get_truncation(config=None):
         else config.get("truncation_default")
     )
     return val if val is not None else constants_attr.getattr("TRUNCATION_DEFAULT")
+
+
+@wrapper.config_reader
+def get_max_post_count(config=None):
+    if config == False:
+        return constants.MAX_COUNT_DEFAULT
+    if config.get("max_post_count") != None:
+        return config.get("max_post_count")
+    elif config.get("download_options", {}).get("max_post_count") != None:
+        return config.get("download_options", {}).get("max_post_count")
+    return constants_attr.getattr("MAX_COUNT_DEFAULT")

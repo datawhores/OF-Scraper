@@ -32,6 +32,8 @@ def medialist_filter(medialist, model_id, username):
 
 def download_picker(username, model_id, medialist):
     medialist = medialist_filter(medialist, model_id, username)
+    maxCount = get_max_count()
+    medialist = medialist if maxCount == 0 else medialist[:maxCount]
     if len(medialist) == 0:
         logging.getLogger("shared").error(
             f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
@@ -44,9 +46,18 @@ def download_picker(username, model_id, medialist):
             >= config_data.get_download_semaphores()
             * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
-        and read_args.retriveArgs().downloadthreads != 0
-        and config_data.get_threads() != 0
+        and not_solo_thread()
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         return normaldownloader.process_dicts(username, model_id, medialist)
+
+
+def get_max_count():
+    return read_args.retriveArgs().max_count or config_data.get_max_post_count()
+
+
+def not_solo_thread():
+    return (
+        read_args.retriveArgs().downloadthreads != 0 and config_data.get_threads() != 0
+    )

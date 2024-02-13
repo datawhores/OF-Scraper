@@ -29,6 +29,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "filter": data.get_filter(config=config),
             "auto_resume": data.get_part_file_clean(config=config),
             "system_free_min": data.get_system_freesize(config=config),
+            "max_post_count": data.get_max_post_count(config=config),
         },
         "binary_options": {
             "mp4decrypt": data.get_mp4decrypt(config=config),
