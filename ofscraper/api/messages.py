@@ -300,7 +300,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
 def set_check(unduped, model_id, after):
     if not after:
         newCheck = {}
-        for post in cache.get(f"message_check_{model_id}", []) + list(unduped.values()):
+        for post in cache.get(f"message_check_{model_id}", default=[]) + list(unduped.values()):
             newCheck[post["id"]] = post
         cache.set(
             f"message_check_{model_id}",
