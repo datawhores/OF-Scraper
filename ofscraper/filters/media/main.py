@@ -254,3 +254,15 @@ def filterMedia(media):
     log.debug(f"filter{count}-> all media final sort count {len(media)}")
 
     return media
+
+
+def media_filter_for_like(media, like=False):
+    media = helpers.timeline_array_filter(media)
+    post_type = "likable" if like else "unlikable"
+    log.debug(
+        f"[bold]Number of {post_type} posts left after date filter[/bold] {len(media)}"
+    )
+    media = helpers.final_post_sort(media)
+    media = helpers.post_count_filter(media)
+    log.debug(f"[bold]Final Number of open and {post_type} post[/bold] {len(media)}")
+    return media

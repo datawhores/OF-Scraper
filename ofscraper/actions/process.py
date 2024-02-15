@@ -198,17 +198,10 @@ def process_like():
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
                 unfavorited_posts = like.get_post_for_like(model_id, ele.name)
-                unfavorited_posts = filters.helpers.timeline_array_filter(
-                    unfavorited_posts
+                unfavorited_posts = filters.media_filter_for_like(
+                    unfavorited_posts, like=True
                 )
-                log.debug(
-                    f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}"
-                )
-                unfavorited_posts = filters.helpers.post_count_filter(unfavorited_posts)
                 post_ids = like.get_post_ids(unfavorited_posts)
-                log.debug(
-                    f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}"
-                )
                 like.like(model_id, ele.name, post_ids)
 
 
@@ -233,15 +226,10 @@ def process_unlike():
                 operations.create_tables(model_id, ele.name)
                 operations.create_backup(model_id, ele.name)
                 favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
-                favorited_posts = filters.helpers.timeline_array_filter(favorited_posts)
-                log.debug(
-                    f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}"
+                favorited_posts = filters.media_filter_for_like(
+                    favorited_posts, like=False
                 )
-                favorited_posts = filters.helpers.post_count_filter(favorited_posts)
                 post_ids = like.get_post_ids(favorited_posts)
-                log.debug(
-                    f"[bold]Final Number of open and unlikable post[/bold] {len(post_ids)}"
-                )
                 like.unlike(model_id, ele.name, post_ids)
 
 
