@@ -11,7 +11,7 @@ import traceback
 import aioprocessing
 import more_itertools
 import psutil
-from aioprocessing import AioPipe
+from aioprocessing import AioLock, AioPipe
 from humanfriendly import format_size
 from rich.live import Live
 
@@ -60,6 +60,7 @@ def process_dicts(username, model_id, filtered_medialist):
         split_val = min(4, num_proc)
         log.debug(f"Number of process {num_proc}")
         connect_tuples = [AioPipe() for _ in range(num_proc)]
+        locks=[AioLock() for _ in range(num_proc)]
         shared = list(more_itertools.chunked([i for i in range(num_proc)], split_val))
         # shared with other process + main
         logqueues_ = [manager.Queue() for _ in range(len(shared))]
@@ -86,6 +87,7 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
+                    locks[i]
                     dates.getLogDateVManager(),
                     selector.get_ALL_SUBS_DICTVManger(),
                     read_args.retriveArgsVManager(),
@@ -313,6 +315,7 @@ def process_dict_starter(
     p_logqueue_,
     p_otherqueue_,
     pipe_,
+    lock_,
     dateDict,
     userNameList,
     argsCopy,
@@ -321,6 +324,7 @@ def process_dict_starter(
         dateDict,
         userNameList,
         pipe_,
+        lock_,
         logger.get_shared_logger(
             main_=p_logqueue_, other_=p_otherqueue_, name=f"shared_{os.getpid()}"
         ),
@@ -402,13 +406,13 @@ async def process_dicts_split(username, model_id, medialist):
                 pack = await coro
                 common.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
-                await common.pipe.coro_send((media_type, num_bytes_downloaded, 0))
+                await common.send_msg((media_type, num_bytes_downloaded, 0))
             except Exception as e:
                 common.log.traceback_(f"Download Failed because\n{e}")
                 common.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
                 num_bytes_downloaded = 0
-                await common.pipe.coro_send((media_type, num_bytes_downloaded, 0))
+                await common.send_msg((media_type, num_bytes_downloaded, 0))
 
     common.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly
@@ -421,8 +425,8 @@ async def process_dicts_split(username, model_id, medialist):
     if other_thread:
         other_thread.join()
     common.log.debug("other thread closed")
-    await common.pipe.coro_send(common.localDirSet)
-    await common.pipe.coro_send(None)
+    await common.send_msg(common.localDirSet)
+    await common.send_msg(None)
 
 
 def pid_log_helper():

@@ -68,6 +68,7 @@ total_count2 = contextvars.ContextVar("total2", default=0)
 innerlog = contextvars.ContextVar("innerlog")
 pipe = None
 log = None
+lock = None
 localDirSet = None
 req_sem = None
 
@@ -133,19 +134,29 @@ def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
 
-def process_split_globals(pipeCopy, logCopy):
+def process_split_globals(pipeCopy, lockCopy, logCopy):
     global pipe
     global log
+    global lock
     pipe = pipeCopy
     log = logCopy
+    lock = lockCopy
 
 
-def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
+async def send_msg(msg):
+    global pipe
+    global lock
+    await lock.acquire()
+    await pipe.coro_send(msg)
+    await lock.release()
+
+
+def subProcessVariableInit(dateDict, userList, pipeCopy, lockCopy, logCopy, argsCopy):
     reset_globals()
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
     selector.set_ALL_SUBS_DICT(userList)
-    process_split_globals(pipeCopy, logCopy)
+    process_split_globals(pipeCopy, lockCopy, logCopy)
 
 
 @singledispatch

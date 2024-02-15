@@ -226,7 +226,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                 async with c.requests(url=url, headers=headers, params=params)() as l:
                     if l.ok:
                         total = int(l.headers["content-length"])
-                        await common.pipe.coro_send((None, 0, total))
+                        await common.send_msg((None, 0, total))
                         temp_file_logger(placeholderObj, ele, common.innerlog.get())
                         if await check_forced_skip(ele, total) == 0:
                             item["total"] = 0
@@ -295,7 +295,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilename)
     try:
         count = 0
-        await common.pipe.coro_send(
+        await common.send_msg(
             {
                 "type": "add_task",
                 "args": (
@@ -307,9 +307,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
             }
         )
         fileobject = await aiofiles.open(placeholderObj.tempfilename, "ab").__aenter__()
-        await common.pipe.coro_send(
-            {"type": "update", "args": (ele.id,), "visible": True}
-        )
+        await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
 
         async for chunk in l.iter_chunked(constants.getattr("maxChunkSizeB")):
             count = count + 1
@@ -318,7 +316,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
             )
             await fileobject.write(chunk)
             if count == constants.getattr("CHUNK_ITER"):
-                await common.pipe.coro_send(
+                await common.send_msg(
                     {
                         "type": "update",
                         "args": (ele.id,),
@@ -333,7 +331,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
                 count = 0
     except Exception as E:
         # reset download data
-        await common.pipe.coro_send((None, 0, -total))
+        await common.send_msg((None, 0, -total))
         raise E
     finally:
         # Close file if needed
@@ -343,7 +341,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
             None
 
         try:
-            await common.pipe.coro_send({"type": "remove_task", "args": (ele.id,)})
+            await common.send_msg({"type": "remove_task", "args": (ele.id,)})
         except Exception:
             None
 

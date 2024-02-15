@@ -210,7 +210,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                 async with c.requests(url=url, headers=headers)() as r:
                     if r.ok:
                         total = int(r.headers["content-length"])
-                        await common.pipe.coro_send((None, 0, total))
+                        await common.send_msg((None, 0, total))
                         content_type = r.headers.get("content-type").split("/")[-1]
                         if not content_type and ele.mediatype.lower() == "videos":
                             content_type = "mp4"
@@ -299,7 +299,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
     )
     try:
         count = 0
-        await common.pipe.coro_send(
+        await common.send_msg(
             {
                 "type": "add_task",
                 "args": (
@@ -312,9 +312,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
         )
 
         fileobject = await aiofiles.open(placeholderObj.tempfilename, "ab").__aenter__()
-        await common.pipe.coro_send(
-            {"type": "update", "args": (ele.id,), "visible": True}
-        )
+        await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
         async for chunk in r.iter_chunked(constants.getattr("maxChunkSizeB")):
             count = count + 1
             if downloadprogress:
@@ -324,7 +322,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
             )
             await fileobject.write(chunk)
             if count == constants.getattr("CHUNK_ITER"):
-                await common.pipe.coro_send(
+                await common.send_msg(
                     {
                         "type": "update",
                         "args": (ele.id,),
@@ -339,11 +337,11 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
                 count = 0
     except Exception as E:
         # reset download data
-        await common.pipe.coro_send((None, 0, -total))
+        await common.send_msg((None, 0, -total))
         raise E
     finally:
         try:
-            await common.pipe.coro_send({"type": "remove_task", "args": (ele.id,)})
+            await common.send_msg({"type": "remove_task", "args": (ele.id,)})
         except:
             None
 
