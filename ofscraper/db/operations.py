@@ -519,10 +519,13 @@ def write_labels_table(
     label: dict, posts: dict, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        insertData = list(
-            map(lambda post: (label.label_id, label.name, label.type, post.id), posts)
-        )
-        curr.executemany(queries.labelInsert, insertData)
+        # insertData = list(
+        #     map(lambda post: (label.label_id, label.name, label.type, post.id), posts)
+        # )
+        for post in posts:
+            insertData = (label.label_id, label.name, label.type, post.id)
+            log.debug(f"insert data {insertData}")
+            curr.execute(queries.labelInsert, insertData)
         conn.commit()
 
 
