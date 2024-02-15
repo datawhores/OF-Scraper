@@ -148,7 +148,9 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
 
 @run
 async def get_pinned_post(model_id):
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+    ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),

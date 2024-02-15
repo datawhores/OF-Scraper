@@ -47,7 +47,7 @@ def operation_wrapper_async(func: abc.Callable):
         loop = None
         conn = None
         try:
-            LOCK_POOL = ThreadPoolExecutor(max_workers=1)
+            LOCK_POOL = ThreadPoolExecutor()
             PROCESS_POOL = ThreadPoolExecutor(max_workers=1)
             lock = FileLock(common_paths.getDB(), timeout=-1)
             loop = asyncio.get_event_loop()

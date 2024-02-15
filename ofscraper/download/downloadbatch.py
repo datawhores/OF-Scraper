@@ -11,7 +11,7 @@ import traceback
 import aioprocessing
 import more_itertools
 import psutil
-from aioprocessing import AioLock, AioPipe
+from aioprocessing import AioPipe
 from humanfriendly import format_size
 from rich.live import Live
 
@@ -60,7 +60,6 @@ def process_dicts(username, model_id, filtered_medialist):
         split_val = min(4, num_proc)
         log.debug(f"Number of process {num_proc}")
         connect_tuples = [AioPipe() for _ in range(num_proc)]
-        locks=[AioLock() for _ in range(num_proc)]
         shared = list(more_itertools.chunked([i for i in range(num_proc)], split_val))
         # shared with other process + main
         logqueues_ = [manager.Queue() for _ in range(len(shared))]
@@ -87,7 +86,6 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    locks[i]
                     dates.getLogDateVManager(),
                     selector.get_ALL_SUBS_DICTVManger(),
                     read_args.retriveArgsVManager(),
@@ -315,7 +313,6 @@ def process_dict_starter(
     p_logqueue_,
     p_otherqueue_,
     pipe_,
-    lock_,
     dateDict,
     userNameList,
     argsCopy,
@@ -324,7 +321,6 @@ def process_dict_starter(
         dateDict,
         userNameList,
         pipe_,
-        lock_,
         logger.get_shared_logger(
             main_=p_logqueue_, other_=p_otherqueue_, name=f"shared_{os.getpid()}"
         ),

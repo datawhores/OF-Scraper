@@ -45,7 +45,9 @@ attempt = contextvars.ContextVar("attempt")
 async def get_stories_post(model_id):
     global sem
     sem = semaphoreDelayed(1)
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+    ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),
@@ -172,7 +174,9 @@ async def scrape_stories(c, user_id, job_progress) -> list:
 async def get_highlight_post(model_id):
     global sem
     sem = semaphoreDelayed(1)
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+    ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
         async with sessionbuilder.sessionBuilder() as c:

@@ -18,6 +18,7 @@ import pathlib
 import platform
 import re
 import shutil
+import threading
 import traceback
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
@@ -66,9 +67,6 @@ attempt2 = contextvars.ContextVar("attempt2", default=0)
 total_count = contextvars.ContextVar("total", default=0)
 total_count2 = contextvars.ContextVar("total2", default=0)
 innerlog = contextvars.ContextVar("innerlog")
-pipe = None
-log = None
-lock = None
 localDirSet = None
 req_sem = None
 
@@ -107,7 +105,7 @@ def reset_globals():
     global sem
     sem = semaphoreDelayed(config_data.get_download_semaphores())
     global cache_thread
-    cache_thread = ThreadPoolExecutor(max_workers=1)
+    cache_thread = ThreadPoolExecutor()
     global dirSet
     dirSet = set()
     global mpd_sem
@@ -134,29 +132,54 @@ def get_medialog(ele):
     return f"Media:{ele.id} Post:{ele.postid}"
 
 
-def process_split_globals(pipeCopy, lockCopy, logCopy):
+def process_split_globals(pipeCopy, logCopy):
     global pipe
     global log
-    global lock
+    global pipe_lock
+    global lock_pool
     pipe = pipeCopy
     log = logCopy
-    lock = lockCopy
+    pipe_lock = threading.Lock()
+    lock_pool = ThreadPoolExecutor()
+
+
+def set_send_msg():
+    global send_msg_helper
+    if platform.system() != "Windows":
+        send_msg_helper = send_msg_unix
+    else:
+        send_msg_helper = send_msg_win
 
 
 async def send_msg(msg):
+    global send_msg_helper
+    await send_msg_helper(msg)
+
+
+async def send_msg_win(msg):
     global pipe
-    global lock
-    await lock.acquire()
+    global pipe_lock
+    global lock_pool
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(lock_pool, pipe_lock.acquire)
+    try:
+        await pipe.coro_send(msg)
+    finally:
+        await loop.run_in_executor(lock_pool, pipe_lock.release)
+
+
+async def send_msg_unix(msg):
+    global pipe
     await pipe.coro_send(msg)
-    await lock.release()
 
 
-def subProcessVariableInit(dateDict, userList, pipeCopy, lockCopy, logCopy, argsCopy):
+def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
     reset_globals()
     write_args.setArgs(argsCopy)
     dates.setLogDate(dateDict)
     selector.set_ALL_SUBS_DICT(userList)
-    process_split_globals(pipeCopy, lockCopy, logCopy)
+    process_split_globals(pipeCopy, logCopy)
+    set_send_msg()
 
 
 @singledispatch

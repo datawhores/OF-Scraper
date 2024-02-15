@@ -44,7 +44,9 @@ sem = None
 async def get_subscriptions(subscribe_count, account="active"):
     global sem
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+    ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
         with Progress(

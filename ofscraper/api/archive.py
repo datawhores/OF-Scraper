@@ -168,7 +168,9 @@ async def scrape_archived_posts(
 
 @run
 async def get_archived_media(model_id, username, forced_after=None, rescan=None):
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+    ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),

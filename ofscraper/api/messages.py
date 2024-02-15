@@ -48,7 +48,9 @@ sem = None
 async def get_messages(model_id, username, forced_after=None, rescan=None):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+    ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
             SpinnerColumn(
