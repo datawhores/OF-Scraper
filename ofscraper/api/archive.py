@@ -342,7 +342,7 @@ def get_after(model_id, username, forced_after=None, rescan=None):
     elif read_args.retriveArgs().after == 0:
         return 0
     elif read_args.retriveArgs().after:
-        return read_args.retriveArgs().after.float_timestamp
+        return read_args.retriveArgs().after.float_tiestamp
 
     elif rescan or (
         cache.get("{model_id}_full_archived_scrape")

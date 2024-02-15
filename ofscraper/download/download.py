@@ -3,7 +3,9 @@ import logging
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader
+import ofscraper.utils.args.count as count
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.solo as solo
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.separate as seperate
@@ -32,7 +34,7 @@ def medialist_filter(medialist, model_id, username):
 
 def download_picker(username, model_id, medialist):
     medialist = medialist_filter(medialist, model_id, username)
-    medialist = medialist[: get_max_count()]
+    medialist = medialist[: count.get_max_count()]
     if len(medialist) == 0:
         logging.getLogger("shared").error(
             f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
@@ -45,18 +47,8 @@ def download_picker(username, model_id, medialist):
             >= config_data.get_download_semaphores()
             * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
-        and not_solo_thread()
+        and solo.not_solo_thread()
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         return normaldownloader.process_dicts(username, model_id, medialist)
-
-
-def get_max_count():
-    return read_args.retriveArgs().max_count or config_data.get_max_post_count() or None
-
-
-def not_solo_thread():
-    return (
-        read_args.retriveArgs().downloadthreads != 0 and config_data.get_threads() != 0
-    )
