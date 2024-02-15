@@ -429,7 +429,17 @@ def process_labels(model_id, username):
             map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
         )
         curr = set(operations.get_all_labels_ids(model_id=model_id, username=username))
+        log.debug(f"{curr} labels")
+        temp = list(
+            filter(
+                lambda post: (labelled_post.label_id, post.id) not in curr,
+                labelled_post.posts,
+            )
+        )
+        sorted(temp)
+        log.debug(f"Insert labels {temp}")
         for labelled_post in labelled_posts_:
+            log.debug()
             operations.write_labels_table(
                 labelled_post,
                 list(
