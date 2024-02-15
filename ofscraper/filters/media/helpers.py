@@ -5,7 +5,7 @@ import re
 import arrow
 
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as data
+import ofscraper.utils.config.data as config_data
 
 log = logging.getLogger("shared")
 
@@ -54,8 +54,15 @@ def timeline_array_filter(posts):
     return out
 
 
+def post_count_filter(media):
+    count = (
+        read_args.retriveArgs().max_count or config_data.get_max_post_count() or None
+    )
+    return media[:count]
+
+
 def posts_type_filter(media):
-    filtersettings = read_args.retriveArgs().mediatype or data.get_filter()
+    filtersettings = read_args.retriveArgs().mediatype or config_data.get_filter()
     if isinstance(filtersettings, str):
         filtersettings = filtersettings.split(",")
     if isinstance(filtersettings, list):

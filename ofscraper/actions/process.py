@@ -204,6 +204,7 @@ def process_like():
                 log.debug(
                     f"[bold]Number of unliked posts left after date filters[/bold] {len(unfavorited_posts)}"
                 )
+                unfavorited_posts = filters.helpers.post_count_filter(unfavorited_posts)
                 post_ids = like.get_post_ids(unfavorited_posts)
                 log.debug(
                     f"[bold]Final Number of open and likable post[/bold] {len(post_ids)}"
@@ -236,6 +237,7 @@ def process_unlike():
                 log.debug(
                     f"[bold]Number of liked posts left after date filters[/bold] {len(favorited_posts)}"
                 )
+                favorited_posts = filters.helpers.post_count_filter(favorited_posts)
                 post_ids = like.get_post_ids(favorited_posts)
                 log.debug(
                     f"[bold]Final Number of open and unlikable post[/bold] {len(post_ids)}"
