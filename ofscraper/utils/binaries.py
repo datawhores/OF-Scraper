@@ -11,8 +11,7 @@ import httpx
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn
 
 import ofscraper.utils.constants as constants
-import ofscraper.utils.path
-import ofscraper.utils.paths.paths as paths_
+import ofscraper.utils.paths.common as common_paths
 
 
 def mp4decrypt_download():
@@ -56,7 +55,7 @@ def mp4_decrypt_windows():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = config.get_config_home() / "bin" / "mp4decrypt.exe"
+        bin_path = common_paths.get_config_home() / "bin" / "mp4decrypt.exe"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with ZipFile(zip_path) as zObject:
             zObject.extractall(path=t)
@@ -89,7 +88,7 @@ def mp4_decrypt_linux():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = paths_.get_config_home() / "bin" / "mp4decrypt"
+        bin_path = common_paths.get_config_home() / "bin" / "mp4decrypt"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with ZipFile(zip_path) as zObject:
             zObject.extractall(path=t)
@@ -122,7 +121,7 @@ def mp4_decrypt_mac():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = paths_.get_config_home() / "bin" / "mp4decrypt"
+        bin_path = common_paths.get_config_home() / "bin" / "mp4decrypt"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with ZipFile(zip_path) as zObject:
             zObject.extractall(path=t)
@@ -155,7 +154,7 @@ def ffmpeg_windows():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = paths_.get_config_home() / "bin" / "ffmpeg.exe"
+        bin_path = common_paths.get_config_home() / "bin" / "ffmpeg.exe"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with ZipFile(zip_path) as zObject:
             zObject.extractall(path=t)
@@ -189,7 +188,7 @@ def ffmpeg_linux():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = paths_.get_config_home() / "bin" / "ffmpeg"
+        bin_path = common_paths.get_config_home() / "bin" / "ffmpeg"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with TarFile.open(zip_path, mode="r:xz") as zObject:
             zObject.extractall(path=t)
@@ -223,7 +222,7 @@ def ffmpeg_mac():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = paths_.get_config_home() / "bin" / "ffmpeg"
+        bin_path = common_paths.get_config_home() / "bin" / "ffmpeg"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with ZipFile(zip_path) as zObject:
             zObject.extractall(path=t)
