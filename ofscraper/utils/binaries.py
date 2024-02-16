@@ -11,6 +11,7 @@ import httpx
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn
 
 import ofscraper.utils.constants as constants
+import ofscraper.utils.path
 import ofscraper.utils.paths.paths as paths_
 
 
@@ -55,7 +56,7 @@ def mp4_decrypt_windows():
                         )
                         num_bytes_downloaded = r.num_bytes_downloaded
             download.remove_task(task1)
-        bin_path = paths_.get_config_home() / "bin" / "mp4decrypt.exe"
+        bin_path = config.get_config_home() / "bin" / "mp4decrypt.exe"
         bin_path.parent.mkdir(exist_ok=True, parents=True)
         with ZipFile(zip_path) as zObject:
             zObject.extractall(path=t)
