@@ -26,7 +26,7 @@ def seperate_avatars(data):
 def seperate_avatar_helper(ele):
     # id for avatar comes from xxh32 of url
     if ele.postid and ele.responsetype == "profile":
-        value = cache.get(ele.postid, False)
+        value = cache.get(ele.postid, default=False)
         cache.close()
         return value
     return False

@@ -45,7 +45,7 @@ def scrape_profile(username: Union[int, str]) -> dict:
 
 def scrape_profile_helper(c, username: Union[int, str]):
     attempt.set(0)
-    data = cache.get(f"username_{username}", None)
+    data = cache.get(f"username_{username}", default=None)
     log.trace(f"username date: {data}")
     if data and not read_args.retriveArgs().update_profile:
         return data
@@ -91,7 +91,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
 
 async def scrape_profile_helper_async(c, username: Union[int, str]):
     attempt.set(0)
-    data = cache.get(f"username_{username}", None)
+    data = cache.get(f"username_{username}", default=None)
     log.trace(f"username date: {data}")
     if data and not read_args.retriveArgs().update_profile:
         return data
