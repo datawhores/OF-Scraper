@@ -153,7 +153,7 @@ This can greatly increase the time needed for a single scrape
 
 It should not be needed to turn this on everytime, especially with  frequent scrapes
 
-SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW KEYBINDINGS and INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
 SINGLE_LINE = """
@@ -179,7 +179,7 @@ PRESS ENTER TO RETURN
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
 
 KEY_BOARD = """
-SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW KEYBINDINGS and INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
 NUMBER = """
@@ -187,7 +187,7 @@ SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
 """
 
 MODEL_SELECT = """
-SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW KEYBINDINGS and INSTRUCTIONS: [ALT+V] or [CTRL+V]
 CHANGE SORT/CHANGE FILTER: [ALT+X] or [CTRL+B]
 MODEL DETAILS: [ALT+D]
 """
@@ -258,6 +258,6 @@ PRESS ENTER TO RETURN
 """
 
 CONFIG_MENU = """
-SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V]
+SHOW KEYBINDINGS and INSTRUCTIONS: [ALT+V] or [CTRL+V]
 CONFIG SECTIONS DETAILS: [ALT+X]
 """
