@@ -72,7 +72,7 @@ async def alt_download(c, ele, username, model_id, progress):
             c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
         )
 
-    audio, video = await alt_download_preparer(ele)
+    audio, video = await ele.mpd_dict
     sharedPlaceholderObj = placeholder.Placeholders()
     sharedPlaceholderObj.getDirs(ele, username, model_id)
     sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
@@ -155,56 +155,6 @@ async def alt_download(c, ele, username, model_id, progress):
             downloaded=True,
         )
     return ele.mediatype, video["total"] + audio["total"]
-
-
-async def alt_download_preparer(ele):
-    @sem_wrapper(common.mpd_sem)
-    async def inner(ele):
-        common.log.debug(
-            f"{get_medialog(ele)} Attempting to get info for {ele.final_filename} with {ele.mpd}"
-        )
-        mpd = await ele.parse_mpd
-        for period in mpd.periods:
-            for adapt_set in filter(
-                lambda x: x.mime_type == "video/mp4", period.adaptation_sets
-            ):
-                kId = None
-                for prot in adapt_set.content_protections:
-                    if prot.value == None:
-                        kId = prot.pssh[0].pssh
-                        break
-                maxquality = max(map(lambda x: x.height, adapt_set.representations))
-                for repr in adapt_set.representations:
-                    origname = f"{repr.base_urls[0].base_url_value}"
-                    if repr.height == maxquality:
-                        video = {
-                            "origname": origname,
-                            "pssh": kId,
-                            "type": "video",
-                            "name": f"tempvid_{origname}",
-                        }
-                        break
-            for adapt_set in filter(
-                lambda x: x.mime_type == "audio/mp4", period.adaptation_sets
-            ):
-                kId = None
-                for prot in adapt_set.content_protections:
-                    if prot.value == None:
-                        kId = prot.pssh[0].pssh
-                        log_helpers.updateSenstiveDict(kId, "pssh_code")
-                        break
-                for repr in adapt_set.representations:
-                    origname = f"{repr.base_urls[0].base_url_value}"
-                    audio = {
-                        "origname": origname,
-                        "pssh": kId,
-                        "type": "audio",
-                        "name": f"tempaudio_{origname}",
-                    }
-                    break
-        return audio, video
-
-    return await inner(ele)
 
 
 async def alt_download_sendreq(item, c, ele, placeholderObj, progress, total):

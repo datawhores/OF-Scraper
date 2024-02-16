@@ -1,7 +1,6 @@
 import logging
 import re
 import string
-import traceback
 
 # supress warnings
 import warnings
@@ -21,6 +20,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+import ofscraper.utils.logs.helpers as log_helpers
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -46,11 +46,6 @@ class Media:
     @property
     def files_source(self):
         return self._media.get("files", {}).get("source", {})
-        allowed = quality.get_allowed_qualities()
-        for ele in ["240", "720", "source"]:
-            if ele in allowed and self._media.get("files", {}).get(ele):
-                return self._media.get("files", {}).get(ele)
-        return {}
 
     @property
     def quality(self):
@@ -338,6 +333,18 @@ class Media:
                         return MPEGDASHParser.parse(await r.text_())
 
     @property
+    async def mpd_dict(self):
+        mpd = await self.parse_mpd
+        if not mpd:
+            return
+        video = None
+        audio = None
+        for period in mpd.periods:
+            video = video if video else self.mpd_video_helper(period)
+            audio = audio if audio else self.mpd_audio_helper(period)
+        return audio, video
+
+    @property
     def license(self):
         if not self.mpd:
             return None
@@ -362,7 +369,9 @@ class Media:
         if self.mediatype != "videos":
             return "source"
         for ele in ["240", "720"]:
-            if ele in allowed and self._media.get("videoSources", {}).get(ele):
+            if ele not in allowed:
+                continue
+            elif self._media.get("videoSources", {}).get(ele):
                 return ele
         return "source"
 
@@ -402,3 +411,54 @@ class Media:
         text = re.sub(" +", " ", text)
         text = re.sub(" ", data.get_spacereplacer(), text)
         return text
+
+    def mpd_video_helper(self, period):
+        allowed = quality.get_allowed_qualities()
+        for adapt_set in filter(
+            lambda x: x.mime_type == "video/mp4", period.adaptation_sets
+        ):
+            kId = None
+            for prot in adapt_set.content_protections:
+                if prot.value == None:
+                    kId = prot.pssh[0].pssh
+                    break
+            selected_quality = None
+            for ele in ["240", "720"]:
+                if selected_quality or ele not in allowed:
+                    continue
+                selected_quality = selected_quality or next(
+                    filter(lambda x: x.height == int(ele), adapt_set.representations),
+                    None,
+                )
+            if "source" in allowed:
+                selected_quality = selected_quality or max(
+                    adapt_set.representations, key=lambda x: x.height
+                )
+            for repr in adapt_set.representations:
+                if repr.height == selected_quality.height:
+                    origname = f"{repr.base_urls[0].base_url_value}"
+                    return {
+                        "origname": origname,
+                        "pssh": kId,
+                        "type": "video",
+                        "name": f"tempvid_{origname}",
+                    }
+
+    def mpd_audio_helper(self, period):
+        for adapt_set in filter(
+            lambda x: x.mime_type == "audio/mp4", period.adaptation_sets
+        ):
+            kId = None
+            for prot in adapt_set.content_protections:
+                if prot.value == None:
+                    kId = prot.pssh[0].pssh
+                    log_helpers.updateSenstiveDict(kId, "pssh_code")
+                    break
+            for repr in adapt_set.representations:
+                origname = f"{repr.base_urls[0].base_url_value}"
+                return {
+                    "origname": origname,
+                    "pssh": kId,
+                    "type": "audio",
+                    "name": f"tempaudio_{origname}",
+                }
