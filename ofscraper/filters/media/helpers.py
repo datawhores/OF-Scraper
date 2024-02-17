@@ -164,22 +164,22 @@ def url_filter(media):
 
 
 def final_post_sort(media):
-    download_sort = read_args.retriveArgs().download_sort
-    log.debug(f"Using download sort {download_sort}")
-    if not download_sort:
+    item_sort = read_args.retriveArgs().item_sort
+    log.debug(f"Using download sort {item_sort}")
+    if not item_sort:
         return media
-    elif download_sort == "date-asc":
+    elif item_sort == "date-asc":
         return media
-    elif download_sort == "date-desc":
+    elif item_sort == "date-desc":
         return list(reversed(media))
-    elif download_sort == "random":
+    elif item_sort == "random":
         random.shuffle(media)
         return media
-    elif download_sort == "text-asc":
+    elif item_sort == "text-asc":
         return sorted(media, key=lambda x: x.text)
-    elif download_sort == "text-desc":
+    elif item_sort == "text-desc":
         return sorted(media, key=lambda x: x.text, reverse=True)
-    elif download_sort == "filename-asc":
+    elif item_sort == "filename-asc":
         return sorted(media, key=lambda x: x.filename)
-    elif download_sort == "filename-desc":
+    elif item_sort == "filename-desc":
         return sorted(media, key=lambda x: x.filename, reverse=True)

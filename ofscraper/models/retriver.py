@@ -20,9 +20,9 @@ def get_models(main=False) -> list:
             return get_via_list(count)
         elif "ALL" in read_args.retriveArgs().username:
             return get_via_list(count)
-        elif read_args.retriveArgs().force_individual:
+        elif read_args.retriveArgs().individual:
             return get_via_individual()
-        elif read_args.retriveArgs().force_list:
+        elif read_args.retriveArgs().list:
             return get_via_list(count)
         elif (sum(count) // 10) > len(read_args.retriveArgs().username):
             return get_via_individual()

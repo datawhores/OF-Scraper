@@ -193,9 +193,9 @@ def create_parser(input=None):
     )
 
     post.add_argument(
-        "-dt",
-        "--download-sort",
-        help="change the order of downloads. Default is by date asc or random depending on which downloader is used",
+        "-it",
+        "--item-sort",
+        help="Change the order of items/posts before executing action. Default is by date asc or random depending on which downloader is used",
         default=None,
         required=False,
         type=str,
@@ -749,7 +749,7 @@ def create_parser(input=None):
 
     group11.add_argument(
         "-fi",
-        "--force-individual",
+        "--individual",
         help="When --username arg is provided searches each username as a seperate request",
         default=False,
         action="store_true",
@@ -757,7 +757,7 @@ def create_parser(input=None):
 
     group11.add_argument(
         "-fl",
-        "--force-list",
+        "--list",
         help="When --username arg is provided searches entire enabled list(s) before filtering for usernames",
         default=False,
         action="store_true",

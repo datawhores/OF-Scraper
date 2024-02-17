@@ -52,7 +52,7 @@ def process_dicts(username, model_id, filtered_medialist):
     common.log = log
     try:
         reset_globals()
-        if not read_args.retriveArgs().download_sort:
+        if not read_args.retriveArgs().item_sort:
             random.shuffle(filtered_medialist)
         manager = manager_.get_manager()
         mediasplits = get_mediasplits(filtered_medialist)
