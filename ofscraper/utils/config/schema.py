@@ -56,7 +56,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "sanitize_text": data.get_sanitizeDB(config=config),
             "temp_dir": data.get_TempDir(config=config),
             "infinite_loop_action_mode": data.get_InfiniteLoop(config=config),
-            "disable_after_check": data.get_disable_after(config=config),
+            "disable_auto_after": data.get_disable_after(config=config),
             "default_user_list": data.get_default_userlist(config=config),
             "default_black_list": data.get_default_blacklist(config=config),
         },

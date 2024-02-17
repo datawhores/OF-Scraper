@@ -148,9 +148,9 @@ def get_disable_after(config=None):
     if config == False:
         return constants.DISABLE_AFTER_DEFAULT
     val = (
-        config.get("disable_after_check")
+        config.get("disable_auto_after")
         if config.get("infinite_loop_action_mode") != None
-        else config.get("advanced_options", {}).get("disable_after_check")
+        else config.get("advanced_options", {}).get("disable_auto_after")
     )
     return val if val != None else constants_attr.getattr("DISABLE_AFTER_DEFAULT")
 
