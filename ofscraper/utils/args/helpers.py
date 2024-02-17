@@ -3,7 +3,6 @@ import pathlib
 import re
 
 import arrow
-from humanfriendly import parse_size
 
 from ofscraper.__version__ import __version__
 
@@ -13,7 +12,7 @@ def check_strhelper(x):
     if isinstance(x, list):
         temp = x
     elif isinstance(x, str):
-        temp = x.split(",")
+        temp = re.split(",| ", x)
     return temp
 
 
@@ -39,7 +38,7 @@ def posttype_helper(x):
         ]
     )
     if isinstance(x, str):
-        words = x.split(",")
+        words = re.split(",| ", x)
         words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
     if (
         len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
@@ -67,7 +66,7 @@ def download_helper(x):
         ]
     )
     if isinstance(x, str):
-        words = x.split(",")
+        words = re.split(",| ", x)
         words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
     if (
         len(list(filter(lambda y: y not in choices and y[1:] not in choices), words))
@@ -82,7 +81,7 @@ def download_helper(x):
 def like_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
     if isinstance(x, str):
-        words = x.split(",")
+        words = re.split(",| ", x)
         words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
     if (
         len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
@@ -97,7 +96,7 @@ def like_helper(x):
 def mediatype_helper(x):
     choices = set(["Videos", "Audio", "Images"])
     if isinstance(x, str):
-        x = x.split(",")
+        x = re.split(",| ", x)
         x = list(map(lambda x: x.capitalize(), x))
     if len(list(filter(lambda y: y not in choices, x))) > 0:
         raise argparse.ArgumentTypeError(
@@ -107,7 +106,7 @@ def mediatype_helper(x):
 
 
 def action_helper(x):
-    select = x.split(",")
+    select = re.split(",| ", x)
     select = list(map(lambda x: x.lower(), select))
     if "like" in select and "unlike" in select:
         raise argparse.ArgumentTypeError(
@@ -145,7 +144,7 @@ def username_helper(x):
     if isinstance(x, list):
         temp = x
     elif isinstance(x, str):
-        temp = x.split(",")
+        temp = re.split(",| ", x)
 
     return list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
 
@@ -155,7 +154,7 @@ def label_helper(x):
     if isinstance(x, list):
         temp = x
     elif isinstance(x, str):
-        temp = x.split(",")
+        temp = re.split(",| ", x)
     return list(map(lambda x: x.lower(), temp))
 
 
