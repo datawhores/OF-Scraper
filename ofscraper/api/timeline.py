@@ -338,7 +338,7 @@ def set_check(unduped, model_id, after):
 
 
 def get_individual_post(id, c=None):
-    with c.requests(constants.getattr("INDVIDUAL_TIMELINE").format(id))() as r:
+    with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id))() as r:
         if r.ok:
             log.trace(f"post raw individual {r.json()}")
             return r.json()

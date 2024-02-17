@@ -2,7 +2,7 @@ initEP = "https://onlyfans.com/api2/v2/init"
 LICENCE_URL = "https://onlyfans.com/api2/v2/users/media/{}/drm/{}/{}?type=widevine"
 
 
-INDVIDUAL_TIMELINE = "https://onlyfans.com/api2/v2/posts/{}?skip_users=all"
+INDIVIDUAL_TIMELINE = "https://onlyfans.com/api2/v2/posts/{}?skip_users=all"
 meEP = "https://onlyfans.com/api2/v2/users/me"
 
 subscriptionsEP = "https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite"
