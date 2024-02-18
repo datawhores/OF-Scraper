@@ -2,7 +2,8 @@ import logging
 from contextlib import contextmanager
 
 import ofscraper.api.init as init
-import ofscraper.utils.auth as auth
+import ofscraper.utils.auth.file as auth_file
+import ofscraper.utils.auth.make as make
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
@@ -17,7 +18,7 @@ def check_auth():
         status = init.getstatus()
         if status == "DOWN":
             log.warning("Auth Failed")
-            auth.make_auth(auth=auth.read_auth())
+            make.make_auth(auth=auth_file.read_auth())
             continue
         break
 

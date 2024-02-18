@@ -6,10 +6,10 @@ import aiohttp
 import certifi
 import httpx
 
+import ofscraper.utils.auth.file as files
+import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-
-from ..utils import auth
 
 ####
 #  This class allows the user to select which backend aiohttp or httpx they want to use
@@ -121,17 +121,17 @@ class sessionBuilder:
     def _create_headers(self, headers, url):
         headers = headers or {}
         if self._set_header:
-            new_headers = auth.make_headers(auth.read_auth())
+            new_headers = auth_requests.make_headers(files.read_auth())
             headers.update(new_headers)
         headers = self._create_sign(headers, url)
         return headers
 
     def _create_sign(self, headers, url):
-        auth.create_sign(url, headers) if self._set_sign else None
+        auth_requests.create_sign(url, headers) if self._set_sign else None
         return headers
 
     def _create_cookies(self):
-        return auth.add_cookies()
+        return auth_requests.add_cookies()
 
     def requests(
         self,

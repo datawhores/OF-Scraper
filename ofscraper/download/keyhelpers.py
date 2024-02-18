@@ -21,7 +21,8 @@ from tenacity import (
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common as common
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.auth as auth
+import ofscraper.utils.auth.file as auth_file
+import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
@@ -101,9 +102,9 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             try:
                 log.debug(f"ID:{id} pssh: {pssh!=None}")
                 log.debug(f"ID:{id} licence: {licence_url}")
-                headers = auth.make_headers(auth.read_auth())
-                headers["cookie"] = auth.get_cookies()
-                auth.create_sign(licence_url, headers)
+                headers = auth_requests.make_headers(auth_file.read_auth())
+                headers["cookie"] = auth_requests.get_cookies()
+                auth_requests.create_sign(licence_url, headers)
                 json_data = {
                     "license": licence_url,
                     "headers": json.dumps(headers),
@@ -151,9 +152,9 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             try:
                 log.debug(f"ID:{id} pssh: {pssh!=None}")
                 log.debug(f"ID:{id} licence: {licence_url}")
-                headers = auth.make_headers(auth.read_auth())
-                headers["cookie"] = auth.get_cookies()
-                auth.create_sign(licence_url, headers)
+                headers = auth_requests.make_headers(auth_file.read_auth())
+                headers["cookie"] = auth_requests.get_cookies()
+                auth_requests.create_sign(licence_url, headers)
                 json_data = {
                     "license": licence_url,
                     "headers": json.dumps(headers),
@@ -201,9 +202,9 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             try:
                 log.debug(f"ID:{id} pssh: {pssh!=None}")
                 log.debug(f"ID:{id} licence: {licence_url}")
-                headers = auth.make_headers(auth.read_auth())
-                headers["cookie"] = auth.get_cookies()
-                auth.create_sign(licence_url, headers)
+                headers = auth_requests.make_headers(auth_file.read_auth())
+                headers["cookie"] = auth_requests.get_cookies()
+                auth_requests.create_sign(licence_url, headers)
                 json_data = {
                     "license_url": licence_url,
                     "headers": json.dumps(headers),

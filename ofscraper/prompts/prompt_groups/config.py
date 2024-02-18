@@ -738,8 +738,8 @@ def reset_config_prompt() -> bool:
                 "message": "How do you want to fix this issue",
                 "choices": [
                     Choice("reset", "Reset Default"),
-                    Choice("manual", "Through script Edit Config"),
-                    Choice("again", "File was fixed manually"),
+                    Choice("manual", "Edit Config manually with script"),
+                    Choice("again", "File was fixed manually via text editor"),
                 ],
             }
         ]

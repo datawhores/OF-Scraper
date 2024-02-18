@@ -34,8 +34,6 @@ import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
-from ..utils import auth
-
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 sem = None

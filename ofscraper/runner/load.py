@@ -17,8 +17,8 @@ def main():
         systemSet()
         args_loader()
         setdate()
-        setLogger()
         readConfig()
+        setLogger()
         make_folder()
         run.main()
     except Exception as E:

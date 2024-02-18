@@ -34,7 +34,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         if event and event.is_set():
             return True
         try:
-            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
+            messages = funct()
         except:
             continue
         if not isinstance(messages, list):

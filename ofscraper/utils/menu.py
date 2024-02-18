@@ -5,7 +5,7 @@ import ofscraper.actions.process as process_actions
 import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
-import ofscraper.utils.auth as auth
+import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.profiles.manage as profiles_manage
@@ -45,7 +45,7 @@ def main_menu_action():
                 count = count + 1
         elif result_main_prompt == "auth":
             # Edit `auth.json` file
-            auth_result_prompt = auth.edit_auth()
+            auth_result_prompt = auth_file.edit_auth()
             if auth_result_prompt == "quit":
                 return True
         elif result_main_prompt == "config":

@@ -23,7 +23,8 @@ import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
-import ofscraper.utils.auth as auth
+import ofscraper.utils.auth.file as auth_file
+import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
@@ -298,7 +299,7 @@ def message_checker():
 
 def purchase_checker():
     user_dict = {}
-    auth.make_headers(auth.read_auth())
+    auth_requests.make_headers(auth_file.read_auth())
     ROWS = []
     for user_name in read_args.retriveArgs().username:
         user_name = profile.scrape_profile(user_name)["username"]

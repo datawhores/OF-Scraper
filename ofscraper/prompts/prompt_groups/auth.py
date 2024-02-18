@@ -32,7 +32,7 @@ def auth_prompt(auth) -> dict:
                 "type": "input",
                 "name": "sess",
                 "message": "Enter your sess cookie:",
-                "default": auth["sess"],
+                "default": auth["sess"] or "",
                 "validate": EmptyInputValidator(),
                 "multiline": True,
             },
@@ -40,7 +40,7 @@ def auth_prompt(auth) -> dict:
                 "type": "input",
                 "name": "auth_id",
                 "message": "Enter your auth_id cookie:",
-                "default": auth["auth_id"],
+                "default": auth["auth_id"] or "",
                 "validate": EmptyInputValidator(),
                 "multiline": True,
             },
@@ -48,14 +48,14 @@ def auth_prompt(auth) -> dict:
                 "type": "input",
                 "name": "auth_uid_",
                 "message": "Enter your auth_uid cookie (can be left blank if you don't use 2FA):",
-                "default": auth["auth_uid_"],
+                "default": auth["auth_uid_"] or "",
                 "multiline": True,
             },
             {
                 "type": "input",
                 "name": "user_agent",
                 "message": "Enter your `user agent`:",
-                "default": auth["user_agent"],
+                "default": auth["user_agent"] or "",
                 "validate": EmptyInputValidator(),
                 "multiline": True,
             },
@@ -63,7 +63,7 @@ def auth_prompt(auth) -> dict:
                 "type": "input",
                 "name": "x-bc",
                 "message": "Enter your `x-bc` token:",
-                "default": auth["x-bc"],
+                "default": auth["x-bc"] or "",
                 "validate": EmptyInputValidator(),
                 "multiline": True,
             },
@@ -185,7 +185,7 @@ def user_agent_prompt(current):
                 "type": "input",
                 "name": name,
                 "message": "Enter User_Agent from browser",
-                "default": current,
+                "default": current or "",
                 "validate": EmptyInputValidator(),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
             }
@@ -194,7 +194,7 @@ def user_agent_prompt(current):
     return questions[name]
 
 
-def xbc_prompt():
+def xbc_prompt(xbc):
     name = "input"
     questions = promptClasses.batchConverter(
         *[
@@ -205,6 +205,7 @@ def xbc_prompt():
                 "instruction": f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/datawhores/ofscraper\n\n",
                 "validate": EmptyInputValidator(),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
+                "default": xbc or "",
             }
         ]
     )
@@ -228,7 +229,7 @@ Cookie Helper Repo:https://github.com/M-rcus/OnlyFans-Cookie-Helper
             }
         ]
     )
-    return questions[name]
+    return questions[name]["auth"]
 
 
 def reset_auth_prompt() -> bool:

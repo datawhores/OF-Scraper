@@ -26,13 +26,14 @@ log = logging.getLogger("shared")
 
 
 def read_config(update=True):
-    with config_context.config_context():
-        config = config_file.open_config()
-        if update and schema.config_diff(config):
-            config = config_file.auto_update_config(config)
-        if config.get("config"):
-            config = config["config"]
-        return config
+    while True:
+        with config_context.config_context():
+            config = config_file.open_config()
+            if update and schema.config_diff(config):
+                config = config_file.auto_update_config(config)
+            if config.get("config"):
+                config = config["config"]
+            return config
 
 
 def update_config(field: str, value):

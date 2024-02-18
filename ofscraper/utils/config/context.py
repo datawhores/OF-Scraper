@@ -15,7 +15,10 @@ def config_context():
         configStr = None
         while True:
             try:
-                print("You config.json has a syntax error")
+                print("Your config.json has a syntax error")
+                import traceback
+
+                print(traceback.format_exc())
                 print(f"{e}\n\n")
                 config_prompt = prompts.reset_config_prompt()
                 if config_prompt == "manual":
@@ -23,7 +26,7 @@ def config_context():
                         configStr or config_file.config_string()
                     )
                     config_file.write_config(configStr)
-                    config = config_file.open_config()
+                    config_file.open_config()
                 elif config_prompt == "reset":
                     config_file.make_config_original()
                 break
