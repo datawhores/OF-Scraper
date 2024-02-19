@@ -25,24 +25,26 @@ import ofscraper.utils.paths.common as common_paths
 console = Console()
 
 
-@auth_context.auth_context()
 def read_auth():
-    old_auth = helpers.get_auth_dict()
-    auth = auth_schema.auth_schema(old_auth)
-    if auth_schema.auth_key_missing(old_auth):
-        auth = write_auth(auth)
-    if auth_schema.auth_key_null(auth):
-        auth = make.make_auth(auth)
-    request_auth.make_request_auth()
-    return auth
+    while True:
+        with auth_context.auth_context():
+            old_auth = helpers.get_auth_dict()
+            auth = auth_schema.auth_schema(old_auth)
+            if auth_schema.auth_key_missing(old_auth):
+                auth = write_auth(auth)
+            if auth_schema.auth_key_null(auth):
+                auth = make.make_auth(auth)
+            request_auth.make_request_auth()
+            return auth
 
 
-@auth_context.auth_context()
 def edit_auth():
-    auth = helpers.get_auth_dict()
-    auth = make.make_auth(auth)
-    console.print("Your `auth.json` file has been edited.")
-    return auth
+    while True:
+        with auth_context.auth_context():
+            auth = helpers.get_auth_dict()
+            auth = make.make_auth(auth)
+            console.print("Your `auth.json` file has been edited.")
+            return auth
 
 
 def write_auth(auth):

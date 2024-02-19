@@ -40,8 +40,8 @@ def _scraper_user_helper(c):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("LOGIN_NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_AUTH_MIN"),
+            max=constants.getattr("OF_AUTH_MAX"),
         ),
         reraise=True,
         after=lambda retry_state: print(

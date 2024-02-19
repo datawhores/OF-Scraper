@@ -34,11 +34,19 @@ def auth_context():
         console.print("You don't seem to have an `auth.json` file")
         make.make_auth()
     except json.JSONDecodeError as e:
-        print("Your auth.json has a syntax error")
-        print(f"{e}\n\n")
-        auth_prompt = prompts.reset_auth_prompt()
-        if auth_prompt == "manual":
-            f.write(prompts.manual_auth_prompt(helpers.get_auth_string()))
-        elif auth_prompt == "reset":
-            with open(common_paths.get_auth_file(), "w") as f:
-                f.write(json.dumps(helpers.get_empty()))
+        while True:
+            try:
+                print("Your auth.json has a syntax error")
+                print(f"{e}\n\n")
+                auth_prompt = prompts.reset_auth_prompt()
+                if auth_prompt == "manual":
+                    authStr = helpers.get_auth_string()
+                    with open(common_paths.get_auth_file(), "w") as f:
+                        f.write(prompts.manual_auth_prompt(authStr))
+                elif auth_prompt == "reset":
+                    with open(common_paths.get_auth_file(), "w") as f:
+                        f.write(json.dumps(helpers.get_empty()))
+                helpers.get_auth_dict()
+                break
+            except:
+                continue
