@@ -27,6 +27,7 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
@@ -113,7 +114,8 @@ def get_request_digitalcriminals():
                         r.raise_for_status()
 
 
-def make_headers(auth):
+def make_headers():
+    auth = auth_file.read_auth()
     headers = {
         "accept": "application/json, text/plain, */*",
         "app-token": constants.getattr("APP_TOKEN"),
@@ -126,10 +128,7 @@ def make_headers(auth):
 
 
 def add_cookies():
-    authFile = common_paths.get_auth_file()
-    with open(authFile, "r") as f:
-        auth = json.load(f)
-
+    auth = auth_file.read_auth()
     cookies = {}
     cookies.update({"sess": auth["sess"]})
     cookies.update({"auth_id": auth["auth_id"]})
@@ -138,12 +137,7 @@ def add_cookies():
 
 
 def get_cookies():
-    authFile = common_paths.get_auth_file()
-
-    with open(authFile, "r") as f:
-        auth = json.load(f)
-    if "auth" in auth:
-        auth = auth["auth"]
+    auth = auth_file.read_auth()
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 

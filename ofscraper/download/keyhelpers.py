@@ -102,7 +102,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             try:
                 log.debug(f"ID:{id} pssh: {pssh!=None}")
                 log.debug(f"ID:{id} licence: {licence_url}")
-                headers = auth_requests.make_headers(auth_file.read_auth())
+                headers = auth_requests.make_headers()
                 headers["cookie"] = auth_requests.get_cookies()
                 auth_requests.create_sign(licence_url, headers)
                 json_data = {
@@ -202,7 +202,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             try:
                 log.debug(f"ID:{id} pssh: {pssh!=None}")
                 log.debug(f"ID:{id} licence: {licence_url}")
-                headers = auth_requests.make_headers(auth_file.read_auth())
+                headers = auth_requests.make_headers()
                 headers["cookie"] = auth_requests.get_cookies()
                 auth_requests.create_sign(licence_url, headers)
                 json_data = {

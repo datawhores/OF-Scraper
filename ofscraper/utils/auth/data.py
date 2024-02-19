@@ -43,7 +43,13 @@ def get_uid(auth):
 
 
 def x_bc(auth):
-    val = auth.get("x_bc") or auth.get("x-bc") or ""
+    val = (
+        auth.get("x_bc")
+        or auth.get("x-bc")
+        or auth.get("auth", {}).get("x-bc")
+        or auth.get("auth", {}).get("x_bc")
+        or ""
+    )
     return fix_val(val)
 
 
