@@ -131,7 +131,8 @@ class sessionBuilder:
         return headers
 
     def _create_cookies(self):
-        return auth_requests.add_cookies()
+        if self._set_cookies:
+            return auth_requests.add_cookies()
 
     def requests(
         self,

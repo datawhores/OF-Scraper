@@ -72,5 +72,5 @@ def browser_cookie_helper(auth, browserSelect):
     auth["user_agent"] = prompts.user_agent_prompt(auth.get("user_agent"))
 
 
-def cookie_helper():
+def cookie_helper_extension():
     return prompts.auth_full_paste()

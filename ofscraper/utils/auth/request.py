@@ -133,7 +133,7 @@ def add_cookies():
     cookies = {}
     cookies.update({"sess": auth["sess"]})
     cookies.update({"auth_id": auth["auth_id"]})
-    cookies.update({"auth_uid": auth["auth_uid"] or auth["auth_id"]})
+    cookies.update({"auth_uid_": auth["auth_uid"] or auth["auth_id"]})
     return cookies
 
 
@@ -142,7 +142,9 @@ def get_cookies():
 
     with open(authFile, "r") as f:
         auth = json.load(f)
-    return f"auth_id={auth['auth']['auth_id']};sess={auth['auth']['sess']};"
+    if "auth" in auth:
+        auth = auth["auth"]
+    return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
 def create_sign(link, headers):

@@ -22,7 +22,7 @@ def make_auth(auth=None):
     if browserSelect in {"quit", "main"}:
         return browserSelect
     elif browserSelect == "Paste From M-rcus' OnlyFans-Cookie-Helper":
-        auth = helpers.cookie_helper(auth)
+        auth = auth_schema.auth_schema(helpers.cookie_helper_extension())
     elif browserSelect == "Enter Each Field Manually":
         console.print(
             """
