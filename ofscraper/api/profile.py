@@ -116,12 +116,12 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                     if r.ok:
                         cache.set(
                             f"username_{username}",
-                            await r.json(),
+                            await r.json_(),
                             int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
                         )
                         cache.close()
-                        log.trace(f"username date: {await r.json()}")
-                        return await r.json()
+                        log.trace(f"username date: {await r.json_()}")
+                        return await r.json_()
                     elif r.status == 404:
                         return {"username": "modeldeleted"}
                     else:
