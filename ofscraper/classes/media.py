@@ -62,7 +62,7 @@ class Media:
         elif self._media["type"] == "forced_skipped":
             return "forced_skipped"
         else:
-            return f"{self._media['type']}s"
+            return f"{self._media['type']}s".lower()
 
     @property
     def length(self):

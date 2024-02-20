@@ -1,6 +1,7 @@
 import argparse
 import re
 import sys
+import textwrap
 
 from humanfriendly import parse_size
 
@@ -18,7 +19,9 @@ def create_parser(input=None):
         input = sys.argv[1:]
     if not system.get_parent():
         input = []
-    parent_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=True)
+    parent_parser = argparse.ArgumentParser(
+        add_help=False, allow_abbrev=True, formatter_class=argparse.RawTextHelpFormatter
+    )
     general = parent_parser.add_argument_group("Program", description="Program Args")
     general.add_argument(
         "-v", "--version", action="version", version=__version__, default=__version__
@@ -64,7 +67,11 @@ def create_parser(input=None):
     )
 
     parser = argparse.ArgumentParser(
-        add_help=False, parents=[parent_parser], prog="OF-Scraper"
+        add_help=False,
+        parents=[parent_parser],
+        prog="OF-Scraper",
+        epilog="Visit https://of-scraper.gitbook.io/of-scraper/command-reference\n For more details on command usage",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument("-h", "--help", action="help")
     scraper = parser.add_argument_group(
@@ -103,7 +110,12 @@ def create_parser(input=None):
     scraper.add_argument(
         "-a",
         "--action",
-        help="perform batch action on users",
+        help="""
+Select batch action(s) to perform
+[like,unlike,download]
+Accepts space or comma seperated list
+like and unlike can not be combined
+        """,
         default=[],
         required=False,
         type=helpers.action_helper,
@@ -131,7 +143,11 @@ def create_parser(input=None):
     post.add_argument(
         "-o",
         "--posts",
-        help="Perform action in following areas",
+        help="""
+Select area(s) for batch action(s)
+Select from [HighLights,Archived,Messages,Timeline,Pinned,Stories,Purchased,Profile,Labels] or All
+Accepts space or comma seperated list
+""",
         default=[],
         required=False,
         type=helpers.posttype_helper,
@@ -141,7 +157,12 @@ def create_parser(input=None):
     post.add_argument(
         "-da",
         "--download-area",
-        help="Download specified content from a model",
+        help="""
+Perform download action in specified area(s)
+Select from [HighLights,Archived,Messages,Timeline,Pinned,Stories,Purchased,Profile,Labels] or All
+Has preference over --posts
+Accepts space or comma seperated list
+""",
         default=[],
         required=False,
         type=helpers.download_helper,
@@ -151,7 +172,12 @@ def create_parser(input=None):
     post.add_argument(
         "-la",
         "--like-area",
-        help="Batch unlike or likes in specific aera",
+        help="""
+Perform like/unlike action in selected area(s)
+[Archived,Timeline,Pinned,Labels] or All
+Has preference over --posts
+Accepts space or comma seperated list
+""",
         default=[],
         required=False,
         type=helpers.like_helper,
@@ -252,7 +278,7 @@ def create_parser(input=None):
     post.add_argument(
         "-mt",
         "--mediatype",
-        help="Filter by media",
+        help="Filter by media in the following areas [Videos,Audios,Images]",
         default=[],
         required=False,
         type=helpers.mediatype_helper,
@@ -733,7 +759,7 @@ def create_parser(input=None):
     advanced.add_argument(
         "-dp",
         "--downloadthreads",
-        help="Number threads to use minimum will always be 1, Maximmum will never be higher then max availible-1",
+        help="Number threads to use minimum will always be 1, total used never be higher then (total threads) -1",
         default=None,
         type=int,
     )

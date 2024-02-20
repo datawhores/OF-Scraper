@@ -94,13 +94,13 @@ def like_helper(x):
 
 
 def mediatype_helper(x):
-    choices = set(["Videos", "Audio", "Images"])
+    choices = set(["Videos", "Audios", "Images"])
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: x.capitalize(), x))
     if len(list(filter(lambda y: y not in choices, x))) > 0:
         raise argparse.ArgumentTypeError(
-            "error: argument -o/--mediatype: invalid choice: (choose from 'images','audio','videos')"
+            "error: argument -o/--mediatype: invalid choice: (choose from 'images','audios','videos')"
         )
     return x
 
@@ -121,7 +121,7 @@ def action_helper(x):
         len(
             list(
                 filter(
-                    lambda x: x in set(["like", "unlike", "download", "metadata"]),
+                    lambda x: x in set(["like", "unlike", "download"]),
                     select,
                 )
             )
