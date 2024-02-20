@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import string
@@ -34,6 +35,7 @@ class Media:
         self._count = count
         self._post = post
         self._final_url = None
+        self._cached_parse_mpd = None
 
     @property
     def expires(self):
@@ -74,9 +76,11 @@ class Media:
 
     @property
     def url(self):
-        if self._final_url:
-            return self._final_url
-        if self.responsetype == "stories" or self.responsetype == "highlights":
+        if self.protected == True:
+            return None
+        elif self._final_url:
+            None
+        elif self.responsetype == "stories" or self.responsetype == "highlights":
             self._final_url = self.files_source.get("url")
         elif self.responsetype == "profile":
             self._final_url = self._media.get("url")
@@ -85,7 +89,7 @@ class Media:
         return self._final_url
 
     def _url_source_helper(self):
-        quality = self.selected_quality
+        quality = self.normal_quality_helper()
         if quality == "source":
             return self._media.get("source", {}).get("source")
         return self._media.get("videoSources", {}).get(quality)
@@ -178,7 +182,7 @@ class Media:
 
     @property
     def mpd(self):
-        if self.url:
+        if self.protected == False:
             return None
         return (
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
@@ -274,11 +278,11 @@ class Media:
             return f"{filename}_{arrow.get(self.date).format(data.get_date())}"
 
     @property
-    def final_filename(self):
+    async def final_filename(self):
         filename = self.filename or self.id
         if self.mediatype == "videos":
             filename = re.sub("_[a-z0-9]+$", f"", filename)
-            filename = f"{filename}_{self.selected_quality}"
+            filename = f"{filename}_{await self.selected_quality}"
         # cleanup
         filename = self.cleanup(filename)
         return filename
@@ -309,6 +313,8 @@ class Media:
 
     @property
     async def parse_mpd(self):
+        if self._cached_parse_mpd:
+            return self._cached_parse_mpd
         if not self.mpd:
             return
         params = {
@@ -330,18 +336,16 @@ class Media:
                     async with c.requests(url=self.mpd, params=params)() as r:
                         if not r.ok:
                             r.raise_for_status()
-                        return MPEGDASHParser.parse(await r.text_())
+                        self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
+                        return self._cached_parse_mpd
 
     @property
     async def mpd_dict(self):
-        mpd = await self.parse_mpd
-        if not mpd:
+        if not self.mpd:
             return
-        video = None
-        audio = None
-        for period in mpd.periods:
-            video = video if video else self.mpd_video_helper(period)
-            audio = audio if audio else self.mpd_audio_helper(period)
+        mpd = await self.parse_mpd
+        video = await self.mpd_video_helper(mpd=mpd)
+        audio = await self.mpd_audio_helper(mpd=mpd)
         return audio, video
 
     @property
@@ -364,16 +368,18 @@ class Media:
         self._media["type"] = val
 
     @property
-    def selected_quality(self):
-        allowed = quality.get_allowed_qualities()
+    async def selected_quality(self):
+        if self.protected == False:
+            return self.normal_quality_helper()
+        return await self.alt_quality_helper()
+
+    @property
+    def protected(self):
         if self.mediatype != "videos":
-            return "source"
-        for ele in ["240", "720"]:
-            if ele not in allowed:
-                continue
-            elif self._media.get("videoSources", {}).get(ele):
-                return ele
-        return "source"
+            return False
+        elif self.media_source.get("source") != None:
+            return False
+        return True
 
     # for use in dynamic names
     @property
@@ -412,53 +418,99 @@ class Media:
         text = re.sub(" ", data.get_spacereplacer(), text)
         return text
 
-    def mpd_video_helper(self, period):
+    async def mpd_video_helper(self, mpd=None):
+        mpd = mpd or await self.parse_mpd
+        if not mpd:
+            return
         allowed = quality.get_allowed_qualities()
-        for adapt_set in filter(
-            lambda x: x.mime_type == "video/mp4", period.adaptation_sets
-        ):
-            kId = None
-            for prot in adapt_set.content_protections:
-                if prot.value == None:
-                    kId = prot.pssh[0].pssh
-                    break
-            selected_quality = None
-            for ele in ["240", "720"]:
-                if selected_quality or ele not in allowed:
-                    continue
-                selected_quality = selected_quality or next(
-                    filter(lambda x: x.height == int(ele), adapt_set.representations),
-                    None,
-                )
-            if "source" in allowed:
+        for period in mpd.periods:
+            for adapt_set in filter(
+                lambda x: x.mime_type == "video/mp4", period.adaptation_sets
+            ):
+                kId = None
+                for prot in adapt_set.content_protections:
+                    if prot.value == None:
+                        kId = prot.pssh[0].pssh
+                        break
+
+                selected_quality = None
+                for ele in ["240", "720"]:
+                    if ele not in allowed:
+                        continue
+                    selected_quality = selected_quality or next(
+                        filter(
+                            lambda x: x.height == int(ele), adapt_set.representations
+                        ),
+                        None,
+                    )
                 selected_quality = selected_quality or max(
                     adapt_set.representations, key=lambda x: x.height
                 )
-            for repr in adapt_set.representations:
-                if repr.height == selected_quality.height:
+                for repr in adapt_set.representations:
+                    if repr.height == selected_quality.height:
+                        origname = f"{repr.base_urls[0].base_url_value}"
+                        return {
+                            "origname": origname,
+                            "pssh": kId,
+                            "type": "video",
+                            "name": f"tempvid_{origname}",
+                        }
+
+    async def mpd_audio_helper(self, mpd=None):
+        mpd = mpd or await self.parse_mpd
+        if not mpd:
+            return
+        for period in mpd.periods:
+            for adapt_set in filter(
+                lambda x: x.mime_type == "audio/mp4", period.adaptation_sets
+            ):
+                kId = None
+                for prot in adapt_set.content_protections:
+                    if prot.value == None:
+                        kId = prot.pssh[0].pssh
+                        log_helpers.updateSenstiveDict(kId, "pssh_code")
+                        break
+                for repr in adapt_set.representations:
                     origname = f"{repr.base_urls[0].base_url_value}"
                     return {
                         "origname": origname,
                         "pssh": kId,
-                        "type": "video",
-                        "name": f"tempvid_{origname}",
+                        "type": "audio",
+                        "name": f"tempaudio_{origname}",
                     }
 
-    def mpd_audio_helper(self, period):
-        for adapt_set in filter(
-            lambda x: x.mime_type == "audio/mp4", period.adaptation_sets
-        ):
-            kId = None
-            for prot in adapt_set.content_protections:
-                if prot.value == None:
-                    kId = prot.pssh[0].pssh
-                    log_helpers.updateSenstiveDict(kId, "pssh_code")
-                    break
-            for repr in adapt_set.representations:
-                origname = f"{repr.base_urls[0].base_url_value}"
-                return {
-                    "origname": origname,
-                    "pssh": kId,
-                    "type": "audio",
-                    "name": f"tempaudio_{origname}",
-                }
+    def normal_quality_helper(self):
+        allowed = quality.get_allowed_qualities()
+        if self.mediatype != "videos":
+            return "source"
+        for ele in ["240", "720"]:
+            if ele not in allowed:
+                continue
+            elif self._media.get("videoSources", {}).get(ele):
+                return ele
+        return "source"
+
+    async def alt_quality_helper(self, mpd=None):
+        mpd = mpd or await self.parse_mpd
+
+        if not mpd:
+            return
+        allowed = quality.get_allowed_qualities()
+        selected = None
+        val = None
+
+        for period in mpd.periods:
+            for adapt_set in filter(
+                lambda x: x.mime_type == "video/mp4", period.adaptation_sets
+            ):
+                kId = None
+                for ele in ["240", "720"]:
+                    if ele not in allowed:
+                        continue
+                    selected = selected or next(
+                        filter(
+                            lambda x: x.height == int(ele), adapt_set.representations
+                        ),
+                        None,
+                    )
+                return str(selected.height) if selected else "source"

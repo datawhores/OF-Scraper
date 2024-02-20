@@ -121,7 +121,7 @@ class sessionBuilder:
     def _create_headers(self, headers, url):
         headers = headers or {}
         if self._set_header:
-            new_headers = auth_requests.make_headers(files.read_auth())
+            new_headers = auth_requests.make_headers()
             headers.update(new_headers)
         headers = self._create_sign(headers, url)
         return headers

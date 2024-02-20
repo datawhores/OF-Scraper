@@ -30,13 +30,21 @@ class Placeholders:
         self._final_path = None
         self._tempfilename = None
 
+    def async_wrapper(f):
+        async def inner(*args, **kwargs):
+            args[0]._variables = {}
+            args[0].create_variables_base()
+            return await f(args[0], *args[1:], **kwargs)
+
+        return inner
+
     def wrapper(f):
-        def wrapper(*args, **kwargs):
+        def inner(*args, **kwargs):
             args[0]._variables = {}
             args[0].create_variables_base()
             return f(args[0], *args[1:], **kwargs)
 
-        return wrapper
+        return inner
 
     def create_variables_base(self):
         my_profile = profile_data.get_my_info()
@@ -94,7 +102,7 @@ class Placeholders:
         self._variables.update({"renewal_price": renewal_price})
         self._variables.update({"renewalprice": renewal_price})
 
-    def add_common_variables(self, ele, username, model_id):
+    async def add_common_variables(self, ele, username, model_id):
         self._variables.update({"username": username})
         self._variables.update({"user_name": username})
         self._variables.update({"model_id": model_id})
@@ -129,9 +137,9 @@ class Placeholders:
         self._variables.update({"media_id": media_id})
         self._variables.update({"mediaid": media_id})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
-        self._variables.update({"quality": ele.selected_quality})
-        self._variables.update({"filename": ele.final_filename})
-        self._variables.update({"file_name": ele.final_filename})
+        self._variables.update({"quality": await ele.selected_quality})
+        self._variables.update({"filename": await ele.final_filename})
+        self._variables.update({"file_name": await ele.final_filename})
         self._variables.update({"only_file_name": ele.no_quality_final_filename})
         self._variables.update({"only_filename": ele.no_quality_final_filename})
         self._variables.update({"text": ele.file_text})
@@ -198,9 +206,9 @@ class Placeholders:
             )
         )
 
-    @wrapper
-    def gettempDir(self, ele, username, model_id, create=True):
-        self._tempdir = self.getmediadir(
+    @async_wrapper
+    async def gettempDir(self, ele, username, model_id, create=True):
+        self._tempdir = await self.getmediadir(
             ele,
             username,
             model_id,
@@ -210,10 +218,10 @@ class Placeholders:
         self._tempdir.mkdir(parents=True, exist_ok=True)
         return self._tempdir
 
-    @wrapper
-    def getmediadir(self, ele, username, model_id, root=None, create=True):
+    @async_wrapper
+    async def getmediadir(self, ele, username, model_id, root=None, create=True):
         root = pathlib.Path(root or common_paths.get_save_location())
-        self.add_common_variables(ele, username, model_id)
+        await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
@@ -242,17 +250,17 @@ class Placeholders:
         self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
         return final_path
 
-    @wrapper
-    def createfilename(self, ele, username, model_id, ext):
+    @async_wrapper
+    async def createfilename(self, ele, username, model_id, ext):
         self._variables.update({"ext": ext})
-        self.add_common_variables(ele, username, model_id)
+        await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         out = None
         if ele.responsetype == "profile":
-            out = f"{ele.final_filename}.{ext}"
+            out = f"{await ele.final_filename}.{ext}"
         elif data.get_allow_code_execution():
             if isinstance(customval, dict) == False:
                 try:
@@ -296,9 +304,9 @@ class Placeholders:
                 pathlib.Path(self.mediadir, f"{self.filename}")
             )
 
-    def getDirs(self, ele, username, model_id, create=True):
-        self.gettempDir(ele, username, model_id, create=create)
-        self.getmediadir(ele, username, model_id, create=create)
+    async def getDirs(self, ele, username, model_id, create=True):
+        await self.gettempDir(ele, username, model_id, create=create)
+        await self.getmediadir(ele, username, model_id, create=create)
 
     @property
     def filename(self):

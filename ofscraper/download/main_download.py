@@ -94,7 +94,7 @@ async def main_download(c, ele, username, model_id, progress):
         f"{get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
     )
     moveHelper(temp, path_to_file, ele)
-    addGlobalDir(placeholder.Placeholders().getmediadir(ele, username, model_id))
+    addGlobalDir(await placeholder.Placeholders().getmediadir(ele, username, model_id))
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common.log.debug(
@@ -141,7 +141,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
                     if data and data.get("content-length"):
                         content_type = data.get("content-type").split("/")[-1]
                         total = int(data.get("content-length"))
-                        placeholderObj.createfilename(
+                        await placeholderObj.createfilename(
                             ele, username, model_id, content_type
                         )
                         placeholderObj.set_final_path()
@@ -231,7 +231,7 @@ async def main_download_sendreq(
                         if not content_type and ele.mediatype.lower() == "images":
                             content_type = "jpg"
                         if not placeholderObj.filename:
-                            placeholderObj.createfilename(
+                            await placeholderObj.createfilename(
                                 ele, username, model_id, content_type
                             )
                             placeholderObj.set_final_path()

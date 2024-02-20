@@ -82,13 +82,13 @@ async def main_download(c, ele, username, model_id):
     total, temp_path, path_to_file = result
     await size_checker(temp_path, ele, total, path_to_file)
     common.innerlog.get().debug(
-        f"{get_medialog(ele)} {ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp_path).absolute().stat().st_size}"
+        f"{get_medialog(ele)} { await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp_path).absolute().stat().st_size}"
     )
     common.innerlog.get().debug(
         f"{get_medialog(ele)} renaming {pathlib.Path(temp_path).absolute()} -> {path_to_file}"
     )
     moveHelper(temp_path, path_to_file, ele, common.innerlog.get())
-    addLocalDir(placeholder.Placeholders().getmediadir(ele, username, model_id))
+    addLocalDir(await placeholder.Placeholders().getmediadir(ele, username, model_id))
 
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
@@ -122,8 +122,10 @@ async def main_download_downloader(c, ele, username, model_id):
         ):
             with _:
                 placeholderObj = placeholder.Placeholders()
-                placeholderObj.getDirs(ele, username, model_id)
-                placeholderObj.tempfilename = f"{ele.final_filename}_{ele.id}.part"
+                await placeholderObj.getDirs(ele, username, model_id)
+                placeholderObj.tempfilename = (
+                    f"{await ele.final_filename}_{ele.id}.part"
+                )
                 data = await asyncio.get_event_loop().run_in_executor(
                     common.cache_thread,
                     partial(cache.get, f"{ele.id}_headers"),
@@ -131,7 +133,9 @@ async def main_download_downloader(c, ele, username, model_id):
                 if data and data.get("content-length"):
                     content_type = data.get("content-type").split("/")[-1]
                     total = int(data.get("content-length"))
-                    placeholderObj.createfilename(ele, username, model_id, content_type)
+                    await placeholderObj.createfilename(
+                        ele, username, model_id, content_type
+                    )
                     placeholderObj.set_final_path()
                     resume_size = (
                         0
@@ -217,7 +221,7 @@ async def main_download_sendreq(c, ele, placeholderObj, username, model_id, tota
                         if not content_type and ele.mediatype.lower() == "images":
                             content_type = "jpg"
                         if not placeholderObj.filename:
-                            placeholderObj.createfilename(
+                            await placeholderObj.createfilename(
                                 ele, username, model_id, content_type
                             )
                             placeholderObj.set_final_path()

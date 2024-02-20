@@ -179,7 +179,6 @@ def filterMedia(media):
     )
     media = helpers.download_type_filter(media)
     count += 1
-
     log.trace(
         "\n\n\n".join(
             list(

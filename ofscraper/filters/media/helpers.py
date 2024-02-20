@@ -143,9 +143,9 @@ def anti_post_user_filter(media):
 
 def download_type_filter(media):
     if read_args.retriveArgs().protected_only:
-        return list(filter(lambda x: x.mpd is not None, media))
+        return list(filter(lambda x: x.protected, media))
     elif read_args.retriveArgs().normal_only:
-        return list(filter(lambda x: x.url is not None, media))
+        return list(filter(lambda x: not x.protected, media))
     else:
         return media
 
