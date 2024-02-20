@@ -189,12 +189,13 @@ async def get_labelled_posts(labels, username):
         job_progress = Progress("{task.description}")
         progress_group = Group(overall_progress, Panel(Group(job_progress)))
 
-        output = {}
+        output = get_default_label_dict(labels)
         global tasks
         global new_tasks
         tasks = []
         new_tasks
         page_count = 0
+
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
@@ -217,7 +218,7 @@ async def get_labelled_posts(labels, username):
                     )
                     for result in done:
                         try:
-                            label, posts = await result
+                            label, new_posts = await result
                         except Exception as E:
                             log.debug(E)
                             continue
@@ -225,21 +226,15 @@ async def get_labelled_posts(labels, username):
                         overall_progress.update(
                             page_task, description=f"Pages Progress: {page_count}"
                         )
-                        label_id_ = label["id"]
                         log.debug(
-                            f"[bold]Label {label['name']} post count with Dupes[/bold] {len(posts)} found"
+                            f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
                         )
-                        posts = label_dedupe(posts)
+                        new_posts = label_dedupe(new_posts)
                         log.debug(
-                            f"[bold]Label {label['name']} post count without Dupes[/bold] {len(posts)} found"
+                            f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
                         )
-
-                        label_ = output.get(label_id_, None)
-                        if not label_:
-                            output[label_id_] = label
-                            output[label_id_]["posts"] = posts
-                        else:
-                            output[label_id_]["posts"].extend(posts)
+                        posts = output[label["id"]].get("posts", []) + new_posts
+                        output[label["id"]]["posts"] = posts
                     tasks = list(pending)
                     tasks.extend(new_tasks)
                     new_tasks = []
@@ -259,16 +254,6 @@ async def get_labelled_posts(labels, username):
         log.debug(f"[bold]Labels count without Dupes[/bold] {len(output)} found")
 
         return list(output.values())
-
-
-def label_dedupe(posts):
-    unduped = {}
-    for post in posts:
-        id = post["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = post
-    return list(unduped.values())
 
 
 async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
@@ -353,3 +338,20 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
                 job_progress.remove_task(task)
 
             return label, posts
+
+
+def label_dedupe(posts):
+    unduped = {}
+    for post in posts:
+        id = post["id"]
+        if unduped.get(id):
+            continue
+        unduped[id] = post
+    return list(unduped.values())
+
+
+def get_default_label_dict(labels):
+    output = {}
+    for label in labels:
+        output[label["id"]] = label
+    return output

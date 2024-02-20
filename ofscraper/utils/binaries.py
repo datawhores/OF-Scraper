@@ -15,6 +15,7 @@ import ofscraper.utils.paths.common as common_paths
 
 
 def mp4decrypt_download():
+    return mp4_decrypt_mac()
     if platform.system() == "Windows":
         return mp4_decrypt_windows()
     elif platform.system() == "Linux":
