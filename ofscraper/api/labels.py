@@ -233,7 +233,9 @@ async def get_labelled_posts(labels, username):
                         log.debug(
                             f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
                         )
-                        posts = output[label["id"]].get("posts", []) + new_posts
+                        posts = label_dedupe(
+                            output[label["id"]].get("posts", []) + new_posts
+                        )
                         output[label["id"]]["posts"] = posts
                     tasks = list(pending)
                     tasks.extend(new_tasks)
