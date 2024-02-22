@@ -52,13 +52,10 @@ profilesPromptChoices = {
 
 
 modelPrompt = {
-    # "Change default profile": "default",
-    # "Edit a profile name": "name",
-    # "Create a profile": "create",
     "Filter model list by subscription properties": "subtype",
     "Filter model list by account activity": "active",
     "Filter model list based on promotion status": "promo",
-    "Change Sorting of model list": "sort",
+    "Filter model list based on status of prices": "price",
+    "Change sorting of model list": "sort",
     "Go Back to Model Lists": "modelList",
-    # "Quit": "quit",
 }

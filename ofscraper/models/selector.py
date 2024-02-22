@@ -135,9 +135,8 @@ def setfilter(forced=False):
             args = prompts.modify_promo_prompt(read_args.retriveArgs())
         elif choice == "active":
             args = prompts.modify_active_prompt(read_args.retriveArgs())
-
-    # if forced or  == "Yes":
-    #     args = prompts.modify_filters_prompt(read_args.retriveArgs())
+        elif choice == "price":
+            args = prompts.modify_prices_prompt(read_args.retriveArgs())
 
 
 def filterNSort(usernames):

@@ -1,9 +1,9 @@
+import inspect
 import json
 import pathlib
 import platform
 import re
 import string
-import textwrap
 
 import arrow
 from pathvalidate import validate_filename, validate_filepath
@@ -44,12 +44,20 @@ class MultiValidator(Validator):
                 )
 
 
+def validatorCallableHelper(funct, message, move_cursor_to_end=False):
+    return Validator.from_callable(
+        funct,
+        inspect.cleandoc(message).strip().replace("\n", " "),
+        move_cursor_to_end=move_cursor_to_end,
+    )
+
+
 def currentProfilesValidator():
     def callable(x):
         x = profiles_tools.profile_name_fixer(x)
         return x not in set(profiles_data.get_profile_names())
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable, "You can not change name to a current profile name"
     )
 
@@ -59,7 +67,7 @@ def currentProfilesCreationValidator():
         x = profiles_tools.profile_name_fixer(x)
         return x not in set(profiles_data.get_profile_names())
 
-    return Validator.from_callable(callable, "This Profile already exists")
+    return validatorCallableHelper(callable, "This Profile already exists")
 
 
 def currentProfileDeleteValidator():
@@ -68,14 +76,14 @@ def currentProfileDeleteValidator():
             profiles_tools.profile_name_fixer(x) != profiles_data.get_active_profile()
         )
 
-    return Validator.from_callable(callable, "You can not delete the active profile")
+    return validatorCallableHelper(callable, "You can not delete the active profile")
 
 
 def emptyListValidator():
     def callable(x):
         return len(x) > 0
 
-    return Validator.from_callable(callable, "You must select at least one")
+    return validatorCallableHelper(callable, "You must select at least one")
 
 
 def cleanTextInput(x):
@@ -88,9 +96,9 @@ def jsonValidator():
             json.loads(x)
             return True
         except:
-            return False
+            return
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
         "Invalid JSON syntax",
         move_cursor_to_end=True,
@@ -113,7 +121,7 @@ def namevalitator():
         validchars = re.search("[a-zA-Z0-9_]*", x)
         return validchars != None and len(x) == len(validchars.group(0))
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
         "ONLY letters, numbers, and underscores are allowed",
         move_cursor_to_end=True,
@@ -139,7 +147,7 @@ def dirformatvalidator():
                 )
                 > 0
             ):
-                return False
+                return
             result = {}
 
             for d in list(map(lambda x: {x: "placeholder"}, placeholders)):
@@ -150,11 +158,11 @@ def dirformatvalidator():
 
             return True
         except:
-            return False
+            return
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 Improper syntax or invalid placeholder
 """
@@ -190,7 +198,7 @@ def fileformatvalidator():
                 len(list(filter(lambda x: x not in validplaceholders, placeholders)))
                 > 0
             ):
-                return False
+                return
             result = {}
 
             for d in list(map(lambda x: {x: "placeholder"}, placeholders)):
@@ -199,11 +207,11 @@ def fileformatvalidator():
 
             return True
         except:
-            return False
+            return
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 Improper syntax or invalid placeholder
 """
@@ -216,17 +224,14 @@ def dateplaceholdervalidator():
     def callable(x):
         try:
             if arrow.utcnow().format(x) == x:
-                return False
+                return
             return True
         except:
-            return False
+            return
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        """
-    Date Format is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens
-                """,
-        True,
+        """Date Format is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens""",
     )
 
 
@@ -235,14 +240,12 @@ def datevalidator():
         try:
             return arrow.get(x or 0)
         except:
-            return False
+            return
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
         """
-    Date Format is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens
-                """,
-        True,
+        Date is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens""",
     )
 
 
@@ -250,12 +253,10 @@ def mp4decryptpathvalidator():
     def callable(x):
         return paths_check.mp4decryptpathcheck(x)
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
-            f"""
-Path to mp4decrypt is not valid filepath or does not exists
-"""
+        inspect.cleandoc(
+            f"""Path to mp4decrypt is not valid filepath or does not exists"""
         ).strip(),
         move_cursor_to_end=True,
     )
@@ -265,9 +266,9 @@ def mp4decryptexecutevalidator():
     def callable(x):
         return paths_check.mp4decryptexecutecheck(x)
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 Path is valid but the given path could not be verified to be mp4decrypt
 """
@@ -280,9 +281,9 @@ def ffmpegpathvalidator():
     def callable(x):
         return paths_check.ffmpegpathcheck(x)
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 Path to ffmpeg is not valid filepath or does not exists
 """
@@ -295,9 +296,9 @@ def ffmpegexecutevalidator():
     def callable(x):
         return paths_check.ffmpegexecutecheck(x)
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 Path is valid but the given path could not be verified to be ffmpeg
 """
@@ -321,12 +322,12 @@ def like_area_validator_posts():
             and not "Archived" in x + list(args.posts)
             and not "Labels" in x + list(args.posts)
         ):
-            return False
+            return
         return True
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 You must select at least one of the following Timeline,Pinned, Archived
 When like/unlike is action is on
@@ -356,7 +357,7 @@ def metadatavalidator():
                 len(list(filter(lambda x: x not in validplaceholders, placeholders)))
                 > 0
             ):
-                return False
+                return
             result = {}
 
             for d in list(map(lambda x: {x: "placeholder"}, placeholders)):
@@ -367,11 +368,11 @@ def metadatavalidator():
 
             return True
         except:
-            return False
+            return
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             f"""
 Improper syntax or invalid placeholder
 """
@@ -386,9 +387,9 @@ def DiscordValidator():
             return True
         return re.search("https://discord.com/api/webhooks/[0-9]*/[0-9a-z]*", x) != None
 
-    return Validator.from_callable(
+    return validatorCallableHelper(
         callable,
-        textwrap.dedent(
+        inspect.cleandoc(
             """
 must be discord webhook -> example: https://discord.com/api/webhooks/{numeric}/{alphanumeric}
     """

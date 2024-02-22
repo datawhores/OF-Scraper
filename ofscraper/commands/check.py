@@ -1,8 +1,8 @@
 import asyncio
+import inspect
 import logging
 import queue
 import re
-import textwrap
 import threading
 import time
 
@@ -431,7 +431,7 @@ def get_first_row():
 
 def texthelper(text):
     text = text or ""
-    text = textwrap.dedent(text)
+    text = inspect.cleandoc(text)
     text = re.sub(" +$", "", text)
     text = re.sub("^ +", "", text)
     text = re.sub("<[^>]*>", "", text)

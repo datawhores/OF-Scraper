@@ -10,16 +10,14 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-import copy
-import re
-
 import arrow
 from InquirerPy.base import Choice
+from InquirerPy.separator import Separator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
-import ofscraper.models.selector as userselector
-import ofscraper.prompts.model_helpers as modelHelpers
+import ofscraper.prompts.helpers.model_helpers as modelHelpers
+import ofscraper.prompts.helpers.prompt_helpers as prompt_helpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -28,68 +26,6 @@ import ofscraper.utils.constants as constants
 
 console = Console()
 models = None
-
-
-def funct(prompt):
-    oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
-    userselector.setfilter()
-    if oldargs != vars(read_args.retriveArgs()):
-        global models
-        models = userselector.filterNSort(userselector.ALL_SUBS)
-    choices = list(
-        map(
-            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-            enumerate(models),
-        )
-    )
-    selectedSet = set(
-        map(
-            lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
-            prompt.selected_choices or [],
-        )
-    )
-    for model in choices:
-        name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
-        if name in selectedSet:
-            model.enabled = True
-    prompt.content_control._raw_choices = choices
-    prompt.content_control.choices = prompt.content_control._get_choices(
-        prompt.content_control._raw_choices, prompt.content_control._default
-    )
-    prompt.content_control._format_choices()
-    return prompt
-
-
-def funct2(prompt_):
-    selected = prompt_.content_control.selection["value"]
-    console.print(
-        f"""
-        Name: [bold blue]{selected.name}[/bold blue]
-        ID: [bold blue]{selected.id}[/bold blue]
-        Renewed Date: [bold blue]{selected.renewed_string}[/bold blue]
-        Subscribed Date: [bold blue]{selected.subscribed_string}[/bold blue]
-        Expired Date: [bold blue]{selected.expired_string}[/bold blue]
-        Last Seen: [bold blue] {selected.last_seen_formatted}[/bold blue]
-        Original Sub Price: [bold blue]{selected.sub_price}[/bold blue]     [Current Subscription Price]
-        Original Regular Price: [bold blue]{selected.regular_price}[/bold blue]     [Regular Subscription Price Set By Model]
-        Original Claimable Promo Price: [bold blue]{selected.lowest_promo_claim}[/bold blue]   [Lowest Promotional Price Marked as Claimable]
-        Original Any Promo Price: [bold blue]{selected.lowest_promo_all}[/bold blue]     [Lowest of Any Promotional Price]
-        
-        ------------------------------------------------------------------------------------------------------------------------------------
-        Final Current Price: [bold blue]{selected.final_current_price}[/bold blue] [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
-        Final Promo Price: [bold blue]{selected.final_promo_price}[/bold blue] [Lowest Any Promo Price or Regular Price | See Final Price Details]
-        Final Renewal Price: [bold blue]{selected.final_renewal_price}[/bold blue] [Lowest Claimable Promo or Regular Price | See Final Price Details]
-        Final Regular Price: [bold blue]{selected.final_regular_price}[/bold blue] [Regular Price | See Final Price Details]
-        
-        [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
-
-        ======================================================
-        
-        PRESS ENTER TO RETURN
-        """
-    )
-    prompt("")
-    return prompt_
 
 
 def model_selector(models_) -> bool:
@@ -103,10 +39,10 @@ def model_selector(models_) -> bool:
         choices=choices,
         transformer=lambda result: ",".join(map(lambda x: x.split(" ")[1], result)),
         multiselect=True,
-        long_instruction=prompt_strings.MODEL_SELECT,
+        more_instruction=prompt_strings.MODEL_SELECT,
         long_message=prompt_strings.MODEL_FUZZY,
-        altx=funct,
-        altd=funct2,
+        altx=prompt_helpers.model_funct,
+        altd=prompt_helpers.model_details,
         validate=prompt_validators.emptyListValidator(),
         prompt="Filter: ",
         message="Which models do you want to scrape\n:",
@@ -119,7 +55,8 @@ def model_selector(models_) -> bool:
 def decide_filters_menu() -> int:
     name = "modelList"
     modelChoice = [*constants.getattr("modelPrompt")]
-
+    modelChoice.insert(4, Separator())
+    modelChoice.insert(6, Separator())
     questions = promptClasses.batchConverter(
         *[
             {
@@ -189,6 +126,11 @@ def modify_active_prompt(args):
                 Otherwise must be in date format""",
                 "validate": prompt_validators.datevalidator(),
                 "filter": lambda x: arrow.get(x or 0),
+                "default": arrow.get(read_args.retriveArgs().last_seen_after).format(
+                    constants.getattr("PROMPT_DATE_FORMAT")
+                )
+                if read_args.retriveArgs().last_seen_after
+                else "",
             },
             {
                 "type": "input",
@@ -198,6 +140,11 @@ def modify_active_prompt(args):
                 Otherwise must be in date format""",
                 "validate": prompt_validators.datevalidator(),
                 "filter": lambda x: arrow.get(x or 0),
+                "default": arrow.get(read_args.retriveArgs().last_seen_before).format(
+                    constants.getattr("PROMPT_DATE_FORMAT")
+                )
+                if read_args.retriveArgs().last_seen_before
+                else "",
             },
         ]
     )
@@ -253,53 +200,52 @@ def modify_promo_prompt(args):
         ]
     )
 
-    # args.renewal = answer["renewal"]
-    # args.sub_status = answer["expire"]
     args.promo = answer["promo"]
     args.all_promo = answer["all-promo"]
     args.free_trial = answer["free-trial"]
-    # if args.free_trial != "yes":
-    #     args = modify_current_price(args)
-    # if args.free_trial != "yes" and decide_price_prompt() == "Yes":
-    #     args = modify_other_prices(args)
     return args
 
 
-def modify_current_price(args):
+def modify_prices_prompt(args):
+    price_type = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": "price",
+                "message": "Which price do you want to modify",
+                "default": None,
+                "choices": [
+                    Choice("current_price", "Current Subscription Price"),
+                    Choice("regular_price", "Regular Subscription Price"),
+                    Choice("promo_price", "Promo Subscription Price"),
+                    Choice("renewal_price", "Renewal Subscription Price"),
+                ],
+            },
+        ],
+        altd=prompt_helpers.price_info,
+        more_instruction=prompt_strings.PRICE_DETAILS,
+    )
+    vars(args)[price_type["price"]]
+
     answer = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
-                "name": "subscription",
-                "message": "Filter accounts by the type of a current subscription price",
-                "default": None,
+                "name": "price",
+                "message": f"Filter accounts by {price_type['price'].title().replace('_',' ')}",
+                "default": vars(args)[price_type["price"]],
                 "choices": [
                     Choice("paid", "Paid Subscriptions Only"),
                     Choice("free", "Free Subscriptions Only"),
                     Choice(None, "Both"),
                 ],
             },
-        ]
+        ],
+        altd=prompt_helpers.price_info,
+        more_instruction=prompt_strings.PRICE_DETAILS,
     )
-
-    args.current_price = answer["subscription"]
+    vars(args)[price_type["price"]] = answer["price"]
     return args
-
-
-def decide_price_prompt():
-    answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "list",
-                "name": "input",
-                "default": "No",
-                "message": "Would you like to modify other price types",
-                "choices": ["Yes", "No"],
-            }
-        ]
-    )
-
-    return answer["input"]
 
 
 def modify_other_prices(args):
@@ -347,22 +293,6 @@ def modify_other_prices(args):
     return args
 
 
-def decide_sort_prompt():
-    answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "list",
-                "name": "input",
-                "message": f"Change the Order or the Criteria for how the model list is sorted\nCurrent setting are {read_args.retriveArgs().sort.capitalize()} in {'Ascending' if not read_args.retriveArgs().desc else 'Descending'} order",
-                "default": "No",
-                "choices": ["Yes", "No"],
-            }
-        ]
-    )
-
-    return answer["input"]
-
-
 def modify_sort_prompt(args):
     answer = promptClasses.batchConverter(
         *[
@@ -392,7 +322,9 @@ def modify_sort_prompt(args):
                 ],
                 "default": True,
             },
-        ]
+        ],
+        altd=prompt_helpers.sort_info,
+        more_instruction=prompt_strings.SORT_DETAILS,
     )
 
     args.sort = answer["type"]
