@@ -30,8 +30,10 @@ def areas_prompt() -> list:
         if "unike" in args.action and len(args.like_area) == 0
         else "Which area(s) would you like to download"
     )
-    long_instruction = (
-        "Hint: Since you have Like or Unlike Set\nYou must select one or more of Timeline,Pinned,Archived, or Label "
+    more_instruction = (
+        """Hint: Since you have Like or Unlike set
+You must select one or more of Timeline,Pinned,Archived, or Label
+"""
         if ("like" or "unlike") in args.action and len(args.like_area) == 0
         else ""
     )
@@ -42,7 +44,7 @@ def areas_prompt() -> list:
                 "qmark": "[?]",
                 "name": name,
                 "message": message,
-                "long_instruction": long_instruction,
+                "more_instruction": more_instruction,
                 "validate": prompt_validators.MultiValidator(
                     prompt_validators.emptyListValidator(),
                     prompt_validators.like_area_validator_posts(),

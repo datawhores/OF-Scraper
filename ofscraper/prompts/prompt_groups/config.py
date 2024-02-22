@@ -111,7 +111,7 @@ def config_prompt() -> int:
         message="Config Menu: Which area would you like to change?",
         choices=[*config_prompt_choices],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     return constants.getattr("configPromptChoices")[answer]
 
@@ -124,7 +124,7 @@ def download_config():
                 "type": "input",
                 "name": "file_size_limit",
                 "message": "file_size_limit: ",
-                "long_instruction": """
+                "option_instruction": """
 File size limit
 Input can be int representing bytes
 or human readable such as 10mb
@@ -137,7 +137,7 @@ Enter 0 for no limit
                 "type": "input",
                 "name": "file_size_min",
                 "message": "file_size_min: ",
-                "long_instruction": """
+                "option_instruction": """
 File size min
 Input can be int representing bytes
 or human readable such as 10mb
@@ -150,7 +150,7 @@ Enter 0 for no minimum
                 "type": "input",
                 "name": "system_free_min",
                 "message": "minimum free space: ",
-                "long_instruction": """
+                "option_instruction": """
 Minimum freespace for download
 Input can be int representing bytes
 or human readable such as 10mb
@@ -180,13 +180,13 @@ Enter 0 for no limit
                 "type": "list",
                 "name": "auto_resume",
                 "message": "Enable auto file resume",
-                "long_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
+                "option_instruction": "Enable this if you don't want to auto resume files, and want .part files auto cleaned",
                 "default": data.get_part_file_clean(),
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -203,7 +203,7 @@ def file_config():
                 "type": "filepath",
                 "name": "save_location",
                 "message": "save_location: ",
-                "long_instruction": "Where would you like to set as the root save downloaded directory?",
+                "option_instruction": "Where would you like to set as the root save downloaded directory?",
                 "default": common_paths.get_save_location(),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
                 "validate": PathValidator(is_dir=True),
@@ -212,7 +212,7 @@ def file_config():
                 "type": "input",
                 "name": "dir_format",
                 "message": "dir_format: ",
-                "long_instruction": "What format do you want for download directories",
+                "option_instruction": "What format do you want for download directories",
                 "default": data.get_dirformat(),
             },
             {
@@ -225,7 +225,7 @@ def file_config():
                 "type": "number",
                 "name": "textlength",
                 "message": "textlength: ",
-                "long_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
+                "option_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
                 "default": data.get_textlength(),
                 "min_allowed": 0,
                 "validate": EmptyInputValidator(),
@@ -234,14 +234,14 @@ def file_config():
                 "type": "input",
                 "name": "space-replacer",
                 "message": "space-replacer: ",
-                "long_instruction": "Replace any spaces in text with this character\n",
+                "option_instruction": "Replace any spaces in text with this character\n",
                 "default": data.get_spacereplacer(),
             },
             {
                 "type": "input",
                 "name": "date",
                 "message": "date: ",
-                "long_instruction": "Enter Date format",
+                "option_instruction": "Enter Date format",
                 "default": data.get_date(),
                 "validate": prompt_validators.dateplaceholdervalidator(),
             },
@@ -249,7 +249,7 @@ def file_config():
                 "type": "list",
                 "name": "text_type_default",
                 "message": "date: ",
-                "long_instruction": "How should textlength be interpreted",
+                "option_instruction": "How should textlength be interpreted",
                 "default": data.get_textType(),
                 "choices": [Choice("letter", "Letter"), Choice("word", "Word")],
                 "validate": prompt_validators.emptyListValidator(),
@@ -263,11 +263,11 @@ def file_config():
                     Choice(True, "Yes"),
                     Choice(False, "No"),
                 ],
-                "long_instruction": "Truncation is based on operating system",
+                "option_instruction": "Truncation is based on operating system",
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -290,7 +290,7 @@ def binary_config():
                     prompt_validators.mp4decryptexecutevalidator(),
                 ),
                 "default": data.get_mp4decrypt(),
-                "long_instruction": """
+                "option_instruction": """
 Certain content requires decryption to process please provide the full path to mp4decrypt
 """,
             },
@@ -303,14 +303,14 @@ Certain content requires decryption to process please provide the full path to m
                     prompt_validators.ffmpegpathvalidator(),
                     prompt_validators.ffmpegexecutevalidator(),
                 ),
-                "long_instruction": """
+                "option_instruction": """
 Certain content requires decryption to process please provide the full path to ffmpeg
 """,
                 "default": data.get_ffmpeg(),
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -334,26 +334,26 @@ def cdm_config():
                 "type": "input",
                 "name": "keydb_api",
                 "message": "keydb api key:\n",
-                "long_instruction": "Required if your using keydb for key-mode",
+                "option_instruction": "Required if your using keydb for key-mode",
                 "default": data.get_keydb_api() or "",
             },
             {
                 "type": "filepath",
                 "name": "client-id",
                 "message": "Enter path to client id file",
-                "long_instruction": "Required if your using manual for key-mode",
+                "option_instruction": "Required if your using manual for key-mode",
                 "default": data.get_client_id() or "",
             },
             {
                 "type": "filepath",
                 "name": "private-key",
                 "message": "Enter path to private-key",
-                "long_instruction": "Required if your using manual for key-mode",
+                "option_instruction": "Required if your using manual for key-mode",
                 "default": data.get_private_key() or "",
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -373,12 +373,12 @@ def performance_config():
                 "min_allowed": 0,
                 "max_allowed": os.cpu_count() - 1,
                 "validate": EmptyInputValidator(),
-                "long_instruction": f"Value can be 1-{os.cpu_count()-1}",
+                "option_instruction": f"Value can be 1-{os.cpu_count()-1}",
                 "default": data.get_threads(),
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
 
     out.update(threads)
@@ -386,7 +386,7 @@ def performance_config():
     if not cache.get("speed_download") or promptClasses.getChecklistSelection(
         choices=[Choice(True, "Yes"), Choice(False, "No")],
         message="Re-run speedtest",
-        long_instruction="Download Sems max value is based on calculated speed",
+        more_instruction="Download Sems max value is based on calculated speed",
         default=False,
     ):
         speed = get_speed(threads)
@@ -402,12 +402,12 @@ def performance_config():
                 "min_allowed": 1,
                 "max_allowed": max_allowed,
                 "validate": EmptyInputValidator(),
-                "long_instruction": f"Value can be 1-{max_allowed}",
+                "option_instruction": f"Value can be 1-{max_allowed}",
                 "default": data.get_download_semaphores(),
             }
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -431,7 +431,7 @@ def general_config():
                 "type": "input",
                 "name": "metadata",
                 "message": "metadata: ",
-                "long_instruction": "Where should metadata files be saved",
+                "option_instruction": "Where should metadata files be saved",
                 "default": data.get_metadata(),
             },
             {
@@ -443,7 +443,7 @@ def general_config():
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()
@@ -459,14 +459,14 @@ def advanced_config() -> dict:
             {
                 "type": "list",
                 "name": "dynamic-mode-default",
-                "message": "What would you like to use for dynamic rules\nhttps://grantjenks.com/docs/diskcache/tutorial.html#caveats",
+                "message": "What would you like to use for dynamic rules",
                 "default": data.get_dynamic(),
                 "choices": ["deviint", "digitalcriminals"],
             },
             {
                 "type": "list",
                 "name": "cache-mode",
-                "message": "sqlite should be fine unless your using a network drive\nSee",
+                "message": "sqlite should be fine unless your using a network drive\nSee https://grantjenks.com/docs/diskcache/tutorial.html#caveats ",
                 "default": data.cache_mode_helper(),
                 "choices": ["sqlite", "json", "disabled"],
             },
@@ -482,7 +482,7 @@ def advanced_config() -> dict:
                 "type": "input",
                 "name": "custom",
                 "message": "edit custom value:\n",
-                "long_instruction": "This is a helper value for remapping placeholder values",
+                "option_instruction": "This is a helper value for remapping placeholder values",
                 "default": json.dumps(custom.get_custom())
                 if not isinstance(custom.get_custom(), str)
                 else custom.get_custom() or "",
@@ -500,14 +500,14 @@ def advanced_config() -> dict:
                 "message": "Enable Code Execution:",
                 "choices": [Choice(True, "Yes"), Choice(False, "No", enabled=True)],
                 "default": data.get_allow_code_execution(),
-                "long_instruction": "Allows for use of eval to evaluate custom values in placeholders",
+                "option_instruction": "Allows for use of eval to evaluate custom values in placeholders",
             },
             {
                 "type": "filepath",
                 "name": "temp_dir",
                 "message": "Location to store temp file",
                 "default": data.get_TempDir() or "",
-                "long_instruction": "Leave empty to use default location",
+                "option_instruction": "Leave empty to use default location",
             },
             {
                 "type": "list",
@@ -532,7 +532,7 @@ def advanced_config() -> dict:
                     Choice(True, "Yes"),
                     Choice(False, "No"),
                 ],
-                "long_instruction": "Action Mode is when at least one --action is based as an arg or --scrape-paid",
+                "option_instruction": "Action Mode is when at least one --action is based as an arg or --scrape-paid",
             },
             {
                 "type": "list",
@@ -543,14 +543,14 @@ def advanced_config() -> dict:
                     Choice(True, "Yes"),
                     Choice(False, "No"),
                 ],
-                "long_instruction": "This will disable full scan on when previous scan used --after",
+                "option_instruction": "This will disable full scan on when previous scan used --after",
             },
             {
                 "type": "input",
                 "name": "default_user_list",
                 "message": "Default User Lists",
                 "default": data.get_default_userlist(),
-                "long_instruction": """
+                "option_instruction": """
 A comma seperated list of userlists to set as default when retriving users
 Main user list with all active+expired users can be called main or ofscraper.main
 Active user list can be called active or ofscraper.active
@@ -563,7 +563,7 @@ List are case insensitive",
                 "name": "default_black_list",
                 "message": "Default User Black Lists",
                 "default": data.get_default_blacklist(),
-                "long_instruction": """
+                "option_instruction": """
 A comma seperated list of userlists to set as black listed
 Main user list with all active+expired users can be called main or ofscraper.main
 Active user list can be called active or ofscraper.active
@@ -573,7 +573,7 @@ List are case insensitive",
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(new_settings)
     config = config_file.open_config()
@@ -589,7 +589,7 @@ def response_type() -> dict:
             {
                 "type": "input",
                 "name": "timeline",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for timeline posts
 Empty string is consider to be 'posts'
             """,
@@ -599,7 +599,7 @@ Empty string is consider to be 'posts'
             {
                 "type": "input",
                 "name": "archived",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for archived posts
 Empty string is consider to be 'archived'
             """,
@@ -609,7 +609,7 @@ Empty string is consider to be 'archived'
             {
                 "type": "input",
                 "name": "pinned",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for pinned posts
 Empty string is consider to be 'pinned'
             """,
@@ -619,7 +619,7 @@ Empty string is consider to be 'pinned'
             {
                 "type": "input",
                 "name": "message",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for message posts
 Empty string is consider to be 'message'
             """,
@@ -629,7 +629,7 @@ Empty string is consider to be 'message'
             {
                 "type": "input",
                 "name": "paid",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for paid posts
 Empty string is consider to be 'paid'
             """,
@@ -639,7 +639,7 @@ Empty string is consider to be 'paid'
             {
                 "type": "input",
                 "name": "stories",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for stories
 Empty string is consider to be 'stories'
             """,
@@ -649,7 +649,7 @@ Empty string is consider to be 'stories'
             {
                 "type": "input",
                 "name": "highlights",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for highlights
 Empty string is consider to be 'highlights'
             """,
@@ -659,7 +659,7 @@ Empty string is consider to be 'highlights'
             {
                 "type": "input",
                 "name": "profile",
-                "long_instruction": """
+                "option_instruction": """
 set responsetype for profile
 Empty string is consider to be 'profile'
             """,
@@ -668,7 +668,7 @@ Empty string is consider to be 'profile'
             },
         ],
         altx=funct,
-        long_instruction=prompt_strings.CONFIG_MENU,
+        more_instruction=prompt_strings.CONFIG_MENU,
     )
     out.update(answer)
     config = config_file.open_config()

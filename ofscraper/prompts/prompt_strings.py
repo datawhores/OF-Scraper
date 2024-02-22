@@ -257,7 +257,4 @@ PRESS ENTER TO RETURN
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
 
-CONFIG_MENU = """
-SHOW KEYBINDINGS AND INSTRUCTIONS: [ALT+V] or [CTRL+V]
-CONFIG SECTIONS DETAILS: [ALT+X]
-"""
+CONFIG_MENU = "CONFIG SECTIONS DETAILS: [ALT+X]"

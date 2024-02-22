@@ -15,8 +15,17 @@ def wrapper(funct):
             handle_skip_helper,
             kwargs.pop("long_message", None) or get_default_instructions(funct),
         )
-        kwargs["long_instruction"] = kwargs.get(
-            "long_instruction", prompt_strings.KEY_BOARD
+        kwargs["long_instruction"] = "\n".join(
+            list(
+                filter(
+                    lambda x: len(x) > 0,
+                    [
+                        f"{kwargs.pop('option_instruction', '')}",
+                        f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}",
+                        f"{kwargs.pop('more_instruction', '')}",
+                    ],
+                )
+            )
         )
         kwargs["message"] = f"{kwargs.get('message')}" if kwargs.get("message") else ""
 
@@ -215,9 +224,6 @@ def batchConverterHelper(ele, kwargs):
     ele_type = "fuzzy" if ele.get("fuzzy") else ele_type
     name = ele.pop("name")
     kwargs = kwargs or {}
-    ele["long_instruction"] = ele.get("long_instruction", "") + kwargs.pop(
-        "long_instruction", ""
-    )
     return name, getType(ele_type)(**kwargs, **ele)
 
 
