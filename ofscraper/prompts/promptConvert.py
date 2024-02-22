@@ -1,4 +1,5 @@
 import functools
+import textwrap
 
 from InquirerPy import get_style, inquirer
 from InquirerPy.separator import Separator
@@ -20,9 +21,11 @@ def wrapper(funct):
                 filter(
                     lambda x: len(x) > 0,
                     [
-                        f"{kwargs.pop('option_instruction', '')}",
-                        f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}",
-                        f"{kwargs.pop('more_instruction', '')}",
+                        textwrap.dedent(f"{kwargs.pop('option_instruction', '')}"),
+                        textwrap.dedent(
+                            f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}"
+                        ),
+                        textwrap.dedent(f"{kwargs.pop('more_instruction', '')}"),
                     ],
                 )
             )

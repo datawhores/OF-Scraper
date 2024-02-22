@@ -122,14 +122,22 @@ def parsed_subscriptions_helper(reset=False):
 
 
 def setfilter(forced=False):
-    if forced or prompts.decide_filters_prompt() == "Yes":
-        args = prompts.modify_filters_prompt(read_args.retriveArgs())
+    global args
+    while True:
+        choice = prompts.decide_filters_menu()
+        if choice == "modelList":
+            break
+        elif choice == "sort":
+            args = prompts.modify_sort_prompt(read_args.retriveArgs())
+        elif choice == "subtype":
+            args = prompts.modify_subtype_prompt(read_args.retriveArgs())
+        elif choice == "promo":
+            args = prompts.modify_promo_prompt(read_args.retriveArgs())
+        elif choice == "active":
+            args = prompts.modify_active_prompt(read_args.retriveArgs())
 
-
-def setsort(forced=False):
-    if forced or prompts.decide_sort_prompt() == "Yes":
-        global args
-        args = prompts.modify_sort_prompt(read_args.retriveArgs())
+    # if forced or  == "Yes":
+    #     args = prompts.modify_filters_prompt(read_args.retriveArgs())
 
 
 def filterNSort(usernames):

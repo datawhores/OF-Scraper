@@ -230,6 +230,22 @@ def dateplaceholdervalidator():
     )
 
 
+def datevalidator():
+    def callable(x):
+        try:
+            return arrow.get(x or 0)
+        except:
+            return False
+
+    return Validator.from_callable(
+        callable,
+        """
+    Date Format is invalid -> https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens
+                """,
+        True,
+    )
+
+
 def mp4decryptpathvalidator():
     def callable(x):
         return paths_check.mp4decryptpathcheck(x)

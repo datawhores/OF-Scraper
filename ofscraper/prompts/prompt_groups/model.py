@@ -13,6 +13,7 @@ r"""
 import copy
 import re
 
+import arrow
 from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
@@ -23,6 +24,7 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.constants as constants
 
 console = Console()
 models = None
@@ -31,7 +33,6 @@ models = None
 def funct(prompt):
     oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
     userselector.setfilter()
-    userselector.setsort()
     if oldargs != vars(read_args.retriveArgs()):
         global models
         models = userselector.filterNSort(userselector.ALL_SUBS)
@@ -115,23 +116,25 @@ def model_selector(models_) -> bool:
     return p
 
 
-def decide_filters_prompt():
-    answer = promptClasses.batchConverter(
+def decide_filters_menu() -> int:
+    name = "modelList"
+    modelChoice = [*constants.getattr("modelPrompt")]
+
+    questions = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
-                "name": "input",
-                "default": "No",
-                "message": "Modify filters for your accounts list?\nSome usage examples are scraping free accounts only or paid accounts without renewal",
-                "choices": ["Yes", "No"],
+                "name": name,
+                "message": "Make changes to model list",
+                "choices": modelChoice,
             }
         ]
     )
 
-    return answer["input"]
+    return constants.getattr("modelPrompt").get(questions[name])
 
 
-def modify_filters_prompt(args):
+def modify_subtype_prompt(args):
     answer = promptClasses.batchConverter(
         *[
             {
@@ -156,6 +159,17 @@ def modify_filters_prompt(args):
                     Choice(None, "Both"),
                 ],
             },
+        ]
+    )
+
+    args.renewal = answer["renewal"]
+    args.sub_status = answer["expire"]
+    return args
+
+
+def modify_active_prompt(args):
+    answer = promptClasses.batchConverter(
+        *[
             {
                 "type": "list",
                 "name": "last-seen",
@@ -167,6 +181,42 @@ def modify_filters_prompt(args):
                     Choice(None, "Both"),
                 ],
             },
+            {
+                "type": "input",
+                "name": "last-seen-after",
+                "message": "Filter accounts by last seen being after the given date",
+                "option_instruction": """enter 0 to disable this filter
+                Otherwise must be in date format""",
+                "validate": prompt_validators.datevalidator(),
+                "filter": lambda x: arrow.get(x or 0),
+            },
+            {
+                "type": "input",
+                "name": "last-seen-before",
+                "message": "Filter accounts by last seen being before the given date",
+                "option_instruction": """enter 0 to disable this filter
+                Otherwise must be in date format""",
+                "validate": prompt_validators.datevalidator(),
+                "filter": lambda x: arrow.get(x or 0),
+            },
+        ]
+    )
+
+    args.last_seen = answer["last-seen"]
+    args.last_seen_after = (
+        answer["last-seen-after"] if answer["last-seen-after"] != arrow.get(0) else None
+    )
+    args.last_seen_before = (
+        answer["last-seen-before"]
+        if answer["last-seen-before"] != arrow.get(0)
+        else None
+    )
+    return args
+
+
+def modify_promo_prompt(args):
+    answer = promptClasses.batchConverter(
+        *[
             {
                 "type": "list",
                 "name": "promo",
@@ -203,16 +253,15 @@ def modify_filters_prompt(args):
         ]
     )
 
-    args.renewal = answer["renewal"]
-    args.sub_status = answer["expire"]
+    # args.renewal = answer["renewal"]
+    # args.sub_status = answer["expire"]
     args.promo = answer["promo"]
     args.all_promo = answer["all-promo"]
     args.free_trial = answer["free-trial"]
-    args.last_seen = answer["last-seen"]
-    if args.free_trial != "yes":
-        args = modify_current_price(args)
-    if args.free_trial != "yes" and decide_price_prompt() == "Yes":
-        args = modify_other_prices(args)
+    # if args.free_trial != "yes":
+    #     args = modify_current_price(args)
+    # if args.free_trial != "yes" and decide_price_prompt() == "Yes":
+    #     args = modify_other_prices(args)
     return args
 
 
