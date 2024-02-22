@@ -188,7 +188,7 @@ class Model:
 
     @property
     def final_last_seen(self):
-        formatted = self.last_seen_formatted()
+        formatted = self.last_seen_formatted
         if not formatted:
             return arrow.now()
         else:
