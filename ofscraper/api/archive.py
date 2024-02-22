@@ -167,7 +167,7 @@ async def scrape_archived_posts(
 
 
 @run
-async def get_archived_media(model_id, username, forced_after=None, rescan=None):
+async def get_archived_media(model_id, username, forced_after=None):
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_REQUEST_WORKERS")
     ) as executor:
@@ -209,7 +209,7 @@ async def get_archived_media(model_id, username, forced_after=None, rescan=None)
                 oldarchived = list(filter(lambda x: x != None, oldarchived))
                 postedAtArray = sorted(oldarchived, key=lambda x: x[0])
 
-                after = get_after(model_id, username, forced_after, rescan)
+                after = get_after(model_id, username, forced_after)
                 # set check
                 log.info(
                     f"""
@@ -338,7 +338,7 @@ def set_check(unduped, model_id, after):
         cache.close()
 
 
-def get_after(model_id, username, forced_after=None, rescan=None):
+def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
     elif read_args.retriveArgs().after == 0:
@@ -346,7 +346,7 @@ def get_after(model_id, username, forced_after=None, rescan=None):
     elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
 
-    elif rescan or (
+    elif (
         cache.get("{model_id}_full_archived_scrape")
         and not read_args.retriveArgs().after
         and not data.get_disable_after()

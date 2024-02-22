@@ -34,6 +34,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -45,7 +46,7 @@ sem = None
 
 
 @run
-async def get_messages(model_id, username, forced_after=None, rescan=None):
+async def get_messages(model_id, username, forced_after=None):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     with ThreadPoolExecutor(
@@ -103,7 +104,7 @@ async def get_messages(model_id, username, forced_after=None, rescan=None):
                 ] + oldmessages
 
                 before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-                after = get_after(model_id, username, forced_after, rescan)
+                after = get_after(model_id, username, forced_after)
 
                 log.debug(f"Messages after = {after}")
 
@@ -302,7 +303,9 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
 def set_check(unduped, model_id, after):
     if not after:
         newCheck = {}
-        for post in cache.get(f"message_check_{model_id}", default=[]) + list(unduped.values()):
+        for post in cache.get(f"message_check_{model_id}", default=[]) + list(
+            unduped.values()
+        ):
             newCheck[post["id"]] = post
         cache.set(
             f"message_check_{model_id}",
@@ -453,7 +456,7 @@ def get_individual_post(model_id, postid, c=None):
             log.debug(f"[bold]Individual message  headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username, forced_after=None, rescan=None):
+def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
     elif read_args.retriveArgs().after == 0:
@@ -461,9 +464,9 @@ def get_after(model_id, username, forced_after=None, rescan=None):
     elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     elif (
-        rescan
-        or cache.get("{model_id}_scrape_messages")
+        cache.get("{model_id}_scrape_messages")
         and not read_args.retriveArgs().after
+        and not data.get_disable_after()
     ):
         log.debug(
             "Used --after previously. Scraping all messages required to make sure content is not missing"
