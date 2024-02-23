@@ -181,6 +181,19 @@ def modify_active_prompt(args):
 
 def modify_promo_prompt(args):
     answer = {}
+    if (
+        args.current_price != None
+        or args.promo_price != None
+        or args.regular_price != None
+    ):
+        console.print(
+            inspect.cleandoc(
+                """
+                      [bold yellow]Please consider disabling price filters
+                      or changing 'free trial' to 'Any Account' to prevent filtering model list to zero[/bold yellow]"""
+            )
+        )
+
     free_trail = promptClasses.batchConverter(
         *[
             {
@@ -279,6 +292,28 @@ def modify_promo_prompt(args):
 
 
 def modify_prices_prompt(args):
+    if args.free_trial:
+        console.print(
+            inspect.cleandoc(
+                """
+            [bold yellow]Free trial is True
+            To avoid filtering list to zero
+            Regular Subscription Price must be set to 'Paid/Both'
+            Current or Promo  Subscription Price must be 'Free/Both'[/bold yellow]
+            """
+            )
+        )
+    elif args.free_trial == False:
+        console.print(
+            inspect.cleandoc(
+                """
+            [bold yellow]Free trial is False
+            To avoid filtering list to zero
+            Regular Subscription Price must be 'Free/Both' or
+            Current and Promo  Subscription Price must be'Paid/Both'[/bold yellow]
+            """
+            )
+        )
     price_type = promptClasses.batchConverter(
         *[
             {
@@ -320,7 +355,7 @@ def modify_prices_prompt(args):
     return args
 
 
-def modify_other_prices(args):
+def modify_other_price(args):
     answer = promptClasses.batchConverter(
         *[
             {

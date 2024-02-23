@@ -55,7 +55,8 @@ def promoFilterHelper(filterusername):
     elif read_args.retriveArgs().free_trial is False:
         filterusername = list(
             filter(
-                lambda x: (x.final_current_price > 0 or x.final_regular_price == 0),
+                lambda x: (x.final_current_price > 0 and x.final_promo_price > 0)
+                or x.final_regular_price == 0,
                 filterusername,
             )
         )

@@ -352,7 +352,7 @@ Accepts space or comma seperated list
     filters.add_argument(
         "-cp",
         "--current-price",
-        help="Filter accounts based on either the subscription price, claimable promotions, or regular price",
+        help="Filter accounts based on either the subscription price, lowest claimable promotional price, or regular price",
         default=None,
         required=False,
         type=str.lower,
@@ -362,7 +362,7 @@ Accepts space or comma seperated list
     filters.add_argument(
         "-rp",
         "--renewal-price",
-        help="Filter accounts based on either the subscription price, claimable promotions, or regular price",
+        help="Filter accounts based on either the lowest claimable promotional price, or regular price",
         default=None,
         required=False,
         type=str.lower,
@@ -382,7 +382,7 @@ Accepts space or comma seperated list
     filters.add_argument(
         "-pp",
         "--promo-price",
-        help="Filter accounts based on either the all promos included unclaimable, or regular price",
+        help="Filter accounts based on either the lowest promotional price regardless of claimability, or regular price",
         default=None,
         required=False,
         type=str.lower,
