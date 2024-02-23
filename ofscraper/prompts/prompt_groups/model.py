@@ -10,6 +10,8 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+import inspect
+
 import arrow
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
@@ -178,42 +180,17 @@ def modify_active_prompt(args):
 
 
 def modify_promo_prompt(args):
-    answer = promptClasses.batchConverter(
+    answer = {}
+    free_trail = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
-                "name": "promo",
-                "message": "Filter accounts presence of claimable promotions",
-                "default": True
-                if read_args.retriveArgs().promo
-                else False
-                if read_args.retriveArgs().promo == False
-                else None,
-                "choices": [
-                    Choice(True, "Promotions Only"),
-                    Choice(False, "No Promotions"),
-                    Choice(None, "Both"),
-                ],
-            },
-            {
-                "type": "list",
-                "name": "all-promo",
-                "message": "Filter accounts presence of any promotions",
-                "default": True
-                if read_args.retriveArgs().all_promo
-                else False
-                if read_args.retriveArgs().all_promo == False
-                else None,
-                "choices": [
-                    Choice(True, "Promotions Only"),
-                    Choice(False, "No Promotions"),
-                    Choice(None, "Both"),
-                ],
-            },
-            {
-                "type": "list",
                 "name": "free-trial",
-                "default": None,
+                "default": True
+                if read_args.retriveArgs().free_trial == True
+                else False
+                if read_args.retriveArgs().free_trial == False
+                else None,
                 "message": "Filter Accounts By whether the account is a free trial",
                 "choices": [
                     Choice(True, "Free Trial only"),
@@ -223,7 +200,78 @@ def modify_promo_prompt(args):
             },
         ]
     )
+    if free_trail["free-trial"]:
+        console.print(
+            inspect.cleandoc(
+                """
+                      [bold yellow]Setting both promos types to false is not allowed since 'Free Trial' is True and requires a promo[/bold yellow]"""
+            )
+        )
+        promo = promptClasses.batchConverter(
+            *[
+                {
+                    "type": "list",
+                    "name": "promo",
+                    "message": "Which kind of promo(s) do you want to enable",
+                    "default": True
+                    if read_args.retriveArgs().promo
+                    else False
+                    if read_args.retriveArgs().promo == False
+                    else None,
+                    "choices": [
+                        Choice({"all-promo": True, "promo": True}, "Any Promo"),
+                        Choice(
+                            {"all-promo": False, "promo": True}, "Claimable Promo Only"
+                        ),
+                    ],
+                },
+            ]
+        )
+        promo = promo["promo"]
+    else:
+        console.print(
+            inspect.cleandoc(
+                """
+                      [bold yellow]Free Trial is not True so any promo status is allowed[/bold yellow]"""
+            )
+        )
+        promo = promptClasses.batchConverter(
+            *[
+                {
+                    "type": "list",
+                    "name": "promo",
+                    "message": "Filter accounts presence of claimable promotions",
+                    "default": True
+                    if read_args.retriveArgs().promo
+                    else False
+                    if read_args.retriveArgs().promo == False
+                    else None,
+                    "choices": [
+                        Choice(True, "Promotions Only"),
+                        Choice(False, "No Promotions"),
+                        Choice(None, "Both"),
+                    ],
+                },
+                {
+                    "type": "list",
+                    "name": "all-promo",
+                    "message": "Filter accounts presence of any promotions",
+                    "default": True
+                    if read_args.retriveArgs().all_promo
+                    else False
+                    if read_args.retriveArgs().all_promo == False
+                    else None,
+                    "choices": [
+                        Choice(True, "Promotions Only"),
+                        Choice(False, "No Promotions"),
+                        Choice(None, "Both"),
+                    ],
+                },
+            ]
+        )
 
+    answer.update(free_trail)
+    answer.update(promo)
     args.promo = answer["promo"]
     args.all_promo = answer["all-promo"]
     args.free_trial = answer["free-trial"]
