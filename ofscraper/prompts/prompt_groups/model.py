@@ -355,51 +355,6 @@ def modify_prices_prompt(args):
     return args
 
 
-def modify_other_price(args):
-    answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "list",
-                "name": "regular",
-                "message": "Filter accounts by the regular subscription price",
-                "default": None,
-                "choices": [
-                    Choice("paid", "Paid Subscriptions Only"),
-                    Choice("free", "Free Subscriptions Only"),
-                    Choice(None, "Both"),
-                ],
-            },
-            {
-                "type": "list",
-                "name": "future",
-                "message": "Filter accounts by renewal price",
-                "default": None,
-                "choices": [
-                    Choice("paid", "Paid Renewals Only"),
-                    Choice("free", "Free Renewals Only"),
-                    Choice(None, "Both"),
-                ],
-            },
-            {
-                "type": "list",
-                "name": "promo-price",
-                "message": "Filter accounts by any promotional price",
-                "default": None,
-                "choices": [
-                    Choice("paid", "Paid Promotions"),
-                    Choice("free", "Free Promotions"),
-                    Choice(None, "Both"),
-                ],
-            },
-        ]
-    )
-
-    args.regular_price = answer["regular"]
-    args.renewal_price = answer["future"]
-    args.promo_price = answer["promo-price"]
-    return args
-
-
 def modify_sort_prompt(args):
     answer = promptClasses.batchConverter(
         *[

@@ -10,6 +10,7 @@ import ofscraper.filters.models.subtype as subtype
 import ofscraper.models.retriver as retriver
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.user as user_helper
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager
@@ -136,6 +137,8 @@ def setfilter(forced=False):
             args = prompts.modify_active_prompt(read_args.retriveArgs())
         elif choice == "price":
             args = prompts.modify_prices_prompt(read_args.retriveArgs())
+        elif choice == "reset":
+            args = user_helper.resetUserFilters()
         elif choice == "list":
             old_args = read_args.retriveArgs()
             old_blacklist = old_args.black_list
