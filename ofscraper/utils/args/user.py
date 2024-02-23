@@ -3,8 +3,8 @@ import ofscraper.utils.args.read as read_args
 
 def resetUserFilters():
     args = read_args.retriveArgs()
-    args.user_list = None
-    args.black_list = None
+    args.user_list = []
+    args.black_list = []
     args.renewal = None
     args.sub_status = None
     args.last_seen = None
@@ -18,4 +18,5 @@ def resetUserFilters():
     args.current_price = None
     args.promo_price = None
     args.sort = "name"
-    args.desc = None
+    args.desc = False
+    return args

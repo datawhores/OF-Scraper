@@ -59,6 +59,7 @@ def decide_filters_menu() -> int:
     modelChoice = [*constants.getattr("modelPrompt")]
     modelChoice.insert(4, Separator())
     modelChoice.insert(7, Separator())
+    modelChoice.insert(9, Separator())
     questions = promptClasses.batchConverter(
         *[
             {
@@ -161,7 +162,7 @@ def modify_active_prompt(args):
             },
         ],
         more_instructions="""
-        
+        \n
         --last-seen filters by visiblity of 'last seen' value
         in contrast to [--last-seen-after/--last-seen-before]
         which both use a the current time if model hides 'last seen'""",
@@ -232,15 +233,14 @@ def modify_promo_prompt(args):
                     if read_args.retriveArgs().promo == False
                     else None,
                     "choices": [
-                        Choice({"all-promo": True, "promo": True}, "Any Promo"),
+                        Choice({"all_promo": True, "promo": True}, "Any Promo"),
                         Choice(
-                            {"all-promo": False, "promo": True}, "Claimable Promo Only"
+                            {"all_promo": None, "promo": True}, "Claimable Promo Only"
                         ),
                     ],
                 },
             ]
-        )
-        promo = promo["promo"]
+        )["promo"]
     else:
         console.print(
             inspect.cleandoc(
@@ -248,31 +248,30 @@ def modify_promo_prompt(args):
                       [bold yellow]Free Trial is not True so any promo status is allowed[/bold yellow]"""
             )
         )
-        promo = promptClasses.batchConverter(
+
+        promo_type = promptClasses.batchConverter(
             *[
                 {
                     "type": "list",
                     "name": "promo",
-                    "message": "Filter accounts presence of claimable promotions",
-                    "default": True
-                    if read_args.retriveArgs().promo
-                    else False
-                    if read_args.retriveArgs().promo == False
-                    else None,
+                    "message": "Which Promo Type do you want to change",
                     "choices": [
-                        Choice(True, "Promotions Only"),
-                        Choice(False, "No Promotions"),
-                        Choice(None, "Both"),
+                        Choice("all_promo", "Any Promotions"),
+                        Choice("promo", "Claimable Promotions"),
                     ],
                 },
+            ]
+        )["promo"]
+        promo = promptClasses.batchConverter(
+            *[
                 {
                     "type": "list",
-                    "name": "all-promo",
-                    "message": "Filter accounts presence of any promotions",
+                    "name": promo_type,
+                    "message": f"Filter accounts presence of {'Any Promotions' if promo_type=='all_promo' else 'Claimable Promotions'}",
                     "default": True
-                    if read_args.retriveArgs().all_promo
+                    if vars(read_args.retriveArgs())[promo_type]
                     else False
-                    if read_args.retriveArgs().all_promo == False
+                    if vars(read_args.retriveArgs())[promo_type] == False
                     else None,
                     "choices": [
                         Choice(True, "Promotions Only"),
@@ -284,10 +283,9 @@ def modify_promo_prompt(args):
         )
 
     answer.update(free_trail)
-    answer.update(promo)
-    args.promo = answer["promo"]
-    args.all_promo = answer["all-promo"]
     args.free_trial = answer["free-trial"]
+    vars(args).update(promo)
+
     return args
 
 

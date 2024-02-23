@@ -138,7 +138,15 @@ def setfilter(forced=False):
         elif choice == "price":
             args = prompts.modify_prices_prompt(read_args.retriveArgs())
         elif choice == "reset":
+            old_args = read_args.retriveArgs()
+            old_blacklist = old_args.black_list
+            old_list = old_args.user_list
             args = user_helper.resetUserFilters()
+            if not list(sorted(old_blacklist)) == list(
+                sorted(args.black_list)
+            ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
+                print("Updating Models")
+                all_subs_helper(check=False)
         elif choice == "list":
             old_args = read_args.retriveArgs()
             old_blacklist = old_args.black_list
