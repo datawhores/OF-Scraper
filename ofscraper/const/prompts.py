@@ -57,5 +57,6 @@ modelPrompt = {
     "Filter model list based on promotion status": "promo",
     "Filter model list based on status of prices": "price",
     "Change sorting of model list": "sort",
+    "Change to a different list [May require rescan]": "list",
     "Go Back to Model Lists": "modelList",
 }

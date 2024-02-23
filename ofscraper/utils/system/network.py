@@ -10,6 +10,7 @@ import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.settings as settings
 
 
 def check_cdm():
@@ -17,7 +18,7 @@ def check_cdm():
         console = console_.get_shared_console()
         log = logging.getLogger("shared")
 
-        keymode = read_args.retriveArgs().key_mode or data.get_key_mode() or "cdrm"
+        keymode = settings.get_key_mode()
         console.print(f"[yellow]Key Mode: {keymode}\n\n[/yellow]")
         if keymode == "manual":
             console.print(

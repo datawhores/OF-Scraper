@@ -26,12 +26,11 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.auth.file as auth_file
-import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.profiles.data as profiles_data
+import ofscraper.utils.settings as settings
 
 
 def make_request_auth():
@@ -60,7 +59,7 @@ def make_request_auth():
 
 
 def get_request_auth():
-    if (read_args.retriveArgs().dynamic_rules or data.get_dynamic() or "deviint") in {
+    if (settings.get_dynamic_rules()) in {
         "deviint",
         "dv",
         "dev",

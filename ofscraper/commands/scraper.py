@@ -35,8 +35,6 @@ log = logging.getLogger("shared")
 
 def process_selected_areas():
     log.debug(f"[bold blue] Running Action Mode [/bold blue]")
-    checkers.check_auth()
-    checkers.check_config()
     functs = process_actions.add_selected_areas()
     run.run_helper(*functs)
     while True:
@@ -56,8 +54,6 @@ def process_selected_areas():
 
 
 def daemon_process():
-    checkers.check_auth()
-    checkers.check_config()
     functs = process_actions.add_selected_areas()
     run.daemon_run_helper(*functs)
 

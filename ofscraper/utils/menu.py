@@ -38,7 +38,6 @@ def main_menu_action():
             elif action_result_prompt == "main":
                 continue
             else:
-                checkers.check_config()
                 count > 0 and reset_menu_helper()
                 functs = process_actions.add_selected_areas()
                 run.run_helper(*functs)

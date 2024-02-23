@@ -56,7 +56,7 @@ def decide_filters_menu() -> int:
     name = "modelList"
     modelChoice = [*constants.getattr("modelPrompt")]
     modelChoice.insert(4, Separator())
-    modelChoice.insert(6, Separator())
+    modelChoice.insert(7, Separator())
     questions = promptClasses.batchConverter(
         *[
             {
@@ -329,6 +329,34 @@ def modify_sort_prompt(args):
 
     args.sort = answer["type"]
     args.desc = answer["order"] == False
+    return args
+
+
+def modify_list_prompt(args):
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "input",
+                "name": "user_list",
+                "message": "Change User List",
+                "default": ",".join(args.user_list or []),
+                "multiline": True,
+                "filter": lambda x: prompt_helpers.user_list(x),
+                "option_instruction": prompt_helpers.get_list_details(True),
+            },
+            {
+                "type": "input",
+                "name": "black_list",
+                "message": "Change Black List",
+                "default": ",".join(args.black_list or []),
+                "multiline": True,
+                "filter": lambda x: prompt_helpers.user_list(x),
+                "option_instruction": prompt_helpers.get_list_details(False),
+            },
+        ],
+    )
+    args.user_list = list(answer["user_list"])
+    args.black_list = list(answer["black_list"])
     return args
 
 

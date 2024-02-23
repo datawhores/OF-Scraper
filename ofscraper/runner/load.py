@@ -3,6 +3,7 @@ import traceback
 
 import ofscraper.runner.run as run
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.globals as log_globals
@@ -20,6 +21,7 @@ def main():
         readConfig()
         setLogger()
         make_folder()
+        check()
         run.main()
     except Exception as E:
         try:
@@ -57,3 +59,8 @@ def readConfig():
 
 def make_folder():
     paths_manage.make_folders()
+
+
+def check():
+    checkers.check_config()
+    checkers.check_config_key_mode()

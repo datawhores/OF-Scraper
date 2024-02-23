@@ -16,6 +16,7 @@ import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
@@ -295,11 +296,11 @@ class Placeholders:
         return out
 
     def set_final_path(self):
-        if (read_args.retriveArgs().original or data.get_truncation()) is False:
+        if settings.get_trunication is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
         elif read_args.retriveArgs().original is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif read_args.retriveArgs().original is True or data.get_truncation() is True:
+        elif settings.get_trunication is True:
             self._final_path = paths.truncate(
                 pathlib.Path(self.mediadir, f"{self.filename}")
             )

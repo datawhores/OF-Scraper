@@ -13,6 +13,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager
+import ofscraper.utils.settings as settings
 
 ALL_SUBS = None
 PARSED_SUBS = None
@@ -31,9 +32,7 @@ def set_ALL_SUBS_DICT(subsDict=None):
     if subsDict and isinstance(subsDict, dict):
         ALL_SUBS_DICT = subsDict
     else:
-        subList = subsDict or ALL_SUBS
-        if not subList:
-            all_subs_helper()
+        subList = subsDict or ALL_SUBS or []
         ALL_SUBS_DICT = {}
         [ALL_SUBS_DICT.update({ele.name: ele}) for ele in subList]
 
@@ -84,14 +83,14 @@ def getselected_usernames(rescan=False, reset=False):
     return PARSED_SUBS
 
 
-def all_subs_helper(refetch=True, main=False):
+def all_subs_helper(refetch=True, main=False, check=True):
     global ALL_SUBS
     if bool(ALL_SUBS) and not refetch:
         return
     while True:
-        ALL_SUBS = retriver.get_models(main)
-        if len(ALL_SUBS) > 0:
-            set_ALL_SUBS_DICTVManger()
+        ALL_SUBS = retriver.get_models()
+        if len(ALL_SUBS) > 0 or not check:
+            set_ALL_SUBS_DICTVManger(subsDict=ALL_SUBS)
             break
         elif len(ALL_SUBS) == 0:
             print("No accounts found during scan")
@@ -109,12 +108,12 @@ def parsed_subscriptions_helper(reset=False):
         args.username = None
         write_args.setArgs(args)
     if not bool(args.username):
-        selectedusers = retriver.get_selected_model(filterNSort((ALL_SUBS)))
+        selectedusers = retriver.get_selected_model(filterNSort())
         read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         write_args.setArgs(args)
     elif "ALL" in args.username:
-        PARSED_SUBS = filterNSort(ALL_SUBS)
+        PARSED_SUBS = filterNSort()
     elif args.username:
         usernameset = set(args.username)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
@@ -123,6 +122,7 @@ def parsed_subscriptions_helper(reset=False):
 
 def setfilter(forced=False):
     global args
+    global ALL_SUBS
     while True:
         choice = prompts.decide_filters_menu()
         if choice == "modelList":
@@ -137,11 +137,25 @@ def setfilter(forced=False):
             args = prompts.modify_active_prompt(read_args.retriveArgs())
         elif choice == "price":
             args = prompts.modify_prices_prompt(read_args.retriveArgs())
+        elif choice == "list":
+            old_args = read_args.retriveArgs()
+            old_blacklist = old_args.black_list
+            old_list = old_args.user_list
+            args = prompts.modify_list_prompt(old_args)
+            if not list(sorted(old_blacklist)) == list(
+                sorted(args.black_list)
+            ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
+                print("Updating Models")
+                all_subs_helper(check=False)
+        write_args.setArgs(args)
 
 
-def filterNSort(usernames):
+def filterNSort():
+    global ALL_SUBS
     while True:
         # paid/free
+        usernames = ALL_SUBS
+
         log.debug(f"username count no filters: {len(usernames)}")
         filterusername = subtype.subType(usernames)
         filterusername = price.pricePaidFreeFilterHelper(filterusername)
@@ -158,8 +172,12 @@ def filterNSort(usernames):
             f"""You have filtered the user list to zero
 Change the filter settings to continue
 
+Active userlist : {settings.get_userlist()}
+Active blacklist : {settings.get_blacklist()}
+
 Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
 Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}
+
 Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
 Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
 Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}

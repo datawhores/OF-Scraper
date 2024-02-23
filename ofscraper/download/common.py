@@ -57,6 +57,7 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system as system
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -305,10 +306,8 @@ async def check_forced_skip(ele, *args):
     total = sum(map(lambda x: int(x), args))
     if total == 0:
         return 0
-    file_size_limit = (
-        read_args.retriveArgs().size_max or config_data.get_filesize_limit()
-    )
-    file_size_min = read_args.retriveArgs().size_min or config_data.get_filesize_limit()
+    file_size_limit = settings.get_size_limit()
+    file_size_min = settings.get_size_min()
     if int(file_size_limit) > 0 and (int(total) > int(file_size_limit)):
         ele.mediatype = "forced_skipped"
         log.debug(f"{get_medialog(ele)} {format_size(total)} over size limit")

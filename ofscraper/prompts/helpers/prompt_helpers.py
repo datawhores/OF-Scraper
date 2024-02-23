@@ -7,7 +7,9 @@ from rich.console import Console
 
 import ofscraper.models.selector as userselector
 import ofscraper.prompts.helpers.model_helpers as modelHelpers
+import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.config.data as config_data
 
 console = Console()
 
@@ -108,7 +110,7 @@ def model_funct(prompt):
     oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
     userselector.setfilter()
     if oldargs != vars(read_args.retriveArgs()):
-        models = userselector.filterNSort(userselector.ALL_SUBS)
+        models = userselector.filterNSort()
     choices = list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
@@ -131,3 +133,23 @@ def model_funct(prompt):
     )
     prompt.content_control._format_choices()
     return prompt
+
+
+def user_list(model_str):
+    model_list = re.split("(,|\n)", model_str)
+    model_list = map(lambda x: re.sub("[^a-zA-Z0-9 ]", "", x), model_list)
+    model_list = filter(lambda x: len(x) != 0, model_list)
+    return model_list
+
+
+def get_list_details(white=True):
+    return (
+        f"""
+    {prompt_strings.LIST_PROMPT_INFO}
+Default User Lists : {config_data.get_default_userlist() or 'No Default List Selected'}
+    """
+        if white
+        else f"""{prompt_strings.LIST_PROMPT_INFO}
+Default Black Lists : {config_data.get_default_blacklist() or 'No Default List Selected'}
+    """
+    )

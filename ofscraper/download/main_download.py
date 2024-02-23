@@ -130,7 +130,7 @@ async def main_download_downloader(c, ele, username, model_id, progress):
                 common.attempt.set(common.attempt.get(0) + 1)
                 try:
                     placeholderObj = placeholder.Placeholders()
-                    placeholderObj.getDirs(ele, username, model_id)
+                    await placeholderObj.getDirs(ele, username, model_id)
                     placeholderObj.tempfilename = f"{ele.filename}_{ele.id}.part"
 
                     data = await asyncio.get_event_loop().run_in_executor(

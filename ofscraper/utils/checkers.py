@@ -8,6 +8,7 @@ import ofscraper.utils.config.config as config_
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.paths.check as check
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
@@ -36,3 +37,10 @@ def check_config():
         config_.update_ffmpeg()
     log.debug(f"[bold]final mp4decrypt path[/bold] {data.get_mp4decrypt()}")
     log.debug(f"[bold]final ffmpeg path[/bold] {data.get_ffmpeg()}")
+
+
+def check_config_key_mode():
+    if settings.get_key_mode() == "keydb" and not data.get_keydb_api():
+        console.shared_console.print(
+            "[red]You must setup keydb API Key\nhttps://keysdb.net[/red]"
+        )

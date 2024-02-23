@@ -29,6 +29,7 @@ import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.common import (
@@ -225,9 +226,7 @@ downloads total [{common.video_count} videos, {common.audio_count} audios, {comm
 
 def queue_process(pipe_, overall_progress, job_progress, task1, total):
     count = 0
-    downloadprogress = (
-        read_args.retriveArgs().downloadbars or config_data.get_show_downloadprogress()
-    )
+    downloadprogress = settings.get_download_bar()
     # shared globals
 
     while True:
@@ -301,7 +300,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
 
 
 def get_mediasplits(medialist):
-    user_count = read_args.retriveArgs().downloadthreads or config_data.get_threads()
+    user_count = settings.get_threads()
     final_count = max(min(user_count, system.getcpu_count(), len(medialist) // 5), 1)
     return more_itertools.divide(final_count, medialist)
 

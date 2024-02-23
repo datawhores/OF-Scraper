@@ -10,7 +10,7 @@ import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.me as me_util
 
 
-def get_models(main=False) -> list:
+def get_models() -> list:
     """
     Get user's subscriptions in form of a list.
     """

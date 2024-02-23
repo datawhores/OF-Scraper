@@ -193,6 +193,10 @@ MODEL DETAILS: [ALT+D]
 PRICE_DETAILS = """
 SHOW CURRENT PRICE STATUS/INFO: [ALT+D]
 """
+LIST_PROMPT_INFO = """
+List are case-insensitive and should be seperate via comma and/or via 'Enter Key'
+Default List are used if input is empty
+"""
 
 SORT_DETAILS = """
 SHOW CURRENT SORTING: [ALT+D]

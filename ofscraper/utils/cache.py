@@ -2,9 +2,9 @@ import threading
 
 from diskcache import Cache
 
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
 
 cache = None
 lock = threading.Lock()
@@ -14,7 +14,7 @@ def get(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+        if settings.get_cache_disabled():
             return kwargs.get("default")
         global cache
         if cache is None:
@@ -30,7 +30,7 @@ def set(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+        if settings.get_cache_disabled():
             return
         global cache
         if cache is None:
@@ -46,7 +46,7 @@ def close(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+        if settings.get_cache_disabled():
             return None
         global cache
         if cache is None:
@@ -62,7 +62,7 @@ def touch(*args, **kwargs):
     global lock
     lock.acquire()
     try:
-        if read_args.retriveArgs().no_cache or data.get_cache_mode() == "disabled":
+        if settings.get_cache_disabled():
             return None
         global cache
         if cache is None:

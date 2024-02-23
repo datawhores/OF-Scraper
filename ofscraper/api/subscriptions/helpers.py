@@ -24,9 +24,8 @@ from tenacity import (
     wait_random,
 )
 
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
@@ -37,14 +36,14 @@ sem = None
 
 
 def get_user_list_helper():
-    out = read_args.retriveArgs().user_list or data.get_default_userlist()
+    out = settings.get_userlist()
     if isinstance(out, str):
         out = out.split(",")
     return set(map(lambda x: x.lower().strip(), out))
 
 
 def get_black_list_helper():
-    out = read_args.retriveArgs().black_list or data.get_default_blacklist()
+    out = settings.get_blacklist()
     if isinstance(out, str):
         out = out.split(",")
     return set(map(lambda x: x.lower().strip(), out))

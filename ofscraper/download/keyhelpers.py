@@ -26,6 +26,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
+import ofscraper.utils.settings as settings
 from ofscraper.download.common import get_medialog
 
 log = None
@@ -39,7 +40,7 @@ def setLog(input_):
 async def un_encrypt(item, c, ele, input_=None):
     setLog(input_ or common.log)
     key = None
-    keymode = read_args.retriveArgs().key_mode or config_data.get_key_mode() or "cdrm"
+    keymode = settings.get_key_mode()
     past_key = await asyncio.get_event_loop().run_in_executor(
         common.cache_thread, partial(cache.get, ele.license)
     )

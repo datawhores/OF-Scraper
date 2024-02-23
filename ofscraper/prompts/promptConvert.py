@@ -21,12 +21,14 @@ def wrapper(funct):
                 filter(
                     lambda x: len(x) > 0,
                     [
-                        inspect.cleandoc(f"{kwargs.pop('option_instruction', '')}"),
                         inspect.cleandoc(
-                            f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}"
+                            f"{kwargs.pop('option_instruction', '')}".upper()
                         ),
                         inspect.cleandoc(
-                            f"{kwargs.pop('more_instruction', '') or kwargs.pop('more_instructions', '')}"
+                            f"{kwargs.get('long_instruction', prompt_strings.KEY_BOARD)}".upper()
+                        ),
+                        inspect.cleandoc(
+                            f"{kwargs.pop('more_instruction', '') or kwargs.pop('more_instructions', '')}".upper()
                         ),
                     ],
                 )
