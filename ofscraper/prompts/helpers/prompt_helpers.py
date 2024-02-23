@@ -114,7 +114,7 @@ PRESS ENTER TO RETURN
 
 def model_funct(prompt):
     userselector.setfilter()
-    models = userselector.get_ALL_SUBS()
+    models = userselector.parsed_subscriptions_helper()
     choices = list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),

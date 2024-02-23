@@ -122,7 +122,6 @@ def parsed_subscriptions_helper(reset=False):
 
 def setfilter(forced=False):
     global args
-    global ALL_SUBS
     while True:
         choice = prompts.decide_filters_menu()
         if choice == "modelList":
@@ -182,6 +181,9 @@ Promo Price Filter: {read_args.retriveArgs().promo_price or 'No Filter'}
 Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
 Current Price Filter: {read_args.retriveArgs().current_price or 'No Filter'}
 Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
+
+[ALT+D] More Filters
+
 """
         )
 

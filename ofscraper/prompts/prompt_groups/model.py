@@ -158,7 +158,11 @@ def modify_active_prompt(args):
                 else "",
             },
         ],
-        more_instructions="--last-seen filters by presence of value  in contrast to [--last-seen-after/--last-seen-before] which both use a the current time model hides last-seen",
+        more_instructions="""
+        
+        --last-seen filters by visiblity of 'last seen' value
+        in contrast to [--last-seen-after/--last-seen-before]
+        which both use a the current time if model hides 'last seen'""",
     )
 
     args.last_seen = answer["last-seen"]
