@@ -80,9 +80,9 @@ def modify_subtype_prompt(args):
                 "type": "list",
                 "name": "renewal",
                 "default": True
-                if read_args.retriveArgs().renew
+                if read_args.retriveArgs().renewal
                 else False
-                if read_args.retriveArgs().renew == False
+                if read_args.retriveArgs().renewal == False
                 else None,
                 "message": "Filter account by whether it has a renewal date",
                 "choices": [
@@ -158,7 +158,7 @@ def modify_active_prompt(args):
                 else "",
             },
         ],
-        more_instructions="--last-seen filters by presence of value  in contrast to --last-seen-after/--last-seen-before which both use afailback if last-seen is hidden",
+        more_instructions="--last-seen filters by presence of value  in contrast to [--last-seen-after/--last-seen-before] which both use a the current time model hides last-seen",
     )
 
     args.last_seen = answer["last-seen"]

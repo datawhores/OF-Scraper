@@ -113,10 +113,8 @@ PRESS ENTER TO RETURN
 
 
 def model_funct(prompt):
-    oldargs = copy.deepcopy(vars(read_args.retriveArgs()))
     userselector.setfilter()
-    if oldargs != vars(read_args.retriveArgs()):
-        models = userselector.filterNSort()
+    models = userselector.get_ALL_SUBS()
     choices = list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
