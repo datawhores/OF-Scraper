@@ -36,38 +36,13 @@ def wrapper(funct):
         )
         kwargs["message"] = f"{kwargs.get('message')}" if kwargs.get("message") else ""
 
-        altx_action = kwargs.pop("altx", None) or (lambda prompt: None)
-        altd_action = kwargs.pop("altd", None) or (lambda prompt: None)
         altv_action = kwargs.pop("altv", None) or long_message
-
+        altx_action = kwargs.pop("altx", None)
+        altd_action = kwargs.pop("altd", None)
         action_set = set()
-
         prompt_ = funct(*args, **kwargs)
 
-        @prompt_.register_kb("alt-x")
-        def _handle_alt_x(event):
-            action_set.add("altx")
-            event.app.exit()
-
-        @prompt_.register_kb("c-b")
-        def _handle_alt_x(event):
-            action_set.add("altx")
-            event.app.exit()
-
-        @prompt_.register_kb("alt-v")
-        def _handle_alt_v(event):
-            action_set.add("altv")
-            event.app.exit()
-
-        @prompt_.register_kb("c-v")
-        def _handle_alt_v(event):
-            action_set.add("altv")
-            event.app.exit()
-
-        @prompt_.register_kb("alt-d")
-        def _handle_altd(event):
-            action_set.add("alt-d")
-            event.app.exit()
+        register_keys(prompt_, altx_action, altd_action, action_set)
 
         while True:
             out = prompt_.execute()
@@ -80,11 +55,42 @@ def wrapper(funct):
                 altd_action(prompt_)
             else:
                 break
-            action_set = set()
+            action_set.clear()
 
         return out
 
     return inner
+
+
+def register_keys(prompt_, altx_action, altd_action, action_set):
+    if altx_action:
+
+        @prompt_.register_kb("alt-x")
+        def _handle_alt_x(event):
+            action_set.add("altx")
+            event.app.exit()
+
+        @prompt_.register_kb("c-b")
+        def _handle_alt_x(event):
+            action_set.add("altx")
+            event.app.exit()
+
+    if altd_action:
+
+        @prompt_.register_kb("alt-d")
+        def _handle_altd(event):
+            action_set.add("alt-d")
+            event.app.exit()
+
+    @prompt_.register_kb("alt-v")
+    def _handle_alt_v(event):
+        action_set.add("altv")
+        event.app.exit()
+
+    @prompt_.register_kb("c-v")
+    def _handle_alt_v(event):
+        action_set.add("altv")
+        event.app.exit()
 
 
 def get_default(funct, prompt):

@@ -172,8 +172,8 @@ def filterNSort():
             f"""You have filtered the user list to zero
 Change the filter settings to continue
 
-Active userlist : {settings.get_userlist()}
-Active blacklist : {settings.get_blacklist()}
+Active userlist : {settings.get_userlist() or 'no blacklist'}
+Active blacklist : {settings.get_blacklist() or 'no userlist'}
 
 Sub Status: {read_args.retriveArgs().sub_status or 'No Filter'}
 Renewal Status: {read_args.retriveArgs().renewal or 'No Filter'}

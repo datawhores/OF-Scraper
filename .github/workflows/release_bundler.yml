@@ -304,7 +304,7 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install pyinstaller==6.4.0
-          deactivate   
+          deactivate
       - name: test ofscraper
         run: |
           export PATH=$PATH:/usr/local/bin
@@ -361,12 +361,10 @@ jobs:
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{inputs.version}}.zip"
 
-
-
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [linux, windows_dir,windows_file,mac]
+    needs: [linux, windows_dir, windows_file, mac]
     permissions:
       contents: write
     steps:
@@ -395,7 +393,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ofscraper_windows_zip
-
 
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper

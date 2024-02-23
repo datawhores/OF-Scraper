@@ -113,7 +113,9 @@ async def get_paid_posts(username, model_id):
 
 def set_check(unduped, model_id):
     newCheck = {}
-    for post in cache.get(f"purchased_check_{model_id}", default=[]) + list(unduped.values()):
+    for post in cache.get(f"purchased_check_{model_id}", default=[]) + list(
+        unduped.values()
+    ):
         newCheck[post["id"]] = post
     cache.set(
         f"purchased_check_{model_id}",

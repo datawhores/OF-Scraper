@@ -36,17 +36,11 @@ sem = None
 
 
 def get_user_list_helper():
-    out = settings.get_userlist()
-    if isinstance(out, str):
-        out = out.split(",")
-    return set(map(lambda x: x.lower().strip(), out))
+    return settings.get_userlist(as_list=True)
 
 
 def get_black_list_helper():
-    out = settings.get_blacklist()
-    if isinstance(out, str):
-        out = out.split(",")
-    return set(map(lambda x: x.lower().strip(), out))
+    return settings.get_blacklist(as_list=True)
 
 
 async def sort_list(c) -> list:

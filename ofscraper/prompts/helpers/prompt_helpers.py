@@ -10,6 +10,7 @@ import ofscraper.prompts.helpers.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
+import ofscraper.utils.settings as settings
 
 console = Console()
 
@@ -20,6 +21,7 @@ def model_details(prompt_):
         inspect.cleandoc(
             f"""
         ========================================================================================================================================
+
         Name: [bold blue]{selected.name}[/bold blue]
         ----------------------------------------------------------------------------------------------------------------------------------------
         ID: [bold blue]{selected.id}[/bold blue]
@@ -64,6 +66,8 @@ def price_info(prompt_):
     console.print(
         inspect.cleandoc(
             f"""
+========================================================================================================================================
+
 [italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
 
 ---------------------------------------------------------------------------------------
@@ -78,7 +82,7 @@ regular_price => [bold blue]{read_args.retriveArgs().regular_price if read_args.
 ---------------------------------------------------------------------------------------
 renewal_price => [bold blue]{read_args.retriveArgs().renewal_price if read_args.retriveArgs().renewal_price else 'paid and free'}[/bold blue]
 [Regular Price | See Final Price Details]
-=======================================================================================================================================        
+==========================================================================================================================================
 
 PRESS ENTER TO RETURN
 
@@ -93,10 +97,12 @@ def sort_info(prompt_):
     console.print(
         inspect.cleandoc(
             f"""
+========================================================================================================================================
 
 sorting by =>  [bold blue]{read_args.retriveArgs().sort}[/bold blue]
+---------------------------------------------------------------------------------------
 sorting direction => [bold blue]{'desc' if read_args.retriveArgs().desc else 'asc'}[/bold blue]
-=======================================================================================================================================
+========================================================================================================================================
 PRESS ENTER TO RETURN
 
     """
@@ -153,3 +159,61 @@ Default User Lists : {config_data.get_default_userlist() or 'No Default List Sel
 Default Black Lists : {config_data.get_default_blacklist() or 'No Default List Selected'}
     """
     )
+
+
+def get_current_filters(prompt_):
+    console.print(
+        inspect.cleandoc(
+            f"""
+========================================================================================================================================
+
+subscription => [bold blue]{'active' if read_args.retriveArgs().sub_status else 'expired' if read_args.retriveArgs().sub_status==False else 'expired and active'}[/bold blue]
+---------------------------------------------------------------------------------------
+renew => [bold blue]{'renew on' if read_args.retriveArgs().renewal else 'renew off' if read_args.retriveArgs().renewal==False else 'renew on/off'}[/bold blue]
+==========================================================================================================================================
+
+user-list in use=> [bold blue]{settings.get_userlist() or 'no userlist'}[/bold blue]
+---------------------------------------------------------------------------------------
+black-list in use=> [bold blue]{settings.get_blacklist() or 'no blacklist'}[/bold blue]
+==========================================================================================================================================
+
+promo status => [bold blue]{'promo on' if read_args.retriveArgs().promo else 'promo off' if read_args.retriveArgs().promo==False else 'promo off/on'}[/bold blue]
+---------------------------------------------------------------------------------------
+all promo status => [bold blue]{'all promo on' if read_args.retriveArgs().all_promo else 'all promo off' if read_args.retriveArgs().all_promo==False else 'all promo off/on'}[/bold blue]
+==========================================================================================================================================
+
+last-seen => [bold blue]{read_args.retriveArgs().last_seen}[/bold blue]
+---------------------------------------------------------------------------------------
+last-seen-before => [bold blue]{read_args.retriveArgs().last_seen_before}[/bold blue]
+---------------------------------------------------------------------------------------
+last-seen-after => [bold blue]{read_args.retriveArgs().last_seen_after}[/bold blue]
+==========================================================================================================================================
+
+[italic yellow]Final Prices Detail =>[ https://of-scraper.gitbook.io/of-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
+
+---------------------------------------------------------------------------------------
+current_price => [bold blue]{read_args.retriveArgs().current_price if read_args.retriveArgs().current_price else 'paid and free'}[/bold blue]
+[Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
+---------------------------------------------------------------------------------------
+promo_price => [bold blue]{read_args.retriveArgs().promo_price if read_args.retriveArgs().promo_price else 'paid and free'}[/bold blue]
+[Lowest Any Promo Price or Regular Price | See Final Price Details]
+---------------------------------------------------------------------------------------
+regular_price => [bold blue]{read_args.retriveArgs().regular_price if read_args.retriveArgs().regular_price else 'paid and free'}[/bold blue]
+[Lowest Claimable Promo or Regular Price | See Final Price Details]
+---------------------------------------------------------------------------------------
+renewal_price => [bold blue]{read_args.retriveArgs().renewal_price if read_args.retriveArgs().renewal_price else 'paid and free'}[/bold blue]
+[Regular Price | See Final Price Details]
+=======================================================================================================================================
+
+sorting by =>  [bold blue]{read_args.retriveArgs().sort}[/bold blue]
+---------------------------------------------------------------------------------------
+sorting direction => [bold blue]{'desc' if read_args.retriveArgs().desc else 'asc'}[/bold blue]
+=======================================================================================================================================
+
+PRESS ENTER TO RETURN
+
+    """
+        )
+    )
+    prompt("")
+    return prompt_

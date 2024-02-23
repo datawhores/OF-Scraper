@@ -12,12 +12,35 @@ def get_key_mode():
     return read_args.retriveArgs().key_mode or config_data.get_key_mode()
 
 
-def get_userlist():
-    return read_args.retriveArgs().user_list or config_data.get_default_userlist()
+def get_userlist(as_list=False):
+    out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
+    if isinstance(out, str) and as_list == True:
+        out = out.split(",")
+        return set(map(lambda x: x.lower().strip(), out))
+    elif as_list == True:
+        out = set(map(lambda x: x.lower().strip(), out))
+        return out
+    elif isinstance(out, list) and as_list == False:
+        out = set(map(lambda x: x.lower().strip(), out))
+        return out.join(",")
+    elif as_list == False:
+        return out
 
 
-def get_blacklist():
-    return read_args.retriveArgs().black_list or config_data.get_default_blacklist()
+def get_blacklist(as_list=False):
+    out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()
+    if isinstance(out, str) and as_list == True:
+        out = out.split(",")
+        return set(map(lambda x: x.lower().strip(), out))
+    elif as_list == True:
+        out = set(map(lambda x: x.lower().strip(), out))
+        return out
+    elif isinstance(out, list) and as_list == False:
+        out = set(map(lambda x: x.lower().strip(), out))
+        return out.join(",")
+    elif as_list == False:
+        out = set(map(lambda x: x.lower().strip(), out))
+        return out
 
 
 def get_trunication():

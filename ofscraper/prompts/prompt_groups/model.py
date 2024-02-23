@@ -65,7 +65,9 @@ def decide_filters_menu() -> int:
                 "message": "Make changes to model list",
                 "choices": modelChoice,
             }
-        ]
+        ],
+        altd=prompt_helpers.get_current_filters,
+        more_instructions=prompt_strings.FILTER_DETAILS,
     )
 
     return constants.getattr("modelPrompt").get(questions[name])
@@ -77,18 +79,26 @@ def modify_subtype_prompt(args):
             {
                 "type": "list",
                 "name": "renewal",
-                "default": None,
+                "default": True
+                if read_args.retriveArgs().renew
+                else False
+                if read_args.retriveArgs().renew == False
+                else None,
                 "message": "Filter account by whether it has a renewal date",
                 "choices": [
-                    Choice(True, "Active Only"),
-                    Choice(False, "Disabled Only"),
+                    Choice(True, "Renewal On"),
+                    Choice(False, "Renewal Off"),
                     Choice(None, "Both"),
                 ],
             },
             {
                 "type": "list",
                 "name": "expire",
-                "default": None,
+                "default": True
+                if read_args.retriveArgs().sub_status
+                else False
+                if read_args.retriveArgs().sub_status == False
+                else None,
                 "message": "Filter accounts based on access to content via a subscription",
                 "choices": [
                     Choice(True, "Active Only"),
@@ -123,7 +133,8 @@ def modify_active_prompt(args):
                 "name": "last-seen-after",
                 "message": "Filter accounts by last seen being after the given date",
                 "option_instruction": """enter 0 to disable this filter
-                Otherwise must be in date format""",
+                Otherwise must be in date format
+                """,
                 "validate": prompt_validators.datevalidator(),
                 "filter": lambda x: arrow.get(x or 0),
                 "default": arrow.get(read_args.retriveArgs().last_seen_after).format(
@@ -146,7 +157,8 @@ def modify_active_prompt(args):
                 if read_args.retriveArgs().last_seen_before
                 else "",
             },
-        ]
+        ],
+        more_instructions="--last-seen filters by presence of value  in contrast to --last-seen-after/--last-seen-before which both use afailback if last-seen is hidden",
     )
 
     args.last_seen = answer["last-seen"]
@@ -168,7 +180,11 @@ def modify_promo_prompt(args):
                 "type": "list",
                 "name": "promo",
                 "message": "Filter accounts presence of claimable promotions",
-                "default": None,
+                "default": True
+                if read_args.retriveArgs().promo
+                else False
+                if read_args.retriveArgs().promo == False
+                else None,
                 "choices": [
                     Choice(True, "Promotions Only"),
                     Choice(False, "No Promotions"),
@@ -179,7 +195,11 @@ def modify_promo_prompt(args):
                 "type": "list",
                 "name": "all-promo",
                 "message": "Filter accounts presence of any promotions",
-                "default": None,
+                "default": True
+                if read_args.retriveArgs().all_promo
+                else False
+                if read_args.retriveArgs().all_promo == False
+                else None,
                 "choices": [
                     Choice(True, "Promotions Only"),
                     Choice(False, "No Promotions"),
