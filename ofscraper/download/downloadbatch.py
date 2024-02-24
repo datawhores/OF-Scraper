@@ -190,7 +190,6 @@ def process_dicts(username, model_id, filtered_medialist):
         try:
             with exit.DelayedKeyboardInterrupt():
                 [process.terminate() for process in processes]
-                manager.shutdown()
                 raise KeyboardInterrupt
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():
@@ -202,7 +201,6 @@ def process_dicts(username, model_id, filtered_medialist):
         try:
             with exit.DelayedKeyboardInterrupt():
                 [process.terminate() for process in processes]
-                manager.shutdown()
                 raise E
         except KeyboardInterrupt:
             with exit.DelayedKeyboardInterrupt():

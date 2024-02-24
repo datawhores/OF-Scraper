@@ -88,7 +88,7 @@ async def main_download(c, ele, username, model_id, progress):
 
     await size_checker(temp, ele, total)
     common.log.debug(
-        f"{get_medialog(ele)} {ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
+        f"{get_medialog(ele)} {await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp).absolute().stat().st_size}"
     )
     common.log.debug(
         f"{get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"

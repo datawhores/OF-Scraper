@@ -23,6 +23,7 @@ def shutdown():
     global manager
     if manager:
         manager.shutdown()
+        manager == None
 
 
 def update_dict(new_dict):

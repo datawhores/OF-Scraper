@@ -94,7 +94,8 @@ async def alt_download(c, ele, username, model_id):
         item = await keyhelpers.un_encrypt(item, c, ele, common.innerlog.get())
     temp_path = paths.truncate(
         pathlib.Path(
-            sharedPlaceholderObj.tempdir, f"temp_{ele.id or ele.final_filename}.mp4"
+            sharedPlaceholderObj.tempdir,
+            f"temp_{ele.id or await ele.final_filename}.mp4",
         )
     )
     temp_path.unlink(missing_ok=True)
