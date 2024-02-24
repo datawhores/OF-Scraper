@@ -226,7 +226,7 @@ downloads total [{common.video_count} videos, {common.audio_count} audios, {comm
 
 def queue_process(pipe_, overall_progress, job_progress, task1, total):
     count = 0
-    downloadprogress = settings.get_download_bar()
+    downloadprogress = settings.get_download_bars()
     # shared globals
 
     while True:

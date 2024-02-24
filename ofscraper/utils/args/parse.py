@@ -1,7 +1,6 @@
 import argparse
 import re
 import sys
-import textwrap
 
 from humanfriendly import parse_size
 
@@ -79,10 +78,11 @@ def create_parser(input=None):
     )
     scraper.add_argument(
         "-u",
-        "--username",
+        "--usernames",
         help="select which username to process (name,name2)\nSet to ALL for all users",
         type=helpers.username_helper,
         action="extend",
+        dest="username",
     )
     scraper.add_argument(
         "-eu",
