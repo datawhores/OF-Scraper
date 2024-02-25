@@ -26,6 +26,8 @@ from functools import partial, singledispatch
 
 from humanfriendly import format_size
 
+import ofscraper.utils.hash as hash
+
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
@@ -119,6 +121,8 @@ def reset_globals():
     console = console_.get_shared_console()
     global localDirSet
     localDirSet = set()
+    global fileHashes
+    fileHashes = {}
     global req_sem
     req_sem = semaphoreDelayed(
         min(
@@ -562,3 +566,9 @@ def log_download_progress(media_type):
 downloads total [{video_count} videos, {audio_count} audios, {photo_count} photos], \
             {forced_skipped} skipped, {skipped} failed)"
         )
+
+
+async def get_hash(file_data):
+    return await asyncio.get_event_loop().run_in_executor(
+        thread, partial(hash.get_hash, file_data)
+    )

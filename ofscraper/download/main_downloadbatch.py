@@ -106,6 +106,7 @@ async def main_download(c, ele, username, model_id):
             model_id=model_id,
             username=username,
             downloaded=True,
+            hash=await common.get_hash(path_to_file),
         )
     await set_profile_cache_helper(ele)
     return ele.mediatype, total

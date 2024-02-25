@@ -141,6 +141,7 @@ async def alt_download(c, ele, username, model_id):
             model_id=model_id,
             username=username,
             downloaded=True,
+            hash=await common.get_hash(sharedPlaceholderObj),
         )
     return ele.mediatype, video["total"] + audio["total"]
 

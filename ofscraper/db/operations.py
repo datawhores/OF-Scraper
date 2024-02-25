@@ -285,6 +285,17 @@ def create_media_table(model_id=None, username=None, conn=None):
 
 
 @operation_wrapper
+def add_column(model_id=None, username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            cur.execute(queries.mediaAddColumn)
+            conn.commit()
+        except sqlite3.OperationalError as E:
+            if not str(E) == "duplicate column name: hash":
+                raise E
+
+
+@operation_wrapper
 def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.allIDCheck)
@@ -296,6 +307,24 @@ def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
 def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.allDLIDCheck)
+        conn.commit()
+        return list(map(lambda x: x[0], cur.fetchall()))
+
+
+@operation_wrapper
+def get_dupe_media_hashes(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.mediaDupeHashes)
+        conn.commit()
+        return list(map(lambda x: x[0], cur.fetchall()))
+
+
+@operation_wrapper
+def get_dupe_media_files(
+    model_id=None, username=None, conn=None, hash=None, **kwargs
+) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.mediaDupeFiles, [hash])
         conn.commit()
         return list(map(lambda x: x[0], cur.fetchall()))
 
@@ -320,20 +349,22 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
 
 @operation_wrapper_async
 def update_media_table(
-    media, filename=None, conn=None, downloaded=None, **kwargs
+    media, filename=None, conn=None, downloaded=None, hash=None, **kwargs
 ) -> list:
     prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
     if len(prevData) == 0:
-        insertData = media_insert_helper(media, filename, downloaded)
+        insertData = media_insert_helper(media, filename, downloaded, hash=hash)
         conn.execute(queries.mediaInsert, insertData)
     else:
-        insertData = media_insert_helper(media, filename, downloaded, prevData)
+        insertData = media_insert_helper(
+            media, filename, downloaded, hash=hash, prevData=prevData
+        )
         insertData.append(media.id)
         conn.execute(queries.mediaUpdate, insertData)
     conn.commit()
 
 
-def media_insert_helper(media, filename, downloaded, prevData=None):
+def media_insert_helper(media, filename, downloaded, hash=None, prevData=None):
     prevData = prevData[0] if isinstance(prevData, list) else prevData
     directory = None
     filename_path = None
@@ -349,6 +380,7 @@ def media_insert_helper(media, filename, downloaded, prevData=None):
         directory = prevData[3]
         filename_path = prevData[4]
         size = prevData[5]
+        hash = prevData[14] or hash
     downloaded = downloaded
     if prevData:
         downloaded = prevData[-2] if downloaded == None else downloaded
@@ -369,6 +401,7 @@ def media_insert_helper(media, filename, downloaded, prevData=None):
         media.linked,
         downloaded,
         media.date,
+        hash,
     ]
     return insertData
 
@@ -552,6 +585,8 @@ def create_tables(model_id, username):
     create_profile_table(model_id=model_id, username=username)
     create_stories_table(model_id=model_id, username=username)
     create_labels_table(model_id=model_id, username=username)
+    # modifications for current tables
+    add_column(model_id=model_id, username=username)
 
 
 def create_backup(model_id, username):

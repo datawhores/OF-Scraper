@@ -597,7 +597,18 @@ def get_max_post_count(config=None):
         if config.get("max_post_count") != None:
             return int(config.get("max_post_count"))
         elif config.get("download_options", {}).get("max_post_count") != None:
-            return config.get("download_options", {}).get("max_post_count")
+            return int(config.get("download_options", {}).get("max_post_count"))
         return int(constants_attr.getattr("MAX_COUNT_DEFAULT"))
     except:
         return constants_attr.getattr("MAX_COUNT_DEFAULT")
+
+
+@wrapper.config_reader
+def get_hash(config=None):
+    if config == False:
+        return constants.HASHED_DEFAULT
+    elif "remove_hash_match" in config:
+        return int(config.get("remove_hash_match"))
+    elif "remove_hash_match" in config.get("advanced_options", {}):
+        return config.get("advanced_options", {}).get("remove_hash_match")
+    return constants.HASHED_DEFAULT

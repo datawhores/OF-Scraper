@@ -55,6 +55,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "custom_values": custom.get_custom(config=config),
             "sanitize_text": data.get_sanitizeDB(config=config),
             "temp_dir": data.get_TempDir(config=config),
+            "remove_hash_match": data.get_hash(config=config),
             "infinite_loop_action_mode": data.get_InfiniteLoop(config=config),
             "disable_auto_after": data.get_disable_after(config=config),
             "default_user_list": data.get_default_userlist(config=config),

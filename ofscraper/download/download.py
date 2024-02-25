@@ -7,6 +7,7 @@ import ofscraper.filters.media.helpers as helpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
+import ofscraper.utils.hash as hash
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
@@ -32,9 +33,14 @@ def medialist_filter(medialist, model_id, username):
     return medialist
 
 
-def download_picker(username, model_id, medialist):
+def download_process(username, model_id, medialist):
     medialist = medialist_filter(medialist, model_id, username)
     medialist = helpers.post_count_filter(medialist)
+    download_picker(username, model_id, medialist)
+    remove_downloads_with_hashes(username, model_id)
+
+
+def download_picker(username, model_id, medialist):
     if len(medialist) == 0:
         logging.getLogger("shared").error(
             f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
@@ -52,3 +58,7 @@ def download_picker(username, model_id, medialist):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
         return normaldownloader.process_dicts(username, model_id, medialist)
+
+
+def remove_downloads_with_hashes(username, model_id):
+    hash.remove_dupes_hash(username, model_id)

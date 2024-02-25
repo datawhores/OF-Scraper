@@ -40,7 +40,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.paths as paths
 from ofscraper.download.common import (
     addGlobalDir,
@@ -154,6 +153,7 @@ async def alt_download(c, ele, username, model_id, progress):
             model_id=model_id,
             username=username,
             downloaded=True,
+            hash=await common.get_hash(sharedPlaceholderObj),
         )
     return ele.mediatype, video["total"] + audio["total"]
 

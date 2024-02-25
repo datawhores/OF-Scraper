@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS medias (
 	linked VARCHAR, 
 	downloaded INTEGER, 
 	created_at TIMESTAMP, 
+	hash VARCHAR,
 	PRIMARY KEY (id), 
 	UNIQUE (media_id)
 );"""
@@ -146,8 +147,8 @@ SELECT post_id FROM stories
 """
 
 mediaInsert = f"""INSERT INTO 'medias'(
-media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at)
-            VALUES (?, ?,?,?,?,?,?,?,?,?,?,?);"""
+media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at,hash)
+            VALUES (?, ?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 mediaDupeCheck = """
 SELECT * FROM medias where media_id=(?)
@@ -167,7 +168,7 @@ SELECT * FROM medias where api_type=('Message') or api_type=('Messages')
 
 mediaUpdate = f"""Update 'medias'
 SET
-media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?
+media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?,hash=?
 WHERE media_id=(?);"""
 
 mediaTypeUpdate = f"""Update 'medias'
@@ -222,4 +223,26 @@ SELECT created_at,post_id FROM posts where archived=(1)
 
 messagesData = """
 SELECT created_at,post_id FROM messages
+"""
+
+mediaAddColumn = """
+ALTER TABLE medias ADD COLUMN hash VARCHAR;
+"""
+
+mediaDupeHashes = """
+WITH x AS (
+    SELECT hash, size
+    FROM medias
+    WHERE hash IS NOT NULL AND size is not null
+)
+SELECT hash
+FROM x
+GROUP BY hash, size
+HAVING COUNT(*) > 1;
+"""
+
+mediaDupeFiles = """
+SELECT filename
+FROM medias
+where hash=(?)
 """

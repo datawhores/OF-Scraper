@@ -131,7 +131,7 @@ def scrape_paid(user_dict=None):
         operations.create_tables(model_id=model_id, username=username)
         operations.create_backup(model_id, username)
         operations.write_profile_table(model_id=model_id, username=username)
-        download.download_picker(
+        download.download_process(
             username,
             model_id,
             value,
@@ -169,7 +169,7 @@ def normal_post_process():
                 operations.create_backup(model_id, ele.name)
                 operations.write_profile_table(model_id=model_id, username=ele.name)
                 combined_urls = OF.process_areas(ele, model_id)
-                download.download_picker(ele.name, model_id, combined_urls)
+                download.download_process(ele.name, model_id, combined_urls)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
