@@ -90,6 +90,7 @@ def funct(prompt_):
     disable_auto_after: toggle for safe --after usage
     default_user_list: default user list for --action
     default_black_list: default black list for --action
+    remove_hash_match: remove files if hash matches
     ----------------------------------------------------------
     [Response Type]
     values that remap responsetypes for downloads
@@ -555,7 +556,7 @@ A comma seperated list of userlists to set as default when retriving users
 Main user list with all active+expired users can be called main or ofscraper.main
 Active user list can be called active or ofscraper.active
 Expired user list can be called expired or ofscraper.expired
-List are case insensitive",
+List are case insensitive\n
 """,
             },
             {
@@ -568,8 +569,19 @@ A comma seperated list of userlists to set as black listed
 Main user list with all active+expired users can be called main or ofscraper.main
 Active user list can be called active or ofscraper.active
 Expired user list can be called expired or ofscraper.expired
-List are case insensitive",
+List are case insensitive\n
 """,
+            },
+            {
+                "type": "list",
+                "name": "remove_hash_match",
+                "message": "Remove Files by matching hashes",
+                "default": data.get_hash(),
+                "choices": [
+                    Choice(True, "Hash Files and Remove Files"),
+                    Choice(False, "Hash Files, but do not remove"),
+                    Choice(None, "Don't Hash Files"),
+                ],
             },
         ],
         altx=funct,

@@ -608,7 +608,7 @@ def get_hash(config=None):
     if config == False:
         return constants.HASHED_DEFAULT
     elif "remove_hash_match" in config:
-        return int(config.get("remove_hash_match"))
+        return config.get("remove_hash_match")
     elif "remove_hash_match" in config.get("advanced_options", {}):
         return config.get("advanced_options", {}).get("remove_hash_match")
     return constants.HASHED_DEFAULT
