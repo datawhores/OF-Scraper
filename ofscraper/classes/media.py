@@ -379,6 +379,8 @@ class Media:
             return False
         elif self.media_source.get("source") != None:
             return False
+        elif self.files_source != None:
+            return False
         return True
 
     # for use in dynamic names
