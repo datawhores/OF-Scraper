@@ -377,9 +377,9 @@ class Media:
     def protected(self):
         if self.mediatype != "videos":
             return False
-        elif self.media_source.get("source") != None:
+        elif bool(self.media_source.get("source")):
             return False
-        elif self.files_source != None:
+        elif bool(self.files_source):
             return False
         return True
 
