@@ -299,7 +299,7 @@ def message_checker():
 
 def purchase_checker():
     user_dict = {}
-    auth_requests.make_headers(auth_file.read_auth())
+    auth_requests.make_headers()
     ROWS = []
     for user_name in read_args.retriveArgs().username:
         user_name = profile.scrape_profile(user_name)["username"]

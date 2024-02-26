@@ -41,9 +41,10 @@ async def un_encrypt(item, c, ele, input_=None):
     setLog(input_ or common.log)
     key = None
     keymode = settings.get_key_mode()
-    past_key = await asyncio.get_event_loop().run_in_executor(
-        common.cache_thread, partial(cache.get, ele.license)
-    )
+    # past_key = await asyncio.get_event_loop().run_in_executor(
+    #     common.cache_thread, partial(cache.get, ele.license)
+    # )
+    past_key = None
     if past_key:
         key = past_key
         log.debug(f"{get_medialog(ele)} got key from cache")
@@ -153,7 +154,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             try:
                 log.debug(f"ID:{id} pssh: {pssh!=None}")
                 log.debug(f"ID:{id} licence: {licence_url}")
-                headers = auth_requests.make_headers(auth_file.read_auth())
+                headers = auth_requests.make_headers()
                 headers["cookie"] = auth_requests.get_cookies()
                 auth_requests.create_sign(licence_url, headers)
                 json_data = {

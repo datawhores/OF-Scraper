@@ -87,9 +87,9 @@ def process_dicts(username, model_id, filtered_medialist):
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
-                    dates.getLogDateVManager(),
-                    selector.get_ALL_SUBS_DICTVManger(),
-                    read_args.retriveArgsVManager(),
+                    dates.getLogDate(),
+                    selector.get_ALL_SUBS_DICT(),
+                    read_args.retriveArgs(),
                 ),
             )
             for i in range(num_proc)
