@@ -172,7 +172,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
                         log.debug(
                             f"offset:{offset} -> found paid content ids {list(map(lambda x:x.get('id'),media))}"
                         )
-                        if data.get("hasMore"):
+                        if data.get("hasMore") and len(media) > 0:
                             offset += len(media)
                             new_tasks.append(
                                 asyncio.create_task(

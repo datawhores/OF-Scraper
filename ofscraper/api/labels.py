@@ -145,8 +145,12 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                             )
                         )
 
-                        if data.get("hasMore"):
-                            offset = data.get("nextOffset")
+                        if (
+                            data.get("hasMore")
+                            and len(data.get("list")) > 0
+                            and data.get("nextOffset") != offset
+                        ):
+                            offset = offset + len(data.get("list"))
                             new_tasks.append(
                                 asyncio.create_task(
                                     scrape_labels(
@@ -310,7 +314,8 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
                                 ),
                             )
                         )
-                        if data.get("hasMore"):
+
+                        if data.get("hasMore") and len(posts) > 0:
                             offset += len(posts)
                             new_tasks.append(
                                 asyncio.create_task(

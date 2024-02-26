@@ -182,8 +182,8 @@ async def scrape_lists(c, job_progress, offset=0):
                             )
                         )
 
-                        if data.get("hasMore"):
-                            offset = data.get("nextOffset")
+                        if data.get("hasMore") and len(out_list) > 0:
+                            offset = offset + len(out_list)
                             new_tasks.append(
                                 asyncio.create_task(
                                     scrape_lists(c, job_progress, offset=offset)
@@ -326,7 +326,11 @@ async def scrape_list(c, item, job_progress, offset=0):
                                 ),
                             )
                         )
-                        if data.get("hasMore"):
+                        if (
+                            data.get("hasMore")
+                            and len(users) > 0
+                            and offset != data.get("nextOffset")
+                        ):
                             offset += len(users)
                             new_tasks.append(
                                 asyncio.create_task(
