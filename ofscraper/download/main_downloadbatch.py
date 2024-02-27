@@ -71,7 +71,6 @@ async def main_download(c, ele, username, model_id):
             username,
             model_id,
         )
-
     result = list(await main_download_downloader(c, ele, username, model_id))
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":
@@ -98,7 +97,6 @@ async def handle_result(result, ele, username, model_id):
     )
     moveHelper(temp_path, path_to_file, ele, common_globals.innerlog.get())
     addLocalDir(await placeholder.Placeholders().getmediadir(ele, username, model_id))
-    await get_text(ele, username, model_id)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.innerlog.get().debug(

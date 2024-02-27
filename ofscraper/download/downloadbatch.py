@@ -37,6 +37,7 @@ from ofscraper.download.common.common import (
     addGlobalDir,
     convert_num_bytes,
     get_medialog,
+    get_text,
     log_download_progress,
     setDirectoriesDate,
     setupProgressBar,
@@ -425,6 +426,7 @@ def pid_log_helper():
 async def download(c, ele, model_id, username):
     # reduce number of logs
     async with common_globals.maxfile_sem:
+        await get_text(ele, username, model_id)
         templog_ = logger.get_shared_logger(
             name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
         )

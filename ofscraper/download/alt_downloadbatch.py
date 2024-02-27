@@ -36,7 +36,6 @@ from ofscraper.download.common.common import (
     downloadspace,
     get_item_total,
     get_medialog,
-    get_text,
     get_url_log,
     metadata,
     moveHelper,
@@ -71,11 +70,12 @@ async def alt_download(c, ele, username, model_id):
     await sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
     sharedPlaceholderObj.merge_path_final()
     path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
-
     audio = await alt_download_downloader(audio, c, ele, username, model_id)
     video = await alt_download_downloader(video, c, ele, username, model_id)
 
-    await media_item_post_process(audio, video, ele, username, model_id)
+    post_result = await media_item_post_process(audio, video, ele, username, model_id)
+    if post_result:
+        return post_result
     await media_item_keys(c, audio, video, ele)
     return await handle_result(
         sharedPlaceholderObj, ele, audio, video, username, model_id
@@ -127,7 +127,6 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
         common_globals.innerlog.get(),
     )
     addLocalDir(sharedPlaceholderObj.trunicated_filename)
-    await get_text(ele, username, model_id)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         set_time(sharedPlaceholderObj.trunicated_filename, newDate)

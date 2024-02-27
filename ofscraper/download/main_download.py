@@ -101,7 +101,6 @@ async def handle_result(result, ele, username, model_id):
     )
     moveHelper(temp, path_to_file, ele)
     addGlobalDir(await placeholder.Placeholders().getmediadir(ele, username, model_id))
-    await get_text(ele, username, model_id)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.log.debug(

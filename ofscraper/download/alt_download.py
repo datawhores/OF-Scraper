@@ -84,8 +84,12 @@ async def alt_download(c, ele, username, model_id, progress):
 
     audio = await alt_download_downloader(audio, c, ele, username, model_id, progress)
     video = await alt_download_downloader(video, c, ele, username, model_id, progress)
-    await media_item_post_process(audio, video, ele, username, model_id)
+
+    post_result = await media_item_post_process(audio, video, ele, username, model_id)
+    if post_result:
+        return post_result
     await media_item_keys(c, audio, video, ele)
+
     return await handle_result(
         sharedPlaceholderObj, ele, audio, video, username, model_id
     )
@@ -128,7 +132,6 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
     )
     moveHelper(temp_path, sharedPlaceholderObj.trunicated_filename, ele)
     addGlobalDir(sharedPlaceholderObj.trunicated_filename)
-    await get_text(ele, username, model_id)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.log.debug(

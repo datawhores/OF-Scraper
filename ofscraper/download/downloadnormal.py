@@ -29,6 +29,7 @@ from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
+    get_text,
     log_download_progress,
     setDirectoriesDate,
     setupProgressBar,
@@ -155,6 +156,7 @@ async def process_dicts(username, model_id, medialist):
 
 async def download(c, ele, model_id, username, progress):
     async with common_globals.maxfile_sem:
+        await get_text(ele, username, model_id)
         try:
             if ele.url:
                 return await main_download(
