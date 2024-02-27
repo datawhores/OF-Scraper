@@ -424,7 +424,6 @@ def pid_log_helper():
 
 
 async def download(c, ele, model_id, username):
-    # reduce number of logs
     async with common_globals.maxfile_sem:
         await get_text(ele, username, model_id)
         templog_ = logger.get_shared_logger(
