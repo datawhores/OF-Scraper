@@ -402,6 +402,14 @@ class Media:
             return True
         return False
 
+    @property
+    def username(self):
+        return self._post.username
+
+    @property
+    def model_id(self):
+        return self._post.model_id
+
     def get_text(self):
         if self.responsetype != "Profile":
             text = (

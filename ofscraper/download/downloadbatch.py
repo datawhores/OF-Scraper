@@ -37,7 +37,6 @@ from ofscraper.download.common.common import (
     addGlobalDir,
     convert_num_bytes,
     get_medialog,
-    get_text,
     log_download_progress,
     setDirectoriesDate,
     setupProgressBar,

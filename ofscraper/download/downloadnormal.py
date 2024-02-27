@@ -29,7 +29,6 @@ from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
-    get_text,
     log_download_progress,
     setDirectoriesDate,
     setupProgressBar,

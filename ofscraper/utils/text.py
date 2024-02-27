@@ -1,7 +1,8 @@
 import asyncio
+import pathlib
 import textwrap
 import traceback
-from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 
 import aiofiles
 
@@ -34,6 +35,8 @@ async def get_text_process(ele):
         file_data = await placeholderObj.get_final_trunicated_path(
             ele, username, model_id, "txt"
         )
+        if pathlib.Path(file_data).exists():
+            return
         file_data = str(file_data)
         wrapped_text = textwrap.wrap(
             ele.text, width=constants.getattr("MAX_TEXT_LENGTH")

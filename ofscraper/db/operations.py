@@ -612,3 +612,9 @@ def create_backup(model_id, username):
         shutil.copy2(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
     cache.close()
+
+
+def table_init_create(model_id=None, username=None):
+    create_tables(model_id=model_id, username=username)
+    create_backup(model_id, username)
+    write_profile_table(model_id=model_id, username=username)

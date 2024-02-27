@@ -48,7 +48,6 @@ from ofscraper.download.common.common import (
     downloadspace,
     get_item_total,
     get_medialog,
-    get_text,
     get_url_log,
     metadata,
     moveHelper,

@@ -101,9 +101,10 @@ def process_post_user_first():
                 )
             try:
                 model_id = ele.id
-                operations.write_profile_table(model_id=model_id, username=ele.name)
-                output.extend(OF.process_areas(ele, model_id))
-                #
+                username = ele.name
+                operations.table_init_create(model_id=model_id, username=username)
+                results = OF.process_areas(ele, model_id)
+                output.extend(results)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
@@ -129,9 +130,6 @@ def scrape_paid(user_dict=None):
         selector.set_ALL_SUBS_DICTVManger(
             {username: models.Model(profile.scrape_profile(model_id))}
         )
-        operations.create_tables(model_id=model_id, username=username)
-        operations.create_backup(model_id, username)
-        operations.write_profile_table(model_id=model_id, username=username)
         get_text(value)
         download.download_process(
             username,
@@ -167,9 +165,7 @@ def normal_post_process():
             )
             try:
                 model_id = ele.id
-                operations.create_tables(model_id, ele.name)
-                operations.create_backup(model_id, ele.name)
-                operations.write_profile_table(model_id=model_id, username=ele.name)
+                operations.table_init_create(model_id, ele.name)
                 combined_urls = OF.process_areas(ele, model_id)
                 download.download_process(ele.name, model_id, combined_urls)
             except Exception as e:
@@ -197,8 +193,7 @@ def process_like():
                     f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
                 model_id = ele.id
-                operations.create_tables(model_id, ele.name)
-                operations.create_backup(model_id, ele.name)
+                operations.table_init_create(model_id, ele.name)
                 unfavorited_posts = like.get_post_for_like(model_id, ele.name)
                 unfavorited_posts = filters.media_filter_for_like(
                     unfavorited_posts, like=True
@@ -225,8 +220,7 @@ def process_unlike():
                     f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
                 model_id = profile.get_id(ele.name)
-                operations.create_tables(model_id, ele.name)
-                operations.create_backup(model_id, ele.name)
+                operations.table_init_create(model_id, ele.name)
                 favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
                 favorited_posts = filters.media_filter_for_like(
                     favorited_posts, like=False

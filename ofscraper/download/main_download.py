@@ -43,7 +43,6 @@ from ofscraper.download.common.common import (
     check_forced_skip,
     downloadspace,
     get_medialog,
-    get_text,
     get_url_log,
     metadata,
     moveHelper,

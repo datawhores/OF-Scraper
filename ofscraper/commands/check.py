@@ -112,9 +112,7 @@ def process_download_cart():
                 log.info(
                     f"Downloading individual media for {username} {media.filename}"
                 )
-                operations.create_tables(model_id=model_id, username=username)
-                operations.create_backup(model_id, username)
-                operations.write_profile_table(model_id=model_id, username=username)
+                operations.table_init_create(model_id=model_id, username=username)
                 values = downloadnormal.process_dicts(
                     username,
                     model_id,
@@ -371,9 +369,7 @@ def get_all_found_media(user_name, posts):
 
 def get_downloaded(user_name, model_id, paid=False):
     downloaded = {}
-    operations.create_tables(model_id=model_id, username=user_name)
-    operations.create_backup(model_id, user_name)
-
+    operations.table_init_create(model_id=model_id, username=user_name)
     paid = get_paid_ids(model_id, user_name) if paid else []
     [
         downloaded.update({ele: downloaded.get(ele, 0) + 1})

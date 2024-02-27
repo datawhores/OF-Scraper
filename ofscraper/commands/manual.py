@@ -30,9 +30,7 @@ def manual_download(urls=None):
         model_id = value[0].post.model_id
         username = value[0].post.username
         log.info(f"Downloading individual media for {username}")
-        operations.create_tables(model_id=model_id, username=username)
-        operations.create_backup(model_id, username)
-        operations.write_profile_table(model_id=model_id, username=username)
+        operations.table_init_create(model_id=model_id, username=username)
         download.download_process(username, model_id, value)
     log.info(f"Finished")
 

@@ -372,8 +372,7 @@ def process_all_paid():
                     or username
                 )
             log.info(f"Processing {username}_{model_id}")
-            operations.create_tables(model_id, username)
-            operations.create_backup(model_id, username)
+            operations.table_init_create(model_id=model_id, username=username)
             log.debug(f"Created table for {username}")
             all_posts = list(
                 map(
