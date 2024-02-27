@@ -425,7 +425,6 @@ def pid_log_helper():
 
 async def download(c, ele, model_id, username):
     async with common_globals.maxfile_sem:
-        await get_text(ele, username, model_id)
         templog_ = logger.get_shared_logger(
             name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
         )

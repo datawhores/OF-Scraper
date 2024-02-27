@@ -156,7 +156,6 @@ async def process_dicts(username, model_id, medialist):
 
 async def download(c, ele, model_id, username, progress):
     async with common_globals.maxfile_sem:
-        await get_text(ele, username, model_id)
         try:
             if ele.url:
                 return await main_download(

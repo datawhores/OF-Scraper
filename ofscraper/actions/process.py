@@ -37,6 +37,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
+from ofscraper.utils.text import get_text
 
 log = logging.getLogger("shared")
 
@@ -131,6 +132,7 @@ def scrape_paid(user_dict=None):
         operations.create_tables(model_id=model_id, username=username)
         operations.create_backup(model_id, username)
         operations.write_profile_table(model_id=model_id, username=username)
+        get_text(value)
         download.download_process(
             username,
             model_id,

@@ -1,5 +1,7 @@
+import asyncio
 import textwrap
 import traceback
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 
 import aiofiles
 
@@ -7,10 +9,22 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.common.common import get_medialog
+from ofscraper.utils.context.run_async import run
 
 
-async def get_text(ele, username, model_id):
+@run
+async def get_text(values):
+    with ThreadPoolExecutor(
+        max_workers=constants.getattr("MAX_TEXT_WORKER")
+    ) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        async with asyncio.TaskGroup() as tg:
+            [tg.create_task(get_text_process(value)) for value in values]
+
+
+async def get_text_process(ele):
+    username = ele.username
+    model_id = ele.model_id
     try:
         if "Text" not in settings.get_mediatypes():
             return
@@ -27,5 +41,5 @@ async def get_text(ele, username, model_id):
         async with aiofiles.open(file_data, "w") as p:
             await p.writelines(wrapped_text)
     except Exception as E:
-        common_globals.log.traceback_(f"{get_medialog(ele)} {E}")
-        common_globals.log.traceback_(f"{get_medialog(ele)} {traceback.format_exc()}")
+        common_globals.log.traceback_(f"{E}")
+        common_globals.log.traceback_(f"{traceback.format_exc()}")
