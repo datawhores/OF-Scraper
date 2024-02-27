@@ -16,10 +16,11 @@ from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.download.common as common
+import ofscraper.download.common.common as common
+import ofscraper.download.common.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as config_data
+import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -32,12 +33,11 @@ import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
-from ofscraper.download.common import (
+from ofscraper.download.common.common import (
     addGlobalDir,
     convert_num_bytes,
     get_medialog,
     log_download_progress,
-    reset_globals,
     setDirectoriesDate,
     setupProgressBar,
     subProcessVariableInit,
@@ -50,9 +50,9 @@ platform_name = platform.system()
 
 def process_dicts(username, model_id, filtered_medialist):
     log = logging.getLogger("shared")
-    common.log = log
+    common_globals.log = log
     try:
-        reset_globals()
+        common_globals.reset_globals()
         if not read_args.retriveArgs().item_sort:
             random.shuffle(filtered_medialist)
         manager = manager_.get_manager()
@@ -98,19 +98,19 @@ def process_dicts(username, model_id, filtered_medialist):
         progress_group, overall_progress, job_progress = setupProgressBar(multi=True)
 
         task1 = overall_progress.add_task(
-            common.desc.format(
-                p_count=common.photo_count,
-                v_count=common.video_count,
-                a_count=common.audio_count,
-                skipped=common.skipped,
+            common_globals.desc.format(
+                p_count=common_globals.photo_count,
+                v_count=common_globals.video_count,
+                a_count=common_globals.audio_count,
+                skipped=common_globals.skipped,
                 mediacount=len(filtered_medialist),
-                sumcount=common.video_count
-                + common.audio_count
-                + common.photo_count
-                + common.skipped,
-                forced_skipped=common.forced_skipped,
-                data=common.data,
-                total=common.total_data,
+                sumcount=common_globals.video_count
+                + common_globals.audio_count
+                + common_globals.photo_count
+                + common_globals.skipped,
+                forced_skipped=common_globals.forced_skipped,
+                data=common_globals.data,
+                total=common_globals.total_data,
             ),
             total=len(filtered_medialist),
             visible=True,
@@ -208,17 +208,13 @@ def process_dicts(username, model_id, filtered_medialist):
         except Exception:
             with exit.DelayedKeyboardInterrupt():
                 raise E
-    log.warning(
-        f"[bold]{username}[/bold] ({format_size(common.total_bytes )}) ({common.photo_count+common.audio_count+common.video_count} \
-downloads total [{common.video_count} videos, {common.audio_count} audios, {common.photo_count} photos], \
-{common.forced_skipped} skipped, {common.skipped} failed)"
-    )
+    common.final_log(username)
     return (
-        common.photo_count,
-        common.video_count,
-        common.audio_count,
-        common.forced_skipped,
-        common.skipped,
+        common_globals.photo_count,
+        common_globals.video_count,
+        common_globals.audio_count,
+        common_globals.forced_skipped,
+        common_globals.skipped,
     )
 
 
@@ -251,49 +247,49 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                 job_progress_helper(job_progress, result)
                 continue
             media_type, num_bytes_downloaded, total_size = result
-            with common.count_lock:
-                common.total_bytes_downloaded = (
-                    common.total_bytes_downloaded + num_bytes_downloaded
+            with common_globals.count_lock:
+                common_globals.total_bytes_downloaded = (
+                    common_globals.total_bytes_downloaded + num_bytes_downloaded
                 )
-                common.total_bytes = common.total_bytes + total_size
+                common_globals.total_bytes = common_globals.total_bytes + total_size
 
-                data = convert_num_bytes(common.total_bytes_downloaded)
-                total_data = convert_num_bytes(common.total_bytes)
+                data = convert_num_bytes(common_globals.total_bytes_downloaded)
+                total_data = convert_num_bytes(common_globals.total_bytes)
                 if media_type == "images":
-                    common.photo_count += 1
+                    common_globals.photo_count += 1
 
                 elif media_type == "videos":
-                    common.video_count += 1
+                    common_globals.video_count += 1
                 elif media_type == "audios":
-                    common.audio_count += 1
+                    common_globals.audio_count += 1
                 elif media_type == "skipped":
-                    common.skipped += 1
+                    common_globals.skipped += 1
                 elif media_type == "forced_skipped":
-                    common.forced_skipped += 1
+                    common_globals.forced_skipped += 1
                 log_download_progress(media_type)
                 overall_progress.update(
                     task1,
-                    description=common.desc.format(
-                        p_count=common.photo_count,
-                        v_count=common.video_count,
-                        a_count=common.audio_count,
-                        skipped=common.skipped,
-                        forced_skipped=common.forced_skipped,
+                    description=common_globals.desc.format(
+                        p_count=common_globals.photo_count,
+                        v_count=common_globals.video_count,
+                        a_count=common_globals.audio_count,
+                        skipped=common_globals.skipped,
+                        forced_skipped=common_globals.forced_skipped,
                         data=data,
                         total=total_data,
                         mediacount=total,
-                        sumcount=common.video_count
-                        + common.audio_count
-                        + common.photo_count
-                        + common.skipped
-                        + common.forced_skipped,
+                        sumcount=common_globals.video_count
+                        + common_globals.audio_count
+                        + common_globals.photo_count
+                        + common_globals.skipped
+                        + common_globals.forced_skipped,
                     ),
                     refresh=True,
-                    completed=common.video_count
-                    + common.audio_count
-                    + common.photo_count
-                    + common.skipped
-                    + common.forced_skipped,
+                    completed=common_globals.video_count
+                    + common_globals.audio_count
+                    + common_globals.photo_count
+                    + common_globals.skipped
+                    + common_globals.forced_skipped,
                 )
 
 
@@ -350,7 +346,7 @@ def job_progress_helper(job_progress, result):
     }.get(result.pop("type"))
     if funct:
         try:
-            with common.chunk_lock:
+            with common_globals.chunk_lock:
                 funct(*result.pop("args"), **result)
         except Exception as E:
             logging.getLogger("shared").debug(E)
@@ -374,17 +370,17 @@ def setpriority():
 
 @run
 async def process_dicts_split(username, model_id, medialist):
-    common.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
+    common_globals.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
     # set variables based on parent process
     # start consumer for other
     other_thread = other_logs.start_other_thread(
-        input_=common.log.handlers[1].queue, name=str(os.getpid()), count=1
+        input_=common_globals.log.handlers[1].queue, name=str(os.getpid()), count=1
     )
     medialist = list(medialist)
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
 
-    common.log.debug(f"{pid_log_helper()} starting process")
-    common.log.debug(
+    common_globals.log.debug(f"{pid_log_helper()} starting process")
+    common_globals.log.debug(
         f"{pid_log_helper()} process mediasplit from total {len(medialist)}"
     )
 
@@ -397,28 +393,28 @@ async def process_dicts_split(username, model_id, medialist):
         for coro in asyncio.as_completed(aws):
             try:
                 pack = await coro
-                common.log.debug(f"unpack {pack} count {len(pack)}")
+                common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                 media_type, num_bytes_downloaded = pack
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
             except Exception as e:
-                common.log.traceback_(f"Download Failed because\n{e}")
-                common.log.traceback_(traceback.format_exc())
+                common_globals.log.traceback_(f"Download Failed because\n{e}")
+                common_globals.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
                 num_bytes_downloaded = 0
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
 
-    common.log.debug(f"{pid_log_helper()} download process thread closing")
+    common_globals.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly
     await asyncio.get_event_loop().run_in_executor(
-        common.cache_thread, common.cache.close
+        common_globals.cache_thread, cache.close
     )
-    common.cache_thread.shutdown()
-    common.log.handlers[0].queue.put("None")
-    common.log.handlers[1].queue.put("None")
+    common_globals.cache_thread.shutdown()
+    common_globals.log.handlers[0].queue.put("None")
+    common_globals.log.handlers[1].queue.put("None")
     if other_thread:
         other_thread.join()
-    common.log.debug("other thread closed")
-    await common.send_msg(common.localDirSet)
+    common_globals.log.debug("other thread closed")
+    await common.send_msg(common_globals.localDirSet)
     await common.send_msg(None)
 
 
@@ -428,29 +424,29 @@ def pid_log_helper():
 
 async def download(c, ele, model_id, username):
     # reduce number of logs
-    async with common.maxfile_sem:
+    async with common_globals.maxfile_sem:
         templog_ = logger.get_shared_logger(
             name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
         )
-        common.innerlog.set(templog_)
+        common_globals.innerlog.set(templog_)
         try:
             if ele.url:
                 return await main_download(c, ele, username, model_id)
             if ele.mpd:
                 return await alt_download(c, ele, username, model_id)
         except Exception as e:
-            common.innerlog.get().traceback_(
+            common_globals.innerlog.get().traceback_(
                 f"{get_medialog(ele)} Download Failed\n{e}"
             )
-            common.innerlog.get().traceback_(
+            common_globals.innerlog.get().traceback_(
                 f"{get_medialog(ele)} exception {traceback.format_exc()}"
             )
             # we can put into seperate otherqueue_
             return "skipped", 0
         finally:
-            common.log.handlers[1].queue.put(
-                list(common.innerlog.get().handlers[1].queue.queue)
+            common_globals.log.handlers[1].queue.put(
+                list(common_globals.innerlog.get().handlers[1].queue.queue)
             )
-            common.log.handlers[0].queue.put(
-                list(common.innerlog.get().handlers[0].queue.queue)
+            common_globals.log.handlers[0].queue.put(
+                list(common_globals.innerlog.get().handlers[0].queue.queue)
             )

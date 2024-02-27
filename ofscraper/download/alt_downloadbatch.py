@@ -21,20 +21,22 @@ except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
-import ofscraper.download.common as common
-import ofscraper.download.keyhelpers as keyhelpers
+import ofscraper.download.common.common as common
+import ofscraper.download.common.globals as common_globals
+import ofscraper.download.common.keyhelpers as keyhelpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.paths as paths
-from ofscraper.download.common import (
+from ofscraper.download.common.common import (
     addLocalDir,
     check_forced_skip,
     downloadspace,
     get_item_total,
     get_medialog,
+    get_text,
     get_url_log,
     metadata,
     moveHelper,
@@ -49,17 +51,17 @@ from ofscraper.utils.context.run_async import run
 
 async def alt_download(c, ele, username, model_id):
     downloadspace()
-    common.innerlog.get().debug(
+    common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} Downloading with batch protected media downloader"
     )
-    common.innerlog.get().debug(
+    common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
     if read_args.retriveArgs().metadata != None:
         sharedPlaceholderObj = placeholder.Placeholders()
         await sharedPlaceholderObj.getmediadir(ele, username, model_id, create=False)
         await sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
-        sharedPlaceholderObj.set_final_path()
+        sharedPlaceholderObj.merge_path_final()
         return await metadata(
             c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
         )
@@ -67,37 +69,27 @@ async def alt_download(c, ele, username, model_id):
     sharedPlaceholderObj = placeholder.Placeholders()
     await sharedPlaceholderObj.getDirs(ele, username, model_id)
     await sharedPlaceholderObj.createfilename(ele, username, model_id, "mp4")
-    sharedPlaceholderObj.set_final_path()
-    path_to_file_logger(sharedPlaceholderObj, ele, common.innerlog.get())
+    sharedPlaceholderObj.merge_path_final()
+    path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
 
     audio = await alt_download_downloader(audio, c, ele, username, model_id)
     video = await alt_download_downloader(video, c, ele, username, model_id)
 
-    if (audio["total"] + video["total"]) == 0:
-        if ele.mediatype != "forced_skipped":
-            await operations.update_media_table(
-                ele,
-                filename=None,
-                model_id=model_id,
-                username=username,
-                downloaded=True,
-            )
-        return ele.mediatype, 0
-    for m in [audio, video]:
-        m["total"] = get_item_total(m)
+    await media_item_post_process(audio, video, ele, username, model_id)
+    await media_item_keys(c, audio, video, ele)
+    return await handle_result(
+        sharedPlaceholderObj, ele, audio, video, username, model_id
+    )
 
-    for m in [audio, video]:
-        if not isinstance(m, dict):
-            return m
-        await size_checker(m["path"], ele, m["total"])
-    for item in [audio, video]:
-        item = await keyhelpers.un_encrypt(item, c, ele, common.innerlog.get())
+
+async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model_id):
     temp_path = paths.truncate(
         pathlib.Path(
             sharedPlaceholderObj.tempdir,
             f"temp_{ele.id or await ele.final_filename}.mp4",
         )
     )
+
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
         [
@@ -116,22 +108,30 @@ async def alt_download(c, ele, username, model_id):
         stderr=subprocess.PIPE,
     )
     if t.stderr.decode().find("Output") == -1:
-        common.innerlog.get().debug(f"{get_medialog(ele)} ffmpeg failed")
-        common.innerlog.get().debug(f"{get_medialog(ele)} ffmpeg {t.stderr.decode()}")
-        common.innerlog.get().debug(f"{get_medialog(ele)} ffmpeg {t.stdout.decode()}")
+        common_globals.innerlog.get().debug(f"{get_medialog(ele)} ffmpeg failed")
+        common_globals.innerlog.get().debug(
+            f"{get_medialog(ele)} ffmpeg {t.stderr.decode()}"
+        )
+        common_globals.innerlog.get().debug(
+            f"{get_medialog(ele)} ffmpeg {t.stdout.decode()}"
+        )
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
-    common.innerlog.get().debug(
+    common_globals.innerlog.get().debug(
         f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filename}"
     )
     moveHelper(
-        temp_path, sharedPlaceholderObj.trunicated_filename, ele, common.innerlog.get()
+        temp_path,
+        sharedPlaceholderObj.trunicated_filename,
+        ele,
+        common_globals.innerlog.get(),
     )
     addLocalDir(sharedPlaceholderObj.trunicated_filename)
+    await get_text(ele, username, model_id)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         set_time(sharedPlaceholderObj.trunicated_filename, newDate)
-        common.innerlog.get().debug(
+        common_globals.innerlog.get().debug(
             f"{get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filename.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
         )
     if ele.id:
@@ -146,10 +146,35 @@ async def alt_download(c, ele, username, model_id):
     return ele.mediatype, video["total"] + audio["total"]
 
 
+async def media_item_post_process(audio, video, ele, username, model_id):
+    if (audio["total"] + video["total"]) == 0:
+        if ele.mediatype != "forced_skipped":
+            await operations.update_media_table(
+                ele,
+                filename=None,
+                model_id=model_id,
+                username=username,
+                downloaded=True,
+            )
+        return ele.mediatype, 0
+    for m in [audio, video]:
+        m["total"] = get_item_total(m)
+
+    for m in [audio, video]:
+        if not isinstance(m, dict):
+            return m
+        await size_checker(m["path"], ele, m["total"])
+
+
+async def media_item_keys(c, audio, video, ele):
+    for item in [audio, video]:
+        item = await keyhelpers.un_encrypt(item, c, ele, common_globals.innerlog.get())
+
+
 async def alt_download_sendreq(item, c, ele, placeholderObj):
     base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
     url = f"{base_url}{item['origname']}"
-    common.innerlog.get().debug(
+    common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
     )
 
@@ -179,17 +204,19 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                 "Signature": ele.signature,
             }
 
-            @sem_wrapper(common.req_sem)
+            @sem_wrapper(common_globals.req_sem)
             async def inner():
                 async with c.requests(url=url, headers=headers, params=params)() as l:
                     if l.ok:
                         total = int(l.headers["content-length"])
                         await common.send_msg((None, 0, total))
-                        temp_file_logger(placeholderObj, ele, common.innerlog.get())
+                        temp_file_logger(
+                            placeholderObj, ele, common_globals.innerlog.get()
+                        )
                         if await check_forced_skip(ele, total) == 0:
                             item["total"] = 0
                             return item
-                        common.innerlog.get().debug(
+                        common_globals.innerlog.get().debug(
                             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {placeholderObj.tempfilename}"
                         )
                         item["total"] = total
@@ -197,7 +224,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                             item, total, l, ele, placeholderObj
                         )
                         await asyncio.get_event_loop().run_in_executor(
-                            common.cache_thread,
+                            common_globals.cache_thread,
                             partial(
                                 cache.set,
                                 f"{item['name']}_headers",
@@ -211,13 +238,13 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
                         return item
 
                     else:
-                        common.innerlog.get().debug(
+                        common_globals.innerlog.get().debug(
                             f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
                         )
-                        common.innerlog.get().debug(
+                        common_globals.innerlog.get().debug(
                             f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
                         )
-                        common.innerlog.get().debug(
+                        common_globals.innerlog.get().debug(
                             f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
                         )
                         l.raise_for_status()
@@ -227,22 +254,22 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
         return item
 
     except OSError as E:
-        common.log.traceback_(E)
-        common.log.traceback_(traceback.format_exc())
-        common.log.debug(
+        common_globals.log.traceback_(E)
+        common_globals.log.traceback_(traceback.format_exc())
+        common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
         )
-        common.log.debug(
+        common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
         )
-        common.log.debug(
+        common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
         )
     except Exception as E:
-        common.innerlog.get().traceback_(
+        common_globals.innerlog.get().traceback_(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
         )
-        common.innerlog.get().traceback_(
+        common_globals.innerlog.get().traceback_(
             f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
         )
         raise E
@@ -269,7 +296,7 @@ async def alt_download_datahandler(item, total, l, ele, placeholderObj):
 
         async for chunk in l.iter_chunked(constants.getattr("maxChunkSizeB")):
             count = count + 1
-            common.innerlog.get().trace(
+            common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
@@ -314,13 +341,13 @@ async def alt_download_downloader(item, c, ele, username, model_id):
             reraise=True,
         ):
             with _:
-                common.attempt.set(common.attempt.get(0) + 1)
+                common_globals.attempt.set(common_globals.attempt.get(0) + 1)
                 placeholderObj = placeholder.Placeholders()
                 await placeholderObj.gettempDir(ele, username, model_id)
                 placeholderObj.tempfilename = f"{item['name']}.part"
                 item["path"] = placeholderObj.tempfilename
                 data = await asyncio.get_event_loop().run_in_executor(
-                    common.cache_thread,
+                    common_globals.cache_thread,
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:

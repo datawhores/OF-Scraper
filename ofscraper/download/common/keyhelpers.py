@@ -19,15 +19,13 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.download.common as common
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.auth.file as auth_file
+import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.common import get_medialog
+from ofscraper.download.common.common import get_medialog
 
 log = None
 
@@ -38,11 +36,11 @@ def setLog(input_):
 
 
 async def un_encrypt(item, c, ele, input_=None):
-    setLog(input_ or common.log)
+    setLog(input_ or common_globals.log)
     key = None
     keymode = settings.get_key_mode()
     past_key = await asyncio.get_event_loop().run_in_executor(
-        common.cache_thread, partial(cache.get, ele.license)
+        common_globals.cache_thread, partial(cache.get, ele.license)
     )
     if past_key:
         key = past_key
@@ -58,7 +56,7 @@ async def un_encrypt(item, c, ele, input_=None):
     if key == None:
         raise Exception(f"{get_medialog(ele)} Could not get key")
     await asyncio.get_event_loop().run_in_executor(
-        common.cache_thread,
+        common_globals.cache_thread,
         partial(cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")),
     )
     log.debug(f"{get_medialog(ele)} got key")
@@ -237,7 +235,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                         elif isinstance(data["keys"][0], object):
                             out = data["keys"][0]["key"]
                         await asyncio.get_event_loop().run_in_executor(
-                            common.cache_thread,
+                            common_globals.cache_thread,
                             partial(
                                 cache.set,
                                 licence_url,

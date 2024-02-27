@@ -380,7 +380,7 @@ def media_insert_helper(media, filename, downloaded, hash=None, prevData=None):
         directory = prevData[3]
         filename_path = prevData[4]
         size = prevData[5]
-        hash = prevData[14] or hash
+        hash = prevData[13] or hash
     downloaded = downloaded
     if prevData:
         downloaded = prevData[-2] if downloaded == None else downloaded

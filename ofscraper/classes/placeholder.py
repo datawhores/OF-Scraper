@@ -295,7 +295,7 @@ class Placeholders:
             out = f"{out}_{ele.count}"
         return out
 
-    def set_final_path(self):
+    def merge_path_final(self):
         if settings.get_trunication() is False:
             self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
         elif read_args.retriveArgs().original is False:
@@ -304,6 +304,13 @@ class Placeholders:
             self._final_path = paths.truncate(
                 pathlib.Path(self.mediadir, f"{self.filename}")
             )
+
+    async def get_final_trunicated_path(self, ele, username, model_id, ext):
+        if not self.filename:
+            await self.createfilename(ele, username, model_id, ext)
+            await self.getmediadir(ele, username, model_id)
+            self.merge_path_final()
+        return self.trunicated_filename
 
     async def getDirs(self, ele, username, model_id, create=True):
         await self.gettempDir(ele, username, model_id, create=create)
