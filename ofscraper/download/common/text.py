@@ -22,7 +22,7 @@ async def get_text(ele, username, model_id):
         )
         file_data = str(file_data)
         wrapped_text = textwrap.wrap(
-            ele.text, width=constants.getattr("MAmoX_TEXT_LENGTH")
+            ele.text, width=constants.getattr("MAX_TEXT_LENGTH")
         )
         async with aiofiles.open(file_data, "w") as p:
             await p.writelines(wrapped_text)
