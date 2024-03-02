@@ -17,13 +17,7 @@ from functools import partial
 
 import aiofiles
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_message,
-    stop_after_attempt,
-    wait_random,
-)
+from tenacity import AsyncRetrying, stop_after_attempt, wait_random
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -39,11 +33,15 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.settings as settings
+import ofscraper.utils.system.system as system
 from ofscraper.download.common.common import (
     addLocalDir,
     check_forced_skip,
     downloadspace,
+    get_data,
     get_medialog,
+    get_resume_size,
     get_url_log,
     metadata,
     moveHelper,
@@ -70,7 +68,8 @@ async def main_download(c, ele, username, model_id):
             username,
             model_id,
         )
-    result = list(await main_download_downloader(c, ele, username, model_id))
+
+    result = list(await main_download_downloader(c, ele))
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":
             await operations.update_media_table(
@@ -85,8 +84,8 @@ async def main_download(c, ele, username, model_id):
 
 
 async def handle_result(result, ele, username, model_id):
-    path_to_file = None
-    total, temp_path, path_to_file = result
+    total, temp_path, placeholderObj = result
+    path_to_file = placeholderObj.trunicated_filepath
     await size_checker(temp_path, ele, total, path_to_file)
     common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} { await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp_path).absolute().stat().st_size}"
@@ -95,7 +94,7 @@ async def handle_result(result, ele, username, model_id):
         f"{get_medialog(ele)} renaming {pathlib.Path(temp_path).absolute()} -> {path_to_file}"
     )
     moveHelper(temp_path, path_to_file, ele, common_globals.innerlog.get())
-    addLocalDir(await placeholder.Placeholders().getmediadir(ele, username, model_id))
+    addLocalDir(placeholderObj.filedir)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.innerlog.get().debug(
@@ -118,200 +117,176 @@ async def handle_result(result, ele, username, model_id):
     return ele.mediatype, total
 
 
-async def main_download_downloader(c, ele, username, model_id):
+async def main_download_downloader(c, ele):
+    data = await get_data(ele)
     try:
-        async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
-            wait=wait_random(
-                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
-            ),
-            reraise=True,
-        ):
-            with _:
-                placeholderObj = placeholder.Placeholders()
-                await placeholderObj.getDirs(ele, username, model_id)
-                placeholderObj.tempfilename = (
-                    f"{await ele.final_filename}_{ele.id}.part"
-                )
-                data = await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
-                    partial(cache.get, f"{ele.id}_headers"),
-                )
-                if data and data.get("content-length"):
-                    content_type = data.get("content-type").split("/")[-1]
-                    total = int(data.get("content-length"))
-                    await placeholderObj.createfilename(
-                        ele, username, model_id, content_type
-                    )
-                    placeholderObj.merge_path_final()
-                    resume_size = (
-                        0
-                        if not pathlib.Path(placeholderObj.tempfilename).exists()
-                        else pathlib.Path(placeholderObj.tempfilename)
-                        .absolute()
-                        .stat()
-                        .st_size
-                    )
-                    if await check_forced_skip(ele, total) == 0:
-                        return [0]
-                    elif total == resume_size:
-                        path_to_file_logger(
-                            placeholderObj, ele, common_globals.innerlog.get()
-                        )
-                        return (
-                            total,
-                            placeholderObj.tempfilename,
-                            placeholderObj.trunicated_filename,
-                        )
-                    elif total < resume_size:
-                        pathlib.Path(placeholderObj.tempfilename).unlink(
-                            missing_ok=True
-                        )
-                else:
-                    paths.truncate(pathlib.Path(placeholderObj.tempfilename)).unlink(
-                        missing_ok=True
-                    )
-    except Exception as E:
-        raise E
-    common_globals.attempt.set(0)
-    try:
-        async for _ in AsyncRetrying(
-            stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
-            wait=wait_random(
-                min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
-            ),
-            reraise=True,
-            retry=retry_if_not_exception_message(
-                constants.getattr("SPACE_DOWNLOAD_MESSAGE")
-            ),
-        ):
-            with _:
-                try:
-                    total = int(data.get("content-length")) if data else None
-                    return await main_download_sendreq(
-                        c, ele, placeholderObj, username, model_id, total
-                    )
-                except Exception as E:
-                    raise E
+        if data:
+            return await main_data_handler(c, data, ele)
+        else:
+            return await alt_data_handler(c, ele)
     except Exception as E:
         raise E
 
 
-async def main_download_sendreq(c, ele, placeholderObj, username, model_id, total):
-    downloadspace()
-    common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-    total = total if common_globals.attempt.get() == 1 else None
-    try:
-        common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {placeholderObj.tempfilename}"
-        )
-        if not total:
-            placeholderObj.tempfilename.unlink(missing_ok=True)
-        resume_size = (
-            0
-            if not pathlib.Path(placeholderObj.tempfilename).exists()
-            else pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size
-        )
-        if not total or total > resume_size:
-            url = ele.url
-            headers = (
-                None if resume_size == 0 else {"Range": f"bytes={resume_size}-{total}"}
-            )
-
-            @sem_wrapper(common_globals.req_sem)
-            async def inner():
-                async with c.requests(url=url, headers=headers)() as r:
-                    if r.ok:
-                        total = int(r.headers["content-length"])
-                        await common.send_msg((None, 0, total))
-                        content_type = r.headers.get("content-type").split("/")[-1]
-                        if not content_type and ele.mediatype.lower() == "videos":
-                            content_type = "mp4"
-                        if not content_type and ele.mediatype.lower() == "images":
-                            content_type = "jpg"
-                        if not placeholderObj.filename:
-                            await placeholderObj.createfilename(
-                                ele, username, model_id, content_type
-                            )
-                            placeholderObj.merge_path_final()
-                        path_to_file_logger(
-                            placeholderObj, ele, common_globals.innerlog.get()
-                        )
-                        if await check_forced_skip(ele, total) == 0:
-                            return [0]
-                        elif total == resume_size:
-                            return (
-                                total,
-                                placeholderObj.tempfilename,
-                                placeholderObj.trunicated_filename,
-                            )
-                        elif total < resume_size:
-                            placeholderObj.tempfilename.unlink(missing_ok=True)
-                        await main_download_datahandler(r, ele, total, placeholderObj)
-                        await asyncio.get_event_loop().run_in_executor(
-                            common_globals.cache_thread,
-                            partial(
-                                cache.set,
-                                f"{ele.id}_headers",
-                                {
-                                    "content-length": r.headers.get("content-length"),
-                                    "content-type": r.headers.get("content-type"),
-                                },
-                            ),
-                        )
-                        await size_checker(placeholderObj.tempfilename, ele, total)
-                        return (
-                            total,
-                            placeholderObj.tempfilename,
-                            placeholderObj.trunicated_filename,
-                        )
-                    else:
-                        common_globals.innerlog.get().debug(
-                            f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
-                        )
-                        common_globals.innerlog.get().debug(
-                            f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}"
-                        )
-                        common_globals.innerlog.get().debug(
-                            f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}"
-                        )
-                        r.raise_for_status()
-                    await asyncio.get_event_loop().run_in_executor(
-                        common_globals.cache_thread,
-                        partial(cache.touch, f"{ele.filename}_headers", 1),
-                    )
-
-            return await inner()
-        await size_checker(placeholderObj.tempfilename, ele, total)
-        return placeholderObj.tempfilename, placeholderObj.trunicated_filename
-    except OSError as E:
-        common_globals.innerlog.get().traceback_(E)
-        common_globals.innerlog.get().traceback_(traceback.format_exc())
-        common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
-        )
-        common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
-        )
-        common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
-        )
-    except Exception as E:
-        common_globals.innerlog.get().traceback_(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
-        )
-        common_globals.innerlog.get().traceback_(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
-        )
-        raise E
-
-
-@sem_wrapper
-async def main_download_datahandler(r, ele, total, placeholderObj):
-    pathstr = str(placeholderObj.trunicated_filename)
-    downloadprogress = (
-        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+async def alt_data_handler(c, ele):
+    tempholderObj = placeholder.tempFilePlaceholder(
+        ele, f"{await ele.final_filename}_{ele.id}.part"
     )
+    await tempholderObj.init()
+    result = None
+    paths.truncate(pathlib.Path(tempholderObj.tempfilepath)).unlink(missing_ok=True)
+    try:
+        result = await main_download_sendreq(
+            c, ele, tempholderObj, placeholderObj=None, total=None
+        )
+    except Exception as E:
+        raise E
+    return result
+
+
+async def main_data_handler(c, data, ele):
+    tempholderObj = placeholder.tempFilePlaceholder(
+        ele, f"{await ele.final_filename}_{ele.id}.part"
+    )
+    await tempholderObj.init()
+    paths.truncate(pathlib.Path(tempholderObj.tempfilepath)).unlink(
+        missing_ok=True
+    ) if settings.get_ else None
+    content_type = data.get("content-type").split("/")[-1]
+    total = int(data.get("content-length"))
+    placeholderObj = placeholder.Placeholders(ele, content_type)
+    resume_size = get_resume_size(tempholderObj)
+    await placeholderObj.init()
+    # other
+    if await check_forced_skip(ele, total) == 0:
+        path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+        return [0]
+    elif total == resume_size:
+        path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+        return (
+            total,
+            tempholderObj.tempfilepath,
+            placeholderObj,
+        )
+
+    elif total != resume_size:
+        try:
+            return await main_download_sendreq(
+                c, ele, tempholderObj, total=total, placeholderObj=placeholderObj
+            )
+        except Exception as E:
+            raise E
+
+
+async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, total=None):
+    downloadspace()
+    async for _ in AsyncRetrying(
+        stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
+        wait=wait_random(
+            min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
+        ),
+        reraise=True,
+    ):
+        with _:
+            try:
+                common_globals.attempt.set(common_globals.attempt.get(0) + 1)
+                total = total if common_globals.attempt.get() == 1 else None
+                common_globals.innerlog.get().debug(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {tempholderObj.tempfilepath}"
+                )
+                tempholderObj.tempfilepath.unlink(
+                    missing_ok=True
+                ) if not total or get_resume_size(tempholderObj) > total else None
+                return await send_req_inner(
+                    c, ele, tempholderObj, placeholderObj=placeholderObj, total=total
+                )
+            except OSError as E:
+                common_globals.innerlog.get().traceback_(E)
+                common_globals.innerlog.get().traceback_(traceback.format_exc())
+                common_globals.innerlog.get().debug(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+                )
+            except Exception as E:
+                common_globals.innerlog.get().traceback_(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
+                )
+                common_globals.innerlog.get().traceback_(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
+                )
+                raise E
+
+
+async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
+    resume_size = get_resume_size(tempholderObj)
+    headers = (
+        None
+        if resume_size == 0 or not total
+        else {"Range": f"bytes={resume_size}-{total}"}
+    )
+    async with sem_wrapper(common_globals.req_sem):
+        async with c.requests(url=ele.url, headers=headers)() as r:
+            if r.ok:
+                await asyncio.get_event_loop().run_in_executor(
+                    common_globals.cache_thread,
+                    partial(
+                        cache.set,
+                        f"{ele.id}_headers",
+                        {
+                            "content-length": r.headers.get("content-length"),
+                            "content-type": r.headers.get("content-type"),
+                        },
+                    ),
+                )
+                total = int(r.headers["content-length"])
+                await common.send_msg((None, 0, total))
+                content_type = r.headers.get("content-type").split("/")[-1]
+                if not placeholderObj:
+                    placeholderObj = placeholder.Placeholders(ele, content_type)
+                    await placeholderObj.init()
+                path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+                content_type = (
+                    "mp4"
+                    if not content_type and ele.mediatype.lower() == "videos"
+                    else None
+                )
+                content_type = (
+                    "jpg"
+                    if not content_type and ele.mediatype.lower() == "images"
+                    else None
+                )
+                if await check_forced_skip(ele, total) == 0:
+                    total = 0
+                elif total == resume_size:
+                    None
+                elif total != resume_size:
+                    await download_fileobject_writer(
+                        r, ele, total, tempholderObj, placeholderObj
+                    )
+            else:
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}"
+                )
+                r.raise_for_status()
+
+    await size_checker(tempholderObj.tempfilepath, ele, total)
+    return (total, tempholderObj.tempfilepath, placeholderObj)
+
+
+async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderObj):
+    pathstr = str(placeholderObj.trunicated_filepath)
+    downloadprogress = settings.get_download_bars()
     try:
         count = 0
         await common.send_msg(
@@ -326,14 +301,14 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
             }
         )
 
-        fileobject = await aiofiles.open(placeholderObj.tempfilename, "ab").__aenter__()
+        fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
         async for chunk in r.iter_chunked(constants.getattr("maxChunkSizeB")):
             count = count + 1
             if downloadprogress:
                 count = count + 1
             common_globals.innerlog.get().trace(
-                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilename).absolute().stat().st_size)}/{total}"
+                f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
             if count == constants.getattr("CHUNK_ITER"):
@@ -342,7 +317,7 @@ async def main_download_datahandler(r, ele, total, placeholderObj):
                         "type": "update",
                         "args": (ele.id,),
                         "completed": (
-                            pathlib.Path(placeholderObj.tempfilename)
+                            pathlib.Path(tempholderObj.tempfilepath)
                             .absolute()
                             .stat()
                             .st_size

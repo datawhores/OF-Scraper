@@ -1,4 +1,5 @@
 from collections import abc
+from contextlib import asynccontextmanager
 from functools import partial, singledispatch
 
 import ofscraper.download.common.globals as common_globals
@@ -15,6 +16,18 @@ def sem_wrapper(*args, **kwargs):
 @sem_wrapper.register
 def _(input_sem: semaphoreDelayed):
     return partial(sem_wrapper, input_sem=input_sem)
+
+
+@sem_wrapper.register
+@asynccontextmanager
+async def _(input_sem: semaphoreDelayed):
+    await input_sem.acquire()
+    try:
+        yield
+    except Exception as E:
+        raise E
+    finally:
+        input_sem.release()
 
 
 @sem_wrapper.register

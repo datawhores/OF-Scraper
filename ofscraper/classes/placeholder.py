@@ -16,20 +16,48 @@ import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
-import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
 
-class Placeholders:
+def check_uniquename():
+    format = data.get_fileformat()
+    if re.search("text", format):
+        return True
+    elif re.search("filename", format):
+        return True
+    elif re.search("post_id", format):
+        return True
+    elif re.search("postid", format):
+        return True
+    elif re.search("media_id", format):
+        return True
+    elif re.search("mediaid", format):
+        return True
+    elif re.search("custom", format):
+        return True
+    return False
+
+
+class basePlaceholder:
     def __init__(self) -> None:
         None
-        self._filename = None
-        self._mediadir = None
-        self._metadata = None
-        self._tempdir = None
-        self._final_path = None
-        self._tempfilename = None
+
+    def create_variables_base(self):
+        my_profile = profile_data.get_my_info()
+        my_id, my_username = me.parse_user(my_profile)
+
+        self._variables = {
+            "configpath": common_paths.get_config_home(),
+            "profile": profile_data.get_active_profile(),
+            "sitename": "Onlyfans",
+            "site_name": "Onlyfans",
+            "save_location": common_paths.get_save_location(),
+            "my_id": my_id,
+            "my_username": my_username,
+            "root": pathlib.Path((common_paths.get_save_location())),
+            "customval": custom_.get_custom(),
+        }
 
     def async_wrapper(f):
         async def inner(*args, **kwargs):
@@ -47,21 +75,126 @@ class Placeholders:
 
         return inner
 
-    def create_variables_base(self):
-        my_profile = profile_data.get_my_info()
-        my_id, my_username = me.parse_user(my_profile)
 
-        self._variables = {
-            "configpath": common_paths.get_config_home(),
-            "profile": profile_data.get_active_profile(),
-            "sitename": "Onlyfans",
-            "site_name": "Onlyfans",
-            "save_location": common_paths.get_save_location(),
-            "my_id": my_id,
-            "my_username": my_username,
-            "root": pathlib.Path((common_paths.get_save_location())),
-            "customval": custom_.get_custom(),
-        }
+class tempFilePlaceholder(basePlaceholder):
+    def __init__(self, ele, tempname) -> None:
+        super().__init__()
+        self._ele = ele
+        self._placeholder = Placeholders(self._ele, "mp4")
+        self._tempname = tempname
+
+    async def init(self):
+        self._tempfilepath = paths.truncate(
+            pathlib.Path(await self.gettempDir(self._ele), self._tempname)
+        )
+
+    @basePlaceholder.async_wrapper
+    async def gettempDir(self, ele, create=True):
+        self._tempdir = await self._placeholder.getmediadir(
+            ele,
+            root=(data.get_TempDir()),
+            create=create,
+        )
+        self._tempdir.mkdir(parents=True, exist_ok=True)
+        return self._tempdir
+
+    @property
+    def tempfilepath(self):
+        return pathlib.Path(self._tempfilepath)
+
+    @property
+    def tempfilename(self):
+        return pathlib.Path(self._tempfilepath).name
+
+
+class databasePlaceholder(basePlaceholder):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @basePlaceholder.wrapper
+    def databasePathHelper(self, model_id, model_username):
+        username = model_username
+        self._variables.update({"username": username})
+        modelusername = model_username
+        self._variables.update({"modelusername": modelusername})
+        model_username = model_username
+        self._variables.update({"model_username": model_username})
+        first_letter = username[0].capitalize()
+        self._variables.update({"first_letter": first_letter})
+        firstletter = username[0].capitalize()
+        self._variables.update({"firstletter": firstletter})
+        self._variables.update({"model_id": model_id})
+        modelid = model_id
+        self._variables.update({"modelid": modelid})
+        globals().update(self._variables)
+        log.trace(
+            f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        )
+        if data.get_allow_code_execution():
+            if isinstance(customval, dict) == False:
+                try:
+                    custom = eval(customval)
+                except:
+                    custom = {}
+            else:
+                custom = {}
+                for key, val in customval.items():
+                    try:
+                        custom[key] = eval(val)
+                    except:
+                        custom[key] = val
+
+            formatStr = eval("f'{}'".format(data.get_metadata()))
+
+        else:
+            formatStr = data.get_metadata().format(**self._variables)
+        data_path = pathlib.Path(formatStr, "user_data.db")
+        data_path = pathlib.Path(os.path.normpath(data_path))
+        self._metadata = data_path
+        self._metadata.parent.mkdir(parents=True, exist_ok=True)
+        log.trace(f"final database path {data_path}")
+        return pathlib.Path(data_path)
+
+    def databasePathCopyHelper(self, model_id, model_username):
+        counter = (
+            cache.get(f"{model_username}_{model_id}_dbcounter", default=0) % 5
+        ) + 1
+        cache.set(f"{model_username}_{model_id}_dbcounter", counter)
+        cache.close()
+        return pathlib.Path(
+            re.sub(
+                "user_data.db",
+                f"/backup/user_data_copy_{counter}.db",
+                str(self.databasePathHelper(model_id, model_username)),
+            )
+        )
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, input):
+        self._matadata = input
+
+
+class Placeholders(basePlaceholder):
+    def __init__(self, ele, ext) -> None:
+        super().__init__()
+        self._filename = None
+        self._mediadir = None
+        self._metadata = None
+        self._filepath = None
+        self._ele = ele
+        self._ext = ext
+
+    async def init(self):
+        self._filepath = self._filepath = paths.truncate(
+            pathlib.Path(
+                await self.getmediadir(self._ele),
+                await self.createfilename(self._ele, self._ext),
+            )
+        )
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)
@@ -149,78 +282,10 @@ class Placeholders:
 
         self.add_price_variables(username)
 
-    @wrapper
-    def databasePathHelper(self, model_id, model_username):
-        username = model_username
-        self._variables.update({"username": username})
-        modelusername = model_username
-        self._variables.update({"modelusername": modelusername})
-        model_username = model_username
-        self._variables.update({"model_username": model_username})
-        first_letter = username[0].capitalize()
-        self._variables.update({"first_letter": first_letter})
-        firstletter = username[0].capitalize()
-        self._variables.update({"firstletter": firstletter})
-        self._variables.update({"model_id": model_id})
-        modelid = model_id
-        self._variables.update({"modelid": modelid})
-        globals().update(self._variables)
-        log.trace(
-            f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
-        )
-        if data.get_allow_code_execution():
-            if isinstance(customval, dict) == False:
-                try:
-                    custom = eval(customval)
-                except:
-                    custom = {}
-            else:
-                custom = {}
-                for key, val in customval.items():
-                    try:
-                        custom[key] = eval(val)
-                    except:
-                        custom[key] = val
-
-            formatStr = eval("f'{}'".format(data.get_metadata()))
-
-        else:
-            formatStr = data.get_metadata().format(**self._variables)
-        data_path = pathlib.Path(formatStr, "user_data.db")
-        data_path = pathlib.Path(os.path.normpath(data_path))
-        self._metadata = data_path
-        self._metadata.parent.mkdir(parents=True, exist_ok=True)
-        log.trace(f"final database path {data_path}")
-        return pathlib.Path(data_path)
-
-    def databasePathCopyHelper(self, model_id, model_username):
-        counter = (
-            cache.get(f"{model_username}_{model_id}_dbcounter", default=0) % 5
-        ) + 1
-        cache.set(f"{model_username}_{model_id}_dbcounter", counter)
-        cache.close()
-        return pathlib.Path(
-            re.sub(
-                "user_data.db",
-                f"/backup/user_data_copy_{counter}.db",
-                str(self.databasePathHelper(model_id, model_username)),
-            )
-        )
-
-    @async_wrapper
-    async def gettempDir(self, ele, username, model_id, create=True):
-        self._tempdir = await self.getmediadir(
-            ele,
-            username,
-            model_id,
-            root=(data.get_TempDir()),
-            create=create,
-        )
-        self._tempdir.mkdir(parents=True, exist_ok=True)
-        return self._tempdir
-
-    @async_wrapper
-    async def getmediadir(self, ele, username, model_id, root=None, create=True):
+    @basePlaceholder.async_wrapper
+    async def getmediadir(self, ele, root=None, create=True):
+        username = ele.username
+        model_id = ele.model_id
         root = pathlib.Path(root or common_paths.get_save_location())
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
@@ -251,8 +316,10 @@ class Placeholders:
         self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
         return final_path
 
-    @async_wrapper
-    async def createfilename(self, ele, username, model_id, ext):
+    @basePlaceholder.async_wrapper
+    async def createfilename(self, ele, ext):
+        username = ele.username
+        model_id = ele.model_id
         self._variables.update({"ext": ext})
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
@@ -295,95 +362,22 @@ class Placeholders:
             out = f"{out}_{ele.count}"
         return out
 
-    def merge_path_final(self):
-        if settings.get_trunication() is False:
-            self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif read_args.retriveArgs().original is False:
-            self._final_path = pathlib.Path(self.mediadir, f"{self.filename}")
-        elif settings.get_trunication() is True:
-            self._final_path = paths.truncate(
-                pathlib.Path(self.mediadir, f"{self.filename}")
-            )
-
-    async def get_final_trunicated_path(self, ele, username, model_id, ext):
-        if not self.filename:
-            await self.createfilename(ele, username, model_id, ext)
-            await self.getmediadir(ele, username, model_id)
-            self.merge_path_final()
-        return self.trunicated_filename
-
-    async def getDirs(self, ele, username, model_id, create=True):
-        await self.gettempDir(ele, username, model_id, create=create)
-        await self.getmediadir(ele, username, model_id, create=create)
+    @property
+    def filepath(self):
+        return pathlib.Path(self._filepath)
 
     @property
     def filename(self):
-        return self._filename
-
-    @filename.setter
-    def filename(self, input):
-        self._filename = input
-
-    @property
-    def mediadir(self):
-        return self._mediadir
-
-    @mediadir.setter
-    def mediadir(self, input):
-        self._mediadir = input
-
-    @property
-    def tempdir(self):
-        return self._tempdir
-
-    @tempdir.setter
-    def tempdir(self, input):
-        self._tempdir = input
-
-    @property
-    def metadata(self):
-        return self._metadata
-
-    @metadata.setter
-    def metadata(self, input):
-        self._matadata = input
+        return pathlib.Path(self._filepath).name
 
     @property
     def trunicated_filename(self):
-        return self._final_path
-
-    @trunicated_filename.setter
-    def trunicated_filename(self, input):
-        self._final_path = input
+        return pathlib.Path(self.trunicated_filepath).name
 
     @property
-    def tempfilename(self):
-        return self._tempfilename
+    def trunicated_filepath(self):
+        return pathlib.Path(paths.truncate(self._filepath))
 
-    @tempfilename.setter
-    def tempfilename(self, input):
-        self._tempfilename = paths.truncate(pathlib.Path(self._tempdir, input))
-
-    def check_uniquename(self):
-        format = data.get_fileformat()
-        if re.search("text", format):
-            return True
-        elif re.search("filename", format):
-            return True
-        elif re.search("post_id", format):
-            return True
-        elif re.search("postid", format):
-            return True
-        elif re.search("media_id", format):
-            return True
-        elif re.search("mediaid", format):
-            return True
-        elif re.search("custom", format):
-            return True
-        return False
-
-
-# def all_placeholders():
-#       {"user_name","modelid","model_id","username","postid","postid","media_id",
-#        "mediaid","first_letter","firstletter","mediatype","media_type","value","date",
-#        "model_username","modelusername","response_type","responsetype","label","downloadtype","download_type"}
+    @property
+    def filedir(self):
+        return pathlib.Path(paths.truncate(self._filepath)).parent

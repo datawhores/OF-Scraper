@@ -52,7 +52,7 @@ def operation_wrapper_async(func: abc.Callable):
             lock = FileLock(common_paths.getDB(), timeout=-1)
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(LOCK_POOL, lock.acquire)
-            database_path = placeholder.Placeholders().databasePathHelper(
+            database_path = placeholder.databasePlaceholder().databasePathHelper(
                 kwargs.get("model_id"), kwargs.get("username")
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -98,7 +98,7 @@ def operation_wrapper(func: abc.Callable):
             raise E
         try:
             lock.acquire(timeout=-1)
-            database_path = placeholder.Placeholders().databasePathHelper(
+            database_path = placeholder.databasePlaceholder().databasePathHelper(
                 kwargs.get("model_id"), kwargs.get("username")
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -331,7 +331,9 @@ def get_dupe_media_files(
 
 @operation_wrapper
 def get_profile_info(model_id=None, username=None, conn=None) -> list:
-    database_path = placeholder.Placeholders().databasePathHelper(model_id, username)
+    database_path = placeholder.databasePlaceholder().databasePathHelper(
+        model_id, username
+    )
     if not pathlib.Path(database_path).exists():
         return None
     with contextlib.closing(conn.cursor()) as cur:
@@ -529,7 +531,9 @@ def write_profile_table(model_id=None, username=None, conn=None) -> list:
 
 @operation_wrapper
 def check_profile_table_exists(model_id=None, username=None, conn=None):
-    database_path = placeholder.Placeholders().databasePathHelper(model_id, username)
+    database_path = placeholder.databasePlaceholder().databasePathHelper(
+        model_id, username
+    )
     if not pathlib.Path(database_path).exists():
         return False
     with contextlib.closing(conn.cursor()) as cur:
@@ -590,7 +594,9 @@ def create_tables(model_id, username):
 
 
 def create_backup(model_id, username):
-    database_path = placeholder.Placeholders().databasePathHelper(model_id, username)
+    database_path = placeholder.databasePlaceholder().databasePathHelper(
+        model_id, username
+    )
 
     now = arrow.now().float_timestamp
     last = cache.get(f"{username}_{model_id}_db_backup", default=now)

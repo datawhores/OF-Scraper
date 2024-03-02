@@ -50,8 +50,7 @@ def download_picker(username, model_id, medialist):
         system.getcpu_count() > 1
         and (
             len(medialist)
-            >= config_data.get_download_semaphores()
-            * constants.getattr("DOWNLOAD_THREAD_MIN")
+            >= config_data.get_threads() * constants.getattr("DOWNLOAD_THREAD_MIN")
         )
         and settings.not_solo_thread()
     ):

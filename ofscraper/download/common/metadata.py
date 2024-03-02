@@ -27,7 +27,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             if ele.id:
                 await operations.update_media_table(
                     ele,
-                    filename=placeholderObj.trunicated_filename,
+                    filename=placeholderObj.trunicated_filepath,
                     model_id=model_id,
                     username=username,
                     downloaded=metadata_downloaded_helper(placeholderObj),
@@ -40,14 +40,12 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             )
         elif download_data and download_data.get("content-type"):
             content_type = download_data.get("content-type").split("/")[-1]
-            placeholderObj = placeholder.Placeholders()
-            await placeholderObj.getDirs(ele, username, model_id, create=False)
-            await placeholderObj.createfilename(ele, username, model_id, content_type)
-            placeholderObj.merge_path_final()
+            placeholderObj = placeholder.Placeholders(ele)
+            await placeholderObj.set_trunicated_filepath(ele, content_type)
             if ele.id:
                 await operations.update_media_table(
                     ele,
-                    filename=placeholderObj.trunicated_filename,
+                    filename=placeholderObj.trunicated_filepath,
                     model_id=model_id,
                     username=username,
                     downloaded=metadata_downloaded_helper(placeholderObj),
@@ -72,7 +70,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                     with _:
                         try:
                             placeholderObj = await metadata_helper(
-                                c, ele, username, model_id, placeholderObj
+                                c, ele, placeholderObj
                             )
                         except Exception as E:
                             raise E
@@ -95,13 +93,13 @@ def metadata_downloaded_helper(placeholderObj):
 
     elif read_args.retriveArgs().metadata == "complete":
         return 1
-    elif pathlib.Path(placeholderObj.trunicated_filename).exists():
+    elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
         return 1
     return 0
 
 
 @sem_wrapper
-async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
+async def metadata_helper(c, ele, placeholderObj=None):
     url = ele.url or ele.mpd
 
     params = (
@@ -136,10 +134,7 @@ async def metadata_helper(c, ele, username, model_id, placeholderObj=None):
                 content_type = "mp4"
             elif not content_type and ele.mediatype.lower() == "images":
                 content_type = "jpg"
-            placeholderObj = placeholderObj or placeholder.Placeholders()
-            await placeholderObj.getDirs(ele, username, model_id, create=False)
-            await placeholderObj.createfilename(ele, username, model_id, content_type)
-            placeholderObj.merge_path_final()
+            placeholderObj = placeholderObj or placeholder.Placeholders(ele)
             return placeholderObj
 
         else:
@@ -154,7 +149,4 @@ async def meta_data_placeholder(ele, username, model_id):
     elif ele.mediatype.lower() == "audios":
         content_type = "mp3"
     placeholderObj = placeholder.Placeholders()
-    await placeholderObj.getDirs(ele, username, model_id, create=False)
-    await placeholderObj.createfilename(ele, username, model_id, content_type)
-    placeholderObj.merge_path_final()
     return placeholderObj

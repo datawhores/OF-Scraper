@@ -302,9 +302,9 @@ def test_user_data_dc_db_str(mocker):
     )
     mocker.patch("ofscraper.utils.paths.profiles.get_my_info", return_value=ME)
 
-    assert (str(placeholder.Placeholders().databasePathHelper("1111", "test"))) == str(
-        pathlib.Path(SAVE_PATH_DEFAULT, "test", "metadata", "user_data.db")
-    )
+    assert (
+        str(placeholder.databasePlaceholder().databasePathHelper("1111", "test"))
+    ) == str(pathlib.Path(SAVE_PATH_DEFAULT, "test", "metadata", "user_data.db"))
 
 
 def test_context_provider(mocker):
@@ -635,6 +635,6 @@ def test_metadatesavelocation(mocker):
 
     username = "test"
     id = "111"
-    assert (str(placeholder.Placeholders().databasePathHelper(id, username))) == str(
-        pathlib.Path(SAVE_LOCATION_DC, "test", "metadata", "user_data.db")
-    )
+    assert (
+        str(placeholder.databasePlaceholder().databasePathHelper(id, username))
+    ) == str(pathlib.Path(SAVE_LOCATION_DC, "test", "metadata", "user_data.db"))

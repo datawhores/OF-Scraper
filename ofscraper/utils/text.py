@@ -15,6 +15,7 @@ from ofscraper.utils.context.run_async import run
 
 @run
 async def get_text(values):
+    return
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_TEXT_WORKER")
     ) as executor:

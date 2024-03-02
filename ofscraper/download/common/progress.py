@@ -68,4 +68,4 @@ def convert_num_bytes(num_bytes: int) -> str:
 
 async def update_total(update):
     async with common_globals.lock:
-        common_globals.total_data += update
+        common_globals.total_bytes += update

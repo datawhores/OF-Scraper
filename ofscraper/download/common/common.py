@@ -113,3 +113,22 @@ async def get_hash(file_data):
     return await asyncio.get_event_loop().run_in_executor(
         common_globals.thread, partial(hash.get_hash, file_data)
     )
+
+
+def get_resume_size(tempholderObj):
+    if not settings.get_auto_resume():
+        pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+        return 0
+    return (
+        0
+        if not pathlib.Path(tempholderObj.tempfilepath).exists()
+        else pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size
+    )
+
+
+async def get_data(ele):
+    data = await asyncio.get_event_loop().run_in_executor(
+        common_globals.cache_thread,
+        partial(cache.get, f"{ele.id}_headers"),
+    )
+    return data

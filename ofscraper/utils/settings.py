@@ -81,3 +81,18 @@ def get_max_post_count():
 
 def get_mediatypes():
     return read_args.retriveArgs().mediatype or config_data.get_filter()
+
+
+def get_download_bars():
+    return (
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+    )
+
+
+def get_auto_resume():
+    remove_file = (
+        read_args.retriveArgs().no_auto_resume
+        or not config_data.get_part_file_clean()
+        or False
+    )
+    return remove_file == False

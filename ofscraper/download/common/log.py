@@ -18,17 +18,17 @@ def path_to_file_logger(placeholderObj, ele, innerlog=None):
         f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.filename}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] full path from config {pathlib.Path(placeholderObj.mediadir,f'{placeholderObj.filename}')}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] full path from config {placeholderObj.filepath}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filename}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
     )
 
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.tempfilename}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
     )
 
 

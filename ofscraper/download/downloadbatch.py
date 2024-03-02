@@ -12,7 +12,6 @@ import aioprocessing
 import more_itertools
 import psutil
 from aioprocessing import AioPipe
-from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -252,9 +251,6 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                     common_globals.total_bytes_downloaded + num_bytes_downloaded
                 )
                 common_globals.total_bytes = common_globals.total_bytes + total_size
-
-                data = convert_num_bytes(common_globals.total_bytes_downloaded)
-                total_data = convert_num_bytes(common_globals.total_bytes)
                 if media_type == "images":
                     common_globals.photo_count += 1
 
@@ -275,8 +271,8 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                         a_count=common_globals.audio_count,
                         skipped=common_globals.skipped,
                         forced_skipped=common_globals.forced_skipped,
-                        data=data,
-                        total=total_data,
+                        data=convert_num_bytes(common_globals.total_bytes_downloaded),
+                        total=convert_num_bytes(common_globals.total_bytes),
                         mediacount=total,
                         sumcount=common_globals.video_count
                         + common_globals.audio_count

@@ -77,7 +77,7 @@ def process_post():
 @exit.exit_wrapper
 def process_post_user_first():
     with scrape_context_manager():
-        if not placeholder.Placeholders().check_uniquename():
+        if not placeholder.check_uniquename():
             log.warning(
                 "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
@@ -143,7 +143,7 @@ def scrape_paid(user_dict=None):
 @exit.exit_wrapper
 def normal_post_process():
     with scrape_context_manager():
-        if not placeholder.Placeholders().check_uniquename():
+        if not placeholder.check_uniquename():
             log.warning(
                 "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]     \
