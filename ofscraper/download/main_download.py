@@ -249,6 +249,7 @@ async def send_req_inner(
         if resume_size == 0 or not total
         else {"Range": f"bytes={resume_size}-{total}"}
     )
+    await update_total(total) if total else None
     async with sem_wrapper(common_globals.req_sem):
         async with c.requests(url=ele.url, headers=headers)() as r:
             if r.ok:
@@ -263,8 +264,9 @@ async def send_req_inner(
                         },
                     ),
                 )
-                total = int(r.headers["content-length"])
-                await update_total(total)
+                new_total = int(r.headers["content-length"])
+                await update_total(new_total) if not total else None
+                total = new_total
                 content_type = r.headers.get("content-type").split("/")[-1]
                 content_type = (
                     "mp4"
