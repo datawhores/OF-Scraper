@@ -25,13 +25,16 @@ def add_widget(widget):
 def get_shared_logger(main_=None, other_=None, name=None):
     # create a logger
     logger = logging.getLogger(name or "shared")
+    logger.handlers.clear()
     log_helpers.addtraceback()
     log_helpers.addtrace()
     main_ = main_ or log_globals.queue_
     if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
         mainhandle = QueueHandler(main_)
+        mainhandle.name = "stdout"
     elif hasattr(main_, "send"):
         mainhandle = log_class.PipeHandler(main_)
+        mainhandle.name = "stdout"
     mainhandle.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     # add a handler that uses the shared queue
     logger.addHandler(mainhandle)
@@ -40,8 +43,10 @@ def get_shared_logger(main_=None, other_=None, name=None):
     other_ = other_ or log_globals.otherqueue_
     if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
         otherhandle = QueueHandler(other_)
+        otherhandle.name = "other"
     elif hasattr(main_, "send"):
         otherhandle = log_class.PipeHandler(main_)
+        otherhandle.name = "other"
     otherhandle.setLevel(min(file_level, discord_level))
     logger.addHandler(otherhandle)
     # log all messages, debug and up

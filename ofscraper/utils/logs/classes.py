@@ -94,6 +94,20 @@ class TraceOnly(logging.Filter):
         return False
 
 
+class TraceBackOnly(logging.Filter):
+    def filter(self, record):
+        if record.levelno == 11:
+            return True
+        return False
+
+
+class NoTraceBack(logging.Filter):
+    def filter(self, record):
+        if record.levelno != 11:
+            return True
+        return False
+
+
 class NoDebug(logging.Filter):
     def filter(self, record):
         if record.levelno <= 11:

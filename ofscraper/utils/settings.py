@@ -96,3 +96,11 @@ def get_auto_resume():
         or False
     )
     return remove_file == False
+
+
+def get_discord():
+    return read_args.retriveArgs().discord and read_args.retriveArgs().discord != "OFF"
+
+
+def get_log():
+    return read_args.retriveArgs().log and read_args.retriveArgs().log != "OFF"

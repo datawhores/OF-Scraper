@@ -601,7 +601,7 @@ def create_backup(model_id, username):
     now = arrow.now().float_timestamp
     last = cache.get(f"{username}_{model_id}_db_backup", default=now)
     if now - last > constants.getattr("DBINTERVAL") and database_path.exists():
-        database_copy = placeholder.Placeholders().databasePathCopyHelper(
+        database_copy = placeholder.databasePlaceholder().databasePathCopyHelper(
             model_id, username
         )
         database_copy.parent.mkdir(parents=True, exist_ok=True)
@@ -611,7 +611,7 @@ def create_backup(model_id, username):
         not pathlib.Path(database_path.parent / "backup").exists()
         or len(list(pathlib.Path(database_path.parent / "backup").iterdir())) == 0
     ):
-        database_copy = placeholder.Placeholders().databasePathCopyHelper(
+        database_copy = placeholder.databasePlaceholder().databasePathCopyHelper(
             model_id, username
         )
         database_copy.parent.mkdir(parents=True, exist_ok=True)

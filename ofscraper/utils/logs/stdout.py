@@ -23,7 +23,7 @@ import ofscraper.utils.system.system as system
 
 def logger_process(input_, name=None, stop_count=1, event=None):
     # create a logger
-    log = init_stdout_logger(name)
+    log = init_stdout_logger(name=name)
     input_ = input_ or log_globals.queue_
     count = 0
     funct = None
@@ -34,6 +34,8 @@ def logger_process(input_, name=None, stop_count=1, event=None):
         funct = input_.recv
     while True:
         # consume a log message, block until one arrives
+        if len(log.handlers) == 0:
+            None
         if event and event.is_set():
             return
         try:
@@ -67,13 +69,14 @@ def logger_process(input_, name=None, stop_count=1, event=None):
 
 # logger for print to console
 def init_stdout_logger(name=None):
-    log = logging.getLogger(name or "ofscraper")
+    log = logging.getLogger(name or "ofscraper_stdout")
+    log.handlers.clear()
     format = " \[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
     log_helpers.addtrace()
     sh = RichHandler(
-        rich_tracebacks=True,
+        rich_tracebacks=False,
         markup=True,
         tracebacks_show_locals=True,
         show_time=False,
@@ -82,7 +85,7 @@ def init_stdout_logger(name=None):
     )
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
-    sh.addFilter(log_class.NoDebug())
+    sh.addFilter(log_class.NoTraceBack())
     tx = log_class.TextHandler()
     tx.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     tx.setFormatter(log_class.SensitiveFormatter(format))
@@ -90,11 +93,6 @@ def init_stdout_logger(name=None):
     log.addHandler(tx)
 
     if read_args.retriveArgs().output in {"TRACE", "DEBUG"}:
-        funct = (
-            log_class.DebugOnly
-            if read_args.retriveArgs().output == "DEBUG"
-            else log_class.TraceOnly
-        )
         sh2 = RichHandler(
             rich_tracebacks=True,
             console=console.get_shared_console(),
@@ -104,7 +102,7 @@ def init_stdout_logger(name=None):
         )
         sh2.setLevel(read_args.retriveArgs().output)
         sh2.setFormatter(log_class.SensitiveFormatter(format))
-        sh2.addFilter(funct())
+        sh2.addFilter(log_class.TraceBackOnly())
         log.addHandler(sh2)
 
     return log

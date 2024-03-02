@@ -7,12 +7,12 @@ import aioprocessing
 
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
-import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.classes as log_class
 import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 
 
@@ -31,6 +31,7 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         funct = input_.recv
     while True:
         # consume a log message, block until one arrives
+        break
         if event and event.is_set():
             return True
         try:
@@ -74,9 +75,9 @@ def logger_other(input_, name=None, stop_count=1, event=None):
 # wrapper function for discord and  log, check if threads/process should star
 def start_checker(func: abc.Callable):
     def inner(*args_, **kwargs):
-        if read_args.retriveArgs().discord and read_args.retriveArgs().discord != "OFF":
+        if settings.get_discord():
             return func(*args_, **kwargs)
-        elif read_args.retriveArgs().log and read_args.retriveArgs().log != "OFF":
+        elif settings.get_log():
             return func(*args_, **kwargs)
 
     return inner
@@ -145,8 +146,9 @@ def updateOtherLoggerStream():
 
 
 def init_other_logger(name):
-    name = name or "other"
+    name = name or "ofscraper_other"
     log = logging.getLogger(name)
+    log.handlers.clear()
     format = " %(asctime)s:\[%(module)s.%(funcName)s:%(lineno)d]  %(message)s"
     log.setLevel(1)
     log_helpers.addtraceback()
@@ -167,17 +169,12 @@ def init_other_logger(name):
         fh = logging.StreamHandler(stream)
         fh.setLevel(log_helpers.getLevel(read_args.retriveArgs().log))
         fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-        fh.addFilter(log_class.NoDebug())
+        fh.addFilter(log_class.NoTraceBack())
         log.addHandler(fh)
     if read_args.retriveArgs().log in {"TRACE", "DEBUG"}:
-        funct = (
-            log_class.DebugOnly
-            if read_args.retriveArgs().output == "DEBUG"
-            else log_class.TraceOnly
-        )
         fh2 = logging.StreamHandler(stream)
         fh2.setLevel(log_helpers.getLevel(read_args.retriveArgs().log))
         fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
-        fh2.addFilter(funct())
+        fh2.addFilter(log_class.TraceBackOnly())
         log.addHandler(fh2)
     return log

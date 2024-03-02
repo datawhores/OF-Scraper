@@ -57,11 +57,11 @@ downloads total [{common_globals.video_count} videos, {common_globals.audio_coun
         )
 
 
-def final_log(username):
+def final_log(username, log=None):
     skipped_word = (
         "skipped" if not read_args.retriveArgs().metadata else "metadata unchanged"
     )
-    common_globals.log.warning(
+    (log or common_globals.log).warning(
         f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
         f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos],"
         f" {common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"

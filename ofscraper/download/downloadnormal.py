@@ -25,6 +25,10 @@ import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.other as other_logs
+import ofscraper.utils.logs.stdout as stdout_logs
+import ofscraper.utils.manager as manager_
 from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common.common import (
     convert_num_bytes,
@@ -43,9 +47,22 @@ async def process_dicts(username, model_id, medialist):
         progress_group, overall_progress, job_progress = setupProgressBar()
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         common_globals.reset_globals()
-        common_globals.log = logging.getLogger("shared")
 
         try:
+            manager = manager_.get_manager()
+            logqueue = manager.Queue()
+            otherqueue = manager.Queue()
+            download_log = logger.get_shared_logger(
+                name="ofscraper_download", main_=logqueue, other_=otherqueue
+            )
+            common_globals.log = download_log
+            # start stdout/main queues consumers
+            log_thread = stdout_logs.start_stdout_logthread(
+                input_=logqueue, name="ofscraper_normal_stdout"
+            )
+            other_thread = other_logs.start_other_thread(
+                input_=otherqueue, name="ofscraper_normal_other"
+            )
             with Live(
                 progress_group,
                 refresh_per_second=constants.getattr("refreshScreen"),
@@ -133,8 +150,12 @@ async def process_dicts(username, model_id, medialist):
                         )
             overall_progress.remove_task(task1)
             setDirectoriesDate()
-            common.final_log(username)
-
+            # close thread
+            otherqueue.put("None")
+            logqueue.put("None")
+            log_thread.join()
+            other_thread.join() if other_thread else None
+            common.final_log(username, log=logging.getLogger("shared"))
             return (
                 common_globals.photo_count,
                 common_globals.video_count,
