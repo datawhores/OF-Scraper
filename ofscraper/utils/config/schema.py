@@ -22,6 +22,9 @@ def get_current_config_schema(config: dict = None) -> dict:
             "date": data.get_date(config=config),
             "text_type_default": data.get_textType(config=config),
             "truncation_default": data.get_truncation(config=config),
+            "audios_overwrites": data.get_audios_overwrites(config=config),
+            "videos_overwrites": data.get_videos_overwrites(config=config),
+            "images_overwrites": data.get_images_overwrites(config=config),
         },
         "download_options": {
             "file_size_limit": data.get_filesize_limit(config=config),

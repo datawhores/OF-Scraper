@@ -235,10 +235,10 @@ class Media:
         text = self.cleanup(text)
         if len(text) == 0:
             return text
-        length = int(data.get_textlength())
+        length = int(data.get_textlength(mediatype=self.mediatype))
         if length == 0:
             return text
-        elif data.get_textType() == "letter":
+        elif data.get_textType(mediatype=self.mediatype) == "letter":
             return f"{''.join(list(text)[:length])}"
         else:
             # split and reduce
@@ -275,7 +275,7 @@ class Media:
                 .split("/")[-1]
                 .strip("/,.;!_-@#$%^&*()+\\ "),
             )
-            return f"{filename}_{arrow.get(self.date).format(data.get_date())}"
+            return f"{filename}_{arrow.get(self.date).format(data.get_date(mediatype=self.mediatype))}"
 
     @property
     async def final_filename(self):
@@ -415,17 +415,17 @@ class Media:
             text = (
                 self._post.sanitized_text
                 or self.filename
-                or arrow.get(self.date).format(data.get_date())
+                or arrow.get(self.date).format(data.get_date(mediatype=self.mediatype))
             )
         elif self.responsetype == "Profile":
-            text = f"{arrow.get(self.date).format(data.get_date())} {self.text or self.filename}"
+            text = f"{arrow.get(self.date).format(data.get_date(mediatype=self.mediatype))} {self.text or self.filename}"
         return text
 
     def cleanup(self, text):
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
-        text = re.sub(" ", data.get_spacereplacer(), text)
+        text = re.sub(" ", data.get_spacereplacer(mediatype=self.mediatype), text)
         return text
 
     async def mpd_video_helper(self, mpd=None):

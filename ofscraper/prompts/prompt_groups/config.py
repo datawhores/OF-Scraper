@@ -45,15 +45,17 @@ def funct(prompt_):
     metadata: path to save db files
     discord: discord hook for logging
     -----------------------------------
-    [File Options]
+    [File Options]:
     save_location: root directory for files
     dir_format: format of directories
-    file_format: format of filenames
     textlength: max length of text placeholder
     space-replacer: space replacement for filenames
     date: date format for placeholders
     text_type_default: toggle for word count type
     trunication_default: toggle for trunicating filenames
+    audio: optional overwrites for audio
+    videos: optional overwrites for video
+    images: optional overwrties from images
     -----------------------------------
     [Download Options]
     file_size_limit: max size allowed for download

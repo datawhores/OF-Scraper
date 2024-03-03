@@ -16,6 +16,7 @@ import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 
@@ -255,7 +256,7 @@ class Placeholders(basePlaceholder):
         self._variables.update({"media_type": mediatype})
         value = ele.value.capitalize()
         self._variables.update({"value": value})
-        date = arrow.get(ele.postdate).format(data.get_date())
+        date = arrow.get(ele.postdate).format(data.get_date(mediatype=ele.mediatype))
         self._variables.update({"date": date})
         model_username = username
         self._variables.update({"model_username": model_username})
@@ -307,9 +308,13 @@ class Placeholders(basePlaceholder):
                         custom[key] = eval(val)
                     except:
                         custom[key] = val
-            downloadDir = pathlib.Path(eval("f'{}'".format(data.get_dirformat())))
+            downloadDir = pathlib.Path(
+                eval("f'{}'".format(data.get_dirformat(mediatype=ele.mediatype)))
+            )
         else:
-            downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
+            downloadDir = pathlib.Path(
+                data.get_dirformat(mediatype=ele.mediatype).format(**self._variables)
+            )
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )
@@ -344,9 +349,9 @@ class Placeholders(basePlaceholder):
                         custom[key] = eval(val)
                     except:
                         custom[key] = val
-            out = eval('f"""{}"""'.format(data.get_fileformat()))
+            out = eval('f"""{}"""'.format(data.get_fileformat(mediatype=ele.mediatype)))
         else:
-            out = data.get_fileformat().format(**self._variables)
+            out = data.get_fileformat(mediatype=ele.mediatype).format(**self._variables)
         out = self._addcount(ele, out)
         log.debug(f"final filename path {out}")
         self._filename = out
@@ -378,7 +383,9 @@ class Placeholders(basePlaceholder):
 
     @property
     def trunicated_filepath(self):
-        return pathlib.Path(paths.truncate(self._filepath))
+        if settings.get_trunication(mediatype=self._ele.mediatype):
+            return pathlib.Path(paths.truncate(self._filepath))
+        return self._filepath
 
     @property
     def filedir(self):

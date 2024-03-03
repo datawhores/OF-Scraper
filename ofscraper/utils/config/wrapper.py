@@ -13,6 +13,6 @@ def config_reader(func: abc.Callable):
             if config != None
             else config_file.open_config()
         )
-        return func(config=configT)
+        return func(config=configT, **kwargs)
 
     return inner

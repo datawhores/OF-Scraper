@@ -43,8 +43,11 @@ def get_blacklist(as_list=False):
         return out
 
 
-def get_trunication():
-    return (read_args.retriveArgs().original or config_data.get_truncation()) is True
+def get_trunication(mediatype=None):
+    return (
+        read_args.retriveArgs().original
+        or not config_data.get_truncation(mediatype=mediatype)
+    ) == False
 
 
 def get_cache_disabled():

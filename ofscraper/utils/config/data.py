@@ -87,45 +87,56 @@ def get_system_freesize(config=None):
 
 
 @wrapper.config_reader
-def get_dirformat(config=None):
+def get_dirformat(config=None, mediatype=None):
     if config == False:
         return constants.DIR_FORMAT_DEFAULT
     return (
         config.get("dir_format")
+        or config.get("file_options", {})
+        .get(f"{mediatype}_overwrites", {})
+        .get("dir_format")
         or config.get("file_options", {}).get("dir_format")
         or constants_attr.getattr("DIR_FORMAT_DEFAULT")
     )
 
 
 @wrapper.config_reader
-def get_fileformat(config=None):
+def get_fileformat(config=None, mediatype=None):
     if config == False:
         return constants.FILE_FORMAT_DEFAULT
     return (
         config.get("file_format")
+        or config.get("file_options", {})
+        .get(f"{mediatype}_overwrites", {})
+        .get("file_format")
         or config.get("file_options", {}).get("file_format")
         or constants_attr.getattr("FILE_FORMAT_DEFAULT")
     )
 
 
 @wrapper.config_reader
-def get_textlength(config=None):
+def get_textlength(config=None, mediatype=None):
     if config == False:
         return constants.TEXTLENGTH_DEFAULT
     try:
         return int(
-            config.get("textlength") or config.get("file_options", {}).get("textlength")
+            config.get("textlength")
+            or config.get("file_options", {})
+            .get(f"{mediatype}_overwrites", {})
+            .get("textlength")
+            or config.get("file_options", {}).get("textlength")
         ) or constants_attr.getattr("TEXTLENGTH_DEFAULT")
     except:
         return constants_attr.getattr("TEXTLENGTH_DEFAULT")
 
 
 @wrapper.config_reader
-def get_date(config=None):
+def get_date(config=None, mediatype=None):
     if config == False:
         return constants.DATE_DEFAULT
     return (
         config.get("date")
+        or config.get("file_options", {}).get(f"{mediatype}_overwrites", {}).get("date")
         or config.get("file_options", {}).get("date")
         or constants_attr.getattr("DATE_DEFAULT")
     )
@@ -382,11 +393,14 @@ def get_pinned_responsetype(config=None):
 
 
 @wrapper.config_reader
-def get_spacereplacer(config=None):
+def get_spacereplacer(config=None, mediatype=None):
     if config == False:
         return constants.SPACE_REPLACER_DEFAULT
     return (
         config.get("space-replacer")
+        or config.get("file_options", {})
+        .get(f"{mediatype}_overwrites", {})
+        .get("space-replacer")
         or config.get("file_options", {}).get("space-replacer")
         or constants_attr.getattr("SPACE_REPLACER_DEFAULT")
     )
@@ -553,11 +567,15 @@ def get_sanitizeDB(config=None):
 
 
 @wrapper.config_reader
-def get_textType(config=None):
+def get_textType(config=None, mediatype=None):
     if config == False:
         return constants.TEXT_TYPE_DEFAULT
-    value = config.get("text_type_default") or config.get("file_options", {}).get(
-        "text_type_default"
+    value = (
+        config.get("text_type_default")
+        or config.get("file_options", {})
+        .get(f"{mediatype}_overwrites", {})
+        .get("text_type_default")
+        or config.get("file_options", {}).get("text_type_default")
     )
     return (
         value
@@ -578,15 +596,48 @@ def get_TempDir(config=None):
 
 
 @wrapper.config_reader
-def get_truncation(config=None):
+def get_truncation(config=None, mediatype=None):
     if config == False:
         return constants.TRUNCATION_DEFAULT
     val = (
-        config.get("file_options", {}).get("truncation_default")
+        config.get("file_options", {})
+        .get(f"{mediatype}_overwrites", {})
+        .get("truncation_default")
+        if config.get("file_options", {})
+        .get(f"{mediatype}_overwrites", {})
+        .get("truncation_default")
+        else config.get("file_options", {}).get("truncation_default")
         if config.get("file_options", {}).get("truncation_default") != None
         else config.get("truncation_default")
     )
     return val if val is not None else constants_attr.getattr("TRUNCATION_DEFAULT")
+
+
+@wrapper.config_reader
+def get_audios_overwrites(config=None):
+    if config == False:
+        return constants.EMPTY_MEDIA_DEFAULT
+    return config.get("file_options", {}).get(
+        "audios_overwrites"
+    ) or constants_attr.getattr("EMPTY_MEDIA_DEFAULT")
+
+
+@wrapper.config_reader
+def get_videos_overwrites(config=None):
+    if config == False:
+        return constants.EMPTY_MEDIA_DEFAULT
+    return config.get("file_options", {}).get(
+        "videos_overwrites"
+    ) or constants_attr.getattr("EMPTY_MEDIA_DEFAULT")
+
+
+@wrapper.config_reader
+def get_images_overwrites(config=None):
+    if config == False:
+        return constants.EMPTY_MEDIA_DEFAULT
+    return config.get("file_options", {}).get(
+        "images_overwrites"
+    ) or constants_attr.getattr("EMPTY_MEDIA_DEFAULT")
 
 
 @wrapper.config_reader
