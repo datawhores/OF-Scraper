@@ -31,7 +31,6 @@ def logger_other(input_, name=None, stop_count=1, event=None):
         funct = input_.recv
     while True:
         # consume a log message, block until one arrives
-        break
         if event and event.is_set():
             return True
         try:
