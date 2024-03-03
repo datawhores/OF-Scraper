@@ -141,7 +141,7 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
             model_id=model_id,
             username=username,
             downloaded=True,
-            hash=await common.get_hash(sharedPlaceholderObj),
+            hash=await common.get_hash(sharedPlaceholderObj, mediatype=ele.mediatype),
         )
     return ele.mediatype, video["total"] + audio["total"]
 
@@ -172,7 +172,7 @@ async def media_item_keys(c, audio, video, ele):
 
 
 async def alt_download_downloader(item, c, ele, progress):
-    downloadspace()
+    downloadspace(mediatype=ele.mediatype)
     placeholderObj = placeholder.tempFilePlaceholder(ele, f"{item['name']}.part")
     await placeholderObj.init()
     item["path"] = placeholderObj.tempfilepath
@@ -212,7 +212,7 @@ async def alt_download_downloader(item, c, ele, progress):
 
 async def main_data_handler(data, item, c, ele, placeholderObj, progress):
     item["total"] = int(data.get("content-length"))
-    resume_size = get_resume_size(placeholderObj)
+    resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     if await check_forced_skip(ele, item["total"]):
         item["total"] = 0
         return item
@@ -265,7 +265,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress):
 
 
 async def send_req_inner(c, ele, item, placeholderObj, progress):
-    resume_size = get_resume_size(placeholderObj)
+    resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     total = item["total"]
     await update_total(total) if total else None
     headers = (

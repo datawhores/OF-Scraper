@@ -30,12 +30,15 @@ def get_main_profile(config=None):
 
 
 @wrapper.config_reader
-def get_filesize_limit(config=None):
+def get_filesize_limit(config=None, mediatype=ModuleNotFoundError):
     if config == False:
         return constants.FILE_SIZE_LIMIT_DEFAULT
     try:
         if config.get("file_size_max") != None:
             size = config.get("file_size_max")
+
+        elif config.get("overwrites", {}).get(mediatype, {}).get("file_size_max"):
+            return config.get("overwrites", {}).get(mediatype, {}).get("file_size_max")
         elif config.get("download_options", {}).get("file_size_max"):
             size = config.get("download_options", {}).get("file_size_max")
         return parse_size(
@@ -50,13 +53,15 @@ def get_filesize_limit(config=None):
 
 
 @wrapper.config_reader
-def get_filesize_min(config=None):
+def get_filesize_min(config=None, mediatype=None):
     if config == False:
         return constants.FILE_SIZE_MIN_DEFAULT
     try:
         size = None
         if config.get("file_size_min") != None:
             size = config.get("file_size_min")
+        elif config.get("overwrites", {}).get(mediatype, {}).get("file_size_min"):
+            size = config.get("overwrites", {}).get(mediatype, {}).get("file_size_min")
         elif config.get("download_options", {}).get("file_size_min"):
             size = config.get("download_options", {}).get("file_size_min")
         return parse_size(
@@ -71,13 +76,16 @@ def get_filesize_min(config=None):
 
 
 @wrapper.config_reader
-def get_system_freesize(config=None):
+def get_system_freesize(config=None, mediatype=None):
     if config == False:
         return constants.SYSTEM_FREEMIN_DEFAULT
     try:
         return parse_size(
             str(
                 config.get("system_free_min")
+                or config.get("overwrites", {})
+                .get(mediatype, {})
+                .get("system_free_min")
                 or config.get("download_options", {}).get("system_free_min")
                 or constants_attr.getattr("SYSTEM_FREEMIN_DEFAULT")
             )
@@ -92,9 +100,7 @@ def get_dirformat(config=None, mediatype=None):
         return constants.DIR_FORMAT_DEFAULT
     return (
         config.get("dir_format")
-        or config.get("file_options", {})
-        .get(f"{mediatype}_overwrites", {})
-        .get("dir_format")
+        or config.get("overwrites", {}).get(f"{mediatype}", {}).get("dir_format")
         or config.get("file_options", {}).get("dir_format")
         or constants_attr.getattr("DIR_FORMAT_DEFAULT")
     )
@@ -106,9 +112,7 @@ def get_fileformat(config=None, mediatype=None):
         return constants.FILE_FORMAT_DEFAULT
     return (
         config.get("file_format")
-        or config.get("file_options", {})
-        .get(f"{mediatype}_overwrites", {})
-        .get("file_format")
+        or config.get("overwrites", {}).get(f"{mediatype}", {}).get("file_format")
         or config.get("file_options", {}).get("file_format")
         or constants_attr.getattr("FILE_FORMAT_DEFAULT")
     )
@@ -121,9 +125,7 @@ def get_textlength(config=None, mediatype=None):
     try:
         return int(
             config.get("textlength")
-            or config.get("file_options", {})
-            .get(f"{mediatype}_overwrites", {})
-            .get("textlength")
+            or config.get("overwrites", {}).get(f"{mediatype}", {}).get("textlength")
             or config.get("file_options", {}).get("textlength")
         ) or constants_attr.getattr("TEXTLENGTH_DEFAULT")
     except:
@@ -136,7 +138,7 @@ def get_date(config=None, mediatype=None):
         return constants.DATE_DEFAULT
     return (
         config.get("date")
-        or config.get("file_options", {}).get(f"{mediatype}_overwrites", {}).get("date")
+        or config.get("overwrites", {}).get(f"{mediatype}", {}).get("date")
         or config.get("file_options", {}).get("date")
         or constants_attr.getattr("DATE_DEFAULT")
     )
@@ -279,23 +281,32 @@ def get_filter(config=None):
 
 
 @wrapper.config_reader
-def responsetype(config=None):
+def responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT
     return (
         config.get("responsetype", {})
+        or config.get("overwrites", {}).get(mediatype, {}).get("responsetype", {})
         or config.get("responsetype", {})
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")
     )
 
 
 @wrapper.config_reader
-def get_timeline_responsetype(config=None):
+def get_timeline_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return (
         config.get("timeline")
         or config.get("post")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("post")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("timeline")
         or config.get("responsetype", {}).get("timeline")
         or config.get("responsetype", {}).get("post")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
@@ -303,12 +314,20 @@ def get_timeline_responsetype(config=None):
 
 
 @wrapper.config_reader
-def get_post_responsetype(config=None):
+def get_post_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["timeline"]
     return (
         config.get("post")
         or config.get("timeline")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("post")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("timeline")
         or config.get("responsetype", {}).get("post")
         or config.get("responsetype", {}).get("timeline")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["timeline"]
@@ -316,77 +335,105 @@ def get_post_responsetype(config=None):
 
 
 @wrapper.config_reader
-def get_archived_responsetype(config=None):
+def get_archived_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["archived"]
     return (
         config.get("archived")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("archived")
         or config.get("responsetype", {}).get("archived")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["archived"]
     )
 
 
 @wrapper.config_reader
-def get_stories_responsetype(config=None):
+def get_stories_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["stories"]
     return (
         config.get("stories")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("stories")
         or config.get("responsetype", {}).get("stories")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["stories"]
     )
 
 
 @wrapper.config_reader
-def get_highlights_responsetype(config=None):
+def get_highlights_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["highlights"]
     return (
         config.get("highlights")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("highlights")
         or config.get("responsetype", {}).get("highlights")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["highlights"]
     )
 
 
 @wrapper.config_reader
-def get_paid_responsetype(config=None):
+def get_paid_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["paid"]
     return (
         config.get("paid")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("paid")
         or config.get("responsetype", {}).get("paid")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["paid"]
     )
 
 
 @wrapper.config_reader
-def get_messages_responsetype(config=None):
+def get_messages_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["message"]
     return (
         config.get("message")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("message")
         or config.get("responsetype", {}).get("message")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["message"]
     )
 
 
 @wrapper.config_reader
-def get_profile_responsetype(config=None):
+def get_profile_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["profile"]
     return (
         config.get("profile")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("profile")
         or config.get("responsetype", {}).get("profile")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["profile"]
     )
 
 
 @wrapper.config_reader
-def get_pinned_responsetype(config=None):
+def get_pinned_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["pinned"]
     return (
         config.get("pinned")
+        or config.get("overwrites", {})
+        .get(mediatype, {})
+        .get("responsetype", {})
+        .get("pinned")
         or config.get("responsetype", {}).get("pinned")
         or constants_attr.getattr("RESPONSE_TYPE_DEFAULT")["pinned"]
     )
@@ -398,9 +445,7 @@ def get_spacereplacer(config=None, mediatype=None):
         return constants.SPACE_REPLACER_DEFAULT
     return (
         config.get("space-replacer")
-        or config.get("file_options", {})
-        .get(f"{mediatype}_overwrites", {})
-        .get("space-replacer")
+        or config.get("overwrites", {}).get(f"{mediatype}", {}).get("space-replacer")
         or config.get("file_options", {}).get("space-replacer")
         or constants_attr.getattr("SPACE_REPLACER_DEFAULT")
     )
@@ -465,11 +510,13 @@ def get_dynamic(config=None):
 
 
 @wrapper.config_reader
-def get_part_file_clean(config=None):
+def get_part_file_clean(config=None, mediatype=None):
     if config == False:
         return constants.RESUME_DEFAULT
     if config.get("auto_resume"):
         return config.get("auto_resume")
+    elif config.get("overwrites", {}).get(mediatype, {}).get("auto_resume"):
+        return config.get("overwrites", {}).get(mediatype, {}).get("auto_resume")
     elif config.get("download_options", {}).get("auto_resume") != None:
         return config.get("download_options", {}).get("auto_resume")
     elif config.get("partfileclean") != None:
@@ -572,9 +619,7 @@ def get_textType(config=None, mediatype=None):
         return constants.TEXT_TYPE_DEFAULT
     value = (
         config.get("text_type_default")
-        or config.get("file_options", {})
-        .get(f"{mediatype}_overwrites", {})
-        .get("text_type_default")
+        or config.get("overwrites", {}).get(f"{mediatype}", {}).get("text_type_default")
         or config.get("file_options", {}).get("text_type_default")
     )
     return (
@@ -585,11 +630,12 @@ def get_textType(config=None, mediatype=None):
 
 
 @wrapper.config_reader
-def get_TempDir(config=None):
+def get_TempDir(config=None, mediatype=None):
     if config == False:
         return constants.TEMP_FOLDER_DEFAULT
     return (
         config.get("temp_dir")
+        or config.get("overwrites", {}).get(mediatype, {}).get("temp_dir")
         or config.get("advanced_options", {}).get("temp_dir")
         or constants_attr.getattr("TEMP_FOLDER_DEFAULT")
     )
@@ -600,11 +646,9 @@ def get_truncation(config=None, mediatype=None):
     if config == False:
         return constants.TRUNCATION_DEFAULT
     val = (
-        config.get("file_options", {})
-        .get(f"{mediatype}_overwrites", {})
-        .get("truncation_default")
+        config.get("overwrites", {}).get(f"{mediatype}", {}).get("truncation_default")
         if config.get("file_options", {})
-        .get(f"{mediatype}_overwrites", {})
+        .get(f"{mediatype}", {})
         .get("truncation_default")
         else config.get("file_options", {}).get("truncation_default")
         if config.get("file_options", {}).get("truncation_default") != None
@@ -617,27 +661,27 @@ def get_truncation(config=None, mediatype=None):
 def get_audios_overwrites(config=None):
     if config == False:
         return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("file_options", {}).get(
-        "audios_overwrites"
-    ) or constants_attr.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("audios") or constants_attr.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
 def get_videos_overwrites(config=None):
     if config == False:
         return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("file_options", {}).get(
-        "videos_overwrites"
-    ) or constants_attr.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("videos") or constants_attr.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
 def get_images_overwrites(config=None):
     if config == False:
         return constants.EMPTY_MEDIA_DEFAULT
-    return config.get("file_options", {}).get(
-        "images_overwrites"
-    ) or constants_attr.getattr("EMPTY_MEDIA_DEFAULT")
+    return config.get("overwrites", {}).get("images") or constants_attr.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
 
 
 @wrapper.config_reader
@@ -655,11 +699,13 @@ def get_max_post_count(config=None):
 
 
 @wrapper.config_reader
-def get_hash(config=None):
+def get_hash(config=None, mediatype=None):
     if config == False:
         return constants.HASHED_DEFAULT
     elif "remove_hash_match" in config:
         return config.get("remove_hash_match")
+    elif config.get("overwrites", {}).get(mediatype, {}).get("remove_hash_match"):
+        return config.get("overwrites", {}).get(mediatype, {}).get("remove_hash_match")
     elif "remove_hash_match" in config.get("advanced_options", {}):
         return config.get("advanced_options", {}).get("remove_hash_match")
     return constants.HASHED_DEFAULT

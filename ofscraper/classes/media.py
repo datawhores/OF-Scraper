@@ -130,7 +130,10 @@ class Media:
 
     @property
     def modified_responsetype(self):
-        return self._post.modified_responsetype
+        return (
+            self._post.modified_response_helper(mediatype=self.mediatype)
+            or self._post.modified_responsetype
+        )
 
     @property
     def responsetype(self):

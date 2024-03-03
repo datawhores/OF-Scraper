@@ -60,4 +60,6 @@ def download_picker(username, model_id, medialist):
 
 
 def remove_downloads_with_hashes(username, model_id):
-    hash.remove_dupes_hash(username, model_id)
+    hash.remove_dupes_hash(username, model_id, "audios")
+    hash.remove_dupes_hash(username, model_id, "images")
+    hash.remove_dupes_hash(username, model_id, "videos")

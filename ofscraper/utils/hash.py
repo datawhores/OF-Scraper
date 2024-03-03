@@ -15,10 +15,10 @@ log = logging.getLogger("shared")
 fileHashes = {}
 
 
-def get_hash(file_data):
+def get_hash(file_data, mediatype=None):
     global fileHashes
     hash = None
-    if config_data.get_hash() == None:
+    if config_data.get_hash(mediatype=mediatype) == None:
         return
     if isinstance(file_data, placeholder.Placeholders):
         file_data = file_data.trunicated_filepath
@@ -37,10 +37,12 @@ def get_hash(file_data):
     return hash
 
 
-def remove_dupes_hash(username, model_id):
-    if not config_data.get_hash():
+def remove_dupes_hash(username, model_id, mediatype=None):
+    if not config_data.get_hash(mediatype=mediatype):
         return
-    hashes = operations.get_dupe_media_hashes(username=username, model_id=model_id)
+    hashes = operations.get_dupe_media_hashes(
+        username=username, model_id=model_id, mediatype=None
+    )
     for hash in hashes:
         files = operations.get_dupe_media_files(
             username=username, model_id=model_id, hash=hash

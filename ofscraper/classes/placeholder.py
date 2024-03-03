@@ -93,7 +93,7 @@ class tempFilePlaceholder(basePlaceholder):
     async def gettempDir(self, ele, create=True):
         self._tempdir = await self._placeholder.getmediadir(
             ele,
-            root=(data.get_TempDir()),
+            root=(data.get_TempDir(mediatype=ele.mediatype)),
             create=create,
         )
         self._tempdir.mkdir(parents=True, exist_ok=True)

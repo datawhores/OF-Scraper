@@ -118,14 +118,14 @@ async def handle_result(result, ele, username, model_id):
             model_id=model_id,
             username=username,
             downloaded=True,
-            hash=await common.get_hash(path_to_file),
+            hash=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
     return ele.mediatype, total
 
 
 async def main_download_downloader(c, ele, progress):
-    downloadspace()
+    downloadspace(mediatype=ele.mediatype)
     tempholderObj = placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
     )
@@ -172,7 +172,7 @@ async def main_data_handler(data, c, tempholderObj, ele, progress):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
     placeholderObj = placeholder.Placeholders(ele, content_type)
-    resume_size = get_resume_size(tempholderObj)
+    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     await placeholderObj.init()
     # other
     if await check_forced_skip(ele, total) == 0:
@@ -233,7 +233,7 @@ async def main_download_sendreq(
 async def send_req_inner(
     c, ele, tempholderObj, progress, placeholderObj=None, total=None
 ):
-    resume_size = get_resume_size(tempholderObj)
+    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     headers = (
         None
         if resume_size == 0 or not total

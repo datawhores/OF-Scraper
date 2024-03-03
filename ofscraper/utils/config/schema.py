@@ -22,9 +22,6 @@ def get_current_config_schema(config: dict = None) -> dict:
             "date": data.get_date(config=config),
             "text_type_default": data.get_textType(config=config),
             "truncation_default": data.get_truncation(config=config),
-            "audios_overwrites": data.get_audios_overwrites(config=config),
-            "videos_overwrites": data.get_videos_overwrites(config=config),
-            "images_overwrites": data.get_images_overwrites(config=config),
         },
         "download_options": {
             "file_size_limit": data.get_filesize_limit(config=config),
@@ -73,6 +70,11 @@ def get_current_config_schema(config: dict = None) -> dict:
             "highlights": data.get_highlights_responsetype(config=config),
             "profile": data.get_profile_responsetype(config=config),
             "pinned": data.get_pinned_responsetype(config=config),
+        },
+        "overwrites": {
+            "audios": data.get_audios_overwrites(config=config),
+            "videos": data.get_videos_overwrites(config=config),
+            "images": data.get_images_overwrites(config=config),
         },
     }
     return new_config

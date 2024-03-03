@@ -60,12 +60,16 @@ def get_dynamic_rules():
     return read_args.retriveArgs().dynamic_rules or config_data.get_dynamic()
 
 
-def get_size_limit():
-    return read_args.retriveArgs().size_max or config_data.get_filesize_limit()
+def get_size_limit(mediatype=None):
+    return read_args.retriveArgs().size_max or config_data.get_filesize_limit(
+        mediatype=mediatype
+    )
 
 
-def get_size_min():
-    return read_args.retriveArgs().size_min or config_data.get_filesize_limit()
+def get_size_min(mediatype=None):
+    return read_args.retriveArgs().size_min or config_data.get_filesize_min(
+        mediatype=mediatype
+    )
 
 
 def get_download_bars():
@@ -92,10 +96,10 @@ def get_download_bars():
     )
 
 
-def get_auto_resume():
+def get_auto_resume(mediatype=None):
     remove_file = (
         read_args.retriveArgs().no_auto_resume
-        or not config_data.get_part_file_clean()
+        or not config_data.get_part_file_clean(mediatype=mediatype)
         or False
     )
     return remove_file == False

@@ -6,11 +6,11 @@ import re
 from contextlib import contextmanager
 from pathlib import Path
 
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
 
 console = console_.get_shared_console()
 homeDir = pathlib.Path.home()
@@ -38,19 +38,23 @@ def set_directory(path: Path):
 
 
 def cleanup():
-    if (
-        read_args.retriveArgs().no_auto_resume
-        or not data.get_part_file_clean()
-        or False
-    ):
+    if not settings.get_auto_resume():
         log.info("Cleaning up temp files\n\n")
-        root = pathlib.Path(data.get_TempDir() or common_paths.get_save_location())
-        for file in list(
-            filter(
-                lambda x: re.search("\.part$|^temp_", str(x)) != None, root.glob("**/*")
-            )
-        ):
-            file.unlink(missing_ok=True)
+        root = [
+            data.get_TempDir("audio")
+            or data.get_TempDir("videos")
+            or data.get_TempDir("images")
+        ]
+        for ele in root:
+            if ele == None:
+                continue
+            for file in list(
+                filter(
+                    lambda x: re.search("\.part$|^temp_", str(x)) != None,
+                    root.glob(ele),
+                )
+            ):
+                file.unlink(missing_ok=True)
 
 
 def truncate(path):

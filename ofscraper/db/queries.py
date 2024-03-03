@@ -229,11 +229,25 @@ mediaAddColumn = """
 ALTER TABLE medias ADD COLUMN hash VARCHAR;
 """
 
+mediaDupeHashesMedia = """
+WITH x AS (
+    SELECT hash, size
+    FROM medias
+    WHERE hash IS NOT NULL AND size is not null and  WHERE hash IS NOT NULL AND size IS NOT NULL AND (media_type = ?)
+)
+)
+SELECT hash
+FROM x
+GROUP BY hash, size
+HAVING COUNT(*) > 1;
+"""
+
 mediaDupeHashes = """
 WITH x AS (
     SELECT hash, size
     FROM medias
-    WHERE hash IS NOT NULL AND size is not null
+    WHERE hash IS NOT NULL AND size is not null and  WHERE hash IS NOT NULL AND size IS NOT NULL
+)
 )
 SELECT hash
 FROM x

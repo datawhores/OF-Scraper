@@ -312,9 +312,14 @@ def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) 
 
 
 @operation_wrapper
-def get_dupe_media_hashes(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_dupe_media_hashes(
+    model_id=None, username=None, conn=None, mediatype=None, **kwargs
+) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.mediaDupeHashes)
+        if mediatype:
+            cur.execute(queries.mediaDupeHashesMedia, [mediatype])
+        else:
+            cur.execute(queries.mediaDupeHashes)
         conn.commit()
         return list(map(lambda x: x[0], cur.fetchall()))
 

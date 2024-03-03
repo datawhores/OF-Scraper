@@ -69,8 +69,8 @@ async def check_forced_skip(ele, *args):
     total = sum(map(lambda x: int(x), args))
     if total == 0:
         return 0
-    file_size_limit = settings.get_size_limit()
-    file_size_min = settings.get_size_min()
+    file_size_limit = settings.get_size_limit(mediatype=ele.mediatype)
+    file_size_min = settings.get_size_min(mediatype=ele.mediatype)
     if int(file_size_limit) > 0 and (int(total) > int(file_size_limit)):
         ele.mediatype = "forced_skipped"
         common_globals.log.debug(
@@ -103,20 +103,20 @@ def alt_attempt_get(item):
         return common_globals.attempt2
 
 
-def downloadspace():
-    space_limit = config_data.get_system_freesize()
+def downloadspace(mediatype=None):
+    space_limit = config_data.get_system_freesize(mediatype=mediatype)
     if space_limit > 0 and space_limit > system.get_free():
         raise Exception(constants.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
 
-async def get_hash(file_data):
+async def get_hash(file_data, mediatype=None):
     return await asyncio.get_event_loop().run_in_executor(
-        common_globals.thread, partial(hash.get_hash, file_data)
+        common_globals.thread, partial(hash.get_hash, file_data, mediatype=mediatype)
     )
 
 
-def get_resume_size(tempholderObj):
-    if not settings.get_auto_resume():
+def get_resume_size(tempholderObj, mediatype=None):
+    if not settings.get_auto_resume(mediatype=mediatype):
         pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
         return 0
     return (

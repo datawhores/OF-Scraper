@@ -71,27 +71,7 @@ class Post:
 
     @property
     def modified_responsetype(self):
-        if self.archived:
-            if data.get_archived_responsetype() == "":
-                return "Archived"
-            return data.get_archived_responsetype()
-
-        else:
-            # remap some values
-            response_key = self.responsetype
-            response_key = (
-                "timeline"
-                if response_key.lower() in {"post", "posts"}
-                else response_key
-            )
-            response = data.responsetype().get(response_key)
-
-            if response == "":
-                return self.responsetype.capitalize()
-            elif response == None:
-                return self.responsetype.capitalize()
-            elif response != "":
-                return response.capitalize()
+        return self.modified_response_helper()
 
     @property
     def id(self):
@@ -166,3 +146,26 @@ class Post:
     @property
     def mass(self):
         return self._post.get("isFromQueue", None)
+
+    def modified_response_helper(self, mediatype=None):
+        if self.archived:
+            if not bool(data.get_archived_responsetype(mediatype=mediatype)):
+                return "Archived"
+            return data.get_archived_responsetype(mediatype=mediatype)
+
+        else:
+            # remap some values
+            response_key = self.responsetype
+            response_key = (
+                "timeline"
+                if response_key.lower() in {"post", "posts"}
+                else response_key
+            )
+            response = data.responsetype(mediatype=mediatype).get(response_key)
+
+            if response == "":
+                return self.responsetype.capitalize()
+            elif response == None:
+                return self.responsetype.capitalize()
+            elif response != "":
+                return response.capitalize()
