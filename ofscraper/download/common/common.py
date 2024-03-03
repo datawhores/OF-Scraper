@@ -132,3 +132,13 @@ async def get_data(ele):
         partial(cache.get, f"{ele.id}_headers"),
     )
     return data
+
+
+def get_unknown_content_type(ele):
+    return (
+        "mp4"
+        if ele.mediatype.lower() == "videos"
+        else "jpg"
+        if ele.mediatype.lower() == "images"
+        else None
+    )

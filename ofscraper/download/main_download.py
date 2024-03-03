@@ -46,6 +46,7 @@ from ofscraper.download.common.common import (
     get_data,
     get_medialog,
     get_resume_size,
+    get_unknown_content_type,
     get_url_log,
     metadata,
     moveHelper,
@@ -124,6 +125,7 @@ async def handle_result(result, ele, username, model_id):
 
 
 async def main_download_downloader(c, ele, progress):
+    downloadspace()
     tempholderObj = placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
     )
@@ -133,13 +135,16 @@ async def main_download_downloader(c, ele, progress):
         wait=wait_random(
             min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
         ),
+        retry=retry_if_not_exception_message(
+            constants.getattr("SPACE_DOWNLOAD_MESSAGE")
+        ),
         reraise=True,
     ):
         with _:
             try:
                 data = await get_data(ele)
                 common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-                pathlib.Path(tempholderObj).unlink(
+                pathlib.Path(tempholderObj.tempfilepath).unlink(
                     missing_ok=True
                 ) if common_globals.attempt.get() > 1 else None
                 if data:
@@ -153,26 +158,13 @@ async def main_download_downloader(c, ele, progress):
 
 
 async def alt_data_handler(c, tempholderObj, ele, progress):
-    async for _ in AsyncRetrying(
-        stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
-        ),
-        retry=retry_if_not_exception_message(
-            constants.getattr("SPACE_DOWNLOAD_MESSAGE")
-        ),
-        reraise=True,
-    ):
-        with _:
-            pathlib.Path(tempholderObj).unlink(
-                missing_ok=True
-            ) if common_globals.attempt.get() > 1 else None
-            try:
-                result = await main_download_sendreq(
-                    c, ele, tempholderObj, progress, placeholderObj=None, total=None
-                )
-            except Exception as E:
-                raise E
+    result = None
+    try:
+        result = await main_download_sendreq(
+            c, ele, tempholderObj, progress, placeholderObj=None, total=None
+        )
+    except Exception as E:
+        raise E
     return result
 
 
@@ -211,13 +203,11 @@ async def main_data_handler(data, c, tempholderObj, ele, progress):
 async def main_download_sendreq(
     c, ele, tempholderObj, progress, total=None, placeholderObj=None
 ):
-    downloadspace()
-
-    total = total if common_globals.attempt.get() == 1 else None
     try:
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {tempholderObj.tempfilepath}"
         )
+        total = total if common_globals.attempt.get() == 1 else None
         return await send_req_inner(
             c, ele, tempholderObj, progress, placeholderObj=placeholderObj, total=total
         )
@@ -268,21 +258,10 @@ async def send_req_inner(
                 await update_total(new_total) if not total else None
                 total = new_total
                 content_type = r.headers.get("content-type").split("/")[-1]
-                content_type = (
-                    "mp4"
-                    if not content_type and ele.mediatype.lower() == "videos"
-                    else None
-                )
-                content_type = (
-                    "jpg"
-                    if not content_type and ele.mediatype.lower() == "images"
-                    else None
-                )
-                if not content_type and ele.mediatype.lower() == "images":
-                    content_type = "jpg"
+                content_type = content_type or get_unknown_content_type(ele)
                 if not placeholderObj:
                     placeholderObj = placeholder.Placeholders(ele, content_type)
-                await placeholderObj.init()
+                    await placeholderObj.init()
                 path_to_file_logger(placeholderObj, ele)
                 if await check_forced_skip(ele, total):
                     total = 0
