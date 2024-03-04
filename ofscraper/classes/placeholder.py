@@ -53,10 +53,10 @@ class basePlaceholder:
             "profile": profile_data.get_active_profile(),
             "sitename": "Onlyfans",
             "site_name": "Onlyfans",
-            "save_location": common_paths.get_save_location(),
+            "save_location": common_paths.get_save_location(mediatype=self.ele),
             "my_id": my_id,
             "my_username": my_username,
-            "root": pathlib.Path((common_paths.get_save_location())),
+            "root": pathlib.Path((common_paths.get_save_location(mediatype=self.ele))),
             "customval": custom_.get_custom(),
         }
 
@@ -289,7 +289,7 @@ class Placeholders(basePlaceholder):
     async def getmediadir(self, ele, root=None, create=True):
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or common_paths.get_save_location())
+        root = pathlib.Path(root or common_paths.get_save_location(mediatype=self.ele))
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(

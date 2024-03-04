@@ -87,12 +87,13 @@ def get_profile_path(name=None):
     return get_config_home() / read_args.retriveArgs().profile
 
 
-def get_save_location(config=None):
+def get_save_location(config=None, mediatype=None):
     if config == False:
         return constants.SAVE_PATH_DEFAULT
     config = config or config_file.open_config()
     return (
-        config.get("save_location")
+        config.get("overwrites", {}).get(f"{mediatype}", {}).get("save_location")
+        or config.get("save_location")
         or config.get("file_options", {}).get("save_location")
         or constants_attr.getattr("SAVE_PATH_DEFAULT")
     )
