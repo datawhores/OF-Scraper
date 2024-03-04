@@ -40,19 +40,22 @@ def set_directory(path: Path):
 def cleanup():
     if not settings.get_auto_resume():
         log.info("Cleaning up temp files\n\n")
-        root = [
-            data.get_TempDir("audio")
-            or data.get_TempDir("videos")
-            or data.get_TempDir("images")
-        ]
-        for ele in root:
+        roots = set(
+            [
+                data.get_TempDir(mediatype="audios")
+                or common_paths.get_save_location(mediatype="audios"),
+                data.get_TempDir(mediatype="videos")
+                or common_paths.get_save_location(mediatype="videos"),
+                data.get_TempDir(mediatype="images")
+                or common_paths.get_save_location(mediatype="imaegs"),
+            ]
+        )
+        for ele in roots:
             if ele == None:
                 continue
-            for file in list(
-                filter(
-                    lambda x: re.search("\.part$|^temp_", str(x)) != None,
-                    root.glob(ele),
-                )
+            for file in filter(
+                lambda x: re.search("\.part$|^temp_", str(x)) != None,
+                pathlib.Path(ele).glob(),
             ):
                 file.unlink(missing_ok=True)
 
