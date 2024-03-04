@@ -55,7 +55,7 @@ def cleanup():
                 continue
             for file in filter(
                 lambda x: re.search("\.part$|^temp_", str(x)) != None,
-                pathlib.Path(ele).glob(),
+                pathlib.Path(ele).glob("**/*"),
             ):
                 file.unlink(missing_ok=True)
 
