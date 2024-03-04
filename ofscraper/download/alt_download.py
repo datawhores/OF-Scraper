@@ -303,7 +303,7 @@ async def send_req_inner(c, ele, item, placeholderObj, progress):
                     item["total"] = 0
                 elif total == resume_size:
                     None
-                elif total != resume_size:
+                else:
                     await download_fileobject_writer(
                         total, l, ele, progress, placeholderObj
                     )

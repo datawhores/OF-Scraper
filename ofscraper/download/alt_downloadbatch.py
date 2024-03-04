@@ -311,7 +311,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
                         return item
                     elif total == resume_size:
                         None
-                    elif total != resume_size:
+                    else:
                         await download_fileobject_writerr(total, l, ele, placeholderObj)
 
                 else:

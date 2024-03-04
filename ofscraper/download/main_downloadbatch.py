@@ -181,7 +181,7 @@ async def main_data_handler(data, c, ele, tempholderObj):
             placeholderObj,
         )
 
-    elif total != resume_size:
+    else:
         try:
             return await main_download_sendreq(
                 c, ele, tempholderObj, total=total, placeholderObj=placeholderObj
@@ -260,7 +260,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                         total = 0
                     elif total == resume_size:
                         None
-                    elif total != resume_size:
+                    else:
                         await download_fileobject_writer(
                             r, ele, total, tempholderObj, placeholderObj
                         )
