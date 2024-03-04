@@ -197,7 +197,24 @@ async def alt_download_downloader(
                     return await main_data_handler(data, item, c, ele, placeholderObj)
                 else:
                     return alt_data_handler(item, c, ele, placeholderObj)
+            except OSError as E:
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                )
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                )
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+                )
+                raise E
             except Exception as E:
+                common_globals.innerlog.get().traceback_(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
+                )
+                common_globals.innerlog.get().traceback_(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
+                )
                 raise E
 
 
@@ -247,24 +264,8 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
         )
         return await send_req_inner(c, ele, item, placeholderObj)
     except OSError as E:
-        common_globals.log.traceback_(E)
-        common_globals.log.traceback_(traceback.format_exc())
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
-        )
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
-        )
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
-        )
+        raise E
     except Exception as E:
-        common_globals.innerlog.get().traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
-        )
-        common_globals.innerlog.get().traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
-        )
         raise E
 
 

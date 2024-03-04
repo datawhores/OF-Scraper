@@ -19,7 +19,6 @@ from functools import partial
 
 import aiofiles
 import arrow
-import psutil
 from tenacity import (
     AsyncRetrying,
     retry_if_not_exception_message,
@@ -206,7 +205,21 @@ async def alt_download_downloader(item, c, ele, progress):
                     return await alt_data_handler(
                         item, c, ele, placeholderObj, progress
                     )
+            except OSError as E:
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
+                )
+                common_globals.log.debug(
+                    f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+                )
+                raise E
             except Exception as E:
+                common_globals.log.traceback_(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
+                )
+                common_globals.log.traceback_(
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
+                )
                 raise E
 
 
@@ -246,21 +259,8 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress):
         )
         return await send_req_inner(c, ele, item, placeholderObj, progress)
     except OSError as E:
-        common_globals.log.traceback_(E)
-        common_globals.log.traceback_(traceback.format_exc())
-        common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
-        )
-        common_globals.log.debug(
-            f" {get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Open Files -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
-        )
+        raise E
     except Exception as E:
-        common_globals.log.traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
-        )
-        common_globals.log.traceback_(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
-        )
         raise E
 
 

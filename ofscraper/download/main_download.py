@@ -153,7 +153,21 @@ async def main_download_downloader(c, ele, progress):
                     )
                 else:
                     return await alt_data_handler(c, tempholderObj, ele, progress)
+            except OSError as E:
+                common_globals.log.debug(
+                    f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
+                )
+                common_globals.log.debug(
+                    f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+                )
+                raise E
             except Exception as E:
+                common_globals.log.traceback_(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
+                )
+                common_globals.log.traceback_(
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
+                )
                 raise E
 
 
@@ -212,21 +226,8 @@ async def main_download_sendreq(
             c, ele, tempholderObj, progress, placeholderObj=placeholderObj, total=total
         )
     except OSError as E:
-        common_globals.log.traceback_(E)
-        common_globals.log.traceback_(traceback.format_exc())
-        common_globals.log.debug(
-            f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
-        )
-        common_globals.log.debug(
-            f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
-        )
+        raise E
     except Exception as E:
-        common_globals.log.traceback_(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
-        )
-        common_globals.log.traceback_(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
-        )
         raise E
 
 
