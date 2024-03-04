@@ -350,6 +350,7 @@ async def download_fileobject_writerr(total, l, ele, placeholderObj):
             }
         )
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
+        download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
 
         async for chunk in l.iter_chunked(constants.getattr("maxChunkSizeB")):
@@ -372,6 +373,7 @@ async def download_fileobject_writerr(total, l, ele, placeholderObj):
                     }
                 )
                 count = 0
+            (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         # reset download data
         raise E
