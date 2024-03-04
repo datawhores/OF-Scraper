@@ -42,21 +42,19 @@ def check_uniquename():
 
 class basePlaceholder:
     def __init__(self) -> None:
-        None
+        self._ele = None
 
     def create_variables_base(self):
         my_profile = profile_data.get_my_info()
         my_id, my_username = me.parse_user(my_profile)
-
         self._variables = {
-            "configpath": common_paths.get_config_home(),
+            "config_path": common_paths.get_config_home(),
             "profile": profile_data.get_active_profile(),
-            "sitename": "Onlyfans",
             "site_name": "Onlyfans",
-            "save_location": common_paths.get_save_location(mediatype=self.ele),
+            "save_location": common_paths.get_save_location(mediatype=self._ele),
             "my_id": my_id,
             "my_username": my_username,
-            "root": pathlib.Path((common_paths.get_save_location(mediatype=self.ele))),
+            "root": pathlib.Path((common_paths.get_save_location(mediatype=self._ele))),
             "customval": custom_.get_custom(),
         }
 
@@ -76,6 +74,13 @@ class basePlaceholder:
 
         return inner
 
+    def add_no_underline(self):
+        items = list(self._variables.items())
+        for key, val in items:
+            if key.find("_"):
+                new_key = key.replace("_", "")
+                self._variables.update({new_key: val})
+
 
 class tempFilePlaceholder(basePlaceholder):
     def __init__(self, ele, tempname) -> None:
@@ -92,7 +97,6 @@ class tempFilePlaceholder(basePlaceholder):
     @basePlaceholder.async_wrapper
     async def gettempDir(self, ele, create=True):
         self._tempdir = await self._placeholder.getmediadir(
-            ele,
             root=(data.get_TempDir(mediatype=ele.mediatype)),
             create=create,
         )
@@ -116,17 +120,13 @@ class databasePlaceholder(basePlaceholder):
     def databasePathHelper(self, model_id, model_username):
         username = model_username
         self._variables.update({"username": username})
-        modelusername = model_username
-        self._variables.update({"modelusername": modelusername})
         model_username = model_username
         self._variables.update({"model_username": model_username})
         first_letter = username[0].capitalize()
         self._variables.update({"first_letter": first_letter})
-        firstletter = username[0].capitalize()
-        self._variables.update({"firstletter": firstletter})
-        self._variables.update({"model_id": model_id})
         modelid = model_id
-        self._variables.update({"modelid": modelid})
+        self._variables.update({"model_id": modelid})
+        self.add_no_underline()
         globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
@@ -192,8 +192,8 @@ class Placeholders(basePlaceholder):
     async def init(self):
         self._filepath = self._filepath = paths.truncate(
             pathlib.Path(
-                await self.getmediadir(self._ele),
-                await self.createfilename(self._ele, self._ext),
+                await self.getmediadir(),
+                await self.createfilename(),
             )
         )
 
@@ -208,7 +208,6 @@ class Placeholders(basePlaceholder):
         )
 
         self._variables.update({"current_price": current_price})
-        self._variables.update({"currentprice": current_price})
         regular_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
@@ -217,7 +216,6 @@ class Placeholders(basePlaceholder):
             else "Paid"
         )
         self._variables.update({"regular_price": regular_price})
-        self._variables.update({"regularprice": regular_price})
         promo_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
@@ -226,7 +224,6 @@ class Placeholders(basePlaceholder):
             else "Paid"
         )
         self._variables.update({"promo_price": promo_price})
-        self._variables.update({"promoprice": promo_price})
         renewal_price = (
             constants.getattr("MODEL_PRICE_PLACEHOLDER")
             if not modelObj
@@ -238,21 +235,20 @@ class Placeholders(basePlaceholder):
         self._variables.update({"renewalprice": renewal_price})
 
     async def add_common_variables(self, ele, username, model_id):
-        self._variables.update({"username": username})
+        await self.add_main_variables(ele, username, model_id)
+        self.add_price_variables(username)
+        self.add_no_underline()
+
+    async def add_main_variables(self, ele, username, model_id):
         self._variables.update({"user_name": username})
         self._variables.update({"model_id": model_id})
-        self._variables.update({"modelid": model_id})
         post_id = ele.postid
         self._variables.update({"post_id": post_id})
-        self._variables.update({"postid": post_id})
         media_id = ele.id
         self._variables.update({"media_id": media_id})
-        self._variables.update({"mediaid": media_id})
         first_letter = username[0].capitalize()
         self._variables.update({"first_letter": first_letter})
-        self._variables.update({"firstletter": first_letter})
         mediatype = ele.mediatype.capitalize()
-        self._variables.update({"mediatype": mediatype})
         self._variables.update({"media_type": mediatype})
         value = ele.value.capitalize()
         self._variables.update({"value": value})
@@ -260,36 +256,29 @@ class Placeholders(basePlaceholder):
         self._variables.update({"date": date})
         model_username = username
         self._variables.update({"model_username": model_username})
-        self._variables.update({"modelusername": model_username})
         responsetype = ele.modified_responsetype
-        self._variables.update({"responsetype": responsetype})
         self._variables.update({"response_type": responsetype})
         label = ele.label_string
         self._variables.update({"label": label})
         downloadtype = ele.downloadtype
-        self._variables.update({"downloadtype": downloadtype})
         self._variables.update({"download_type": downloadtype})
         self._variables.update({"media_id": media_id})
-        self._variables.update({"mediaid": media_id})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
         self._variables.update({"quality": await ele.selected_quality})
-        self._variables.update({"filename": await ele.final_filename})
         self._variables.update({"file_name": await ele.final_filename})
         self._variables.update({"original_filename": ele.filename})
-        self._variables.update({"originalfilename": ele.filename})
         self._variables.update({"only_file_name": ele.no_quality_final_filename})
         self._variables.update({"only_filename": ele.no_quality_final_filename})
         self._variables.update({"text": ele.file_text})
         self._variables.update({"config": config_file.open_config()})
         self._variables.update({"args": read_args.retriveArgs()})
 
-        self.add_price_variables(username)
-
     @basePlaceholder.async_wrapper
-    async def getmediadir(self, ele, root=None, create=True):
+    async def getmediadir(self, root=None, create=True):
+        ele = self._ele
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or common_paths.get_save_location(mediatype=self.ele))
+        root = pathlib.Path(root or common_paths.get_save_location(mediatype=self._ele))
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
@@ -324,7 +313,9 @@ class Placeholders(basePlaceholder):
         return final_path
 
     @basePlaceholder.async_wrapper
-    async def createfilename(self, ele, ext):
+    async def createfilename(self):
+        ele = self._ele
+        ext = self._ext
         username = ele.username
         model_id = ele.model_id
         self._variables.update({"ext": ext})

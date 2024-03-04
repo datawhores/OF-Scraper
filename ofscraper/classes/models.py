@@ -137,6 +137,17 @@ class Model:
     def last_seen(self):
         return self._model.get("lastSeen")
 
+    # active subscription
+    @property
+    def last_post_date(self):
+        if self.subscribed_data and self.subscribed_data["status"] == "Set to Expire":
+            return True
+        elif self.renewed:
+            return True
+        elif arrow.get(self.final_expired) > dates.getDateNow():
+            return True
+        return False
+
     @property
     def isRealPerformer(self):
         return self._model.get("isRealPerformer")
