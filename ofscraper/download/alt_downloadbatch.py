@@ -196,7 +196,7 @@ async def alt_download_downloader(
                 if data:
                     return await main_data_handler(data, item, c, ele, placeholderObj)
                 else:
-                    return alt_data_handler(item, c, ele, placeholderObj)
+                    return await alt_data_handler(item, c, ele, placeholderObj)
             except OSError as E:
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
