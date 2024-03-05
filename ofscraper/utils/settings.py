@@ -1,5 +1,6 @@
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
+import ofscraper.utils.constants as constants
 
 
 def not_solo_thread():
@@ -110,4 +111,12 @@ def get_discord():
 
 
 def get_log():
-    return read_args.retriveArgs().log and read_args.retriveArgs().log != "OFF"
+    return constants.getattr("DEFAULT_LOG_LEVEL") or (
+        read_args.retriveArgs().log and read_args.retriveArgs().log != "OFF"
+    )
+
+
+def get_log_level():
+    if read_args.retriveArgs().log:
+        return read_args.retriveArgs().log
+    return constants.getattr("DEFAULT_LOG_LEVEL")

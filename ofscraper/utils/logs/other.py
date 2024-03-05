@@ -130,10 +130,7 @@ def start_other_helper():
 
 # updates stream for main process
 def updateOtherLoggerStream():
-    if (
-        read_args.retriveArgs().discord == "OFF"
-        and read_args.retriveArgs().log == "OFF"
-    ):
+    if read_args.retriveArgs().discord == "OFF" and settings.get_log_level() == "OFF":
         return
     dates.resetLogDateVManager()
     stream = open(
@@ -159,20 +156,20 @@ def init_other_logger(name):
     cord.setFormatter(log_class.SensitiveFormatter("%(message)s"))
     # console
     log.addHandler(cord)
-    if read_args.retriveArgs().log != "OFF":
+    if settings.get_log_level() != "OFF":
         stream = open(
             common_paths.getlogpath(),
             encoding="utf-8",
             mode="a",
         )
         fh = logging.StreamHandler(stream)
-        fh.setLevel(log_helpers.getLevel(read_args.retriveArgs().log))
+        fh.setLevel(log_helpers.getLevel(settings.get_log_level()))
         fh.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh.addFilter(log_class.NoTraceBack())
         log.addHandler(fh)
-    if read_args.retriveArgs().log in {"TRACE", "DEBUG"}:
+    if settings.get_log_level() in {"TRACE", "DEBUG"}:
         fh2 = logging.StreamHandler(stream)
-        fh2.setLevel(log_helpers.getLevel(read_args.retriveArgs().log))
+        fh2.setLevel(log_helpers.getLevel(settings.get_log_level()))
         fh2.setFormatter(log_class.LogFileFormatter(format, "%Y-%m-%d %H:%M:%S"))
         fh2.addFilter(log_class.TraceBackOnly())
         log.addHandler(fh2)

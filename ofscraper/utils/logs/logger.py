@@ -7,6 +7,7 @@ import ofscraper.utils.logs.globals as log_globals
 import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.logs.other as log_others
 import ofscraper.utils.logs.stdout as log_stdout
+import ofscraper.utils.settings as settings
 
 
 def add_widget(widget):
@@ -39,7 +40,7 @@ def get_shared_logger(main_=None, other_=None, name=None):
     # add a handler that uses the shared queue
     logger.addHandler(mainhandle)
     discord_level = log_helpers.getNumber(read_args.retriveArgs().discord)
-    file_level = log_helpers.getNumber(read_args.retriveArgs().log)
+    file_level = log_helpers.getNumber(settings.get_log_level())
     other_ = other_ or log_globals.otherqueue_
     if hasattr(main_, "get") and hasattr(main_, "put_nowait"):
         otherhandle = QueueHandler(other_)

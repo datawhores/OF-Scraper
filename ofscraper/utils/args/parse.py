@@ -44,7 +44,7 @@ def create_parser(input=None):
         "--log",
         help="set log file level",
         type=str.upper,
-        default="OFF",
+        default=None,
         choices=["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
     ),
     output.add_argument(
