@@ -33,7 +33,7 @@ def mp4decryptexecutecheck(x):
         ):
             return True
     except Exception as E:
-        log.error("issue executing path as mp4decrypt")
+        log.error(f"issue executing path as mp4decrypt: {x}")
         log.error(E)
         log.error(traceback.format_exc())
         time.sleep(2)
@@ -46,7 +46,7 @@ def ffmpegchecker(x):
 
 def ffmpegpathcheck(x):
     if not pathlib.Path(x).is_file():
-        log.error("path to ffmpeg is not valid")
+        log.error(f"path to ffmpeg is not valid :{x}")
         return False
     return True
 
@@ -60,7 +60,7 @@ def ffmpegexecutecheck(x):
         ):
             return True
     except Exception as E:
-        log.error("issue executing path as ffmpeg")
+        log.error(f"issue executing path as ffmpeg: {x}")
         log.error(E)
         log.error(traceback.format_exc())
         time.sleep(2)

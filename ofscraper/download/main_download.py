@@ -317,7 +317,7 @@ async def download_fileobject_writer(
                     partial(
                         progress.update,
                         task1,
-                        completed=pathlib.Path(placeholderObj.tempfilepath)
+                        completed=pathlib.Path(placeholderObj, mp.tempfilepath)
                         .absolute()
                         .stat()
                         .st_size,
