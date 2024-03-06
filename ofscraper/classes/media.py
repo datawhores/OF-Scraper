@@ -37,6 +37,9 @@ class Media:
         self._final_url = None
         self._cached_parse_mpd = None
 
+    def __eq__(self, other):
+        return self.postid == other.postid
+
     @property
     def expires(self):
         return self._post.expires

@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import logging
 import pathlib
 import textwrap
 import traceback
@@ -8,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 import aiofiles
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
@@ -25,6 +25,7 @@ async def get_text(values):
 
 
 async def get_text_process(ele):
+    log = logging.getLogger("shared")
     try:
         if "Text" not in settings.get_mediatypes():
             return
@@ -32,7 +33,7 @@ async def get_text_process(ele):
             return
         # make new text mediatype
         new_ele = copy.deepcopy(ele)
-        new_ele.mediatype = "texts"
+        new_ele.mediatype = "text"
 
         placeholderObj = placeholder.Placeholders(new_ele, "txt")
         await placeholderObj.init()
@@ -44,5 +45,5 @@ async def get_text_process(ele):
         async with aiofiles.open(placeholderObj.filepath, "w") as p:
             await p.writelines(wrapped_text)
     except Exception as E:
-        common_globals.log.traceback_(f"{E}")
-        common_globals.log.traceback_(f"{traceback.format_exc()}")
+        log.traceback_(f"{E}")
+        log.traceback_(f"{traceback.format_exc()}")

@@ -90,9 +90,9 @@ class tempFilePlaceholder(basePlaceholder):
         self._tempname = tempname
 
     async def init(self):
-        self._tempfilepath = paths.truncate(
-            pathlib.Path(await self.gettempDir(self._ele), self._tempname)
-        )
+        dir = await self.gettempDir(self._ele)
+        file = self._tempname
+        self._tempfilepath = paths.truncate(pathlib.Path(dir, file))
 
     @basePlaceholder.async_wrapper
     async def gettempDir(self, ele, create=True):
@@ -190,12 +190,9 @@ class Placeholders(basePlaceholder):
         self._ext = ext
 
     async def init(self):
-        self._filepath = self._filepath = paths.truncate(
-            pathlib.Path(
-                await self.getmediadir(),
-                await self.createfilename(),
-            )
-        )
+        dir = await self.getmediadir()
+        file = await self.createfilename()
+        self._filepath = paths.truncate(pathlib.Path(dir, file))
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)

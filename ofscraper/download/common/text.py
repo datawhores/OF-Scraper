@@ -12,7 +12,7 @@ def textDownloader(mediadicts):
             log.info("Skipping Downloading of Text Files")
             return
         log.info("Downloading Text Files")
-        data = set(map(lambda x: x.postid, mediadicts))
+        data = ({e.postid: e for e in mediadicts}).values()
         text.get_text(data)
     except Exception as E:
         log.debug(f"Issue with text {E}")
