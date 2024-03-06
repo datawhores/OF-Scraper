@@ -25,7 +25,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
-import ofscraper.utils.system as system
+import ofscraper.utils.system.free as system
 from ofscraper.download.common.log import *
 from ofscraper.download.common.message import *
 from ofscraper.download.common.metadata import *
