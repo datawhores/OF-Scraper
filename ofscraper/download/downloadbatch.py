@@ -381,11 +381,9 @@ async def process_dicts_split(username, model_id, medialist):
     )
 
     aws = []
-
     async with sessionbuilder.sessionBuilder() as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
-
         for coro in asyncio.as_completed(aws):
             try:
                 pack = await coro
