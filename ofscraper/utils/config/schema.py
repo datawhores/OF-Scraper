@@ -75,6 +75,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "audios": data.get_audios_overwrites(config=config),
             "videos": data.get_videos_overwrites(config=config),
             "images": data.get_images_overwrites(config=config),
+            "text": data.get_text_overwrites(config=config),
         },
     }
     return new_config

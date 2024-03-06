@@ -682,6 +682,15 @@ def get_images_overwrites(config=None):
 
 
 @wrapper.config_reader
+def get_text_overwrites(config=None):
+    if config == False:
+        return constants.EMPTY_MEDIA_DEFAULT
+    return config.get("overwrites", {}).get("text") or constants_attr.getattr(
+        "EMPTY_MEDIA_DEFAULT"
+    )
+
+
+@wrapper.config_reader
 def get_max_post_count(config=None):
     if config == False:
         return constants.MAX_COUNT_DEFAULT
