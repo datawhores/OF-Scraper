@@ -130,7 +130,6 @@ def scrape_paid(user_dict=None):
         selector.set_ALL_SUBS_DICTVManger(
             {username: models.Model(profile.scrape_profile(model_id))}
         )
-        get_text(value)
         download.download_process(
             username,
             model_id,
