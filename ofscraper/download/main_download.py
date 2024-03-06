@@ -311,19 +311,18 @@ async def download_fileobject_writer(
             common_globals.log.trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
-            if count == constants.getattr("CHUNK_ITER"):
+            if (count + 1) % constants.getattr("CHUNK_ITER") == 0:
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
                         progress.update,
                         task1,
-                        completed=pathlib.Path(placeholderObj, mp.tempfilepath)
+                        completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()
                         .stat()
                         .st_size,
                     ),
                 )
-                count = 0
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         await update_total(-total)
