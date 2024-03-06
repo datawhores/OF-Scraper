@@ -190,7 +190,7 @@ class Placeholders(basePlaceholder):
         self._ext = ext
 
     async def init(self):
-        self._filepath = self._filepath = paths.truncate(
+        self._filepath = paths.truncate(
             pathlib.Path(
                 await self.getmediadir(),
                 await self.createfilename(),
