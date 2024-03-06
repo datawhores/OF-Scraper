@@ -38,7 +38,6 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.utils.text import get_text
 
 log = logging.getLogger("shared")
 
