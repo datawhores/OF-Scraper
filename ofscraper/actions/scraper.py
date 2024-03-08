@@ -13,7 +13,8 @@ r"""
 
 import asyncio
 import logging
-from concurrent.futures import ThreadPoolExecutor
+import platform
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from rich.live import Live
 
@@ -34,7 +35,6 @@ import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
-import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
@@ -460,10 +460,13 @@ async def process_labels(model_id, username):
 
 
 async def process_areas(ele, model_id) -> list:
-    from concurrent.futures import ProcessPoolExecutor
-
+    executor = (
+        ProcessPoolExecutor()
+        if platform.system() != "Windows"
+        else ThreadPoolExecutor()
+    )
     try:
-        with ProcessPoolExecutor() as executor:
+        with executor:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             final_post_areas = set(areas.get_download_area())
