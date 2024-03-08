@@ -16,7 +16,6 @@ import logging
 import platform
 import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from functools import partial
 
 from rich.live import Live
 
@@ -37,6 +36,7 @@ import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
+import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
@@ -551,7 +551,7 @@ async def process_labels(model_id, username):
 async def process_areas(ele, model_id) -> list:
     executor = (
         ProcessPoolExecutor()
-        if platform.system() != "Windows"
+        if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
         else ThreadPoolExecutor()
     )
     try:
@@ -559,9 +559,7 @@ async def process_areas(ele, model_id) -> list:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             output = []
-            group = (
-                progress_utils.get_api_progress_Group()
-            )  # setattr(progress_utils.timeline_layout, "visible", False)
+            group = progress_utils.get_api_progress_Group()
             with Live(group, console=console_.get_shared_console()):
                 new_data = await process_task(model_id, username, ele)
                 output.extend(new_data)

@@ -30,7 +30,7 @@ def get_api_progress_Group():
     setup_layout()
 
     layout = Layout(name="parent")
-    layout.split_column(Layout(name="upper"), Layout(name="lower"))
+    layout.split_column(Layout(name="upper", ratio=1), Layout(name="lower", ratio=1))
     layout["upper"].split_row(
         timeline_layout,
         pinned_layout,
