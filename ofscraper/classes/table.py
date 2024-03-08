@@ -13,7 +13,7 @@ from textual.widgets import (
     DataTable,
     Input,
     Label,
-    TextLog,
+    RichLog,
 )
 
 import ofscraper.utils.logs.logger as logger
@@ -22,7 +22,7 @@ log = logging.getLogger("shared")
 
 
 # console=console_.get_shared_console()
-class OutConsole(TextLog):
+class OutConsole(RichLog):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
