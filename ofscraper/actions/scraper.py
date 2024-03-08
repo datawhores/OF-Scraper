@@ -40,6 +40,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
+import ofscraper.utils.system.system as system
 from ofscraper.download.common.common import textDownloader
 
 log = logging.getLogger("shared")
@@ -584,11 +585,12 @@ async def process_task(model_id, username, ele):
     output = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
+    MAX_COUNT = min(constants.getattr("API_MAX_AREAS"), system.getcpu_count())
 
     while True:
         if not bool(tasks) and not bool(final_post_areas):
             break
-        for i in range(3 - len(tasks)):
+        for i in range(MAX_COUNT - len(tasks)):
             if "Profile" in final_post_areas:
                 tasks.append(asyncio.create_task(process_profile(username)))
                 final_post_areas.remove("Profile")
