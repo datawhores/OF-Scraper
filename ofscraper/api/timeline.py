@@ -11,7 +11,6 @@ import contextvars
 import logging
 import math
 import traceback
-from functools import partial
 
 import arrow
 from tenacity import (
@@ -275,12 +274,9 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     log.debug(E)
                     continue
                 page_count = page_count + 1
-                progress_utils.shared_queue.put(
-                    partial(
-                        overall_progress.update,
-                        page_task,
-                        description=f"Timeline Content Pages Progress: {page_count}",
-                    )
+                overall_progress.update(
+                    page_task,
+                    description=f"Timeline Content Pages Progress: {page_count}",
                 )
                 responseArray.extend(result)
             tasks = list(pending)

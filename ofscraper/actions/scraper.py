@@ -13,12 +13,8 @@ r"""
 
 import asyncio
 import logging
-import threading
-import time
-from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 
-import aioprocessing
-import more_itertools
 from rich.live import Live
 
 import ofscraper.api.archive as archive
@@ -36,16 +32,12 @@ import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
-import ofscraper.utils.manager as manager_
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as free
-import ofscraper.utils.system.system as system
 
 log = logging.getLogger("shared")
 
@@ -467,117 +459,67 @@ async def process_labels(model_id, username):
         return [item for sublist in output for item in sublist]
 
 
-def multi_process_area_helper(functions, output, args, shared_queue):
-    write_args.setArgs(args)
-    progress_utils.shared_queue = shared_queue
-
-    async def inner():
-        for function in functions:
-            data = await function()
-            output.extend(data)
-
-    asyncio.run(inner())
-
-
-def queue_reader(stop_count=1):
-    count = 0
-    import ofscraper.utils.progress as progress_utils
-
-    while True:
-        if count == stop_count:
-            break
-        data = progress_utils.shared_queue.get()
-        print(data)
-
-
 async def process_areas(ele, model_id) -> list:
-    try:
-        username = ele.name
-        final_post_areas = set(areas.get_download_area())
-        manager = manager_.get_manager()
-        output = manager.list()
-        group = progress_utils.get_api_progress_Group()
-        count = settings.get_threads()
-        functions = []
-        # functions.append(
-        #     partial(process_profile,username)
-        # ) if "Profile" in final_post_areas else None
-        # functions.append(
-        #     partial(process_pinned_posts,model_id, username)
-        # ) if "Pinned" in final_post_areas else None  # setattr(progress_utils.pinned_layout, "visible", False)
-        functions.append(
-            partial(process_timeline_posts, model_id, username)
-        ) if "Timeline" in final_post_areas else None  # setattr(progress_utils.timeline_layout, "visible", False)
-        # functions.append(
-        #     partial(process_archived_posts,model_id, username)
-        # ) if "Archived" in final_post_areas else None  # setattr(progress_utils.archived_layout, "visible", False)
-        # functions.append(
-        #     partial(process_messages,model_id, username)
-        # ) if "Messages" in final_post_areas else None  # setattr(progress_utils.archived_layout, "visible", False))
-        # functions.append(partial(process_labels,model_id, username)) if (
-        #     "Labels" in final_post_areas and ele.active
-        # ) else None  # setattr(progress_utils.labelled_layout, "visible", False)
-        # functions.append(
-        #     partial(process_paid_post,model_id, username)
-        # ) if (
-        #     "Purchased" in final_post_areas
-        # ) else None  # setattr(progress_utils.paid_layout, "visible", False)
-        # functions.append(
-        #     partial(process_highlights,model_id, username)
-        # ) if (
-        #     "Highlights" in final_post_areas
-        # ) else None  # setattr(progress_utils.highlights_layout, "visible", False)
-        # functions.append(partial(process_stories,model_id, username)) if (
-        #     "Stories" in final_post_areas
-        # ) else None  # setattr(progress_utils.stories_layout, "visible", False)
-        functions_split = more_itertools.divide(
-            max(1, min(system.getcpu_count(), settings.get_threads(), len(functions))),
-            functions,
-        )
-        processes = [
-            aioprocessing.AioProcess(
-                target=multi_process_area_helper,
-                args=(
-                    functions_split[i],
-                    output,
-                    read_args.retriveArgs(),
-                    progress_utils.shared_queue,
-                ),
-            )
-            for i in range(len(functions_split))
-        ]
-        [process.start() for process in processes]
-        # thread= threading.Thread(target=queue_reader)
-        # thread.start()
-        with Live(group, refresh_per_second=5, console=console_.get_shared_console()):
-            while True:
-                new_proceess = list(filter(lambda x: x and x.is_alive(), processes))
-                if len(new_proceess) != len(processes):
-                    log.debug(f"Remaining Processes: {new_proceess}")
-                    log.debug(f"Number of Processes: {len(new_proceess)}")
-                if len(new_proceess) == 0:
-                    break
-                processes = new_proceess
-                for process in processes:
-                    process.join(timeout=15)
-                    if process.is_alive():
-                        process.terminate()
-                time.sleep(0.5)
+    from concurrent.futures import ProcessPoolExecutor
 
-                # while tasks:
-                #     done, pending = await asyncio.wait(
-                #         tasks, return_when=asyncio.FIRST_COMPLETED
-                #     )
-                #     asyncio.sleep(0)
-                #     for results in done:
-                #         try:
-                #             result = await results
-                #         except Exception as E:
-                #             log.debug(E)
-                #             continue
-                #         output.extend(result)
-                #     tasks = list(pending)
-        thread.join()
+    try:
+        with ProcessPoolExecutor() as executor:
+            asyncio.get_event_loop().set_default_executor(executor)
+            username = ele.name
+            final_post_areas = set(areas.get_download_area())
+            tasks = []
+            output = []
+            group = progress_utils.get_api_progress_Group()
+
+            tasks.append(
+                asyncio.create_task(process_profile(username))
+            ) if "Profile" in final_post_areas else None
+            tasks.append(
+                asyncio.create_task(process_pinned_posts(model_id, username))
+            ) if "Pinned" in final_post_areas else None  # setattr(progress_utils.pinned_layout, "visible", False)
+            tasks.append(
+                asyncio.create_task(process_timeline_posts(model_id, username))
+            ) if "Timeline" in final_post_areas else None  # setattr(progress_utils.timeline_layout, "visible", False)
+            tasks.append(
+                asyncio.create_task(process_archived_posts(model_id, username))
+            ) if "Archived" in final_post_areas else None  # setattr(progress_utils.archived_layout, "visible", False)
+            tasks.append(
+                asyncio.create_task(process_messages(model_id, username))
+            ) if "Messages" in final_post_areas else None  # setattr(progress_utils.archived_layout, "visible", False))
+            tasks.append(asyncio.create_task(process_labels(model_id, username))) if (
+                "Labels" in final_post_areas and ele.active
+            ) else None  # setattr(progress_utils.labelled_layout, "visible", False)
+            tasks.append(
+                asyncio.create_task(process_paid_post(model_id, username))
+            ) if (
+                "Purchased" in final_post_areas
+            ) else None  # setattr(progress_utils.paid_layout, "visible", False)
+            tasks.append(
+                asyncio.create_task(process_highlights(model_id, username))
+            ) if (
+                "Highlights" in final_post_areas
+            ) else None  # setattr(progress_utils.highlights_layout, "visible", False)
+            tasks.append(asyncio.create_task(process_stories(model_id, username))) if (
+                "Stories" in final_post_areas
+            ) else None  # setattr(progress_utils.stories_layout, "visible", False)
+
+            with Live(
+                group, refresh_per_second=5, console=console_.get_shared_console()
+            ):
+                while tasks:
+                    done, pending = await asyncio.wait(
+                        tasks, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    asyncio.sleep(0)
+                    for results in done:
+                        try:
+                            result = await results
+                        except Exception as E:
+                            log.debug(E)
+                            continue
+                        output.extend(result)
+                    tasks = list(pending)
+
         return filters.filterMedia(output)
     except Exception as E:
         print(E)
