@@ -27,7 +27,7 @@ diskcache = "^5.6.1"
 ffmpeg-python = "^0.2.0"
 dunamai = "^1.17.0"
 poetry-dynamic-versioning = "^0.22.0"
-textual = "^0.27.0"
+textual = "0.52.1"
 aiohttp = { extras = ["speedups"], version = "^3.8.5" }
 faust-cchardet = "^2.1.18"
 certifi = "^2023.5.7"
