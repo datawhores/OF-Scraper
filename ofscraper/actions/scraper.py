@@ -207,6 +207,7 @@ async def process_highlights(model_id, username):
                 model_id=model_id,
                 username=username,
             )
+            await textDownloader(highlights_)
 
             log.debug(
                 f"[bold]highlight media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}"
@@ -253,6 +254,7 @@ async def process_timeline_posts(model_id, username):
                 model_id=model_id,
                 username=username,
             )
+            await textDownloader(timeline_posts)
             log.debug(
                 f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}"
             )
@@ -311,6 +313,7 @@ async def process_archived_posts(model_id, username):
                 model_id=model_id,
                 username=username,
             )
+            await textDownloader(archived_posts)
             log.debug(
                 f"[bold]Archived media count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}"
             )
@@ -365,6 +368,7 @@ async def process_pinned_posts(model_id, username):
                 model_id=model_id,
                 username=username,
             )
+            await textDownloader(pinned_posts)
             log.debug(
                 f"[bold]Pinned media count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}"
             )
@@ -412,11 +416,13 @@ async def process_profile(username) -> list:
                             "url": data["url"],
                             "type": data["mediatype"],
                             "id": data["mediaid"],
+                            "text": data["text"],
                         },
                         count,
                         posts_.Post(data, info[2], username, responsetype="profile"),
                     )
                 )
+            await textDownloader(output)
             return output
     except Exception as E:
         try:
