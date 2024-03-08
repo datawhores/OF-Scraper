@@ -212,7 +212,7 @@ async def get_labelled_posts(labels, username):
             tasks.extend(new_tasks)
             new_tasks = []
         overall_progress.remove_task(page_task)
-        # layout=None
+        layout.visible = False
     log.trace(
         "post label joined {posts}".format(
             posts="\n\n".join(

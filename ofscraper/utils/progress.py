@@ -15,31 +15,6 @@ stories_progress = None
 highlights_progress = None
 messages = None
 shared_data = None
-shared_queue = None
-# layout=None
-
-
-def set_up_manager():
-    global shared_data
-    shared_data = {
-        "timeline_progress": timeline_progress,
-        "pinned_progress": pinned_progress,
-        "overall_progress": overall_progress,
-        "archived_progress": archived_progress,
-        "messages_progress": messages_progress,
-        "paid_progress": paid_progress,
-        "labelled_progress": labelled_progress,
-        "highlights_progress": highlights_progress,
-        "stories_progress": stories_progress,
-        "timeline_layout": timeline_layout,
-        "pinned_layout": pinned_layout,
-        "archived_layout": archived_layout,
-        "labelled_layout": labelled_layout,
-        "messages_layout": messages_layout,
-        "paid_layout": paid_layout,
-        "stories_layout": stories_layout,
-        "highlights_layout": highlights_layout,
-    }
 
 
 def get_api_progress_Group():
@@ -51,19 +26,24 @@ def get_api_progress_Group():
     global paid_layout
     global stories_layout
     global highlights_layout
-    global shared_queue
-    shared_queue = aioprocessing.AioQueue()
     set_up_progress()
     setup_layout()
-    set_up_manager()
 
     layout = Layout(name="parent")
     layout.split_column(Layout(name="upper"), Layout(name="lower"))
     layout["upper"].split_row(
-        timeline_layout, pinned_layout, archived_layout, labelled_layout
+        timeline_layout,
+        pinned_layout,
+        archived_layout,
+        labelled_layout,
+        Layout(name="OF-Scraper", size=0, ratio=0),
     ),
     layout["lower"].split_row(
-        messages_layout, paid_layout, stories_layout, highlights_layout
+        messages_layout,
+        paid_layout,
+        stories_layout,
+        highlights_layout,
+        Layout(name="OF-Scaper", size=0, ratio=0),
     )
 
     progress_group = Group(overall_progress, layout)
@@ -89,21 +69,41 @@ def setup_layout():
     global stories_layout
     global highlights_layout
 
-    timeline_layout = Layout(Panel(timeline_progress), name="timeline")
-    pinned_layout = Layout(Panel(pinned_progress), name="pinned")
-    archived_layout = Layout(Panel(archived_progress), name="archived")
-    labelled_layout = Layout(Panel(labelled_progress), name="labelled")
-    messages_layout = Layout(Panel(messages_progress), name="messages")
-    paid_layout = Layout(Panel(paid_progress), name="paid")
-    stories_layout = Layout(Panel(stories_progress), name="stories")
-    highlights_layout = Layout(Panel(highlights_progress), name="highlights")
+    timeline_layout = Layout(
+        Panel(timeline_progress, title="Timeline Info"), name="timeline"
+    )
+    pinned_layout = Layout(Panel(pinned_progress, title="Pinned Info"), name="pinned")
+    archived_layout = Layout(
+        Panel(archived_progress, title="Archived Info"), name="archived"
+    )
+    labelled_layout = Layout(
+        Panel(labelled_progress, title="Labelled Info"), name="labelled"
+    )
+    messages_layout = Layout(
+        Panel(messages_progress, title="Messages Info"), name="messages"
+    )
+    paid_layout = Layout(Panel(paid_progress, title="Paid Info"), name="paid")
+    stories_layout = Layout(
+        Panel(stories_progress, title="Stories Info"), name="stories"
+    )
+    highlights_layout = Layout(
+        Panel(highlights_progress, title="Highlights Info"), name="highlights"
+    )
+
+    timeline_layout.visible = False
+    pinned_layout.visible = False
+    archived_layout.visible = False
+    labelled_layout.visible = False
+    messages_layout.visible = False
+    paid_layout.visible = False
+    stories_layout.visible = False
+    highlights_layout.visible = False
 
 
 def set_up_progress():
     global timeline_progress
     global pinned_progress
     global overall_progress
-    global layout
     global archived_progress
     global messages_progress
     global paid_progress

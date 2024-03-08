@@ -73,7 +73,7 @@ async def get_stories_post(model_id):
             tasks.extend(new_tasks)
             new_tasks = []
         overall_progress.remove_task(page_task)
-        # layout=None
+        layout.visible = False
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
@@ -223,7 +223,7 @@ async def get_highlight_post(model_id):
             tasks.extend(new_tasks)
             new_tasks = []
         overall_progress.remove_task(page_task)
-        # layout=None
+        layout.visible = False
 
     log.trace(
         "highlight raw unduped {posts}".format(

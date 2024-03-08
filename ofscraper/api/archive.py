@@ -281,7 +281,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
             tasks.extend(new_tasks)
             new_tasks = []
         overall_progress.remove_task(page_task)
-        # layout=None
+        layout.visible = False
         unduped = {}
         log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
         for post in responseArray:

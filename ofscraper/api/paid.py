@@ -49,7 +49,7 @@ async def get_paid_posts(username, model_id):
 
     page_count = 0
     job_progress = progress_utils.paid_progress
-    overall_progress = progress_utils.paid_progress
+    overall_progress = progress_utils.overall_progress
     layout = progress_utils.paid_layout
 
     async with sessionbuilder.sessionBuilder() as c:
@@ -75,8 +75,8 @@ async def get_paid_posts(username, model_id):
             tasks = list(pending)
             tasks.extend(new_tasks)
             new_tasks = []
-        # overall_progress.remove_task(page_task)
-        # layout=None
+        overall_progress.remove_task(page_task)
+        layout.visible = False
     outdict = {}
     for post in output:
         outdict[post["id"]] = post

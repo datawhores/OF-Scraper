@@ -250,7 +250,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
             tasks.extend(new_tasks)
             new_tasks = []
         overall_progress.remove_task(page_task)
-        # layout=None
+        layout.visible = False
 
     unduped = {}
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
