@@ -11,14 +11,8 @@ import contextvars
 import logging
 import math
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 
 import arrow
-from rich.console import Group
-from rich.live import Live
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
 from tenacity import (
     AsyncRetrying,
     retry,
@@ -32,8 +26,8 @@ import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
+import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
@@ -166,143 +160,128 @@ async def scrape_archived_posts(
             return posts
 
 
-@run
 async def get_archived_media(model_id, username, forced_after=None):
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-        overall_progress = Progress(
-            SpinnerColumn(style=Style(color="blue")),
-            TextColumn("Getting archived media...\n{task.description}"),
+    global tasks
+    global new_tasks
+    tasks = []
+    new_tasks = []
+    min_posts = 50
+    responseArray = []
+    page_count = 0
+    job_progress = progress_utils.archived_progress
+    overall_progress = progress_utils.overall_progress
+    layout = progress_utils.archived_layout
+
+    async with sessionbuilder.sessionBuilder() as c:
+        oldarchived = (
+            operations.get_archived_postinfo(model_id=model_id, username=username)
+            if not read_args.retriveArgs().no_cache
+            else []
         )
-        job_progress = Progress("{task.description}")
-        progress_group = Group(overall_progress, Panel(Group(job_progress)))
-        global tasks
-        global new_tasks
-        tasks = []
-        new_tasks = []
-        min_posts = 50
-        responseArray = []
-        page_count = 0
 
-        with Live(
-            progress_group, refresh_per_second=5, console=console.get_shared_console()
-        ):
-            async with sessionbuilder.sessionBuilder() as c:
-                oldarchived = (
-                    operations.get_archived_postinfo(
-                        model_id=model_id, username=username
-                    )
-                    if not read_args.retriveArgs().no_cache
-                    else []
+        log.trace(
+            "oldarchive {posts}".format(
+                posts="\n\n".join(
+                    list(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
                 )
+            )
+        )
+        log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+        oldarchived = list(filter(lambda x: x != None, oldarchived))
+        postedAtArray = sorted(oldarchived, key=lambda x: x[0])
 
-                log.trace(
-                    "oldarchive {posts}".format(
-                        posts="\n\n".join(
-                            list(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
-                        )
-                    )
-                )
-                log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-                oldarchived = list(filter(lambda x: x != None, oldarchived))
-                postedAtArray = sorted(oldarchived, key=lambda x: x[0])
-
-                after = get_after(model_id, username, forced_after)
-                # set check
-                log.info(
-                    f"""
+        after = get_after(model_id, username, forced_after)
+        # set check
+        log.info(
+            f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
 [yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all archived posts + download/re-download of all files[/yellow]
-                """
-                )
-                filteredArray = (
-                    list(filter(lambda x: x[0] >= after, postedAtArray))
-                    if len(postedAtArray) > 0
-                    else []
-                )
+        """
+        )
+        filteredArray = (
+            list(filter(lambda x: x[0] >= after, postedAtArray))
+            if len(postedAtArray) > 0
+            else []
+        )
 
-                if len(filteredArray) > min_posts:
-                    splitArrays = [
-                        filteredArray[i : i + min_posts]
-                        for i in range(0, len(filteredArray), min_posts)
-                    ]
-                    # use the previous split for timesamp
-                    tasks.append(
-                        asyncio.create_task(
-                            scrape_archived_posts(
-                                c,
-                                model_id,
-                                job_progress,
-                                required_ids=set(
-                                    list(map(lambda x: x[0], splitArrays[0]))
-                                ),
-                                timestamp=read_args.retriveArgs().after.float_timestamp
-                                if read_args.retriveArgs().after
-                                else None,
-                            )
-                        )
+        if len(filteredArray) > min_posts:
+            splitArrays = [
+                filteredArray[i : i + min_posts]
+                for i in range(0, len(filteredArray), min_posts)
+            ]
+            # use the previous split for timesamp
+            tasks.append(
+                asyncio.create_task(
+                    scrape_archived_posts(
+                        c,
+                        model_id,
+                        job_progress,
+                        required_ids=set(list(map(lambda x: x[0], splitArrays[0]))),
+                        timestamp=read_args.retriveArgs().after.float_timestamp
+                        if read_args.retriveArgs().after
+                        else None,
                     )
-                    [
-                        tasks.append(
-                            asyncio.create_task(
-                                scrape_archived_posts(
-                                    c,
-                                    model_id,
-                                    job_progress,
-                                    required_ids=set(
-                                        list(map(lambda x: x[0], splitArrays[i]))
-                                    ),
-                                    timestamp=splitArrays[i - 1][-1][0],
-                                )
-                            )
-                        )
-                        for i in range(1, len(splitArrays) - 1)
-                    ]
-                    # keeping grabbing until nothing left
-                    tasks.append(
-                        asyncio.create_task(
-                            scrape_archived_posts(
-                                c,
-                                model_id,
-                                job_progress,
-                                timestamp=splitArrays[-2][-1][0],
-                            )
-                        )
-                    )
-                else:
-                    tasks.append(
-                        asyncio.create_task(
-                            scrape_archived_posts(
-                                c, model_id, job_progress, timestamp=after
-                            )
-                        )
-                    )
-
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
                 )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            result = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
+            )
+            [
+                tasks.append(
+                    asyncio.create_task(
+                        scrape_archived_posts(
+                            c,
+                            model_id,
+                            job_progress,
+                            required_ids=set(list(map(lambda x: x[0], splitArrays[i]))),
+                            timestamp=splitArrays[i - 1][-1][0],
                         )
-                        responseArray.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-                overall_progress.remove_task(page_task)
+                    )
+                )
+                for i in range(1, len(splitArrays) - 1)
+            ]
+            # keeping grabbing until nothing left
+            tasks.append(
+                asyncio.create_task(
+                    scrape_archived_posts(
+                        c,
+                        model_id,
+                        job_progress,
+                        timestamp=splitArrays[-2][-1][0],
+                    )
+                )
+            )
+        else:
+            tasks.append(
+                asyncio.create_task(
+                    scrape_archived_posts(c, model_id, job_progress, timestamp=after)
+                )
+            )
+
+        page_task = overall_progress.add_task(
+            f" Archived Content Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            await asyncio.sleep(0)
+
+            for result in done:
+                try:
+                    result = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Archived Content Pages Progress: {page_count}",
+                )
+                responseArray.extend(result)
+            tasks = list(pending)
+            tasks.extend(new_tasks)
+            new_tasks = []
+        overall_progress.remove_task(page_task)
+        # layout=None
         unduped = {}
         log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
         for post in responseArray:

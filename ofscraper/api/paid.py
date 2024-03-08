@@ -16,11 +16,6 @@ import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
-from rich.console import Group
-from rich.live import Live
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
 from tenacity import (
     AsyncRetrying,
     retry,
@@ -30,10 +25,10 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
+import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
@@ -43,72 +38,57 @@ attempt = contextvars.ContextVar("attempt")
 sem = None
 
 
-@run
 async def get_paid_posts(username, model_id):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    output = []
+    global tasks
+    global new_tasks
+    tasks = []
+    new_tasks = []
 
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
+    page_count = 0
+    job_progress = progress_utils.paid_progress
+    overall_progress = progress_utils.paid_progress
+    layout = progress_utils.paid_layout
 
-        overall_progress = Progress(
-            SpinnerColumn(style=Style(color="blue")),
-            TextColumn("Getting paid media...\n{task.description}"),
+    async with sessionbuilder.sessionBuilder() as c:
+        tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress)))
+        page_task = overall_progress.add_task(
+            f"Paid Content Pages Progress: {page_count}", visible=True
         )
-        job_progress = Progress("{task.description}")
-        progress_group = Group(overall_progress, Panel(Group(job_progress)))
-
-        output = []
-        global tasks
-        global new_tasks
-        tasks = []
-        new_tasks = []
-
-        page_count = 0
-        with Live(
-            progress_group, refresh_per_second=5, console=console.get_shared_console()
-        ):
-            async with sessionbuilder.sessionBuilder() as c:
-                tasks.append(
-                    asyncio.create_task(scrape_paid(c, username, job_progress))
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for result in done:
+                try:
+                    result = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task, description=f"Paid Content Pages Progress: {page_count}"
                 )
-
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
-                )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            result = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-                overall_progress.remove_task(page_task)
-        outdict = {}
-        for post in output:
-            outdict[post["id"]] = post
-        log.trace(
-            "paid raw unduped {posts}".format(
-                posts="\n\n".join(
-                    list(map(lambda x: f"undupedinfo paid: {str(x)}", outdict.values()))
-                )
+                output.extend(result)
+            tasks = list(pending)
+            tasks.extend(new_tasks)
+            new_tasks = []
+        # overall_progress.remove_task(page_task)
+        # layout=None
+    outdict = {}
+    for post in output:
+        outdict[post["id"]] = post
+    log.trace(
+        "paid raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo paid: {str(x)}", outdict.values()))
             )
         )
-        set_check(outdict, model_id)
-        return list(outdict.values())
+    )
+    set_check(outdict, model_id)
+    return list(outdict.values())
 
 
 def set_check(unduped, model_id):

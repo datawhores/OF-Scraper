@@ -11,6 +11,7 @@ r"""
                                                                                       
 """
 
+import asyncio
 import logging
 import time
 import timeit
@@ -69,13 +70,13 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 @exit.exit_wrapper
 def process_post():
     if read_args.retriveArgs().users_first:
-        process_post_user_first()
+        asyncio.run(process_post_user_first())
     else:
         normal_post_process()
 
 
 @exit.exit_wrapper
-def process_post_user_first():
+async def process_post_user_first():
     with scrape_context_manager():
         if not placeholder.check_uniquename():
             log.warning(
@@ -90,26 +91,29 @@ def process_post_user_first():
         userdata = userselector.getselected_usernames(rescan=False)
         length = len(userdata)
         output = []
+        asyncio.create_task()
 
-        for count, ele in enumerate(userdata):
-            log.info(f"Data retrival progressing on model {count+1}/{length}")
-            if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                log.warning(f"Avatar : {ele.avatar}")
-            if bool(areas.get_download_area()):
-                log.info(
-                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                )
-            try:
-                model_id = ele.id
-                username = ele.name
-                operations.table_init_create(model_id=model_id, username=username)
-                results = OF.process_areas(ele, model_id)
-                output.extend(results)
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+        # log.info(f"Data retrival progressing on model {count+1}/{length}")
+
+
+async def process_user_first_helper(ele):
+    if constants.getattr("SHOW_AVATAR") and ele.avatar:
+        log.warning(f"Avatar : {ele.avatar}")
+    if bool(areas.get_download_area()):
+        log.info(
+            f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+        )
+    try:
+        model_id = ele.id
+        username = ele.name
+        operations.table_init_create(model_id=model_id, username=username)
+        results = OF.process_areas(ele, model_id, progress=False)
+        return results
+    except Exception as e:
+        if isinstance(e, KeyboardInterrupt):
+            raise e
+        log.traceback_(f"failed with exception: {e}")
+        log.traceback_(traceback.format_exc())
 
 
 def scrape_paid(user_dict=None):
@@ -165,7 +169,7 @@ def normal_post_process():
             try:
                 model_id = ele.id
                 operations.table_init_create(model_id, ele.name)
-                combined_urls = OF.process_areas(ele, model_id)
+                combined_urls = asyncio.run(OF.process_areas(ele, model_id))
                 download.download_process(ele.name, model_id, combined_urls)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):

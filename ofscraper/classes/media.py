@@ -290,7 +290,10 @@ class Media:
             filename = re.sub("_[a-z0-9]+$", f"", filename)
             filename = f"{filename}_{await self.selected_quality}"
         # cleanup
-        filename = self.cleanup(filename)
+        try:
+            filename = self.cleanup(filename)
+        except Exception as E:
+            print(E)
         return filename
 
     @property
@@ -381,7 +384,7 @@ class Media:
 
     @property
     def protected(self):
-        if self.mediatype != "videos":
+        if self.mediatype not in {"videos", "texts"}:
             return False
         elif bool(self.media_source.get("source")):
             return False

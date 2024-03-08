@@ -15,13 +15,7 @@ import asyncio
 import contextvars
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 
-from rich.console import Group
-from rich.live import Live
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
 from tenacity import (
     AsyncRetrying,
     retry,
@@ -31,8 +25,8 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
+import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
@@ -41,71 +35,60 @@ sem = None
 attempt = contextvars.ContextVar("attempt")
 
 
-@run
 async def get_stories_post(model_id):
     global sem
     sem = semaphoreDelayed(1)
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-        overall_progress = Progress(
-            SpinnerColumn(style=Style(color="blue")),
-            TextColumn("Getting story media...\n{task.description}"),
-        )
-        job_progress = Progress("{task.description}")
-        progress_group = Group(overall_progress, Panel(Group(job_progress)))
+    output = []
+    page_count = 0
+    global tasks
+    global new_tasks
+    tasks = []
+    new_tasks = []
+    job_progress = progress_utils.stories_progress
+    overall_progress = progress_utils.overall_progress
+    layout = progress_utils.stories_layout
 
-        output = []
-        page_count = 0
-        global tasks
-        global new_tasks
-        tasks = []
-        new_tasks = []
-        with Live(
-            progress_group, refresh_per_second=5, console=console.get_shared_console()
-        ):
-            async with sessionbuilder.sessionBuilder() as c:
-                tasks.append(
-                    asyncio.create_task(scrape_stories(c, model_id, job_progress))
+    async with sessionbuilder.sessionBuilder() as c:
+        tasks.append(asyncio.create_task(scrape_stories(c, model_id, job_progress)))
+        page_task = overall_progress.add_task(
+            f"Stories Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for result in done:
+                try:
+                    result = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Stories Content Pages Progress: {page_count}",
                 )
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
-                )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            result = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-            overall_progress.remove_task(page_task)
-        log.trace(
-            "stories raw unduped {posts}".format(
-                posts="\n\n".join(
-                    list(map(lambda x: f"undupedinfo stories: {str(x)}", output))
-                )
+                output.extend(result)
+            tasks = list(pending)
+            tasks.extend(new_tasks)
+            new_tasks = []
+        overall_progress.remove_task(page_task)
+        # layout=None
+    log.trace(
+        "stories raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", output))
             )
         )
-        log.debug(f"[bold]stories Count with Dupes[/bold] {len(output)} found")
-        outdict = {}
-        for ele in output:
-            outdict[ele["id"]] = ele
-        log.debug(
-            f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
-        )
-        return list(outdict.values())
+    )
+    log.debug(f"[bold]stories Count with Dupes[/bold] {len(output)} found")
+    outdict = {}
+    for ele in output:
+        outdict[ele["id"]] = ele
+    log.debug(
+        f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
+    )
+    return list(outdict.values())
 
 
 async def scrape_stories(c, user_id, job_progress) -> list:
@@ -170,122 +153,93 @@ async def scrape_stories(c, user_id, job_progress) -> list:
             return stories
 
 
-@run
 async def get_highlight_post(model_id):
     global sem
     sem = semaphoreDelayed(1)
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
 
-        async with sessionbuilder.sessionBuilder() as c:
-            overall_progress = Progress(
-                SpinnerColumn(style=Style(color="blue")),
-                TextColumn("Getting highlight list...\n{task.description}"),
+    async with sessionbuilder.sessionBuilder() as c:
+        output = []
+
+        page_count = 0
+        global tasks
+        global new_tasks
+        tasks = []
+        new_tasks = []
+        job_progress = progress_utils.highlights_progress
+        overall_progress = progress_utils.overall_progress
+        layout = progress_utils.highlights_layout
+        tasks.append(
+            asyncio.create_task(scrape_highlight_list(c, model_id, job_progress))
+        )
+        page_task = overall_progress.add_task(
+            f"Highlights List Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
             )
-            job_progress = Progress("{task.description}")
-            progress_group = Group(overall_progress, Panel(Group(job_progress)))
-
-            output = []
-
-            page_count = 0
-            global tasks
-            global new_tasks
-            tasks = []
+            for result in done:
+                try:
+                    result = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Highlight List  Pages Progress: {page_count}",
+                )
+                output.extend(result)
+            tasks = list(pending)
+            tasks.extend(new_tasks)
             new_tasks = []
-            with Live(
-                progress_group,
-                refresh_per_second=5,
-                console=console.get_shared_console(),
-            ):
-                tasks.append(
-                    asyncio.create_task(
-                        scrape_highlight_list(c, model_id, job_progress)
-                    )
-                )
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
-                )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            result = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-                overall_progress.remove_task(page_task)
+        overall_progress.remove_task(page_task)
+        output2 = []
+        page_count = 0
+        tasks = []
+        new_tasks = []
 
-            overall_progress = Progress(
-                SpinnerColumn(style=Style(color="blue")),
-                TextColumn("Getting highlight...\n{task.description}"),
+        [
+            tasks.append(asyncio.create_task(scrape_highlights(c, i, job_progress)))
+            for i in output
+        ]
+        page_task = overall_progress.add_task(
+            f"Highlight Content via List Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
             )
-            job_progress = Progress("{task.description}")
-            progress_group = Group(overall_progress, Panel(Group(job_progress)))
-            with Live(
-                progress_group,
-                refresh_per_second=5,
-                console=console.get_shared_console(),
-            ):
-                output2 = []
-                page_count = 0
-                tasks = []
-                new_tasks = []
+            for result in done:
+                try:
+                    result = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(page_task, description=f": {page_count}")
+                output2.extend(result)
+            tasks = list(pending)
+            tasks.extend(new_tasks)
+            new_tasks = []
+        overall_progress.remove_task(page_task)
+        # layout=None
 
-                [
-                    tasks.append(
-                        asyncio.create_task(scrape_highlights(c, i, job_progress))
-                    )
-                    for i in output
-                ]
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
-                )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            result = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output2.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-
-        log.trace(
-            "highlight raw unduped {posts}".format(
-                posts="\n\n".join(
-                    list(map(lambda x: f"undupedinfo heighlight: {str(x)}", output))
-                )
+    log.trace(
+        "highlight raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo heighlight: {str(x)}", output))
             )
         )
-        log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output2)} found")
-        outdict = {}
-        for ele in output2:
-            outdict[ele["id"]] = ele
-        log.debug(
-            f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
-        )
-        return list(outdict.values())
+    )
+    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output2)} found")
+    outdict = {}
+    for ele in output2:
+        outdict[ele["id"]] = ele
+    log.debug(
+        f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
+    )
+    return list(outdict.values())
 
 
 async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:

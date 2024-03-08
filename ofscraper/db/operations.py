@@ -475,7 +475,6 @@ def get_messages_media(conn=None, **kwargs) -> list:
         return data
 
 
-@run
 async def batch_mediainsert(media, funct, **kwargs):
     curr = set(get_media_ids(**kwargs) or [])
     mediaDict = {}

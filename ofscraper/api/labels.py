@@ -14,13 +14,7 @@ import asyncio
 import contextvars
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 
-from rich.console import Group
-from rich.live import Live
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
 from tenacity import (
     AsyncRetrying,
     retry,
@@ -32,6 +26,7 @@ from tenacity import (
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
+import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
@@ -40,65 +35,51 @@ attempt = contextvars.ContextVar("attempt")
 sem = None
 
 
-@run
 async def get_labels(model_id):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-        overall_progress = Progress(
-            SpinnerColumn(style=Style(color="blue")),
-            TextColumn("Getting labels...\n{task.description}"),
+    output = []
+    global tasks
+    global new_tasks
+    tasks = []
+    new_tasks = []
+
+    page_count = 0
+    job_progress = progress_utils.labelled_progress
+    overall_progress = progress_utils.overall_progress
+
+    async with sessionbuilder.sessionBuilder() as c:
+        tasks.append(asyncio.create_task(scrape_labels(c, model_id, job_progress)))
+
+        page_task = overall_progress.add_task(
+            f" Label Progress: {page_count}", visible=True
         )
-        job_progress = Progress("{task.description}")
-        progress_group = Group(overall_progress, Panel(Group(job_progress)))
-
-        output = []
-        global tasks
-        global new_tasks
-        tasks = []
-        new_tasks = []
-
-        page_count = 0
-        with Live(
-            progress_group, refresh_per_second=5, console=console.get_shared_console()
-        ):
-            async with sessionbuilder.sessionBuilder() as c:
-                tasks.append(
-                    asyncio.create_task(scrape_labels(c, model_id, job_progress))
-                )
-
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
-                )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            result = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-                overall_progress.remove_task(page_task)
-        log.trace(
-            "post label names unduped {posts}".format(
-                posts="\n\n".join(map(lambda x: f" label name unduped:{x}", output))
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            for result in done:
+                try:
+                    result = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task, description=f"Pages Progress: {page_count}"
+                )
+                output.extend(result)
+            tasks = list(pending)
+            tasks.extend(new_tasks)
+            new_tasks = []
+        overall_progress.remove_task(page_task)
+    log.trace(
+        "post label names unduped {posts}".format(
+            posts="\n\n".join(map(lambda x: f" label name unduped:{x}", output))
         )
-        log.debug(f"[bold]Labels name count without Dupes[/bold] {len(output)} found")
-        return output
+    )
+    log.debug(f"[bold]Labels name count without Dupes[/bold] {len(output)} found")
+    return output
 
 
 async def scrape_labels(c, model_id, job_progress, offset=0):
@@ -178,88 +159,75 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                 job_progress.remove_task(task)
 
 
-@run
 async def get_labelled_posts(labels, username):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-        overall_progress = Progress(
-            SpinnerColumn(style=Style(color="blue")),
-            TextColumn("Getting posts from labels...\n{task.description}"),
-        )
-        job_progress = Progress("{task.description}")
-        progress_group = Group(overall_progress, Panel(Group(job_progress)))
+    output = get_default_label_dict(labels)
+    global tasks
+    global new_tasks
+    tasks = []
+    new_tasks
+    page_count = 0
+    job_progress = progress_utils.labelled_progress
+    overall_progress = progress_utils.overall_progress
+    layout = progress_utils.labelled_layout
 
-        output = get_default_label_dict(labels)
-        global tasks
-        global new_tasks
-        tasks = []
-        new_tasks
-        page_count = 0
-
-        with Live(
-            progress_group, refresh_per_second=5, console=console.get_shared_console()
-        ):
-            async with sessionbuilder.sessionBuilder() as c:
-                [
-                    tasks.append(
-                        asyncio.create_task(
-                            scrape_labelled_posts(c, label, username, job_progress)
-                        )
-                    )
-                    for label in labels
-                ]
-
-                page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
+    async with sessionbuilder.sessionBuilder() as c:
+        [
+            tasks.append(
+                asyncio.create_task(
+                    scrape_labelled_posts(c, label, username, job_progress)
                 )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    for result in done:
-                        try:
-                            label, new_posts = await result
-                        except Exception as E:
-                            log.debug(E)
-                            continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        log.debug(
-                            f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
-                        )
-                        new_posts = label_dedupe(new_posts)
-                        log.debug(
-                            f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
-                        )
-                        posts = label_dedupe(
-                            output[label["id"]].get("posts", []) + new_posts
-                        )
-                        output[label["id"]]["posts"] = posts
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
-                overall_progress.remove_task(page_task)
-        log.trace(
-            "post label joined {posts}".format(
-                posts="\n\n".join(
-                    list(
-                        map(
-                            lambda x: f"label post joined: {str(x)}",
-                            list(output.values()),
-                        )
+            )
+            for label in labels
+        ]
+
+        page_task = overall_progress.add_task(
+            f" Labels Progress: {page_count}", visible=True
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for result in done:
+                try:
+                    label, new_posts = await result
+                except Exception as E:
+                    log.debug(E)
+                    continue
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task, description=f"Labels Progress: {page_count}"
+                )
+                log.debug(
+                    f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
+                )
+                new_posts = label_dedupe(new_posts)
+                log.debug(
+                    f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
+                )
+                posts = label_dedupe(output[label["id"]].get("posts", []) + new_posts)
+                output[label["id"]]["posts"] = posts
+            tasks = list(pending)
+            tasks.extend(new_tasks)
+            new_tasks = []
+        overall_progress.remove_task(page_task)
+        # layout=None
+    log.trace(
+        "post label joined {posts}".format(
+            posts="\n\n".join(
+                list(
+                    map(
+                        lambda x: f"label post joined: {str(x)}",
+                        list(output.values()),
                     )
                 )
             )
         )
-        log.debug(f"[bold]Labels count without Dupes[/bold] {len(output)} found")
+    )
+    log.debug(f"[bold]Labels count without Dupes[/bold] {len(output)} found")
 
-        return list(output.values())
+    return list(output.values())
 
 
 async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):

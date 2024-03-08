@@ -118,14 +118,10 @@ class databasePlaceholder(basePlaceholder):
 
     @basePlaceholder.wrapper
     def databasePathHelper(self, model_id, model_username):
-        username = model_username
-        self._variables.update({"username": username})
-        model_username = model_username
+        self._variables.update({"username": model_username})
         self._variables.update({"model_username": model_username})
-        first_letter = username[0].capitalize()
-        self._variables.update({"first_letter": first_letter})
-        modelid = model_id
-        self._variables.update({"model_id": modelid})
+        self._variables.update({"first_letter": model_username[0].capitalize()})
+        self._variables.update({"model_id": model_id})
         self.add_no_underline()
         globals().update(self._variables)
         log.trace(
@@ -196,40 +192,50 @@ class Placeholders(basePlaceholder):
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)
-        current_price = (
-            constants.getattr("MODEL_PRICE_PLACEHOLDER")
-            if not modelObj
-            else "Free"
-            if modelObj.final_current_price == 0
-            else "Paid"
+        self._variables.update(
+            {
+                "current_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_current_price == 0
+                    else "Paid"
+                )
+            }
         )
-
-        self._variables.update({"current_price": current_price})
-        regular_price = (
-            constants.getattr("MODEL_PRICE_PLACEHOLDER")
-            if not modelObj
-            else "Free"
-            if modelObj.final_regular_price == 0
-            else "Paid"
+        self._variables.update(
+            {
+                "regular_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_regular_price == 0
+                    else "Paid"
+                )
+            }
         )
-        self._variables.update({"regular_price": regular_price})
-        promo_price = (
-            constants.getattr("MODEL_PRICE_PLACEHOLDER")
-            if not modelObj
-            else "Free"
-            if modelObj.final_promo_price == 0
-            else "Paid"
+        self._variables.update(
+            {
+                "promo_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_promo_price == 0
+                    else "Paid"
+                )
+            }
         )
-        self._variables.update({"promo_price": promo_price})
-        renewal_price = (
-            constants.getattr("MODEL_PRICE_PLACEHOLDER")
-            if not modelObj
-            else "Free"
-            if modelObj.final_renewal_price == 0
-            else "Paid"
+        self._variables.update(
+            {
+                "renewal_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_renewal_price == 0
+                    else "Paid"
+                )
+            }
         )
-        self._variables.update({"renewal_price": renewal_price})
-        self._variables.update({"renewalprice": renewal_price})
 
     async def add_common_variables(self, ele, username, model_id):
         await self.add_main_variables(ele, username, model_id)
@@ -239,27 +245,23 @@ class Placeholders(basePlaceholder):
     async def add_main_variables(self, ele, username, model_id):
         self._variables.update({"user_name": username})
         self._variables.update({"model_id": model_id})
-        post_id = ele.postid
-        self._variables.update({"post_id": post_id})
-        media_id = ele.id
-        self._variables.update({"media_id": media_id})
-        first_letter = username[0].capitalize()
-        self._variables.update({"first_letter": first_letter})
-        mediatype = ele.mediatype.capitalize()
-        self._variables.update({"media_type": mediatype})
-        value = ele.value.capitalize()
-        self._variables.update({"value": value})
-        date = arrow.get(ele.postdate).format(data.get_date(mediatype=ele.mediatype))
-        self._variables.update({"date": date})
-        model_username = username
-        self._variables.update({"model_username": model_username})
-        responsetype = ele.modified_responsetype
-        self._variables.update({"response_type": responsetype})
-        label = ele.label_string
-        self._variables.update({"label": label})
-        downloadtype = ele.downloadtype
-        self._variables.update({"download_type": downloadtype})
-        self._variables.update({"media_id": media_id})
+        self._variables.update({"post_id": ele.postid})
+        self._variables.update({"media_id": ele.id})
+        self._variables.update({"first_letter": username[0].capitalize()})
+        self._variables.update({"media_type": ele.mediatype.capitalize()})
+        self._variables.update({"value": ele.value.capitalize()})
+        self._variables.update(
+            {
+                "date": arrow.get(ele.postdate).format(
+                    data.get_date(mediatype=ele.mediatype)
+                )
+            }
+        )
+        self._variables.update({"model_username": username})
+        self._variables.update({"response_type": ele.modified_responsetype})
+        self._variables.update({"label": ele.label_string})
+        self._variables.update({"download_type": ele.downloadtype})
+        self._variables.update({"media_id": ele.id})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
         self._variables.update({"quality": await ele.selected_quality})
         self._variables.update({"file_name": await ele.final_filename})
