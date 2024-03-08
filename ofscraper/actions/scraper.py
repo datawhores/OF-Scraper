@@ -40,6 +40,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
+from ofscraper.download.common.common import textDownloader
 
 log = logging.getLogger("shared")
 
@@ -65,6 +66,7 @@ async def process_messages(model_id, username):
                     username=username,
                 )
             ]
+            await textDownloader(messages_)
 
             log.debug(
                 f"[bold]Messages media count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}"
@@ -116,6 +118,8 @@ async def process_paid_post(model_id, username):
                 model_id=model_id,
                 username=username,
             )
+            await textDownloader(paid_content)
+
             output = []
             [output.extend(post.media) for post in paid_content]
             log.debug(f"[bold]Paid media count without locked[/bold] {len(output)}")
@@ -158,6 +162,7 @@ async def process_stories(model_id, username):
                 model_id=model_id,
                 username=username,
             )
+            await textDownloader(stories)
 
             log.debug(
                 f"[bold]Story media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}"
