@@ -125,7 +125,7 @@ class Media:
     # used for placeholder
     @property
     def label_string(self):
-        return self._post.label_ or "None"
+        return self._post.label_string
 
     @property
     def downloadtype(self):

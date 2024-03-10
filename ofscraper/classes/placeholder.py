@@ -466,6 +466,13 @@ class Textholders(basePlaceholder):
         self._variables.update({"config": config_file.open_config()})
         self._variables.update({"args": read_args.retriveArgs()})
 
+        self._variables.update({"quality": "source"})
+        self._variables.update(
+            {"file_name": f"{ele.media_text(mediatype='Text')}_source"}
+        )
+        self._variables.update({"original_filename": ele.media_text(mediatype="Text")})
+        self._variables.update({"only_file_name": ele.media_text(mediatype="Text")})
+
     @basePlaceholder.async_wrapper
     async def getmediadir(self, root=None, create=True):
         ele = self._ele
@@ -536,21 +543,8 @@ class Textholders(basePlaceholder):
             out = eval('f"""{}"""'.format(data.get_fileformat(mediatype="Text")))
         else:
             out = data.get_fileformat(mediatype="Text").format(**self._variables)
-        out = self._addcount(ele, out)
         log.debug(f"final filename path {out}")
         self._filename = out
-        return out
-
-    def _addcount(self, ele, out):
-        if not ele.needs_count:
-            return out
-        out = re.sub(" $", "", out)
-        out = re.sub("( *\.(?!\.))", f".", out)
-        # insert count
-        if re.search("\.[^.]+", out):
-            out = re.sub("(\.(?!\.))", f"_{ele.count}.", out)
-        else:
-            out = f"{out}_{ele.count}"
         return out
 
     @property

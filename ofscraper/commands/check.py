@@ -117,10 +117,12 @@ def process_download_cart():
                 if settings.get_mediatypes() == ["Text"]:
                     textDownloader(post_dict.values())
                 else:
-                    values = downloadnormal.process_dicts(username, model_id, [media])
                     textDownloader(post_dict.values())
+
+                    values = downloadnormal.process_dicts(username, model_id, [media])
                     if values == None or values[-1] == 1:
                         raise Exception("Download is marked as skipped")
+
                 log.info("Download Finished")
                 app.update_cell(key, "Download_Cart", "[downloaded]")
                 app.update_cell(key, "Downloaded", True)
