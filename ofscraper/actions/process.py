@@ -170,7 +170,6 @@ def normal_post_process():
                 model_id = ele.id
                 operations.table_init_create(model_id, ele.name)
                 combined_urls, posts = asyncio.run(OF.process_areas(ele, model_id))
-                return
                 download.download_process(
                     ele.name, model_id, combined_urls, posts=posts
                 )

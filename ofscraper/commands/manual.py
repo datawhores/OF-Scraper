@@ -4,7 +4,6 @@ import re
 import ofscraper.actions.scraper as of
 import ofscraper.api.highlights as highlights_
 import ofscraper.api.messages as messages_
-import ofscraper.api.paid as paid
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
@@ -16,14 +15,17 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.system.network as network
+from ofscraper.download.common.common import textDownloader
 
 
 def manual_download(urls=None):
     log = logging.getLogger("shared")
     network.check_cdm()
     allow_manual_dupes()
-    media_dict = get_media_from_urls(urls)
+    media_dict, posts_dict = get_media_from_urls(urls)
     log.debug(f"Number of values from media dict  {len(list(media_dict.values()))}")
+    log.debug(f"Number of values from post dict  {len(list(posts_dict.values()))}")
+
     get_manual_usernames(media_dict)
     selector.all_subs_helper()
     for value in filter(lambda x: len(x) > 0, media_dict.values()):
@@ -31,8 +33,9 @@ def manual_download(urls=None):
         username = value[0].post.username
         log.info(f"Downloading individual media for {username}")
         operations.table_init_create(model_id=model_id, username=username)
-        download.download_process(username, model_id, value)
-    log.info(f"Finished")
+        download.download_process(username, model_id, value, posts=None)
+    for value in posts_dict.values():
+        textDownloader([value])
 
 
 def allow_manual_dupes():
@@ -55,6 +58,7 @@ def get_manual_usernames(media_dict):
 def get_media_from_urls(urls):
     user_name_dict = {}
     media_dict = {}
+    post_dict = {}
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
         for url in url_helper(urls):
             response = get_info(url)
@@ -65,33 +69,45 @@ def get_media_from_urls(urls):
                 model_id = user_name_dict.get(model) or profile.get_id(model)
                 value = timeline.get_individual_post(postid, c=c)
                 media_dict.update(get_all_media(model_id, value))
+                post_dict.update(get_post_item(model_id, value))
             elif type == "msg":
                 model_id = model
                 value = messages_.get_individual_post(model_id, postid, c=c)
                 media_dict.update(get_all_media(model_id, value))
+                post_dict.update(get_post_item(model_id, value))
             elif type == "msg2":
                 model_id = user_name_dict.get(model) or profile.get_id(model)
                 value = messages_.get_individual_post(model_id, postid, c=c)
                 media_dict.update(get_all_media(model_id, value))
+                post_dict.update(get_post_item(model_id, value))
             elif type == "unknown":
                 value = unknown_type_helper(postid, c) or {}
                 model_id = value.get("author", {}).get("id")
                 media_dict.update(get_all_media(model_id, value))
+                post_dict.update(get_post_item(model_id, value))
             elif type == "highlights":
                 value = highlights_.get_individual_highlights(postid, c) or {}
                 model_id = value.get("userId")
                 media_dict.update(get_all_media(model_id, value, "highlights"))
+                post_dict.update(get_post_item(model_id, value, "highlights"))
                 # special case
             elif type == "stories":
                 value = highlights_.get_individual_stories(postid, c) or {}
                 model_id = value.get("userId")
                 media_dict.update(get_all_media(model_id, value, "stories"))
+                post_dict.update(get_post_item(model_id, value, "stories"))
                 # special case
-    return media_dict
+    return media_dict, post_dict
 
 
 def unknown_type_helper(postid, client):
     return timeline.get_individual_post(postid, client)
+
+
+def get_post_item(model_id, value, inputtype=None):
+    user_name = profile.scrape_profile(model_id)["username"]
+    post = posts_.Post(value, model_id, user_name, responsetype=inputtype)
+    return {post.id: post}
 
 
 def get_all_media(model_id, value, inputtype=None):
