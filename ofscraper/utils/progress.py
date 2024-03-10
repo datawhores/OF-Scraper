@@ -1,19 +1,24 @@
 from rich.console import Group
 from rich.layout import Layout
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 from rich.style import Style
+from rich.table import Column
 
-timeline_progress = None
-pinned_progress = None
-overall_progress = None
-archived_progress = None
-paid_progress = None
-labelled_progress = None
-stories_progress = None
-highlights_progress = None
-messages = None
-shared_data = None
+import ofscraper.utils.args.read as read_args
+import ofscraper.utils.config.data as config_data
+import ofscraper.utils.console as console_
+from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 
 
 def get_api_progress_Group():
@@ -49,7 +54,7 @@ def get_api_progress_Group():
     return progress_group
 
 
-def setup_layout(visible=None):
+def setup_layout():
     global timeline_progress
     global pinned_progress
     global overall_progress
@@ -121,3 +126,38 @@ def set_up_progress():
     labelled_progress = Progress("{task.description}")
     highlights_progress = Progress("{task.description}")
     stories_progress = Progress("{task.description}")
+
+
+def setupDownloadProgressBar(multi=False):
+    downloadprogress = (
+        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
+    )
+    if not multi:
+        job_progress = Progress(
+            TextColumn("{task.description}", table_column=Column(ratio=2)),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeRemainingColumn(),
+            TransferSpeedColumn(),
+            DownloadColumn(),
+        )
+    else:
+        job_progress = MultiProgress(
+            TextColumn("{task.description}", table_column=Column(ratio=2)),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeRemainingColumn(),
+            TransferSpeedColumn(),
+            DownloadColumn(),
+        )
+    overall_progress = Progress(
+        TextColumn("{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+    )
+    progress_group = Group(overall_progress, Panel(Group(job_progress, fit=True)))
+    progress_group.renderables[1].height = (
+        max(15, console_.get_shared_console().size[1] - 2) if downloadprogress else 0
+    )
+    return progress_group, overall_progress, job_progress

@@ -38,11 +38,11 @@ from ofscraper.download.common.common import (
     get_medialog,
     log_download_progress,
     setDirectoriesDate,
-    setupProgressBar,
     subProcessVariableInit,
 )
 from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.progress import setupDownloadProgressBar
 
 platform_name = platform.system()
 
@@ -94,7 +94,9 @@ def process_dicts(username, model_id, filtered_medialist):
             for i in range(num_proc)
         ]
         [process.start() for process in processes]
-        progress_group, overall_progress, job_progress = setupProgressBar(multi=True)
+        progress_group, overall_progress, job_progress = setupDownloadProgressBar(
+            multi=True
+        )
 
         task1 = overall_progress.add_task(
             common_globals.desc.format(

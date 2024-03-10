@@ -21,41 +21,6 @@ import ofscraper.utils.console as console_
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 
 
-def setupProgressBar(multi=False):
-    downloadprogress = (
-        config_data.get_show_downloadprogress() or read_args.retriveArgs().downloadbars
-    )
-    if not multi:
-        job_progress = Progress(
-            TextColumn("{task.description}", table_column=Column(ratio=2)),
-            BarColumn(),
-            TaskProgressColumn(),
-            TimeRemainingColumn(),
-            TransferSpeedColumn(),
-            DownloadColumn(),
-        )
-    else:
-        job_progress = MultiProgress(
-            TextColumn("{task.description}", table_column=Column(ratio=2)),
-            BarColumn(),
-            TaskProgressColumn(),
-            TimeRemainingColumn(),
-            TransferSpeedColumn(),
-            DownloadColumn(),
-        )
-    overall_progress = Progress(
-        TextColumn("{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-    )
-    progress_group = Group(overall_progress, Panel(Group(job_progress, fit=True)))
-    progress_group.renderables[1].height = (
-        max(15, console_.get_shared_console().size[1] - 2) if downloadprogress else 0
-    )
-    return progress_group, overall_progress, job_progress
-
-
 def convert_num_bytes(num_bytes: int) -> str:
     if num_bytes == 0:
         return "0 B"
