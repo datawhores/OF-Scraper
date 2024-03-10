@@ -78,6 +78,10 @@ class Post:
         return self._post["id"]
 
     @property
+    def postid(self):
+        return self._post["id"]
+
+    @property
     def date(self):
         return self._post.get("postedAt") or self._post.get("createdAt")
 
