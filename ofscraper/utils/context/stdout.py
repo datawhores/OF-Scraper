@@ -22,7 +22,7 @@ def lowstdout():
 
 # @contextlib.contextmanager
 # def lowstdout():
-#     if logging.getLogger("ofscraper").handlers[1].level>constants.getattr("SUPPRESS_LOG_LEVEL"):
+#     if logging.getLogger("ofscraper_stdout").handlers[1].level>constants.getattr("SUPPRESS_LOG_LEVEL"):
 #         save_stdout = sys.stdout
 #         sys.stdout = open(os.devnull, 'w')
 #         yield

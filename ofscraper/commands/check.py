@@ -114,7 +114,7 @@ def process_download_cart():
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 values = downloadnormal.process_dicts(
-                    username, model_id, [media], post=list(post_dict.values())
+                    username, model_id, [media], posts=list(post_dict.values())
                 )
                 if values == None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
