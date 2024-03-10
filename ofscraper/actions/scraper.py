@@ -146,7 +146,7 @@ async def process_paid_post(model_id, username):
 async def process_stories(model_id, username):
     try:
         with stdout.lowstdout():
-            stories = await highlights.get_stories_post(model_id)
+            stories = await highlights.get_stories_post_progress(model_id)
             stories = list(
                 map(
                     lambda x: posts_.Post(
@@ -190,7 +190,7 @@ async def process_stories(model_id, username):
 async def process_highlights(model_id, username):
     try:
         with stdout.lowstdout():
-            highlights_ = await highlights.get_highlight_post(model_id)
+            highlights_ = await highlights.get_highlight_post_progress(model_id)
             highlights_ = list(
                 map(
                     lambda x: posts_.Post(

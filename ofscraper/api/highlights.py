@@ -35,7 +35,8 @@ sem = None
 attempt = contextvars.ContextVar("attempt")
 
 
-async def get_stories_post(model_id):
+@run
+async def get_stories_post_progress(model_id):
     global sem
     sem = semaphoreDelayed(1)
     output = []
@@ -88,7 +89,48 @@ async def get_stories_post(model_id):
     return list(outdict.values())
 
 
-async def scrape_stories(c, user_id, job_progress) -> list:
+@run
+async def get_stories_post(model_id):
+    global sem
+    sem = semaphoreDelayed(1)
+    output = []
+    page_count = 0
+    tasks = []
+
+    async with sessionbuilder.sessionBuilder() as c:
+        tasks.append(asyncio.create_task(scrape_stories(c, model_id, None)))
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            tasks = list(pending)
+            for result in done:
+                try:
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    output.extend(result)
+                    tasks.extend(new_tasks)
+                except Exception as E:
+                    log.debug(E)
+                    continue
+    log.trace(
+        "stories raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", output))
+            )
+        )
+    )
+    log.debug(f"[bold]stories Count with Dupes[/bold] {len(output)} found")
+    outdict = {}
+    for ele in output:
+        outdict[ele["id"]] = ele
+    log.debug(
+        f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
+    )
+    return list(outdict.values())
+
+
+async def scrape_stories(c, user_id, job_progress=None) -> list:
     global sem
     global tasks
     stories = None
@@ -108,9 +150,13 @@ async def scrape_stories(c, user_id, job_progress) -> list:
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
-                    visible=True,
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : user id -> {user_id}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
                 )
                 async with c.requests(
                     url=constants.getattr("highlightsWithAStoryEP").format(user_id)
@@ -146,12 +192,13 @@ async def scrape_stories(c, user_id, job_progress) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if job_progress and task else None
 
             return stories, new_tasks
 
 
-async def get_highlight_post(model_id):
+@run
+async def get_highlight_post_progress(model_id):
     global sem
     sem = semaphoreDelayed(1)
 
@@ -160,10 +207,12 @@ async def get_highlight_post(model_id):
 
         page_count = 0
         tasks = []
-        job_progress = progress_utils.highlights_progress
+        job_progress = progress_utils.highlights_progressget_paid_posts_progress
         overall_progress = progress_utils.overall_progress
         tasks.append(
-            asyncio.create_task(scrape_highlight_list(c, model_id, job_progress))
+            asyncio.create_task(
+                scrape_highlight_list(c, model_id, job_progress=job_progress)
+            )
         )
         page_task = overall_progress.add_task(
             f"Highlights List Pages Progress: {page_count}", visible=True
@@ -236,7 +285,78 @@ async def get_highlight_post(model_id):
     return list(outdict.values())
 
 
-async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
+@run
+async def get_highlight_post(model_id):
+    global sem
+    sem = semaphoreDelayed(1)
+
+    async with sessionbuilder.sessionBuilder() as c:
+        output = []
+
+        page_count = 0
+        tasks = []
+        tasks.append(
+            asyncio.create_task(scrape_highlight_list(c, model_id, job_progress=None))
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            await asyncio.sleep(0)
+            tasks = list(pending)
+            for result in done:
+                try:
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    output.extend(result)
+                    tasks.extend(new_tasks)
+
+                except Exception as E:
+                    log.debug(E)
+                    continue
+        output2 = []
+        page_count = 0
+        tasks = []
+
+        [
+            tasks.append(
+                asyncio.create_task(scrape_highlights(c, i, job_progress=None))
+            )
+            for i in output
+        ]
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            tasks = list(pending)
+            for result in done:
+                try:
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    output2.extend(result)
+                    tasks.extend(new_tasks)
+                except Exception as E:
+                    log.debug(E)
+                    continue
+
+    log.trace(
+        "highlight raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo heighlight: {str(x)}", output))
+            )
+        )
+    )
+    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output2)} found")
+    outdict = {}
+    for ele in output2:
+        outdict[ele["id"]] = ele
+    log.debug(
+        f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
+    )
+    return list(outdict.values())
+
+
+async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
     global sem
     attempt.set(0)
     async for _ in AsyncRetrying(
@@ -253,9 +373,13 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scraping highlight list  offset-> {offset}",
-                    visible=True,
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scraping highlight list  offset-> {offset}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
                 )
                 async with c.requests(
                     url=constants.getattr("highlightsWithStoriesEP").format(
@@ -285,12 +409,12 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if job_progress and task else None
 
             return data, new_tasks
 
 
-async def scrape_highlights(c, id, job_progress) -> list:
+async def scrape_highlights(c, id, job_progress=None) -> list:
     global sem
     attempt.set(0)
     async for _ in AsyncRetrying(
@@ -307,9 +431,13 @@ async def scrape_highlights(c, id, job_progress) -> list:
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
-                    visible=True,
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} highlights id -> {id}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
                 )
                 async with c.requests(
                     url=constants.getattr("storyEP").format(id)
@@ -332,7 +460,7 @@ async def scrape_highlights(c, id, job_progress) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if job_progress and task else None
 
             return resp_data["stories"], new_tasks
 

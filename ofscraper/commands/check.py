@@ -27,8 +27,9 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
+from ofscraper.download.common.common import textDownloader
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -113,11 +114,13 @@ def process_download_cart():
                     f"Downloading individual media for {username} {media.filename}"
                 )
                 operations.table_init_create(model_id=model_id, username=username)
-                values = downloadnormal.process_dicts(
-                    username, model_id, [media], posts=list(post_dict.values())
-                )
-                if values == None or values[-1] == 1:
-                    raise Exception("Download is marked as skipped")
+                if settings.get_mediatypes() == ["Text"]:
+                    textDownloader(post_dict.values())
+                else:
+                    values = downloadnormal.process_dicts(username, model_id, [media])
+                    textDownloader(post_dict.values())
+                    if values == None or values[-1] == 1:
+                        raise Exception("Download is marked as skipped")
                 log.info("Download Finished")
                 app.update_cell(key, "Download_Cart", "[downloaded]")
                 app.update_cell(key, "Downloaded", True)
