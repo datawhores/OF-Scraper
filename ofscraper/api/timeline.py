@@ -193,7 +193,6 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
     job_progress = progress_utils.timeline_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.timeline_layout
     async with sessionbuilder.sessionBuilder() as c:
         if len(filteredArray) >= min_posts + 1:
             splitArrays = [
@@ -279,7 +278,8 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.timeline_layout:
+            progress_utils.timeline_layout = False
 
     unduped = {}
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")

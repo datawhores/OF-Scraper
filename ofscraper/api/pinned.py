@@ -144,7 +144,6 @@ async def get_pinned_post(model_id):
     page_count = 0
     job_progress = progress_utils.pinned_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.pinned_layout
 
     async with sessionbuilder.sessionBuilder() as c:
         tasks.append(
@@ -185,7 +184,8 @@ async def get_pinned_post(model_id):
                     continue
 
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.pinned_layout:
+            progress_utils.pinned_layout = False
     outdict = {}
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
     for post in responseArray:

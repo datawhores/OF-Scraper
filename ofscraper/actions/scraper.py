@@ -102,7 +102,7 @@ async def process_messages(model_id, username):
 async def process_paid_post(model_id, username):
     try:
         with stdout.lowstdout():
-            paid_content = await paid.get_paid_posts(username, model_id)
+            paid_content = await paid.get_paid_posts_progress(username, model_id)
             paid_content = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, responsetype="paid"),

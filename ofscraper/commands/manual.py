@@ -34,8 +34,7 @@ def manual_download(urls=None):
         log.info(f"Downloading individual media for {username}")
         operations.table_init_create(model_id=model_id, username=username)
         download.download_process(username, model_id, value, posts=None)
-    for value in posts_dict.values():
-        textDownloader([value])
+    textDownloader(posts_dict.values())
 
 
 def allow_manual_dupes():

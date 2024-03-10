@@ -23,11 +23,11 @@ import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
-import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
+import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.network as network
 
 log = logging.getLogger("shared")
@@ -93,7 +93,7 @@ def process_download_cart():
                     continue
                 log.info(f"Added url {url}")
                 log.info("Sending URLs to OF-Scraper")
-                media_dict = manual.get_media_from_urls(urls=[url])
+                media_dict, post_dict = manual.get_media_from_urls(urls=[url])
                 # None for stories and highlights
                 matchID = int(row[media_id].plain)
                 medialist = list(
@@ -114,9 +114,7 @@ def process_download_cart():
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 values = downloadnormal.process_dicts(
-                    username,
-                    model_id,
-                    [media],
+                    username, model_id, [media], post=list(post_dict.values())
                 )
                 if values == None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
@@ -128,6 +126,18 @@ def process_download_cart():
                 app.update_downloadcart_cell(key, "[failed]")
                 log.debug(E)
         time.sleep(10)
+
+
+def checker():
+    args = read_args.retriveArgs()
+    if args.command == "post_check":
+        post_checker()
+    elif args.command == "msg_check":
+        message_checker()
+    elif args.command == "paid_check":
+        purchase_checker()
+    elif args.command == "story_check":
+        stories_checker()
 
 
 def post_checker():
@@ -272,7 +282,7 @@ def message_checker():
         if len(oldpaid) > 0 and not read_args.retriveArgs().force:
             paid = oldpaid
         else:
-            paid = paid_.get_paid_posts(user_name, model_id)
+            paid = paid_.get_paid_posts(model_id)
             cache.set(
                 f"purchased_check_{model_id}",
                 paid,
@@ -309,7 +319,7 @@ def purchase_checker():
         if len(oldpaid) > 0 and not read_args.retriveArgs().force:
             paid = oldpaid
         else:
-            paid = paid_.get_paid_posts(user_name, model_id)
+            paid = paid_.get_paid_posts(model_id)
             cache.set(
                 f"purchased_check_{model_id}",
                 paid,
@@ -369,6 +379,7 @@ def get_all_found_media(user_name, posts):
 
 def get_downloaded(user_name, model_id, paid=False):
     downloaded = {}
+
     operations.table_init_create(model_id=model_id, username=user_name)
     paid = get_paid_ids(model_id, user_name) if paid else []
     [
@@ -389,7 +400,7 @@ def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        paid = paid_.get_paid_posts(user_name, model_id)
+        paid = paid_.get_paid_posts(model_id)
         cache.set(
             f"purchased_check_{model_id}", paid, expire=constants.getattr("DAY_SECONDS")
         )

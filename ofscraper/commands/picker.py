@@ -6,14 +6,8 @@ import ofscraper.utils.args.read as read_args
 
 def pick():
     args = read_args.retriveArgs()
-    if args.command == "post_check":
-        check.post_checker()
-    elif args.command == "msg_check":
-        check.message_checker()
-    elif args.command == "paid_check":
-        check.purchase_checker()
-    elif args.command == "story_check":
-        check.stories_checker()
+    if args.command in ["post_check", "msg_check", "paid_check", "story_check"]:
+        check.checker()
     elif args.command == "manual":
         manual.manual_download()
     else:

@@ -12,6 +12,7 @@ async def textDownloader(objectdicts):
     if objectdicts == None:
         return
     try:
+        objectdicts = list(objectdicts)
         if not "Text" in settings.get_mediatypes():
             log.info("Skipping Downloading of Text Files")
             return

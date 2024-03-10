@@ -43,7 +43,6 @@ async def get_stories_post(model_id):
     tasks = []
     job_progress = progress_utils.stories_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.stories_layout
 
     async with sessionbuilder.sessionBuilder() as c:
         tasks.append(asyncio.create_task(scrape_stories(c, model_id, job_progress)))
@@ -70,7 +69,8 @@ async def get_stories_post(model_id):
                     continue
 
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.stories_layout:
+            progress_utils.stories_layout = False
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
@@ -162,7 +162,6 @@ async def get_highlight_post(model_id):
         tasks = []
         job_progress = progress_utils.highlights_progress
         overall_progress = progress_utils.overall_progress
-        layout = progress_utils.highlights_layout
         tasks.append(
             asyncio.create_task(scrape_highlight_list(c, model_id, job_progress))
         )
@@ -217,7 +216,8 @@ async def get_highlight_post(model_id):
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.highlights_layout:
+            progress_utils.highlights_layout = False
 
     log.trace(
         "highlight raw unduped {posts}".format(

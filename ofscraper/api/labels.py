@@ -161,7 +161,6 @@ async def get_labelled_posts(labels, username):
     page_count = 0
     job_progress = progress_utils.labelled_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.labelled_layout
 
     async with sessionbuilder.sessionBuilder() as c:
         [
@@ -204,7 +203,8 @@ async def get_labelled_posts(labels, username):
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.labelled_layout:
+            progress_utils.labelled_layout = False
     log.trace(
         "post label joined {posts}".format(
             posts="\n\n".join(

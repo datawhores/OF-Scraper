@@ -51,7 +51,6 @@ async def get_messages(model_id, username, forced_after=None):
     min_posts = 40
     job_progress = progress_utils.messages_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.messages_layout
 
     async with sessionbuilder.sessionBuilder() as c:
         oldmessages = (
@@ -247,7 +246,8 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.messages_layout:
+            progress_utils.messages_layout = False
 
     unduped = {}
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")

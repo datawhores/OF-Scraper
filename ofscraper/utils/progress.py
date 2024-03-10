@@ -1,4 +1,3 @@
-import aioprocessing
 from rich.console import Group
 from rich.layout import Layout
 from rich.panel import Panel
@@ -50,7 +49,7 @@ def get_api_progress_Group():
     return progress_group
 
 
-def setup_layout():
+def setup_layout(visible=None):
     global timeline_progress
     global pinned_progress
     global overall_progress

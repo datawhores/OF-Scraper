@@ -38,7 +38,8 @@ attempt = contextvars.ContextVar("attempt")
 sem = None
 
 
-async def get_paid_posts(username, model_id):
+@run
+async def get_paid_posts_progress(username, model_id):
     global sem
     sem = sems.get_req_sem()
     output = []
@@ -47,7 +48,6 @@ async def get_paid_posts(username, model_id):
     page_count = 0
     job_progress = progress_utils.paid_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.paid_layout
 
     async with sessionbuilder.sessionBuilder() as c:
         tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress)))
@@ -74,7 +74,46 @@ async def get_paid_posts(username, model_id):
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.paid_layout:
+            progress_utils.paid_layout.visible = False
+    outdict = {}
+    for post in output:
+        outdict[post["id"]] = post
+    log.trace(
+        "paid raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo paid: {str(x)}", outdict.values()))
+            )
+        )
+    )
+    set_check(outdict, model_id)
+    return list(outdict.values())
+
+
+@run
+async def get_paid_posts(model_id):
+    global sem
+    sem = sems.get_req_sem()
+    output = []
+    tasks = []
+
+    page_count = 0
+    async with sessionbuilder.sessionBuilder() as c:
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            tasks = list(pending)
+
+            for result in done:
+                try:
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    output.extend(result)
+                    tasks.extend(new_tasks)
+                except Exception as E:
+                    log.debug(E)
+                    continue
     outdict = {}
     for post in output:
         outdict[post["id"]] = post
@@ -370,7 +409,7 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
 
 
 def get_individual_post(username, model_id, postid):
-    data = get_paid_posts(username, model_id)
+    data = get_paid_posts_progress(username, model_id)
     postid = int(postid)
     posts = list(filter(lambda x: int(x["id"]) == postid, data))
     if len(posts) > 0:

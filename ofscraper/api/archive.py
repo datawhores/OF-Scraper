@@ -168,7 +168,6 @@ async def get_archived_media(model_id, username, forced_after=None):
     page_count = 0
     job_progress = progress_utils.archived_progress
     overall_progress = progress_utils.overall_progress
-    layout = progress_utils.archived_layout
 
     async with sessionbuilder.sessionBuilder() as c:
         oldarchived = (
@@ -277,7 +276,9 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        layout.visible = False
+        if progress_utils.archived_layout:
+            progress_utils.archived_layout = False
+
         unduped = {}
         log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
         for post in responseArray:
