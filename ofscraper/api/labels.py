@@ -24,10 +24,9 @@ from tenacity import (
 )
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
+import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -37,7 +36,7 @@ sem = None
 
 async def get_labels(model_id):
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     output = []
     tasks = []
 
@@ -156,7 +155,7 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
 
 async def get_labelled_posts(labels, username):
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     output = get_default_label_dict(labels)
     tasks = []
     page_count = 0

@@ -31,7 +31,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
+import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -41,7 +41,7 @@ sem = None
 
 async def get_messages(model_id, username, forced_after=None):
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     global after
 
     tasks = []

@@ -33,7 +33,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
+import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -139,7 +139,7 @@ async def get_lists():
 async def scrape_lists(c, job_progress, offset=0):
     global sem
     global tasks
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     attempt.set(0)
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -206,7 +206,7 @@ async def scrape_lists(c, job_progress, offset=0):
 
 async def get_list_users(lists):
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_REQUEST_WORKERS")
     ) as executor:

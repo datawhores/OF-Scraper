@@ -29,7 +29,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
+import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -159,7 +159,7 @@ async def scrape_timeline_posts(
 
 async def get_timeline_media(model_id, username, forced_after=None):
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     tasks = []
     min_posts = 50
     responseArray = []

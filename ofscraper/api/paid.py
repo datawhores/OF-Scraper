@@ -29,7 +29,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
+import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 paid_content_list_name = "list"
@@ -40,7 +40,7 @@ sem = None
 
 async def get_paid_posts(username, model_id):
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     output = []
     tasks = []
 
