@@ -70,8 +70,6 @@ async def get_subscriptions(subscribe_count, account="active"):
 
 async def activeHelper(subscribe_count, c):
     out = []
-    global tasks
-    global new_tasks
 
     if any(
         x in helpers.get_black_list_helper()
@@ -108,28 +106,22 @@ async def activeHelper(subscribe_count, c):
         for offset in range(0, subscribe_count + 1, 10)
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
-
-    new_tasks = []
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        tasks = list(pending)
         for result in done:
             try:
-                result = await result
+                result, new_tasks = await result
+                out.extend(result)
+                tasks.extend(new_tasks)
             except Exception as E:
                 log.debug(E)
                 continue
-            out.extend(result)
-        tasks = list(pending)
-        tasks.extend(new_tasks)
-        new_tasks = []
     return out
 
 
 async def expiredHelper(subscribe_count, c):
     out = []
-    global tasks
-    global new_tasks
-
     if any(
         x in helpers.get_black_list_helper()
         for x in [
@@ -166,19 +158,20 @@ async def expiredHelper(subscribe_count, c):
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
 
-    new_tasks = []
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        tasks = list(pending)
+
         for result in done:
             try:
-                result = await result
+                result, new_tasks = await result
+                out.extend(result)
+
+                tasks.extend(new_tasks)
+
             except Exception as E:
                 log.debug(E)
                 continue
-            out.extend(result)
-        tasks = list(pending)
-        tasks.extend(new_tasks)
-        new_tasks = []
 
     return out
 
@@ -196,6 +189,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -224,7 +218,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
                                     )
                                 )
                             )
-                        return subscriptions
+                        return subscriptions, new_tasks
                     else:
                         log.debug(
                             f"[bold]subscriptions response status code:[/bold]{r.status}"
@@ -257,6 +251,7 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -287,7 +282,7 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
                                 )
                             )
 
-                        return subscriptions
+                        return subscriptions, new_tasks
                     else:
                         log.debug(
                             f"[bold]subscriptions response status code:[/bold]{r.status}"

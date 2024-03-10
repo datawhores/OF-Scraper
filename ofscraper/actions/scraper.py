@@ -41,7 +41,6 @@ import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
-from ofscraper.download.common.common import textDownloader
 
 log = logging.getLogger("shared")
 
@@ -67,7 +66,6 @@ async def process_messages(model_id, username):
                     username=username,
                 )
             ]
-            await textDownloader(messages_)
 
             log.debug(
                 f"[bold]Messages media count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}"
@@ -91,7 +89,7 @@ async def process_messages(model_id, username):
                 and read_args.retriveArgs().after != 0,
             )
 
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return list(filter(lambda x: isinstance(x, media.Media), output)), messages_
     except Exception as E:
         try:
             log.traceback_(E)
@@ -119,7 +117,6 @@ async def process_paid_post(model_id, username):
                 model_id=model_id,
                 username=username,
             )
-            await textDownloader(paid_content)
 
             output = []
             [output.extend(post.media) for post in paid_content]
@@ -133,7 +130,10 @@ async def process_paid_post(model_id, username):
                 downloaded=False,
             )
 
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return (
+                list(filter(lambda x: isinstance(x, media.Media), output)),
+                paid_content,
+            )
     except Exception as E:
         try:
             log.traceback_(E)
@@ -163,7 +163,6 @@ async def process_stories(model_id, username):
                 model_id=model_id,
                 username=username,
             )
-            await textDownloader(stories)
 
             log.debug(
                 f"[bold]Story media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}"
@@ -178,7 +177,7 @@ async def process_stories(model_id, username):
                 downloaded=False,
             )
 
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return list(filter(lambda x: isinstance(x, media.Media), output)), stories
     except Exception as E:
         try:
             log.traceback_(E)
@@ -208,7 +207,6 @@ async def process_highlights(model_id, username):
                 model_id=model_id,
                 username=username,
             )
-            await textDownloader(highlights_)
 
             log.debug(
                 f"[bold]highlight media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}"
@@ -223,7 +221,10 @@ async def process_highlights(model_id, username):
                 downloaded=False,
             )
 
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return (
+                list(filter(lambda x: isinstance(x, media.Media), output)),
+                highlights_,
+            )
     except Exception as E:
         try:
             log.traceback_(E)
@@ -255,7 +256,6 @@ async def process_timeline_posts(model_id, username):
                 model_id=model_id,
                 username=username,
             )
-            await textDownloader(timeline_posts)
             log.debug(
                 f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}"
             )
@@ -282,7 +282,10 @@ async def process_timeline_posts(model_id, username):
                 "{model_id}_full_timeline_scrape",
                 read_args.retriveArgs().after is not None,
             )
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return (
+                list(filter(lambda x: isinstance(x, media.Media), output)),
+                timeline_posts,
+            )
     except Exception as E:
         try:
             log.traceback_(E)
@@ -314,7 +317,7 @@ async def process_archived_posts(model_id, username):
                 model_id=model_id,
                 username=username,
             )
-            await textDownloader(archived_posts)
+
             log.debug(
                 f"[bold]Archived media count with locked[/bold] {sum(map(lambda x:len(x.post_media),archived_posts))}"
             )
@@ -342,7 +345,10 @@ async def process_archived_posts(model_id, username):
                 "{model_id}_full_archived_scrape",
                 read_args.retriveArgs().after is not None,
             )
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return (
+                list(filter(lambda x: isinstance(x, media.Media), output)),
+                archived_posts,
+            )
     except Exception as E:
         try:
             log.traceback_(E)
@@ -369,7 +375,7 @@ async def process_pinned_posts(model_id, username):
                 model_id=model_id,
                 username=username,
             )
-            await textDownloader(pinned_posts)
+
             log.debug(
                 f"[bold]Pinned media count with locked[/bold] {sum(map(lambda x:len(x.post_media),pinned_posts))}"
             )
@@ -393,7 +399,10 @@ async def process_pinned_posts(model_id, username):
                 downloaded=False,
             )
 
-            return list(filter(lambda x: isinstance(x, media.Media), output))
+            return (
+                list(filter(lambda x: isinstance(x, media.Media), output)),
+                pinned_posts,
+            )
     except Exception as E:
         try:
             log.traceback_(E)
@@ -410,7 +419,10 @@ async def process_profile(username) -> list:
             urls, info = profile.parse_profile(user_profile)
             profile.print_profile_info(info)
             output = []
+            posts = []
             for count, data in enumerate(urls):
+                post = posts_.Post(data, info[2], username, responsetype="profile")
+                posts.append(post)
                 output.append(
                     media.Media(
                         {
@@ -420,11 +432,10 @@ async def process_profile(username) -> list:
                             "text": data["text"],
                         },
                         count,
-                        posts_.Post(data, info[2], username, responsetype="profile"),
+                        post,
                     )
                 )
-            await textDownloader(output)
-            return output
+            return output, post
     except Exception as E:
         try:
             log.traceback_(E)
@@ -573,16 +584,17 @@ async def process_areas(ele, model_id) -> list:
             output = []
             group = progress_utils.get_api_progress_Group()
             with Live(group, console=console_.get_shared_console()):
-                new_data = await process_task(model_id, username, ele)
+                new_data, posts = await process_task(model_id, username, ele)
                 output.extend(new_data)
-        return filters.filterMedia(output)
+        return filters.filterMedia(output), posts
     except Exception as E:
         print(E)
         raise E
 
 
 async def process_task(model_id, username, ele):
-    output = []
+    media = []
+    post = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
     MAX_COUNT = min(constants.getattr("API_MAX_AREAS"), system.getcpu_count())
@@ -638,12 +650,13 @@ async def process_task(model_id, username, ele):
             break
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         await asyncio.sleep(0)
+        tasks = list(pending)
         for results in done:
             try:
-                result = await results
+                medias, posts = await results
+                media.extend(medias or [])
+                post.extend(posts or [])
             except Exception as E:
                 log.debug(E)
                 continue
-            output.extend(result or [])
-        tasks = list(pending)
-    return output
+    return media, post

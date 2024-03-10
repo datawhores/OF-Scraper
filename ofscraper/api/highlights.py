@@ -40,10 +40,7 @@ async def get_stories_post(model_id):
     sem = semaphoreDelayed(1)
     output = []
     page_count = 0
-    global tasks
-    global new_tasks
     tasks = []
-    new_tasks = []
     job_progress = progress_utils.stories_progress
     overall_progress = progress_utils.overall_progress
     layout = progress_utils.stories_layout
@@ -57,21 +54,21 @@ async def get_stories_post(model_id):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            tasks = list(pending)
             for result in done:
                 try:
-                    result = await result
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Stories Content Pages Progress: {page_count}",
+                    )
+                    output.extend(result)
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task,
-                    description=f"Stories Content Pages Progress: {page_count}",
-                )
-                output.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
+
         overall_progress.remove_task(page_task)
         layout.visible = False
     log.trace(
@@ -107,6 +104,7 @@ async def scrape_stories(c, user_id, job_progress) -> list:
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -150,7 +148,7 @@ async def scrape_stories(c, user_id, job_progress) -> list:
                 sem.release()
                 job_progress.remove_task(task)
 
-            return stories
+            return stories, new_tasks
 
 
 async def get_highlight_post(model_id):
@@ -161,10 +159,7 @@ async def get_highlight_post(model_id):
         output = []
 
         page_count = 0
-        global tasks
-        global new_tasks
         tasks = []
-        new_tasks = []
         job_progress = progress_utils.highlights_progress
         overall_progress = progress_utils.overall_progress
         layout = progress_utils.highlights_layout
@@ -178,26 +173,26 @@ async def get_highlight_post(model_id):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            await asyncio.sleep(0)
+            tasks = list(pending)
             for result in done:
                 try:
-                    result = await result
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Highlight List  Pages Progress: {page_count}",
+                    )
+                    output.extend(result)
+                    tasks.extend(new_tasks)
+
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task,
-                    description=f"Highlight List  Pages Progress: {page_count}",
-                )
-                output.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
         output2 = []
         page_count = 0
         tasks = []
-        new_tasks = []
 
         [
             tasks.append(asyncio.create_task(scrape_highlights(c, i, job_progress)))
@@ -210,18 +205,17 @@ async def get_highlight_post(model_id):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            tasks = list(pending)
             for result in done:
                 try:
-                    result = await result
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(page_task, description=f": {page_count}")
+                    output2.extend(result)
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(page_task, description=f": {page_count}")
-                output2.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
         layout.visible = False
 
@@ -244,7 +238,6 @@ async def get_highlight_post(model_id):
 
 async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
     global sem
-    global tasks
     attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -256,6 +249,7 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -293,12 +287,11 @@ async def scrape_highlight_list(c, user_id, job_progress, offset=0) -> list:
                 sem.release()
                 job_progress.remove_task(task)
 
-            return data
+            return data, new_tasks
 
 
 async def scrape_highlights(c, id, job_progress) -> list:
     global sem
-    global tasks
     attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -310,6 +303,7 @@ async def scrape_highlights(c, id, job_progress) -> list:
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -340,7 +334,7 @@ async def scrape_highlights(c, id, job_progress) -> list:
                 sem.release()
                 job_progress.remove_task(task)
 
-            return resp_data["stories"]
+            return resp_data["stories"], new_tasks
 
 
 def get_highlightList(data):

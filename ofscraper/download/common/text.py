@@ -3,8 +3,10 @@ import traceback
 
 import ofscraper.utils.settings as settings
 import ofscraper.utils.text as text
+from ofscraper.utils.context.run_async import run
 
 
+@run
 async def textDownloader(objectdicts):
     log = logging.getLogger("shared")
     try:

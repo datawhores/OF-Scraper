@@ -42,11 +42,8 @@ sem = None
 async def get_messages(model_id, username, forced_after=None):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
-    global tasks
     global after
-    global new_tasks
 
-    new_tasks = []
     tasks = []
     responseArray = []
     page_count = 0
@@ -234,21 +231,21 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
             await asyncio.sleep(0)
+            tasks = list(pending)
             for result in done:
                 try:
-                    out = await result
+                    out, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Messages Content Pages Progress: {page_count}",
+                    )
+                    responseArray.extend(out)
+                    tasks.extend(new_tasks)
+
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task,
-                    description=f"Messages Content Pages Progress: {page_count}",
-                )
-                responseArray.extend(out)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
         layout.visible = False
 
@@ -312,6 +309,7 @@ async def scrape_messages(
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 async with c.requests(url=url)() as r:
@@ -411,7 +409,7 @@ async def scrape_messages(
             finally:
                 sem.release()
                 progress.remove_task(task)
-            return messages
+            return messages, new_tasks
 
 
 def get_individual_post(model_id, postid, c=None):

@@ -34,7 +34,6 @@ sem = None
 
 
 async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) -> list:
-    global tasks
     global sem
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     posts = None
@@ -58,6 +57,7 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -135,14 +135,11 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
             finally:
                 sem.release()
                 progress.remove_task(task)
-            return posts
+            return posts, new_tasks
 
 
 async def get_pinned_post(model_id):
-    global tasks
-    global new_tasks
     tasks = []
-    new_tasks = []
     responseArray = []
     page_count = 0
     job_progress = progress_utils.pinned_progress
@@ -171,21 +168,22 @@ async def get_pinned_post(model_id):
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
             await asyncio.sleep(0)
+            tasks = list(pending)
             for result in done:
                 try:
-                    result = await result
+                    result, new_tasks = await result
+
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Pinned Content Pages Progress: {page_count}",
+                    )
+                    responseArray.extend(result)
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task,
-                    description=f"Pinned Content Pages Progress: {page_count}",
-                )
-                responseArray.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
+
         overall_progress.remove_task(page_task)
         layout.visible = False
     outdict = {}

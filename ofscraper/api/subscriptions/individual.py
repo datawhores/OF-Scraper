@@ -62,18 +62,14 @@ async def get_subscription_helper(c, accounts):
         asyncio.create_task(profile.scrape_profile_helper_async(c, account))
         for account in accounts
     ]
-
-    new_tasks = []
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        tasks = list(pending)
         for result in done:
             try:
                 result = await result
+                out.append(result)
             except Exception as E:
                 log.debug(E)
                 continue
-            out.append(result)
-        tasks = list(pending)
-        tasks.extend(new_tasks)
-        new_tasks = []
     return out

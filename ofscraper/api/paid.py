@@ -42,10 +42,7 @@ async def get_paid_posts(username, model_id):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     output = []
-    global tasks
-    global new_tasks
     tasks = []
-    new_tasks = []
 
     page_count = 0
     job_progress = progress_utils.paid_progress
@@ -61,20 +58,21 @@ async def get_paid_posts(username, model_id):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            tasks = list(pending)
+
             for result in done:
                 try:
-                    result = await result
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Paid Content Pages Progress: {page_count}",
+                    )
+                    output.extend(result)
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task, description=f"Paid Content Pages Progress: {page_count}"
-                )
-                output.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
         layout.visible = False
     outdict = {}
@@ -110,7 +108,6 @@ async def scrape_paid(c, username, job_progress, offset=0):
     url to look for any purchased content. If it finds some it will return it as a list.
     """
     global sem
-    global tasks
     media = None
 
     attempt.set(0)
@@ -126,6 +123,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
     ):
         with _:
             await sem.acquire()
+            new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = job_progress.add_task(
@@ -178,7 +176,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
                 sem.release()
                 job_progress.remove_task(task)
 
-        return media
+        return media, new_tasks
 
 
 @run
@@ -198,10 +196,7 @@ async def get_all_paid_posts():
 
         output = []
         min_posts = 100
-        global tasks
-        global new_tasks
         tasks = []
-        new_tasks = []
         page_count = 0
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
@@ -250,20 +245,19 @@ async def get_all_paid_posts():
                     done, pending = await asyncio.wait(
                         tasks, return_when=asyncio.FIRST_COMPLETED
                     )
+                    tasks = list(pending)
                     for result in done:
                         try:
-                            result = await result
+                            result, new_tasks = await result
+                            page_count = page_count + 1
+                            overall_progress.update(
+                                page_task, description=f"Pages Progress: {page_count}"
+                            )
+                            output.extend(result)
+                            tasks.extend(new_tasks)
                         except Exception as E:
                             log.debug(E)
                             continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
                 overall_progress.remove_task(page_task)
         outdict = {}
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
@@ -286,7 +280,6 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
     url to look for any purchased content. If it finds some it will return it as a list.
     """
     global sem
-    global new_tasks
     media = None
 
     attempt.set(0)
@@ -301,6 +294,7 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
     ):
         with _:
             await sem.acquire()
+            new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = job_progress.add_task(
@@ -372,7 +366,7 @@ async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
                 sem.release()
                 job_progress.remove_task(task)
 
-            return media
+            return media, new_tasks
 
 
 def get_individual_post(username, model_id, postid):

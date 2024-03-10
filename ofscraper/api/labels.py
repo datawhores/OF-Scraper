@@ -39,10 +39,7 @@ async def get_labels(model_id):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     output = []
-    global tasks
-    global new_tasks
     tasks = []
-    new_tasks = []
 
     page_count = 0
     job_progress = progress_utils.labelled_progress
@@ -58,20 +55,19 @@ async def get_labels(model_id):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            tasks = list(pending)
             for result in done:
                 try:
-                    result = await result
+                    result, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task, description=f"Pages Progress: {page_count}"
+                    )
+                    output.extend(result)
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task, description=f"Pages Progress: {page_count}"
-                )
-                output.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
     log.trace(
         "post label names unduped {posts}".format(
@@ -84,10 +80,8 @@ async def get_labels(model_id):
 
 async def scrape_labels(c, model_id, job_progress, offset=0):
     global sem
-    global tasks
     labels = None
     attempt.set(0)
-
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -98,6 +92,7 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -139,7 +134,7 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                                     )
                                 )
                             )
-                        return data.get("list")
+                        return data.get("list"), new_tasks
 
                     else:
                         log.debug(
@@ -163,10 +158,7 @@ async def get_labelled_posts(labels, username):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
     output = get_default_label_dict(labels)
-    global tasks
-    global new_tasks
     tasks = []
-    new_tasks
     page_count = 0
     job_progress = progress_utils.labelled_progress
     overall_progress = progress_utils.overall_progress
@@ -189,28 +181,29 @@ async def get_labelled_posts(labels, username):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            tasks = list(pending)
             for result in done:
                 try:
-                    label, new_posts = await result
+                    label, new_posts, new_tasks = await result
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task, description=f"Labels Progress: {page_count}"
+                    )
+                    log.debug(
+                        f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
+                    )
+                    new_posts = label_dedupe(new_posts)
+                    log.debug(
+                        f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
+                    )
+                    posts = label_dedupe(
+                        output[label["id"]].get("posts", []) + new_posts
+                    )
+                    output[label["id"]]["posts"] = posts
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task, description=f"Labels Progress: {page_count}"
-                )
-                log.debug(
-                    f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
-                )
-                new_posts = label_dedupe(new_posts)
-                log.debug(
-                    f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
-                )
-                posts = label_dedupe(output[label["id"]].get("posts", []) + new_posts)
-                output[label["id"]]["posts"] = posts
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
         layout.visible = False
     log.trace(
@@ -232,10 +225,8 @@ async def get_labelled_posts(labels, username):
 
 async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
     global sem
-    global tasks
     posts = None
     attempt.set(0)
-
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -246,6 +237,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -312,7 +304,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
                 sem.release()
                 job_progress.remove_task(task)
 
-            return label, posts
+            return label, posts, new_tasks
 
 
 def label_dedupe(posts):

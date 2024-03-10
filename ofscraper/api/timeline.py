@@ -7,6 +7,7 @@ r"""
                  \/     \/           \/            \/         
 """
 import asyncio
+import concurrent.futures
 import contextvars
 import logging
 import math
@@ -39,8 +40,6 @@ sem = None
 async def scrape_timeline_posts(
     c, model_id, progress, timestamp=None, required_ids=None
 ) -> list:
-    global new_tasks
-    global sem
     posts = None
     attempt.set(0)
 
@@ -48,7 +47,7 @@ async def scrape_timeline_posts(
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
-        return []
+        return [], new_tasks
     if timestamp:
         log.debug(arrow.get(math.trunc(float(timestamp))))
         ep = constants.getattr("timelineNextEP")
@@ -68,6 +67,7 @@ async def scrape_timeline_posts(
     ):
         with _:
             await sem.acquire()
+            new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = progress.add_task(
@@ -154,16 +154,13 @@ async def scrape_timeline_posts(
                 sem.release()
                 progress.remove_task(task)
 
-            return posts
+            return posts, new_tasks
 
 
 async def get_timeline_media(model_id, username, forced_after=None):
     global sem
     sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
-    global tasks
-    global new_tasks
     tasks = []
-    new_tasks = []
     min_posts = 50
     responseArray = []
     page_count = 0
@@ -267,21 +264,20 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
             await asyncio.sleep(0)
-            for result in done:
+            tasks = list(pending)
+            for data in done:
                 try:
-                    result = await result
+                    result, new_tasks = await data
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Timeline Content Pages Progress: {page_count}",
+                    )
+                    responseArray.extend(result)
+                    tasks.extend(new_tasks)
                 except Exception as E:
                     log.debug(E)
                     continue
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task,
-                    description=f"Timeline Content Pages Progress: {page_count}",
-                )
-                responseArray.extend(result)
-            tasks = list(pending)
-            tasks.extend(new_tasks)
-            new_tasks = []
         overall_progress.remove_task(page_task)
         layout.visible = False
 

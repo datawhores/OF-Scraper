@@ -235,12 +235,12 @@ class sessionBuilder:
     async def _aio_funct_async(self, method, **kwargs):
         try:
             resp = self._session.request(method, **kwargs)
+            async with resp as r:
+                r.text_ = r.text
+                r.json_ = r.json
+                r.iter_chunked = r.content.iter_chunked
+                yield r
+        except aiohttp.ClientConnectionError as E:
+            raise E
         except Exception as E:
             raise E
-        async with resp as r:
-            r.text_ = r.text
-            r.json_ = r.json
-            r.iter_chunked = r.content.iter_chunked
-            yield r
-
-        None

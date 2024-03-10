@@ -11,6 +11,7 @@ import ofscraper.utils.hash as hash
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+from ofscraper.download.common.common import textDownloader
 
 
 def medialist_filter(medialist, model_id, username):
@@ -33,9 +34,10 @@ def medialist_filter(medialist, model_id, username):
     return medialist
 
 
-def download_process(username, model_id, medialist):
+def download_process(username, model_id, medialist, posts=None):
     medialist = medialist_filter(medialist, model_id, username)
     medialist = helpers.post_count_filter(medialist)
+    textDownloader(posts) if posts else None
     download_picker(username, model_id, medialist)
     remove_downloads_with_hashes(username, model_id)
 

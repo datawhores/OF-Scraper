@@ -98,10 +98,7 @@ async def get_lists():
         progress_group = Group(overall_progress, Panel(Group(job_progress)))
 
         output = []
-        global tasks
-        global new_tasks
         tasks = []
-        new_tasks = []
         page_count = 0
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
@@ -115,20 +112,20 @@ async def get_lists():
                     done, pending = await asyncio.wait(
                         tasks, return_when=asyncio.FIRST_COMPLETED
                     )
+                    tasks = list(pending)
                     for result in done:
                         try:
-                            result = await result
+                            result, new_tasks = await result
+                            page_count = page_count + 1
+                            overall_progress.update(
+                                page_task, description=f"Pages Progress: {page_count}"
+                            )
+                            output.extend(result)
+                            tasks.extend(new_tasks)
                         except Exception as E:
                             log.debug(E)
                             continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
+
                 overall_progress.remove_task(page_task)
         log.trace(
             "list unduped {posts}".format(
@@ -154,6 +151,7 @@ async def scrape_lists(c, job_progress, offset=0):
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -203,7 +201,7 @@ async def scrape_lists(c, job_progress, offset=0):
             finally:
                 sem.release()
                 job_progress.remove_task(task)
-            return out_list
+            return out_list, new_tasks
 
 
 async def get_list_users(lists):
@@ -223,10 +221,7 @@ async def get_list_users(lists):
         progress_group = Group(overall_progress, Panel(Group(job_progress)))
 
         output = []
-        global tasks
-        global new_tasks
         tasks = []
-        new_tasks = []
         page_count = 0
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
@@ -243,20 +238,19 @@ async def get_list_users(lists):
                     done, pending = await asyncio.wait(
                         tasks, return_when=asyncio.FIRST_COMPLETED
                     )
+                    tasks = list(pending)
                     for result in done:
                         try:
-                            result = await result
+                            result, new_tasks = await result
+                            page_count = page_count + 1
+                            overall_progress.update(
+                                page_task, description=f"Pages Progress: {page_count}"
+                            )
+                            output.extend(result)
+                            tasks.extend(new_tasks)
                         except Exception as E:
                             log.debug(E)
                             continue
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task, description=f"Pages Progress: {page_count}"
-                        )
-                        output.extend(result)
-                    tasks = list(pending)
-                    tasks.extend(new_tasks)
-                    new_tasks = []
                 overall_progress.remove_task(page_task)
         outdict = {}
         for ele in output:
@@ -291,6 +285,7 @@ async def scrape_list(c, item, job_progress, offset=0):
         reraise=True,
     ):
         with _:
+            new_tasks = []
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -356,4 +351,4 @@ async def scrape_list(c, item, job_progress, offset=0):
             finally:
                 sem.release()
                 job_progress.remove_task(task)
-            return users
+            return users, new_tasks
