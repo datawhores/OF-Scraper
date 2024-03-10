@@ -30,6 +30,10 @@ class Post:
         return self._label
 
     @property
+    def label_string(self):
+        return self.label or "None"
+
+    @property
     def post(self):
         return self._post
 
@@ -75,10 +79,6 @@ class Post:
 
     @property
     def id(self):
-        return self._post["id"]
-
-    @property
-    def postid(self):
         return self._post["id"]
 
     @property
@@ -173,3 +173,30 @@ class Post:
                 return self.responsetype.capitalize()
             elif response != "":
                 return response.capitalize()
+
+    def cleanup(self, text):
+        text = re.sub('[\n<>:"/\|?*:;]+', "", text)
+        text = re.sub("-+", "_", text)
+        text = re.sub(" +", " ", text)
+        text = re.sub(" ", data.get_spacereplacer(mediatype=self.mediatype), text)
+        return text
+
+    def media_text(self, mediatype=None):
+        text = self.sanitized_text
+        if text == None:
+            return "None"
+        text = self.cleanup(text)
+        if len(text) == 0:
+            return text
+        length = int(data.get_textlength(mediatype=mediatype))
+        if length == 0:
+            return text
+        elif data.get_textType(mediatype=mediatype) == "letter":
+            return f"{''.join(list(text)[:length])}"
+        else:
+            # split and reduce
+            wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", text)))
+            splitArray = wordarray[: length + 1]
+            text = f"{''.join(splitArray)}"
+        text = re.sub(" +$", "", text)
+        return text

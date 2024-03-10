@@ -261,7 +261,6 @@ class Placeholders(basePlaceholder):
         self._variables.update({"response_type": ele.modified_responsetype})
         self._variables.update({"label": ele.label_string})
         self._variables.update({"download_type": ele.downloadtype})
-        self._variables.update({"media_id": ele.id})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
         self._variables.update({"quality": await ele.selected_quality})
         self._variables.update({"file_name": await ele.final_filename})
@@ -342,6 +341,201 @@ class Placeholders(basePlaceholder):
             out = eval('f"""{}"""'.format(data.get_fileformat(mediatype=ele.mediatype)))
         else:
             out = data.get_fileformat(mediatype=ele.mediatype).format(**self._variables)
+        out = self._addcount(ele, out)
+        log.debug(f"final filename path {out}")
+        self._filename = out
+        return out
+
+    def _addcount(self, ele, out):
+        if not ele.needs_count:
+            return out
+        out = re.sub(" $", "", out)
+        out = re.sub("( *\.(?!\.))", f".", out)
+        # insert count
+        if re.search("\.[^.]+", out):
+            out = re.sub("(\.(?!\.))", f"_{ele.count}.", out)
+        else:
+            out = f"{out}_{ele.count}"
+        return out
+
+    @property
+    def filepath(self):
+        return pathlib.Path(self._filepath)
+
+    @property
+    def filename(self):
+        return pathlib.Path(self._filepath).name
+
+    @property
+    def trunicated_filename(self):
+        return pathlib.Path(self.trunicated_filepath).name
+
+    @property
+    def trunicated_filepath(self):
+        if settings.get_trunication(mediatype=self._ele.mediatype):
+            return pathlib.Path(paths.truncate(self._filepath))
+        return self._filepath
+
+    @property
+    def filedir(self):
+        return pathlib.Path(paths.truncate(self._filepath)).parent
+
+
+class Textholders(basePlaceholder):
+    def __init__(self, ele, ext) -> None:
+        super().__init__()
+        self._filename = None
+        self._mediadir = None
+        self._metadata = None
+        self._filepath = None
+        self._ele = ele
+        self._ext = ext
+
+    async def init(self):
+        dir = await self.getmediadir()
+        file = await self.createfilename()
+        self._filepath = paths.truncate(pathlib.Path(dir, file))
+
+    def add_price_variables(self, username):
+        modelObj = selector.get_model_fromParsed(username)
+        self._variables.update(
+            {
+                "current_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_current_price == 0
+                    else "Paid"
+                )
+            }
+        )
+        self._variables.update(
+            {
+                "regular_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_regular_price == 0
+                    else "Paid"
+                )
+            }
+        )
+        self._variables.update(
+            {
+                "promo_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_promo_price == 0
+                    else "Paid"
+                )
+            }
+        )
+        self._variables.update(
+            {
+                "renewal_price": (
+                    constants.getattr("MODEL_PRICE_PLACEHOLDER")
+                    if not modelObj
+                    else "Free"
+                    if modelObj.final_renewal_price == 0
+                    else "Paid"
+                )
+            }
+        )
+
+    async def add_common_variables(self, ele, username, model_id):
+        await self.add_main_variables(ele, username, model_id)
+        self.add_price_variables(username)
+        self.add_no_underline()
+
+    async def add_main_variables(self, ele, username, model_id):
+        self._variables.update({"user_name": username})
+        self._variables.update({"model_id": model_id})
+        self._variables.update({"post_id": ele.id})
+        self._variables.update({"first_letter": username[0].capitalize()})
+        self._variables.update({"value": ele.value.capitalize()})
+        self._variables.update(
+            {"date": arrow.get(ele.date).format(data.get_date(mediatype="Text"))}
+        )
+        self._variables.update({"model_username": username})
+        self._variables.update({"media_type": "Text"})
+        self._variables.update({"response_type": ele.modified_responsetype})
+        self._variables.update({"label": ele.label_string})
+        self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
+        self._variables.update({"text": ele.media_text(mediatype="Text")})
+        self._variables.update({"config": config_file.open_config()})
+        self._variables.update({"args": read_args.retriveArgs()})
+
+    @basePlaceholder.async_wrapper
+    async def getmediadir(self, root=None, create=True):
+        ele = self._ele
+        username = ele.username
+        model_id = ele.model_id
+        root = pathlib.Path(root or common_paths.get_save_location(mediatype="Text"))
+        await self.add_common_variables(ele, username, model_id)
+        globals().update(self._variables)
+        log.trace(
+            f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        )
+        if data.get_allow_code_execution():
+            if isinstance(customval, dict) == False:
+                try:
+                    custom = eval(customval)
+                except:
+                    custom = {}
+            else:
+                custom = {}
+                for key, val in customval.items():
+                    try:
+                        custom[key] = eval(val)
+                    except:
+                        custom[key] = val
+            downloadDir = pathlib.Path(
+                eval("f'{}'".format(data.get_dirformat(mediatype="Text")))
+            )
+        else:
+            downloadDir = pathlib.Path(
+                data.get_dirformat(mediatype="Text").format(**self._variables)
+            )
+        final_path = pathlib.Path(
+            os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
+        )
+        log.trace(f"final mediadir path {final_path}")
+        self._mediadir = final_path
+        self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
+        return final_path
+
+    @basePlaceholder.async_wrapper
+    async def createfilename(self):
+        ele = self._ele
+        ext = self._ext
+        username = ele.username
+        model_id = ele.model_id
+        self._variables.update({"ext": ext})
+        await self.add_common_variables(ele, username, model_id)
+        globals().update(self._variables)
+        log.trace(
+            f"modelid:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        )
+        out = None
+        if ele.responsetype == "profile":
+            out = f"{await ele.final_filename}.{ext}"
+        elif data.get_allow_code_execution():
+            if isinstance(customval, dict) == False:
+                try:
+                    custom = eval(customval)
+                except:
+                    custom = {}
+            else:
+                custom = {}
+                for key, val in customval.items():
+                    try:
+                        custom[key] = eval(val)
+                    except:
+                        custom[key] = val
+            out = eval('f"""{}"""'.format(data.get_fileformat(mediatype="Text")))
+        else:
+            out = data.get_fileformat(mediatype="Text").format(**self._variables)
         out = self._addcount(ele, out)
         log.debug(f"final filename path {out}")
         self._filename = out
