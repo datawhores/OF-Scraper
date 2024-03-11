@@ -62,7 +62,7 @@ async def get_pinned_post(model_id, c=None):
     )
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
+        await asyncio.sleep(1)
         tasks = list(pending)
         for result in done:
             try:
@@ -76,6 +76,7 @@ async def get_pinned_post(model_id, c=None):
                 responseArray.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
 
@@ -123,6 +124,7 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = progress.add_task(
@@ -192,6 +194,7 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
                         log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E

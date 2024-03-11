@@ -66,6 +66,7 @@ async def scrape_timeline_posts(
     ):
         with _:
             await sem.acquire()
+            await asyncio.sleep(1)
             new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -149,6 +150,7 @@ async def scrape_timeline_posts(
                         log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
@@ -264,7 +266,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     )
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
+        await asyncio.sleep(1)
         tasks = list(pending)
         for data in done:
             try:
@@ -277,6 +279,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                 responseArray.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -404,7 +407,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
+        await asyncio.sleep(1)
         tasks = list(pending)
         for data in done:
             try:
@@ -412,6 +415,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                 responseArray.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
 

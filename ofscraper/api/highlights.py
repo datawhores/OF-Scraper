@@ -57,6 +57,7 @@ async def get_stories_post_progress(model_id, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -68,6 +69,7 @@ async def get_stories_post_progress(model_id, c=None):
                 output.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
 
@@ -105,6 +107,7 @@ async def get_stories_post(model_id, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -112,6 +115,7 @@ async def get_stories_post(model_id, c=None):
                 output.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     log.trace(
@@ -149,6 +153,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = (
@@ -187,6 +192,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
                         log.debug(f"[bold]stories headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
@@ -222,8 +228,8 @@ async def get_highlight_post_progress(model_id, c=None):
     )
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -236,6 +242,7 @@ async def get_highlight_post_progress(model_id, c=None):
                 tasks.extend(new_tasks)
 
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -255,6 +262,7 @@ async def get_highlight_post_progress(model_id, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -263,6 +271,7 @@ async def get_highlight_post_progress(model_id, c=None):
                 output2.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -302,8 +311,8 @@ async def get_highlight_post(model_id, c=None):
     )
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -312,6 +321,7 @@ async def get_highlight_post(model_id, c=None):
                 tasks.extend(new_tasks)
 
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     output2 = []
@@ -325,6 +335,7 @@ async def get_highlight_post(model_id, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -332,6 +343,7 @@ async def get_highlight_post(model_id, c=None):
                 output2.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
 
@@ -367,6 +379,7 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = (
@@ -399,6 +412,7 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
                         )
                         log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
@@ -425,6 +439,7 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = (
@@ -450,6 +465,7 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
                         log.debug(f"[bold]h ighlight headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E

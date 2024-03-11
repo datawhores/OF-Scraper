@@ -230,8 +230,8 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
 
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 out, new_tasks = await result
@@ -244,6 +244,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 tasks.extend(new_tasks)
 
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -448,7 +449,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
 
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
+        await asyncio.sleep(1)
         tasks = list(pending)
         for result in done:
             try:
@@ -457,6 +458,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 tasks.extend(new_tasks)
 
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     unduped = {}
@@ -521,6 +523,7 @@ async def scrape_messages(
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 async with c.requests(url=url)() as r:
                     attempt.set(attempt.get(0) + 1)
@@ -617,6 +620,7 @@ async def scrape_messages(
 
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E

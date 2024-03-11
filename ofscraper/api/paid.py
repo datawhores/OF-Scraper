@@ -61,7 +61,7 @@ async def get_paid_posts_progress(username, model_id, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
-
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -73,6 +73,7 @@ async def get_paid_posts_progress(username, model_id, c=None):
                 output.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -105,12 +106,14 @@ async def get_paid_posts(model_id, username, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
                 output.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
                 log.debug(E)
                 continue
     outdict = {}
@@ -161,6 +164,8 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
     ):
         with _:
             await sem.acquire()
+            await asyncio.sleep(1)
+
             new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -216,6 +221,7 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
                         job_progress.remove_task(task)
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
@@ -294,6 +300,7 @@ async def get_all_paid_posts():
                         tasks, return_when=asyncio.FIRST_COMPLETED
                     )
                     tasks = list(pending)
+                    await asyncio.sleep(1)
                     for result in done:
                         try:
                             result, new_tasks = await result
@@ -304,6 +311,7 @@ async def get_all_paid_posts():
                             output.extend(result)
                             tasks.extend(new_tasks)
                         except Exception as E:
+                            await asyncio.sleep(1)
                             log.debug(E)
                             continue
                 overall_progress.remove_task(page_task)
@@ -342,6 +350,7 @@ async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
     ):
         with _:
             await sem.acquire()
+            await asyncio.sleep(1)
             new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -406,6 +415,7 @@ async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
                         job_progress.remove_task(task)
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E

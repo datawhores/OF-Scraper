@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+import asyncio
 import contextvars
 import logging
 import traceback
@@ -112,6 +113,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                 log.info(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
                 )
+                await asyncio.sleep(1)
                 async with c.requests(
                     constants.getattr("profileEP").format(username)
                 )() as r:
@@ -134,6 +136,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                         log.debug(f"[bold]profile headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
@@ -219,6 +222,7 @@ def get_id_helper(c, username):
                 log.info(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get id {username}"
                 )
+
                 with c.requests(constants.getattr("profileEP").format(username))() as r:
                     if r.ok:
                         id = r.json()["id"]

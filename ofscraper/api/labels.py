@@ -58,6 +58,7 @@ async def get_labels(model_id, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 result, new_tasks = await result
@@ -68,6 +69,8 @@ async def get_labels(model_id, c=None):
                 output.extend(result)
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
+
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -96,6 +99,7 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
 
@@ -153,6 +157,8 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
                         log.debug(f"[bold]labels headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
+
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
@@ -190,6 +196,7 @@ async def get_labelled_posts(labels, username, c=None):
     while tasks:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         tasks = list(pending)
+        await asyncio.sleep(1)
         for result in done:
             try:
                 label, new_posts, new_tasks = await result
@@ -208,6 +215,8 @@ async def get_labelled_posts(labels, username, c=None):
                 output[label["id"]]["posts"] = posts
                 tasks.extend(new_tasks)
             except Exception as E:
+                await asyncio.sleep(1)
+
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
@@ -245,6 +254,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
         with _:
             new_tasks = []
             await sem.acquire()
+            await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = (
@@ -310,6 +320,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
 
                         r.raise_for_status()
             except Exception as E:
+                await asyncio.sleep(1)
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
