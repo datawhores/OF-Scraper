@@ -632,18 +632,19 @@ async def scrape_messages(
 
 
 def get_individual_post(model_id, postid, c=None):
-    with c.requests(
-        url=constants.getattr("messageSPECIFIC").format(model_id, postid)
-    )() as r:
-        if r.ok:
-            log.trace(f"message raw individual {r.json()}")
-            return r.json()["list"][0]
-        else:
-            log.debug(
-                f"[bold]Individual message response status code:[/bold]{r.status}"
-            )
-            log.debug(f"[bold]Individual message  response:[/bold] {r.text_()}")
-            log.debug(f"[bold]Individual message  headers:[/bold] {r.headers}")
+    with c or sessionbuilder.sessionBuilder(backend="httpx") as c:
+        with c.requests(
+            url=constants.getattr("messageSPECIFIC").format(model_id, postid)
+        )() as r:
+            if r.ok:
+                log.trace(f"message raw individual {r.json()}")
+                return r.json()["list"][0]
+            else:
+                log.debug(
+                    f"[bold]Individual message response status code:[/bold]{r.status}"
+                )
+                log.debug(f"[bold]Individual message  response:[/bold] {r.text_()}")
+                log.debug(f"[bold]Individual message  headers:[/bold] {r.headers}")
 
 
 def get_after(model_id, username, forced_after=None):
