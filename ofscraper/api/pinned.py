@@ -80,7 +80,7 @@ async def get_pinned_post(model_id, c=None):
                 continue
 
     overall_progress.remove_task(page_task)
-    progress_utils.pinned_layout = False
+    progress_utils.pinned_layout.visible = False
     outdict = {}
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
     for post in responseArray:

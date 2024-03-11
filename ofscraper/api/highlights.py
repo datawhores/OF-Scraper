@@ -72,7 +72,7 @@ async def get_stories_post_progress(model_id, c=None):
                 continue
 
     overall_progress.remove_task(page_task)
-    progress_utils.stories_layout = False
+    progress_utils.stories_layout.visible = False
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
@@ -266,7 +266,7 @@ async def get_highlight_post_progress(model_id, c=None):
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
-    progress_utils.highlights_layout = False
+    progress_utils.highlights_layout.visible = False
 
     log.trace(
         "highlight raw unduped {posts}".format(

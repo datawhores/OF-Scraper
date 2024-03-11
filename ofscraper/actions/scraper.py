@@ -582,7 +582,7 @@ async def process_areas(ele, model_id) -> list:
             with Live(group, console=console_.get_shared_console()):
                 new_data, posts = await process_task(model_id, username, ele)
                 output.extend(new_data)
-        return filters.filterMedia(output), posts
+        return filters.filterMedia(output), filters.filterPost(posts)
     except Exception as E:
         print(E)
         raise E

@@ -247,7 +247,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
-    progress_utils.messages_layout = False
+    progress_utils.messages_layout.visible = False
 
     unduped = {}
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")

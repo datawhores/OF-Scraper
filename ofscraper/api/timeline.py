@@ -280,7 +280,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                 log.debug(E)
                 continue
     overall_progress.remove_task(page_task)
-    progress_utils.timeline_layout = False
+    progress_utils.timeline_layout.visible = False
 
     unduped = {}
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")

@@ -156,7 +156,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                 log.tracback_(E)
                 continue
     overall_progress.remove_task(page_task)
-    progress_utils.archived_layout = False
+    progress_utils.archived_layout.visible = False
 
     unduped = {}
     log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
