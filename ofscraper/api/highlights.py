@@ -506,11 +506,12 @@ def get_individual_highlights(id, c=None):
 
 
 def get_individual_stories(id, c=None):
-    with c.requests(constants.getattr("storiesSPECIFIC").format(id))() as r:
-        if r.ok:
-            log.trace(f"highlight raw highlight individua; {r.json_()}")
-            return r.json()
-        else:
-            log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
-            log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
-            log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
+    with c or sessionbuilder.sessionBuilder(backend="httpx") as c:
+        with c.requests(constants.getattr("storiesSPECIFIC").format(id))() as r:
+            if r.ok:
+                log.trace(f"highlight raw highlight individua; {r.json_()}")
+                return r.json()
+            else:
+                log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
+                log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
+                log.debug(f"[bold]highlight headers:[/bold] {r.headers}")

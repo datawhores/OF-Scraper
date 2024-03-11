@@ -85,18 +85,33 @@ def get_media_from_urls(urls):
             media_dict.update(get_all_media(model_id, value))
             post_dict.update(get_post_item(model_id, value))
         elif type == "unknown":
-            value = unknown_type_helper(postid, c) or {}
+            value = (
+                unknown_type_helper(
+                    postid, c=sessionbuilder.sessionBuilder(backend="httpx")
+                )
+                or {}
+            )
             model_id = value.get("author", {}).get("id")
             media_dict.update(get_all_media(model_id, value))
             post_dict.update(get_post_item(model_id, value))
         elif type == "highlights":
-            value = highlights_.get_individual_highlights(postid, c) or {}
+            value = (
+                highlights_.get_individual_highlights(
+                    postid, c=sessionbuilder.sessionBuilder(backend="httpx")
+                )
+                or {}
+            )
             model_id = value.get("userId")
             media_dict.update(get_all_media(model_id, value, "highlights"))
             post_dict.update(get_post_item(model_id, value, "highlights"))
             # special case
         elif type == "stories":
-            value = highlights_.get_individual_stories(postid, c) or {}
+            value = (
+                highlights_.get_individual_stories(
+                    postid, c=sessionbuilder.sessionBuilder(backend="httpx")
+                )
+                or {}
+            )
             model_id = value.get("userId")
             media_dict.update(get_all_media(model_id, value, "stories"))
             post_dict.update(get_post_item(model_id, value, "stories"))
