@@ -102,25 +102,28 @@ def process_download_cart():
                         list(media_dict.values())[0],
                     )
                 )
-                media = medialist[0] if len(medialist) > 0 else None
-                model_id = media.post.model_id
-                username = media.post.username
-                args = read_args.retriveArgs()
-                args.username = set([username])
-                write_args.setArgs(args)
-                selector.all_subs_helper()
-                log.info(
-                    f"Downloading individual media for {username} {media.filename}"
-                )
-                operations.table_init_create(model_id=model_id, username=username)
                 if settings.get_mediatypes() == ["Text"]:
                     textDownloader(post_dict.values(), username=username)
-                else:
+                elif len(medialist) > 0 and len(settings.get_mediatypes()) > 1:
+                    media = medialist[0]
+                    model_id = media.post.model_id
+                    username = model_id = media.post.username
+                    args = read_args.retriveArgs()
+                    args.username = set([username])
+                    write_args.setArgs(args)
+                    selector.all_subs_helper()
+                    log.info(
+                        f"Downloading individual media for {username} {media.filename}"
+                    )
+                    operations.table_init_create(model_id=model_id, username=username)
+
                     textDownloader(post_dict.values(), username=username)
 
                     values = downloadnormal.process_dicts(username, model_id, [media])
                     if values == None or values[-1] == 1:
                         raise Exception("Download is marked as skipped")
+                else:
+                    raise Exception("Issue getting download")
 
                 log.info("Download Finished")
                 app.update_cell(key, "Download_Cart", "[downloaded]")
@@ -274,7 +277,7 @@ def message_checker():
         if len(oldpaid) > 0 and not read_args.retriveArgs().force:
             paid = oldpaid
         else:
-            paid = paid_.get_paid_posts(model_id, username)
+            paid = paid_.get_paid_posts(model_id, user_name)
             cache.set(
                 f"purchased_check_{model_id}",
                 paid,

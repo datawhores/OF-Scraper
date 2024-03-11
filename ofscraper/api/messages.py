@@ -632,7 +632,9 @@ async def scrape_messages(
 
 
 def get_individual_post(model_id, postid, c=None):
-    with c or sessionbuilder.sessionBuilder(backend="httpx") as c:
+    with c or sessionbuilder.sessionBuilder(
+        backend="httpx",
+    ) as c:
         with c.requests(
             url=constants.getattr("messageSPECIFIC").format(model_id, postid)
         )() as r:

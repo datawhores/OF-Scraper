@@ -1,9 +1,9 @@
 import logging
 import re
 
-import ofscraper.actions.scraper as of
 import ofscraper.api.highlights as highlights_
 import ofscraper.api.messages as messages_
+import ofscraper.api.paid as paid
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
@@ -82,6 +82,7 @@ def get_media_from_urls(urls):
             value = messages_.get_individual_post(
                 model_id, postid, c=sessionbuilder.sessionBuilder(backend="httpx")
             )
+            value = None
             media_dict.update(get_all_media(model_id, value))
             post_dict.update(get_post_item(model_id, value))
         elif type == "unknown":
@@ -109,6 +110,8 @@ def unknown_type_helper(postid, client):
 
 
 def get_post_item(model_id, value, inputtype=None):
+    if value == None:
+        return []
     user_name = profile.scrape_profile(model_id)["username"]
     post = posts_.Post(value, model_id, user_name, responsetype=inputtype)
     return {post.id: post}
@@ -133,7 +136,7 @@ def paid_failback(id, username):
     logging.getLogger("shared").debug(
         "Using failback search because query return 0 media"
     )
-    return of.process_paid_post(id, username)
+    return paid.get_paid_posts(id, username) or []
 
 
 def get_info(url):
