@@ -33,9 +33,7 @@ def manual_download(urls=None):
         username = value[0].post.username
         log.info(f"Downloading individual media for {username}")
         operations.table_init_create(model_id=model_id, username=username)
-        download.download_process(
-            username, model_id, value, posts=None, username=username
-        )
+        download.download_process(username, model_id, value, posts=None)
     textDownloader(posts_dict.values(), username=username)
 
 
