@@ -119,8 +119,8 @@ def get_media_from_urls(urls):
     return media_dict, post_dict
 
 
-def unknown_type_helper(postid, client):
-    return timeline.get_individual_post(postid, client)
+def unknown_type_helper(postid, c=None):
+    return timeline.get_individual_post(postid, c=c)
 
 
 def get_post_item(model_id, value, inputtype=None):
@@ -150,7 +150,8 @@ def paid_failback(id, username):
     logging.getLogger("shared").debug(
         "Using failback search because query return 0 media"
     )
-    return paid.get_paid_posts(id, username) or []
+    data = paid.get_paid_posts(id, username) or []
+    return list(map(lambda x: posts_.Post(x, id, username, responsetype="paid"), data))
 
 
 def get_info(url):
