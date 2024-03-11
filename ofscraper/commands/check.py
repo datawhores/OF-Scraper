@@ -5,6 +5,7 @@ import queue
 import re
 import threading
 import time
+import traceback
 
 import arrow
 
@@ -131,7 +132,8 @@ def process_download_cart():
 
             except Exception as E:
                 app.update_downloadcart_cell(key, "[failed]")
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback(tracekback.format.exec())
         time.sleep(10)
 
 
