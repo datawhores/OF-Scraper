@@ -50,7 +50,9 @@ async def get_paid_posts_progress(username, model_id):
     overall_progress = progress_utils.overall_progress
 
     async with sessionbuilder.sessionBuilder() as c:
-        tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress)))
+        tasks.append(
+            asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
+        )
         page_task = overall_progress.add_task(
             f"Paid Content Pages Progress: {page_count}", visible=True
         )
@@ -91,14 +93,14 @@ async def get_paid_posts_progress(username, model_id):
 
 
 @run
-async def get_paid_posts(model_id):
+async def get_paid_posts(model_id, username):
     global sem
     sem = sems.get_req_sem()
     output = []
     tasks = []
 
-    page_count = 0
     async with sessionbuilder.sessionBuilder() as c:
+        tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
         while tasks:
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
@@ -108,7 +110,6 @@ async def get_paid_posts(model_id):
             for result in done:
                 try:
                     result, new_tasks = await result
-                    page_count = page_count + 1
                     output.extend(result)
                     tasks.extend(new_tasks)
                 except Exception as E:
@@ -142,7 +143,7 @@ def set_check(unduped, model_id):
     cache.close()
 
 
-async def scrape_paid(c, username, job_progress, offset=0):
+async def scrape_paid(c, username, job_progress=None, offset=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
     """
@@ -165,9 +166,13 @@ async def scrape_paid(c, username, job_progress, offset=0):
             new_tasks = []
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scrape paid offset -> {offset} username -> {username}",
-                    visible=True,
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scrape paid offset -> {offset} username -> {username}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
                 )
 
                 async with c.requests(
@@ -213,7 +218,7 @@ async def scrape_paid(c, username, job_progress, offset=0):
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if task and job_progress else None
 
         return media, new_tasks
 
@@ -314,7 +319,7 @@ async def get_all_paid_posts():
         return output
 
 
-async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
+async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
     """

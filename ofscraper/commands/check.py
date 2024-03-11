@@ -324,7 +324,7 @@ def purchase_checker():
         if len(oldpaid) > 0 and not read_args.retriveArgs().force:
             paid = oldpaid
         else:
-            paid = paid_.get_paid_posts(model_id)
+            paid = paid_.get_paid_posts(model_id, user_name)
             cache.set(
                 f"purchased_check_{model_id}",
                 paid,
