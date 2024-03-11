@@ -29,8 +29,8 @@ import ofscraper.utils.logs.helpers as log_helpers
 log = logging.getLogger("shared")
 
 
-def scrape_user(c=None):
-    with c or sessionbuilder.sessionBuilder(
+def scrape_user():
+    with sessionbuilder.sessionBuilder(
         backend="httpx", limit=constants.getattr("API_MAX_CONNECTION")
     ) as c:
         return _scraper_user_helper(c)
@@ -78,8 +78,8 @@ def _scraper_user_helper(c):
             return data
 
 
-def parse_subscriber_count(c=None):
-    with c or sessionbuilder.sessionBuilder(
+def parse_subscriber_count():
+    with sessionbuilder.sessionBuilder(
         backend="httpx", limit=constants.getattr("API_MAX_CONNECTION")
     ) as c:
         for _ in Retrying(

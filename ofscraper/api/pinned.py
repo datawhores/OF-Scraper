@@ -41,49 +41,46 @@ async def get_pinned_post(model_id, c=None):
     job_progress = progress_utils.pinned_progress
     overall_progress = progress_utils.overall_progress
 
-    async with sessionbuilder.sessionBuilder(
-        limit=constants.getattr("API_MAX_CONNECTION")
-    ) as c:
-        tasks.append(
-            asyncio.create_task(
-                scrape_pinned_posts(
-                    c,
-                    model_id,
-                    job_progress,
-                    timestamp=read_args.retriveArgs().after.float_timestamp
-                    if read_args.retriveArgs().after
-                    else None,
+    # async with sessionbuilder.sessionBuilder(
+    #     limit=constants.getattr("API_MAX_CONNECTION")
+    # ) as c:
+    tasks.append(
+        asyncio.create_task(
+            scrape_pinned_posts(
+                c,
+                model_id,
+                job_progress,
+                timestamp=read_args.retriveArgs().after.float_timestamp
+                if read_args.retriveArgs().after
+                else None,
+            )
+        )
+    )
+
+    page_task = overall_progress.add_task(
+        f"Pinned Content Pages Progress: {page_count}", visible=True
+    )
+    while tasks:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        await asyncio.sleep(0)
+        tasks = list(pending)
+        for result in done:
+            try:
+                result, new_tasks = await result
+
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Pinned Content Pages Progress: {page_count}",
                 )
-            )
-        )
+                responseArray.extend(result)
+                tasks.extend(new_tasks)
+            except Exception as E:
+                log.debug(E)
+                continue
 
-        page_task = overall_progress.add_task(
-            f"Pinned Content Pages Progress: {page_count}", visible=True
-        )
-        while tasks:
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            await asyncio.sleep(0)
-            tasks = list(pending)
-            for result in done:
-                try:
-                    result, new_tasks = await result
-
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Pinned Content Pages Progress: {page_count}",
-                    )
-                    responseArray.extend(result)
-                    tasks.extend(new_tasks)
-                except Exception as E:
-                    log.debug(E)
-                    continue
-
-        overall_progress.remove_task(page_task)
-        if progress_utils.pinned_layout:
-            progress_utils.pinned_layout = False
+    overall_progress.remove_task(page_task)
+    progress_utils.pinned_layout = False
     outdict = {}
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
     for post in responseArray:

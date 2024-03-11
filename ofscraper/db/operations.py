@@ -445,7 +445,7 @@ def get_last_timeline_date(model_id=None, username=None):
 
 
 @operation_wrapper
-def get_archived_media(conn=None, **kwargs) -> list:
+def a(conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.getArchivedMedia)
         data = list(map(lambda x: x, cur.fetchall()))

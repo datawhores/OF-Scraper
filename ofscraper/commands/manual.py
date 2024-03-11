@@ -59,64 +59,44 @@ def get_media_from_urls(urls):
     user_name_dict = {}
     media_dict = {}
     post_dict = {}
-    for url in url_helper(urls):
-        response = get_info(url)
-        model = response[0]
-        postid = response[1]
-        type = response[2]
-        if type == "post":
-            model_id = user_name_dict.get(model) or profile.get_id(model)
-            value = timeline.get_individual_post(
-                postid, c=sessionbuilder.sessionBuilder(backend="httpx")
-            )
-            media_dict.update(get_all_media(postid, model_id, value))
-            post_dict.update(get_post_item(model_id, value))
-        elif type == "msg":
-            model_id = model
-            value = messages_.get_individual_post(
-                model_id, postid, c=sessionbuilder.sessionBuilder(backend="httpx")
-            )
-            media_dict.update(get_all_media(postid, model_id, value))
-            post_dict.update(get_post_item(model_id, value))
-        elif type == "msg2":
-            model_id = user_name_dict.get(model) or profile.get_id(model)
-            value = messages_.get_individual_post(
-                model_id, postid, c=sessionbuilder.sessionBuilder(backend="httpx")
-            )
-            media_dict.update(get_all_media(postid, model_id, value))
-            post_dict.update(get_post_item(model_id, value))
-        elif type == "unknown":
-            value = (
-                unknown_type_helper(
-                    postid, c=sessionbuilder.sessionBuilder(backend="httpx")
-                )
-                or {}
-            )
-            model_id = value.get("author", {}).get("id")
-            media_dict.update(get_all_media(postid, model_id, value))
-            post_dict.update(get_post_item(model_id, value))
-        elif type == "highlights":
-            value = (
-                highlights_.get_individual_highlights(
-                    postid, c=sessionbuilder.sessionBuilder(backend="httpx")
-                )
-                or {}
-            )
-            model_id = value.get("userId")
-            media_dict.update(get_all_media(postid, model_id, value, "highlights"))
-            post_dict.update(get_post_item(model_id, value, "highlights"))
-            # special case
-        elif type == "stories":
-            value = (
-                highlights_.get_individual_stories(
-                    postid, c=sessionbuilder.sessionBuilder(backend="httpx")
-                )
-                or {}
-            )
-            model_id = value.get("userId")
-            media_dict.update(get_all_media(postid, model_id, value, "stories"))
-            post_dict.update(get_post_item(model_id, value, "stories"))
-            # special case
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        for url in url_helper(urls):
+            response = get_info(url)
+            model = response[0]
+            postid = response[1]
+            type = response[2]
+            if type == "post":
+                model_id = user_name_dict.get(model) or profile.get_id(model)
+                value = timeline.get_individual_post(postid, c=c)
+                media_dict.update(get_all_media(postid, model_id, value))
+                post_dict.update(get_post_item(model_id, value))
+            elif type == "msg":
+                model_id = model
+                value = messages_.get_individual_post(model_id, postid, c=c)
+                media_dict.update(get_all_media(postid, model_id, value))
+                post_dict.update(get_post_item(model_id, value))
+            elif type == "msg2":
+                model_id = user_name_dict.get(model) or profile.get_id(model)
+                value = messages_.get_individual_post(model_id, postid, c=c)
+                media_dict.update(get_all_media(postid, model_id, value))
+                post_dict.update(get_post_item(model_id, value))
+            elif type == "unknown":
+                value = unknown_type_helper(postid, c=c) or {}
+                model_id = value.get("author", {}).get("id")
+                media_dict.update(get_all_media(postid, model_id, value))
+                post_dict.update(get_post_item(model_id, value))
+            elif type == "highlights":
+                value = highlights_.get_individual_highlights(postid, c=c) or {}
+                model_id = value.get("userId")
+                media_dict.update(get_all_media(postid, model_id, value, "highlights"))
+                post_dict.update(get_post_item(model_id, value, "highlights"))
+                # special case
+            elif type == "stories":
+                value = highlights_.get_individual_stories(postid, c=c) or {}
+                model_id = value.get("userId")
+                media_dict.update(get_all_media(postid, model_id, value, "stories"))
+                post_dict.update(get_post_item(model_id, value, "stories"))
+                # special case
     return media_dict, post_dict
 
 

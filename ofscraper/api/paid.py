@@ -49,37 +49,34 @@ async def get_paid_posts_progress(username, model_id, c=None):
     job_progress = progress_utils.paid_progress
     overall_progress = progress_utils.overall_progress
 
-    async with c or sessionbuilder.sessionBuilder(
-        limit=constants.getattr("API_MAX_CONNECTION")
-    ) as c:
-        tasks.append(
-            asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
-        )
-        page_task = overall_progress.add_task(
-            f"Paid Content Pages Progress: {page_count}", visible=True
-        )
-        while tasks:
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            tasks = list(pending)
+    # async with c or sessionbuilder.sessionBuilder(
+    #     limit=constants.getattr("API_MAX_CONNECTION")
+    # ) as c:
+    tasks.append(
+        asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
+    )
+    page_task = overall_progress.add_task(
+        f"Paid Content Pages Progress: {page_count}", visible=True
+    )
+    while tasks:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        tasks = list(pending)
 
-            for result in done:
-                try:
-                    result, new_tasks = await result
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Paid Content Pages Progress: {page_count}",
-                    )
-                    output.extend(result)
-                    tasks.extend(new_tasks)
-                except Exception as E:
-                    log.debug(E)
-                    continue
-        overall_progress.remove_task(page_task)
-        if progress_utils.paid_layout:
-            progress_utils.paid_layout.visible = False
+        for result in done:
+            try:
+                result, new_tasks = await result
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Paid Content Pages Progress: {page_count}",
+                )
+                output.extend(result)
+                tasks.extend(new_tasks)
+            except Exception as E:
+                log.debug(E)
+                continue
+    overall_progress.remove_task(page_task)
+    progress_utils.paid_layout.visible = False
     outdict = {}
     for post in output:
         outdict[post["id"]] = post
@@ -101,23 +98,21 @@ async def get_paid_posts(model_id, username, c=None):
     output = []
     tasks = []
 
-    async with c or sessionbuilder.sessionBuilder(
-        limit=constants.getattr("API_MAX_CONNECTION")
-    ) as c:
-        tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
-        while tasks:
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            tasks = list(pending)
-            for result in done:
-                try:
-                    result, new_tasks = await result
-                    output.extend(result)
-                    tasks.extend(new_tasks)
-                except Exception as E:
-                    log.debug(E)
-                    continue
+    # async with c or sessionbuilder.sessionBuilder(
+    #     limit=constants.getattr("API_MAX_CONNECTION")
+    # ) as c:
+    tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
+    while tasks:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        tasks = list(pending)
+        for result in done:
+            try:
+                result, new_tasks = await result
+                output.extend(result)
+                tasks.extend(new_tasks)
+            except Exception as E:
+                log.debug(E)
+                continue
     outdict = {}
     for post in output:
         outdict[post["id"]] = post

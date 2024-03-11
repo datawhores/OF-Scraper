@@ -30,6 +30,7 @@ import ofscraper.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
+import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.areas as areas
@@ -46,13 +47,10 @@ log = logging.getLogger("shared")
 
 
 @free.space_checker
-async def process_messages(model_id, username):
+async def process_messages(model_id, username, c):
     try:
         with stdout.lowstdout():
-            messages_ = await messages.get_messages_progress(
-                model_id,
-                username,
-            )
+            messages_ = await messages.get_messages_progress(model_id, username, c=c)
             messages_ = list(
                 map(lambda x: posts_.Post(x, model_id, username), messages_)
             )
@@ -99,10 +97,10 @@ async def process_messages(model_id, username):
 
 
 @free.space_checker
-async def process_paid_post(model_id, username):
+async def process_paid_post(model_id, username, c):
     try:
         with stdout.lowstdout():
-            paid_content = await paid.get_paid_posts_progress(username, model_id)
+            paid_content = await paid.get_paid_posts_progress(username, model_id, c=c)
             paid_content = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
@@ -143,10 +141,10 @@ async def process_paid_post(model_id, username):
 
 
 @free.space_checker
-async def process_stories(model_id, username):
+async def process_stories(model_id, username, c):
     try:
         with stdout.lowstdout():
-            stories = await highlights.get_stories_post_progress(model_id)
+            stories = await highlights.get_stories_post_progress(model_id, c=c)
             stories = list(
                 map(
                     lambda x: posts_.Post(
@@ -187,10 +185,10 @@ async def process_stories(model_id, username):
 
 
 @free.space_checker
-async def process_highlights(model_id, username):
+async def process_highlights(model_id, username, c):
     try:
         with stdout.lowstdout():
-            highlights_ = await highlights.get_highlight_post_progress(model_id)
+            highlights_ = await highlights.get_highlight_post_progress(model_id, c=c)
             highlights_ = list(
                 map(
                     lambda x: posts_.Post(
@@ -234,12 +232,11 @@ async def process_highlights(model_id, username):
 
 
 @free.space_checker
-async def process_timeline_posts(model_id, username):
+async def process_timeline_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
             timeline_posts = await timeline.get_timeline_media_progress(
-                model_id,
-                username,
+                model_id, username, c=c
             )
             timeline_posts = list(
                 map(
@@ -295,13 +292,10 @@ async def process_timeline_posts(model_id, username):
 
 
 @free.space_checker
-async def process_archived_posts(model_id, username):
+async def process_archived_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
-            archived_posts = await archive.get_archived_media(
-                model_id,
-                username,
-            )
+            archived_posts = await archive.get_archived_media(model_id, username, c=c)
             archived_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, "archived"),
@@ -358,10 +352,10 @@ async def process_archived_posts(model_id, username):
 
 
 @free.space_checker
-async def process_pinned_posts(model_id, username):
+async def process_pinned_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
-            pinned_posts = await pinned.get_pinned_post(model_id)
+            pinned_posts = await pinned.get_pinned_post(model_id, c=c)
             pinned_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, "pinned"), pinned_posts
@@ -412,10 +406,10 @@ async def process_pinned_posts(model_id, username):
 
 
 @free.space_checker
-async def process_profile(username) -> list:
+async def process_profile(username, c) -> list:
     try:
         with stdout.lowstdout():
-            user_profile = profile.scrape_profile(username)
+            user_profile = profile.scrape_profile(username, c=c)
             urls, info = profile.parse_profile(user_profile)
             profile.print_profile_info(info)
             output = []
@@ -513,10 +507,10 @@ def process_all_paid():
 
 
 @free.space_checker
-async def process_labels(model_id, username):
+async def process_labels(model_id, username, c):
     try:
         with stdout.lowstdout():
-            labels_ = await labels_api.get_labels(model_id)
+            labels_ = await labels_api.get_labels(model_id, c=c)
 
             labels_ = (
                 labels_
@@ -529,7 +523,9 @@ async def process_labels(model_id, username):
                     )
                 )
             )
-            labelled_posts_ = await labels_api.get_labelled_posts(labels_, model_id)
+            labelled_posts_ = await labels_api.get_labelled_posts(
+                labels_, model_id, c=c
+            )
             labelled_posts_ = list(
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
@@ -597,66 +593,84 @@ async def process_task(model_id, username, ele):
     post = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
-    MAX_COUNT = min(constants.getattr("API_MAX_AREAS"), system.getcpu_count())
-
-    while True:
-        if not bool(tasks) and not bool(final_post_areas):
-            break
-        for i in range(MAX_COUNT - len(tasks)):
-            if "Profile" in final_post_areas:
-                tasks.append(asyncio.create_task(process_profile(username)))
-                final_post_areas.remove("Profile")
-            elif "Pinned" in final_post_areas:
-                tasks.append(
-                    asyncio.create_task(process_pinned_posts(model_id, username))
-                )
-                setattr(progress_utils.pinned_layout, "visible", True)
-                final_post_areas.remove("Pinned")
-            elif "Timeline" in final_post_areas:
-                tasks.append(
-                    asyncio.create_task(process_timeline_posts(model_id, username))
-                )
-                setattr(progress_utils.timeline_layout, "visible", True)
-                final_post_areas.remove("Timeline")
-            elif "Archived" in final_post_areas:
-                tasks.append(
-                    asyncio.create_task(process_archived_posts(model_id, username))
-                )
-                setattr(progress_utils.archived_layout, "visible", True)
-                final_post_areas.remove("Archived")
-            elif "Purchased" in final_post_areas:
-                tasks.append(asyncio.create_task(process_paid_post(model_id, username)))
-                setattr(progress_utils.paid_layout, "visible", True)
-                final_post_areas.remove("Purchased")
-            elif "Messages" in final_post_areas:
-                tasks.append(asyncio.create_task(process_messages(model_id, username)))
-                final_post_areas.remove("Messages")
-                setattr(progress_utils.messages_layout, "visible", True)
-            elif "Highlights" in final_post_areas:
-                tasks.append(
-                    asyncio.create_task(process_highlights(model_id, username))
-                )
-                setattr(progress_utils.highlights_layout, "visible", True)
-                final_post_areas.remove("Highlights")
-            elif "Stories" in final_post_areas:
-                tasks.append(asyncio.create_task(process_stories(model_id, username)))
-                setattr(progress_utils.stories_layout, "visible", True)
-                final_post_areas.remove("Stories")
-            elif "Labels" in final_post_areas and ele.active:
-                tasks.append(asyncio.create_task(process_labels(model_id, username)))
-                setattr(progress_utils.labelled_layout, "visible", True)
-                final_post_areas.remove("Labels")
-        if not bool(tasks):
-            break
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
-        tasks = list(pending)
-        for results in done:
-            try:
-                medias, posts = await results
-                media.extend(medias or [])
-                post.extend(posts or [])
-            except Exception as E:
-                log.debug(E)
-                continue
+    async with sessionbuilder.sessionBuilder() as c:
+        while True:
+            max_count = min(
+                constants.getattr("API_MAX_AREAS"),
+                system.getcpu_count(),
+                len(final_post_areas),
+            )
+            if not bool(tasks) and not bool(final_post_areas):
+                break
+            for i in range(max_count - len(tasks)):
+                if "Profile" in final_post_areas:
+                    tasks.append(asyncio.create_task(process_profile(username, c)))
+                    final_post_areas.remove("Profile")
+                elif "Pinned" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(process_pinned_posts(model_id, username, c))
+                    )
+                    setattr(progress_utils.pinned_layout, "visible", True)
+                    final_post_areas.remove("Pinned")
+                elif "Timeline" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(
+                            process_timeline_posts(model_id, username, c)
+                        )
+                    )
+                    setattr(progress_utils.timeline_layout, "visible", True)
+                    final_post_areas.remove("Timeline")
+                elif "Archived" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(
+                            process_archived_posts(model_id, username, c)
+                        )
+                    )
+                    setattr(progress_utils.archived_layout, "visible", True)
+                    final_post_areas.remove("Archived")
+                elif "Purchased" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(process_paid_post(model_id, username, c))
+                    )
+                    setattr(progress_utils.paid_layout, "visible", True)
+                    final_post_areas.remove("Purchased")
+                elif "Messages" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(process_messages(model_id, username, c))
+                    )
+                    final_post_areas.remove("Messages")
+                    setattr(progress_utils.messages_layout, "visible", True)
+                elif "Highlights" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(process_highlights(model_id, username, c))
+                    )
+                    setattr(progress_utils.highlights_layout, "visible", True)
+                    final_post_areas.remove("Highlights")
+                elif "Stories" in final_post_areas:
+                    tasks.append(
+                        asyncio.create_task(process_stories(model_id, username, c))
+                    )
+                    setattr(progress_utils.stories_layout, "visible", True)
+                    final_post_areas.remove("Stories")
+                elif "Labels" in final_post_areas and ele.active:
+                    tasks.append(
+                        asyncio.create_task(process_labels(model_id, username, c))
+                    )
+                    setattr(progress_utils.labelled_layout, "visible", True)
+                    final_post_areas.remove("Labels")
+            if not bool(tasks):
+                break
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            await asyncio.sleep(0)
+            tasks = list(pending)
+            for results in done:
+                try:
+                    medias, posts = await results
+                    media.extend(medias or [])
+                    post.extend(posts or [])
+                except Exception as E:
+                    log.debug(E)
+                    continue
     return media, post

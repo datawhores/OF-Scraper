@@ -48,136 +48,133 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
     job_progress = progress_utils.archived_progress
     overall_progress = progress_utils.overall_progress
 
-    async with c or sessionbuilder.sessionBuilder(
-        limit=constants.getattr("API_MAX_CONNECTION")
-    ) as c:
-        oldarchived = (
-            operations.get_archived_postinfo(model_id=model_id, username=username)
-            if not read_args.retriveArgs().no_cache
-            else []
-        )
+    # async with c or sessionbuilder.sessionBuilder(
+    #     limit=constants.getattr("API_MAX_CONNECTION")
+    # ) as c:
+    oldarchived = (
+        operations.get_archived_postinfo(model_id=model_id, username=username)
+        if not read_args.retriveArgs().no_cache
+        else []
+    )
 
-        log.trace(
-            "oldarchive {posts}".format(
-                posts="\n\n".join(
-                    list(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
-                )
-            )
+    log.trace(
+        "oldarchive {posts}".format(
+            posts="\n\n".join(list(map(lambda x: f"oldarchive: {str(x)}", oldarchived)))
         )
-        log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-        oldarchived = list(filter(lambda x: x != None, oldarchived))
-        postedAtArray = sorted(oldarchived, key=lambda x: x[0])
+    )
+    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    postedAtArray = sorted(oldarchived, key=lambda x: x[0])
 
-        after = get_after(model_id, username, forced_after)
-        # set check
-        log.info(
-            f"""
+    after = get_after(model_id, username, forced_after)
+    # set check
+    log.info(
+        f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
 [yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all archived posts + download/re-download of all files[/yellow]
-        """
-        )
-        filteredArray = (
-            list(filter(lambda x: x[0] >= after, postedAtArray))
-            if len(postedAtArray) > 0
-            else []
-        )
+    """
+    )
+    filteredArray = (
+        list(filter(lambda x: x[0] >= after, postedAtArray))
+        if len(postedAtArray) > 0
+        else []
+    )
 
-        if len(filteredArray) > min_posts:
-            splitArrays = [
-                filteredArray[i : i + min_posts]
-                for i in range(0, len(filteredArray), min_posts)
-            ]
-            # use the previous split for timesamp
+    if len(filteredArray) > min_posts:
+        splitArrays = [
+            filteredArray[i : i + min_posts]
+            for i in range(0, len(filteredArray), min_posts)
+        ]
+        # use the previous split for timesamp
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    required_ids=set(list(map(lambda x: x[0], splitArrays[0]))),
+                    timestamp=read_args.retriveArgs().after.float_timestamp
+                    if read_args.retriveArgs().after
+                    else None,
+                )
+            )
+        )
+        [
             tasks.append(
                 asyncio.create_task(
                     scrape_archived_posts(
                         c,
                         model_id,
                         job_progress=job_progress,
-                        required_ids=set(list(map(lambda x: x[0], splitArrays[0]))),
-                        timestamp=read_args.retriveArgs().after.float_timestamp
-                        if read_args.retriveArgs().after
-                        else None,
+                        required_ids=set(list(map(lambda x: x[0], splitArrays[i]))),
+                        timestamp=splitArrays[i - 1][-1][0],
                     )
                 )
             )
-            [
-                tasks.append(
-                    asyncio.create_task(
-                        scrape_archived_posts(
-                            c,
-                            model_id,
-                            job_progress=job_progress,
-                            required_ids=set(list(map(lambda x: x[0], splitArrays[i]))),
-                            timestamp=splitArrays[i - 1][-1][0],
-                        )
-                    )
-                )
-                for i in range(1, len(splitArrays) - 1)
-            ]
-            # keeping grabbing until nothing left
-            tasks.append(
-                asyncio.create_task(
-                    scrape_archived_posts(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        timestamp=splitArrays[-2][-1][0],
-                    )
+            for i in range(1, len(splitArrays) - 1)
+        ]
+        # keeping grabbing until nothing left
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    timestamp=splitArrays[-2][-1][0],
                 )
             )
-        else:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_archived_posts(
-                        c, model_id, job_progress=job_progress, timestamp=after
-                    )
-                )
-            )
-
-        page_task = overall_progress.add_task(
-            f" Archived Content Pages Progress: {page_count}", visible=True
         )
-        while tasks:
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
+    else:
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c, model_id, job_progress=job_progress, timestamp=after
+                )
             )
-            await asyncio.sleep(0)
-            tasks = pending
-            for result in done:
-                try:
-                    result, new_tasks = await result
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Archived Content Pages Progress: {page_count}",
-                    )
-                    responseArray.extend(result)
-                    tasks.extend(new_tasks)
-                except Exception as E:
-                    log.debug(E)
-                    continue
-        overall_progress.remove_task(page_task)
-        progress_utils.archived_layout = False
+        )
 
-        unduped = {}
-        log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
-        for post in responseArray:
-            id = post["id"]
-            if unduped.get(id):
+    page_task = overall_progress.add_task(
+        f" Archived Content Pages Progress: {page_count}", visible=True
+    )
+    while tasks:
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        await asyncio.sleep(0)
+        tasks = list(pending)
+        for result in done:
+            try:
+                result, new_tasks = await result
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Archived Content Pages Progress: {page_count}",
+                )
+                responseArray.extend(result)
+                tasks.extend(new_tasks)
+            except Exception as E:
+                log.traceback(traceback.format_exc())
+                log.tracback_(E)
                 continue
-            unduped[id] = post
-        log.trace(f"archive dupeset postids {list(unduped.keys())}")
-        log.trace(
-            "archived raw unduped {posts}".format(
-                posts="\n\n".join(
-                    list(map(lambda x: f"undupedinfo archive: {str(x)}", unduped))
-                )
+    overall_progress.remove_task(page_task)
+    progress_utils.archived_layout = False
+
+    unduped = {}
+    log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
+    for post in responseArray:
+        id = post["id"]
+        if unduped.get(id):
+            continue
+        unduped[id] = post
+    log.trace(f"archive dupeset postids {list(unduped.keys())}")
+    log.trace(
+        "archived raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo archive: {str(x)}", unduped))
             )
         )
-        log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-        set_check(unduped, model_id, after)
+    )
+    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
+    set_check(unduped, model_id, after)
     return list(unduped.values())
 
 
