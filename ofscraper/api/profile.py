@@ -198,7 +198,7 @@ def print_profile_info(info):
 
 
 def get_id(username, c=None):
-    # with c or sessionbuilder.sessionBuilder(backend="httpx") as c:
+    c or sessionbuilder.sessionBuilder(backend="httpx")
     return get_id_helper(c, username)
 
 
