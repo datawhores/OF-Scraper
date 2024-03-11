@@ -49,7 +49,7 @@ log = logging.getLogger("shared")
 async def process_messages(model_id, username):
     try:
         with stdout.lowstdout():
-            messages_ = await messages.get_messages(
+            messages_ = await messages.get_messages_progress(
                 model_id,
                 username,
             )

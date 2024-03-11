@@ -22,7 +22,18 @@ async def get_text(values):
         asyncio.get_event_loop().set_default_executor(executor)
         dupe = read_args.retriveArgs().dupe
         async with asyncio.TaskGroup() as tg:
-            [tg.create_task(get_text_process(value, dupe=dupe)) for value in values]
+            tasks = [
+                tg.create_task(get_text_process(value, dupe=dupe)) for value in values
+            ]
+            results = []
+        for task in tasks:
+            result = await task
+            results.append(result)
+        return (
+            len(list(filter(lambda x: x == True, results))),
+            len(list(filter(lambda x: x == False, results))),
+            len(list(filter(lambda x: x == "exists", results))),
+        )
 
 
 async def get_text_process(ele, dupe=None):
@@ -39,12 +50,14 @@ async def get_text_process(ele, dupe=None):
         placeholderObj = placeholder.Textholders(new_ele, "txt")
         await placeholderObj.init()
         if pathlib.Path(placeholderObj.filepath).exists() and not dupe:
-            return
+            return "exists"
         wrapped_text = textwrap.wrap(
             new_ele.text, width=constants.getattr("MAX_TEXT_LENGTH")
         )
         async with aiofiles.open(placeholderObj.filepath, "w") as p:
             await p.writelines(wrapped_text)
+        return True
     except Exception as E:
         log.traceback_(f"{E}")
         log.traceback_(f"{traceback.format_exc()}")
+        return False

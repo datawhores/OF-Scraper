@@ -178,7 +178,9 @@ def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
 
 
 @operation_wrapper
-def get_messages_data(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_messages_progress_data(
+    model_id=None, username=None, conn=None, **kwargs
+) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.messagesData)
         conn.commit()
@@ -191,7 +193,7 @@ def get_messages_data(model_id=None, username=None, conn=None, **kwargs) -> list
 
 
 def get_last_message_date(model_id=None, username=None):
-    data = get_messages_data(model_id=model_id, username=username)
+    data = get_messages_progress_data(model_id=model_id, username=username)
     return sorted(data, key=lambda x: x.get("date"))[-1].get("date")
 
 
@@ -467,7 +469,7 @@ def get_last_archived_date(model_id=None, username=None):
 
 
 @operation_wrapper
-def get_messages_media(conn=None, **kwargs) -> list:
+def get_messages_progress_media(conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.getMessagesMedia)
         data = list(map(lambda x: x, cur.fetchall()))

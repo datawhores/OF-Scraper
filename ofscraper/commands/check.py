@@ -115,9 +115,9 @@ def process_download_cart():
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 if settings.get_mediatypes() == ["Text"]:
-                    textDownloader(post_dict.values())
+                    textDownloader(post_dict.values(), username=username)
                 else:
-                    textDownloader(post_dict.values())
+                    textDownloader(post_dict.values(), username=username)
 
                     values = downloadnormal.process_dicts(username, model_id, [media])
                     if values == None or values[-1] == 1:

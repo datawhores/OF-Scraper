@@ -2,13 +2,14 @@ import logging
 import traceback
 
 import ofscraper.classes.media as media_class
+import ofscraper.download.common.log as logs
 import ofscraper.utils.settings as settings
 import ofscraper.utils.text as text
 from ofscraper.utils.context.run_async import run
 
 
 @run
-async def textDownloader(objectdicts):
+async def textDownloader(objectdicts, username=None):
     log = logging.getLogger("shared")
     if objectdicts == None:
         return
@@ -24,7 +25,9 @@ async def textDownloader(objectdicts):
                 for e in objectdicts
             }
         ).values()
-        await text.get_text(data)
+        count, fails, exists = await text.get_text(data)
+        username or "Unknown"
+        logs.text_log(username, count, fails, exists, log=log)
     except Exception as E:
         log.debug(f"Issue with text {E}")
         log.debug(f"Issue with text {traceback.format_exc()}")

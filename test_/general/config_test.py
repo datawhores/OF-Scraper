@@ -291,17 +291,23 @@ def test_paidresponse3(mocker):
 
 
 def test_messages_response(mocker):
-    assert (get_messages_responsetype(None)) == RESPONSE_TYPE_DEFAULT["message"]
+    assert (get_messages_progress_responsetype(None)) == RESPONSE_TYPE_DEFAULT[
+        "message"
+    ]
 
 
 def test_messages2(mocker):
     config = {"responsetype": {"message": RESPONSE_TYPE_DEFAULT["timeline"]}}
-    assert (get_messages_responsetype(config)) == RESPONSE_TYPE_DEFAULT["timeline"]
+    assert (get_messages_progress_responsetype(config)) == RESPONSE_TYPE_DEFAULT[
+        "timeline"
+    ]
 
 
 def test_messagesresponse3(mocker):
     config = {}
-    assert (get_messages_responsetype(config)) == RESPONSE_TYPE_DEFAULT["message"]
+    assert (get_messages_progress_responsetype(config)) == RESPONSE_TYPE_DEFAULT[
+        "message"
+    ]
 
 
 def test_profiles_response(mocker):

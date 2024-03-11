@@ -390,7 +390,7 @@ def get_paid_responsetype(config=None, mediatype=None):
 
 
 @wrapper.config_reader
-def get_messages_responsetype(config=None, mediatype=None):
+def get_messages_progress_responsetype(config=None, mediatype=None):
     if config == False:
         return constants.RESPONSE_TYPE_DEFAULT["message"]
     return (

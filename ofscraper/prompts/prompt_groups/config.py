@@ -637,7 +637,7 @@ Empty string is consider to be 'pinned'
 set responsetype for message posts
 Empty string is consider to be 'message'
             """,
-                "default": data.get_messages_responsetype(),
+                "default": data.get_messages_progress_responsetype(),
                 "message": "message responstype mapping: ",
             },
             {

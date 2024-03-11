@@ -63,7 +63,7 @@ def get_current_config_schema(config: dict = None) -> dict:
         },
         "responsetype": {
             "timeline": data.get_timeline_responsetype(config=config),
-            "message": data.get_messages_responsetype(config=config),
+            "message": data.get_messages_progress_responsetype(config=config),
             "archived": data.get_archived_responsetype(config=config),
             "paid": data.get_paid_responsetype(config=config),
             "stories": data.get_stories_responsetype(config=config),
