@@ -8,7 +8,6 @@ import time
 
 import arrow
 
-import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
 import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid_
@@ -148,44 +147,42 @@ def checker():
 def post_checker():
     user_dict = {}
 
-    with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        links = list(url_helper())
-        for ele in links:
-            name_match = re.search(
-                f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
-            )
-            name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
+    links = list(url_helper())
+    for ele in links:
+        name_match = re.search(
+            f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
+        )
+        name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
 
-            if name_match:
-                user_name = name_match.group(1)
-                log.info(f"Getting Full Timeline for {user_name}")
-                model_id = profile.get_id(user_name)
-            elif name_match2:
-                user_name = name_match2.group(0)
-                model_id = profile.get_id(user_name)
-            else:
-                continue
-            if user_dict.get(user_name):
-                continue
+        if name_match:
+            user_name = name_match.group(1)
+            log.info(f"Getting Full Timeline for {user_name}")
+            model_id = profile.get_id(user_name)
+        elif name_match2:
+            user_name = name_match2.group(0)
+            model_id = profile.get_id(user_name)
+        else:
+            continue
+        if user_dict.get(user_name):
+            continue
 
-            oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+        oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+        user_dict[user_name] = {}
+        user_dict[user_name] = user_dict[user_name] or []
+        if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
+            user_dict[user_name].extend(oldtimeline)
+        else:
             user_dict[user_name] = {}
             user_dict[user_name] = user_dict[user_name] or []
-            if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
-                user_dict[user_name].extend(oldtimeline)
-            else:
-                user_dict[user_name] = {}
-                user_dict[user_name] = user_dict[user_name] or []
-                data = timeline.get_timeline_media(
-                    model_id, user_name, forced_after=0, c=c
-                )
-                user_dict[user_name].extend(data)
-                cache.set(
-                    f"timeline_check_{model_id}",
-                    data,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
-                cache.close()
+            c = sessionbuilder.sessionBuilder(backend="httpx")
+            data = timeline.get_timeline_media(model_id, user_name, forced_after=0, c=c)
+            user_dict[user_name].extend(data)
+            cache.set(
+                f"timeline_check_{model_id}",
+                data,
+                expire=constants.getattr("DAY_SECONDS"),
+            )
+            cache.close()
 
         # individual links
         for ele in list(
@@ -206,6 +203,7 @@ def post_checker():
                 log.info(f"Getting Invidiual Link for {user_name}")
                 if not user_dict.get(user_name):
                     user_dict[name_match.group(1)] = {}
+                c = sessionbuilder.sessionBuilder(backend="httpx")
                 data = timeline.get_individual_post(post_id, c)
                 user_dict[user_name] = user_dict[user_name] or []
                 user_dict[user_name].append(data)
