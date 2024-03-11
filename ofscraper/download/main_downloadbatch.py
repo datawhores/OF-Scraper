@@ -150,6 +150,7 @@ async def main_download_downloader(c, ele):
                     return await alt_data_handler(c, ele, tempholderObj)
 
             except OSError as E:
+                await asyncio.sleep(1)
                 common_globals.innerlog.get().debug(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
                 )
@@ -161,6 +162,7 @@ async def main_download_downloader(c, ele):
                 )
                 raise E
             except Exception as E:
+                await asyncio.sleep(1)
                 common_globals.innerlog.get().traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
                 )
