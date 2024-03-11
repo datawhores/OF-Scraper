@@ -133,7 +133,7 @@ def process_download_cart():
             except Exception as E:
                 app.update_downloadcart_cell(key, "[failed]")
                 log.traceback_(E)
-                log.traceback(tracekback.format.exec())
+                log.traceback_(traceback.format_exc())
         time.sleep(10)
 
 
