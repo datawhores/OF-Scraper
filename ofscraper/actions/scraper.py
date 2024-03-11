@@ -409,7 +409,7 @@ async def process_pinned_posts(model_id, username, c):
 async def process_profile(username, c) -> list:
     try:
         with stdout.lowstdout():
-            user_profile = profile.scrape_profile(username, c=c)
+            user_profile = profile.scrape_profile(username)
             urls, info = profile.parse_profile(user_profile)
             profile.print_profile_info(info)
             output = []
@@ -580,8 +580,8 @@ async def process_areas(ele, model_id) -> list:
             output = []
             group = progress_utils.get_api_progress_Group()
             with Live(group, console=console_.get_shared_console()):
-                new_data, posts = await process_task(model_id, username, ele)
-                output.extend(new_data)
+                medias, posts = await process_task(model_id, username, ele)
+                output.extend(medias)
         return filters.filterMedia(output), filters.filterPost(posts)
     except Exception as E:
         print(E)
