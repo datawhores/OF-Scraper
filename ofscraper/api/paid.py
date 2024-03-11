@@ -39,7 +39,7 @@ sem = None
 
 
 @run
-async def get_paid_posts_progress(username, model_id):
+async def get_paid_posts_progress(username, model_id, c=None):
     global sem
     sem = sems.get_req_sem()
     output = []
@@ -49,7 +49,9 @@ async def get_paid_posts_progress(username, model_id):
     job_progress = progress_utils.paid_progress
     overall_progress = progress_utils.overall_progress
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         tasks.append(
             asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
         )
@@ -93,20 +95,21 @@ async def get_paid_posts_progress(username, model_id):
 
 
 @run
-async def get_paid_posts(model_id, username):
+async def get_paid_posts(model_id, username, c=None):
     global sem
     sem = sems.get_req_sem()
     output = []
     tasks = []
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
         while tasks:
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
             tasks = list(pending)
-
             for result in done:
                 try:
                     result, new_tasks = await result
@@ -167,9 +170,13 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = (
-                    job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scrape paid offset -> {offset} username -> {username}",
-                        visible=True,
+                    (
+                        job_progress.add_task(
+                            f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} scrape paid offset -> {offset} username -> {username}",
+                            visible=True,
+                        )
+                        if job_progress
+                        else None
                     )
                     if job_progress
                     else None
@@ -203,7 +210,9 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
                                     )
                                 )
                             )
-                        job_progress.remove_task(task)
+                        job_progress.remove_task(
+                            task
+                        ) if task and job_progress else None
 
                     else:
                         log.debug(f"[bold]paid response status code:[/bold]{r.status}")

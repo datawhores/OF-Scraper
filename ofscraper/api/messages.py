@@ -40,7 +40,7 @@ sem = None
 
 
 @run
-async def get_messages_progress(model_id, username, forced_after=None):
+async def get_messages_progress(model_id, username, forced_after=None, c=None):
     global sem
     sem = sems.get_req_sem()
     global after
@@ -53,7 +53,9 @@ async def get_messages_progress(model_id, username, forced_after=None):
     job_progress = progress_utils.messages_progress
     overall_progress = progress_utils.overall_progress
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         oldmessages = (
             operations.get_messages_progress_data(model_id=model_id, username=username)
             if not read_args.retriveArgs().no_cache
@@ -272,7 +274,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
 
 
 @run
-async def get_messages(model_id, username, forced_after=None):
+async def get_messages(model_id, username, forced_after=None, c=None):
     global sem
     sem = sems.get_req_sem()
     global after
@@ -282,7 +284,9 @@ async def get_messages(model_id, username, forced_after=None):
     # require a min num of posts to be returned
     min_posts = 40
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         oldmessages = (
             operations.get_messages_progress_data(model_id=model_id, username=username)
             if not read_args.retriveArgs().no_cache

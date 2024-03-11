@@ -237,7 +237,7 @@ async def process_highlights(model_id, username):
 async def process_timeline_posts(model_id, username):
     try:
         with stdout.lowstdout():
-            timeline_posts = await timeline.get_timeline_media(
+            timeline_posts = await timeline.get_timeline_media_progress(
                 model_id,
                 username,
             )

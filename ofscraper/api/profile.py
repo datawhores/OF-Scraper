@@ -38,8 +38,10 @@ attempt = contextvars.ContextVar("attempt")
 
 
 # can get profile from username or id
-def scrape_profile(username: Union[int, str]) -> dict:
-    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+def scrape_profile(username: Union[int, str], c=None) -> dict:
+    with c or sessionbuilder.sessionBuilder(
+        backend="httpx", limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         return scrape_profile_helper(c, username)
 
 
@@ -192,8 +194,8 @@ def print_profile_info(info):
     log.info(final_fmt.format(*info))
 
 
-def get_id(username):
-    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+def get_id(username, c=None):
+    with c or sessionbuilder.sessionBuilder(backend="httpx") as c:
         return get_id_helper(c, username)
 
 

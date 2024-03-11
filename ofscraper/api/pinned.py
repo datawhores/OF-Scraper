@@ -33,6 +33,73 @@ attempt = contextvars.ContextVar("attempt")
 sem = None
 
 
+@run
+async def get_pinned_post(model_id, c=None):
+    tasks = []
+    responseArray = []
+    page_count = 0
+    job_progress = progress_utils.pinned_progress
+    overall_progress = progress_utils.overall_progress
+
+    async with sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
+        tasks.append(
+            asyncio.create_task(
+                scrape_pinned_posts(
+                    c,
+                    model_id,
+                    job_progress,
+                    timestamp=read_args.retriveArgs().after.float_timestamp
+                    if read_args.retriveArgs().after
+                    else None,
+                )
+            )
+        )
+
+        page_task = overall_progress.add_task(
+            f"Pinned Content Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            await asyncio.sleep(0)
+            tasks = list(pending)
+            for result in done:
+                try:
+                    result, new_tasks = await result
+
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Pinned Content Pages Progress: {page_count}",
+                    )
+                    responseArray.extend(result)
+                    tasks.extend(new_tasks)
+                except Exception as E:
+                    log.debug(E)
+                    continue
+
+        overall_progress.remove_task(page_task)
+        if progress_utils.pinned_layout:
+            progress_utils.pinned_layout = False
+    outdict = {}
+    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
+    for post in responseArray:
+        outdict[post["id"]] = post
+    log.trace(f"pinned dupeset postids {outdict.keys()}")
+    log.trace(
+        "pinned raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo pinned: {str(x)}", outdict.values()))
+            )
+        )
+    )
+    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(outdict.values())} found")
+    return list(outdict.values())
+
+
 async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) -> list:
     global sem
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
@@ -136,67 +203,3 @@ async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) ->
                 sem.release()
                 progress.remove_task(task)
             return posts, new_tasks
-
-
-async def get_pinned_post(model_id):
-    tasks = []
-    responseArray = []
-    page_count = 0
-    job_progress = progress_utils.pinned_progress
-    overall_progress = progress_utils.overall_progress
-
-    async with sessionbuilder.sessionBuilder() as c:
-        tasks.append(
-            asyncio.create_task(
-                scrape_pinned_posts(
-                    c,
-                    model_id,
-                    job_progress,
-                    timestamp=read_args.retriveArgs().after.float_timestamp
-                    if read_args.retriveArgs().after
-                    else None,
-                )
-            )
-        )
-
-        page_task = overall_progress.add_task(
-            f"Pinned Content Pages Progress: {page_count}", visible=True
-        )
-        while tasks:
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            await asyncio.sleep(0)
-            tasks = list(pending)
-            for result in done:
-                try:
-                    result, new_tasks = await result
-
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Pinned Content Pages Progress: {page_count}",
-                    )
-                    responseArray.extend(result)
-                    tasks.extend(new_tasks)
-                except Exception as E:
-                    log.debug(E)
-                    continue
-
-        overall_progress.remove_task(page_task)
-        if progress_utils.pinned_layout:
-            progress_utils.pinned_layout = False
-    outdict = {}
-    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        outdict[post["id"]] = post
-    log.trace(f"pinned dupeset postids {outdict.keys()}")
-    log.trace(
-        "pinned raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo pinned: {str(x)}", outdict.values()))
-            )
-        )
-    )
-    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(outdict.values())} found")
-    return list(outdict.values())

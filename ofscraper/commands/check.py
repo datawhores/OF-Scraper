@@ -176,23 +176,12 @@ def post_checker():
             else:
                 user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
-                data = timeline.get_timeline_media(model_id, user_name, forced_after=0)
+                data = timeline.get_timeline_media(
+                    model_id, user_name, forced_after=0, c=c
+                )
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"timeline_check_{model_id}",
-                    data,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
-                cache.close()
-
-            oldarchive = cache.get(f"archived_check_{model_id}", default=[])
-            if len(oldarchive) > 0 and not read_args.retriveArgs().force:
-                user_dict[user_name].extend(oldarchive)
-            else:
-                data = archive.get_archived_media(model_id, user_name, forced_after=0)
-                user_dict[user_name].extend(data)
-                cache.set(
-                    f"archived_check_{model_id}",
                     data,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
@@ -287,7 +276,7 @@ def message_checker():
         if len(oldpaid) > 0 and not read_args.retriveArgs().force:
             paid = oldpaid
         else:
-            paid = paid_.get_paid_posts(model_id)
+            paid = paid_.get_paid_posts(model_id, username)
             cache.set(
                 f"purchased_check_{model_id}",
                 paid,
@@ -405,7 +394,7 @@ def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        paid = paid_.get_paid_posts(model_id)
+        paid = paid_.get_paid_posts(model_id, user_name)
         cache.set(
             f"purchased_check_{model_id}", paid, expire=constants.getattr("DAY_SECONDS")
         )

@@ -36,7 +36,7 @@ attempt = contextvars.ContextVar("attempt")
 
 
 @run
-async def get_stories_post_progress(model_id):
+async def get_stories_post_progress(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
     output = []
@@ -45,8 +45,12 @@ async def get_stories_post_progress(model_id):
     job_progress = progress_utils.stories_progress
     overall_progress = progress_utils.overall_progress
 
-    async with sessionbuilder.sessionBuilder() as c:
-        tasks.append(asyncio.create_task(scrape_stories(c, model_id, job_progress)))
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
+        tasks.append(
+            asyncio.create_task(scrape_stories(c, model_id, job_progress=job_progress))
+        )
         page_task = overall_progress.add_task(
             f"Stories Pages Progress: {page_count}", visible=True
         )
@@ -70,8 +74,7 @@ async def get_stories_post_progress(model_id):
                     continue
 
         overall_progress.remove_task(page_task)
-        if progress_utils.stories_layout:
-            progress_utils.stories_layout = False
+        progress_utils.stories_layout = False
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
@@ -90,14 +93,16 @@ async def get_stories_post_progress(model_id):
 
 
 @run
-async def get_stories_post(model_id):
+async def get_stories_post(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
     output = []
     page_count = 0
     tasks = []
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         tasks.append(asyncio.create_task(scrape_stories(c, model_id, None)))
         while tasks:
             done, pending = await asyncio.wait(
@@ -198,16 +203,18 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
 
 
 @run
-async def get_highlight_post_progress(model_id):
+async def get_highlight_post_progress(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         output = []
 
         page_count = 0
         tasks = []
-        job_progress = progress_utils.highlights_progressget_paid_posts_progress
+        job_progress = progress_utils.highlights_progress
         overall_progress = progress_utils.overall_progress
         tasks.append(
             asyncio.create_task(
@@ -243,7 +250,9 @@ async def get_highlight_post_progress(model_id):
         tasks = []
 
         [
-            tasks.append(asyncio.create_task(scrape_highlights(c, i, job_progress)))
+            tasks.append(
+                asyncio.create_task(scrape_highlights(c, i, job_progress=job_progress))
+            )
             for i in output
         ]
         page_task = overall_progress.add_task(
@@ -265,8 +274,7 @@ async def get_highlight_post_progress(model_id):
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        if progress_utils.highlights_layout:
-            progress_utils.highlights_layout = False
+        progress_utils.highlights_layout = False
 
     log.trace(
         "highlight raw unduped {posts}".format(
@@ -286,11 +294,13 @@ async def get_highlight_post_progress(model_id):
 
 
 @run
-async def get_highlight_post(model_id):
+async def get_highlight_post(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         output = []
 
         page_count = 0

@@ -58,7 +58,9 @@ def get_posts(model_id, username):
     if "Pinned" in options or "All" in options:
         pinned_posts = pinned.get_pinned_post(model_id)
     if "Timeline" in options or "All" in options:
-        timeline_posts = timeline.get_timeline_media(model_id, username, forced_after=0)
+        timeline_posts = timeline.get_timeline_media_progress(
+            model_id, username, forced_after=0
+        )
     if "Archived" in options or "All" in options:
         archived_posts = archive.get_archived_media(model_id, username, forced_after=0)
     if "Labels" in options or "All" in options:

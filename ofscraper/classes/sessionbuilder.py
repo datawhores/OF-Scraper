@@ -6,7 +6,6 @@ import aiohttp
 import certifi
 import httpx
 
-import ofscraper.utils.auth.file as files
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants

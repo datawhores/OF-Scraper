@@ -34,7 +34,8 @@ attempt = contextvars.ContextVar("attempt")
 sem = None
 
 
-async def get_labels(model_id):
+@run
+async def get_labels(model_id, c=None):
     global sem
     sem = sems.get_req_sem()
     output = []
@@ -44,8 +45,12 @@ async def get_labels(model_id):
     job_progress = progress_utils.labelled_progress
     overall_progress = progress_utils.overall_progress
 
-    async with sessionbuilder.sessionBuilder() as c:
-        tasks.append(asyncio.create_task(scrape_labels(c, model_id, job_progress)))
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
+        tasks.append(
+            asyncio.create_task(scrape_labels(c, model_id, job_progress=job_progress))
+        )
 
         page_task = overall_progress.add_task(
             f" Label Progress: {page_count}", visible=True
@@ -77,7 +82,7 @@ async def get_labels(model_id):
     return output
 
 
-async def scrape_labels(c, model_id, job_progress, offset=0):
+async def scrape_labels(c, model_id, job_progress=None, offset=0):
     global sem
     labels = None
     attempt.set(0)
@@ -96,9 +101,13 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
             try:
                 attempt.set(attempt.get(0) + 1)
 
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
-                    visible=True,
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
                 )
                 async with c.requests(
                     url=constants.getattr("labelsEP").format(model_id, offset)
@@ -129,7 +138,10 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                             new_tasks.append(
                                 asyncio.create_task(
                                     scrape_labels(
-                                        c, model_id, job_progress, offset=offset
+                                        c,
+                                        model_id,
+                                        job_progress=job_progress,
+                                        offset=offset,
                                     )
                                 )
                             )
@@ -141,7 +153,6 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
                         )
                         log.debug(f"[bold]labels response:[/bold] {await r.text_()}")
                         log.debug(f"[bold]labels headers:[/bold] {r.headers}")
-                        job_progress.remove_task(task)
                         r.raise_for_status()
             except Exception as E:
                 log.traceback_(E)
@@ -150,9 +161,10 @@ async def scrape_labels(c, model_id, job_progress, offset=0):
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if job_progress and task else None
 
 
+@run
 async def get_labelled_posts(labels, username):
     global sem
     sem = sems.get_req_sem()
@@ -162,11 +174,13 @@ async def get_labelled_posts(labels, username):
     job_progress = progress_utils.labelled_progress
     overall_progress = progress_utils.overall_progress
 
-    async with sessionbuilder.sessionBuilder() as c:
+    async with c or sessionbuilder.sessionBuilder(
+        limit=constants.getattr("API_MAX_CONNECTION")
+    ) as c:
         [
             tasks.append(
                 asyncio.create_task(
-                    scrape_labelled_posts(c, label, username, job_progress)
+                    scrape_labelled_posts(c, label, username, job_progress=job_progress)
                 )
             )
             for label in labels
@@ -203,8 +217,7 @@ async def get_labelled_posts(labels, username):
                     log.debug(E)
                     continue
         overall_progress.remove_task(page_task)
-        if progress_utils.labelled_layout:
-            progress_utils.labelled_layout = False
+        progress_utils.labelled_layout = False
     log.trace(
         "post label joined {posts}".format(
             posts="\n\n".join(
@@ -222,7 +235,7 @@ async def get_labelled_posts(labels, username):
     return list(output.values())
 
 
-async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
+async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0):
     global sem
     posts = None
     attempt.set(0)
@@ -240,9 +253,13 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : label -> {label['name']}",
-                    visible=True,
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : label -> {label['name']}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
                 )
                 async with c.requests(
                     url=constants.getattr("labelledPostsEP").format(
@@ -279,7 +296,11 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
                             new_tasks.append(
                                 asyncio.create_task(
                                     scrape_labelled_posts(
-                                        c, label, model_id, job_progress, offset=offset
+                                        c,
+                                        label,
+                                        model_id,
+                                        job_progress=job_progress,
+                                        offset=offset,
                                     )
                                 )
                             )
@@ -301,7 +322,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress, offset=0):
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if job_progress and task else None
 
             return label, posts, new_tasks
 
