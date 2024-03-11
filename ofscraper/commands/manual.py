@@ -82,7 +82,6 @@ def get_media_from_urls(urls):
             value = messages_.get_individual_post(
                 model_id, postid, c=sessionbuilder.sessionBuilder(backend="httpx")
             )
-            value = None
             media_dict.update(get_all_media(model_id, value))
             post_dict.update(get_post_item(model_id, value))
         elif type == "unknown":
