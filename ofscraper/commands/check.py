@@ -115,7 +115,7 @@ def process_download_cart():
                     write_args.setArgs(args)
                     selector.all_subs_helper()
                     log.info(
-                        f"Downloading individual media for {username} {media.filename}"
+                        f"Downloading individual media ({media.filename}) to disk for {username}"
                     )
                     operations.table_init_create(model_id=model_id, username=username)
 
