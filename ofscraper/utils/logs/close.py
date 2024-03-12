@@ -7,7 +7,7 @@ import ofscraper.utils.logs.globals as log_globals
 
 def gracefulClose():
     sendCloseMessage()
-    stdout = logging.getLogger("ofscraper")
+    stdout = logging.getLogger("ofscraper_stdout")
     stdout.debug(
         f"Main Process threads before closing log threads {threading.enumerate()}"
     )
@@ -86,4 +86,4 @@ def closeQueue():
 
 def clearHandlers():
     logging.getLogger("shared").handlers.clear()
-    logging.getLogger("ofscraper").handlers.clear()
+    logging.getLogger("ofscraper_stdout").handlers.clear()

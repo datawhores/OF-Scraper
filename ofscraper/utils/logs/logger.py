@@ -16,7 +16,7 @@ def add_widget(widget):
         for ele in list(
             filter(
                 lambda x: isinstance(x, log_class.TextHandler),
-                logging.getLogger("ofscraper").handlers,
+                logging.getLogger("ofscraper_stdout").handlers,
             )
         )
     ]
