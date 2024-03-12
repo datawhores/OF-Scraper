@@ -242,7 +242,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 )
                 responseArray.extend(out)
                 tasks.extend(new_tasks)
-
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -456,7 +456,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 out, new_tasks = await result
                 responseArray.extend(out)
                 tasks.extend(new_tasks)
-
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)

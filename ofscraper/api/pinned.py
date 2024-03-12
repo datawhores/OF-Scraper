@@ -75,6 +75,8 @@ async def get_pinned_post(model_id, c=None):
                 )
                 responseArray.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
+
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)

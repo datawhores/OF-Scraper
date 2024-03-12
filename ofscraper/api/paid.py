@@ -72,6 +72,7 @@ async def get_paid_posts_progress(username, model_id, c=None):
                 )
                 output.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -112,6 +113,7 @@ async def get_paid_posts(model_id, username, c=None):
                 result, new_tasks = await result
                 output.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -311,6 +313,7 @@ async def get_all_paid_posts():
                             )
                             output.extend(result)
                             tasks.extend(new_tasks)
+                            await asyncio.sleep(1)
                         except Exception as E:
                             await asyncio.sleep(1)
                             log.debug(E)

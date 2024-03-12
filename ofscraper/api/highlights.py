@@ -68,6 +68,7 @@ async def get_stories_post_progress(model_id, c=None):
                 )
                 output.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -114,6 +115,7 @@ async def get_stories_post(model_id, c=None):
                 page_count = page_count + 1
                 output.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -240,7 +242,7 @@ async def get_highlight_post_progress(model_id, c=None):
                 )
                 output.extend(result)
                 tasks.extend(new_tasks)
-
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -270,6 +272,7 @@ async def get_highlight_post_progress(model_id, c=None):
                 overall_progress.update(page_task, description=f": {page_count}")
                 output2.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -319,7 +322,7 @@ async def get_highlight_post(model_id, c=None):
                 page_count = page_count + 1
                 output.extend(result)
                 tasks.extend(new_tasks)
-
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)
@@ -342,6 +345,7 @@ async def get_highlight_post(model_id, c=None):
                 page_count = page_count + 1
                 output2.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
                 log.debug(E)

@@ -663,14 +663,16 @@ async def process_task(model_id, username, ele):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
             tasks = list(pending)
             for results in done:
                 try:
                     medias, posts = await results
                     media.extend(medias or [])
                     post.extend(posts or [])
+                    await asyncio.sleep(1)
                 except Exception as E:
+                    await asyncio.sleep(1)
                     log.debug(E)
                     continue
     return media, post

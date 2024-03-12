@@ -151,6 +151,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                 )
                 responseArray.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 log.traceback(traceback.format_exc())
                 log.tracback_(E)

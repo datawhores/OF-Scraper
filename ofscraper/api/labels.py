@@ -68,6 +68,7 @@ async def get_labels(model_id, c=None):
                 )
                 output.extend(result)
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
 
@@ -105,7 +106,7 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
 
                 task = (
                     job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} {offset}",
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} labels offset -> {offset}",
                         visible=True,
                     )
                     if job_progress
@@ -214,6 +215,7 @@ async def get_labelled_posts(labels, username, c=None):
                 posts = label_dedupe(output[label["id"]].get("posts", []) + new_posts)
                 output[label["id"]]["posts"] = posts
                 tasks.extend(new_tasks)
+                await asyncio.sleep(1)
             except Exception as E:
                 await asyncio.sleep(1)
 
@@ -259,7 +261,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
                 attempt.set(attempt.get(0) + 1)
                 task = (
                     job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : label -> {label['name']}",
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : getting posts from label -> {label['name']}",
                         visible=True,
                     )
                     if job_progress
