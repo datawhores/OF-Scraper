@@ -7,6 +7,7 @@ import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
+import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
@@ -64,28 +65,28 @@ def get_media_from_urls(urls):
             if type == "post":
                 model_id = user_name_dict.get(model) or profile.get_id(model)
                 value = timeline.get_individual_post(postid, c=c)
-                media_dict.update(get_all_media(model_id, value))
+                media_dict.update(get_all_media(postid, model_id, value))
             elif type == "msg":
                 model_id = model
                 value = messages_.get_individual_post(model_id, postid, c=c)
-                media_dict.update(get_all_media(model_id, value))
+                media_dict.update(get_all_media(postid, model_id, value))
             elif type == "msg2":
                 model_id = user_name_dict.get(model) or profile.get_id(model)
                 value = messages_.get_individual_post(model_id, postid, c=c)
-                media_dict.update(get_all_media(model_id, value))
+                media_dict.update(get_all_media(postid, model_id, value))
             elif type == "unknown":
                 value = unknown_type_helper(postid, c) or {}
                 model_id = value.get("author", {}).get("id")
-                media_dict.update(get_all_media(model_id, value))
+                media_dict.update(get_all_media(postid, model_id, value))
             elif type == "highlights":
                 value = highlights_.get_individual_highlights(postid, c) or {}
                 model_id = value.get("userId")
-                media_dict.update(get_all_media(model_id, value, "highlights"))
+                media_dict.update(get_all_media(postid, model_id, value, "highlights"))
                 # special case
             elif type == "stories":
                 value = highlights_.get_individual_stories(postid, c) or {}
                 model_id = value.get("userId")
-                media_dict.update(get_all_media(model_id, value, "stories"))
+                media_dict.update(get_all_media(postid, model_id, value, "stories"))
                 # special case
     return media_dict
 
@@ -94,7 +95,7 @@ def unknown_type_helper(postid, client):
     return timeline.get_individual_post(postid, client)
 
 
-def get_all_media(model_id, value, inputtype=None):
+def get_all_media(posts_id, model_id, value, inputtype=None):
     media_dict = {}
     value = value or {}
     media = []
@@ -103,17 +104,31 @@ def get_all_media(model_id, value, inputtype=None):
     user_name = profile.scrape_profile(model_id)["username"]
     post_item = posts_.Post(value, model_id, user_name, responsetype=inputtype)
     media = post_item.media
+    media = list(
+        filter(
+            lambda x: isinstance(x, media_.Media)
+            and (str(x.id) == str(posts_id) or str(x.postid) == str(posts_id)),
+            media,
+        )
+    )
     if len(media) == 0:
-        media.extend(paid_failback(model_id, user_name))
+        media.extend(paid_failback(posts_id, model_id, user_name))
     media_dict[model_id] = media
     return media_dict
 
 
-def paid_failback(id, username):
+def paid_failback(post_id, id, username):
     logging.getLogger("shared").debug(
         "Using failback search because query return 0 media"
     )
-    return of.process_paid_post(id, username)
+    data = of.process_paid_post(id, username)
+    return list(
+        filter(
+            lambda x: isinstance(x, media_.Media)
+            and (str(x.id) == post_id or str(x.postid) == post_id),
+            data,
+        )
+    )
 
 
 def get_info(url):

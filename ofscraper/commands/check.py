@@ -5,6 +5,7 @@ import queue
 import re
 import threading
 import time
+import traceback
 
 import arrow
 
@@ -102,7 +103,7 @@ def process_download_cart():
                         list(media_dict.values())[0],
                     )
                 )
-                media = medialist[0] if len(medialist) > 0 else None
+                media = medialist[0]
                 model_id = media.post.model_id
                 username = media.post.username
                 args = read_args.retriveArgs()
@@ -110,7 +111,7 @@ def process_download_cart():
                 write_args.setArgs(args)
                 selector.all_subs_helper()
                 log.info(
-                    f"Downloading individual media for {username} {media.filename}"
+                    f"Downloading individual media ({media.filename}) to disk for {username}"
                 )
                 operations.table_init_create(model_id=model_id, username=username)
                 values = downloadnormal.process_dicts(
@@ -126,7 +127,8 @@ def process_download_cart():
 
             except Exception as E:
                 app.update_downloadcart_cell(key, "[failed]")
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
         time.sleep(10)
 
 
