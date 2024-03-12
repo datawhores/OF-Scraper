@@ -630,8 +630,8 @@ async def scrape_messages(
             return messages, new_tasks
 
 
-def get_individual_post(model_id, postid, c=None):
-    with c or sessionbuilder.sessionBuilder(
+def get_individual_post(model_id, postid):
+    with sessionbuilder.sessionBuilder(
         backend="httpx",
     ) as c:
         with c.requests(

@@ -144,6 +144,7 @@ def set_check(unduped, model_id):
     cache.close()
 
 
+@run
 async def scrape_paid(c, username, job_progress=None, offset=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.

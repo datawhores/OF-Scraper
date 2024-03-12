@@ -17,6 +17,7 @@ import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.system.network as network
 from ofscraper.download.common.common import textDownloader
+from ofscraper.utils.context.run_async import run
 
 
 def manual_download(urls=None):
@@ -59,49 +60,48 @@ def get_media_from_urls(urls):
     user_name_dict = {}
     media_dict = {}
     post_dict = {}
-    with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        for url in url_helper(urls):
-            response = get_info(url)
-            model = response[0]
-            postid = response[1]
-            type = response[2]
-            if type == "post":
-                model_id = user_name_dict.get(model) or profile.get_id(model)
-                value = timeline.get_individual_post(postid, c=c)
-                media_dict.update(get_all_media(postid, model_id, value))
-                post_dict.update(get_post_item(model_id, value))
-            elif type == "msg":
-                model_id = model
-                value = messages_.get_individual_post(model_id, postid, c=c)
-                media_dict.update(get_all_media(postid, model_id, value))
-                post_dict.update(get_post_item(model_id, value))
-            elif type == "msg2":
-                model_id = user_name_dict.get(model) or profile.get_id(model)
-                value = messages_.get_individual_post(model_id, postid, c=c)
-                media_dict.update(get_all_media(postid, model_id, value))
-                post_dict.update(get_post_item(model_id, value))
-            elif type == "unknown":
-                value = unknown_type_helper(postid, c=c) or {}
-                model_id = value.get("author", {}).get("id")
-                media_dict.update(get_all_media(postid, model_id, value))
-                post_dict.update(get_post_item(model_id, value))
-            elif type == "highlights":
-                value = highlights_.get_individual_highlights(postid, c=c) or {}
-                model_id = value.get("userId")
-                media_dict.update(get_all_media(postid, model_id, value, "highlights"))
-                post_dict.update(get_post_item(model_id, value, "highlights"))
-                # special case
-            elif type == "stories":
-                value = highlights_.get_individual_stories(postid, c=c) or {}
-                model_id = value.get("userId")
-                media_dict.update(get_all_media(postid, model_id, value, "stories"))
-                post_dict.update(get_post_item(model_id, value, "stories"))
-                # special case
+    for url in url_helper(urls):
+        response = get_info(url)
+        model = response[0]
+        postid = response[1]
+        type = response[2]
+        if type == "post":
+            model_id = user_name_dict.get(model) or profile.get_id(model)
+            value = timeline.get_individual_post(postid)
+            media_dict.update(get_all_media(postid, model_id, value))
+            post_dict.update(get_post_item(model_id, value))
+        elif type == "msg":
+            model_id = model
+            value = messages_.get_individual_post(model_id, postid)
+            media_dict.update(get_all_media(postid, model_id, value))
+            post_dict.update(get_post_item(model_id, value))
+        elif type == "msg2":
+            model_id = user_name_dict.get(model) or profile.get_id(model)
+            value = messages_.get_individual_post(model_id, postid)
+            media_dict.update(get_all_media(postid, model_id, value))
+            post_dict.update(get_post_item(model_id, value))
+        elif type == "unknown":
+            value = unknown_type_helper(postid) or {}
+            model_id = value.get("author", {}).get("id")
+            media_dict.update(get_all_media(postid, model_id, value))
+            post_dict.update(get_post_item(model_id, value))
+        elif type == "highlights":
+            value = highlights_.get_individual_highlights(postid) or {}
+            model_id = value.get("userId")
+            media_dict.update(get_all_media(postid, model_id, value, "highlights"))
+            post_dict.update(get_post_item(model_id, value, "highlights"))
+            # special case
+        elif type == "stories":
+            value = highlights_.get_individual_stories(postid) or {}
+            model_id = value.get("userId")
+            media_dict.update(get_all_media(postid, model_id, value, "stories"))
+            post_dict.update(get_post_item(model_id, value, "stories"))
+            # special case
     return media_dict, post_dict
 
 
-def unknown_type_helper(postid, c=None):
-    return timeline.get_individual_post(postid, c=c)
+def unknown_type_helper(postid):
+    return timeline.get_individual_post(postid)
 
 
 def get_post_item(model_id, value, inputtype=None):
@@ -134,24 +134,26 @@ def get_all_media(posts_id, model_id, value, inputtype=None):
     return media_dict
 
 
-def paid_failback(post_id, model_id, username):
+@run
+async def paid_failback(post_id, model_id, username):
     logging.getLogger("shared").debug(
         "Using failback search because query return 0 media"
     )
     post_id = str(post_id)
-    data = paid.get_paid_posts(id, username) or []
-    posts = list(
-        map(lambda x: posts_.Post(x, model_id, username, responsetype="paid"), data)
-    )
-    output = []
-    [output.extend(post.media) for post in posts]
-    return list(
-        filter(
-            lambda x: isinstance(x, media_.Media)
-            and (str(x.id) == post_id or str(x.postid) == post_id),
-            output,
+    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        data = await paid.get_paid_posts(id, username, c=c) or []
+        posts = list(
+            map(lambda x: posts_.Post(x, model_id, username, responsetype="paid"), data)
         )
-    )
+        output = []
+        [output.extend(post.media) for post in posts]
+        return list(
+            filter(
+                lambda x: isinstance(x, media_.Media)
+                and (str(x.id) == post_id or str(x.postid) == post_id),
+                output,
+            )
+        )
 
 
 def get_info(url):

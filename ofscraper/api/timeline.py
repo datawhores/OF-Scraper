@@ -455,16 +455,18 @@ def set_check(unduped, model_id, after):
         cache.close()
 
 
-def get_individual_post(id, c=None):
-    # c=c or sessionbuilder.sessionBuilder(backend="httpx")
-    with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id))() as r:
-        if r.ok:
-            log.trace(f"post raw individual {r.json()}")
-            return r.json()
-        else:
-            log.debug(f"[bold]individual post response status code:[/bold]{r.status}")
-            log.debug(f"[bold]individual post response:[/bold] {r.text_()}")
-            log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
+def get_individual_post(id):
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id))() as r:
+            if r.ok:
+                log.trace(f"post raw individual {r.json()}")
+                return r.json()
+            else:
+                log.debug(
+                    f"[bold]individual post response status code:[/bold]{r.status}"
+                )
+                log.debug(f"[bold]individual post response:[/bold] {r.text_()}")
+                log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 
 
 def get_after(model_id, username, forced_after=None):

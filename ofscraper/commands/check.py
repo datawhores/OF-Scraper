@@ -30,6 +30,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.common.common import textDownloader
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -150,78 +151,83 @@ def checker():
 
 
 def post_checker():
+    ROWS = post_check_helper()
+    start_helper(ROWS)
+
+
+@run
+async def post_check_helper():
     user_dict = {}
-
     links = list(url_helper())
-    for ele in links:
-        name_match = re.search(
-            f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
-        )
-        name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
+    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        for ele in links:
+            name_match = re.search(
+                f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
+            )
+            name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
 
-        if name_match:
-            user_name = name_match.group(1)
-            log.info(f"Getting Full Timeline for {user_name}")
-            model_id = profile.get_id(user_name)
-        elif name_match2:
-            user_name = name_match2.group(0)
-            model_id = profile.get_id(user_name)
-        else:
-            continue
-        if user_dict.get(user_name):
-            continue
+            if name_match:
+                user_name = name_match.group(1)
+                log.info(f"Getting Full Timeline for {user_name}")
+                model_id = profile.get_id(user_name)
+            elif name_match2:
+                user_name = name_match2.group(0)
+                model_id = profile.get_id(user_name)
+            else:
+                continue
+            if user_dict.get(user_name):
+                continue
 
-        oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
-        user_dict[user_name] = {}
-        user_dict[user_name] = user_dict[user_name] or []
-        if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
-            user_dict[user_name].extend(oldtimeline)
-        else:
+            oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
             user_dict[user_name] = {}
             user_dict[user_name] = user_dict[user_name] or []
-            c = sessionbuilder.sessionBuilder(backend="httpx")
-            data = timeline.get_timeline_media(model_id, user_name, forced_after=0, c=c)
-            user_dict[user_name].extend(data)
-            cache.set(
-                f"timeline_check_{model_id}",
-                data,
-                expire=constants.getattr("DAY_SECONDS"),
-            )
-            cache.close()
-
-        # individual links
-        for ele in list(
-            filter(
-                lambda x: re.search(
-                    f"onlyfans.com/{constants.getattr('NUMBER_REGEX')}+/{constants.getattr('USERNAME_REGEX')}+$",
-                    x,
-                ),
-                links,
-            )
-        ):
-            name_match = re.search(f"/({constants.getattr('USERNAME_REGEX')}+$)", ele)
-            num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
-            if name_match and num_match:
-                user_name = name_match.group(1)
-                post_id = num_match.group(1)
-                model_id = profile.get_id(user_name)
-                log.info(f"Getting Invidiual Link for {user_name}")
-                if not user_dict.get(user_name):
-                    user_dict[name_match.group(1)] = {}
-                c = sessionbuilder.sessionBuilder(backend="httpx")
-                data = timeline.get_individual_post(post_id, c)
+            if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
+                user_dict[user_name].extend(oldtimeline)
+            else:
+                user_dict[user_name] = {}
                 user_dict[user_name] = user_dict[user_name] or []
-                user_dict[user_name].append(data)
+                data = await timeline.get_timeline_media(
+                    model_id, user_name, forced_after=0, c=c
+                )
+                user_dict[user_name].extend(data)
+                cache.set(
+                    f"timeline_check_{model_id}",
+                    data,
+                    expire=constants.getattr("DAY_SECONDS"),
+                )
+                cache.close()
+
+            # individual links
+            for ele in list(
+                filter(
+                    lambda x: re.search(
+                        f"onlyfans.com/{constants.getattr('NUMBER_REGEX')}+/{constants.getattr('USERNAME_REGEX')}+$",
+                        x,
+                    ),
+                    links,
+                )
+            ):
+                name_match = re.search(
+                    f"/({constants.getattr('USERNAME_REGEX')}+$)", ele
+                )
+                num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
+                if name_match and num_match:
+                    user_name = name_match.group(1)
+                    post_id = num_match.group(1)
+                    model_id = profile.get_id(user_name)
+                    log.info(f"Getting Invidiual Link for {user_name}")
+                    if not user_dict.get(user_name):
+                        user_dict[name_match.group(1)] = {}
+                    data = timeline.get_individual_post(post_id)
+                    user_dict[user_name] = user_dict[user_name] or []
+                    user_dict[user_name].append(data)
 
     ROWS = []
     for user_name in user_dict.keys():
-        downloaded = get_downloaded(user_name, model_id, True)
+        downloaded = await get_downloaded(user_name, model_id, True)
         media = get_all_found_media(user_name, user_dict[user_name])
         ROWS.extend(row_gather(media, downloaded, user_name))
-    reset_url()
-    set_count(ROWS)
-    network.check_cdm()
-    thread_starters(ROWS)
+    return ROWS
 
 
 def reset_url():
@@ -242,121 +248,142 @@ def set_count(ROWS):
         ele[0] = count + 1
 
 
-def message_checker():
-    links = list(url_helper())
-    ROWS = []
-    for item in links:
-        num_match = re.search(
-            f"({constants.getattr('NUMBER_REGEX')}+)", item
-        ) or re.search(f"^({constants.getattr('NUMBER_REGEX')}+)$", item)
-        name_match = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", item)
-        if num_match:
-            model_id = num_match.group(1)
-            user_name = profile.scrape_profile(model_id)["username"]
-        elif name_match:
-            user_name = name_match.group(0)
-            model_id = profile.get_id(user_name)
-        else:
-            continue
-        log.info(f"Getting Messages/Paid content for {user_name}")
-        # messages
-        messages = None
-        oldmessages = cache.get(f"message_check_{model_id}", default=[])
-        log.debug(f"Number of messages in cache {len(oldmessages)}")
-
-        if len(oldmessages) > 0 and not read_args.retriveArgs().force:
-            messages = oldmessages
-        else:
-            messages = messages_.get_messages(model_id, user_name, forced_after=0)
-            cache.set(
-                f"message_check_{model_id}",
-                messages,
-                expire=constants.getattr("DAY_SECONDS"),
-            )
-        oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
-        paid = None
-        # paid content
-        if len(oldpaid) > 0 and not read_args.retriveArgs().force:
-            paid = oldpaid
-        else:
-            paid = paid_.get_paid_posts(model_id, user_name)
-            cache.set(
-                f"purchased_check_{model_id}",
-                paid,
-                expire=constants.getattr("DAY_SECONDS"),
-            )
-        media = get_all_found_media(user_name, messages + paid)
-        unduped = []
-        id_set = set()
-        for ele in media:
-            if ele.id == None or ele.id not in id_set:
-                unduped.append(ele)
-                id_set.add(ele.id)
-        downloaded = get_downloaded(user_name, model_id, True)
-
-        ROWS.extend(row_gather(unduped, downloaded, user_name))
-
+def start_helper(ROWS):
     reset_url()
     set_count(ROWS)
     network.check_cdm()
     thread_starters(ROWS)
+
+
+def message_checker():
+    ROWS = message_checker_helper()
+    start_helper(ROWS)
+
+
+@run
+async def message_checker_helper():
+    links = list(url_helper())
+    ROWS = []
+    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        for item in links:
+            num_match = re.search(
+                f"({constants.getattr('NUMBER_REGEX')}+)", item
+            ) or re.search(f"^({constants.getattr('NUMBER_REGEX')}+)$", item)
+            name_match = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", item)
+            if num_match:
+                model_id = num_match.group(1)
+                user_name = profile.scrape_profile(model_id)["username"]
+            elif name_match:
+                user_name = name_match.group(0)
+                model_id = profile.get_id(user_name)
+            else:
+                continue
+            log.info(f"Getting Messages/Paid content for {user_name}")
+            # messages
+            messages = None
+            oldmessages = cache.get(f"message_check_{model_id}", default=[])
+            log.debug(f"Number of messages in cache {len(oldmessages)}")
+
+            if len(oldmessages) > 0 and not read_args.retriveArgs().force:
+                messages = oldmessages
+            else:
+                messages = await messages_.get_messages(
+                    model_id, user_name, forced_after=0
+                )
+                cache.set(
+                    f"message_check_{model_id}",
+                    messages,
+                    expire=constants.getattr("DAY_SECONDS"),
+                )
+            oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+            paid = None
+            # paid content
+            if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+                paid = oldpaid
+            else:
+                paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                cache.set(
+                    f"purchased_check_{model_id}",
+                    paid,
+                    expire=constants.getattr("DAY_SECONDS"),
+                )
+            media = get_all_found_media(user_name, messages + paid)
+            unduped = []
+            id_set = set()
+            for ele in media:
+                if ele.id == None or ele.id not in id_set:
+                    unduped.append(ele)
+                    id_set.add(ele.id)
+            downloaded = await get_downloaded(user_name, model_id, True)
+
+            ROWS.extend(row_gather(unduped, downloaded, user_name))
+    return ROWS
 
 
 def purchase_checker():
+    ROWS = purchase_checker_helper()
+    start_helper(ROWS)
+
+
+@run
+async def purchase_checker_helper():
     user_dict = {}
     auth_requests.make_headers()
     ROWS = []
-    for user_name in read_args.retriveArgs().username:
-        user_name = profile.scrape_profile(user_name)["username"]
-        user_dict[user_name] = user_dict.get(user_name, [])
-        model_id = profile.get_id(user_name)
-        oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
-        paid = None
+    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        for user_name in read_args.retriveArgs().username:
+            user_name = profile.scrape_profile(user_name)["username"]
+            user_dict[user_name] = user_dict.get(user_name, [])
+            model_id = profile.get_id(user_name)
+            oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+            paid = None
 
-        if len(oldpaid) > 0 and not read_args.retriveArgs().force:
-            paid = oldpaid
-        else:
-            paid = paid_.get_paid_posts(model_id, user_name)
-            cache.set(
-                f"purchased_check_{model_id}",
-                paid,
-                expire=constants.getattr("DAY_SECONDS"),
-            )
-        downloaded = get_downloaded(user_name, model_id)
-        media = get_all_found_media(user_name, paid)
-        ROWS.extend(row_gather(media, downloaded, user_name))
-    reset_url()
-    set_count(ROWS)
-    network.check_cdm()
-    thread_starters(ROWS)
+            if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+                paid = oldpaid
+            else:
+                paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                cache.set(
+                    f"purchased_check_{model_id}",
+                    paid,
+                    expire=constants.getattr("DAY_SECONDS"),
+                )
+            downloaded = await get_downloaded(user_name, model_id)
+            media = get_all_found_media(user_name, paid)
+            ROWS.extend(row_gather(media, downloaded, user_name))
+    return ROWS
 
 
 def stories_checker():
+    ROWS = stories_checker_helper()
+    start_helper(ROWS)
+
+
+@run
+async def stories_checker_helper():
     user_dict = {}
     ROWS = []
-    for user_name in read_args.retriveArgs().username:
-        user_name = profile.scrape_profile(user_name)["username"]
-        user_dict[user_name] = user_dict.get(user_name, [])
-        model_id = profile.get_id(user_name)
-        stories = highlights.get_stories_post(model_id)
-        highlights_ = highlights.get_highlight_post(model_id)
-        highlights_ = list(
-            map(
-                lambda x: posts_.Post(x, model_id, user_name, "highlights"), highlights_
+    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        for user_name in read_args.retriveArgs().username:
+            user_name = profile.scrape_profile(user_name)["username"]
+            user_dict[user_name] = user_dict.get(user_name, [])
+            model_id = profile.get_id(user_name)
+            stories = await highlights.get_stories_post(model_id, c=c)
+            highlights_ = await highlights.get_highlight_post(model_id, c=c)
+            highlights_ = list(
+                map(
+                    lambda x: posts_.Post(x, model_id, user_name, "highlights"),
+                    highlights_,
+                )
             )
-        )
-        stories = list(
-            map(lambda x: posts_.Post(x, model_id, user_name, "stories"), stories)
-        )
+            stories = list(
+                map(lambda x: posts_.Post(x, model_id, user_name, "stories"), stories)
+            )
 
-        downloaded = get_downloaded(user_name, model_id)
-        media = []
-        [media.extend(ele.all_media) for ele in stories + highlights_]
-        ROWS.extend(row_gather(media, downloaded, user_name))
-    reset_url()
-    set_count(ROWS)
-    network.check_cdm()
-    thread_starters(ROWS)
+            downloaded = await get_downloaded(user_name, model_id)
+            media = []
+            [media.extend(ele.all_media) for ele in stories + highlights_]
+            ROWS.extend(row_gather(media, downloaded, user_name))
+    return ROWS
 
 
 def url_helper():
@@ -374,11 +401,12 @@ def get_all_found_media(user_name, posts):
     return temp
 
 
-def get_downloaded(user_name, model_id, paid=False):
+@run
+async def get_downloaded(user_name, model_id, paid=False):
     downloaded = {}
 
     operations.table_init_create(model_id=model_id, username=user_name)
-    paid = get_paid_ids(model_id, user_name) if paid else []
+    paid = await get_paid_ids(model_id, user_name) if paid else []
     [
         downloaded.update({ele: downloaded.get(ele, 0) + 1})
         for ele in operations.get_media_ids_downloaded(
@@ -390,17 +418,21 @@ def get_downloaded(user_name, model_id, paid=False):
     return downloaded
 
 
-def get_paid_ids(model_id, user_name):
+@run
+async def get_paid_ids(model_id, user_name):
     oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
     paid = None
 
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        paid = paid_.get_paid_posts(model_id, user_name)
-        cache.set(
-            f"purchased_check_{model_id}", paid, expire=constants.getattr("DAY_SECONDS")
-        )
+        async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+            paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+            cache.set(
+                f"purchased_check_{model_id}",
+                paid,
+                expire=constants.getattr("DAY_SECONDS"),
+            )
     media = get_all_found_media(user_name, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
