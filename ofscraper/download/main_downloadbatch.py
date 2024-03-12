@@ -1,4 +1,4 @@
-r"""
+"""
                                                              
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
@@ -150,7 +150,6 @@ async def main_download_downloader(c, ele):
                     return await alt_data_handler(c, ele, tempholderObj)
 
             except OSError as E:
-                await asyncio.sleep(1)
                 common_globals.innerlog.get().debug(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
                 )
@@ -162,7 +161,6 @@ async def main_download_downloader(c, ele):
                 )
                 raise E
             except Exception as E:
-                await asyncio.sleep(1)
                 common_globals.innerlog.get().traceback_(
                     f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
                 )
@@ -232,59 +230,52 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         if resume_size == 0 or not total
         else {"Range": f"bytes={resume_size}-{total}"}
     )
-    old_total = total
-    try:
-        await common.send_msg((None, 0, total)) if total else None
-        async with sem_wrapper(common_globals.req_sem):
-            async with c.requests(url=ele.url, headers=headers)() as r:
-                if r.ok:
-                    await asyncio.get_event_loop().run_in_executor(
-                        common_globals.cache_thread,
-                        partial(
-                            cache.set,
-                            f"{ele.id}_headers",
-                            {
-                                "content-length": r.headers.get("content-length"),
-                                "content-type": r.headers.get("content-type"),
-                            },
-                        ),
-                    )
-                    new_total = int(r.headers["content-length"])
-                    await common.send_msg((None, 0, new_total)) if not total else None
-                    total = new_total
-                    content_type = r.headers.get("content-type").split("/")[-1]
-                    content_type = get_unknown_content_type(ele)
-                    if not placeholderObj:
-                        placeholderObj = placeholder.Placeholders(ele, content_type)
-                        await placeholderObj.init()
-                    path_to_file_logger(
-                        placeholderObj, ele, common_globals.innerlog.get()
-                    )
-                    if await check_forced_skip(ele, total) == 0:
-                        total = 0
-                    elif total == resume_size:
-                        None
-                    else:
-                        await download_fileobject_writer(
-                            r, ele, total, tempholderObj, placeholderObj
-                        )
+    await common.send_msg((None, 0, total)) if total else None
+    async with sem_wrapper(common_globals.req_sem):
+        async with c.requests(url=ele.url, headers=headers)() as r:
+            if r.ok:
+                await asyncio.get_event_loop().run_in_executor(
+                    common_globals.cache_thread,
+                    partial(
+                        cache.set,
+                        f"{ele.id}_headers",
+                        {
+                            "content-length": r.headers.get("content-length"),
+                            "content-type": r.headers.get("content-type"),
+                        },
+                    ),
+                )
+                new_total = int(r.headers["content-length"])
+                await common.send_msg((None, 0, new_total)) if not total else None
+                total = new_total
+                content_type = r.headers.get("content-type").split("/")[-1]
+                content_type = get_unknown_content_type(ele)
+                if not placeholderObj:
+                    placeholderObj = placeholder.Placeholders(ele, content_type)
+                    await placeholderObj.init()
+                path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+                if await check_forced_skip(ele, total) == 0:
+                    total = 0
+                elif total == resume_size:
+                    None
                 else:
-                    common_globals.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
+                    await download_fileobject_writer(
+                        r, ele, total, tempholderObj, placeholderObj
                     )
-                    common_globals.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}"
-                    )
-                    common_globals.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}"
-                    )
-                    r.raise_for_status()
+            else:
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)} main download  response text [/bold]: {await r.text_()}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)}main download headers [/bold]: {r.headers}"
+                )
+                r.raise_for_status()
 
-        await size_checker(tempholderObj.tempfilepath, ele, total)
-        return (total, tempholderObj.tempfilepath, placeholderObj)
-    except Exception as E:
-        await common.send_msg((None, 0, -(new_total if not old_total else old_total)))
-        raise E
+    await size_checker(tempholderObj.tempfilepath, ele, total)
+    return (total, tempholderObj.tempfilepath, placeholderObj)
 
 
 async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderObj):
@@ -333,6 +324,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         # reset download data
+        await common.send_msg((None, 0, -total))
         raise E
     finally:
         try:
