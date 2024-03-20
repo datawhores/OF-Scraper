@@ -62,22 +62,27 @@ async def get_pinned_post(model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in asyncio.as_completed(tasks):
-            try:
-                result, new_tasks_batch = await task
-                new_tasks.extend(new_tasks_batch)
-                page_count = page_count + 1
-                overall_progress.update(
-                    page_task,
-                    description=f"Pinned Content Pages Progress: {page_count}",
-                )
-                responseArray.extend(result)
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                continue
+        try:
+            for task in asyncio.as_completed(
+                tasks, timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task)
+            ):
+                try:
+                    result, new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    page_count = page_count + 1
+                    overall_progress.update(
+                        page_task,
+                        description=f"Pinned Content Pages Progress: {page_count}",
+                    )
+                    responseArray.extend(result)
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+        except TimeoutError as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
         tasks = new_tasks
-
     overall_progress.remove_task(page_task)
     progress_utils.pinned_layout.visible = False
     outdict = {}
