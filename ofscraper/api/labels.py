@@ -58,26 +58,27 @@ async def get_labels(model_id, c=None):
     while bool(tasks):
         new_tasks = []
         try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task)
+            async with asyncio.timeout(
+                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
             ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Label Names Pages Progress: {page_count}",
-                    )
-                    responseArray.extend(result)
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        result, new_tasks_batch = await task
+                        new_tasks.extend(new_tasks_batch)
+                        page_count = page_count + 1
+                        overall_progress.update(
+                            page_task,
+                            description=f"Label Names Pages Progress: {page_count}",
+                        )
+                        responseArray.extend(result)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
+            tasks = new_tasks
         except TimeoutError as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.labelled_layout.visible = False
     log.trace(
@@ -205,31 +206,32 @@ async def get_labelled_posts(labels, username, c=None):
     while bool(tasks):
         new_tasks = []
         try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task)
+            async with asyncio.timeout(
+                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
             ):
-                try:
-                    label, new_posts, new_tasks = await task
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task, description=f"Labels Progress: {page_count}"
-                    )
-                    log.debug(
-                        f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
-                    )
-                    new_posts = label_dedupe(new_posts)
-                    log.debug(
-                        f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
-                    )
-                    posts = label_dedupe(
-                        responseDict[label["id"]].get("posts", []) + new_posts
-                    )
-                    responseDict[label["id"]]["posts"] = posts
-                    tasks.extend(new_tasks)
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        label, new_posts, new_tasks = await task
+                        page_count = page_count + 1
+                        overall_progress.update(
+                            page_task, description=f"Labels Progress: {page_count}"
+                        )
+                        log.debug(
+                            f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
+                        )
+                        new_posts = label_dedupe(new_posts)
+                        log.debug(
+                            f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
+                        )
+                        posts = label_dedupe(
+                            responseDict[label["id"]].get("posts", []) + new_posts
+                        )
+                        responseDict[label["id"]]["posts"] = posts
+                        tasks.extend(new_tasks)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
         except TimeoutError as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())

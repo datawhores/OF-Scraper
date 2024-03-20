@@ -106,18 +106,21 @@ async def activeHelper(subscribe_count, c):
         for offset in range(0, subscribe_count + 1, 10)
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
-    while bool(tasks, timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task)):
+    while bool(tasks):
         new_tasks = []
         try:
-            for task in asyncio.as_completed(tasks):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    output.extend(result)
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
+            async with asyncio.timeout(
+                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+            ):
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        result, new_tasks_batch = await task
+                        new_tasks.extend(new_tasks_batch)
+                        output.extend(result)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
         except TimeoutError as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
@@ -163,18 +166,21 @@ async def expiredHelper(subscribe_count, c):
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
 
-    while bool(tasks, timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task)):
+    while bool(tasks):
         new_tasks = []
         try:
-            for task in asyncio.as_completed(tasks):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    output.extend(result)
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
+            async with asyncio.timeout(
+                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+            ):
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        result, new_tasks_batch = await task
+                        new_tasks.extend(new_tasks_batch)
+                        output.extend(result)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
         except TimeoutError as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())

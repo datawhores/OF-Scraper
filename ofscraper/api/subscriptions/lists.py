@@ -111,23 +111,23 @@ async def get_lists():
             while bool(tasks):
                 new_tasks = []
                 try:
-                    for task in asyncio.as_completed(
-                        tasks,
-                        timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task),
+                    async with asyncio.timeout(
+                        constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
                     ):
-                        try:
-                            result, new_tasks_batch = await task
-                            new_tasks.extend(new_tasks_batch)
-                            page_count = page_count + 1
-                            overall_progress.update(
-                                page_task,
-                                description=f"UserList Pages Progress: {page_count}",
-                            )
-                            output.extend(result)
-                        except Exception as E:
-                            log.traceback_(E)
-                            log.traceback_(traceback.format_exc())
-                            continue
+                        for task in asyncio.as_completed(tasks):
+                            try:
+                                result, new_tasks_batch = await task
+                                new_tasks.extend(new_tasks_batch)
+                                page_count = page_count + 1
+                                overall_progress.update(
+                                    page_task,
+                                    description=f"UserList Pages Progress: {page_count}",
+                                )
+                                output.extend(result)
+                            except Exception as E:
+                                log.traceback_(E)
+                                log.traceback_(traceback.format_exc())
+                                continue
                 except TimeoutError as E:
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
@@ -244,23 +244,23 @@ async def get_list_users(lists):
                 while bool(tasks):
                     new_tasks = []
                     try:
-                        for task in asyncio.as_completed(
-                            tasks,
-                            timeout=constants.get("API_TIMEOUT_PER_TASKS") * len(task),
+                        async with asyncio.timeout(
+                            constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
                         ):
-                            try:
-                                result, new_tasks_batch = await task
-                                new_tasks.extend(new_tasks_batch)
-                                page_count = page_count + 1
-                                overall_progress.update(
-                                    page_task,
-                                    description=f"UserList Users Pages Progress: {page_count}",
-                                )
-                                output.extend(result)
-                            except Exception as E:
-                                log.traceback_(E)
-                                log.traceback_(traceback.format_exc())
-                                continue
+                            for task in asyncio.as_completed(tasks):
+                                try:
+                                    result, new_tasks_batch = await task
+                                    new_tasks.extend(new_tasks_batch)
+                                    page_count = page_count + 1
+                                    overall_progress.update(
+                                        page_task,
+                                        description=f"UserList Users Pages Progress: {page_count}",
+                                    )
+                                    output.extend(result)
+                                except Exception as E:
+                                    log.traceback_(E)
+                                    log.traceback_(traceback.format_exc())
+                                    continue
                     except TimeoutError as E:
                         log.traceback_(E)
                         log.traceback_(traceback.format_exc())
