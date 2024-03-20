@@ -249,7 +249,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
-            cache.get(f"{model_id}_scrape_messages")
+            cache.set(f"{model_id}_scrape_messages")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
@@ -470,7 +470,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
-            cache.get(f"{model_id}_scrape_messages")
+            cache.set(f"{model_id}_scrape_messages")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
