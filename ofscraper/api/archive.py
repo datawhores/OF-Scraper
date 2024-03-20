@@ -135,27 +135,25 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
         )
 
     page_task = overall_progress.add_task(
-        f" Archived Content Pages Progress: {page_count}", visible=True
+        f"Archived Content Pages Progress: {page_count}", visible=True
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(0)
-        tasks = list(pending)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
                 overall_progress.update(
                     page_task,
                     description=f"Archived Content Pages Progress: {page_count}",
                 )
                 responseArray.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
             except Exception as E:
-                log.traceback(traceback.format_exc())
-                log.tracback_(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.archived_layout.visible = False
 

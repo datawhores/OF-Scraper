@@ -39,7 +39,7 @@ attempt = contextvars.ContextVar("attempt")
 async def get_stories_post_progress(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
-    output = []
+    responseArray = []
     page_count = 0
     tasks = []
     job_progress = progress_utils.stories_progress
@@ -54,38 +54,36 @@ async def get_stories_post_progress(model_id, c=None):
     page_task = overall_progress.add_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
                 overall_progress.update(
                     page_task,
                     description=f"Stories Content Pages Progress: {page_count}",
                 )
-                output.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                responseArray.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
-
+        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.stories_layout.visible = False
+
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", output))
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", responseArray))
             )
         )
     )
-    log.debug(f"[bold]stories Count with Dupes[/bold] {len(output)} found")
+    log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
     outdict = {}
-    for ele in output:
+    for ele in responseArray:
         outdict[ele["id"]] = ele
     log.debug(
         f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
@@ -97,7 +95,7 @@ async def get_stories_post_progress(model_id, c=None):
 async def get_stories_post(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
-    output = []
+    responseArray = []
     page_count = 0
     tasks = []
 
@@ -105,31 +103,29 @@ async def get_stories_post(model_id, c=None):
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
     tasks.append(asyncio.create_task(scrape_stories(c, model_id, None)))
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                output.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                responseArray.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", output))
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", responseArray))
             )
         )
     )
-    log.debug(f"[bold]stories Count with Dupes[/bold] {len(output)} found")
+    log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
     outdict = {}
-    for ele in output:
+    for ele in responseArray:
         outdict[ele["id"]] = ele
     log.debug(
         f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
@@ -214,7 +210,7 @@ async def get_highlight_post_progress(model_id, c=None):
     # async with c or sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
-    output = []
+    highlightLists = []
 
     page_count = 0
     tasks = []
@@ -228,68 +224,71 @@ async def get_highlight_post_progress(model_id, c=None):
     page_task = overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
                 overall_progress.update(
                     page_task,
-                    description=f"Highlight List  Pages Progress: {page_count}",
+                    description=f"Highlights List Pages Progress: {page_count}",
                 )
-                output.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                highlightLists.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
-    overall_progress.remove_task(page_task)
-    output2 = []
-    page_count = 0
+        tasks = new_tasks
     tasks = []
 
     [
         tasks.append(
             asyncio.create_task(scrape_highlights(c, i, job_progress=job_progress))
         )
-        for i in output
+        for i in highlightLists
     ]
+
+    highlightResponse = []
+    page_count = 0
     page_task = overall_progress.add_task(
         f"Highlight Content via List Pages Progress: {page_count}", visible=True
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(page_task, description=f": {page_count}")
-                output2.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                overall_progress.update(
+                    page_task,
+                    description=f"Highlight Content via List Pages Progress: {page_count}",
+                )
+                highlightResponse.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.highlights_layout.visible = False
 
     log.trace(
         "highlight raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo heighlight: {str(x)}", output))
+                list(
+                    map(
+                        lambda x: f"undupedinfo heighlight: {str(x)}", highlightResponse
+                    )
+                )
             )
         )
     )
-    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output2)} found")
+    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
     outdict = {}
-    for ele in output2:
+    for ele in highlightResponse:
         outdict[ele["id"]] = ele
     log.debug(
         f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
@@ -305,62 +304,63 @@ async def get_highlight_post(model_id, c=None):
     # async with c or sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
-    output = []
+    highlightLists = []
 
     page_count = 0
     tasks = []
     tasks.append(
         asyncio.create_task(scrape_highlight_list(c, model_id, job_progress=None))
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                output.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                highlightLists.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
-    output2 = []
-    page_count = 0
+        tasks = new_tasks
     tasks = []
 
     [
         tasks.append(asyncio.create_task(scrape_highlights(c, i, job_progress=None)))
-        for i in output
+        for i in highlightLists
     ]
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+
+    highlightResponse = []
+    page_count = 0
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                output2.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                highlightResponse.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
 
     log.trace(
         "highlight raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo heighlight: {str(x)}", output))
+                list(
+                    map(
+                        lambda x: f"undupedinfo heighlight: {str(x)}", highlightResponse
+                    )
+                )
             )
         )
     )
-    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(output2)} found")
+    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
     outdict = {}
-    for ele in output2:
+    for ele in highlightResponse:
         outdict[ele["id"]] = ele
     log.debug(
         f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"

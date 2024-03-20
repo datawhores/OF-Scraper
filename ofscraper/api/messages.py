@@ -228,25 +228,23 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
         f" Message Content Pages Progress: {page_count}", visible=True
     )
 
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                out, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
                 overall_progress.update(
                     page_task,
-                    description=f"Messages Content Pages Progress: {page_count}",
+                    description=f"Message Content Pages Progress: {page_count}",
                 )
-                responseArray.extend(out)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                responseArray.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.messages_layout.visible = False
 
@@ -447,20 +445,19 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
             )
         )
 
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(1)
-        tasks = list(pending)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                out, new_tasks = await result
-                responseArray.extend(out)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                responseArray.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     unduped = {}
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
 

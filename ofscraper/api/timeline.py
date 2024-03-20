@@ -264,24 +264,23 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     page_task = overall_progress.add_task(
         f" Timeline Content Pages Progress: {page_count}", visible=True
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(1)
-        tasks = list(pending)
-        for data in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await data
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
                 overall_progress.update(
                     page_task,
                     description=f"Timeline Content Pages Progress: {page_count}",
                 )
                 responseArray.extend(result)
-                tasks.extend(new_tasks)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.timeline_layout.visible = False
 
@@ -405,19 +404,19 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             )
         )
 
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(1)
-        tasks = list(pending)
-        for data in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await data
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
                 responseArray.extend(result)
-                tasks.extend(new_tasks)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
 
     unduped = {}
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")

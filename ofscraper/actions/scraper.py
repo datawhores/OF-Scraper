@@ -327,14 +327,6 @@ async def process_archived_posts(model_id, username, c):
                 username=username,
                 downloaded=False,
             )
-            # archived is set as post
-            await operations.batch_mediainsert(
-                output,
-                operations.update_response_media_table,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
             cache.set(
                 "{model_id}_full_archived_scrape",
                 read_args.retriveArgs().after is not None,
@@ -429,7 +421,7 @@ async def process_profile(username, c) -> list:
                         post,
                     )
                 )
-            return output, post
+            return output, posts
     except Exception as E:
         try:
             log.traceback_(E)
@@ -589,8 +581,8 @@ async def process_areas(ele, model_id) -> list:
 
 
 async def process_task(model_id, username, ele):
-    media = []
-    post = []
+    mediaObjs = []
+    postObjs = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
     async with sessionbuilder.sessionBuilder() as c:
@@ -658,8 +650,6 @@ async def process_task(model_id, username, ele):
                     )
                     setattr(progress_utils.labelled_layout, "visible", True)
                     final_post_areas.remove("Labels")
-            if not bool(tasks):
-                break
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
@@ -668,11 +658,11 @@ async def process_task(model_id, username, ele):
             for results in done:
                 try:
                     medias, posts = await results
-                    media.extend(medias or [])
-                    post.extend(posts or [])
+                    mediaObjs.extend(medias or [])
+                    postObjs.extend(posts or [])
                     await asyncio.sleep(1)
                 except Exception as E:
                     await asyncio.sleep(1)
                     log.debug(E)
                     continue
-    return media, post
+    return mediaObjs, postObjs

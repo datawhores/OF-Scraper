@@ -69,7 +69,7 @@ async def get_subscriptions(subscribe_count, account="active"):
 
 
 async def activeHelper(subscribe_count, c):
-    out = []
+    output = []
 
     if any(
         x in helpers.get_black_list_helper()
@@ -106,22 +106,23 @@ async def activeHelper(subscribe_count, c):
         for offset in range(0, subscribe_count + 1, 10)
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
-                out.extend(result)
-                tasks.extend(new_tasks)
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                output.extend(result)
             except Exception as E:
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
-    return out
+        tasks = new_tasks
+    return output
 
 
 async def expiredHelper(subscribe_count, c):
-    out = []
+    output = []
     if any(
         x in helpers.get_black_list_helper()
         for x in [
@@ -158,22 +159,19 @@ async def expiredHelper(subscribe_count, c):
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
 
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
-                out.extend(result)
-
-                tasks.extend(new_tasks)
-
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                output.extend(result)
             except Exception as E:
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
-
-    return out
+        tasks = new_tasks
+    return output
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:

@@ -42,45 +42,40 @@ sem = None
 async def get_paid_posts_progress(username, model_id, c=None):
     global sem
     sem = sems.get_req_sem()
-    output = []
+    responseArray = []
     tasks = []
 
     page_count = 0
     job_progress = progress_utils.paid_progress
     overall_progress = progress_utils.overall_progress
-
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     tasks.append(
         asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
     )
     page_task = overall_progress.add_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
                 overall_progress.update(
                     page_task,
                     description=f"Paid Content Pages Progress: {page_count}",
                 )
-                output.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                responseArray.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.paid_layout.visible = False
+
     outdict = {}
-    for post in output:
+    for post in responseArray:
         outdict[post["id"]] = post
     log.trace(
         "paid raw unduped {posts}".format(
@@ -97,29 +92,28 @@ async def get_paid_posts_progress(username, model_id, c=None):
 async def get_paid_posts(model_id, username, c=None):
     global sem
     sem = sems.get_req_sem()
-    output = []
+    responseArray = []
     tasks = []
 
     # async with c or sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
     tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        await asyncio.sleep(1)
-        for result in done:
+    while bool(tasks):
+        new_tasks = []
+        for task in tasks:
             try:
-                result, new_tasks = await result
-                output.extend(result)
-                tasks.extend(new_tasks)
-                await asyncio.sleep(1)
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                responseArray.extend(result)
             except Exception as E:
-                await asyncio.sleep(1)
-                log.debug(E)
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
     outdict = {}
-    for post in output:
+    for post in responseArray:
         outdict[post["id"]] = post
     log.trace(
         "paid raw unduped {posts}".format(
@@ -318,6 +312,7 @@ async def get_all_paid_posts():
                             await asyncio.sleep(1)
                             log.debug(E)
                             continue
+
                 overall_progress.remove_task(page_task)
         outdict = {}
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")

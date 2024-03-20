@@ -106,27 +106,27 @@ async def get_lists():
             async with sessionbuilder.sessionBuilder() as c:
                 tasks.append(asyncio.create_task(scrape_lists(c, job_progress)))
                 page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
+                    f"UserList Pages Progress: {page_count}", visible=True
                 )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    tasks = list(pending)
-                    for result in done:
-                        try:
-                            result, new_tasks = await result
-                            page_count = page_count + 1
-                            overall_progress.update(
-                                page_task, description=f"Pages Progress: {page_count}"
-                            )
-                            output.extend(result)
-                            tasks.extend(new_tasks)
-                        except Exception as E:
-                            log.debug(E)
-                            continue
+            while bool(tasks):
+                new_tasks = []
+                for task in tasks:
+                    try:
+                        result, new_tasks_batch = await task
+                        new_tasks.extend(new_tasks_batch)
+                        page_count = page_count + 1
+                        overall_progress.update(
+                            page_task,
+                            description=f"UserList Pages Progress: {page_count}",
+                        )
+                        output.extend(result)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
+                tasks = new_tasks
 
-                overall_progress.remove_task(page_task)
+        overall_progress.remove_task(page_task)
         log.trace(
             "list unduped {posts}".format(
                 posts="\n\n".join(map(lambda x: f" list data raw:{x}", output))
@@ -232,42 +232,38 @@ async def get_list_users(lists):
                     for id in lists
                 ]
                 page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
+                    f"UserList Users Pages Progress: {page_count}", visible=True
                 )
-                while tasks:
-                    done, pending = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-                    tasks = list(pending)
-                    for result in done:
+                while bool(tasks):
+                    new_tasks = []
+                    for task in tasks:
                         try:
-                            result, new_tasks = await result
+                            result, new_tasks_batch = await task
+                            new_tasks.extend(new_tasks_batch)
                             page_count = page_count + 1
                             overall_progress.update(
-                                page_task, description=f"Pages Progress: {page_count}"
+                                page_task,
+                                description=f"UserList Users Pages Progress: {page_count}",
                             )
                             output.extend(result)
-                            tasks.extend(new_tasks)
                         except Exception as E:
-                            log.debug(E)
+                            log.traceback_(E)
+                            log.traceback_(traceback.format_exc())
                             continue
-                overall_progress.remove_task(page_task)
-        outdict = {}
-        for ele in output:
-            outdict[ele["id"]] = ele
-        log.trace(
-            "users found {users}".format(
-                users="\n\n".join(
-                    list(
-                        map(lambda x: f"label post joined: {str(x)}", outdict.values())
-                    )
-                )
+                    tasks = new_tasks
+    overall_progress.remove_task(page_task)
+    outdict = {}
+    for ele in output:
+        outdict[ele["id"]] = ele
+    log.trace(
+        "users found {users}".format(
+            users="\n\n".join(
+                list(map(lambda x: f"user data: {str(x)}", outdict.values()))
             )
         )
-        log.debug(
-            f"[bold]users count without Dupes[/bold] {len(outdict.values())} found"
-        )
-        return outdict.values()
+    )
+    log.debug(f"[bold]users count without Dupes[/bold] {len(outdict.values())} found")
+    return outdict.values()
 
 
 async def scrape_list(c, item, job_progress, offset=0):

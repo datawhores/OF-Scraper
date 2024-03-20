@@ -13,6 +13,7 @@ r"""
 
 import asyncio
 import logging
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -57,19 +58,17 @@ async def get_subscription(accounts=None):
 
 
 async def get_subscription_helper(c, accounts):
-    out = []
+    output = []
     tasks = [
         asyncio.create_task(profile.scrape_profile_helper_async(c, account))
         for account in accounts
     ]
-    while tasks:
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        tasks = list(pending)
-        for result in done:
-            try:
-                result = await result
-                out.append(result)
-            except Exception as E:
-                log.debug(E)
-                continue
-    return out
+    for task in tasks:
+        try:
+            result = await task
+            output.append(result)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            continue
+    return output
