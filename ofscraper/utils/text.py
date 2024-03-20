@@ -26,7 +26,7 @@ async def get_text(values):
                 tg.create_task(get_text_process(value, dupe=dupe)) for value in values
             ]
             results = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             result = await task
             results.append(result)
         return (

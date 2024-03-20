@@ -108,7 +108,7 @@ async def activeHelper(subscribe_count, c):
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -161,7 +161,7 @@ async def expiredHelper(subscribe_count, c):
 
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)

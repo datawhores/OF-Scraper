@@ -62,7 +62,7 @@ async def get_pinned_post(model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)

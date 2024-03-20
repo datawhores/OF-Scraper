@@ -110,7 +110,7 @@ async def get_lists():
                 )
             while bool(tasks):
                 new_tasks = []
-                for task in tasks:
+                for task in asyncio.as_completed(tasks):
                     try:
                         result, new_tasks_batch = await task
                         new_tasks.extend(new_tasks_batch)
@@ -236,7 +236,7 @@ async def get_list_users(lists):
                 )
                 while bool(tasks):
                     new_tasks = []
-                    for task in tasks:
+                    for task in asyncio.as_completed(tasks):
                         try:
                             result, new_tasks_batch = await task
                             new_tasks.extend(new_tasks_batch)

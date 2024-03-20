@@ -56,7 +56,7 @@ async def get_stories_post_progress(model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -105,7 +105,7 @@ async def get_stories_post(model_id, c=None):
     tasks.append(asyncio.create_task(scrape_stories(c, model_id, None)))
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -226,7 +226,7 @@ async def get_highlight_post_progress(model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -257,7 +257,7 @@ async def get_highlight_post_progress(model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -313,7 +313,7 @@ async def get_highlight_post(model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -335,7 +335,7 @@ async def get_highlight_post(model_id, c=None):
     page_count = 0
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)

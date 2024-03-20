@@ -56,7 +56,7 @@ async def get_paid_posts_progress(username, model_id, c=None):
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -101,7 +101,7 @@ async def get_paid_posts(model_id, username, c=None):
     tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)

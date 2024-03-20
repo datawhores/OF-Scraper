@@ -63,7 +63,7 @@ async def get_subscription_helper(c, accounts):
         asyncio.create_task(profile.scrape_profile_helper_async(c, account))
         for account in accounts
     ]
-    for task in tasks:
+    for task in asyncio.as_completed(tasks):
         try:
             result = await task
             output.append(result)

@@ -10,7 +10,9 @@ import asyncio
 import contextvars
 import logging
 import math
+import queue
 import traceback
+from multiprocessing import Value
 
 import arrow
 from tenacity import (
@@ -170,6 +172,7 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     min_posts = 50
     responseArray = []
     page_count = 0
+    counter = None
     if not read_args.retriveArgs().no_cache:
         oldtimeline = operations.get_timeline_postdates(
             model_id=model_id, username=username
@@ -266,7 +269,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     )
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -308,10 +311,14 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 @run
 async def get_timeline_media(model_id, username, forced_after=None, c=None):
     global sem
+    global data_queue
+    global counter
+
     sem = sems.get_req_sem()
     tasks = []
     min_posts = 50
     responseArray = []
+    data_queue = queue.Queue(maxsize=0)
     if not read_args.retriveArgs().no_cache:
         oldtimeline = operations.get_timeline_postdates(
             model_id=model_id, username=username
@@ -406,7 +413,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
     while bool(tasks):
         new_tasks = []
-        for task in tasks:
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
