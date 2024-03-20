@@ -380,11 +380,11 @@ def media_insert_helper(media, filename, downloaded, hash=None, prevData=None):
     size = None
     if filename and pathlib.Path(filename).exists():
         directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename))
+        filename_path = str(pathlib.Path(filename).name)
         size = math.ceil(pathlib.Path(filename).stat().st_size)
     elif filename:
         directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename))
+        filename_path = str(pathlib.Path(filename).name)
     elif prevData:
         directory = prevData[3]
         filename_path = prevData[4]
