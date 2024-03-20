@@ -271,7 +271,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(task)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
