@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import re
 import string
@@ -7,7 +6,7 @@ import string
 import warnings
 
 import arrow
-from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
 from tenacity import (
     AsyncRetrying,
@@ -17,6 +16,7 @@ from tenacity import (
     wait_random,
 )
 
+import ofscraper.classes.base as base
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.quality as quality
 import ofscraper.utils.config.data as data
@@ -29,8 +29,9 @@ warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 log = logging.getLogger("shared")
 
 
-class Media:
+class Media(base.base):
     def __init__(self, media, count, post):
+        super().__init__()
         self._media = media
         self._count = count
         self._post = post
@@ -180,10 +181,6 @@ class Media:
 
     @property
     def text(self):
-        if self._post.text:
-            return re.sub(
-                "\n+", " ", BeautifulSoup(self._post.text, "html.parser").text
-            )
         return self._post.text
 
     @property
@@ -238,20 +235,8 @@ class Media:
     @property
     def file_text(self):
         text = self.get_text()
-        text = self.cleanup(text)
-        if len(text) == 0:
-            return text
-        length = int(data.get_textlength(mediatype=self.mediatype))
-        if length == 0:
-            return text
-        elif data.get_textType(mediatype=self.mediatype) == "letter":
-            return f"{''.join(list(text)[:length])}"
-        else:
-            # split and reduce
-            wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", text)))
-            splitArray = wordarray[: length + 1]
-            text = f"{''.join(splitArray)}"
-        text = re.sub(" +$", "", text)
+        text = self.file_cleanup(text, mediatype=self.mediatype)
+        text = self.text_trunicate(text)
         return text
 
     @property
@@ -291,7 +276,11 @@ class Media:
             filename = f"{filename}_{await self.selected_quality}"
         # cleanup
         try:
-            filename = self.cleanup(filename)
+            filename = self.file_cleanup(filename)
+            filename = re.sub(
+                " ", data.get_spacereplacer(mediatype=self.mediatype), filename
+            )
+
         except Exception as E:
             print(E)
         return filename
@@ -302,7 +291,13 @@ class Media:
         if self.mediatype == "videos":
             filename = re.sub("_[a-z]+", f"", filename)
         # cleanup
-        filename = self.cleanup(filename)
+        try:
+            filename = self.file_cleanup(filename)
+            filename = re.sub(
+                " ", data.get_spacereplacer(mediatype=self.mediatype), filename
+            )
+        except Exception as E:
+            print(E)
         return filename
 
     @property
@@ -422,19 +417,12 @@ class Media:
     def get_text(self):
         if self.responsetype != "Profile":
             text = (
-                self._post.sanitized_text
+                self._post.file_sanitized_text
                 or self.filename
                 or arrow.get(self.date).format(data.get_date(mediatype=self.mediatype))
             )
         elif self.responsetype == "Profile":
             text = f"{arrow.get(self.date).format(data.get_date(mediatype=self.mediatype))} {self.text or self.filename}"
-        return text
-
-    def cleanup(self, text):
-        text = re.sub('[\n<>:"/\|?*:;]+', "", text)
-        text = re.sub("-+", "_", text)
-        text = re.sub(" +", " ", text)
-        text = re.sub(" ", data.get_spacereplacer(mediatype=self.mediatype), text)
         return text
 
     async def mpd_video_helper(self, mpd=None):

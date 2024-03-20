@@ -462,16 +462,20 @@ class Textholders(basePlaceholder):
         self._variables.update({"response_type": ele.modified_responsetype})
         self._variables.update({"label": ele.label_string})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
-        self._variables.update({"text": ele.media_text(mediatype="Text")})
+        self._variables.update({"text": ele.text_trunicate(ele.file_sanitized_text)})
         self._variables.update({"config": config_file.open_config()})
         self._variables.update({"args": read_args.retriveArgs()})
 
         self._variables.update({"quality": "source"})
         self._variables.update(
-            {"file_name": f"{ele.media_text(mediatype='Text')}_source"}
+            {"file_name": f"{ele.text_trunicate(ele.file_sanitized_text)}_source"}
         )
-        self._variables.update({"original_filename": ele.media_text(mediatype="Text")})
-        self._variables.update({"only_file_name": ele.media_text(mediatype="Text")})
+        self._variables.update(
+            {"original_filename": ele.text_trunicate(ele.file_sanitized_text)}
+        )
+        self._variables.update(
+            {"only_file_name": ele.text_trunicate(ele.file_sanitized_text)}
+        )
 
     @basePlaceholder.async_wrapper
     async def getmediadir(self, root=None, create=True):
@@ -526,7 +530,9 @@ class Textholders(basePlaceholder):
         )
         out = None
         if ele.responsetype == "profile":
-            out = f"{await ele.final_filename}.{ext}"
+            text = ele.file_sanitized_text
+            text = re.sub(" ", data.get_spacereplacer(mediatype="Text"), text)
+            out = f"{text}.{ext}"
         elif data.get_allow_code_execution():
             if isinstance(customval, dict) == False:
                 try:

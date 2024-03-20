@@ -37,7 +37,7 @@ def set_directory(path: Path):
         os.chdir(origin)
 
 
-def cleanup():
+def temp_cleanup():
     if not settings.get_auto_resume():
         log.info("Cleaning up temp files\n\n")
         roots = set(

@@ -1,19 +1,17 @@
-import importlib
 import logging
-import re
 
 import arrow
-from bs4 import BeautifulSoup
 
+import ofscraper.classes.base as base
 import ofscraper.classes.media as Media
 import ofscraper.utils.config.data as data
 
-html_parser = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 log = logging.getLogger("shared")
 
 
-class Post:
+class Post(base.base):
     def __init__(self, post, model_id, username, responsetype=None, label=None):
+        super().__init__()
         self._post = post
         self._model_id = int(model_id)
         self._username = username
@@ -52,12 +50,13 @@ class Post:
         return 0
 
     @property
-    def sanitized_text(self):
-        string = self.text
-        if string:
-            string = re.sub("<[^>]*>", "", string)
-            string = " ".join(string.split())
-            string = BeautifulSoup(string, html_parser).get_text()
+    def db_sanitized_text(self):
+        string = self.db_cleanup(self.text)
+        return string
+
+    @property
+    def file_sanitized_text(self):
+        string = self.file_cleanup(self.text or self.id)
         return string
 
     @property
@@ -67,7 +66,7 @@ class Post:
     # text for posts
     @property
     def db_text(self):
-        return self.text if not data.get_sanitizeDB() else self.sanitized_text
+        return self.text if not data.get_sanitizeDB() else self.db_sanitized_text
 
     @property
     def title(self):
@@ -173,30 +172,3 @@ class Post:
                 return self.responsetype.capitalize()
             elif response != "":
                 return response.capitalize()
-
-    def cleanup(self, text):
-        text = re.sub('[\n<>:"/\|?*:;]+', "", text)
-        text = re.sub("-+", "_", text)
-        text = re.sub(" +", " ", text)
-        text = re.sub(" ", data.get_spacereplacer(mediatype=self.mediatype), text)
-        return text
-
-    def media_text(self, mediatype=None):
-        text = self.sanitized_text
-        if text == None:
-            return "None"
-        text = self.cleanup(text)
-        if len(text) == 0:
-            return text
-        length = int(data.get_textlength(mediatype=mediatype))
-        if length == 0:
-            return text
-        elif data.get_textType(mediatype=mediatype) == "letter":
-            return f"{''.join(list(text)[:length])}"
-        else:
-            # split and reduce
-            wordarray = list(filter(lambda x: len(x) != 0, re.split("( )", text)))
-            splitArray = wordarray[: length + 1]
-            text = f"{''.join(splitArray)}"
-        text = re.sub(" +$", "", text)
-        return text

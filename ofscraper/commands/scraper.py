@@ -77,17 +77,17 @@ def print_start():
 def main():
     try:
         print_start()
-        paths.cleanup()
+        paths.temp_cleanup()
         paths.cleanDB()
         network.check_cdm()
 
         scrapper()
-        paths.cleanup()
+        paths.temp_cleanup()
         paths.cleanDB()
     except KeyboardInterrupt:
         try:
             with exit.DelayedKeyboardInterrupt():
-                paths.cleanup()
+                paths.temp_cleanup()
                 paths.cleanDB()
                 raise KeyboardInterrupt
         except KeyboardInterrupt:
@@ -95,7 +95,7 @@ def main():
     except Exception as E:
         try:
             with exit.DelayedKeyboardInterrupt():
-                paths.cleanup()
+                paths.temp_cleanup()
                 paths.cleanDB()
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
