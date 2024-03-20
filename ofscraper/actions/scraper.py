@@ -550,7 +550,7 @@ async def process_labels(model_id, username, c):
                 f"[bold]Label media count without locked[/bold] {sum(map(lambda x:len(x),output))}"
             )
 
-            return [item for sublist in output for item in sublist]
+            return [item for sublist in output for item in sublist], labelled_posts_
     except Exception as E:
         try:
             log.traceback_(E)
