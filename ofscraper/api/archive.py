@@ -158,6 +158,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
+            cache.get(f"{model_id}_full_archived_scrape")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
 
@@ -209,7 +210,7 @@ def get_after(model_id, username, forced_after=None):
         return read_args.retriveArgs().after.float_timestamp
 
     elif (
-        cache.get("{model_id}_full_archived_scrape")
+        cache.get(f"{model_id}_full_archived_scrape")
         and not read_args.retriveArgs().after
         and not data.get_disable_after()
     ):

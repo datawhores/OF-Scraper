@@ -249,6 +249,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
+            cache.get(f"{model_id}_scrape_messages")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
@@ -469,6 +470,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
+            cache.get(f"{model_id}_scrape_messages")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
@@ -668,7 +670,7 @@ def get_after(model_id, username, forced_after=None):
     elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     elif (
-        cache.get("{model_id}_scrape_messages")
+        cache.get(f"{model_id}_scrape_messages")
         and not read_args.retriveArgs().after
         and not data.get_disable_after()
     ):

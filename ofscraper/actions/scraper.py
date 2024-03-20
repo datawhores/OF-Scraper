@@ -82,7 +82,7 @@ async def process_messages(model_id, username, c):
             )
             # Update after database
             cache.set(
-                "{model_id}_scrape_messages",
+                f"{model_id}_scrape_messages",
                 read_args.retriveArgs().after is not None
                 and read_args.retriveArgs().after != 0,
             )
@@ -276,7 +276,7 @@ async def process_timeline_posts(model_id, username, c):
                 downloaded=False,
             )
             cache.set(
-                "{model_id}_full_timeline_scrape",
+                f"{model_id}_full_timeline_scrape",
                 read_args.retriveArgs().after is not None,
             )
             return (
@@ -328,7 +328,7 @@ async def process_archived_posts(model_id, username, c):
                 downloaded=False,
             )
             cache.set(
-                "{model_id}_full_archived_scrape",
+                f"{model_id}_full_archived_scrape",
                 read_args.retriveArgs().after is not None,
             )
             return (
