@@ -638,6 +638,7 @@ def get_TempDir(config=None, mediatype=None):
 
 @wrapper.config_reader
 def get_truncation(config=None, mediatype=None):
+    val = None
     if config == False:
         return constants.TRUNCATION_DEFAULT
 
