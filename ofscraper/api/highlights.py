@@ -220,6 +220,11 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
 
 @run
 async def get_highlight_post_progress(model_id, c=None):
+    highlightLists = await get_highlight_list_progress(model_id, c)
+    return await get_highlights_via_list_progress(highlightLists, c)
+
+
+async def get_highlight_list_progress(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
 
@@ -265,8 +270,14 @@ async def get_highlight_post_progress(model_id, c=None):
             log.traceback_(traceback.format_exc())
 
         tasks = new_tasks
-    tasks = []
+    overall_progress.remove_task(page_task)
+    return highlightLists
 
+
+async def get_highlights_via_list_progress(highlightLists, c=None):
+    job_progress = progress_utils.highlights_progress
+    overall_progress = progress_utils.overall_progress
+    tasks = []
     [
         tasks.append(
             asyncio.create_task(scrape_highlights(c, i, job_progress=job_progress))
@@ -303,9 +314,6 @@ async def get_highlight_post_progress(model_id, c=None):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
-    overall_progress.remove_task(page_task)
-    progress_utils.highlights_layout.visible = False
-
     log.trace(
         "highlight raw unduped {posts}".format(
             posts="\n\n".join(
@@ -324,11 +332,18 @@ async def get_highlight_post_progress(model_id, c=None):
     log.debug(
         f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
     )
+    overall_progress.remove_task(page_task)
+    progress_utils.highlights_layout.visible = False
     return list(outdict.values())
 
 
 @run
 async def get_highlight_post(model_id, c=None):
+    highlightList = await get_highlight_list(model_id, c)
+    return await get_highlights_via_list(highlightList)
+
+
+async def get_highlight_list(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
 
@@ -363,6 +378,10 @@ async def get_highlight_post(model_id, c=None):
             log.traceback_(traceback.format_exc())
 
         tasks = new_tasks
+    return highlightLists
+
+
+async def get_highlights_via_list(highlightLists, c):
     tasks = []
     [
         tasks.append(asyncio.create_task(scrape_highlights(c, i, job_progress=None)))
