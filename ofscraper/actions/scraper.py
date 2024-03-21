@@ -652,6 +652,8 @@ async def process_task(model_id, username, ele):
                     )
                     setattr(progress_utils.labelled_layout, "visible", True)
                     final_post_areas.remove("Labels")
+            if not bool(tasks):
+                break
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
