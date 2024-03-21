@@ -158,7 +158,7 @@ def write_messages_table(messages: dict, **kwargs):
                         message.paid,
                         message.archived,
                         message.date,
-                        message.model_id,
+                        message.fromuser,
                     ),
                     messages,
                 )
