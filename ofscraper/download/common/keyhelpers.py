@@ -66,7 +66,7 @@ async def un_encrypt(item, c, ele, input_=None):
     )
     r = subprocess.run(
         [
-            config_data.get_mp4decrypt(),
+            settings.get_mp4decrypt(),
             "--key",
             key,
             str(item["path"]),

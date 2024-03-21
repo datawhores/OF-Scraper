@@ -42,6 +42,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.utils.config.data as data
+import ofscraper.utils.settings as settings
 
 
 def mp4_prompt():
@@ -62,7 +63,7 @@ Linux version [mp4decrypt] and windows version [mp4decrypt.exe] are provided in 
 
 https://www.bento4.com/documentation/mp4decrypt/
 """,
-                "default": data.get_mp4decrypt(),
+                "default": settings.get_mp4decrypt(),
             },
         ]
     )
@@ -88,7 +89,7 @@ Linux version [ffmpeg] and windows version [ffmpeg.exe] are provided in the repo
 
 https://ffmpeg.org/download.html
 """,
-                "default": data.get_ffmpeg(),
+                "default": settings.get_ffmpeg(),
             },
         ]
     )

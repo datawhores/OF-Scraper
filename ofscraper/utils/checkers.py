@@ -25,18 +25,18 @@ def check_auth():
 
 
 def check_config():
-    while not check.mp4decryptchecker(data.get_mp4decrypt()):
+    while not check.mp4decryptchecker(settings.get_mp4decrypt()):
         console.get_shared_console().print(
             "There is an issue with the mp4decrypt path\n\n"
         )
-        log.debug(f"[bold]current mp4decrypt path[/bold] {data.get_mp4decrypt()}")
+        log.debug(f"[bold]current mp4decrypt path[/bold] {settings.get_mp4decrypt()}")
         config_.update_mp4decrypt()
-    while not check.ffmpegchecker(data.get_ffmpeg()):
+    while not check.ffmpegchecker(settings.get_ffmpeg()):
         console.get_shared_console().print("There is an issue with the ffmpeg path\n\n")
-        log.debug(f"[bold]current ffmpeg path[/bold] {data.get_ffmpeg()}")
+        log.debug(f"[bold]current ffmpeg path[/bold] {settings.get_ffmpeg()}")
         config_.update_ffmpeg()
-    log.debug(f"[bold]final mp4decrypt path[/bold] {data.get_mp4decrypt()}")
-    log.debug(f"[bold]final ffmpeg path[/bold] {data.get_ffmpeg()}")
+    log.debug(f"[bold]final mp4decrypt path[/bold] {settings.get_mp4decrypt()}")
+    log.debug(f"[bold]final ffmpeg path[/bold] {settings.get_ffmpeg()}")
 
 
 def check_config_key_mode():

@@ -1,3 +1,5 @@
+import shutil
+
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
@@ -120,3 +122,19 @@ def get_log_level():
     if read_args.retriveArgs().log:
         return read_args.retriveArgs().log
     return constants.getattr("DEFAULT_LOG_LEVEL")
+
+
+def get_mp4decrypt():
+    return (
+        config_data.get_mp4decrypt()
+        or shutil.which(constants.getattr("MP4_DECRYPT"))
+        or ""
+    )
+
+
+def get_ffmpeg():
+    return (
+        config_data.get_ffmpeg()
+        or shutil.which(constants.getattr("FFMPEG_DECRYPT"))
+        or ""
+    )

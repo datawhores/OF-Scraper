@@ -30,6 +30,7 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 
 console = Console()
@@ -292,7 +293,7 @@ def binary_config():
                     prompt_validators.mp4decryptpathvalidator(),
                     prompt_validators.mp4decryptexecutevalidator(),
                 ),
-                "default": data.get_mp4decrypt(),
+                "default": settings.get_mp4decrypt(),
                 "option_instruction": """
 Certain content requires decryption to process please provide the full path to mp4decrypt
 """,
@@ -309,7 +310,7 @@ Certain content requires decryption to process please provide the full path to m
                 "option_instruction": """
 Certain content requires decryption to process please provide the full path to ffmpeg
 """,
-                "default": data.get_ffmpeg(),
+                "default": settings.get_ffmpeg(),
             },
         ],
         altx=funct,

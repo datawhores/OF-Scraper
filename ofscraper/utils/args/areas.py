@@ -37,7 +37,6 @@ def get_download_area():
         "Stories",
         "Purchased",
         "Profile",
-        "Labels",
     ]
     if len(read_args.retriveArgs().download_area) == 0:
         post = set(read_args.retriveArgs().posts)
@@ -45,6 +44,11 @@ def get_download_area():
         post = set(read_args.retriveArgs().download_area)
     if "All" in post:
         post.update(set(all_choices))
+    elif "Labels*" or "Labels+":
+        post.update(set(all_choices))
+        post.update({"Labels"})
+        post.discard("Labels*")
+        post.discard("Laabels+")
     return list(
         filter(
             lambda x: x != "All"

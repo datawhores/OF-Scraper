@@ -23,7 +23,6 @@ from tenacity import (
     wait_random,
 )
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.sems as sems

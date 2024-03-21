@@ -26,9 +26,9 @@ import ofscraper.download.common.globals as common_globals
 import ofscraper.download.common.keyhelpers as keyhelpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
+import ofscraper.utils.settings as settings
 from ofscraper.download.common.common import (
     addLocalDir,
     check_forced_skip,
@@ -85,7 +85,7 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
         [
-            config_data.get_ffmpeg(),
+            settings.get_ffmpeg(),
             "-i",
             str(video["path"]),
             "-i",
