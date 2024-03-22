@@ -8,6 +8,7 @@ r"""
                  \/     \/           \/            \/         
 """
 
+from ofscraper.const.binary import *
 from ofscraper.const.config import *
 from ofscraper.const.date import *
 from ofscraper.const.download import *
