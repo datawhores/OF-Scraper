@@ -35,7 +35,12 @@ def lowstdout():
 
 @contextlib.contextmanager
 def nostdout():
-    save_stdout = sys.stdout
-    sys.stdout = io.BytesIO()
-    yield
-    sys.stdout = save_stdout
+    try:
+        save_stdout = sys.stdout
+        sys.stdout = open(os.devnull, "w")
+        yield
+        sys.stdout = save_stdout
+    except:
+        None
+        yield
+        None

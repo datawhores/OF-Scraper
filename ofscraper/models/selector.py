@@ -167,12 +167,7 @@ def filterNSort():
         usernames = ALL_SUBS
 
         log.debug(f"username count no filters: {len(usernames)}")
-        filterusername = subtype.subType(usernames)
-        filterusername = price.pricePaidFreeFilterHelper(filterusername)
-        filterusername = flags.promoFilterHelper(filterusername)
-        filterusername = date_.dateFilters(filterusername)
-        filterusername = other.otherFilters(filterusername)
-
+        filterusername = filterOnly(usernames)
         log.debug(f"final username count with all filters: {len(filterusername)}")
         # give log time to process
         time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT"))
@@ -199,3 +194,13 @@ Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
         )
 
         setfilter(forced=True)
+
+
+def filterOnly(usernames=None):
+    usernames = usernames or ALL_SUBS
+    filterusername = subtype.subType(usernames)
+    filterusername = price.pricePaidFreeFilterHelper(filterusername)
+    filterusername = flags.promoFilterHelper(filterusername)
+    filterusername = date_.dateFilters(filterusername)
+    filterusername = other.otherFilters(filterusername)
+    return filterusername
