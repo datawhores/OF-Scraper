@@ -136,7 +136,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
     if len(IDArray) <= 2:
         tasks.append(
             asyncio.create_task(
-                scrape_messages(c, model_id, job_progress, message_id=None)
+                scrape_messages(c, model_id, progress=job_progress, message_id=None)
             )
         )
 
@@ -156,7 +156,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        job_progress,
+                        progress=job_progress,
                         message_id=None,
                         required_ids=set(splitArraysTime[0]),
                     )
@@ -168,7 +168,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        job_progress,
+                        progress=job_progress,
                         message_id=splitArraysID[0][0],
                         required_ids=set(splitArraysTime[0]),
                     )
@@ -181,7 +181,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                         scrape_messages(
                             c,
                             model_id,
-                            job_progress,
+                            progress=job_progress,
                             required_ids=set(splitArraysTime[i]),
                             message_id=splitArraysID[i - 1][-1],
                         )
@@ -195,7 +195,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        job_progress,
+                        progress=job_progress,
                         message_id=splitArraysID[-2][-1],
                     )
                 )
@@ -206,7 +206,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        job_progress,
+                        progress=job_progress,
                         message_id=splitArraysID[-1][-1],
                     )
                 )
@@ -217,7 +217,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 scrape_messages(
                     c,
                     model_id,
-                    job_progress,
+                    progress=job_progress,
                     message_id=IDArray[0],
                     required_ids=set(postedAtArray[1:]),
                 )
@@ -282,7 +282,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     global sem
     sem = sems.get_req_sem()
     global after
-
+    job_progress = None
     tasks = []
     responseArray = []
     # require a min num of posts to be returned
@@ -371,7 +371,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
     if len(IDArray) <= 2:
         tasks.append(
             asyncio.create_task(
-                scrape_messages(c, model_id, job_progress=None, message_id=None)
+                scrape_messages(c, model_id, progress=job_progress, message_id=None)
             )
         )
 

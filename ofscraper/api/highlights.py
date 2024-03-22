@@ -213,7 +213,9 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
 
             return stories, new_tasks
 
@@ -382,9 +384,12 @@ async def get_highlight_list(model_id, c=None):
 
 
 async def get_highlights_via_list(highlightLists, c):
+    job_progress = None
     tasks = []
     [
-        tasks.append(asyncio.create_task(scrape_highlights(c, i, job_progress=None)))
+        tasks.append(
+            asyncio.create_task(scrape_highlights(c, i, job_progress=job_progress))
+        )
         for i in highlightLists
     ]
 
@@ -487,7 +492,9 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
 
             return data, new_tasks
 
@@ -540,7 +547,9 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
 
             return resp_data["stories"], new_tasks
 

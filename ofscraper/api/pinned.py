@@ -49,7 +49,7 @@ async def get_pinned_post(model_id, c=None):
             scrape_pinned_posts(
                 c,
                 model_id,
-                job_progress,
+                job_progress=job_progress,
                 timestamp=read_args.retriveArgs().after.float_timestamp
                 if read_args.retriveArgs().after
                 else None,
@@ -102,7 +102,9 @@ async def get_pinned_post(model_id, c=None):
     return list(outdict.values())
 
 
-async def scrape_pinned_posts(c, model_id, progress, timestamp=None, count=0) -> list:
+async def scrape_pinned_posts(
+    c, model_id, job_progress=None, timestamp=None, count=0
+) -> list:
     global sem
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     posts = None

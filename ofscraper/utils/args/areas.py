@@ -1,4 +1,5 @@
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.constants as const
 
 
 def get_like_area():
@@ -7,14 +8,19 @@ def get_like_area():
         "Archived",
         "Timeline",
         "Pinned",
-        "Labels",
     ]
+    all_choices.append("Label") if const.getattr("INCLUDED_LABELS_ALL") else None
     if len(read_args.retriveArgs().like_area) == 0:
         post = set(read_args.retriveArgs().posts)
     else:
         post = set(read_args.retriveArgs().like_area)
     if "All" in post:
         post.update(set(all_choices))
+    elif "Labels*" or "Labels+" in post:
+        post.update(set(all_choices))
+        post.update({"Labels"})
+        post.discard("Labels*")
+        post.discard("Laabels+")
     return list(
         filter(
             lambda x: x != "All"
@@ -38,13 +44,14 @@ def get_download_area():
         "Purchased",
         "Profile",
     ]
+    all_choices.append("Label") if const.getattr("INCLUDED_LABELS_ALL") else None
     if len(read_args.retriveArgs().download_area) == 0:
         post = set(read_args.retriveArgs().posts)
     else:
         post = set(read_args.retriveArgs().download_area)
     if "All" in post:
         post.update(set(all_choices))
-    elif "Labels*" or "Labels+":
+    elif "Labels*" or "Labels+" in post:
         post.update(set(all_choices))
         post.update({"Labels"})
         post.discard("Labels*")

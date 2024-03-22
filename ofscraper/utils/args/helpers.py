@@ -86,7 +86,7 @@ def like_helper(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
     if isinstance(x, str):
         words = re.split(",| ", x)
-        words = list(map(lambda x: re.sub("[^a-zA-Z-]", "", str.title(x)), words))
+        words = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), words))
     if (
         len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
         > 0

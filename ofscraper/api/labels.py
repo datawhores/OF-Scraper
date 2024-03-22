@@ -173,7 +173,9 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
 
 
 @run
@@ -344,7 +346,9 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
 
             return label, posts, new_tasks
 

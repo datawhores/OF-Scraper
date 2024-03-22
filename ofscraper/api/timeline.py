@@ -159,8 +159,9 @@ async def scrape_timeline_posts(
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
-
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
             return posts, new_tasks
 
 
@@ -172,7 +173,6 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     min_posts = 50
     responseArray = []
     page_count = 0
-    counter = None
     if not read_args.retriveArgs().no_cache:
         oldtimeline = operations.get_timeline_postdates(
             model_id=model_id, username=username
@@ -199,6 +199,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             """
     )
     filteredArray = list(filter(lambda x: x >= after, postedAtArray))
+    filteredArray[1:]
 
     job_progress = progress_utils.timeline_progress
     overall_progress = progress_utils.overall_progress
@@ -241,7 +242,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     scrape_timeline_posts(
                         c,
                         model_id,
-                        job_progress=None,
+                        job_progress=job_progress,
                         timestamp=splitArrays[-2][-1],
                     )
                 )
@@ -252,7 +253,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     scrape_timeline_posts(
                         c,
                         model_id,
-                        job_progress=None,
+                        job_progress=job_progress,
                         timestamp=splitArrays[-1][-1],
                     )
                 )
@@ -261,7 +262,9 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     else:
         tasks.append(
             asyncio.create_task(
-                scrape_timeline_posts(c, model_id, job_progress=None, timestamp=after)
+                scrape_timeline_posts(
+                    c, model_id, job_progress=job_progress, timestamp=after
+                )
             )
         )
     page_task = overall_progress.add_task(
@@ -319,14 +322,12 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 @run
 async def get_timeline_media(model_id, username, forced_after=None, c=None):
     global sem
-    global data_queue
-    global counter
+    job_progress = None
 
     sem = sems.get_req_sem()
     tasks = []
     min_posts = 50
     responseArray = []
-    data_queue = queue.Queue(maxsize=0)
     if not read_args.retriveArgs().no_cache:
         oldtimeline = operations.get_timeline_postdates(
             model_id=model_id, username=username
@@ -369,7 +370,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     scrape_timeline_posts(
                         c,
                         model_id,
-                        job_progress=None,
+                        job_progress=job_progress,
                         required_ids=set(splitArrays[0]),
                         timestamp=after,
                     )
@@ -381,7 +382,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                         scrape_timeline_posts(
                             c,
                             model_id,
-                            job_progress=None,
+                            job_progress=job_progress,
                             required_ids=set(splitArrays[i]),
                             timestamp=splitArrays[i - 1][-1],
                         )
@@ -395,7 +396,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     scrape_timeline_posts(
                         c,
                         model_id,
-                        job_progress=None,
+                        job_progress=job_progress,
                         timestamp=splitArrays[-2][-1],
                     )
                 )
@@ -406,7 +407,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     scrape_timeline_posts(
                         c,
                         model_id,
-                        job_progress=None,
+                        job_progress=job_progress,
                         timestamp=splitArrays[-1][-1],
                     )
                 )
@@ -415,7 +416,9 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     else:
         tasks.append(
             asyncio.create_task(
-                scrape_timeline_posts(c, model_id, job_progress=None, timestamp=after)
+                scrape_timeline_posts(
+                    c, model_id, job_progress=job_progress, timestamp=after
+                )
             )
         )
 

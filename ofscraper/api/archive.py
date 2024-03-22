@@ -322,7 +322,7 @@ async def scrape_archived_posts(
                                         scrape_archived_posts(
                                             c,
                                             model_id,
-                                            job_progress=None,
+                                            job_progress=job_progress,
                                             timestamp=posts[-1]["postedAtPrecise"],
                                         )
                                     )
@@ -341,7 +341,7 @@ async def scrape_archived_posts(
                                             scrape_archived_posts(
                                                 c,
                                                 model_id,
-                                                job_progress=None,
+                                                job_progress=job_progress,
                                                 timestamp=posts[-1]["postedAtPrecise"],
                                                 required_ids=required_ids,
                                             )
@@ -361,5 +361,7 @@ async def scrape_archived_posts(
 
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
             return posts, new_tasks

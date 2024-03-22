@@ -101,11 +101,14 @@ async def get_paid_posts(model_id, username, c=None):
     sem = sems.get_req_sem()
     responseArray = []
     tasks = []
+    job_progress = None
 
     # async with c or sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
-    tasks.append(asyncio.create_task(scrape_paid(c, username, job_progress=None)))
+    tasks.append(
+        asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
+    )
     while bool(tasks):
         new_tasks = []
         try:
