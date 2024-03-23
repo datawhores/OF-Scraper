@@ -33,7 +33,7 @@ from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
-    log_download_job_progress,
+    log_download_progress,
     setDirectoriesDate,
 )
 from ofscraper.download.main_download import main_download
