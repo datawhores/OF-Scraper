@@ -362,18 +362,20 @@ def update_media_table(
 ) -> list:
     prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
     if len(prevData) == 0:
-        insertData = media_insert_helper(media, filename, downloaded, hash=hash)
+        insertData = media_insert_helper(
+            media, filename, downloaded=downloaded, hash=hash
+        )
         conn.execute(queries.mediaInsert, insertData)
     else:
         insertData = media_insert_helper(
-            media, filename, downloaded, hash=hash, prevData=prevData
+            media, filename, downloaded=downloaded, hash=hash, prevData=prevData
         )
         insertData.append(media.id)
         conn.execute(queries.mediaUpdate, insertData)
     conn.commit()
 
 
-def media_insert_helper(media, filename, downloaded, hash=None, prevData=None):
+def media_insert_helper(media, filename, downloaded=None, hash=None, prevData=None):
     prevData = prevData[0] if isinstance(prevData, list) else prevData
     directory = None
     filename_path = None
@@ -390,7 +392,6 @@ def media_insert_helper(media, filename, downloaded, hash=None, prevData=None):
         filename_path = prevData[4]
         size = prevData[5]
         hash = prevData[13] or hash
-    downloaded = downloaded
     if prevData:
         downloaded = prevData[-2] if downloaded == None else downloaded
     elif filename:
@@ -416,13 +417,14 @@ def media_insert_helper(media, filename, downloaded, hash=None, prevData=None):
 
 
 @operation_wrapper_async
-def write_media_table_batch(medias, conn=None, **kwargs) -> list:
+def write_media_table_batch(medias, conn=None, downloaded=None, **kwargs) -> list:
     medias = converthelper(medias)
+    filename = None
     if len(medias) == 0:
         return
     insertData = list(
         map(
-            lambda media: media_insert_helper(media, None, None),
+            lambda media: media_insert_helper(media, filename, downloaded=downloaded),
             medias,
         )
     )
