@@ -20,7 +20,6 @@ from contextlib import contextmanager
 import ofscraper.actions.process as process_actions
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit

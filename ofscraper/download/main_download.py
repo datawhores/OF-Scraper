@@ -59,7 +59,7 @@ from ofscraper.download.common.common import (
 )
 
 
-async def main_download(c, ele, username, model_id, progress):
+async def main_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     # total may be none if no .part file
@@ -124,7 +124,7 @@ async def handle_result(result, ele, username, model_id):
     return ele.mediatype, total
 
 
-async def main_download_downloader(c, ele, progress):
+async def main_download_downloader(c, ele, job_progress):
     downloadspace(mediatype=ele.mediatype)
     tempholderObj = placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
@@ -149,10 +149,10 @@ async def main_download_downloader(c, ele, progress):
                 ) if common_globals.attempt.get() > 1 else None
                 if data:
                     return await main_data_handler(
-                        data, c, tempholderObj, ele, progress
+                        data, c, tempholderObj, ele, job_progress
                     )
                 else:
-                    return await alt_data_handler(c, tempholderObj, ele, progress)
+                    return await alt_data_handler(c, tempholderObj, ele, job_progress)
             except OSError as E:
                 await asyncio.sleep(1)
                 common_globals.log.debug(
@@ -300,7 +300,7 @@ async def download_fileobject_writer(
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
     downloadprogress = settings.get_download_bars()
-    task1 = progress.add_task(
+    task1 = job_progress.add_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
@@ -322,7 +322,7 @@ async def download_fileobject_writer(
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
-                        progress.update,
+                        job_progress.update,
                         task1,
                         completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()
@@ -341,6 +341,6 @@ async def download_fileobject_writer(
         except Exception:
             None
         try:
-            progress.remove_task(task1)
+            job_progress.remove_task(task1)
         except Exception:
             None

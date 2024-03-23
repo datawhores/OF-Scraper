@@ -342,7 +342,7 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
 @run
 async def get_highlight_post(model_id, c=None):
     highlightList = await get_highlight_list(model_id, c)
-    return await get_highlights_via_list(highlightList)
+    return await get_highlights_via_list(highlightList, c)
 
 
 async def get_highlight_list(model_id, c=None):
