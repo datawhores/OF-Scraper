@@ -73,7 +73,7 @@ async def main_download(c, ele, username, model_id, progress):
     result = await main_download_downloader(
         c,
         ele,
-        progress,
+        job_progress,
     )
     # special case for zero byte files
     if result[0] == 0:
@@ -173,18 +173,18 @@ async def main_download_downloader(c, ele, progress):
                 raise E
 
 
-async def alt_data_handler(c, tempholderObj, ele, progress):
+async def alt_data_handler(c, tempholderObj, ele, job_progress):
     result = None
     try:
         result = await main_download_sendreq(
-            c, ele, tempholderObj, progress, placeholderObj=None, total=None
+            c, ele, tempholderObj, job_progress, placeholderObj=None, total=None
         )
     except Exception as E:
         raise E
     return result
 
 
-async def main_data_handler(data, c, tempholderObj, ele, progress):
+async def main_data_handler(data, c, tempholderObj, ele, job_progress):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
     placeholderObj = placeholder.Placeholders(ele, content_type)
@@ -208,7 +208,7 @@ async def main_data_handler(data, c, tempholderObj, ele, progress):
                 c,
                 ele,
                 tempholderObj,
-                progress,
+                job_progress,
                 total=total,
                 placeholderObj=placeholderObj,
             )
@@ -217,7 +217,7 @@ async def main_data_handler(data, c, tempholderObj, ele, progress):
 
 
 async def main_download_sendreq(
-    c, ele, tempholderObj, progress, total=None, placeholderObj=None
+    c, ele, tempholderObj, job_progress, total=None, placeholderObj=None
 ):
     try:
         common_globals.log.debug(
@@ -225,7 +225,12 @@ async def main_download_sendreq(
         )
         total = total if common_globals.attempt.get() == 1 else None
         return await send_req_inner(
-            c, ele, tempholderObj, progress, placeholderObj=placeholderObj, total=total
+            c,
+            ele,
+            tempholderObj,
+            job_progress,
+            placeholderObj=placeholderObj,
+            total=total,
         )
     except OSError as E:
         raise E
@@ -234,7 +239,7 @@ async def main_download_sendreq(
 
 
 async def send_req_inner(
-    c, ele, tempholderObj, progress, placeholderObj=None, total=None
+    c, ele, tempholderObj, job_progress, placeholderObj=None, total=None
 ):
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     headers = (
@@ -272,7 +277,7 @@ async def send_req_inner(
                     None
                 else:
                     await download_fileobject_writer(
-                        r, progress, ele, tempholderObj, placeholderObj, total
+                        r, job_progress, ele, tempholderObj, placeholderObj, total
                     )
             else:
                 common_globals.log.debug(
@@ -291,11 +296,11 @@ async def send_req_inner(
 
 
 async def download_fileobject_writer(
-    r, progress, ele, tempholderObj, placeholderObj, total
+    r, job_progress, ele, tempholderObj, placeholderObj, total
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
     downloadprogress = settings.get_download_bars()
-    task1 = job_progress.add_task(
+    task1 = progress.add_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
@@ -317,7 +322,7 @@ async def download_fileobject_writer(
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
-                        job_progress.update,
+                        progress.update,
                         task1,
                         completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()
@@ -336,6 +341,6 @@ async def download_fileobject_writer(
         except Exception:
             None
         try:
-            job_progress.remove_task(task1)
+            progress.remove_task(task1)
         except Exception:
             None

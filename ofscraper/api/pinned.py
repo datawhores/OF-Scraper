@@ -186,7 +186,7 @@ async def scrape_pinned_posts(
                                     scrape_pinned_posts(
                                         c,
                                         model_id,
-                                        progress,
+                                        job_progress=job_progress,
                                         timestamp=posts[-1]["postedAtPrecise"],
                                         count=count + len(posts),
                                     )

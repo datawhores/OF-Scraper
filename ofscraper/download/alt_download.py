@@ -266,7 +266,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, progress):
         raise E
 
 
-async def send_req_inner(c, ele, item, placeholderObj, progress):
+async def send_req_inner(c, ele, item, placeholderObj, job_progress):
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     total = item["total"]
     await update_total(total) if total else None
@@ -307,7 +307,7 @@ async def send_req_inner(c, ele, item, placeholderObj, progress):
                     None
                 else:
                     await download_fileobject_writer(
-                        total, l, ele, progress, placeholderObj
+                        total, l, ele, job_progress, placeholderObj
                     )
             else:
                 common_globals.log.debug(

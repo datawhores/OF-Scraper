@@ -33,7 +33,7 @@ from ofscraper.download.alt_download import alt_download
 from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
-    log_download_progress,
+    log_download_job_progress,
     setDirectoriesDate,
 )
 from ofscraper.download.main_download import main_download
@@ -44,7 +44,7 @@ from ofscraper.utils.progress import setupDownloadProgressBar
 @run
 async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
-        progress_group, overall_progress, job_progress = setupDownloadProgressBar()
+        progress_group, overall_job_progress, job_progress = setupDownloadProgressBar()
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         common_globals.reset_globals()
 
@@ -174,7 +174,7 @@ async def process_dicts(username, model_id, medialist):
             common_globals.cache_thread.shutdown()
 
 
-async def download(c, ele, model_id, username, progress):
+async def download(c, ele, model_id, username, job_progress):
     async with common_globals.maxfile_sem:
         try:
             if ele.url:
@@ -183,7 +183,7 @@ async def download(c, ele, model_id, username, progress):
                     ele,
                     username,
                     model_id,
-                    progress,
+                    job_progress,
                 )
             elif ele.mpd:
                 return await alt_download(
@@ -191,7 +191,7 @@ async def download(c, ele, model_id, username, progress):
                     ele,
                     username,
                     model_id,
-                    progress,
+                    job_progress,
                 )
         except Exception as E:
             common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
