@@ -351,7 +351,7 @@ class Placeholders(basePlaceholder):
             return out
         out = re.sub(" $", "", out)
         # insert count
-        if re.search(r"\.[^.]+$", out):
+        if re.search(r"\.(?:[a-zA-Z0-9]+)$", out):
             out = re.sub(r"(\.(?!\.))", f"_{ele.count}.", out)
         else:
             out = f"{out}_{ele.count}"
