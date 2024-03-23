@@ -102,6 +102,7 @@ async def get_paid_posts(model_id, username, c=None):
     responseArray = []
     tasks = []
     job_progress = None
+    page_count = 0
 
     # async with c or sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")

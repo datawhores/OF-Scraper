@@ -328,6 +328,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     tasks = []
     min_posts = 50
     responseArray = []
+    page_count = 0
     if not read_args.retriveArgs().no_cache:
         oldtimeline = operations.get_timeline_postdates(
             model_id=model_id, username=username
