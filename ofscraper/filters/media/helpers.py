@@ -5,7 +5,6 @@ import re
 import arrow
 
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
