@@ -175,6 +175,7 @@ async def alt_download_downloader(item, c, ele, progress):
     placeholderObj = placeholder.tempFilePlaceholder(ele, f"{item['name']}.part")
     await placeholderObj.init()
     item["path"] = placeholderObj.tempfilepath
+    item["total"] = None
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
         wait=wait_random(
