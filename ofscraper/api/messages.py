@@ -136,7 +136,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
     if len(IDArray) <= 2:
         tasks.append(
             asyncio.create_task(
-                scrape_messages(c, model_id, progress=job_progress, message_id=None)
+                scrape_messages(c, model_id, job_progress=job_progress, message_id=None)
             )
         )
 
@@ -156,7 +156,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        progress=job_progress,
+                        job_progress=job_progress,
                         message_id=None,
                         required_ids=set(splitArraysTime[0]),
                     )
@@ -168,7 +168,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        progress=job_progress,
+                        job_progress=job_progress,
                         message_id=splitArraysID[0][0],
                         required_ids=set(splitArraysTime[0]),
                     )
@@ -181,7 +181,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                         scrape_messages(
                             c,
                             model_id,
-                            progress=job_progress,
+                            job_progress=job_progress,
                             required_ids=set(splitArraysTime[i]),
                             message_id=splitArraysID[i - 1][-1],
                         )
@@ -195,7 +195,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        progress=job_progress,
+                        job_progress=job_progress,
                         message_id=splitArraysID[-2][-1],
                     )
                 )
@@ -206,7 +206,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     scrape_messages(
                         c,
                         model_id,
-                        progress=job_progress,
+                        job_progress=job_progress,
                         message_id=splitArraysID[-1][-1],
                     )
                 )
@@ -217,7 +217,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                 scrape_messages(
                     c,
                     model_id,
-                    progress=job_progress,
+                    job_progress=job_progress,
                     message_id=IDArray[0],
                     required_ids=set(postedAtArray[1:]),
                 )
@@ -371,7 +371,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
     if len(IDArray) <= 2:
         tasks.append(
             asyncio.create_task(
-                scrape_messages(c, model_id, progress=job_progress, message_id=None)
+                scrape_messages(c, model_id, job_progress=job_progress, message_id=None)
             )
         )
 
@@ -512,7 +512,7 @@ def set_check(unduped, model_id, after):
 
 
 async def scrape_messages(
-    c, model_id, progress=None, message_id=None, required_ids=None
+    c, model_id, job_progress=None, message_id=None, required_ids=None
 ) -> list:
     global sem
     global tasks
@@ -543,10 +543,10 @@ async def scrape_messages(
                     attempt.set(attempt.get(0) + 1)
 
                     task = (
-                        progress.add_task(
+                        job_progress.add_task(
                             f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Message ID-> {message_id if message_id else 'initial'}"
                         )
-                        if progress
+                        if job_progress
                         else None
                     )
                     if r.ok:
@@ -596,7 +596,7 @@ async def scrape_messages(
                                         scrape_messages(
                                             c,
                                             model_id,
-                                            progress,
+                                            job_progress=job_progress,
                                             message_id=messages[-1]["id"],
                                         )
                                     )
@@ -618,7 +618,7 @@ async def scrape_messages(
                                             scrape_messages(
                                                 c,
                                                 model_id,
-                                                progress,
+                                                job_progress=job_progress,
                                                 message_id=messages[-1]["id"],
                                                 required_ids=required_ids,
                                             )
@@ -640,7 +640,7 @@ async def scrape_messages(
                 raise E
             finally:
                 sem.release()
-                progress.remove_task(task) if progress and task else None
+                job_progress.remove_task(task) if job_progress and task else None
             return messages, new_tasks
 
 

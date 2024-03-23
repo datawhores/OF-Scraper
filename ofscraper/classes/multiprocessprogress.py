@@ -35,7 +35,7 @@ class MultiprocessProgress(rich.progress.Progress):
             TaskID: An ID you can use when calling `update`.
         """
         with self._lock:
-            task = rich.progress.Task(
+            task = rich.job_progress.Task(
                 task_id,
                 description,
                 total,

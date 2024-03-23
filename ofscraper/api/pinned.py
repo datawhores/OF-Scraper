@@ -133,7 +133,7 @@ async def scrape_pinned_posts(
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = progress.add_task(
+                task = job_progress.add_task(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
                     visible=True,
                 )
@@ -207,5 +207,5 @@ async def scrape_pinned_posts(
 
             finally:
                 sem.release()
-                progress.remove_task(task)
+                job_progress.remove_task(task)
             return posts, new_tasks

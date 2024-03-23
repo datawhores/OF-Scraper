@@ -43,13 +43,13 @@ async def get_subscription(accounts=None):
 
         with Progress(
             SpinnerColumn(style=Style(color="blue")), TextColumn("{task.description}")
-        ) as progress:
-            task1 = progress.add_task(
+        ) as job_progress:
+            task1 = job_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )
             async with sessionbuilder.sessionBuilder() as c:
                 out = await get_subscription_helper(c, accounts)
-                progress.remove_task(task1)
+                job_progress.remove_task(task1)
         outdict = {}
         for ele in filter(lambda x: x["username"] != "modeldeleted", out):
             outdict[ele["id"]] = ele

@@ -295,7 +295,7 @@ async def download_fileobject_writer(
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
     downloadprogress = settings.get_download_bars()
-    task1 = progress.add_task(
+    task1 = job_progress.add_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
@@ -317,7 +317,7 @@ async def download_fileobject_writer(
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
-                        progress.update,
+                        job_progress.update,
                         task1,
                         completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()
@@ -336,6 +336,6 @@ async def download_fileobject_writer(
         except Exception:
             None
         try:
-            progress.remove_task(task1)
+            job_progress.remove_task(task1)
         except Exception:
             None

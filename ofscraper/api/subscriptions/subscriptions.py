@@ -51,8 +51,8 @@ async def get_subscriptions(subscribe_count, account="active"):
 
         with Progress(
             SpinnerColumn(style=Style(color="blue")), TextColumn("{task.description}")
-        ) as progress:
-            task1 = progress.add_task(
+        ) as job_progress:
+            task1 = job_progress.add_task(
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
             async with sessionbuilder.sessionBuilder() as c:
@@ -60,7 +60,7 @@ async def get_subscriptions(subscribe_count, account="active"):
                     out = await activeHelper(subscribe_count, c)
                 else:
                     out = await expiredHelper(subscribe_count, c)
-                progress.remove_task(task1)
+                job_progress.remove_task(task1)
         outdict = {}
         for ele in out:
             outdict[ele["id"]] = ele

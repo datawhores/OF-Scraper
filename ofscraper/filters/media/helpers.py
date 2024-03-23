@@ -18,7 +18,7 @@ def sort_media(media):
 def dupefilter(media):
     output = []
     ids = set()
-    log.info("Removing duplicate media")
+    log.info("Removing duplicate media/post")
     for item in media:
         if not item.id or item.id not in ids:
             output.append(item)
