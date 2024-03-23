@@ -235,7 +235,7 @@ def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][-1]).float_timestamp - 1000
+        return arrow.get(missing_items[0][12]).float_timestamp - 1000
 
 
 @run
