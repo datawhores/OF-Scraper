@@ -1,4 +1,3 @@
-import pathlib
 import re
 
 from humanfriendly import format_size

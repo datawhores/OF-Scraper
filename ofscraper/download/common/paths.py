@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 import platform
@@ -24,7 +25,7 @@ def moveHelper(temp, path_to_file, ele, log_=None):
         shutil.move(temp, path_to_file)
     else:
         pathlib.Path(temp).unlink(missing_ok=True)
-        log_ = log_ or log
+        log_ = log_ or logging.getLogger("shared")
         log_.debug(f"{get_medialog(ele)} smaller then previous file")
     # set variables based on parent process
 
