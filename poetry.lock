@@ -2894,4 +2894,8 @@ pyinstaller = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.14"
+<<<<<<< HEAD
 content-hash = "eb06c96340183f265747fabda9ea701d105c60d1b835f915d6254e075f61dfae"
+=======
+content-hash = "e8a01dd5754d5cc2aa519620f3bc8d3c2ff3ddedb43313c3ecd77748cdca1b43"
+>>>>>>> 4ea84272b579254367eb3be4278df9dc58c2be37

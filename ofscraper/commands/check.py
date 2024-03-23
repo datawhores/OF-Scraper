@@ -104,6 +104,7 @@ def process_download_cart():
                         list(media_dict.values())[0],
                     )
                 )
+<<<<<<< HEAD
                 if settings.get_mediatypes() == ["Text"]:
                     textDownloader(post_dict.values(), username=username)
                 elif len(medialist) > 0 and len(settings.get_mediatypes()) > 1:
@@ -127,6 +128,26 @@ def process_download_cart():
                 else:
                     raise Exception("Issue getting download")
 
+=======
+                media = medialist[0]
+                model_id = media.post.model_id
+                username = media.post.username
+                args = read_args.retriveArgs()
+                args.username = set([username])
+                write_args.setArgs(args)
+                selector.all_subs_helper()
+                log.info(
+                    f"Downloading individual media ({media.filename}) to disk for {username}"
+                )
+                operations.table_init_create(model_id=model_id, username=username)
+                values = downloadnormal.process_dicts(
+                    username,
+                    model_id,
+                    [media],
+                )
+                if values == None or values[-1] == 1:
+                    raise Exception("Download is marked as skipped")
+>>>>>>> 4ea84272b579254367eb3be4278df9dc58c2be37
                 log.info("Download Finished")
                 app.update_cell(key, "Download_Cart", "[downloaded]")
                 app.update_cell(key, "Downloaded", True)

@@ -59,6 +59,7 @@ def get_manual_usernames(media_dict):
 def get_media_from_urls(urls):
     user_name_dict = {}
     media_dict = {}
+<<<<<<< HEAD
     post_dict = {}
     for url in url_helper(urls):
         response = get_info(url)
@@ -98,12 +99,48 @@ def get_media_from_urls(urls):
             post_dict.update(get_post_item(model_id, value, "stories"))
             # special case
     return media_dict, post_dict
+=======
+    with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        for url in url_helper(urls):
+            response = get_info(url)
+            model = response[0]
+            postid = response[1]
+            type = response[2]
+            if type == "post":
+                model_id = user_name_dict.get(model) or profile.get_id(model)
+                value = timeline.get_individual_post(postid, c=c)
+                media_dict.update(get_all_media(postid, model_id, value))
+            elif type == "msg":
+                model_id = model
+                value = messages_.get_individual_post(model_id, postid, c=c)
+                media_dict.update(get_all_media(postid, model_id, value))
+            elif type == "msg2":
+                model_id = user_name_dict.get(model) or profile.get_id(model)
+                value = messages_.get_individual_post(model_id, postid, c=c)
+                media_dict.update(get_all_media(postid, model_id, value))
+            elif type == "unknown":
+                value = unknown_type_helper(postid, c) or {}
+                model_id = value.get("author", {}).get("id")
+                media_dict.update(get_all_media(postid, model_id, value))
+            elif type == "highlights":
+                value = highlights_.get_individual_highlights(postid, c) or {}
+                model_id = value.get("userId")
+                media_dict.update(get_all_media(postid, model_id, value, "highlights"))
+                # special case
+            elif type == "stories":
+                value = highlights_.get_individual_stories(postid, c) or {}
+                model_id = value.get("userId")
+                media_dict.update(get_all_media(postid, model_id, value, "stories"))
+                # special case
+    return media_dict
+>>>>>>> 4ea84272b579254367eb3be4278df9dc58c2be37
 
 
 def unknown_type_helper(postid):
     return timeline.get_individual_post(postid)
 
 
+<<<<<<< HEAD
 def get_post_item(model_id, value, inputtype=None):
     if value == None:
         return []
@@ -112,6 +149,8 @@ def get_post_item(model_id, value, inputtype=None):
     return {post.id: post}
 
 
+=======
+>>>>>>> 4ea84272b579254367eb3be4278df9dc58c2be37
 def get_all_media(posts_id, model_id, value, inputtype=None):
     media_dict = {}
     value = value or {}
@@ -134,6 +173,7 @@ def get_all_media(posts_id, model_id, value, inputtype=None):
     return media_dict
 
 
+<<<<<<< HEAD
 @run
 async def paid_failback(post_id, model_id, username):
     logging.getLogger("shared").debug(
@@ -154,6 +194,20 @@ async def paid_failback(post_id, model_id, username):
                 output,
             )
         )
+=======
+def paid_failback(post_id, id, username):
+    logging.getLogger("shared").debug(
+        "Using failback search because query return 0 media"
+    )
+    data = of.process_paid_post(id, username)
+    return list(
+        filter(
+            lambda x: isinstance(x, media_.Media)
+            and (str(x.id) == post_id or str(x.postid) == post_id),
+            data,
+        )
+    )
+>>>>>>> 4ea84272b579254367eb3be4278df9dc58c2be37
 
 
 def get_info(url):

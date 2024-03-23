@@ -186,9 +186,18 @@ class Placeholders(basePlaceholder):
         self._ext = ext
 
     async def init(self):
+<<<<<<< HEAD
         dir = await self.getmediadir()
         file = await self.createfilename()
         self._filepath = paths.truncate(pathlib.Path(dir, file))
+=======
+        self._filepath = paths.truncate(
+            pathlib.Path(
+                await self.getmediadir(),
+                await self.createfilename(),
+            )
+        )
+>>>>>>> 4ea84272b579254367eb3be4278df9dc58c2be37
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)
