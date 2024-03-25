@@ -65,6 +65,11 @@ For detailed instructions on:
 
 Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
 
+## Private Report##
+A ticket can be created in the ticket channel
+only you and admins have access to ticket discussions
+
+
 # Feature Requests
 
 [ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
