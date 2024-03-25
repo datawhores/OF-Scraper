@@ -2,9 +2,15 @@
 name: Bug report
 about: Create a report to help us improve
 title: "# Clear Description of issue"
-labels: ""
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
+
+<!---
+Reported issues without a log will be closed
+Use the ticket channel @ discord if you want to keep logs non-public
+-->
 
 **Describe the bug**
 A clear and concise description of what the bug is.
