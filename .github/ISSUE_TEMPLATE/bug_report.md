@@ -9,12 +9,19 @@ assignees: ''
 
 <!---
 An issue created without a log and  config information will be closed
-
 Use the ticket channel @ discord if you want to keep logs and/or config private
 -->
 
 <!---
 At the moment it is only recommended to send reports of setup issues to discord
+-->
+
+<!---
+logs or configs are also not required if you report is for a change in script behavior 
+
+Examples: 
+https://github.com/datawhores/OF-Scraper/issues/339
+https://github.com/datawhores/OF-Scraper/issues/341
 -->
 
 
