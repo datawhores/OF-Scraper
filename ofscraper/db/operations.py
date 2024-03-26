@@ -37,7 +37,11 @@ from ..db import queries
 
 console = Console()
 log = logging.getLogger("shared")
-# print error
+#################################################################################################
+###
+###   wrappers
+###
+#################################################################################################
 
 
 def operation_wrapper_async(func: abc.Callable):
@@ -136,6 +140,13 @@ def operation_wrapper(func: abc.Callable):
     return inner
 
 
+#################################################################################################
+###
+###   Messages
+###
+#################################################################################################
+
+
 @operation_wrapper
 def create_message_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
@@ -143,64 +154,46 @@ def create_message_table(model_id=None, username=None, conn=None):
         conn.commit()
 
 
-def make_messages_table_changes(all_messages, model_id=None, username=None):
-    curr_id = set(get_all_messages_ids(model_id=model_id, username=username))
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
-    if len(new_posts) > 0:
-        new_posts = converthelper(new_posts)
-        write_messages_table(new_posts, model_id=model_id, username=username)
-    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
-        curr_posts = converthelper(curr_posts)
-        update_messages_table(curr_posts, model_id=model_id, username=username)
-
-
-def update_messages_table(messages: dict, **kwargs):
-    @operation_wrapper
-    def inner(messages=None, conn=None, **kwargs):
-        with contextlib.closing(conn.cursor()) as cur:
-            updateData = list(
-                map(
-                    lambda message: (
-                        message.db_text,
-                        message.price,
-                        message.paid,
-                        message.archived,
-                        message.date,
-                        message.fromuser,
-                        message.id,
-                    ),
-                    messages,
-                )
+@operation_wrapper
+def update_messages_table(messages: dict, conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        updateData = list(
+            map(
+                lambda message: (
+                    message.db_text,
+                    message.price,
+                    message.paid,
+                    message.archived,
+                    message.date,
+                    message.fromuser,
+                    message.id,
+                ),
+                messages,
             )
-            cur.executemany(queries.messagesUpdate, updateData)
-            conn.commit()
+        )
+        cur.executemany(queries.messagesUpdate, updateData)
+        conn.commit()
 
-    return inner(messages=messages, **kwargs)
 
-
-def write_messages_table(messages: dict, **kwargs):
-    @operation_wrapper
-    def inner(messages=None, conn=None, **kwargs):
-        with contextlib.closing(conn.cursor()) as cur:
-            insertData = list(
-                map(
-                    lambda message: (
-                        message.id,
-                        message.db_text,
-                        message.price,
-                        message.paid,
-                        message.archived,
-                        message.date,
-                        message.fromuser,
-                    ),
-                    messages,
-                )
+@operation_wrapper
+def write_messages_table(messages: dict, conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        insertData = list(
+            map(
+                lambda message: (
+                    message.id,
+                    message.db_text,
+                    message.price,
+                    message.paid,
+                    message.archived,
+                    message.date,
+                    message.fromuser,
+                ),
+                messages,
             )
-            cur.executemany(queries.messagesInsert, insertData)
-            conn.commit()
-
-    return inner(messages=messages, **kwargs)
+        )
+        cur.executemany(queries.messagesInsert, insertData)
+        conn.commit()
 
 
 @operation_wrapper
@@ -226,9 +219,11 @@ def get_messages_progress_data(
         )
 
 
-def get_last_message_date(model_id=None, username=None):
-    data = get_messages_progress_data(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x.get("date"))[-1].get("date")
+#################################################################################################
+###
+###   posts
+###
+#################################################################################################
 
 
 @operation_wrapper
@@ -271,18 +266,6 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
         conn.commit()
 
 
-def make_post_table_changes(all_posts, model_id=None, username=None):
-    curr_id = get_all_post_ids(model_id=model_id, username=username)
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
-    if len(new_posts) > 0:
-        new_posts = converthelper(new_posts)
-        write_post_table(new_posts, model_id=model_id, username=username)
-    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
-        curr_posts = converthelper(curr_posts)
-        update_posts_table(curr_posts, model_id=model_id, username=username)
-
-
 @operation_wrapper
 def get_timeline_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -306,25 +289,18 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
         return list(map(lambda x: x[0], cur.fetchall()))
 
 
+#################################################################################################
+###
+###   stories
+###
+#################################################################################################
+
+
 @operation_wrapper
 def create_stories_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.storiesCreate)
         conn.commit()
-
-
-def make_stories_tables_changes(
-    all_stories: dict, model_id=None, username=None, conn=None
-):
-    curr_id = set(get_all_stories_ids(model_id=model_id, username=username))
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_stories))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_stories))
-    if len(new_posts) > 0:
-        new_posts = converthelper(new_posts)
-        write_stories_table(new_posts, model_id=model_id, username=username)
-    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
-        curr_posts = converthelper(curr_posts)
-        update_stories_table(curr_posts, model_id=model_id, username=username)
 
 
 @operation_wrapper
@@ -375,6 +351,13 @@ def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
         cur.execute(queries.allStoriesCheck)
         conn.commit()
         return list(map(lambda x: x[0], cur.fetchall()))
+
+
+#################################################################################################
+###
+###   media
+###
+#################################################################################################
 
 
 @operation_wrapper
@@ -434,6 +417,56 @@ def get_dupe_media_files(
         return list(map(lambda x: x[0], cur.fetchall()))
 
 
+@operation_wrapper_async
+def download_media_update(
+    media, conn=None, filename=None, downloaded=None, hashdata=None, **kwargs
+):
+    with contextlib.closing(conn.cursor()) as curr:
+        update_media_table_via_api_helper(media, conn=curr)
+        update_media_table_download_helper(
+            media,
+            filename=filename,
+            hashdata=hashdata,
+            conn=curr,
+            downloaded=downloaded,
+        )
+        conn.commit()
+
+
+@operation_wrapper_async
+def write_media_table_via_api_batch(medias, conn=None, **kwargs) -> list:
+    insertData = list(
+        map(
+            lambda media: [
+                media.id,
+                media.postid,
+                media.url,
+                None,
+                None,
+                None,
+                media.responsetype.capitalize(),
+                media.mediatype.capitalize(),
+                media.preview,
+                media.linked,
+                media.date,
+                None,
+                media.id,
+                None,
+            ],
+            medias,
+        )
+    )
+
+    conn.executemany(queries.mediaInsert, insertData)
+    conn.commit()
+
+
+#################################################################################################
+###
+###   profile
+#################################################################################################
+
+
 @operation_wrapper
 def get_profile_info(model_id=None, username=None, conn=None) -> list:
     database_path = placeholder.databasePlaceholder().databasePathHelper(
@@ -452,168 +485,6 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
             None
         except Exception as E:
             raise E
-
-
-@operation_wrapper_async
-def update_media_table(
-    media, filename=None, conn=None, downloaded=None, hash=None, **kwargs
-) -> list:
-    prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
-    if len(prevData) == 0:
-        insertData = media_insert_helper(
-            media, filename, downloaded=downloaded, hash=hash
-        )
-        conn.execute(queries.mediaInsert, insertData)
-    else:
-        insertData = media_insert_helper(
-            media, filename, downloaded=downloaded, hash=hash, prevData=prevData
-        )
-        insertData.append(media.id)
-        conn.execute(queries.mediaUpdate, insertData)
-    conn.commit()
-
-
-def media_insert_helper(media, filename, downloaded=None, hash=None, prevData=None):
-    prevData = prevData[0] if isinstance(prevData, list) else prevData
-    directory = None
-    filename_path = None
-    size = None
-    if filename and pathlib.Path(filename).exists():
-        directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename).name)
-        size = math.ceil(pathlib.Path(filename).stat().st_size)
-    elif filename:
-        directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename).name)
-    elif prevData:
-        directory = prevData[3]
-        filename_path = prevData[4]
-        size = prevData[5]
-        hash = prevData[13] or hash
-    if prevData:
-        downloaded = prevData[-2] if downloaded == None else downloaded
-    elif filename:
-        downloaded = (
-            pathlib.Path(filename).exists() if downloaded == None else downloaded
-        )
-    insertData = [
-        media.id,
-        media.postid,
-        media.url,
-        directory,
-        filename_path,
-        size,
-        media.responsetype.capitalize(),
-        media.mediatype.capitalize(),
-        media.preview,
-        media.linked,
-        downloaded,
-        media.date,
-        hash,
-    ]
-    return insertData
-
-
-@operation_wrapper_async
-def write_media_table_batch(medias, conn=None, downloaded=None, **kwargs) -> list:
-    medias = converthelper(medias)
-    filename = None
-    if len(medias) == 0:
-        return
-    insertData = list(
-        map(
-            lambda media: media_insert_helper(media, filename, downloaded=downloaded),
-            medias,
-        )
-    )
-    conn.executemany(queries.mediaInsert, insertData)
-    conn.commit()
-
-
-@operation_wrapper
-def get_timeline_media(model_id=None, username=None, conn=None) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getTimelineMedia)
-        data = list(map(lambda x: x, cur.fetchall()))
-        conn.commit()
-        return data
-
-
-def get_last_timeline_date(model_id=None, username=None):
-    data = get_timeline_postdates(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x)[-1]
-
-
-@operation_wrapper
-def a(conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getArchivedMedia)
-        data = list(map(lambda x: x, cur.fetchall()))
-        conn.commit()
-        return data
-
-
-@operation_wrapper
-def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.archivedPostInfo)
-        conn.commit()
-        return list(
-            map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
-        )
-
-
-def get_last_archived_date(model_id=None, username=None):
-    data = get_archived_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x[0])[-1][0]
-
-
-@operation_wrapper
-def get_messages_progress_media(conn=None, **kwargs) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getMessagesMedia)
-        data = list(map(lambda x: x, cur.fetchall()))
-        conn.commit()
-        return data
-
-
-async def batch_mediainsert(media, funct, **kwargs):
-    curr = set(get_media_ids(**kwargs) or [])
-    mediaDict = {}
-    for ele in media:
-        mediaDict[ele.id] = ele
-    await funct(list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs)
-
-
-@operation_wrapper_async
-def update_response_media_table(medias, conn=None, downloaded=False, **kwargs) -> list:
-    medias = converthelper(medias)
-    insertData = list(
-        map(
-            lambda media: [
-                media.responsetype.capitalize(),
-                media.mediatype.capitalize(),
-                media.id,
-            ],
-            medias,
-        )
-    )
-    conn.executemany(queries.mediaTypeUpdate, insertData)
-    conn.commit()
-
-
-@operation_wrapper
-def create_products_table(model_id=None, username=None, conn=None):
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.productCreate)
-        conn.commit()
-
-
-@operation_wrapper
-def create_others_table(model_id=None, username=None, conn=None):
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.otherCreate)
-        conn.commit()
 
 
 @operation_wrapper
@@ -650,6 +521,13 @@ def check_profile_table_exists(model_id=None, username=None, conn=None):
         return False
 
 
+#################################################################################################
+###
+###   labels
+###
+#################################################################################################
+
+
 @operation_wrapper
 def create_labels_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
@@ -677,6 +555,84 @@ def get_all_labels_ids(model_id=None, username=None, conn=None):
         return curr.fetchall()
 
 
+#################################################################################################
+###
+###   apis
+###
+#################################################################################################
+
+
+@operation_wrapper
+def get_timeline_media(model_id=None, username=None, conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getTimelineMedia)
+        data = list(map(lambda x: x, cur.fetchall()))
+        conn.commit()
+        return data
+
+
+def get_last_timeline_date(model_id=None, username=None):
+    data = get_timeline_postdates(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x)[-1]
+
+
+@operation_wrapper
+def get_archived_media(conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getArchivedMedia)
+        data = list(map(lambda x: x, cur.fetchall()))
+        conn.commit()
+        return data
+
+
+@operation_wrapper
+def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.archivedPostInfo)
+        conn.commit()
+        return list(
+            map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
+        )
+
+
+def get_last_archived_date(model_id=None, username=None):
+    data = get_archived_postinfo(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x[0])[-1][0]
+
+
+@operation_wrapper
+def get_messages_progress_media(conn=None, **kwargs) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.getMessagesMedia)
+        data = list(map(lambda x: x, cur.fetchall()))
+        conn.commit()
+        return data
+
+
+#################################################################################################
+###
+###  other tables
+###
+#################################################################################################
+@operation_wrapper
+def create_products_table(model_id=None, username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.productCreate)
+        conn.commit()
+
+
+@operation_wrapper
+def create_others_table(model_id=None, username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(queries.otherCreate)
+        conn.commit()
+
+
+#################################################################################################
+###
+###  helpers
+###
+#################################################################################################
 def converthelper(media):
     if isinstance(media, list):
         return media
@@ -730,3 +686,111 @@ def table_init_create(model_id=None, username=None):
     create_tables(model_id=model_id, username=username)
     create_backup(model_id, username)
     write_profile_table(model_id=model_id, username=username)
+
+
+def make_messages_table_changes(all_messages, model_id=None, username=None):
+    curr_id = set(get_all_messages_ids(model_id=model_id, username=username))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
+    if len(new_posts) > 0:
+        new_posts = converthelper(new_posts)
+        write_messages_table(new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        curr_posts = converthelper(curr_posts)
+        update_messages_table(curr_posts, model_id=model_id, username=username)
+
+
+def get_last_message_date(model_id=None, username=None):
+    data = get_messages_progress_data(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x.get("date"))[-1].get("date")
+
+
+def make_post_table_changes(all_posts, model_id=None, username=None):
+    curr_id = get_all_post_ids(model_id=model_id, username=username)
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
+    if len(new_posts) > 0:
+        new_posts = converthelper(new_posts)
+        write_post_table(new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        curr_posts = converthelper(curr_posts)
+        update_posts_table(curr_posts, model_id=model_id, username=username)
+
+
+def make_stories_tables_changes(
+    all_stories: dict, model_id=None, username=None, conn=None
+):
+    curr_id = set(get_all_stories_ids(model_id=model_id, username=username))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_stories))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_stories))
+    if len(new_posts) > 0:
+        new_posts = converthelper(new_posts)
+        write_stories_table(new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        curr_posts = converthelper(curr_posts)
+        update_stories_table(curr_posts, model_id=model_id, username=username)
+
+
+def update_media_table_via_api_helper(media, conn=None, **kwargs) -> list:
+    insertData = [
+        media.id,
+        media.postid,
+        media.url,
+        media.responsetype.capitalize(),
+        media.mediatype.capitalize(),
+        media.preview,
+        media.linked,
+        media.date,
+        media.id,
+    ]
+    conn.execute(queries.mediaUpdateAPI, insertData)
+
+
+def update_media_table_download_helper(
+    media, filename=None, hashdata=None, conn=None, **kwargs
+) -> list:
+    prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
+    insertData = media_exist_insert_helper(
+        filename=filename, hashdata=hashdata, prevData=prevData
+    )
+    insertData.append(media.id)
+    conn.execute(queries.mediaUpdateDownload, insertData)
+
+
+def media_exist_insert_helper(
+    filename=None, downloaded=None, hashdata=None, prevData=None
+):
+    prevData = prevData[0] if isinstance(prevData, list) else prevData
+    directory = None
+    filename_path = None
+    size = None
+    if filename and pathlib.Path(filename).exists():
+        directory = str(pathlib.Path(filename).parent)
+        filename_path = str(pathlib.Path(filename).name)
+        size = math.ceil(pathlib.Path(filename).stat().st_size)
+    elif filename:
+        directory = str(pathlib.Path(filename).parent)
+        filename_path = str(pathlib.Path(filename).name)
+    elif prevData:
+        directory = prevData[3]
+        filename_path = prevData[4]
+        size = prevData[5]
+        hashdata = prevData[13] or hashdata
+    insertData = [
+        directory,
+        filename_path,
+        size,
+        downloaded,
+        hashdata,
+    ]
+    return insertData
+
+
+async def batch_mediainsert(media, **kwargs):
+    curr = set(get_media_ids(**kwargs) or [])
+    mediaDict = {}
+    for ele in media:
+        mediaDict[ele.id] = ele
+    await write_media_table_via_api_batch(
+        list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
+    )

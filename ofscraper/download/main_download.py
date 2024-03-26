@@ -78,7 +78,7 @@ async def main_download(c, ele, username, model_id, job_progress):
     # special case for zero byte files
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":
-            await operations.update_media_table(
+            await operations.download_media_update(
                 ele,
                 filename=None,
                 model_id=model_id,
@@ -112,13 +112,13 @@ async def handle_result(result, ele, username, model_id):
         )
 
     if ele.id:
-        await operations.update_media_table(
+        await operations.download_media_update(
             ele,
             filename=path_to_file,
             model_id=model_id,
             username=username,
             downloaded=True,
-            hash=await common.get_hash(path_to_file, mediatype=ele.mediatype),
+            hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
     return ele.mediatype, total

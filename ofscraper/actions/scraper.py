@@ -72,7 +72,6 @@ async def process_messages(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -116,7 +115,6 @@ async def process_paid_post(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -160,7 +158,6 @@ async def process_stories(model_id, username, c):
             [output.extend(stories.media) for stories in stories]
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -201,7 +198,6 @@ async def process_highlights(model_id, username, c):
             [output.extend(stories.media) for stories in highlights_]
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -248,14 +244,12 @@ async def process_timeline_posts(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
             )
             await operations.batch_mediainsert(
                 output,
-                operations.update_response_media_table,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -304,7 +298,6 @@ async def process_archived_posts(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -351,14 +344,12 @@ async def process_pinned_posts(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
             )
             await operations.batch_mediainsert(
                 output,
-                operations.update_response_media_table,
                 model_id=model_id,
                 username=username,
                 downloaded=False,

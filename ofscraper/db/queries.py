@@ -187,6 +187,18 @@ SET
 media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?,hash=?
 WHERE media_id=(?);"""
 
+
+mediaUpdateAPI = f"""Update 'medias'
+SET
+media_id=?,post_id=?,link=?,api_type=?,media_type=?,preview=?,linked=?,created_at=?
+WHERE media_id=(?);"""
+
+
+mediaUpdateDownload = f"""Update 'medias'
+SET
+directory=?,filename=?,size=?,downloaded=?,hash=?
+WHERE media_id=(?);"""
+
 mediaTypeUpdate = f"""Update 'medias'
 SET
 api_type=?,media_type=?

@@ -25,7 +25,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     for _ in range(2):
         if placeholderObj:
             if ele.id:
-                await operations.update_media_table(
+                await operations.download_media_update(
                     ele,
                     filename=placeholderObj.trunicated_filepath,
                     model_id=model_id,
@@ -43,7 +43,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             placeholderObj = placeholder.Placeholders(ele)
             await placeholderObj.set_trunicated_filepath(ele, content_type)
             if ele.id:
-                await operations.update_media_table(
+                await operations.download_media_update(
                     ele,
                     filename=placeholderObj.trunicated_filepath,
                     model_id=model_id,

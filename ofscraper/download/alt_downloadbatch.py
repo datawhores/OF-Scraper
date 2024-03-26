@@ -126,13 +126,15 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
             f"{get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filepath.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
         )
     if ele.id:
-        await operations.update_media_table(
+        await operations.download_media_update(
             ele,
             filename=sharedPlaceholderObj.trunicated_filepath,
             model_id=model_id,
             username=username,
             downloaded=True,
-            hash=await common.get_hash(sharedPlaceholderObj, mediatype=ele.mediatype),
+            hashdata=await common.get_hash(
+                sharedPlaceholderObj, mediatype=ele.mediatype
+            ),
         )
     return ele.mediatype, video["total"] + audio["total"]
 
@@ -140,7 +142,7 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
 async def media_item_post_process(audio, video, ele, username, model_id):
     if (audio["total"] + video["total"]) == 0:
         if ele.mediatype != "forced_skipped":
-            await operations.update_media_table(
+            await operations.download_media_update(
                 ele,
                 filename=None,
                 model_id=model_id,
