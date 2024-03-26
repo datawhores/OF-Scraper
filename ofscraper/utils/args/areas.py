@@ -16,7 +16,7 @@ def get_like_area():
         post = set(read_args.retriveArgs().like_area)
     if "All" in post:
         post.update(set(all_choices))
-    elif "Labels*" or "Labels+" in post:
+    elif ("Labels*" or "Labels+") in post:
         post.update(set(all_choices))
         post.update({"Labels"})
         post.discard("Labels*")
@@ -51,7 +51,7 @@ def get_download_area():
         post = set(read_args.retriveArgs().download_area)
     if "All" in post:
         post.update(set(all_choices))
-    elif "Labels*" or "Labels+" in post:
+    elif ("Labels*" or "Labels+") in post:
         post.update(set(all_choices))
         post.update({"Labels"})
         post.discard("Labels*")

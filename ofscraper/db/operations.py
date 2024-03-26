@@ -26,6 +26,7 @@ from filelock import FileLock
 from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -200,9 +201,6 @@ def get_last_message_date(model_id=None, username=None):
 @operation_wrapper
 def write_post_table(posts: list, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        posts = converthelper(posts)
-        if len(posts) == 0:
-            return
         insertData = list(
             map(
                 lambda data: (
@@ -218,6 +216,37 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
         )
         cur.executemany(queries.postInsert, insertData)
         conn.commit()
+
+@operation_wrapper
+def update_posts_table(posts: list,model_id=None,username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        updateData = list(
+                map(
+                    lambda data: [
+                        data.db_text,
+                        data.price,
+                        data.paid,
+                        data.archived,
+                        data.date
+                    ,data.id],
+                    posts,
+                )
+            )
+        cur.executemany(queries.postUpdate, updateData)
+        conn.commit()
+
+def make_post_table_changes(all_posts,model_id=None,username=None):
+    curr_id=get_all_post_ids(model_id=model_id, username=username)
+    new_posts=list(filter(lambda x: x.id not in curr_id, all_posts))
+    curr_posts=list(filter(lambda x: x.id in curr_id, all_posts))
+    if len(new_posts) > 0:
+        new_posts = converthelper(new_posts)
+        write_post_table(new_posts,model_id=model_id,username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts)>0:
+        curr_posts = converthelper(curr_posts)
+        update_posts_table(curr_posts,model_id=model_id,username=username)
+
+
 
 
 @operation_wrapper

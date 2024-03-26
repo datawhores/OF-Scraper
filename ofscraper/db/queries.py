@@ -109,6 +109,11 @@ post_id, text,price,paid,archived,
 created_at)
             VALUES (?, ?,?,?,?,?);"""
 
+postUpdate = f"""UPDATE posts
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?
+WHERE post_id = ?;"""
+
+
 postDupeCheck = """
 SELECT * FROM posts where post_id=(?)
 """
