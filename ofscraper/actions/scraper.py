@@ -107,14 +107,13 @@ async def process_paid_post(model_id, username, c):
                     paid_content,
                 )
             )
-            curr = set(
-                operations.get_all_post_ids(model_id=model_id, username=username)
-            )
-            operations.write_post_table(
-                list(filter(lambda x: x.id not in curr, paid_content)),
+            operations.make_post_table_changes(
+                paid_content,
                 model_id=model_id,
                 username=username,
             )
+            operations.update_posts_table_helper(model_id=model_id,
+                username=username)
 
             output = []
             [output.extend(post.media) for post in paid_content]
@@ -244,15 +243,12 @@ async def process_timeline_posts(model_id, username, c):
                     timeline_posts,
                 )
             )
-
-            curr = set(
-                operations.get_all_post_ids(model_id=model_id, username=username)
-            )
-            operations.write_post_table(
-                list(filter(lambda x: x.id not in curr, timeline_posts)),
+            operations.make_post_table_changes(
+                timeline_posts,
                 model_id=model_id,
                 username=username,
             )
+            
             log.debug(
                 f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}"
             )
@@ -303,11 +299,9 @@ async def process_archived_posts(model_id, username, c):
                 )
             )
 
-            curr = set(
-                operations.get_all_post_ids(model_id=model_id, username=username)
-            )
-            operations.write_post_table(
-                list(filter(lambda x: x.id not in curr, archived_posts)),
+
+            operations.make_post_table_changes(
+                archived_posts,
                 model_id=model_id,
                 username=username,
             )
@@ -353,11 +347,8 @@ async def process_pinned_posts(model_id, username, c):
                     lambda x: posts_.Post(x, model_id, username, "pinned"), pinned_posts
                 )
             )
-            curr = set(
-                operations.get_all_post_ids(model_id=model_id, username=username)
-            )
-            operations.write_post_table(
-                list(filter(lambda x: x.id not in curr, pinned_posts)),
+            operations.make_post_table_changes(
+                pinned_posts,
                 model_id=model_id,
                 username=username,
             )
@@ -475,11 +466,8 @@ def process_all_paid():
             for ele in all_posts:
                 new_dict[ele.id] = ele
             new_posts = new_dict.values()
-            curr = set(
-                operations.get_all_post_ids(model_id=model_id, username=username) or []
-            )
-            operations.write_post_table(
-                list(filter(lambda x: x.id not in curr, new_posts)),
+            operations.make_post_table_changes(
+                new_posts,
                 model_id=model_id,
                 username=username,
             )
