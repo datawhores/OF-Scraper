@@ -100,6 +100,12 @@ post_id, text,price,paid,archived,
 created_at,user_id)
             VALUES (?, ?,?,?,?,?,?);"""
 
+
+messagesUpdate = f"""UPDATE messages
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?
+WHERE post_id = ?;"""
+
+
 messageDupeCheck = """
 SELECT * FROM messages where post_id=(?)
 """
@@ -126,6 +132,11 @@ storiesInsert = f"""INSERT INTO 'stories'(
 post_id, text,price,paid,archived,
 created_at)
             VALUES (?, ?,?,?,?,?);"""
+
+storiesUpdate = f"""UPDATE stories
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?
+WHERE post_id = ?;"""
+
 
 storiesDupeCheck = """
 SELECT * FROM stories where post_id=(?)

@@ -143,13 +143,46 @@ def create_message_table(model_id=None, username=None, conn=None):
         conn.commit()
 
 
+def make_messages_table_changes(all_messages, model_id=None, username=None):
+    curr_id = set(get_all_messages_ids(model_id=model_id, username=username))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
+    if len(new_posts) > 0:
+        new_posts = converthelper(new_posts)
+        write_messages_table(new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        curr_posts = converthelper(curr_posts)
+        update_messages_table(curr_posts, model_id=model_id, username=username)
+
+
+def update_messages_table(messages: dict, **kwargs):
+    @operation_wrapper
+    def inner(messages=None, conn=None, **kwargs):
+        with contextlib.closing(conn.cursor()) as cur:
+            updateData = list(
+                map(
+                    lambda message: (
+                        message.db_text,
+                        message.price,
+                        message.paid,
+                        message.archived,
+                        message.date,
+                        message.fromuser,
+                        message.id,
+                    ),
+                    messages,
+                )
+            )
+            cur.executemany(queries.messagesUpdate, updateData)
+            conn.commit()
+
+    return inner(messages=messages, **kwargs)
+
+
 def write_messages_table(messages: dict, **kwargs):
     @operation_wrapper
     def inner(messages=None, conn=None, **kwargs):
         with contextlib.closing(conn.cursor()) as cur:
-            messages = converthelper(messages)
-            if len(messages) == 0:
-                return
             insertData = list(
                 map(
                     lambda message: (
@@ -217,36 +250,37 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
         cur.executemany(queries.postInsert, insertData)
         conn.commit()
 
+
 @operation_wrapper
-def update_posts_table(posts: list,model_id=None,username=None, conn=None):
+def update_posts_table(posts: list, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         updateData = list(
-                map(
-                    lambda data: [
-                        data.db_text,
-                        data.price,
-                        data.paid,
-                        data.archived,
-                        data.date
-                    ,data.id],
-                    posts,
-                )
+            map(
+                lambda data: [
+                    data.db_text,
+                    data.price,
+                    data.paid,
+                    data.archived,
+                    data.date,
+                    data.id,
+                ],
+                posts,
             )
+        )
         cur.executemany(queries.postUpdate, updateData)
         conn.commit()
 
-def make_post_table_changes(all_posts,model_id=None,username=None):
-    curr_id=get_all_post_ids(model_id=model_id, username=username)
-    new_posts=list(filter(lambda x: x.id not in curr_id, all_posts))
-    curr_posts=list(filter(lambda x: x.id in curr_id, all_posts))
+
+def make_post_table_changes(all_posts, model_id=None, username=None):
+    curr_id = get_all_post_ids(model_id=model_id, username=username)
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
     if len(new_posts) > 0:
         new_posts = converthelper(new_posts)
-        write_post_table(new_posts,model_id=model_id,username=username)
-    if read_args.retriveArgs().metadata and len(curr_posts)>0:
+        write_post_table(new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
         curr_posts = converthelper(curr_posts)
-        update_posts_table(curr_posts,model_id=model_id,username=username)
-
-
+        update_posts_table(curr_posts, model_id=model_id, username=username)
 
 
 @operation_wrapper
@@ -279,6 +313,20 @@ def create_stories_table(model_id=None, username=None, conn=None):
         conn.commit()
 
 
+def make_stories_tables_changes(
+    all_stories: dict, model_id=None, username=None, conn=None
+):
+    curr_id = set(get_all_stories_ids(model_id=model_id, username=username))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_stories))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_stories))
+    if len(new_posts) > 0:
+        new_posts = converthelper(new_posts)
+        write_stories_table(new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        curr_posts = converthelper(curr_posts)
+        update_stories_table(curr_posts, model_id=model_id, username=username)
+
+
 @operation_wrapper
 def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
@@ -297,6 +345,27 @@ def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
             )
         )
         cur.executemany(queries.storiesInsert, insertData)
+        conn.commit()
+
+
+@operation_wrapper
+def update_stories_table(stories: dict, model_id=None, username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        stories = converthelper(stories)
+        updateData = list(
+            map(
+                lambda data: (
+                    data.db_text or data.title or "",
+                    data.price,
+                    data.paid,
+                    data.archived,
+                    data.date,
+                    data.id,
+                ),
+                stories,
+            )
+        )
+        cur.executemany(queries.storiesUpdate, updateData)
         conn.commit()
 
 
