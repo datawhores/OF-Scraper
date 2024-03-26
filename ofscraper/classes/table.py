@@ -6,15 +6,12 @@ from rich.text import Text
 from textual import events
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import (
-    Button,
-    Checkbox,
-    ContentSwitcher,
-    DataTable,
-    Input,
-    Label,
-    TextLog,
-)
+from textual.widgets import Button, Checkbox, ContentSwitcher, DataTable, Input, Label
+
+try:
+    from textual.widgets import TextLog
+except ImportError:
+    from textual.widgets import RichLog as TextLog
 
 import ofscraper.utils.logs.logger as logger
 
