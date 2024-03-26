@@ -224,10 +224,10 @@ async def main_download_sendreq(c, ele, tempholderObj, placeholderObj=None, tota
 
 
 async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None):
-    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     old_total = total
     try:
         await common.batch_total_change_helper(None, total)
+        resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
         headers = (
             None
             if resume_size == 0 or not old_total
@@ -334,7 +334,6 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         # reset download data
-        await common.send_msg((None, 0, -total))
         raise E
     finally:
         try:

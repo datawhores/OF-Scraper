@@ -152,3 +152,12 @@ async def batch_total_change_helper(total, new_total):
         await send_msg((None, 0, new_total))
     elif total and new_total - total != 0:
         await send_msg((None, 0, new_total - total))
+
+
+async def total_change_helper(total, new_total):
+    if not new_total and not new_total:
+        return
+    elif not total:
+        await update_total(new_total)
+    elif total and new_total - total != 0:
+        await update_total(new_total - total)

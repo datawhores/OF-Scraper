@@ -269,62 +269,68 @@ async def alt_download_sendreq(item, c, ele, placeholderObj, job_progress):
 
 
 async def send_req_inner(c, ele, item, placeholderObj, job_progress):
-    resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    total = item["total"]
-    await update_total(total) if total else None
-    headers = (
-        None
-        if resume_size == 0 or not total
-        else {"Range": f"bytes={resume_size}-{total}"}
-    )
-    params = {
-        "Policy": ele.policy,
-        "Key-Pair-Id": ele.keypair,
-        "Signature": ele.signature,
-    }
-    base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
-    url = f"{base_url}{item['origname']}"
-    async with sem_wrapper(common_globals.req_sem):
-        async with c.requests(url=url, headers=headers, params=params)() as l:
-            if l.ok:
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
-                    partial(
-                        cache.set,
-                        f"{item['name']}_headers",
-                        {
-                            "content-length": l.headers.get("content-length"),
-                            "content-type": l.headers.get("content-type"),
-                        },
-                    ),
-                )
-                new_total = int(l.headers["content-length"])
-                await update_total(new_total) if not item["total"] else None
-                temp_file_logger(placeholderObj, ele)
-                item["total"] = new_total
-                total = item["total"]
-                if await check_forced_skip(ele, total):
-                    item["total"] = 0
-                elif total == resume_size:
-                    None
-                else:
-                    await download_fileobject_writer(
-                        total, l, ele, job_progress, placeholderObj
+    old_total = item["total"]
+    total = old_total
+    try:
+        await common.total_change_helper(None, total)
+        resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
+        headers = (
+            None
+            if resume_size == 0 or not total
+            else {"Range": f"bytes={resume_size}-{total}"}
+        )
+        params = {
+            "Policy": ele.policy,
+            "Key-Pair-Id": ele.keypair,
+            "Signature": ele.signature,
+        }
+        base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
+        url = f"{base_url}{item['origname']}"
+        async with sem_wrapper(common_globals.req_sem):
+            async with c.requests(url=url, headers=headers, params=params)() as l:
+                if l.ok:
+                    await asyncio.get_event_loop().run_in_executor(
+                        common_globals.cache_thread,
+                        partial(
+                            cache.set,
+                            f"{item['name']}_headers",
+                            {
+                                "content-length": l.headers.get("content-length"),
+                                "content-type": l.headers.get("content-type"),
+                            },
+                        ),
                     )
-            else:
-                common_globals.log.debug(
-                    f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
-                )
-                common_globals.log.debug(
-                    f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}"
-                )
-                common_globals.log.debug(
-                    f"[bold]  {get_medialog(ele)} alt download  headers [/bold]: {l.headers}"
-                )
-                l.raise_for_status()
+                    new_total = int(l.headers["content-length"])
+                    temp_file_logger(placeholderObj, ele)
+                    if await check_forced_skip(ele, new_total):
+                        item["total"] = 0
+                        await common.total_change_helper(None, old_total)
+                    elif total == resume_size:
+                        None
+                    else:
+                        item["total"] = new_total
+                        total = new_total
+                        await common.total_change_helper(old_total, total)
+                        await download_fileobject_writer(
+                            total, l, ele, job_progress, placeholderObj
+                        )
+                else:
+                    common_globals.log.debug(
+                        f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
+                    )
+                    common_globals.log.debug(
+                        f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}"
+                    )
+                    common_globals.log.debug(
+                        f"[bold]  {get_medialog(ele)} alt download  headers [/bold]: {l.headers}"
+                    )
+                    l.raise_for_status()
 
-    await size_checker(placeholderObj.tempfilepath, ele, total)
-    return item
+        await size_checker(placeholderObj.tempfilepath, ele, total)
+        return item
+    except Exception as E:
+        await common.total_change_helper(None, -(total or 0))
+        raise E
 
 
 async def download_fileobject_writer(total, l, ele, job_progress, placeholderObj):
@@ -364,7 +370,6 @@ async def download_fileobject_writer(total, l, ele, job_progress, placeholderObj
                 )
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
-        await update_total(-total)
         raise E
     finally:
         # Close file if needed

@@ -273,11 +273,11 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
-    resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     old_total = item["total"]
     total = old_total
     try:
         await common.batch_total_change_helper(None, total)
+        resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = (
             None
             if resume_size == 0 or not total
