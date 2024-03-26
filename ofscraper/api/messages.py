@@ -494,7 +494,7 @@ def get_after(model_id, username):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    elif len(list(filter(lambda x: x[-2] == 0, curr))) == 0:
+    elif len(list(filter(lambda x: x[10] != 1, curr))) == 0:
         log.debug(
             "Using cache for date because,all downloads in db marked as downloaded"
         )
