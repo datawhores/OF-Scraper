@@ -640,7 +640,9 @@ async def scrape_messages(
                 raise E
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
             return messages, new_tasks
 
 
