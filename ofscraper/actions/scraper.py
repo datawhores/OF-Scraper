@@ -109,7 +109,6 @@ async def process_paid_post(model_id, username, c):
                 model_id=model_id,
                 username=username,
             )
-            operations.update_posts_table_helper(model_id=model_id, username=username)
 
             output = []
             [output.extend(post.media) for post in paid_content]
@@ -549,8 +548,7 @@ async def process_areas(ele, model_id) -> list:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             output = []
-            group = progress_utils.get_api_progress_Group()
-            with Live(group, console=console_.get_shared_console()):
+            with progress_utils.setup_api_progress_live():
                 medias, posts = await process_task(model_id, username, ele)
                 output.extend(medias)
         return filters.filterMedia(output), filters.filterPost(posts)

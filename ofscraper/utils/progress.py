@@ -1,5 +1,6 @@
 from rich.console import Group
 from rich.layout import Layout
+from rich.live import Live
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
@@ -21,7 +22,22 @@ import ofscraper.utils.console as console_
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
 
 
-def get_api_progress_Group():
+def setup_all_paid_live():
+    global all_paid_progress
+    global overall_progress
+    all_paid_progress = Progress("{task.description}")
+    overall_progress = Progress(
+        SpinnerColumn(style=Style(color="blue")),
+        TextColumn("{task.description}"),
+    )
+    progress_group = Group(overall_progress, Panel(Group(all_paid_progress)))
+
+    return Live(
+        progress_group, refresh_per_second=5, console=console_.get_shared_console()
+    )
+
+
+def setup_api_progress_live():
     global timeline_layout
     global pinned_layout
     global archived_layout
@@ -51,7 +67,7 @@ def get_api_progress_Group():
     )
 
     progress_group = Group(overall_progress, layout)
-    return progress_group
+    return Live(progress_group, console=console_.get_shared_console())
 
 
 def setup_layout():

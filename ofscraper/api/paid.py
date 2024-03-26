@@ -251,25 +251,20 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
 @run
 async def get_all_paid_posts():
     global sem
-    sem = semaphoreDelayed(constants.getattr("MAX_SEMAPHORE"))
+    sem = sems.get_req_sem()
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_REQUEST_WORKERS")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
-        overall_progress = Progress(
-            SpinnerColumn(style=Style(color="blue")),
-            TextColumn("Getting all paid media...\n{task.description}"),
-        )
-        job_progress = Progress("{task.description}")
-        progress_group = Group(overall_progress, Panel(Group(job_progress)))
 
         output = []
         min_posts = 100
         tasks = []
         page_count = 0
-        with Live(
-            progress_group, refresh_per_second=5, console=console.get_shared_console()
-        ):
+        with progress_utils.setup_all_paid_live():
+            job_progress = progress_utils.all_paid_progress
+            overall_progress = progress_utils.overall_progress
+
             async with sessionbuilder.sessionBuilder() as c:
                 allpaid = cache.get(f"purchased_all", default=[])
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
