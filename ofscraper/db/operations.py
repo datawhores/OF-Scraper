@@ -750,6 +750,7 @@ def update_media_table_download_helper(
     media, filename=None, hashdata=None, conn=None, **kwargs
 ) -> list:
     prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
+    prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
     insertData = media_exist_insert_helper(
         filename=filename, hashdata=hashdata, prevData=prevData
     )
@@ -760,7 +761,6 @@ def update_media_table_download_helper(
 def media_exist_insert_helper(
     filename=None, downloaded=None, hashdata=None, prevData=None
 ):
-    prevData = prevData[0] if isinstance(prevData, list) else prevData
     directory = None
     filename_path = None
     size = None

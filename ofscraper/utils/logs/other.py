@@ -46,6 +46,13 @@ def logger_other(input_, name=None, stop_count=1, event=None):
             elif message == "None":
                 count = count + 1
                 continue
+            elif isinstance(message, str):
+                list(
+                    filter(
+                        lambda x: isinstance(x, log_class.DiscordHandler),
+                        log.handlers,
+                    )
+                )[0].handle(message)
             elif isinstance(message, io.TextIOBase):
                 [
                     ele.setStream(message)
@@ -130,15 +137,17 @@ def start_other_helper():
 
 # updates stream for main process
 def updateOtherLoggerStream():
-    if read_args.retriveArgs().discord == "OFF" and settings.get_log_level() == "OFF":
-        return
-    dates.resetLogDateVManager()
-    stream = open(
-        common_paths.getlogpath(),
-        encoding="utf-8",
-        mode="a",
-    )
-    log_globals.otherqueue_.put_nowait(stream)
+    if settings.get_log_level() and settings.get_log_level() != "OFF":
+        dates.resetLogDateVManager()
+        stream = open(
+            common_paths.getlogpath(),
+            encoding="utf-8",
+            mode="a",
+        )
+        log_globals.otherqueue_.put_nowait(stream)
+    if read_args.retriveArgs().discord and read_args.retriveArgs().discord != "OFF":
+        temp = log_class.DiscordHandler()
+        log_globals.otherqueue_.put_nowait(temp._url)
 
 
 def init_other_logger(name):
