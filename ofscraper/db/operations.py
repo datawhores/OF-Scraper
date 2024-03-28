@@ -792,9 +792,12 @@ def drop_labels_table(model_id=None, username=None, conn=None) -> list:
 @operation_wrapper
 def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.labelALLTransition)
-        conn.commit()
-        return cur.fetchall()
+        try:
+            cur.execute(queries.labelALLTransition)
+            return cur.fetchall()
+        except sqlite3.OperationalError:
+            cur.execute(queries.labelALLTransition2)
+            return cur.fetchall()
 
 
 #################################################################################################

@@ -297,18 +297,20 @@ VALUES (?);
 labelsCreate = """
 CREATE TABLE IF NOT EXISTS labels (
 	id INTEGER NOT NULL, 
+    label_id INTEGER,
 	name VARCHAR, 
 	type VARCHAR, 
 	post_id INTEGER, 
     model_id INTEGER,
-	PRIMARY KEY (id, post_id)
+	PRIMARY KEY (id)
+    UNIQUE (post_id,label_id,model_id)
 )
 """
 
 
 labelInsert = f"""INSERT INTO 'labels'(
-id, name, type, post_id,model_id)
-VALUES (?, ?,?,?,?);"""
+label_id,name, type, post_id,model_id)
+VALUES ( ?,?,?,?,?);"""
 
 labelID = """
 SELECT id,post_id  FROM  labels
@@ -319,7 +321,11 @@ ALTER TABLE labels ADD COLUMN user_id VARCHAR;
 """
 
 labelALLTransition = """
-SELECT name,type,post_id FROM labels;
+SELECT label_id,name,type,post_id FROM labels;
+"""
+
+labelALLTransition2 = """
+SELECT id,name,type,post_id FROM labels;
 """
 labelDrop = """
 drop table labels;
