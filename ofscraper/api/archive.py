@@ -62,77 +62,13 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
             posts="\n\n".join(list(map(lambda x: f"oldarchive: {str(x)}", oldarchived)))
         )
     )
+
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
-    postedAtArray = sorted(oldarchived, key=lambda x: x[0])
 
     after = get_after(model_id, username, forced_after)
-    # set check
-    log.info(
-        f"""
-Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
-[yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all archived posts + download/re-download of all files[/yellow]
-    """
-    )
-    filteredArray = (
-        list(filter(lambda x: x[0] >= after, postedAtArray))
-        if len(postedAtArray) > 0
-        else []
-    )
-
-    if len(filteredArray) > min_posts:
-        splitArrays = [
-            filteredArray[i : i + min_posts]
-            for i in range(0, len(filteredArray), min_posts)
-        ]
-        # use the previous split for timesamp
-        tasks.append(
-            asyncio.create_task(
-                scrape_archived_posts(
-                    c,
-                    model_id,
-                    job_progress=job_progress,
-                    required_ids=set(list(map(lambda x: x[0], splitArrays[0]))),
-                    timestamp=read_args.retriveArgs().after.float_timestamp
-                    if read_args.retriveArgs().after
-                    else None,
-                )
-            )
-        )
-        [
-            tasks.append(
-                asyncio.create_task(
-                    scrape_archived_posts(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        required_ids=set(list(map(lambda x: x[0], splitArrays[i]))),
-                        timestamp=splitArrays[i - 1][-1][0],
-                    )
-                )
-            )
-            for i in range(1, len(splitArrays) - 1)
-        ]
-        # keeping grabbing until nothing left
-        tasks.append(
-            asyncio.create_task(
-                scrape_archived_posts(
-                    c,
-                    model_id,
-                    job_progress=job_progress,
-                    timestamp=splitArrays[-2][-1][0],
-                )
-            )
-        )
-    else:
-        tasks.append(
-            asyncio.create_task(
-                scrape_archived_posts(
-                    c, model_id, job_progress=job_progress, timestamp=after
-                )
-            )
-        )
+    splitArrays = get_split_array(oldarchived, username, after)
+    add_tasks(tasks, splitArrays, c, model_id, job_progress, after)
 
     page_task = overall_progress.add_task(
         f"Archived Content Pages Progress: {page_count}", visible=True
