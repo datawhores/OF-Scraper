@@ -540,49 +540,54 @@ def download_media_update(
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        update_media_table_via_api_helper(media, model_id=model_id, conn=curr)
+        update_media_table_via_api_helper(
+            media, curr=curr, model_id=model_id, conn=conn
+        )
         update_media_table_download_helper(
             media,
             filename=filename,
             hashdata=hashdata,
-            conn=curr,
+            conn=conn,
+            curr=curr,
             downloaded=downloaded,
         )
-        conn.commit()
 
 
 @operation_wrapper_async
 def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) -> list:
-    insertData = list(
-        map(
-            lambda media: [
-                media.id,
-                media.postid,
-                media.url,
-                None,
-                None,
-                None,
-                media.responsetype.capitalize(),
-                media.mediatype.capitalize(),
-                media.preview,
-                media.linked,
-                None,
-                media.date,
-                None,
-                model_id,
-            ],
-            medias,
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = list(
+            map(
+                lambda media: [
+                    media.id,
+                    media.postid,
+                    media.url,
+                    None,
+                    None,
+                    None,
+                    media.responsetype.capitalize(),
+                    media.mediatype.capitalize(),
+                    media.preview,
+                    media.linked,
+                    None,
+                    media.date,
+                    None,
+                    model_id,
+                ],
+                medias,
+            )
         )
-    )
 
-    conn.executemany(queries.mediaInsert, insertData)
-    conn.commit()
+        curr.executemany(queries.mediaInsert, insertData)
+        conn.commit()
 
 
 @operation_wrapper
-def write_media_table_transition(insertData, model_id=None, conn=None, **kwargs):
+def write_media_table_transition(
+    insertData, model_id=None, curr=None, conn=None, **kwargs
+):
     insertData = [[*ele, model_id] for ele in insertData]
-    conn.executemany(queries.mediaInsert, insertData)
+    curr.executemany(queries.mediaInsert, insertData)
     conn.commit()
 
 
@@ -1191,6 +1196,7 @@ def update_media_table_via_api_helper(
         model_id,
     ]
     conn.execute(queries.mediaUpdateAPI, insertData)
+    conn.commit()
 
 
 def update_media_table_download_helper(
@@ -1203,6 +1209,7 @@ def update_media_table_download_helper(
     )
     insertData.append(media.id)
     conn.execute(queries.mediaUpdateDownload, insertData)
+    conn.commit()
 
 
 def media_exist_insert_helper(

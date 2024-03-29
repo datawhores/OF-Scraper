@@ -43,6 +43,7 @@ async def scrape_timeline_posts(
 ) -> list:
     posts = None
     attempt.set(0)
+    timestamp = timestamp - 1000 if timestamp else None
 
     if timestamp and (
         float(timestamp)
@@ -199,8 +200,6 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             """
     )
     filteredArray = list(filter(lambda x: x >= after, postedAtArray))
-    filteredArray[1:]
-
     job_progress = progress_utils.timeline_progress
     overall_progress = progress_utils.overall_progress
     # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
@@ -210,7 +209,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             for i in range(0, len(filteredArray), min_posts)
         ]
         # use the previous split for timestamp
-        if len(filteredArray) >= (min_posts * 2) + 1:
+        if len(splitArrays) > 2:
             tasks.append(
                 asyncio.create_task(
                     scrape_timeline_posts(
@@ -218,7 +217,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                         model_id,
                         job_progress=job_progress,
                         required_ids=set(splitArrays[0]),
-                        timestamp=after,
+                        timestamp=splitArrays[0][0],
                     )
                 )
             )
@@ -243,7 +242,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                         c,
                         model_id,
                         job_progress=job_progress,
-                        timestamp=splitArrays[-2][-1],
+                        timestamp=splitArrays[-1][-1],
                     )
                 )
             )
@@ -254,7 +253,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                         c,
                         model_id,
                         job_progress=job_progress,
-                        timestamp=splitArrays[-1][-1],
+                        timestamp=splitArrays[0][0],
                     )
                 )
             )
