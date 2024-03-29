@@ -313,7 +313,7 @@ label_id,name, type, post_id,model_id)
 VALUES ( ?,?,?,?,?);"""
 
 labelID = """
-SELECT id,post_id  FROM  labels
+SELECT id,post_id  FROM  labels where model_id=(?)
 """
 
 labelAddColumnID = """

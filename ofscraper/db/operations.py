@@ -232,11 +232,9 @@ def drop_messages_table(model_id=None, username=None, conn=None) -> list:
 
 
 @operation_wrapper
-def get_messages_progress_data(
-    model_id=None, username=None, conn=None, **kwargs
-) -> list:
+def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.messagesData, model_id)
+        cur.execute(queries.messagesData, [model_id])
         conn.commit()
         return list(
             map(
@@ -306,7 +304,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
 
 
 @operation_wrapper
-def get_timeline_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.timelinePostDates, [model_id])
         conn.commit()
@@ -743,9 +741,13 @@ def write_labels_table(
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
             map(
-                lambda post: (label.label_id, label.name, label.type, post.id, model_id)
-                if not isinstance(posts, tuple)
-                else post,
+                lambda post: (
+                    label.label_id,
+                    label.name,
+                    label.type,
+                    post.id,
+                    model_id,
+                ),
                 posts,
             )
         )
@@ -766,7 +768,7 @@ def write_labels_table_transition(
 @operation_wrapper
 def get_all_labels_ids(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as curr:
-        curr.execute(queries.labelID)
+        curr.execute(queries.labelID, [model_id])
         conn.commit()
         return curr.fetchall()
 
@@ -817,7 +819,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
 
 
 def get_last_timeline_date(model_id=None, username=None):
-    data = get_timeline_postdates(model_id=model_id, username=username)
+    data = get_timeline_postinfo(model_id=model_id, username=username)
     return sorted(data, key=lambda x: x)[-1]
 
 
@@ -1143,7 +1145,7 @@ def make_messages_table_changes(all_messages, model_id=None, username=None):
 
 
 def get_last_message_date(model_id=None, username=None):
-    data = get_messages_progress_data(model_id=model_id, username=username)
+    data = get_messages_post_info(model_id=model_id, username=username)
     return sorted(data, key=lambda x: x.get("date"))[-1].get("date")
 
 

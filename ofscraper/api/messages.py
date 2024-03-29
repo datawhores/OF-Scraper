@@ -57,7 +57,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
     oldmessages = (
-        operations.get_messages_progress_data(model_id=model_id, username=username)
+        operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -292,7 +292,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
     oldmessages = (
-        operations.get_messages_progress_data(model_id=model_id, username=username)
+        operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )

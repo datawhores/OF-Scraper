@@ -174,7 +174,7 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     responseArray = []
     page_count = 0
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = operations.get_timeline_postdates(
+        oldtimeline = operations.get_timeline_postinfo(
             model_id=model_id, username=username
         )
     else:
@@ -330,7 +330,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     responseArray = []
     page_count = 0
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = operations.get_timeline_postdates(
+        oldtimeline = operations.get_timeline_postinfo(
             model_id=model_id, username=username
         )
     else:
