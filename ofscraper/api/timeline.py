@@ -203,60 +203,59 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     job_progress = progress_utils.timeline_progress
     overall_progress = progress_utils.overall_progress
     # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
-    if len(filteredArray) >= min_posts + 1:
-        splitArrays = [
-            filteredArray[i : i + min_posts]
-            for i in range(0, len(filteredArray), min_posts)
+    splitArrays = [
+        filteredArray[i : i + min_posts]
+        for i in range(0, len(filteredArray), min_posts)
+    ]
+    # use the previous split for timestamp
+    if len(splitArrays) > 2:
+        tasks.append(
+            asyncio.create_task(
+                scrape_timeline_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    required_ids=set(splitArrays[0]),
+                    timestamp=splitArrays[0][0],
+                )
+            )
+        )
+        [
+            tasks.append(
+                asyncio.create_task(
+                    scrape_timeline_posts(
+                        c,
+                        model_id,
+                        job_progress=job_progress,
+                        required_ids=set(splitArrays[i]),
+                        timestamp=splitArrays[i - 1][-1],
+                    )
+                )
+            )
+            for i in range(1, len(splitArrays) - 1)
         ]
-        # use the previous split for timestamp
-        if len(splitArrays) > 2:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_timeline_posts(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        required_ids=set(splitArrays[0]),
-                        timestamp=splitArrays[0][0],
-                    )
+        # keeping grabbing until nothing left
+        tasks.append(
+            asyncio.create_task(
+                scrape_timeline_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    timestamp=splitArrays[-1][-1],
                 )
             )
-            [
-                tasks.append(
-                    asyncio.create_task(
-                        scrape_timeline_posts(
-                            c,
-                            model_id,
-                            job_progress=job_progress,
-                            required_ids=set(splitArrays[i]),
-                            timestamp=splitArrays[i - 1][-1],
-                        )
-                    )
-                )
-                for i in range(1, len(splitArrays) - 1)
-            ]
-            # keeping grabbing until nothing left
-            tasks.append(
-                asyncio.create_task(
-                    scrape_timeline_posts(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        timestamp=splitArrays[-1][-1],
-                    )
+        )
+    elif len(splitArrays) > 0:
+        tasks.append(
+            asyncio.create_task(
+                scrape_timeline_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    timestamp=splitArrays[0][0],
                 )
             )
-        else:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_timeline_posts(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        timestamp=splitArrays[0][0],
-                    )
-                )
-            )
+        )
 
     else:
         tasks.append(

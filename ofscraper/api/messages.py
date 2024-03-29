@@ -407,7 +407,7 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
                     )
                 )
             )
-        if len(IDArray) >= (min_posts * 2) + 1:
+        if len(splitArraysID) > 2:
             [
                 tasks.append(
                     asyncio.create_task(
