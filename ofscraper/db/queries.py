@@ -226,15 +226,15 @@ SELECT * FROM medias where media_id=(?)
 """
 
 getTimelineMedia = """
-SELECT * FROM medias where api_type=('Timeline')
+SELECT * FROM medias where api_type=('Timeline') and model_id=(?)
 """
 
 getArchivedMedia = """
-SELECT * FROM medias where api_type=('Archived')
+SELECT * FROM medias where api_type=('Archived') and model_id=(?)
 """
 
 getMessagesMedia = """
-SELECT * FROM medias where api_type=('Message') or api_type=('Messages')
+SELECT * FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 """
 
 
@@ -332,14 +332,14 @@ drop table labels;
 """
 
 timelinePostDates = """
-SELECT created_at FROM posts where archived=(0)
+SELECT created_at FROM posts where archived=(0) and model_id=(?)
 """
 archivedPostInfo = """
-SELECT created_at,post_id FROM posts where archived=(1)
+SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 """
 
 messagesData = """
-SELECT created_at,post_id FROM messages
+SELECT created_at,post_id FROM messages where model_id=(?)
 """
 
 mediaAddColumnHash = """

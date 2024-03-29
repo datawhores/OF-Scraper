@@ -236,7 +236,7 @@ def get_messages_progress_data(
     model_id=None, username=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.messagesData)
+        cur.execute(queries.messagesData, model_id)
         conn.commit()
         return list(
             map(
@@ -308,7 +308,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
 @operation_wrapper
 def get_timeline_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.timelinePostDates)
+        cur.execute(queries.timelinePostDates, [model_id])
         conn.commit()
         return list(map(lambda x: arrow.get(x[0]).float_timestamp, cur.fetchall()))
 
@@ -810,7 +810,7 @@ def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
 @operation_wrapper
 def get_timeline_media(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getTimelineMedia)
+        cur.execute(queries.getTimelineMedia, [model_id])
         data = list(map(lambda x: x, cur.fetchall()))
         conn.commit()
         return data
@@ -822,9 +822,9 @@ def get_last_timeline_date(model_id=None, username=None):
 
 
 @operation_wrapper
-def get_archived_media(conn=None, **kwargs) -> list:
+def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getArchivedMedia)
+        cur.execute(queries.getArchivedMedia, [model_id])
         data = list(map(lambda x: x, cur.fetchall()))
         conn.commit()
         return data
@@ -833,7 +833,7 @@ def get_archived_media(conn=None, **kwargs) -> list:
 @operation_wrapper
 def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.archivedPostInfo)
+        cur.execute(queries.archivedPostInfo, [model_id])
         conn.commit()
         return list(
             map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
@@ -846,9 +846,9 @@ def get_last_archived_date(model_id=None, username=None):
 
 
 @operation_wrapper
-def get_messages_progress_media(conn=None, **kwargs) -> list:
+def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.getMessagesMedia)
+        cur.execute(queries.getMessagesMedia, [model_id])
         data = list(map(lambda x: x, cur.fetchall()))
         conn.commit()
         return data
@@ -1192,12 +1192,12 @@ def update_media_table_via_api_helper(
 
 
 def update_media_table_download_helper(
-    media, filename=None, hashdata=None, conn=None, **kwargs
+    media, filename=None, hashdata=None, conn=None, downloaded=None, **kwargs
 ) -> list:
     prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
     prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
     insertData = media_exist_insert_helper(
-        filename=filename, hashdata=hashdata, prevData=prevData
+        filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
     )
     insertData.append(media.id)
     conn.execute(queries.mediaUpdateDownload, insertData)

@@ -680,7 +680,7 @@ def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all messages required to make sure content is not missing"
         )
         return 0
-    curr = operations.get_messages_progress_media(model_id=model_id, username=username)
+    curr = operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
