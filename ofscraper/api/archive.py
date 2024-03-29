@@ -122,6 +122,97 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
     return list(unduped.values())
 
 
+def get_split_array(oldarchived, username, after):
+    min_posts = 50
+    log.trace(
+        "oldarchived {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"oldarchived: {str(x)}", oldarchived))
+            )
+        )
+    )
+    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    postedAtArray = sorted(oldarchived)
+    log.info(
+        f"""
+Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+[yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all archived posts + download/re-download of all files[/yellow]
+
+            """
+    )
+    filteredArray = list(filter(lambda x: x >= after, postedAtArray))
+
+    # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
+    splitArrays = [
+        filteredArray[i : i + min_posts]
+        for i in range(0, len(filteredArray), min_posts)
+    ]
+    return splitArrays
+
+
+def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
+    if len(splitArrays) > 2:
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    required_ids=set(splitArrays[0]),
+                    timestamp=splitArrays[0][0],
+                )
+            )
+        )
+        [
+            tasks.append(
+                asyncio.create_task(
+                    scrape_archived_posts(
+                        c,
+                        model_id,
+                        job_progress=job_progress,
+                        required_ids=set(splitArrays[i]),
+                        timestamp=splitArrays[i - 1][-1],
+                    )
+                )
+            )
+            for i in range(1, len(splitArrays) - 1)
+        ]
+        # keeping grabbing until nothing left
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    timestamp=splitArrays[-1][-1],
+                )
+            )
+        )
+    # use the first split if less then 3
+    elif len(splitArrays) > 0:
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    timestamp=splitArrays[0][0],
+                )
+            )
+        )
+    # use after if split is empty i.e no db data
+    else:
+        tasks.append(
+            asyncio.create_task(
+                scrape_archived_posts(
+                    c, model_id, job_progress=job_progress, timestamp=after
+                )
+            )
+        )
+
+
 def set_check(unduped, model_id, after):
     if not after:
         newCheck = {}
