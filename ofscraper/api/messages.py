@@ -476,7 +476,7 @@ def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x[10] != 1, curr))
+    missing_items = list(filter(lambda x: x[11] != 1, curr))
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug(

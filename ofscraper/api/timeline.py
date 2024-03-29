@@ -215,13 +215,12 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
             async with sessionbuilder.sessionBuilder() as c:
-                if len(filteredArray) >= min_posts + 1:
                     splitArrays = [
                         filteredArray[i : i + min_posts]
                         for i in range(0, len(filteredArray), min_posts)
                     ]
                     # use the previous split for timestamp
-                    if len(filteredArray) >= (min_posts * 2) + 1:
+                    if len(splitArrays) >2:
                         tasks.append(
                             asyncio.create_task(
                                 scrape_timeline_posts(
@@ -368,7 +367,7 @@ def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x[10] != 1, curr))
+    missing_items = list(filter(lambda x: x[11] != 1, curr))
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
