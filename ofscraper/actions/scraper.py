@@ -70,7 +70,7 @@ async def process_messages(model_id, username, c):
             [output.extend(message.media) for message in messages_]
             log.debug(f"[bold]Messages media count[/bold] {len(output)}")
 
-            await operations.batch_mediainsert(
+            await operations.write_messages_table(
                 output,
                 model_id=model_id,
                 username=username,
@@ -248,12 +248,6 @@ async def process_timeline_posts(model_id, username, c):
                 username=username,
                 downloaded=False,
             )
-            await operations.batch_mediainsert(
-                output,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
             cache.set(
                 f"{model_id}_full_timeline_scrape",
                 read_args.retriveArgs().after is not None,
@@ -342,12 +336,6 @@ async def process_pinned_posts(model_id, username, c):
             [output.extend(post.media) for post in pinned_posts]
             log.debug(f"[bold]Pinned media count without locked[/bold] {len(output)}")
 
-            await operations.batch_mediainsert(
-                output,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
             await operations.batch_mediainsert(
                 output,
                 model_id=model_id,
