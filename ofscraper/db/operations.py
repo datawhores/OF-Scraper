@@ -583,12 +583,11 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
 
 
 @operation_wrapper
-def write_media_table_transition(
-    insertData, model_id=None, curr=None, conn=None, **kwargs
-):
-    insertData = [[*ele, model_id] for ele in insertData]
-    curr.executemany(queries.mediaInsert, insertData)
-    conn.commit()
+def write_media_table_transition(insertData, model_id=None, conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = [[*ele, model_id] for ele in insertData]
+        curr.executemany(queries.mediaInsert, insertData)
+        conn.commit()
 
 
 @operation_wrapper
