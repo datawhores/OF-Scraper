@@ -219,7 +219,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
 
 
 @operation_wrapper
-def get_timeline_postdates(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_timeline_postdata(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.timelinePostDates)
         conn.commit()
@@ -440,7 +440,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
 
 
 def get_last_timeline_date(model_id=None, username=None):
-    data = get_timeline_postdates(model_id=model_id, username=username)
+    data = get_timeline_postdata(model_id=model_id, username=username)
     return sorted(data, key=lambda x: x)[-1]
 
 
@@ -454,7 +454,7 @@ def get_archived_media(conn=None, **kwargs) -> list:
 
 
 @operation_wrapper
-def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_archived_postdata(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(queries.archivedPostInfo)
         conn.commit()
@@ -464,7 +464,7 @@ def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> 
 
 
 def get_last_archived_date(model_id=None, username=None):
-    data = get_archived_postinfo(model_id=model_id, username=username)
+    data = get_archived_postdata(model_id=model_id, username=username)
     return sorted(data, key=lambda x: x[0])[-1][0]
 
 
