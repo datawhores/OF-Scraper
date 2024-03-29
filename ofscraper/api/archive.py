@@ -45,7 +45,7 @@ sem = None
 
 
 async def scrape_archived_posts(
-    c, model_id, progress, timestamp=None, required_ids=None
+    c, model_id, job_progress, timestamp=None, required_ids=None
 ) -> list:
     global tasks
     global sem
@@ -78,7 +78,7 @@ async def scrape_archived_posts(
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = progress.add_task(
+                task = job_progress.add_task(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
                     visible=True,
                 )
@@ -123,7 +123,7 @@ async def scrape_archived_posts(
                                         scrape_archived_posts(
                                             c,
                                             model_id,
-                                            progress,
+                                            job_progress,
                                             timestamp=posts[-1]["postedAtPrecise"],
                                         )
                                     )
@@ -142,7 +142,7 @@ async def scrape_archived_posts(
                                             scrape_archived_posts(
                                                 c,
                                                 model_id,
-                                                progress,
+                                                job_progress,
                                                 timestamp=posts[-1]["postedAtPrecise"],
                                                 required_ids=required_ids,
                                             )
@@ -162,7 +162,7 @@ async def scrape_archived_posts(
 
             finally:
                 sem.release()
-                progress.remove_task(task)
+                job_progress.remove_task(task)
             return posts
 
 
@@ -224,24 +224,19 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                     else []
                 )
 
-                if len(filteredArray) > min_posts:
-                    splitArrays = [
-                        filteredArray[i : i + min_posts]
-                        for i in range(0, len(filteredArray), min_posts)
-                    ]
-                    # use the previous split for timesamp
+                splitArrays = [
+                    filteredArray[i : i + min_posts]
+                    for i in range(0, len(filteredArray), min_posts)
+                ]
+                if len(splitArrays) > 2:
                     tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
                                 c,
                                 model_id,
-                                job_progress,
-                                required_ids=set(
-                                    list(map(lambda x: x[0], splitArrays[0]))
-                                ),
-                                timestamp=read_args.retriveArgs().after.float_timestamp
-                                if read_args.retriveArgs().after
-                                else None,
+                                job_progress=job_progress,
+                                required_ids=set(splitArrays[0]),
+                                timestamp=splitArrays[0][0],
                             )
                         )
                     )
@@ -251,11 +246,9 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                 scrape_archived_posts(
                                     c,
                                     model_id,
-                                    job_progress,
-                                    required_ids=set(
-                                        list(map(lambda x: x[0], splitArrays[i]))
-                                    ),
-                                    timestamp=splitArrays[i - 1][-1][0],
+                                    job_progress=job_progress,
+                                    required_ids=set(splitArrays[i]),
+                                    timestamp=splitArrays[i - 1][-1],
                                 )
                             )
                         )
@@ -267,16 +260,29 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                             scrape_archived_posts(
                                 c,
                                 model_id,
-                                job_progress,
-                                timestamp=splitArrays[-2][-1][0],
+                                job_progress=job_progress,
+                                timestamp=splitArrays[-1][-1],
                             )
                         )
                     )
+                # use the first split if less then 3
+                elif len(splitArrays) > 0:
+                    tasks.append(
+                        asyncio.create_task(
+                            scrape_archived_posts(
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=splitArrays[0][0],
+                            )
+                        )
+                    )
+                # use after if split is empty i.e no db data
                 else:
                     tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
-                                c, model_id, job_progress, timestamp=after
+                                c, model_id, job_progress=job_progress, timestamp=after
                             )
                         )
                     )
