@@ -43,7 +43,7 @@ sem = None
 
 
 async def scrape_timeline_posts(
-    c, model_id, progress, timestamp=None, required_ids=None
+    c, model_id, job_progress, timestamp=None, required_ids=None
 ) -> list:
     global new_tasks
     global sem
@@ -76,7 +76,7 @@ async def scrape_timeline_posts(
             await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = progress.add_task(
+                task = job_progress.add_task(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
                     visible=True,
                 )
@@ -120,7 +120,7 @@ async def scrape_timeline_posts(
                                         scrape_timeline_posts(
                                             c,
                                             model_id,
-                                            progress,
+                                            job_progress,
                                             timestamp=posts[-1]["postedAtPrecise"],
                                         )
                                     )
@@ -138,7 +138,7 @@ async def scrape_timeline_posts(
                                             scrape_timeline_posts(
                                                 c,
                                                 model_id,
-                                                progress,
+                                                job_progress,
                                                 timestamp=posts[-1]["postedAtPrecise"],
                                                 required_ids=required_ids,
                                             )
@@ -158,7 +158,7 @@ async def scrape_timeline_posts(
 
             finally:
                 sem.release()
-                progress.remove_task(task)
+                job_progress.remove_task(task)
 
             return posts
 
@@ -215,68 +215,69 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
             async with sessionbuilder.sessionBuilder() as c:
-                    splitArrays = [
-                        filteredArray[i : i + min_posts]
-                        for i in range(0, len(filteredArray), min_posts)
+                splitArrays = [
+                    filteredArray[i : i + min_posts]
+                    for i in range(0, len(filteredArray), min_posts)
+                ]
+                if len(splitArrays) > 2:
+                    tasks.append(
+                        asyncio.create_task(
+                            scrape_timeline_posts(
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                required_ids=set(splitArrays[0]),
+                                timestamp=splitArrays[0][0],
+                            )
+                        )
+                    )
+                    [
+                        tasks.append(
+                            asyncio.create_task(
+                                scrape_timeline_posts(
+                                    c,
+                                    model_id,
+                                    job_progress=job_progress,
+                                    required_ids=set(splitArrays[i]),
+                                    timestamp=splitArrays[i - 1][-1],
+                                )
+                            )
+                        )
+                        for i in range(1, len(splitArrays) - 1)
                     ]
-                    # use the previous split for timestamp
-                    if len(splitArrays) >2:
-                        tasks.append(
-                            asyncio.create_task(
-                                scrape_timeline_posts(
-                                    c,
-                                    model_id,
-                                    job_progress,
-                                    required_ids=set(splitArrays[0]),
-                                    timestamp=after,
-                                )
+                    # keeping grabbing until nothing left
+                    tasks.append(
+                        asyncio.create_task(
+                            scrape_timeline_posts(
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=splitArrays[-1][-1],
                             )
                         )
-                        [
-                            tasks.append(
-                                asyncio.create_task(
-                                    scrape_timeline_posts(
-                                        c,
-                                        model_id,
-                                        job_progress,
-                                        required_ids=set(splitArrays[i]),
-                                        timestamp=splitArrays[i - 1][-1],
-                                    )
-                                )
-                            )
-                            for i in range(1, len(splitArrays) - 1)
-                        ]
-                        # keeping grabbing until nothing left
-                        tasks.append(
-                            asyncio.create_task(
-                                scrape_timeline_posts(
-                                    c,
-                                    model_id,
-                                    job_progress,
-                                    timestamp=splitArrays[-2][-1],
-                                )
+                    )
+                # use the first split if less then 3
+                elif len(splitArrays) > 0:
+                    tasks.append(
+                        asyncio.create_task(
+                            scrape_timeline_posts(
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=splitArrays[0][0],
                             )
                         )
-                    else:
-                        tasks.append(
-                            asyncio.create_task(
-                                scrape_timeline_posts(
-                                    c,
-                                    model_id,
-                                    job_progress,
-                                    timestamp=splitArrays[-1][-1],
-                                )
-                            )
-                        )
-
+                    )
+                # use after if split is empty i.e no db data
                 else:
                     tasks.append(
                         asyncio.create_task(
                             scrape_timeline_posts(
-                                c, model_id, job_progress, timestamp=after
+                                c, model_id, job_progress=job_progress, timestamp=after
                             )
                         )
                     )
+
                 page_task = overall_progress.add_task(
                     f" Pages Progress: {page_count}", visible=True
                 )
@@ -298,8 +299,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     tasks = list(pending)
                     tasks.extend(new_tasks)
                     new_tasks = []
-                overall_progress.remove_task(page_task)
-
+        overall_progress.remove_task(page_task)
         unduped = {}
         log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
         for post in responseArray:
