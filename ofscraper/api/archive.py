@@ -191,7 +191,7 @@ async def get_archived_media(model_id, username, forced_after=None):
         ):
             async with sessionbuilder.sessionBuilder() as c:
                 oldarchived = (
-                    operations.get_archived_postdata(
+                    operations.get_archived_postinfo(
                         model_id=model_id, username=username
                     )
                     if not read_args.retriveArgs().no_cache
