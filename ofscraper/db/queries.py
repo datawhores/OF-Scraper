@@ -100,18 +100,12 @@ post_id, text,price,paid,archived,
 created_at,user_id)
             VALUES (?, ?,?,?,?,?,?);"""
 
-messageDupeCheck = """
-SELECT * FROM messages where post_id=(?)
-"""
 
 postInsert = f"""INSERT INTO 'posts'(
 post_id, text,price,paid,archived,
 created_at)
             VALUES (?, ?,?,?,?,?);"""
 
-postDupeCheck = """
-SELECT * FROM posts where post_id=(?)
-"""
 
 postNormalCheck = """
 SELECT post_id FROM posts where archived=False
@@ -122,9 +116,6 @@ post_id, text,price,paid,archived,
 created_at)
             VALUES (?, ?,?,?,?,?);"""
 
-storiesDupeCheck = """
-SELECT * FROM stories where post_id=(?)
-"""
 
 allIDCheck = """
 SELECT media_id FROM medias
@@ -151,19 +142,32 @@ media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked
             VALUES (?, ?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 mediaDupeCheck = """
-SELECT * FROM medias where media_id=(?)
+SELECT media_id,post_id,link,directory,filename,size
+,api_typemmedia_type,preview,linked,downloaded,created_at
+hash
+FROM medias where media_id=(?)
 """
 
+
 getTimelineMedia = """
-SELECT * FROM medias where api_type=('Timeline')
+SELECT media_id,post_id,link,directory,filename,size
+,api_typemmedia_type,preview,linked,downloaded,created_at
+hash
+FROM medias where api_type=('Timeline')
 """
 
 getArchivedMedia = """
-SELECT * FROM medias where api_type=('Archived')
+SELECT media_id,post_id,link,directory,filename,size
+,api_typemmedia_type,preview,linked,downloaded,created_at
+hash
+FROM medias where api_type=('Archived')
 """
 
 getMessagesMedia = """
-SELECT * FROM medias where api_type=('Message') or api_type=('Messages')
+SELECT media_id,post_id,link,directory,filename,size
+,api_typemmedia_type,preview,linked,downloaded,created_at
+hash
+FROM medias where api_type=('Message') or api_type=('Messages')
 """
 
 mediaUpdate = f"""Update 'medias'
@@ -176,9 +180,6 @@ SET
 api_type=?,media_type=?
 WHERE media_id=(?);"""
 
-profileDupeCheck = """
-SELECT * FROM profiles where user_id=(?)
-"""
 profileTableCheck = """
 SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 """
@@ -202,9 +203,6 @@ CREATE TABLE IF NOT EXISTS labels (
 )
 """
 
-labelDupeCheck = """
-SELECT * FROM labels WHERE id=? AND post_id=?
-"""
 
 labelInsert = f"""INSERT INTO 'labels'(
 id, name, type, post_id)

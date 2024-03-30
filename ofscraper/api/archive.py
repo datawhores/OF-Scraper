@@ -117,7 +117,7 @@ async def scrape_archived_posts(
                                 )
                             )
 
-                            if not bool(required_ids):
+                            if not required_ids:
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_archived_posts(
