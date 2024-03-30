@@ -122,7 +122,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
 
 
 def get_split_array(oldarchived, username, after):
-    min_posts = 40
+    min_posts = 50
     log.trace(
         "oldarchived {posts}".format(
             posts="\n\n".join(

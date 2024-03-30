@@ -49,7 +49,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     responseArray = []
     page_count = 0
     # require a min num of posts to be returned
-    min_posts = 40
+    min_posts = 50
     job_progress = progress_utils.messages_progress
     overall_progress = progress_utils.overall_progress
 
@@ -286,7 +286,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     tasks = []
     responseArray = []
     # require a min num of posts to be returned
-    min_posts = 40
+    min_posts = 50
 
     # async with c or sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")
