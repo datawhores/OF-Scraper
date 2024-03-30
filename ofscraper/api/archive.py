@@ -209,7 +209,7 @@ async def get_archived_media(model_id, username, forced_after=None):
                 )
                 log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
                 oldarchived = list(filter(lambda x: x != None, oldarchived))
-                postedAtArray = sorted(oldarchived, key=lambda x: x[0])
+                postsDataArray = sorted(oldarchived, key=lambda x: x[0])
 
                 after = get_after(model_id, username, forced_after)
                 # set check
@@ -221,8 +221,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                 """
                 )
                 filteredArray = (
-                    list(filter(lambda x: x[0] >= after, postedAtArray))
-                    if len(postedAtArray) > 0
+                    list(filter(lambda x: x[0] >= after, postsDataArray))
+                    if len(postsDataArray) > 0
                     else []
                 )
 

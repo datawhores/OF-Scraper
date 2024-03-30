@@ -201,7 +201,7 @@ async def get_timeline_media(model_id, username, forced_after=None):
         )
         log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
         oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-        postedAtArray = sorted(oldtimeline)
+        postsDataArray = sorted(oldtimeline)
         after = get_after(model_id, username, forced_after)
         log.info(
             f"""
@@ -211,7 +211,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
                 """
         )
-        filteredArray = list(filter(lambda x: x >= after, postedAtArray))
+        filteredArray = list(filter(lambda x: x[0] >= after, postsDataArray))
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
