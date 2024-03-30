@@ -26,7 +26,7 @@ def get_like_area():
             lambda x: x != "All"
             and x[0] != "-"
             and f"-{x}" not in post
-            and x in all_choices + ["Label"],
+            and x in all_choices + ["Labels"],
             post,
         )
     )
@@ -61,7 +61,7 @@ def get_download_area():
             lambda x: x != "All"
             and x[0] != "-"
             and f"-{x}" not in post
-            and x in all_choices + ["Label"],
+            and x in all_choices + ["Labels"],
             post,
         )
     )
