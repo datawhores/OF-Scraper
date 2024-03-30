@@ -184,7 +184,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
 
 
 def get_split_array(oldtimeline, username, after):
-    min_posts = 50
+    min_posts = 40
     log.trace(
         "oldtimeline {posts}".format(
             posts="\n\n".join(
@@ -194,7 +194,7 @@ def get_split_array(oldtimeline, username, after):
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-    postsDataArray = sorted(oldtimeline)
+    postsDataArray = sorted(oldtimeline, key=lambda x: x[0])
     log.info(
         f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}

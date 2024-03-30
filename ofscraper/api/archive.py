@@ -132,7 +132,7 @@ def get_split_array(oldarchived, username, after):
     )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
-    postsDataArray = sorted(oldarchived)
+    postsDataArray = sorted(oldarchived, key=lambda x: x[0])
     log.info(
         f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}

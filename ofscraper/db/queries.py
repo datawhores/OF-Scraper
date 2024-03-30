@@ -240,7 +240,7 @@ SELECT * FROM medias where api_type=('Message') or api_type=('Messages') and mod
 
 mediaUpdateAPI = f"""Update 'medias'
 SET
-media_id=?,post_id=?,link=?,api_type=?,media_type=?,preview=?,linked=?,created_at=?,model_id=?
+media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,model_id=?
 WHERE media_id=(?);"""
 
 

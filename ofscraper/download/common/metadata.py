@@ -40,8 +40,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             )
         elif download_data and download_data.get("content-type"):
             content_type = download_data.get("content-type").split("/")[-1]
-            placeholderObj = placeholder.Placeholders(ele)
-            await placeholderObj.set_trunicated_filepath(ele, content_type)
+            placeholderObj = await placeholder.Placeholders(ele, content_type).init()
             if ele.id:
                 await operations.download_media_update(
                     ele,
@@ -84,7 +83,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                 common_globals.log.debug(
                     f"{get_medialog(ele)} using a generic placeholderObj"
                 )
-                placeholderObj = await meta_data_placeholder(ele, username, model_id)
+                placeholderObj = await meta_data_placeholder(ele)
 
 
 def metadata_downloaded_helper(placeholderObj):
@@ -93,7 +92,7 @@ def metadata_downloaded_helper(placeholderObj):
 
     elif read_args.retriveArgs().metadata == "complete":
         return 1
-    elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
+    elif pathlib.Path(placeholderObj.trunicated_name).exists():
         return 1
     return 0
 
@@ -134,19 +133,21 @@ async def metadata_helper(c, ele, placeholderObj=None):
                 content_type = "mp4"
             elif not content_type and ele.mediatype.lower() == "images":
                 content_type = "jpg"
-            placeholderObj = placeholderObj or placeholder.Placeholders(ele)
+            placeholderObj = await (
+                placeholderObj or placeholder.Placeholders(ele, ext=content_type)
+            ).init()
             return placeholderObj
 
         else:
             r.raise_for_status()
 
 
-async def meta_data_placeholder(ele, username, model_id):
+async def meta_data_placeholder(ele):
     if ele.mediatype.lower() == "videos":
         content_type = "mp4"
     elif ele.mediatype.lower() == "images":
         content_type = "jpg"
     elif ele.mediatype.lower() == "audios":
         content_type = "mp3"
-    placeholderObj = placeholder.Placeholders()
+    placeholderObj = await placeholder.Placeholders(ele, ext=content_type).init()
     return placeholderObj

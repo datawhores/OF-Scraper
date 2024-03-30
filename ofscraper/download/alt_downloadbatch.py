@@ -55,8 +55,7 @@ async def alt_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
-    sharedPlaceholderObj = placeholder.Placeholders(ele, "mp4")
-    await sharedPlaceholderObj.init()
+    sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
     if read_args.retriveArgs().metadata != None:
         return await metadata(
             c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
@@ -76,10 +75,9 @@ async def alt_download(c, ele, username, model_id):
 
 
 async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model_id):
-    tempPlaceholder = placeholder.tempFilePlaceholder(
+    tempPlaceholder = await placeholder.tempFilePlaceholder(
         ele, f"temp_{ele.id or await ele.final_filename}.mp4"
-    )
-    await tempPlaceholder.init()
+    ).init()
     temp_path = tempPlaceholder.tempfilepath
 
     temp_path.unlink(missing_ok=True)
