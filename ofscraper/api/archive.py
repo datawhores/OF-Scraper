@@ -45,7 +45,7 @@ sem = None
 
 
 async def scrape_archived_posts(
-    c, model_id, job_progress, timestamp=None, required_ids=None
+    c, model_id, job_progress, timestamp=None, required_ids=None, offset=False
 ) -> list:
     global tasks
     global sem
@@ -57,12 +57,12 @@ async def scrape_archived_posts(
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
-    if timestamp:
-        ep = constants.getattr("archivedNextEP")
-        url = ep.format(model_id, str(timestamp))
-    else:
-        ep = constants.getattr("archivedEP")
-        url = ep.format(model_id)
+    timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
+    url = (
+        constants.getattr("archivedNextEP").format(model_id, str(timestamp))
+        if timestamp
+        else constants.getattr("archivedEP").format(model_id)
+    )
     log.debug(url)
 
     async for _ in AsyncRetrying(
@@ -117,7 +117,7 @@ async def scrape_archived_posts(
                                 )
                             )
 
-                            if required_ids == None:
+                            if not bool(required_ids):
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_archived_posts(
@@ -145,6 +145,7 @@ async def scrape_archived_posts(
                                                 job_progress,
                                                 timestamp=posts[-1]["postedAtPrecise"],
                                                 required_ids=required_ids,
+                                                offset=False,
                                             )
                                         )
                                     )
@@ -182,7 +183,7 @@ async def get_archived_media(model_id, username, forced_after=None):
         global new_tasks
         tasks = []
         new_tasks = []
-        min_posts = 50
+        min_posts = 40
         responseArray = []
         page_count = 0
 
@@ -235,8 +236,9 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                 c,
                                 model_id,
                                 job_progress=job_progress,
-                                required_ids=set(splitArrays[0]),
-                                timestamp=splitArrays[0][0],
+                                required_ids=set([ele[0] for ele in splitArrays[0]]),
+                                timestamp=splitArrays[0][0][0],
+                                offset=True,
                             )
                         )
                     )
@@ -247,8 +249,10 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                     c,
                                     model_id,
                                     job_progress=job_progress,
-                                    required_ids=set(splitArrays[i]),
-                                    timestamp=splitArrays[i - 1][-1],
+                                    required_ids=set(
+                                        [ele[0] for ele in splitArrays[i]]
+                                    ),
+                                    timestamp=splitArrays[i - i][-1][0],
                                 )
                             )
                         )
@@ -261,7 +265,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                 c,
                                 model_id,
                                 job_progress=job_progress,
-                                timestamp=splitArrays[-1][-1],
+                                timestamp=splitArrays[-1][0][0],
+                                offset=True,
                             )
                         )
                     )
@@ -273,7 +278,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                 c,
                                 model_id,
                                 job_progress=job_progress,
-                                timestamp=splitArrays[0][0],
+                                timestamp=splitArrays[0][0][0],
+                                offset=True,
                             )
                         )
                     )
@@ -282,7 +288,11 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                     tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
-                                c, model_id, job_progress=job_progress, timestamp=after
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=after,
+                                offset=True,
                             )
                         )
                     )
@@ -308,7 +318,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                     tasks = list(pending)
                     tasks.extend(new_tasks)
                     new_tasks = []
-                overall_progress.remove_task(page_task)
+        overall_progress.remove_task(page_task)
         unduped = {}
         log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
         for post in responseArray:
@@ -370,12 +380,9 @@ def get_after(model_id, username, forced_after=None):
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return (
-            operations.get_last_archived_date(model_id=model_id, username=username)
-            - 1000
-        )
+        return operations.get_last_archived_date(model_id=model_id, username=username)
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][12]).float_timestamp - 1000
+        return arrow.get(missing_items[0][12]).float_timestamp
