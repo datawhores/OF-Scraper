@@ -214,8 +214,8 @@ labelID = """
 SELECT id,post_id  FROM  labels
 """
 
-timelinePostDates = """
-SELECT created_at FROM posts where archived=(0)
+timelinePostInfo = """
+SELECT created_at,post_id FROM posts where archived=(0)
 """
 archivedPostInfo = """
 SELECT created_at,post_id FROM posts where archived=(1)

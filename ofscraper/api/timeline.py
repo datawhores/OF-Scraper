@@ -43,7 +43,7 @@ sem = None
 
 
 async def scrape_timeline_posts(
-    c, model_id, job_progress, timestamp=None, required_ids=None
+    c, model_id, job_progress, timestamp=None, required_ids=None, offset=False
 ) -> list:
     global new_tasks
     global sem
@@ -55,13 +55,12 @@ async def scrape_timeline_posts(
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
-    if timestamp:
-        log.debug(arrow.get(math.trunc(float(timestamp))))
-        ep = constants.getattr("timelineNextEP")
-        url = ep.format(model_id, str(timestamp))
-    else:
-        ep = constants.getattr("timelineEP")
-        url = ep.format(model_id)
+    timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
+    url = (
+        constants.getattr("timelineNextEP").format(model_id, str(timestamp))
+        if timestamp
+        else constants.getattr("timelineEP").format(model_id)
+    )
     log.debug(url)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -114,13 +113,14 @@ async def scrape_timeline_posts(
                                     ),
                                 )
                             )
-                            if required_ids == None:
+                            if not bool(required_ids):
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_timeline_posts(
                                             c,
                                             model_id,
                                             job_progress,
+                                            offset=False,
                                             timestamp=posts[-1]["postedAtPrecise"],
                                         )
                                     )
@@ -141,6 +141,7 @@ async def scrape_timeline_posts(
                                                 job_progress,
                                                 timestamp=posts[-1]["postedAtPrecise"],
                                                 required_ids=required_ids,
+                                                offset=False,
                                             )
                                         )
                                     )
@@ -226,8 +227,9 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                                 c,
                                 model_id,
                                 job_progress=job_progress,
-                                required_ids=set(splitArrays[0]),
-                                timestamp=splitArrays[0][0],
+                                required_ids=set([ele[0] for ele in splitArrays[0]]),
+                                timestamp=splitArrays[0][0][0],
+                                offset=True,
                             )
                         )
                     )
@@ -238,8 +240,11 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                                     c,
                                     model_id,
                                     job_progress=job_progress,
-                                    required_ids=set(splitArrays[i]),
-                                    timestamp=splitArrays[i - 1][-1],
+                                    required_ids=set(
+                                        [ele[0] for ele in splitArrays[i]]
+                                    ),
+                                    timestamp=splitArrays[i - 1][-1][0],
+                                    offset=False,
                                 )
                             )
                         )
@@ -252,7 +257,8 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                                 c,
                                 model_id,
                                 job_progress=job_progress,
-                                timestamp=splitArrays[-1][-1],
+                                timestamp=splitArrays[-1][0][0],
+                                offset=True,
                             )
                         )
                     )
@@ -264,7 +270,8 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                                 c,
                                 model_id,
                                 job_progress=job_progress,
-                                timestamp=splitArrays[0][0],
+                                timestamp=splitArrays[0][0][0],
+                                offset=True,
                             )
                         )
                     )
@@ -273,7 +280,11 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
                     tasks.append(
                         asyncio.create_task(
                             scrape_timeline_posts(
-                                c, model_id, job_progress=job_progress, timestamp=after
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=after,
+                                offset=True,
                             )
                         )
                     )
@@ -371,12 +382,9 @@ def get_after(model_id, username, forced_after=None):
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return (
-            operations.get_last_timeline_date(model_id=model_id, username=username)
-            - 1000
-        )
+        return operations.get_last_timeline_date(model_id=model_id, username=username)
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][12]).float_timestamp - 1000
+        return arrow.get(missing_items[0][12]).float_timestamp

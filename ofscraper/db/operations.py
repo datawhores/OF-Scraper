@@ -221,9 +221,11 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
 @operation_wrapper
 def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.timelinePostDates)
+        cur.execute(queries.timelinePostInfo)
         conn.commit()
-        return list(map(lambda x: arrow.get(x[0]).float_timestamp, cur.fetchall()))
+        return list(
+            map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
+        )
 
 
 @operation_wrapper
