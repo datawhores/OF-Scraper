@@ -42,7 +42,6 @@ sem = None
 async def get_archived_media(model_id, username, forced_after=None, c=None):
     tasks = []
     new_tasks = []
-    min_posts = 50
     responseArray = []
     page_count = 0
     job_progress = progress_utils.archived_progress
@@ -94,7 +93,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
-            cache.set(f"{model_id}_full_archived_scrape")
+            cache.set(f"{model_id}_full_archived_scrape", True)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
 
@@ -123,7 +122,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
 
 
 def get_split_array(oldarchived, username, after):
-    min_posts = 50
+    min_posts = 40
     log.trace(
         "oldarchived {posts}".format(
             posts="\n\n".join(
@@ -142,7 +141,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 
             """
     )
-    filteredArray = list(filter(lambda x: x >= after, postedAtArray))
+    filteredArray = list(filter(lambda x: x[0] >= after, postedAtArray))
 
     # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
@@ -160,7 +159,7 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    required_ids=set(splitArrays[0]),
+                    required_ids=set([ele[0] for ele in splitArrays[0]]),
                     timestamp=splitArrays[0][0][0],
                     offset=True,
                 )
@@ -173,8 +172,9 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                         c,
                         model_id,
                         job_progress=job_progress,
-                        required_ids=set(splitArrays[i]),
-                        timestamp=splitArrays[i - 1][-1],
+                        required_ids=set([ele[0] for ele in splitArrays[i]]),
+                        timestamp=splitArrays[i - 1][-1][0],
+                        offset=False,
                     )
                 )
             )
@@ -187,7 +187,8 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[-1][-1],
+                    timestamp=splitArrays[-1][0][0],
+                    offset=True,
                 )
             )
         )
@@ -199,7 +200,8 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[0][0],
+                    timestamp=splitArrays[0][0][0],
+                    offset=True,
                 )
             )
         )
@@ -208,7 +210,7 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
         tasks.append(
             asyncio.create_task(
                 scrape_archived_posts(
-                    c, model_id, job_progress=job_progress, timestamp=after
+                    c, model_id, job_progress=job_progress, timestamp=after, offset=True
                 )
             )
         )
@@ -255,15 +257,12 @@ def get_after(model_id, username, forced_after=None):
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return (
-            operations.get_last_archived_date(model_id=model_id, username=username)
-            - 1000
-        )
+        return operations.get_last_archived_date(model_id=model_id, username=username)
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][12]).float_timestamp - 1000
+        return arrow.get(missing_items[0][12]).float_timestamp
 
 
 @run
@@ -344,7 +343,7 @@ async def scrape_archived_posts(
                                 )
                             )
 
-                            if required_ids == None:
+                            if not bool(required_ids):
                                 new_tasks.append(
                                     asyncio.create_task(
                                         scrape_archived_posts(
