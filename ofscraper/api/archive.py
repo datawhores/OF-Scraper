@@ -125,6 +125,7 @@ async def scrape_archived_posts(
                                             model_id,
                                             job_progress,
                                             timestamp=posts[-1]["postedAtPrecise"],
+                                            offset=False,
                                         )
                                     )
                                 )
@@ -253,6 +254,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
                                         [ele[0] for ele in splitArrays[i]]
                                     ),
                                     timestamp=splitArrays[i - i][-1][0],
+                                    offset=False,
                                 )
                             )
                         )
