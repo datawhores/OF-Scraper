@@ -293,8 +293,8 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
                     data.paid,
                     data.archived,
                     data.date,
-                    data.id,
                     model_id,
+                    data.id,
                 ],
                 posts,
             )
@@ -412,8 +412,8 @@ def update_stories_table(stories: dict, model_id=None, username=None, conn=None)
                     data.paid,
                     data.archived,
                     data.date,
-                    data.id,
                     model_id,
+                    data.id,
                 ),
                 stories,
             )
@@ -1182,7 +1182,7 @@ def make_stories_tables_changes(
 
 
 def update_media_table_via_api_helper(
-    media, model_id=None, conn=None, **kwargs
+    media, model_id=None, conn=None, curr=None, **kwargs
 ) -> list:
     insertData = [
         media.id,
@@ -1195,20 +1195,20 @@ def update_media_table_via_api_helper(
         model_id,
         media.id,
     ]
-    conn.execute(queries.mediaUpdateAPI, insertData)
+    curr.execute(queries.mediaUpdateAPI, insertData)
     conn.commit()
 
 
 def update_media_table_download_helper(
-    media, filename=None, hashdata=None, conn=None, downloaded=None, **kwargs
+    media, filename=None, hashdata=None, conn=None, downloaded=None, curr=None, **kwargs
 ) -> list:
-    prevData = conn.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
+    prevData = curr.execute(queries.mediaDupeCheck, (media.id,)).fetchall()
     prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
     insertData = media_exist_insert_helper(
         filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
     )
     insertData.append(media.id)
-    conn.execute(queries.mediaUpdateDownload, insertData)
+    curr.execute(queries.mediaUpdateDownload, insertData)
     conn.commit()
 
 

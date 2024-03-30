@@ -249,10 +249,6 @@ SET
 directory=?,filename=?,size=?,downloaded=?,hash=?
 WHERE media_id=(?);"""
 
-mediaTypeUpdate = f"""Update 'medias'
-SET
-api_type=?,media_type=?
-WHERE media_id=(?);"""
 
 mediaALLTransition = """
 SELECT media_id,post_id,link,directory,filename,size,api_type,
