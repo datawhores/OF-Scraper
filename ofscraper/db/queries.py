@@ -218,8 +218,8 @@ drop table stories;
 """
 
 mediaInsert = f"""INSERT INTO 'medias'(
-media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at,hash,model_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+media_id,post_id,link,api_type,media_type,preview,linked,created_at,hash,model_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?);"""
 
 mediaDupeCheck = """
 SELECT * FROM medias where media_id=(?)
