@@ -70,7 +70,7 @@ async def get_messages(model_id, username, forced_after=None):
         responseArray = []
         page_count = 0
         # require a min num of posts to be returned
-        min_posts = 40
+        min_posts = 50
         with Live(
             progress_group,
             refresh_per_second=constants.getattr("refreshScreen"),

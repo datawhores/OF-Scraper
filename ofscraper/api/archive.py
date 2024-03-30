@@ -184,7 +184,7 @@ async def get_archived_media(model_id, username, forced_after=None):
         global new_tasks
         tasks = []
         new_tasks = []
-        min_posts = 40
+        min_posts = 50
         responseArray = []
         page_count = 0
 
