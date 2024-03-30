@@ -571,6 +571,7 @@ def write_labels_table(
         try:
             curr.executemany(queries.labelInsert, insertData)
             conn.commit()
+        # make label insert compat with 3.9+ schema
         except sqlite3.IntegrityError:
             curr.executemany(queries.labelInsert2, insertData)
             conn.commit()
