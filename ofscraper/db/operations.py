@@ -568,8 +568,12 @@ def write_labels_table(
         insertData = list(
             map(lambda post: (label.label_id, label.name, label.type, post.id), posts)
         )
-        curr.executemany(queries.labelInsert, insertData)
-        conn.commit()
+        try:
+            curr.executemany(queries.labelInsert, insertData)
+            conn.commit()
+        except sqlite3.IntegrityError:
+            curr.executemany(queries.labelInsert2, insertData)
+            conn.commit()
 
 
 @operation_wrapper
