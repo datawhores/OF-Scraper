@@ -263,7 +263,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-    postedAtArray = sorted(oldtimeline)
+    postsDataArray = sorted(oldtimeline)
     after = get_after(model_id, username, forced_after)
 
     splitArrays = get_split_array(oldtimeline, username, after)
@@ -323,7 +323,7 @@ def get_split_array(oldtimeline, username, after):
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-    postedAtArray = sorted(oldtimeline)
+    postsDataArray = sorted(oldtimeline)
     log.info(
         f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
@@ -332,7 +332,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
             """
     )
-    filteredArray = list(filter(lambda x: x >= after, postedAtArray))
+    filteredArray = list(filter(lambda x: x >= after, postsDataArray))
 
     # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
@@ -350,8 +350,9 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    required_ids=set(splitArrays[0]),
-                    timestamp=splitArrays[0][0],
+                    required_ids=set([ele[0] for ele in splitArrays[0]]),
+                    timestamp=splitArrays[0][0][0],
+                    offset=True,
                 )
             )
         )
@@ -362,8 +363,9 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                         c,
                         model_id,
                         job_progress=job_progress,
-                        required_ids=set(splitArrays[i]),
-                        timestamp=splitArrays[i - 1][-1],
+                        required_ids=set([ele[0] for ele in splitArrays[i]]),
+                        timestamp=splitArrays[i - 1][-1][0],
+                        offset=False,
                     )
                 )
             )
@@ -376,7 +378,7 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[-1][-1],
+                    timestamp=splitArrays[-1][0][0],
                 )
             )
         )

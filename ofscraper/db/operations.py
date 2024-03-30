@@ -306,9 +306,11 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
 @operation_wrapper
 def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.timelinePostDates, [model_id])
+        cur.execute(queries.timelinePostInfo, [model_id])
         conn.commit()
-        return list(map(lambda x: arrow.get(x[0]).float_timestamp, cur.fetchall()))
+        return list(
+            map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
+        )
 
 
 @operation_wrapper

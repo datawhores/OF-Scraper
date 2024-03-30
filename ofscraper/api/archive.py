@@ -132,7 +132,7 @@ def get_split_array(oldarchived, username, after):
     )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
-    postedAtArray = sorted(oldarchived)
+    postsDataArray = sorted(oldarchived)
     log.info(
         f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
@@ -141,7 +141,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 
             """
     )
-    filteredArray = list(filter(lambda x: x[0] >= after, postedAtArray))
+    filteredArray = list(filter(lambda x: x[0] >= after, postsDataArray))
 
     # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
