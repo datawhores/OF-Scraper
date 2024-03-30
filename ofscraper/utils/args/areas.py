@@ -20,13 +20,13 @@ def get_like_area():
         post.update(set(all_choices))
         post.update({"Labels"})
         post.discard("Labels*")
-        post.discard("Laabels+")
+        post.discard("Labels+")
     return list(
         filter(
             lambda x: x != "All"
             and x[0] != "-"
             and f"-{x}" not in post
-            and x in all_choices,
+            and x in all_choices + ["Label"],
             post,
         )
     )
@@ -61,7 +61,7 @@ def get_download_area():
             lambda x: x != "All"
             and x[0] != "-"
             and f"-{x}" not in post
-            and x in all_choices,
+            and x in all_choices + ["Label"],
             post,
         )
     )
