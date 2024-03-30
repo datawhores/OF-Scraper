@@ -161,7 +161,8 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                     model_id,
                     job_progress=job_progress,
                     required_ids=set(splitArrays[0]),
-                    timestamp=splitArrays[0][0],
+                    timestamp=splitArrays[0][0][0],
+                    offset=True,
                 )
             )
         )
@@ -267,7 +268,7 @@ def get_after(model_id, username, forced_after=None):
 
 @run
 async def scrape_archived_posts(
-    c, model_id, job_progress=None, timestamp=None, required_ids=None
+    c, model_id, job_progress=None, timestamp=None, required_ids=None, offset=False
 ) -> list:
     global sem
     posts = None
@@ -278,12 +279,12 @@ async def scrape_archived_posts(
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
         return []
-    if timestamp:
-        ep = constants.getattr("archivedNextEP")
-        url = ep.format(model_id, str(timestamp))
-    else:
-        ep = constants.getattr("archivedEP")
-        url = ep.format(model_id)
+    timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
+    url = (
+        constants.getattr("archivedNextEP").format(model_id, str(timestamp))
+        if timestamp
+        else constants.getattr("archivedEP").format(model_id)
+    )
     log.debug(url)
 
     async for _ in AsyncRetrying(
@@ -351,6 +352,7 @@ async def scrape_archived_posts(
                                             model_id,
                                             job_progress=job_progress,
                                             timestamp=posts[-1]["postedAtPrecise"],
+                                            offset=False,
                                         )
                                     )
                                 )
@@ -371,6 +373,7 @@ async def scrape_archived_posts(
                                                 job_progress=job_progress,
                                                 timestamp=posts[-1]["postedAtPrecise"],
                                                 required_ids=required_ids,
+                                                offset=False,
                                             )
                                         )
                                     )
