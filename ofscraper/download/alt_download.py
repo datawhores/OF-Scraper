@@ -64,8 +64,7 @@ async def alt_download(c, ele, username, model_id, progress):
     common_globals.log.debug(
         f"{get_medialog(ele)} Downloading with protected media downloader"
     )
-    sharedPlaceholderObj = placeholder.Placeholders(ele, "mp4")
-    await sharedPlaceholderObj.init()
+    sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     if read_args.retriveArgs().metadata != None:
         return await metadata(
@@ -89,10 +88,9 @@ async def alt_download(c, ele, username, model_id, progress):
 
 
 async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model_id):
-    tempPlaceholder = placeholder.tempFilePlaceholder(
+    tempPlaceholder = await placeholder.tempFilePlaceholder(
         ele, f"temp_{ele.id or await ele.final_filename}.mp4"
-    )
-    await tempPlaceholder.init()
+    ).init()
     temp_path = tempPlaceholder.tempfilepath
     temp_path.unlink(missing_ok=True)
     t = subprocess.run(
@@ -172,8 +170,9 @@ async def media_item_keys(c, audio, video, ele):
 
 async def alt_download_downloader(item, c, ele, progress):
     downloadspace(mediatype=ele.mediatype)
-    placeholderObj = placeholder.tempFilePlaceholder(ele, f"{item['name']}.part")
-    await placeholderObj.init()
+    placeholderObj = await placeholder.tempFilePlaceholder(
+        ele, f"{item['name']}.part"
+    ).init()
     item["path"] = placeholderObj.tempfilepath
     item["total"] = None
     async for _ in AsyncRetrying(

@@ -40,8 +40,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             )
         elif download_data and download_data.get("content-type"):
             content_type = download_data.get("content-type").split("/")[-1]
-            placeholderObj = placeholder.Placeholders(ele)
-            await placeholderObj.set_trunicated_filepath(ele, content_type)
+            placeholderObj = await placeholder.Placeholders(ele, content_type).init()
             if ele.id:
                 await operations.update_media_table(
                     ele,
@@ -134,7 +133,10 @@ async def metadata_helper(c, ele, placeholderObj=None):
                 content_type = "mp4"
             elif not content_type and ele.mediatype.lower() == "images":
                 content_type = "jpg"
-            placeholderObj = placeholderObj or placeholder.Placeholders(ele)
+            placeholderObj = (
+                placeholderObj
+                or await placeholder.Placeholders(ele, content_type).init()
+            )
             return placeholderObj
 
         else:
@@ -148,5 +150,5 @@ async def meta_data_placeholder(ele, username, model_id):
         content_type = "jpg"
     elif ele.mediatype.lower() == "audios":
         content_type = "mp3"
-    placeholderObj = placeholder.Placeholders()
+    placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     return placeholderObj

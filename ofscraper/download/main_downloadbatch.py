@@ -123,10 +123,9 @@ async def handle_result(result, ele, username, model_id):
 
 async def main_download_downloader(c, ele):
     downloadspace(mediatype=ele.mediatype)
-    tempholderObj = placeholder.tempFilePlaceholder(
+    tempholderObj = await placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
-    )
-    await tempholderObj.init()
+    ).init()
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
         wait=wait_random(
@@ -184,9 +183,8 @@ async def alt_data_handler(c, ele, tempholderObj):
 async def main_data_handler(data, c, ele, tempholderObj):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
-    placeholderObj = placeholder.Placeholders(ele, content_type)
+    placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-    await placeholderObj.init()
     # other
     if await check_forced_skip(ele, total) == 0:
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
@@ -251,8 +249,9 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 content_type = r.headers.get("content-type").split("/")[-1]
                 content_type = get_unknown_content_type(ele)
                 if not placeholderObj:
-                    placeholderObj = placeholder.Placeholders(ele, content_type)
-                    await placeholderObj.init()
+                    placeholderObj = await placeholder.Placeholders(
+                        ele, content_type
+                    ).init()
                 path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
                 if await check_forced_skip(ele, total) == 0:
                     total = 0
