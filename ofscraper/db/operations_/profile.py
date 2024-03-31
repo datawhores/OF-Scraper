@@ -134,6 +134,14 @@ def create_models_table(model_id=None, username=None, conn=None):
         conn.commit()
 
 
+@wrapper.operation_wrapper
+def write_models_table(model_id=None, username=None, conn=None) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        if len(cur.execute(queries.modelDupeCheck, (model_id,)).fetchall()) == 0:
+            cur.execute(queries.modelInsert, [model_id])
+            conn.commit()
+
+
 def remove_unique_constriant_profile(model_id=None, username=None):
     data = get_all_profiles(model_id=model_id, username=username)
     drop_profiles_table(model_id=model_id, username=username)
