@@ -1,32 +1,3 @@
-otherCreate = """
-CREATE TABLE IF NOT EXISTS others (
-	id INTEGER NOT NULL,  
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-	model_id INTEGER, 
-	PRIMARY KEY (id), 
-	UNIQUE (post_id,model_id)
-)
-"""
-productCreate = """
-CREATE TABLE IF NOT EXISTS products (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP,
-    title VARCHAR, 
-    model_id INTEGER, 
-	PRIMARY KEY (id), 
-	UNIQUE (post_id,model_id)
-)
-"""
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
 	id INTEGER NOT NULL, 
@@ -58,10 +29,6 @@ CREATE TABLE IF NOT EXISTS stories (
 	PRIMARY KEY (id), 
 	UNIQUE (post_id,model_id)
 )
-"""
-
-schemaCreate = """
-CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value TEXT);
 """
 
 
@@ -137,52 +104,3 @@ select user_id,username from profiles
 profilesDrop = """
 DROP TABLE profiles;
 """
-
-otherAddColumnID = """
-ALTER Table others ADD COLUMN model_id INTEGER;
-"""
-
-productsAddColumnID = """
-ALTER Table products ADD COLUMN model_id INTEGER;
-"""
-
-
-schemaAll = """
-SELECT flag_name FROM schema_flags WHERE flag_value = 1;
-"""
-
-schemaInsert = """
-INSERT INTO 'schema_flags'( flag_name,flag_value)
-VALUES (?,?)
-"""
-
-
-othersALLTransition = """
-SELECT text,price,paid,archived,created_at FROM others;
-"""
-
-
-othersDrop = """
-drop table others;
-"""
-
-
-othersInsert = f"""INSERT INTO 'others'(
-post_id, text,price,paid,archived,
-created_at,model_id)
-VALUES (?, ?,?,?,?,?,?);"""
-
-
-productsALLTransition = """
-SELECT text,price,paid,archived,created_at FROM products;
-"""
-
-
-productsDrop = """
-drop table products;
-"""
-
-productsInsert = f"""INSERT INTO 'products'(
-post_id, text,price,paid,archived,
-created_at,title,model_id)
-VALUES (?, ?,?,?,?,?,?,?);"""

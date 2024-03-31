@@ -23,18 +23,84 @@ from ofscraper.utils.context.run_async import run
 console = Console()
 log = logging.getLogger("shared")
 
+otherCreate = """
+CREATE TABLE IF NOT EXISTS others (
+	id INTEGER NOT NULL,  
+	post_id INTEGER NOT NULL, 
+	text VARCHAR, 
+	price INTEGER, 
+	paid INTEGER, 
+	archived BOOLEAN, 
+	created_at TIMESTAMP, 
+	model_id INTEGER, 
+	PRIMARY KEY (id), 
+	UNIQUE (post_id,model_id)
+)
+"""
+productCreate = """
+CREATE TABLE IF NOT EXISTS products (
+	id INTEGER NOT NULL, 
+	post_id INTEGER NOT NULL, 
+	text VARCHAR, 
+	price INTEGER, 
+	paid INTEGER, 
+	archived BOOLEAN, 
+	created_at TIMESTAMP,
+    title VARCHAR, 
+    model_id INTEGER, 
+	PRIMARY KEY (id), 
+	UNIQUE (post_id,model_id)
+)
+"""
+schemaCreate = """
+CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value TEXT);
+"""
+otherAddColumnID = """
+ALTER Table others ADD COLUMN model_id INTEGER;
+"""
+productsAddColumnID = """
+ALTER Table products ADD COLUMN model_id INTEGER;
+"""
+schemaAll = """
+SELECT flag_name FROM schema_flags WHERE flag_value = 1;
+"""
+schemaInsert = """
+INSERT INTO 'schema_flags'( flag_name,flag_value)
+VALUES (?,?)
+"""
+othersALLTransition = """
+SELECT text,price,paid,archived,created_at FROM others;
+"""
+othersDrop = """
+drop table others;
+"""
+othersInsert = f"""INSERT INTO 'others'(
+post_id, text,price,paid,archived,
+created_at,model_id)
+VALUES (?, ?,?,?,?,?,?);"""
+productsALLTransition = """
+SELECT text,price,paid,archived,created_at FROM products;
+"""
+productsDrop = """
+drop table products;
+"""
+productsInsert = f"""INSERT INTO 'products'(
+post_id, text,price,paid,archived,
+created_at,title,model_id)
+VALUES (?, ?,?,?,?,?,?,?);"""
+
 
 @wrapper.operation_wrapper
 def create_products_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.productCreate)
+        cur.execute(productCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def create_others_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.otherCreate)
+        cur.execute(otherCreate)
         conn.commit()
 
 
@@ -42,7 +108,7 @@ def create_others_table(model_id=None, username=None, conn=None):
 def add_column_other_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(queries.otherAddColumnID)
+            cur.execute(otherAddColumnID)
             conn.commit()
         except sqlite3.OperationalError as E:
             if not str(E) == "duplicate column name: model_id":
@@ -53,7 +119,7 @@ def add_column_other_ID(conn=None, **kwargs):
 def add_column_products_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(queries.productsAddColumnID)
+            cur.execute(productsAddColumnID)
             conn.commit()
         except sqlite3.OperationalError as E:
             if not str(E) == "duplicate column name: model_id":
@@ -63,14 +129,14 @@ def add_column_products_ID(conn=None, **kwargs):
 @wrapper.operation_wrapper
 def create_schema_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.schemaCreate)
+        cur.execute(schemaCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_schema_changes(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        data = cur.execute(queries.schemaAll).fetchall()
+        data = cur.execute(schemaAll).fetchall()
         return set(list(map(lambda x: x[0], data)))
 
 
@@ -78,7 +144,7 @@ def get_schema_changes(model_id=None, username=None, conn=None):
 def add_flag_schema(flag, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            data = cur.execute(queries.schemaInsert, [flag, 1])
+            data = cur.execute(schemaInsert, [flag, 1])
             conn.commit()
         except sqlite3.IntegrityError as e:
             log.debug("Error: Unique constraint on schema flags violation occurred", e)
@@ -89,14 +155,14 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper
 def get_all_others_transition(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        data = cur.execute(queries.othersALLTransition).fetchall()
+        data = cur.execute(othersALLTransition).fetchall()
         return data
 
 
 @wrapper.operation_wrapper
 def drop_others_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.othersDrop)
+        cur.execute(othersDrop)
         conn.commit()
 
 
@@ -106,21 +172,21 @@ def write_others_table_transition(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [[*ele, model_id] for ele in insertData]
-        cur.executemany(queries.othersInsert, insertData)
+        cur.executemany(othersInsert, insertData)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_all_products_transition(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        data = cur.execute(queries.productsALLTransition).fetchall()
+        data = cur.execute(productsALLTransition).fetchall()
         return data
 
 
 @wrapper.operation_wrapper
 def drop_products_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.productsDrop)
+        cur.execute(productsDrop)
         conn.commit()
 
 
@@ -130,16 +196,8 @@ def write_products_table_transition(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [[*ele, model_id] for ele in insertData]
-        cur.executemany(queries.productsInsert, insertData)
+        cur.executemany(productsInsert, insertData)
         conn.commit()
-
-
-@wrapper.operation_wrapper
-def write_models_table(model_id=None, username=None, conn=None) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        if len(cur.execute(queries.modelDupeCheck, (model_id,)).fetchall()) == 0:
-            cur.execute(queries.modelInsert, [model_id])
-            conn.commit()
 
 
 def modify_unique_constriant_others(model_id=None, username=None):
