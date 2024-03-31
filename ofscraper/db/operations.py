@@ -46,8 +46,48 @@ def create_tables(model_id, username):
 
 
 def modify_tables(model_id=None, username=None):
+    create_backup_transition(model_id, username)
     add_column_tables(model_id=model_id, username=username)
     modify_tables_constraints_and_columns(model_id=model_id, username=username)
+
+
+def create_backup_transition(model_id, username):
+    changes = get_schema_changes(model_id=model_id, username=username)
+    groupA = [
+        "media_hash",
+        "media_model_id",
+        "post_model_id",
+        "products_model_id",
+        "other_model_id",
+        "stories_model_id",
+        "messages_model_id",
+        "labels_model_id",
+    ]
+    groupB = [
+        "profile_username_constraint_removed",
+        "stories_model_id_constraint_added",
+        "media_model_id_constraint_added",
+        "labels_model_id_constraint_added",
+        "posts_model_id_constraint_added",
+        "others_model_id_constraint_added",
+        "products_model_id_constraint_added",
+        "messages_model_id_constraint_added",
+    ]
+    if len(changes) == 0:
+        None
+    elif not any(groupA):
+        None
+    elif not any(groupB):
+        None
+    elif len(set(groupA + groupB)) != len(changes):
+        None
+    else:
+        return
+    # action if 1 test passes
+    log.info("creating a backup before transition")
+    new_path = create_backup(model_id, username, "old_schema_db_backup.db")
+    log.info(f"transition backup created at {new_path}")
+    check_backup(model_id, username, new_path)
 
 
 def add_column_tables(model_id=None, username=None):
@@ -123,14 +163,35 @@ def modify_tables_constraints_and_columns(model_id=None, username=None):
         )
 
 
-def create_backup(model_id, username):
+def check_backup(model_id, username, new_path):
+    if not new_path.absolute().exists():
+        raise Exception("Backup db was not created")
+    elif (
+        new_path.absolute().stat().st_size
+        != placeholder.databasePlaceholder()
+        .databasePathHelper(model_id, username)
+        .absolute()
+        .stat()
+        .st_size
+    ):
+        raise Exception("backup db file should be the same size")
+
+
+def create_backup(model_id, username, backup=None):
     database_path = placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
     )
-
+    database_copy = None
     now = arrow.now().float_timestamp
     last = cache.get(f"{username}_{model_id}_db_backup", default=now)
-    if now - last > constants.getattr("DBINTERVAL") and database_path.exists():
+    if backup:
+        database_copy = placeholder.databasePlaceholder().databasePathCopyHelper(
+            model_id, username
+        )
+        database_copy.parent.mkdir(parents=True, exist_ok=True)
+        database_copy = database_copy.parent / backup
+        shutil.copy2(database_path, database_copy)
+    elif now - last > constants.getattr("DBINTERVAL") and database_path.exists():
         database_copy = placeholder.databasePlaceholder().databasePathCopyHelper(
             model_id, username
         )
@@ -148,6 +209,7 @@ def create_backup(model_id, username):
         shutil.copy2(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
     cache.close()
+    return database_copy
 
 
 def table_init_create(model_id=None, username=None):
