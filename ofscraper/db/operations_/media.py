@@ -337,8 +337,6 @@ def update_media_table_download_helper(
     insertData.append(media.id)
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
-    
-
 
 def media_exist_insert_helper(
     filename=None, downloaded=None, hashdata=None, prevData=None

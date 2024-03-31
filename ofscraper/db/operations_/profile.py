@@ -47,7 +47,7 @@ SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 """
 profileInsert = f"""INSERT INTO 'profiles'(
 user_id,username)
-            VALUES (?, ?);"""
+VALUES (?, ?);"""
 profileUpdate = f"""Update 'profiles'
 SET
 user_id=?,username=?
