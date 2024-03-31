@@ -54,7 +54,9 @@ select post_id,text,price,paid,archived,created_at from stories
 storiesDrop = """
 drop table stories;
 """
-
+allStoriesCheck = """
+SELECT post_id FROM stories
+"""
 
 @wrapper.operation_wrapper
 def create_stories_table(model_id=None, username=None, conn=None):
