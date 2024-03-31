@@ -30,11 +30,11 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                     filename=placeholderObj.trunicated_filepath,
                     model_id=model_id,
                     username=username,
-                    downloaded=metadata_downloaded_helper(placeholderObj),
+                    downloaded=await metadata_downloaded_helper(placeholderObj),
                 )
             return (
                 ele.mediatype
-                if metadata_downloaded_helper(placeholderObj)
+                if await metadata_downloaded_helper(placeholderObj)
                 else "forced_skipped",
                 0,
             )
@@ -47,11 +47,11 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                     filename=placeholderObj.trunicated_filepath,
                     model_id=model_id,
                     username=username,
-                    downloaded=metadata_downloaded_helper(placeholderObj),
+                    downloaded=await metadata_downloaded_helper(placeholderObj),
                 )
             return (
                 ele.mediatype
-                if metadata_downloaded_helper(placeholderObj)
+                if await metadata_downloaded_helper(placeholderObj)
                 else "forced_skipped",
                 0,
             )
@@ -86,13 +86,14 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                 placeholderObj = await meta_data_placeholder(ele)
 
 
-def metadata_downloaded_helper(placeholderObj):
+async def metadata_downloaded_helper(placeholderObj):
+    placeholderObj=await placeholderObj.init()
     if read_args.retriveArgs().metadata == "none":
         return None
 
     elif read_args.retriveArgs().metadata == "complete":
         return 1
-    elif pathlib.Path(placeholderObj.trunicated_name).exists():
+    elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
         return 1
     return 0
 

@@ -108,13 +108,10 @@ filename,size,api_type,
 media_type,preview,linked,
 downloaded,created_at,hash,model_id)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
-
-
-mediaDupeCheck = """
+mediaDownloadSelect= """
 SELECT  
-media_id,post_id,link,directory
-filename,size,api_type,media_type
-preview,linked,downloaded,created_at,hash,model_id
+directory,filename,size
+downloaded,hash
 FROM medias where media_id=(?)
 """
 allIDCheck = """
@@ -332,7 +329,7 @@ def update_media_table_via_api_helper(
 def update_media_table_download_helper(
     media, filename=None, hashdata=None, conn=None, downloaded=None, curr=None, **kwargs
 ) -> list:
-    prevData = curr.execute(mediaDupeCheck, (media.id,)).fetchall()
+    prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetchall()
     prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
     insertData = media_exist_insert_helper(
         filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
@@ -340,6 +337,7 @@ def update_media_table_download_helper(
     insertData.append(media.id)
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
+    
 
 
 def media_exist_insert_helper(
@@ -356,10 +354,10 @@ def media_exist_insert_helper(
         directory = str(pathlib.Path(filename).parent)
         filename_path = str(pathlib.Path(filename).name)
     elif prevData:
-        directory = prevData[3]
-        filename_path = prevData[4]
-        size = prevData[5]
-        hashdata = prevData[12] or hashdata
+        directory = prevData[0]
+        filename_path = prevData[1]
+        size = prevData[2]
+        hashdata = prevData[3] or hashdata
     insertData = [
         directory,
         filename_path,
