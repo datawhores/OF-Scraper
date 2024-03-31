@@ -27,17 +27,17 @@ log = logging.getLogger("shared")
 
 messagesCreate = """
 CREATE TABLE IF NOT EXISTS messages (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-	user_id INTEGER,
-    model_id INTEGER,
-	PRIMARY KEY (id), 
-	UNIQUE (post_id,model_id)
+id INTEGER NOT NULL,
+post_id INTEGER NOT NULL,
+text VARCHAR,
+price INTEGER,
+paid INTEGER,
+archived BOOLEAN,
+created_at TIMESTAMP,
+user_id INTEGER,
+model_id INTEGER,
+PRIMARY KEY (id),
+UNIQUE (post_id,model_id)
 )
 """
 messagesInsert = f"""INSERT INTO 'messages'(

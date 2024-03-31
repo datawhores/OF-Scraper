@@ -17,7 +17,6 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.db.queries as queries
 from ofscraper.utils.context.run_async import run
 
 console = Console()

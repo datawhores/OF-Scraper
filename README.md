@@ -66,9 +66,9 @@ For detailed instructions on:
 Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
 
 ## Private Reports
+
 A ticket can be created in the ticket channel
 only you and admins have access to ticket discussions
-
 
 # Feature Requests
 
