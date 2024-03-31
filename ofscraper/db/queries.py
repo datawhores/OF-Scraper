@@ -14,37 +14,12 @@ CREATE TABLE IF NOT EXISTS medias (
 	downloaded INTEGER, 
 	created_at TIMESTAMP, 
 	hash VARCHAR,
+    model_id INTEGER,
 	PRIMARY KEY (id), 
-	UNIQUE (media_id)
+	UNIQUE (media_id,model_id)
 );"""
 
-messagesCreate = """
-CREATE TABLE IF NOT EXISTS messages (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-	user_id INTEGER, 
-	PRIMARY KEY (id), 
-	UNIQUE (post_id)
-)
-"""
-postCreate = """
-CREATE TABLE IF NOT EXISTS posts (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-	PRIMARY KEY (id), 
-	UNIQUE (post_id)
-)
-"""
+
 otherCreate = """
 CREATE TABLE IF NOT EXISTS others (
 	id INTEGER NOT NULL,  
@@ -54,8 +29,9 @@ CREATE TABLE IF NOT EXISTS others (
 	paid INTEGER, 
 	archived BOOLEAN, 
 	created_at TIMESTAMP, 
+	model_id INTEGER, 
 	PRIMARY KEY (id), 
-	UNIQUE (post_id)
+	UNIQUE (post_id,model_id)
 )
 """
 productCreate = """
@@ -66,18 +42,28 @@ CREATE TABLE IF NOT EXISTS products (
 	price INTEGER, 
 	paid INTEGER, 
 	archived BOOLEAN, 
-	created_at TIMESTAMP, title VARCHAR, 
+	created_at TIMESTAMP,
+    title VARCHAR, 
+    model_id INTEGER, 
 	PRIMARY KEY (id), 
-	UNIQUE (post_id)
+	UNIQUE (post_id,model_id)
 )
 """
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
 	id INTEGER NOT NULL, 
 	user_id INTEGER NOT NULL, 
-	username VARCHAR NOT NULL, 
-	PRIMARY KEY (id), 
-	UNIQUE (username)
+	username VARCHAR NOT NULL,
+	PRIMARY KEY (id)
+)
+"""
+
+modelsCreate = """
+CREATE TABLE IF NOT EXISTS models (
+	id INTEGER NOT NULL,
+	model_id INTEGER NOT NULL,
+	UNIQUE (model_id)
+	PRIMARY KEY (id)
 )
 """
 
@@ -90,45 +76,39 @@ CREATE TABLE IF NOT EXISTS stories (
 	paid INTEGER, 
 	archived BOOLEAN, 
 	created_at TIMESTAMP, 
+    model_id INTEGER, 
 	PRIMARY KEY (id), 
-	UNIQUE (post_id)
+	UNIQUE (post_id,model_id)
 )
 """
 
-messagesInsert = f"""INSERT INTO 'messages'(
-post_id, text,price,paid,archived,
-created_at,user_id)
-            VALUES (?, ?,?,?,?,?,?);"""
-
-messageDupeCheck = """
-SELECT * FROM messages where post_id=(?)
+schemaCreate = """
+CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value TEXT);
 """
 
-postInsert = f"""INSERT INTO 'posts'(
-post_id, text,price,paid,archived,
-created_at)
-            VALUES (?, ?,?,?,?,?);"""
-
-postUpdate = f"""UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?
-WHERE post_id = ?;"""
-
-
-postDupeCheck = """
-SELECT * FROM posts where post_id=(?)
-"""
 
 postNormalCheck = """
 SELECT post_id FROM posts where archived=False
 """
 
-storiesInsert = f"""INSERT INTO 'stories'(
-post_id, text,price,paid,archived,
-created_at)
-            VALUES (?, ?,?,?,?,?);"""
 
-storiesDupeCheck = """
-SELECT * FROM stories where post_id=(?)
+storiesInsert = f"""INSERT INTO 'stories'(
+post_id, text,price,paid,archived,created_at,model_id)
+            VALUES (?, ?,?,?,?,?,?);"""
+
+
+storiesUpdate = f"""UPDATE stories
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
+WHERE post_id = ?;"""
+
+
+storiesAddColumnID = """
+ALTER TABLE stories ADD COLUMN model_id INTEGER;
+"""
+
+
+storiesALLTransition = """
+select post_id,text,price,paid,archived,created_at from stories
 """
 
 allIDCheck = """
@@ -143,44 +123,57 @@ allPOSTCheck = """
 SELECT post_id FROM posts
 """
 
-allMessagesCheck = """
-SELECT post_id FROM messages
-"""
 
 allStoriesCheck = """
 SELECT post_id FROM stories
 """
 
+storiesDrop = """
+drop table stories;
+"""
+
 mediaInsert = f"""INSERT INTO 'medias'(
-media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked,downloaded,created_at,hash)
-            VALUES (?, ?,?,?,?,?,?,?,?,?,?,?,?);"""
+media_id,post_id,link,api_type,media_type,preview,linked,created_at,hash,model_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?);"""
 
 mediaDupeCheck = """
 SELECT * FROM medias where media_id=(?)
 """
 
 getTimelineMedia = """
-SELECT * FROM medias where api_type=('Timeline')
+SELECT * FROM medias where api_type=('Timeline') and model_id=(?)
 """
 
 getArchivedMedia = """
-SELECT * FROM medias where api_type=('Archived')
+SELECT * FROM medias where api_type=('Archived') and model_id=(?)
 """
 
 getMessagesMedia = """
-SELECT * FROM medias where api_type=('Message') or api_type=('Messages')
+SELECT * FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 """
 
-mediaUpdate = f"""Update 'medias'
+
+mediaUpdateAPI = f"""Update 'medias'
 SET
-media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?,hash=?
+media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,model_id=?
 WHERE media_id=(?);"""
 
-mediaTypeUpdate = f"""Update 'medias'
+
+mediaUpdateDownload = f"""Update 'medias'
 SET
-api_type=?,media_type=?
+directory=?,filename=?,size=?,downloaded=?,hash=?
 WHERE media_id=(?);"""
 
+
+mediaALLTransition = """
+SELECT media_id,post_id,link,directory,filename,size,api_type,
+media_type,preview,linked,downloaded,created_at,hash FROM medias;
+"""
+
+
+mediaDrop = """
+drop table medias;
+"""
 profileDupeCheck = """
 SELECT * FROM profiles where user_id=(?)
 """
@@ -197,42 +190,25 @@ SET
 user_id=?,username=?
 WHERE user_id=(?);"""
 
-labelsCreate = """
-CREATE TABLE IF NOT EXISTS labels (
-	id INTEGER NOT NULL, 
-	name VARCHAR, 
-	type VARCHAR, 
-	post_id INTEGER, 
-	PRIMARY KEY (id, post_id)
-)
+
+modelDupeCheck = """
+SELECT * FROM models where model_id=(?)
 """
 
-labelDupeCheck = """
-SELECT * FROM labels WHERE id=? AND post_id=?
+modelInsert = f"""
+INSERT INTO models (model_id)
+VALUES (?);
 """
 
-labelInsert = f"""INSERT INTO 'labels'(
-id, name, type, post_id)
-VALUES (?, ?,?,?);"""
 
-labelID = """
-SELECT id,post_id  FROM  labels
-"""
-
-timelinePostDates = """
-SELECT created_at FROM posts where archived=(0)
-"""
-archivedPostInfo = """
-SELECT created_at,post_id FROM posts where archived=(1)
-"""
-
-messagesData = """
-SELECT created_at,post_id FROM messages
-"""
-
-mediaAddColumn = """
+mediaAddColumnHash = """
 ALTER TABLE medias ADD COLUMN hash VARCHAR;
 """
+
+mediaAddColumnID = """
+ALTER TABLE medias ADD COLUMN model_id INTEGER;
+"""
+
 
 mediaDupeHashesMedia = """
 WITH x AS (
@@ -265,3 +241,60 @@ SELECT filename
 FROM medias
 where hash=(?)
 """
+
+
+profilesALL = """
+select user_id,username from profiles
+"""
+profilesDrop = """
+DROP TABLE profiles;
+"""
+
+otherAddColumnID = """
+ALTER Table others ADD COLUMN model_id INTEGER;
+"""
+
+productsAddColumnID = """
+ALTER Table products ADD COLUMN model_id INTEGER;
+"""
+
+
+schemaAll = """
+SELECT flag_name FROM schema_flags WHERE flag_value = 1;
+"""
+
+schemaInsert = """
+INSERT INTO 'schema_flags'( flag_name,flag_value)
+VALUES (?,?)
+"""
+
+
+othersALLTransition = """
+SELECT text,price,paid,archived,created_at FROM others;
+"""
+
+
+othersDrop = """
+drop table others;
+"""
+
+
+othersInsert = f"""INSERT INTO 'others'(
+post_id, text,price,paid,archived,
+created_at,model_id)
+VALUES (?, ?,?,?,?,?,?);"""
+
+
+productsALLTransition = """
+SELECT text,price,paid,archived,created_at FROM products;
+"""
+
+
+productsDrop = """
+drop table products;
+"""
+
+productsInsert = f"""INSERT INTO 'products'(
+post_id, text,price,paid,archived,
+created_at,title,model_id)
+VALUES (?, ?,?,?,?,?,?,?);"""

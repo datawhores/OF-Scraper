@@ -49,180 +49,22 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     responseArray = []
     page_count = 0
     # require a min num of posts to be returned
-    min_posts = 40
     job_progress = progress_utils.messages_progress
     overall_progress = progress_utils.overall_progress
 
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
+    before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
+    after = get_after(model_id, username, forced_after)
     oldmessages = (
-        operations.get_messages_progress_data(model_id=model_id, username=username)
+        operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
-    log.trace(
-        "oldmessage {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
-            )
-        )
+
+    filteredArray = get_filterArray(after, before, oldmessages)
+    splitArrays = get_split_array(filteredArray)
+    tasks = get_tasks(
+        splitArrays, filteredArray, oldmessages, model_id, job_progress, c
     )
-    oldmessages = list(filter(lambda x: (x.get("date")) != None, oldmessages))
-    log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-
-    oldmessages = sorted(
-        oldmessages,
-        key=lambda x: arrow.get(x.get("date")).float_timestamp,
-        reverse=True,
-    )
-    oldmessages = [{"date": arrow.now().float_timestamp, "id": None}] + oldmessages
-
-    before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = get_after(model_id, username, forced_after)
-
-    log.debug(f"Messages after = {after}")
-
-    log.debug(f"Messages before = {before}")
-
-    if after > before:
-        return []
-    if len(oldmessages) <= 2:
-        filteredArray = oldmessages
-    else:
-        i = None
-        j = None
-
-        if before >= oldmessages[1].get("date"):
-            i = 0
-        elif before <= oldmessages[-1].get("date"):
-            i = len(oldmessages) - 2
-        else:
-            i = list(x.get("date") > before for x in oldmessages).index(False) - 1
-
-        if after >= oldmessages[1].get("date"):
-            j = 2
-        elif after < oldmessages[-1].get("date"):
-            j = len(oldmessages)
-        else:
-            temp = list(x.get("date") < after for x in oldmessages)
-            j = temp.index(True) if True in temp else len(oldmessages)
-        j = min(max(i + 2, j), len(oldmessages))
-        i = max(min(j - 2, i), 0)
-        log.debug(f"Messages found i=={i} length=={len(oldmessages)}")
-        log.debug(f"Messages found j=={j} length=={len(oldmessages)}")
-        filteredArray = oldmessages[i:j]
-
-    log.info(
-        f"""
-Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
-[yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all messages + download/re-download of all files[/yellow]
-
-        """
-    )
-
-    IDArray = (
-        list(map(lambda x: x.get("id"), filteredArray))
-        if len(filteredArray) > 0
-        else []
-    )
-    postedAtArray = (
-        list(map(lambda x: x.get("date"), filteredArray))
-        if len(filteredArray) > 0
-        else []
-    )
-
-    if len(IDArray) <= 2:
-        tasks.append(
-            asyncio.create_task(
-                scrape_messages(c, model_id, job_progress=job_progress, message_id=None)
-            )
-        )
-
-    elif len(IDArray) >= min_posts + 1:
-        splitArraysID = [
-            IDArray[i : i + min_posts] for i in range(0, len(IDArray), min_posts)
-        ]
-        splitArraysTime = [
-            postedAtArray[i : i + min_posts]
-            for i in range(0, len(postedAtArray), min_posts)
-        ]
-
-        # use the previous split for message_id
-        if i == 0:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        message_id=None,
-                        required_ids=set(splitArraysTime[0]),
-                    )
-                )
-            )
-        else:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        message_id=splitArraysID[0][0],
-                        required_ids=set(splitArraysTime[0]),
-                    )
-                )
-            )
-        if len(IDArray) >= (min_posts * 2) + 1:
-            [
-                tasks.append(
-                    asyncio.create_task(
-                        scrape_messages(
-                            c,
-                            model_id,
-                            job_progress=job_progress,
-                            required_ids=set(splitArraysTime[i]),
-                            message_id=splitArraysID[i - 1][-1],
-                        )
-                    )
-                )
-                for i in range(1, len(splitArraysID) - 1)
-            ]
-            # keeping grabbing until nothing left
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        message_id=splitArraysID[-2][-1],
-                    )
-                )
-            )
-        else:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        job_progress=job_progress,
-                        message_id=splitArraysID[-1][-1],
-                    )
-                )
-            )
-    else:
-        tasks.append(
-            asyncio.create_task(
-                scrape_messages(
-                    c,
-                    model_id,
-                    job_progress=job_progress,
-                    message_id=IDArray[0],
-                    required_ids=set(postedAtArray[1:]),
-                )
-            )
-        )
 
     page_task = overall_progress.add_task(
         f" Message Content Pages Progress: {page_count}", visible=True
@@ -283,16 +125,10 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     sem = sems.get_req_sem()
     global after
     job_progress = None
-    tasks = []
     responseArray = []
-    # require a min num of posts to be returned
-    min_posts = 40
 
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     oldmessages = (
-        operations.get_messages_progress_data(model_id=model_id, username=username)
+        operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -303,15 +139,6 @@ async def get_messages(model_id, username, forced_after=None, c=None):
             )
         )
     )
-    oldmessages = list(filter(lambda x: (x.get("date")) != None, oldmessages))
-    log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-
-    oldmessages = sorted(
-        oldmessages,
-        key=lambda x: arrow.get(x.get("date")).float_timestamp,
-        reverse=True,
-    )
-    oldmessages = [{"date": arrow.now().float_timestamp, "id": None}] + oldmessages
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = get_after(model_id, username, forced_after)
@@ -320,139 +147,20 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 
     log.debug(f"Messages before = {before}")
 
-    if after > before:
-        return []
-    if len(oldmessages) <= 2:
-        filteredArray = oldmessages
-    else:
-        i = None
-        j = None
-
-        if before >= oldmessages[1].get("date"):
-            i = 0
-        elif before <= oldmessages[-1].get("date"):
-            i = len(oldmessages) - 2
-        else:
-            i = list(x.get("date") > before for x in oldmessages).index(False) - 1
-
-        if after >= oldmessages[1].get("date"):
-            j = 2
-        elif after < oldmessages[-1].get("date"):
-            j = len(oldmessages)
-        else:
-            temp = list(x.get("date") < after for x in oldmessages)
-            j = temp.index(True) if True in temp else len(oldmessages)
-        j = min(max(i + 2, j), len(oldmessages))
-        i = max(min(j - 2, i), 0)
-        log.debug(f"Messages found i=={i} length=={len(oldmessages)}")
-        log.debug(f"Messages found j=={j} length=={len(oldmessages)}")
-        filteredArray = oldmessages[i:j]
-
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM.DD')}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all messages + download/re-download of all files[/yellow]
 
         """
     )
 
-    IDArray = (
-        list(map(lambda x: x.get("id"), filteredArray))
-        if len(filteredArray) > 0
-        else []
+    filteredArray = get_filterArray(after, before, oldmessages)
+    splitArrays = get_split_array(filteredArray)
+    tasks = get_tasks(
+        splitArrays, filteredArray, oldmessages, model_id, job_progress, c
     )
-    postedAtArray = (
-        list(map(lambda x: x.get("date"), filteredArray))
-        if len(filteredArray) > 0
-        else []
-    )
-
-    if len(IDArray) <= 2:
-        tasks.append(
-            asyncio.create_task(
-                scrape_messages(c, model_id, job_progress=job_progress, message_id=None)
-            )
-        )
-
-    elif len(IDArray) >= min_posts + 1:
-        splitArraysID = [
-            IDArray[i : i + min_posts] for i in range(0, len(IDArray), min_posts)
-        ]
-        splitArraysTime = [
-            postedAtArray[i : i + min_posts]
-            for i in range(0, len(postedAtArray), min_posts)
-        ]
-
-        # use the previous split for message_id
-        if i == 0:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        message_id=None,
-                        required_ids=set(splitArraysTime[0]),
-                    )
-                )
-            )
-        else:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        message_id=splitArraysID[0][0],
-                        required_ids=set(splitArraysTime[0]),
-                    )
-                )
-            )
-        if len(IDArray) >= (min_posts * 2) + 1:
-            [
-                tasks.append(
-                    asyncio.create_task(
-                        scrape_messages(
-                            c,
-                            model_id,
-                            required_ids=set(splitArraysTime[i]),
-                            message_id=splitArraysID[i - 1][-1],
-                        )
-                    )
-                )
-                for i in range(1, len(splitArraysID) - 1)
-            ]
-            # keeping grabbing until nothing left
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        message_id=splitArraysID[-2][-1],
-                    )
-                )
-            )
-        else:
-            tasks.append(
-                asyncio.create_task(
-                    scrape_messages(
-                        c,
-                        model_id,
-                        message_id=splitArraysID[-1][-1],
-                    )
-                )
-            )
-    else:
-        tasks.append(
-            asyncio.create_task(
-                scrape_messages(
-                    c,
-                    model_id,
-                    message_id=IDArray[0],
-                    required_ids=set(postedAtArray[1:]),
-                )
-            )
-        )
-
     while bool(tasks):
         new_tasks = []
         try:
@@ -494,6 +202,144 @@ Setting initial message scan date for {username} to {arrow.get(after).format('YY
     )
     set_check(unduped, model_id, after)
     return list(unduped.values())
+
+
+def get_filterArray(after, before, oldmessages):
+    oldmessages = list(filter(lambda x: (x.get("date")) != None, oldmessages))
+    log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
+    oldmessages = sorted(
+        oldmessages,
+        key=lambda x: arrow.get(x.get("date")).float_timestamp,
+        reverse=True,
+    )
+    if after > before:
+        return []
+    elif len(oldmessages) <= 2:
+        return oldmessages
+    else:
+        return oldmessages[get_i(oldmessages, before) : get_j(oldmessages, after)]
+
+
+def get_i(oldmessages, before):
+    """
+    iterate through posts until a date less then or equal
+    to before , set index to -1 this point
+    """
+    if before >= oldmessages[1].get("date"):
+        return 0
+    if before <= oldmessages[-1].get("date"):
+        return len(oldmessages) - 2
+    # Use a generator expression for efficiency
+    return max(
+        next(
+            index - 1
+            for index, message in enumerate(oldmessages)
+            if message.get("date") <= before
+        ),
+        0,
+    )
+
+
+def get_j(oldmessages, after):
+    """
+    iterate through posts until a date less then or equal
+    to after , set index to +1 this point
+    """
+    if after >= oldmessages[0].get("date"):
+        return 0
+    if after < oldmessages[-1].get("date"):
+        return len(oldmessages) - 1
+    return min(
+        next(
+            index + 1
+            for index, message in enumerate(oldmessages)
+            if message.get("date") <= after
+        ),
+        len(oldmessages) - 1,
+    )
+
+
+def get_split_array(filteredArray):
+    min_posts = 50
+    return [
+        filteredArray[i : i + min_posts]
+        for i in range(0, len(filteredArray), min_posts)
+    ]
+
+
+def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c):
+    tasks = []
+
+    if len(splitArrays) > 2:
+        tasks.append(
+            asyncio.create_task(
+                scrape_messages(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    message_id=splitArrays[0][0].get("id")
+                    if len(filteredArray) == len(oldmessages)
+                    else None,
+                    required_ids=set([ele.get("date") for ele in splitArrays[0]]),
+                    offset=True,
+                )
+            )
+        )
+        [
+            tasks.append(
+                asyncio.create_task(
+                    scrape_messages(
+                        c,
+                        model_id,
+                        job_progress=job_progress,
+                        message_id=splitArrays[i - 1][-1].get("id"),
+                        required_ids=set([ele.get("date") for ele in splitArrays[i]]),
+                    )
+                )
+            )
+            for i in range(1, len(splitArrays) - 1)
+        ]
+        # keeping grabbing until nothing left
+        tasks.append(
+            asyncio.create_task(
+                scrape_messages(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    message_id=splitArrays[-2][-1].get("id"),
+                    required_ids=set([ele.get("date") for ele in splitArrays[-1]]),
+                )
+            )
+        )
+    # use the first split if less then 3
+    elif len(splitArrays) > 0:
+        tasks.append(
+            asyncio.create_task(
+                scrape_messages(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    required_ids=None,
+                    message_id=splitArrays[0][0].get("id")
+                    if len(filteredArray) == len(oldmessages)
+                    else None,
+                )
+            )
+        )
+    # set init message to none
+    else:
+        tasks.append(
+            asyncio.create_task(
+                scrape_messages(
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    message_id=None,
+                    required_ids=None,
+                )
+            )
+        )
+    return tasks
 
 
 def set_check(unduped, model_id, after):
@@ -640,7 +486,9 @@ async def scrape_messages(
                 raise E
             finally:
                 sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
+                job_progress.remove_task(
+                    task
+                ) if job_progress and task != None else None
             return messages, new_tasks
 
 
@@ -678,11 +526,11 @@ def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all messages required to make sure content is not missing"
         )
         return 0
-    curr = operations.get_messages_progress_media(model_id=model_id, username=username)
+    curr = operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x[10] != 1, curr))
+    missing_items = list(filter(lambda x: x[11] != 1, curr))
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug(

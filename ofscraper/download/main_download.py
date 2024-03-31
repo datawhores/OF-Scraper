@@ -55,11 +55,10 @@ from ofscraper.download.common.common import (
     set_profile_cache_helper,
     set_time,
     size_checker,
-    update_total,
 )
 
 
-async def main_download(c, ele, username, model_id, progress):
+async def main_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     # total may be none if no .part file
@@ -78,7 +77,7 @@ async def main_download(c, ele, username, model_id, progress):
     # special case for zero byte files
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":
-            await operations.update_media_table(
+            await operations.download_media_update(
                 ele,
                 filename=None,
                 model_id=model_id,
@@ -112,24 +111,23 @@ async def handle_result(result, ele, username, model_id):
         )
 
     if ele.id:
-        await operations.update_media_table(
+        await operations.download_media_update(
             ele,
             filename=path_to_file,
             model_id=model_id,
             username=username,
             downloaded=True,
-            hash=await common.get_hash(path_to_file, mediatype=ele.mediatype),
+            hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
     return ele.mediatype, total
 
 
-async def main_download_downloader(c, ele, progress):
+async def main_download_downloader(c, ele, job_progress):
     downloadspace(mediatype=ele.mediatype)
-    tempholderObj = placeholder.tempFilePlaceholder(
+    tempholderObj = await placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
-    )
-    await tempholderObj.init()
+    ).init()
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
         wait=wait_random(
@@ -149,10 +147,10 @@ async def main_download_downloader(c, ele, progress):
                 ) if common_globals.attempt.get() > 1 else None
                 if data:
                     return await main_data_handler(
-                        data, c, tempholderObj, ele, progress
+                        data, c, tempholderObj, ele, job_progress
                     )
                 else:
-                    return await alt_data_handler(c, tempholderObj, ele, progress)
+                    return await alt_data_handler(c, tempholderObj, ele, job_progress)
             except OSError as E:
                 await asyncio.sleep(1)
                 common_globals.log.debug(
@@ -187,9 +185,8 @@ async def alt_data_handler(c, tempholderObj, ele, job_progress):
 async def main_data_handler(data, c, tempholderObj, ele, job_progress):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
-    placeholderObj = placeholder.Placeholders(ele, content_type)
+    placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-    await placeholderObj.init()
     # other
     if await check_forced_skip(ele, total) == 0:
         path_to_file_logger(placeholderObj, ele)
@@ -241,58 +238,65 @@ async def main_download_sendreq(
 async def send_req_inner(
     c, ele, tempholderObj, job_progress, placeholderObj=None, total=None
 ):
-    resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
-    headers = (
-        None
-        if resume_size == 0 or not total
-        else {"Range": f"bytes={resume_size}-{total}"}
-    )
-    await update_total(total) if total else None
-    async with sem_wrapper(common_globals.req_sem):
-        async with c.requests(url=ele.url, headers=headers)() as r:
-            if r.ok:
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
-                    partial(
-                        cache.set,
-                        f"{ele.id}_headers",
-                        {
-                            "content-length": r.headers.get("content-length"),
-                            "content-type": r.headers.get("content-type"),
-                        },
-                    ),
-                )
-                new_total = int(r.headers["content-length"])
-                await update_total(new_total) if not total else None
-                total = new_total
-                content_type = r.headers.get("content-type").split("/")[-1]
-                content_type = content_type or get_unknown_content_type(ele)
-                if not placeholderObj:
-                    placeholderObj = placeholder.Placeholders(ele, content_type)
-                    await placeholderObj.init()
-                path_to_file_logger(placeholderObj, ele)
-                if await check_forced_skip(ele, total):
-                    total = 0
-                elif total == resume_size:
-                    None
-                else:
-                    await download_fileobject_writer(
-                        r, job_progress, ele, tempholderObj, placeholderObj, total
+    old_total = total
+    try:
+        await common.total_change_helper(None, total)
+        resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
+        headers = (
+            None
+            if resume_size == 0 or not total
+            else {"Range": f"bytes={resume_size}-{total}"}
+        )
+        async with sem_wrapper(common_globals.req_sem):
+            async with c.requests(url=ele.url, headers=headers)() as r:
+                if r.ok:
+                    await asyncio.get_event_loop().run_in_executor(
+                        common_globals.cache_thread,
+                        partial(
+                            cache.set,
+                            f"{ele.id}_headers",
+                            {
+                                "content-length": r.headers.get("content-length"),
+                                "content-type": r.headers.get("content-type"),
+                            },
+                        ),
                     )
-            else:
-                common_globals.log.debug(
-                    f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
-                )
-                common_globals.log.debug(
-                    f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}"
-                )
-                common_globals.log.debug(
-                    f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}"
-                )
-                r.raise_for_status()
+                    new_total = int(r.headers["content-length"])
+                    content_type = r.headers.get("content-type").split("/")[-1]
+                    content_type = content_type or get_unknown_content_type(ele)
+                    if not placeholderObj:
+                        placeholderObj = await placeholder.Placeholders(
+                            ele, content_type
+                        ).init()
+                    path_to_file_logger(placeholderObj, ele)
+                    if await check_forced_skip(ele, new_total):
+                        total = 0
+                        await common.total_change_helper(old_total, total)
+                    elif total == resume_size:
+                        None
+                    else:
+                        total = new_total
+                        await common.total_change_helper(old_total, total)
+                        await download_fileobject_writer(
+                            r, job_progress, ele, tempholderObj, placeholderObj, total
+                        )
+                else:
+                    common_globals.log.debug(
+                        f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
+                    )
+                    common_globals.log.debug(
+                        f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}"
+                    )
+                    common_globals.log.debug(
+                        f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}"
+                    )
+                    r.raise_for_status()
 
-    await size_checker(tempholderObj.tempfilepath, ele, total)
-    return (total, tempholderObj.tempfilepath, placeholderObj)
+        await size_checker(tempholderObj.tempfilepath, ele, total)
+        return (total, tempholderObj.tempfilepath, placeholderObj)
+    except Exception as E:
+        await common.total_change_helper(None, -(total or 0))
+        raise E
 
 
 async def download_fileobject_writer(
@@ -300,7 +304,7 @@ async def download_fileobject_writer(
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
     downloadprogress = settings.get_download_bars()
-    task1 = progress.add_task(
+    task1 = job_progress.add_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
@@ -322,7 +326,7 @@ async def download_fileobject_writer(
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
-                        progress.update,
+                        job_progress.update,
                         task1,
                         completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()
@@ -332,7 +336,6 @@ async def download_fileobject_writer(
                 )
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
-        await update_total(-total)
         raise E
     finally:
         # Close file if needed
@@ -341,6 +344,6 @@ async def download_fileobject_writer(
         except Exception:
             None
         try:
-            progress.remove_task(task1)
+            job_progress.remove_task(task1)
         except Exception:
             None

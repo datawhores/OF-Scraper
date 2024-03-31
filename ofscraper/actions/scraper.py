@@ -54,16 +54,11 @@ async def process_messages(model_id, username, c):
             messages_ = list(
                 map(lambda x: posts_.Post(x, model_id, username), messages_)
             )
-            curr = set(
-                operations.get_all_messages_ids(model_id=model_id, username=username)
+            await operations.make_messages_table_changes(
+                messages_,
+                model_id=model_id,
+                username=username,
             )
-            [
-                operations.write_messages_table(
-                    list(filter(lambda x: x.id not in curr, messages_)),
-                    model_id=model_id,
-                    username=username,
-                )
-            ]
 
             log.debug(
                 f"[bold]Messages media count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}"
@@ -72,14 +67,6 @@ async def process_messages(model_id, username, c):
             output = []
             [output.extend(message.media) for message in messages_]
             log.debug(f"[bold]Messages media count[/bold] {len(output)}")
-
-            await operations.batch_mediainsert(
-                output,
-                operations.write_media_table_batch,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
             # Update after database
             cache.set(
                 f"{model_id}_scrape_messages",
@@ -107,7 +94,7 @@ async def process_paid_post(model_id, username, c):
                     paid_content,
                 )
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 paid_content,
                 model_id=model_id,
                 username=username,
@@ -121,7 +108,6 @@ async def process_paid_post(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -152,11 +138,8 @@ async def process_stories(model_id, username, c):
                     stories,
                 )
             )
-            curr = set(
-                operations.get_all_stories_ids(model_id=model_id, username=username)
-            )
-            operations.write_stories_table(
-                list(filter(lambda x: x.id not in curr, stories)),
+            operations.make_stories_tables_changes(
+                stories,
                 model_id=model_id,
                 username=username,
             )
@@ -168,7 +151,6 @@ async def process_stories(model_id, username, c):
             [output.extend(stories.media) for stories in stories]
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -196,11 +178,8 @@ async def process_highlights(model_id, username, c):
                     highlights_,
                 )
             )
-            curr = set(
-                operations.get_all_stories_ids(model_id=model_id, username=username)
-            )
-            operations.write_stories_table(
-                list(filter(lambda x: x.id not in curr, highlights_)),
+            operations.make_stories_tables_changes(
+                highlights_,
                 model_id=model_id,
                 username=username,
             )
@@ -212,7 +191,6 @@ async def process_highlights(model_id, username, c):
             [output.extend(stories.media) for stories in highlights_]
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -243,12 +221,11 @@ async def process_timeline_posts(model_id, username, c):
                     timeline_posts,
                 )
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 timeline_posts,
                 model_id=model_id,
                 username=username,
             )
-            
             log.debug(
                 f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}"
             )
@@ -259,14 +236,6 @@ async def process_timeline_posts(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
-            await operations.batch_mediainsert(
-                output,
-                operations.update_response_media_table,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -299,8 +268,7 @@ async def process_archived_posts(model_id, username, c):
                 )
             )
 
-
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 archived_posts,
                 model_id=model_id,
                 username=username,
@@ -316,7 +284,6 @@ async def process_archived_posts(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -347,7 +314,7 @@ async def process_pinned_posts(model_id, username, c):
                     lambda x: posts_.Post(x, model_id, username, "pinned"), pinned_posts
                 )
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 pinned_posts,
                 model_id=model_id,
                 username=username,
@@ -363,14 +330,6 @@ async def process_pinned_posts(model_id, username, c):
 
             await operations.batch_mediainsert(
                 output,
-                operations.write_media_table_batch,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
-            await operations.batch_mediainsert(
-                output,
-                operations.update_response_media_table,
                 model_id=model_id,
                 username=username,
                 downloaded=False,
@@ -422,7 +381,7 @@ async def process_profile(username, c) -> list:
 
 
 @free.space_checker
-def process_all_paid():
+async def process_all_paid():
     with stdout.lowstdout():
         paid_content = paid.get_all_paid_posts()
         user_dict = {}
@@ -466,7 +425,7 @@ def process_all_paid():
             for ele in all_posts:
                 new_dict[ele.id] = ele
             new_posts = new_dict.values()
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 new_posts,
                 model_id=model_id,
                 username=username,
@@ -560,8 +519,7 @@ async def process_areas(ele, model_id) -> list:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             output = []
-            group = progress_utils.get_api_progress_Group()
-            with Live(group, console=console_.get_shared_console()):
+            with progress_utils.setup_api_progress_live():
                 medias, posts = await process_task(model_id, username, ele)
                 output.extend(medias)
         return filters.filterMedia(output), filters.filterPost(posts)

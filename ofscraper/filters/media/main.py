@@ -399,23 +399,6 @@ def filterPost(post):
     log.debug(
         f"filter {count}->  all post post excluded text filter count: {len(post)}"
     )
-    post = helpers.download_type_filter(post)
-    count += 1
-    log.trace(
-        "\n\n\n".join(
-            list(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  all download type filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            )
-        )
-    )
-    log.debug(f"filter {count}->  all post download type filter count: {len(post)}")
 
     post = helpers.mass_msg_filter(post)
     count += 1

@@ -44,7 +44,7 @@ from ofscraper.utils.progress import setupDownloadProgressBar
 @run
 async def process_dicts(username, model_id, medialist):
     with stdout.lowstdout():
-        progress_group, overall_job_progress, job_progress = setupDownloadProgressBar()
+        progress_group, overall_progress, job_progress = setupDownloadProgressBar()
         # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
         common_globals.reset_globals()
 

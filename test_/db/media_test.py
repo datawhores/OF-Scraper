@@ -62,7 +62,7 @@ def test_media_insert(mocker):
                     "ofscraper.db.operations.FileLock.release", return_value=True
                 )
                 create_media_table(11111, "test")
-                update_media_table(
+                update_media_table_download(
                     Post(TIMELINE_EXAMPLE, model_id="11111", username="test").media[0],
                     d.name,
                     model_id="11111",
@@ -83,4 +83,4 @@ def test_media_insert(mocker):
 #                 mocker.patch("ofscraper.classes.placeholder.Placeholders.databasePathCopyHelper",return_value=pathlib.Path(p.name))
 #                 mocker.patch("ofscraper.db.operations.log",new_callabe=a)
 #                 create_media_table(11111,"test")
-#                 update_media_table(Post(TIMELINE_EXAMPLE,"11111","test3").media[0],d.name,"11111","test32")
+#                 update_media_table_download(Post(TIMELINE_EXAMPLE,"11111","test3").media[0],d.name,"11111","test32")

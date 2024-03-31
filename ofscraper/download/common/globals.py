@@ -45,12 +45,6 @@ def main_globals():
     data = 0
     global total_data
     total_data = 0
-    global desc
-    desc = (
-        "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})"
-        if not read_args.retriveArgs().metadata
-        else "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} metadata unchanged, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})"
-    )
     global count_lock
     count_lock = aioprocessing.AioLock()
     global chunk_lock

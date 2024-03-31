@@ -47,8 +47,7 @@ async def get_text_process(ele, dupe=None):
         new_ele = copy.deepcopy(ele)
         new_ele.mediatype = "text"
 
-        placeholderObj = placeholder.Textholders(new_ele, "txt")
-        await placeholderObj.init()
+        placeholderObj = await placeholder.Textholders(new_ele, "txt").init()
         if pathlib.Path(placeholderObj.filepath).exists() and not dupe:
             return "exists"
         wrapped_text = textwrap.wrap(
