@@ -32,7 +32,7 @@ console = Console()
 log = logging.getLogger("shared")
 
 
-async def create_tables(model_id, username):
+def create_tables(model_id, username):
     create_models_table(model_id=model_id, username=username)
     create_profile_table(model_id=model_id, username=username)
     create_post_table(model_id=model_id, username=username)
