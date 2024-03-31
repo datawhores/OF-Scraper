@@ -110,7 +110,7 @@ async def metadata_helper(c, ele, placeholderObj=None):
         if ele.mpd
         else None
     )
-    common_globals.attempt.set(attempt.get(0) + 1)
+    common_globals.attempt.set(common_globals.attempt.get() + 1)
     common_globals.log.debug(
         f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}]  Getting data for metadata insert"
     )
