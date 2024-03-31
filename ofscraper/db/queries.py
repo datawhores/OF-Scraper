@@ -19,35 +19,7 @@ CREATE TABLE IF NOT EXISTS medias (
 	UNIQUE (media_id,model_id)
 );"""
 
-messagesCreate = """
-CREATE TABLE IF NOT EXISTS messages (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-	user_id INTEGER,
-    model_id INTEGER,
-	PRIMARY KEY (id), 
-	UNIQUE (post_id,model_id)
-)
-"""
-postCreate = """
-CREATE TABLE IF NOT EXISTS posts (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-    model_id INTEGER, 
-	PRIMARY KEY (id), 
-	UNIQUE (post_id,model_id)
-)
-"""
+
 otherCreate = """
 CREATE TABLE IF NOT EXISTS others (
 	id INTEGER NOT NULL,  
@@ -115,53 +87,11 @@ CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value 
 """
 
 
-messagesInsert = f"""INSERT INTO 'messages'(
-post_id, text,price,paid,archived,
-created_at,user_id,model_id)
-            VALUES (?, ?,?,?,?,?,?,?);"""
-
-
-messagesUpdate = f"""UPDATE messages
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
-WHERE post_id = ?;"""
-
-
-messagesAddColumnID = """
-ALTER TABLE messages ADD COLUMN model_id INTEGER;
-"""
-
-messagesALLTransition = """
-select post_id,text,price,paid,archived,created_at,user_id from messages
-"""
-
-
-messagesDrop = """
-drop table messages;
-"""
-
-postInsert = f"""INSERT INTO 'posts'(
-post_id, text,price,paid,archived,created_at,model_id)
-VALUES (?, ?,?,?,?,?,?);"""
-
-
-postUpdate = f"""UPDATE posts
-SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
-WHERE post_id = ?;"""
-
-
 postNormalCheck = """
 SELECT post_id FROM posts where archived=False
 """
 
 
-postsALLTransition = """
-SELECT post_id, text,price,paid,archived,created_at FROM posts;
-"""
-
-
-postsDrop = """
-drop table posts;
-"""
 storiesInsert = f"""INSERT INTO 'stories'(
 post_id, text,price,paid,archived,created_at,model_id)
             VALUES (?, ?,?,?,?,?,?);"""
@@ -193,9 +123,6 @@ allPOSTCheck = """
 SELECT post_id FROM posts
 """
 
-allMessagesCheck = """
-SELECT post_id FROM messages
-"""
 
 allStoriesCheck = """
 SELECT post_id FROM stories
@@ -264,10 +191,6 @@ user_id=?,username=?
 WHERE user_id=(?);"""
 
 
-profileAddColumnID = """
-ALTER TABLE posts ADD COLUMN model_id INTEGER;
-"""
-
 modelDupeCheck = """
 SELECT * FROM models where model_id=(?)
 """
@@ -315,16 +238,6 @@ labelDrop = """
 drop table labels;
 """
 
-timelinePostInfo = """
-SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
-"""
-archivedPostInfo = """
-SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
-"""
-
-messagesData = """
-SELECT created_at,post_id FROM messages where model_id=(?)
-"""
 
 mediaAddColumnHash = """
 ALTER TABLE medias ADD COLUMN hash VARCHAR;

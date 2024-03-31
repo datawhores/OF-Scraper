@@ -19,22 +19,59 @@ from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.db.queries as queries
 import ofscraper.utils.args.read as read_args
 from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
 
+messagesCreate = """
+CREATE TABLE IF NOT EXISTS messages (
+	id INTEGER NOT NULL, 
+	post_id INTEGER NOT NULL, 
+	text VARCHAR, 
+	price INTEGER, 
+	paid INTEGER, 
+	archived BOOLEAN, 
+	created_at TIMESTAMP, 
+	user_id INTEGER,
+    model_id INTEGER,
+	PRIMARY KEY (id), 
+	UNIQUE (post_id,model_id)
+)
+"""
+messagesInsert = f"""INSERT INTO 'messages'(
+post_id, text,price,paid,archived,
+created_at,user_id,model_id)
+            VALUES (?, ?,?,?,?,?,?,?);"""
+messagesUpdate = f"""UPDATE messages
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
+WHERE post_id = ?;"""
+allMessagesCheck = """
+SELECT post_id FROM messages
+"""
+messagesALLTransition = """
+select post_id,text,price,paid,archived,created_at,user_id from messages
+"""
+messagesDrop = """
+drop table messages;
+"""
+messagesData = """
+SELECT created_at,post_id FROM messages where model_id=(?)
+"""
+messagesAddColumnID = """
+ALTER TABLE messages ADD COLUMN model_id INTEGER;
+"""
+
 
 @wrapper.operation_wrapper
 def create_message_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.messagesCreate)
+        cur.execute(messagesCreate)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         updateData = list(
@@ -52,7 +89,7 @@ def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                 messages,
             )
         )
-        cur.executemany(queries.messagesUpdate, updateData)
+        cur.executemany(messagesUpdate, updateData)
         conn.commit()
 
 
@@ -74,7 +111,7 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                 messages,
             )
         )
-        cur.executemany(queries.messagesInsert, insertData)
+        cur.executemany(messagesInsert, insertData)
         conn.commit()
 
 
@@ -84,14 +121,14 @@ def write_messages_table_transition(
 ):
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [[*ele, model_id] for ele in insertData]
-        cur.executemany(queries.messagesInsert, insertData)
+        cur.executemany(messagesInsert, insertData)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.allMessagesCheck)
+        cur.execute(allMessagesCheck)
         conn.commit()
         return list(map(lambda x: x[0], cur.fetchall()))
 
@@ -99,7 +136,7 @@ def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper
 def get_all_messages_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.messagesALLTransition)
+        cur.execute(messagesALLTransition)
         conn.commit()
         return cur.fetchall()
 
@@ -107,14 +144,14 @@ def get_all_messages_transition(model_id=None, username=None, conn=None) -> list
 @wrapper.operation_wrapper
 def drop_messages_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.messagesDrop)
+        cur.execute(messagesDrop)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.messagesData, [model_id])
+        cur.execute(messagesData, [model_id])
         conn.commit()
         return list(
             map(
@@ -128,7 +165,7 @@ def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) ->
 def add_column_messages_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(queries.messagesAddColumnID)
+            cur.execute(messagesAddColumnID)
             conn.commit()
         except sqlite3.OperationalError as E:
             if not str(E) == "duplicate column name: model_id":
@@ -151,7 +188,7 @@ async def make_messages_table_changes(all_messages, model_id=None, username=None
         await write_messages_table(new_posts, model_id=model_id, username=username)
     if read_args.retriveArgs().metadata and len(curr_posts) > 0:
         curr_posts = helpers.converthelper(curr_posts)
-        update_messages_table(curr_posts, model_id=model_id, username=username)
+        await update_messages_table(curr_posts, model_id=model_id, username=username)
 
 
 def get_last_message_date(model_id=None, username=None):

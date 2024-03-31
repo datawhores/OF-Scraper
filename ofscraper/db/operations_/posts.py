@@ -19,12 +19,50 @@ from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.db.queries as queries
 import ofscraper.utils.args.read as read_args
 from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
+
+postCreate = """
+CREATE TABLE IF NOT EXISTS posts (
+	id INTEGER NOT NULL, 
+	post_id INTEGER NOT NULL, 
+	text VARCHAR, 
+	price INTEGER, 
+	paid INTEGER, 
+	archived BOOLEAN, 
+	created_at TIMESTAMP, 
+    model_id INTEGER, 
+	PRIMARY KEY (id), 
+	UNIQUE (post_id,model_id)
+)
+"""
+postInsert = f"""INSERT INTO 'posts'(
+post_id, text,price,paid,archived,created_at,model_id)
+VALUES (?, ?,?,?,?,?,?);"""
+postUpdate = f"""UPDATE posts
+SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
+WHERE post_id = ?;"""
+timelinePostInfo = """
+SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
+"""
+postsALLTransition = """
+SELECT post_id, text,price,paid,archived,created_at FROM posts;
+"""
+postsDrop = """
+drop table posts;
+"""
+allPOSTCheck = """
+SELECT post_id FROM posts
+"""
+postAddColumnID = """
+ALTER TABLE posts ADD COLUMN model_id INTEGER;
+"""
+archivedPostInfo = """
+SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
+"""
 
 
 @wrapper.operation_wrapper
@@ -44,7 +82,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
                 posts,
             )
         )
-        cur.executemany(queries.postInsert, insertData)
+        cur.executemany(postInsert, insertData)
         conn.commit()
 
 
@@ -54,7 +92,7 @@ def write_post_table_transition(
 ):
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [[*ele, model_id] for ele in insertData]
-        cur.executemany(queries.postInsert, insertData)
+        cur.executemany(postInsert, insertData)
         conn.commit()
 
 
@@ -75,14 +113,14 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
                 posts,
             )
         )
-        cur.executemany(queries.postUpdate, updateData)
+        cur.executemany(postUpdate, updateData)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.timelinePostInfo, [model_id])
+        cur.execute(timelinePostInfo, [model_id])
         conn.commit()
         return list(
             map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
@@ -92,14 +130,14 @@ def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> 
 @wrapper.operation_wrapper
 def create_post_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.postCreate)
+        cur.execute(postCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.allPOSTCheck)
+        cur.execute(allPOSTCheck)
         conn.commit()
         return list(map(lambda x: x[0], cur.fetchall()))
 
@@ -107,7 +145,7 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper
 def get_all_posts_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.postsALLTransition)
+        cur.execute(postsALLTransition)
         conn.commit()
         return cur.fetchall()
 
@@ -115,7 +153,7 @@ def get_all_posts_transition(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper
 def drop_posts_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.postsDrop)
+        cur.execute(postsDrop)
         conn.commit()
 
 
@@ -123,7 +161,7 @@ def drop_posts_table(model_id=None, username=None, conn=None) -> list:
 def add_column_post_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(queries.profileAddColumnID)
+            cur.execute(postAddColumnID)
             conn.commit()
         except sqlite3.OperationalError as E:
             if not str(E) == "duplicate column name: model_id":
@@ -133,7 +171,7 @@ def add_column_post_ID(conn=None, **kwargs):
 @wrapper.operation_wrapper
 def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.archivedPostInfo, [model_id])
+        cur.execute(archivedPostInfo, [model_id])
         conn.commit()
         return list(
             map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
