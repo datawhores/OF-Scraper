@@ -93,6 +93,7 @@ class tempFilePlaceholder(basePlaceholder):
         self._tempfilepath = paths.truncate(
             pathlib.Path(await self.gettempDir(self._ele), self._tempname)
         )
+        return self
 
     @basePlaceholder.async_wrapper
     async def gettempDir(self, ele, create=True):
@@ -196,6 +197,7 @@ class Placeholders(basePlaceholder):
                 await self.createfilename(),
             )
         )
+        return self
 
     def add_price_variables(self, username):
         modelObj = selector.get_model_fromParsed(username)
