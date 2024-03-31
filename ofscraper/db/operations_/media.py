@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS medias (
 	PRIMARY KEY (id), 
 	UNIQUE (media_id,model_id)
 );"""
-
 mediaALLTransition = """
 SELECT media_id,post_id,link,directory,filename,size,api_type,
 media_type,preview,linked,downloaded,created_at,hash FROM medias;
