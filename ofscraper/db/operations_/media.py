@@ -98,8 +98,10 @@ FROM medias
 where hash=(?)
 """
 mediaInsert = f"""INSERT INTO 'medias'(
-media_id,post_id,link,api_type,media_type,preview,linked,created_at,hash,model_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?);"""
+media_id,post_id,link,api_type,
+media_type,preview,linked,
+created_at,model_id)
+            VALUES (?,?,?,?,?,?,?,?,?);"""
 mediaDupeCheck = """
 SELECT  
 media_id,post_id,link,directory
@@ -247,7 +249,6 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                 medias,
             )
         )
-
         curr.executemany(mediaInsert, insertData)
         conn.commit()
 
