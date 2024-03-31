@@ -1,20 +1,4 @@
-profilesCreate = """
-CREATE TABLE IF NOT EXISTS profiles (
-	id INTEGER NOT NULL, 
-	user_id INTEGER NOT NULL, 
-	username VARCHAR NOT NULL,
-	PRIMARY KEY (id)
-)
-"""
 
-modelsCreate = """
-CREATE TABLE IF NOT EXISTS models (
-	id INTEGER NOT NULL,
-	model_id INTEGER NOT NULL,
-	UNIQUE (model_id)
-	PRIMARY KEY (id)
-)
-"""
 
 storiesCreate = """
 CREATE TABLE IF NOT EXISTS stories (
@@ -71,36 +55,4 @@ drop table stories;
 """
 
 
-profileDupeCheck = """
-SELECT * FROM profiles where user_id=(?)
-"""
-profileTableCheck = """
-SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
-"""
 
-profileInsert = f"""INSERT INTO 'profiles'(
-user_id,username)
-            VALUES (?, ?);"""
-
-profileUpdate = f"""Update 'profiles'
-SET
-user_id=?,username=?
-WHERE user_id=(?);"""
-
-
-modelDupeCheck = """
-SELECT * FROM models where model_id=(?)
-"""
-
-modelInsert = f"""
-INSERT INTO models (model_id)
-VALUES (?);
-"""
-
-
-profilesALL = """
-select user_id,username from profiles
-"""
-profilesDrop = """
-DROP TABLE profiles;
-"""
