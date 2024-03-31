@@ -94,7 +94,7 @@ async def process_paid_post(model_id, username, c):
                     paid_content,
                 )
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 paid_content,
                 model_id=model_id,
                 username=username,
@@ -219,7 +219,7 @@ async def process_timeline_posts(model_id, username, c):
                     timeline_posts,
                 )
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 timeline_posts,
                 model_id=model_id,
                 username=username,
@@ -267,7 +267,7 @@ async def process_archived_posts(model_id, username, c):
                 )
             )
 
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 archived_posts,
                 model_id=model_id,
                 username=username,
@@ -313,7 +313,7 @@ async def process_pinned_posts(model_id, username, c):
                     lambda x: posts_.Post(x, model_id, username, "pinned"), pinned_posts
                 )
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 pinned_posts,
                 model_id=model_id,
                 username=username,
@@ -380,7 +380,7 @@ async def process_profile(username, c) -> list:
 
 
 @free.space_checker
-def process_all_paid():
+async def process_all_paid():
     with stdout.lowstdout():
         paid_content = paid.get_all_paid_posts()
         user_dict = {}
@@ -424,7 +424,7 @@ def process_all_paid():
             for ele in all_posts:
                 new_dict[ele.id] = ele
             new_posts = new_dict.values()
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 new_posts,
                 model_id=model_id,
                 username=username,

@@ -10,7 +10,6 @@ import asyncio
 import contextvars
 import logging
 import math
-import queue
 import traceback
 from multiprocessing import Value
 

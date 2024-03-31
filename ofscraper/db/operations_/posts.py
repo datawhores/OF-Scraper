@@ -65,7 +65,7 @@ SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 """
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_post_table(posts: list, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         insertData = list(
@@ -96,7 +96,7 @@ def write_post_table_transition(
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def update_posts_table(posts: list, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         updateData = list(
@@ -185,16 +185,16 @@ def modify_unique_constriant_posts(model_id=None, username=None):
     write_post_table_transition(data, model_id=model_id, username=username)
 
 
-def make_post_table_changes(all_posts, model_id=None, username=None):
+async def make_post_table_changes(all_posts, model_id=None, username=None):
     curr_id = get_all_post_ids(model_id=model_id, username=username)
     new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
-        write_post_table(new_posts, model_id=model_id, username=username)
+        await write_post_table(new_posts, model_id=model_id, username=username)
     if read_args.retriveArgs().metadata and len(curr_posts) > 0:
         curr_posts = helpers.converthelper(curr_posts)
-        update_posts_table(curr_posts, model_id=model_id, username=username)
+        await update_posts_table(curr_posts, model_id=model_id, username=username)
 
 
 def get_last_archived_date(model_id=None, username=None):

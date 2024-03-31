@@ -17,17 +17,46 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.db.queries as queries
 from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
+labelsCreate = """
+CREATE TABLE IF NOT EXISTS labels (
+	id INTEGER NOT NULL, 
+    label_id INTEGER,
+	name VARCHAR, 
+	type VARCHAR, 
+	post_id INTEGER, 
+    model_id INTEGER,
+	PRIMARY KEY (id)
+    UNIQUE (post_id,label_id,model_id)
+)
+"""
+labelInsert = f"""INSERT INTO 'labels'(
+label_id,name, type, post_id,model_id)
+VALUES ( ?,?,?,?,?);"""
+labelID = """
+SELECT id,post_id  FROM  labels where model_id=(?)
+"""
+labelAddColumnID = """
+ALTER TABLE labels ADD COLUMN user_id VARCHAR;
+"""
+labelALLTransition = """
+SELECT label_id,name,type,post_id FROM labels;
+"""
+labelALLTransition2 = """
+SELECT id,name,type,post_id FROM labels;
+"""
+labelDrop = """
+drop table labels;
+"""
 
 
 @wrapper.operation_wrapper
 def create_labels_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.labelsCreate)
+        cur.execute(labelsCreate)
         conn.commit()
 
 
@@ -48,7 +77,7 @@ def write_labels_table(
                 posts,
             )
         )
-        curr.executemany(queries.labelInsert, insertData)
+        curr.executemany(labelInsert, insertData)
         conn.commit()
 
 
@@ -58,14 +87,14 @@ def write_labels_table_transition(
 ):
     with contextlib.closing(conn.cursor()) as curr:
         insertData = [[*ele, model_id] for ele in insertData]
-        curr.executemany(queries.labelInsert, insertData)
+        curr.executemany(labelInsert, insertData)
         conn.commit()
 
 
 @wrapper.operation_wrapper
 def get_all_labels_ids(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as curr:
-        curr.execute(queries.labelID, [model_id])
+        curr.execute(labelID, [model_id])
         conn.commit()
         return curr.fetchall()
 
@@ -74,7 +103,7 @@ def get_all_labels_ids(model_id=None, username=None, conn=None):
 def add_column_labels_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(queries.labelAddColumnID)
+            cur.execute(labelAddColumnID)
             conn.commit()
         except sqlite3.OperationalError as E:
             if not str(E) == "duplicate column name: model_id":
@@ -84,7 +113,7 @@ def add_column_labels_ID(conn=None, **kwargs):
 @wrapper.operation_wrapper
 def drop_labels_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(queries.labelDrop)
+        cur.execute(labelDrop)
         conn.commit()
 
 
@@ -92,10 +121,10 @@ def drop_labels_table(model_id=None, username=None, conn=None) -> list:
 def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(queries.labelALLTransition)
+            cur.execute(labelALLTransition)
             return cur.fetchall()
         except sqlite3.OperationalError:
-            cur.execute(queries.labelALLTransition2)
+            cur.execute(labelALLTransition2)
             return cur.fetchall()
 
 
