@@ -19,6 +19,7 @@ from functools import partial
 
 import aiofiles
 import arrow
+import psutil
 from tenacity import (
     AsyncRetrying,
     retry_if_not_exception_message,
