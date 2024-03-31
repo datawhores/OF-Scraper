@@ -2,9 +2,15 @@
 name: Bug report
 about: Create a report to help us improve
 title: "# Clear Description of issue"
-labels: ""
-assignees: ""
+labels: ''
+assignees: ''
+
 ---
+
+<!---
+Issues pertaining to the script not working, and without a config and log will be closed
+In other cases a log and config may be helpful
+-->
 
 **Describe the bug**
 A clear and concise description of what the bug is.
@@ -24,15 +30,25 @@ Example
 A clear and concise description of what you expected to happen.
 
 **Screenshots/Logs**
-If applicable, add screenshots to help explain your problem.
+Logs are required for any reports of any issue, unless the issue is related to setup of script
+Logs must be at least debug level
 
-Hint: Please make sure that the log formatting is readable, use a paste site
-like https://paste.passtheheadphones.me/
+Hint: Please make sure that the log formatting is readable, use a paste site 
+like 
+https://privatebin.io/
 
-Hint2 : add " --log debug" this will create a log file with debug messages
-Hint3 : add " --output debug" this will show debug messages in the terminal output, a log file is preferred. If your're doing this make your presentation readable
+**Config**
+Please provide details about your correct config 
+This is required for all reports
 
-**Desktop (please complete the following information):**
+Feel free to anonymize information
+- for example home directory
+- keydb api key
+
+
+
+
+**System Info**
 
 - OS: [e.g. iOS]
 - Browser [e.g. chrome, safari]
@@ -40,12 +56,6 @@ Hint3 : add " --output debug" this will show debug messages in the terminal outp
 - binary or python
 - python version if installed via pip or pypi
 
-**Smartphone (please complete the following information):**
-
-- Device: [e.g. iPhone6]
-- OS: [e.g. iOS8.1]
-- Browser [e.g. stock browser, safari]
-- Version [e.g. 22]
 
 **Additional context**
 Add any other context about the problem here.
