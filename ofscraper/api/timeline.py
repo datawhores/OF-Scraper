@@ -213,7 +213,7 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     return splitArrays
 
 
-def get_tasks(tasks, splitArrays, c, model_id, job_progress, after):
+def get_tasks(splitArrays, c, model_id, job_progress, after):
     tasks = []
     if len(splitArrays) > 2:
         tasks.append(
