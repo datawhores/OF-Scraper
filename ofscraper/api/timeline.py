@@ -48,15 +48,10 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
 
     job_progress = progress_utils.timeline_progress
     overall_progress = progress_utils.overall_progress
-    if not read_args.retriveArgs().no_cache:
-        oldtimeline = operations.get_timeline_postinfo(
-            model_id=model_id, username=username
-        )
-    else:
-        oldtimeline = []
     after = get_after(model_id, username, forced_after)
-    splitArrays = get_split_array(oldtimeline, username, after)
-    add_tasks(tasks, splitArrays, c, model_id, job_progress, after)
+
+    splitArrays = get_split_array(model_id, username, after)
+    tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
     page_task = overall_progress.add_task(
         f" Timeline Content Pages Progress: {page_count}", visible=True
     )
@@ -115,8 +110,6 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     job_progress = None
 
     sem = sems.get_req_sem()
-    tasks = []
-    min_posts = 50
 
     responseArray = []
     page_count = 0
@@ -137,8 +130,8 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
     after = get_after(model_id, username, forced_after)
 
-    splitArrays = get_split_array(oldtimeline, username, after)
-    add_tasks(tasks, splitArrays, c, model_id, job_progress, after)
+    splitArrays = get_split_array(model_id, username, after)
+    tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
 
     while bool(tasks):
         new_tasks = []
@@ -183,8 +176,15 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     return list(unduped.values())
 
 
-def get_split_array(oldtimeline, username, after):
+def get_split_array(model_id, username, after):
     min_posts = 50
+
+    if not read_args.retriveArgs().no_cache:
+        oldtimeline = operations.get_timeline_postinfo(
+            model_id=model_id, username=username
+        )
+    else:
+        oldtimeline = []
     log.trace(
         "oldtimeline {posts}".format(
             posts="\n\n".join(
@@ -213,7 +213,8 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     return splitArrays
 
 
-def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
+def get_tasks(tasks, splitArrays, c, model_id, job_progress, after):
+    tasks = []
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
@@ -276,6 +277,7 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                 )
             )
         )
+    return tasks
 
 
 def set_check(unduped, model_id, after):

@@ -67,7 +67,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
 
     after = get_after(model_id, username, forced_after)
     splitArrays = get_split_array(oldarchived, username, after)
-    add_tasks(tasks, splitArrays, c, model_id, job_progress, after)
+    get_tasks(splitArrays, c, model_id, job_progress, after)
 
     page_task = overall_progress.add_task(
         f"Archived Content Pages Progress: {page_count}", visible=True
@@ -151,7 +151,8 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
     return splitArrays
 
 
-def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
+def get_tasks(splitArrays, c, model_id, job_progress, after):
+    tasks = []
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
@@ -214,6 +215,7 @@ def add_tasks(tasks, splitArrays, c, model_id, job_progress, after):
                 )
             )
         )
+    return tasks
 
 
 def set_check(unduped, model_id, after):

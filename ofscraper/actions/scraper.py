@@ -54,13 +54,11 @@ async def process_messages(model_id, username, c):
             messages_ = list(
                 map(lambda x: posts_.Post(x, model_id, username), messages_)
             )
-            [
-                operations.make_messages_table_changes(
-                    messages_,
-                    model_id=model_id,
-                    username=username,
-                )
-            ]
+            await operations.make_messages_table_changes(
+                messages_,
+                model_id=model_id,
+                username=username,
+            )
 
             log.debug(
                 f"[bold]Messages media count with locked[/bold] {sum(map(lambda x:len(x.post_media),messages_))}"
@@ -69,13 +67,6 @@ async def process_messages(model_id, username, c):
             output = []
             [output.extend(message.media) for message in messages_]
             log.debug(f"[bold]Messages media count[/bold] {len(output)}")
-
-            await operations.write_messages_table(
-                output,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
-            )
             # Update after database
             cache.set(
                 f"{model_id}_scrape_messages",

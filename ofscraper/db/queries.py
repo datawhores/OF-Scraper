@@ -114,6 +114,7 @@ schemaCreate = """
 CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value TEXT);
 """
 
+
 messagesInsert = f"""INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id)
@@ -123,11 +124,6 @@ created_at,user_id,model_id)
 messagesUpdate = f"""UPDATE messages
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
 WHERE post_id = ?;"""
-
-
-messageDupeCheck = """
-SELECT * FROM messages where post_id=(?)
-"""
 
 
 messagesAddColumnID = """
@@ -153,10 +149,6 @@ SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
 WHERE post_id = ?;"""
 
 
-postDupeCheck = """
-SELECT * FROM posts where post_id=(?)
-"""
-
 postNormalCheck = """
 SELECT post_id FROM posts where archived=False
 """
@@ -179,10 +171,6 @@ storiesUpdate = f"""UPDATE stories
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ?;"""
 
-
-storiesDupeCheck = """
-SELECT * FROM stories where post_id=(?)
-"""
 
 storiesAddColumnID = """
 ALTER TABLE stories ADD COLUMN model_id INTEGER;
