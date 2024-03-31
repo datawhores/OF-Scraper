@@ -391,9 +391,9 @@ def media_insert_helper(media, filename, downloaded=None, hash=None, prevData=No
         directory = prevData[3]
         filename_path = prevData[4]
         size = prevData[5]
-        hash = prevData[13] or hash
+        hash = prevData[12] or hash
     if prevData:
-        downloaded = prevData[-2] if downloaded == None else downloaded
+        downloaded = prevData[10] if downloaded == None else downloaded
     elif filename:
         downloaded = (
             pathlib.Path(filename).exists() if downloaded == None else downloaded

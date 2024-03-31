@@ -379,7 +379,7 @@ def get_after(model_id, username, forced_after=None):
         log.debug("Setting date to zero because database is empty")
         return 0
     missing_items = list(filter(lambda x: x[10] != 1, curr))
-    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
+    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[11])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
         return operations.get_last_timeline_date(model_id=model_id, username=username)

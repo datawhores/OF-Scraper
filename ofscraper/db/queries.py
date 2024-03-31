@@ -143,7 +143,7 @@ media_id,post_id,link,directory,filename,size,api_type,media_type,preview,linked
 
 mediaDupeCheck = """
 SELECT media_id,post_id,link,directory,filename,size
-,api_type,media_type ,preview,linked,downloaded,created_at
+,api_type,media_type ,preview,linked,downloaded,created_at,
 hash
 FROM medias where media_id=(?)
 """
@@ -151,28 +151,29 @@ FROM medias where media_id=(?)
 
 getTimelineMedia = """
 SELECT media_id,post_id,link,directory,filename,size
-,api_type,media_type ,preview,linked,downloaded,created_at
+,api_type,media_type ,preview,linked,downloaded,created_at,
 hash
 FROM medias where api_type=('Timeline')
 """
 
 getArchivedMedia = """
 SELECT media_id,post_id,link,directory,filename,size
-,api_type,media_type ,preview,linked,downloaded,created_at
+,api_type,media_type ,preview,linked,downloaded,created_at,
 hash
 FROM medias where api_type=('Archived')
 """
 
 getMessagesMedia = """
 SELECT media_id,post_id,link,directory,filename,size
-,api_type,media_type ,preview,linked,downloaded,created_at
+,api_type,media_type ,preview,linked,downloaded,created_at,
 hash
 FROM medias where api_type=('Message') or api_type=('Messages')
 """
 
 mediaUpdate = f"""Update 'medias'
 SET
-media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?,hash=?
+media_id=?,post_id=?,link=?,directory=?,filename=?,size=?,
+api_type=?,media_type=?,preview=?,linked=?,downloaded=?,created_at=?,hash=?
 WHERE media_id=(?);"""
 
 mediaTypeUpdate = f"""Update 'medias'
