@@ -102,6 +102,15 @@ media_id,post_id,link,api_type,
 media_type,preview,linked,
 created_at,model_id)
             VALUES (?,?,?,?,?,?,?,?,?);"""
+
+mediaInsertFull = f"""INSERT INTO 'medias'(
+media_id,post_id,link,directory,
+filename,size,api_type,
+media_type,preview,linked,
+downloaded,created_at,hash,model_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+
+
 mediaDupeCheck = """
 SELECT  
 media_id,post_id,link,directory
@@ -257,7 +266,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
 def write_media_table_transition(insertData, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
         insertData = [[*ele, model_id] for ele in insertData]
-        curr.executemany(mediaInsert, insertData)
+        curr.executemany(mediaInsertFull, insertData)
         conn.commit()
 
 
