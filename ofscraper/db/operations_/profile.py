@@ -19,10 +19,11 @@ from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations_.wrapper as wrapper
-from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
+
+#user_id==modes.id cause of legacy
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
 	id INTEGER NOT NULL, 
@@ -67,7 +68,7 @@ DROP TABLE profiles;
 """
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_profile_info(model_id=None, username=None, conn=None) -> list:
     database_path = placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
@@ -87,14 +88,14 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
             raise E
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def create_profile_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(profilesCreate)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_profile_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [model_id, username]
@@ -106,14 +107,14 @@ def write_profile_table(model_id=None, username=None, conn=None) -> list:
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_profile_table_transition(insertData, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.executemany(profileInsert, insertData)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def check_profile_table_exists(model_id=None, username=None, conn=None):
     database_path = placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
@@ -129,7 +130,7 @@ def check_profile_table_exists(model_id=None, username=None, conn=None):
 
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_profiles(model_id=None, username=None, conn=None) -> list:
     database_path = placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
@@ -147,21 +148,21 @@ def get_all_profiles(model_id=None, username=None, conn=None) -> list:
             raise E
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def drop_profiles_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(profilesDrop)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def create_models_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(modelsCreate)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_models_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         if len(cur.execute(modelDupeCheck, (model_id,)).fetchall()) == 0:
@@ -169,8 +170,8 @@ def write_models_table(model_id=None, username=None, conn=None) -> list:
             conn.commit()
 
 
-def remove_unique_constriant_profile(model_id=None, username=None):
-    data = get_all_profiles(model_id=model_id, username=username)
-    drop_profiles_table(model_id=model_id, username=username)
-    create_profile_table(model_id=model_id, username=username)
-    write_profile_table_transition(data, model_id=model_id, username=username)
+async def remove_unique_constriant_profile(model_id=None, username=None):
+    data = await get_all_profiles(model_id=model_id, username=username)
+    await drop_profiles_table(model_id=model_id, username=username)
+    await create_profile_table(model_id=model_id, username=username)
+    await write_profile_table_transition(data, model_id=model_id, username=username)

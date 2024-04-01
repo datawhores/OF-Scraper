@@ -47,9 +47,9 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
 
     job_progress = progress_utils.timeline_progress
     overall_progress = progress_utils.overall_progress
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
 
-    splitArrays = get_split_array(model_id, username, after)
+    splitArrays = await get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
     page_task = overall_progress.add_task(
         f" Timeline Content Pages Progress: {page_count}", visible=True
@@ -113,7 +113,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     responseArray = []
     page_count = 0
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = operations.get_timeline_postinfo(
+        oldtimeline = await operations.get_timeline_postinfo(
             model_id=model_id, username=username
         )
     else:
@@ -127,7 +127,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
 
     splitArrays = get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
@@ -175,11 +175,11 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     return list(unduped.values())
 
 
-def get_split_array(model_id, username, after):
+async def get_split_array(model_id, username, after):
     min_posts = 50
 
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = operations.get_timeline_postinfo(
+        oldtimeline = await operations.get_timeline_postinfo(
             model_id=model_id, username=username
         )
     else:
@@ -307,7 +307,7 @@ def get_individual_post(id):
                 log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username, forced_after=None):
+async def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
     elif read_args.retriveArgs().after == 0:
@@ -331,7 +331,7 @@ def get_after(model_id, username, forced_after=None):
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return operations.get_last_timeline_date(model_id=model_id, username=username)
+        return await operations.get_last_timeline_date(model_id=model_id, username=username)
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"

@@ -12,14 +12,12 @@ r"""
 """
 import contextlib
 import logging
-import sqlite3
 
 from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
@@ -46,10 +44,21 @@ SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ?;"""
 
 storiesAddColumnID = """
-ALTER TABLE stories ADD COLUMN model_id INTEGER;
+BEGIN TRANSACTION;
+  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('stories') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
+  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
+    ALTER TABLE stories ADD COLUMN model_id INTEGER;
+  END IF;
+COMMIT TRANSACTION;
 """
 storiesALLTransition = """
-select post_id,text,price,paid,archived,created_at from stories
+SELECT post_id,text,price,paid,archived,created_at,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('stories') WHERE name = 'model_id')
+            THEN model_id
+            ELSE NULL
+       END AS model_id
+FROM stories;
+
 """
 storiesDrop = """
 drop table stories;
@@ -58,14 +67,14 @@ allStoriesCheck = """
 SELECT post_id FROM stories
 """
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def create_stories_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesCreate)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         stories = helpers.converthelper(stories)
@@ -87,17 +96,18 @@ def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_stories_table_transition(
-    insertData: dict, model_id=None, username=None, conn=None
+    inputData: dict, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        insertData = [[*ele, model_id] for ele in insertData]
+        ordered_keys=["post_id", "text","price","paid","archived", "created_at","model_id"]
+        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(storiesInsert, insertData)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def update_stories_table(stories: dict, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         stories = helpers.converthelper(stories)
@@ -119,7 +129,7 @@ def update_stories_table(stories: dict, model_id=None, username=None, conn=None)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allStoriesCheck)
@@ -127,7 +137,7 @@ def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
         return list(map(lambda x: x[0], cur.fetchall()))
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_stories_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesALLTransition)
@@ -135,40 +145,37 @@ def get_all_stories_transition(model_id=None, username=None, conn=None) -> list:
         return cur.fetchall()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def add_column_stories_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        try:
-            cur.execute(storiesAddColumnID)
-            conn.commit()
-        except sqlite3.OperationalError as E:
-            if not str(E) == "duplicate column name: model_id":
-                raise E
+        cur.execute(storiesAddColumnID)
+        conn.commit()
 
 
-@wrapper.operation_wrapper
+
+@wrapper.operation_wrapper_async
 def drop_stories_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesDrop)
         conn.commit()
 
 
-def modify_unique_constriant_stories(model_id=None, username=None):
-    data = get_all_stories_transition(model_id=model_id, username=username)
-    drop_stories_table(model_id=model_id, username=username)
-    create_stories_table(model_id=model_id, username=username)
-    write_stories_table_transition(data, model_id=model_id, username=username)
+async def modify_unique_constriant_stories(model_id=None, username=None):
+    data = await get_all_stories_transition(model_id=model_id, username=username)
+    await drop_stories_table(model_id=model_id, username=username)
+    await create_stories_table(model_id=model_id, username=username)
+    await write_stories_table_transition(data, model_id=model_id, username=username)
 
 
-def make_stories_tables_changes(
+async def make_stories_tables_changes(
     all_stories: dict, model_id=None, username=None, conn=None
 ):
-    curr_id = set(get_all_stories_ids(model_id=model_id, username=username))
+    curr_id = set(await get_all_stories_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_stories))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_stories))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
-        write_stories_table(new_posts, model_id=model_id, username=username)
+        await write_stories_table(new_posts, model_id=model_id, username=username)
     if read_args.retriveArgs().metadata and len(curr_posts) > 0:
         curr_posts = helpers.converthelper(curr_posts)
-        update_stories_table(curr_posts, model_id=model_id, username=username)
+        await update_stories_table(curr_posts, model_id=model_id, username=username)

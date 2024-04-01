@@ -98,10 +98,7 @@ async def process_paid_post(model_id, username, c):
                 paid_content,
                 model_id=model_id,
                 username=username,
-            )
-            operations.update_posts_table_helper(model_id=model_id,
-                username=username)
-
+            )      
             output = []
             [output.extend(post.media) for post in paid_content]
             log.debug(f"[bold]Paid media count without locked[/bold] {len(output)}")
@@ -138,7 +135,7 @@ async def process_stories(model_id, username, c):
                     stories,
                 )
             )
-            operations.make_stories_tables_changes(
+            await operations.make_stories_tables_changes(
                 stories,
                 model_id=model_id,
                 username=username,
@@ -178,7 +175,7 @@ async def process_highlights(model_id, username, c):
                     highlights_,
                 )
             )
-            operations.make_stories_tables_changes(
+            await operations.make_stories_tables_changes(
                 highlights_,
                 model_id=model_id,
                 username=username,
@@ -405,11 +402,11 @@ async def process_all_paid():
         output = []
         for model_id, value in user_dict.items():
             username = profile.scrape_profile(model_id).get("username")
-            if username == "modeldeleted" and operations.check_profile_table_exists(
+            if username == "modeldeleted" and await operations.check_profile_table_exists(
                 model_id=model_id, username=username
             ):
                 username = (
-                    operations.get_profile_info(model_id=model_id, username=username)
+                    await operations.get_profile_info(model_id=model_id, username=username)
                     or username
                 )
             log.info(f"Processing {username}_{model_id}")

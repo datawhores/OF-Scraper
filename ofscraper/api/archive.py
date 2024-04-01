@@ -48,7 +48,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
     overall_progress = progress_utils.overall_progress
 
     oldarchived = (
-        operations.get_archived_postinfo(model_id=model_id, username=username)
+        await operations.get_archived_postinfo(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -62,7 +62,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
 
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
     splitArrays = get_split_array(oldarchived, username, after)
     tasks=get_tasks(splitArrays, c, model_id, job_progress, after)
 
@@ -230,7 +230,7 @@ def set_check(unduped, model_id, after):
         cache.close()
 
 
-def get_after(model_id, username, forced_after=None):
+async def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
     elif read_args.retriveArgs().after == 0:
@@ -256,7 +256,7 @@ def get_after(model_id, username, forced_after=None):
     missing_items = list(sorted(missing_items, key=lambda x: x.get('created_at')))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return operations.get_last_archived_date(model_id=model_id, username=username)
+        return await operations.get_last_archived_date(model_id=model_id, username=username)
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"

@@ -18,7 +18,6 @@ import arrow
 from rich.console import Console
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.db.operations_.labels import *
@@ -28,28 +27,28 @@ from ofscraper.db.operations_.others import *
 from ofscraper.db.operations_.posts import *
 from ofscraper.db.operations_.profile import *
 from ofscraper.db.operations_.stories import *
+from ofscraper.utils.context.run_async import run
+
 
 console = Console()
 log = logging.getLogger("shared")
 
+async def create_tables(model_id, username):
+    await create_models_table(model_id=model_id, username=username)
+    await create_profile_table(model_id=model_id, username=username)
+    await create_post_table(model_id=model_id, username=username)
+    await create_message_table(model_id=model_id, username=username)
+    await create_media_table(model_id=model_id, username=username)
+    await create_products_table(model_id=model_id, username=username)
+    await create_others_table(model_id=model_id, username=username)
+    await create_stories_table(model_id=model_id, username=username)
+    await create_labels_table(model_id=model_id, username=username)
+    await create_schema_table(model_id=model_id, username=username)
 
-def create_tables(model_id, username):
-    create_models_table(model_id=model_id, username=username)
-    create_profile_table(model_id=model_id, username=username)
-    create_post_table(model_id=model_id, username=username)
-    create_message_table(model_id=model_id, username=username)
-    create_media_table(model_id=model_id, username=username)
-    create_products_table(model_id=model_id, username=username)
-    create_others_table(model_id=model_id, username=username)
-    create_stories_table(model_id=model_id, username=username)
-    create_labels_table(model_id=model_id, username=username)
-    create_schema_table(model_id=model_id, username=username)
-
-
-def modify_tables(model_id=None, username=None):
+async def modify_tables(model_id=None, username=None):
     create_backup_transition(model_id, username)
-    add_column_tables(model_id=model_id, username=username)
-    modify_tables_constraints_and_columns(model_id=model_id, username=username)
+    await add_column_tables(model_id=model_id, username=username)
+    await modify_tables_constraints_and_columns(model_id=model_id, username=username)
 
 
 def create_backup_transition(model_id, username):
@@ -92,76 +91,76 @@ def create_backup_transition(model_id, username):
     check_backup(model_id, username, new_path)
 
 
-def add_column_tables(model_id=None, username=None):
+async def add_column_tables(model_id=None, username=None):
     changes = get_schema_changes(model_id=model_id, username=username)
     if not "media_hash" in changes:
-        add_column_media_hash(model_id=model_id, username=username)
-        add_flag_schema("media_hash", model_id=model_id, username=username)
+        await add_column_media_hash(model_id=model_id, username=username)
+        await add_flag_schema("media_hash", model_id=model_id, username=username)
     if not "media_model_id" in changes:
-        add_column_media_ID(model_id=model_id, username=username)
-        add_flag_schema("media_model_id", model_id=model_id, username=username)
+        await add_column_media_ID(model_id=model_id, username=username)
+        await add_flag_schema("media_model_id", model_id=model_id, username=username)
     if not "posts_model_id" in changes:
-        add_column_post_ID(model_id=model_id, username=username)
-        add_flag_schema("posts_model_id", model_id=model_id, username=username)
+        await add_column_post_ID(model_id=model_id, username=username)
+        await add_flag_schema("posts_model_id", model_id=model_id, username=username)
     if not "products_model_id" in changes:
-        add_column_products_ID(model_id=model_id, username=username)
-        add_flag_schema("products_model_id", model_id=model_id, username=username)
+        await add_column_products_ID(model_id=model_id, username=username)
+        await add_flag_schema("products_model_id", model_id=model_id, username=username)
     if not "other_model_id" in changes:
-        add_column_other_ID(model_id=model_id, username=username)
-        add_flag_schema("other_model_id", model_id=model_id, username=username)
+        await add_column_other_ID(model_id=model_id, username=username)
+        await add_flag_schema("other_model_id", model_id=model_id, username=username)
     if not "stories_model_id" in changes:
-        add_column_stories_ID(model_id=model_id, username=username)
-        add_flag_schema("stories_model_id", model_id=model_id, username=username)
+        await add_column_stories_ID(model_id=model_id, username=username)
+        await add_flag_schema("stories_model_id", model_id=model_id, username=username)
     if not "messages_model_id" in changes:
-        add_column_messages_ID(model_id=model_id, username=username)
-        add_flag_schema("messages_model_id", model_id=model_id, username=username)
+        await add_column_messages_ID(model_id=model_id, username=username)
+        await add_flag_schema("messages_model_id", model_id=model_id, username=username)
     if not "labels_model_id" in changes:
-        add_column_labels_ID(model_id=model_id, username=username)
-        add_flag_schema("labels_model_id", model_id=model_id, username=username)
+        await add_column_labels_ID(model_id=model_id, username=username)
+        await add_flag_schema("labels_model_id", model_id=model_id, username=username)
 
 
-def modify_tables_constraints_and_columns(model_id=None, username=None):
+async def modify_tables_constraints_and_columns(model_id=None, username=None):
     changes = get_schema_changes(model_id=model_id, username=username)
     changes=[]
     if not "profile_username_constraint_removed" in changes:
-        remove_unique_constriant_profile(model_id=model_id, username=username)
-        add_flag_schema(
+        await remove_unique_constriant_profile(model_id=model_id, username=username)
+        await add_flag_schema(
             "profile_username_constraint_removed", model_id=model_id, username=username
         )
     if not "stories_model_id_constraint_added" in changes:
-        modify_unique_constriant_stories(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_stories(model_id=model_id, username=username)
+        await add_flag_schema(
             "stories_model_id_constraint_added", model_id=model_id, username=username
         )
     if not "media_model_id_constraint_added" in changes:
-        modify_unique_constriant_media(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_media(model_id=model_id, username=username)
+        await add_flag_schema(
             "media_model_id_constraint_added", model_id=model_id, username=username
         )
     if not "posts_model_id_constraint_added" in changes:
-        modify_unique_constriant_posts(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_posts(model_id=model_id, username=username)
+        await add_flag_schema(
             "posts_model_id_constraint_added", model_id=model_id, username=username
         )
     if not "others_model_id_constraint_added" in changes:
-        modify_unique_constriant_others(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_others(model_id=model_id, username=username)
+        await add_flag_schema(
             "others_model_id_constraint_added", model_id=model_id, username=username
         )
     if not "products_model_id_constraint_added" in changes:
-        modify_unique_constriant_products(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_products(model_id=model_id, username=username)
+        await add_flag_schema(
             "products_model_id_constraint_added", model_id=model_id, username=username
         )
     if not "messages_model_id_constraint_added" in changes:
-        modify_unique_constriant_messages(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_messages(model_id=model_id, username=username)
+        await add_flag_schema(
             "messages_model_id_constraint_added", model_id=model_id, username=username
         )
 
     if not "labels_model_id_constraint_added" in changes:
-        modify_unique_constriant_labels(model_id=model_id, username=username)
-        add_flag_schema(
+        await modify_unique_constriant_labels(model_id=model_id, username=username)
+        await add_flag_schema(
             "labels_model_id_constraint_added", model_id=model_id, username=username
         )
 
@@ -214,10 +213,10 @@ def create_backup(model_id, username, backup=None):
     cache.close()
     return database_copy
 
-
-def table_init_create(model_id=None, username=None):
-    create_tables(model_id=model_id, username=username)
+@run
+async def table_init_create(model_id=None, username=None):
+    await create_tables(model_id=model_id, username=username)
     create_backup(model_id, username)
-    modify_tables(model_id, username)
-    write_profile_table(model_id=model_id, username=username)
-    write_models_table(model_id=model_id, username=username)
+    # await modify_tables(model_id, username)
+    # await write_profile_table(model_id=model_id, username=username)
+    # await write_models_table(model_id=model_id, username=username)

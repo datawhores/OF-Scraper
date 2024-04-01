@@ -12,7 +12,6 @@ r"""
 """
 import contextlib
 import logging
-import sqlite3
 
 from rich.console import Console
 
@@ -47,20 +46,32 @@ labelPostsID = """
 SELECT post_id  FROM  labels where model_id=(?) and label_id=(?)
 """
 labelAddColumnID = """
-ALTER TABLE labels ADD COLUMN user_id VARCHAR;
+BEGIN TRANSACTION;
+  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('labels') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
+  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
+    ALTER TABLE labels ADD COLUMN model_id INTEGER;
+  END IF;
+COMMIT TRANSACTION;
 """
 labelALLTransition = """
-SELECT label_id,name,type,post_id FROM labels;
-"""
-labelALLTransition2 = """
-SELECT id,name,type,post_id FROM labels;
+SELECT
+    CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('labels') WHERE name = 'label_id')
+        THEN label_id
+        ELSE id
+    END AS label_id,
+        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('labels') WHERE name = 'model_id')
+        THEN model_id
+        ELSE Null
+    END AS model_id,
+    name, type, post_id
+FROM labels;
 """
 labelDrop = """
 drop table labels;
 """
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def create_labels_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(labelsCreate)
@@ -112,13 +123,13 @@ def update_labels_table(
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_labels_table_transition(
     inputData: list, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        ordered_keys=["label_id","name", "type", "post_id"]
-        insertData = [tuple([data[key] for key in ordered_keys]+[model_id]) for data in inputData]
+        ordered_keys=["label_id","name", "type", "post_id","model_id"]
+        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(labelInsert, insertData)
         conn.commit()
 
@@ -130,40 +141,31 @@ def get_all_labels_posts(label,model_id=None, username=None, conn=None):
         return [dict(row)["post_id"] for row in curr.fetchall()]
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def add_column_labels_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        try:
-            cur.execute(labelAddColumnID)
-            conn.commit()
-        except sqlite3.OperationalError as E:
-            if not str(E) == "duplicate column name: model_id":
-                raise E
+        cur.execute(labelAddColumnID)
+        conn.commit() 
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def drop_labels_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(labelDrop)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        try:
-            cur.execute(labelALLTransition)
-            return [dict(row) for row in cur.fetchall()]
-        except sqlite3.OperationalError:
-            cur.execute(labelALLTransition2)
-            return [dict(row) for row in cur.fetchall()]
+        cur.execute(labelALLTransition)
+        return [dict(row) for row in cur.fetchall()]
 
-
-def modify_unique_constriant_labels(model_id=None, username=None):
-    data = get_all_labels_transition(model_id=model_id, username=username)
-    drop_labels_table(model_id=model_id, username=username)
-    create_labels_table(model_id=model_id, username=username)
-    write_labels_table_transition(data, model_id=model_id, username=username)
+async def modify_unique_constriant_labels(model_id=None, username=None):
+    data = await get_all_labels_transition(model_id=model_id, username=username)
+    await drop_labels_table(model_id=model_id, username=username)
+    await create_labels_table(model_id=model_id, username=username)
+    await write_labels_table_transition(data, model_id=model_id, username=username)
 
 async def make_label_table_changes(label, model_id=None, username=None):
     curr = set( await get_all_labels_posts( label,model_id=model_id,username=username))

@@ -12,7 +12,6 @@ r"""
 """
 import contextlib
 import logging
-import sqlite3
 
 import arrow
 from rich.console import Console
@@ -20,11 +19,11 @@ from rich.console import Console
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
 
+#user_id==sender
 messagesCreate = """
 CREATE TABLE IF NOT EXISTS messages (
 id INTEGER NOT NULL,
@@ -46,12 +45,17 @@ created_at,user_id,model_id)
             VALUES (?, ?,?,?,?,?,?,?);"""
 messagesUpdate = f"""UPDATE messages
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
-WHERE post_id = ?;"""
+WHERE post_id = ? and model_id=(?);"""
 allMessagesCheck = """
 SELECT post_id FROM messages
 """
 messagesALLTransition = """
-select post_id,text,price,paid,archived,created_at,user_id from messages
+SELECT post_id, text, price, paid, archived, created_at, user_id,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'model_id')
+            THEN model_id
+            ELSE NULL
+       END AS model_id
+FROM messages;
 """
 messagesDrop = """
 drop table messages;
@@ -60,11 +64,16 @@ messagesData = """
 SELECT created_at,post_id FROM messages where model_id=(?)
 """
 messagesAddColumnID = """
-ALTER TABLE messages ADD COLUMN model_id INTEGER;
+BEGIN TRANSCTION;
+  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
+  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
+    ALTER TABLE messages ADD COLUMN model_id INTEGER;
+  END IF;
+COMMIT TRANSACTION;
 """
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def create_message_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesCreate)
@@ -85,6 +94,7 @@ def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                     message.fromuser,
                     model_id,
                     message.id,
+                    model_id
                 ),
                 messages,
             )
@@ -115,71 +125,66 @@ def write_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_messages_table_transition(
-    insertData: list, model_id=None, conn=None, **kwargs
+    inputData: list, model_id=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        insertData = [[*ele, model_id] for ele in insertData]
+        ordered_keys=["post_id", "text","price","paid","archived", "created_at","user_id","model_id"]
+        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(messagesInsert, insertData)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allMessagesCheck)
         return [dict(row)["post_id"] for row in cur.fetchall()]
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_messages_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesALLTransition)
-        conn.commit()
-        return cur.fetchall()
+        return [dict(row)for row in cur.fetchall()]
 
 
-@wrapper.operation_wrapper
+
+@wrapper.operation_wrapper_async
 def drop_messages_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesDrop)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesData, [model_id])
         conn.commit()
-        return list(
-            map(
-                lambda x: {"date": arrow.get(x[0]).float_timestamp, "id": x[1]},
-                cur.fetchall(),
-            )
-        )
+        data=[dict(row) for row in cur.fetchall()]
+        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
 
 
-@wrapper.operation_wrapper
+
+
+@wrapper.operation_wrapper_async
 def add_column_messages_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        try:
-            cur.execute(messagesAddColumnID)
-            conn.commit()
-        except sqlite3.OperationalError as E:
-            if not str(E) == "duplicate column name: model_id":
-                raise E
+        cur.execute(messagesAddColumnID)
+        conn.commit()
 
 
-def modify_unique_constriant_messages(model_id=None, username=None):
-    data = get_all_messages_transition(model_id=model_id, username=username)
-    drop_messages_table(model_id=model_id, username=username)
-    create_message_table(model_id=model_id, username=username)
-    write_messages_table_transition(data, model_id=model_id, username=username)
+async def modify_unique_constriant_messages(model_id=None, username=None):
+    data = await get_all_messages_transition(model_id=model_id, username=username)
+    await drop_messages_table(model_id=model_id, username=username)
+    await create_message_table(model_id=model_id, username=username)
+    await write_messages_table_transition(data, model_id=model_id, username=username)
 
 
 async def make_messages_table_changes(all_messages, model_id=None, username=None):
-    curr_id = set(get_all_messages_ids(model_id=model_id, username=username))
+    curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
     if len(new_posts) > 0:
@@ -190,6 +195,6 @@ async def make_messages_table_changes(all_messages, model_id=None, username=None
         await update_messages_table(curr_posts, model_id=model_id, username=username)
 
 
-def get_last_message_date(model_id=None, username=None):
-    data = get_messages_post_info(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x.get("date"))[-1].get("date")
+async def get_last_message_date(model_id=None, username=None):
+    data = await get_messages_post_info(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x.get("created_at"))[-1].get("created_at")

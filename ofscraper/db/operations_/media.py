@@ -45,8 +45,13 @@ CREATE TABLE IF NOT EXISTS medias (
 	UNIQUE (media_id,model_id)
 );"""
 mediaALLTransition = """
-SELECT media_id,post_id,link,directory,filename,size,api_type,
-media_type,preview,linked,downloaded,created_at,hash FROM medias;
+SELECT  media_id,post_id,link,directory,filename,size,api_type,
+media_type,preview,linked,downloaded,created_at,hash,
+       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
+            THEN model_id
+            ELSE NULL
+       END AS model_id
+FROM medias;
 """
 mediaDrop = """
 drop table medias;
@@ -60,11 +65,21 @@ SET
 directory=?,filename=?,size=?,downloaded=?,hash=?
 WHERE media_id=(?) and model_id=(?);"""
 mediaAddColumnHash = """
-ALTER TABLE medias ADD COLUMN hash VARCHAR;
+BEGIN TRANSACTION;
+  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'hash') THEN 1 ELSE 0 END AS alter_required;
+  IF alter_required = 0 THEN  -- Check for false (hash doesn't exist)
+    ALTER TABLE medias ADD COLUMN hash VARCHAR;
+  END IF;
+COMMIT TRANSACTION;
 """
 
 mediaAddColumnID = """
-ALTER TABLE medias ADD COLUMN model_id INTEGER;
+BEGIN TRANSACTION;
+  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
+  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
+    ALTER TABLE medias ADD COLUMN model_id INTEGER;
+  END IF;
+COMMIT TRANSACTION;
 """
 mediaDupeHashesMedia = """
 WITH x AS (
@@ -143,14 +158,14 @@ FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 """
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaCreate)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def add_column_media_hash(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         try:
@@ -161,18 +176,14 @@ def add_column_media_hash(model_id=None, username=None, conn=None):
                 raise E
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def add_column_media_ID(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        try:
-            cur.execute(mediaAddColumnID)
-            conn.commit()
-        except sqlite3.OperationalError as E:
-            if not str(E) == "duplicate column name: model_id":
-                raise E
+        cur.execute(mediaAddColumnID)
+        conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allIDCheck)
@@ -255,7 +266,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
         ordered_keys = [
@@ -272,13 +283,14 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
         "downloaded",
         "created_at",
         "hash",
+        "model_id"
     ]
-        insertData=[tuple([data[key] for key in ordered_keys]+[model_id]) for data in inputData]
+        insertData=[tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertFull, insertData)
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def get_all_medias_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaALLTransition)
@@ -288,7 +300,7 @@ def get_all_medias_transition(model_id=None, username=None, conn=None) -> list:
 
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def drop_media_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaDrop)
@@ -379,7 +391,7 @@ def media_exist_insert_helper(
 
 
 async def batch_mediainsert(media, **kwargs):
-    curr = set(get_media_ids(**kwargs) or [])
+    curr = set(await get_media_ids(**kwargs) or [])
     mediaDict = {}
     for ele in media:
         mediaDict[ele.id] = ele
@@ -388,8 +400,8 @@ async def batch_mediainsert(media, **kwargs):
     )
 
 
-def modify_unique_constriant_media(model_id=None, username=None):
-    data = get_all_medias_transition(model_id=model_id, username=username)
-    drop_media_table(model_id=model_id, username=username)
-    create_media_table(model_id=model_id, username=username)
-    write_media_table_transition(data, model_id=model_id, username=username)
+async def modify_unique_constriant_media(model_id=None, username=None):
+    data = await get_all_medias_transition(model_id=model_id, username=username)
+    await drop_media_table(model_id=model_id, username=username)
+    await create_media_table(model_id=model_id, username=username)
+    await write_media_table_transition(data, model_id=model_id, username=username)

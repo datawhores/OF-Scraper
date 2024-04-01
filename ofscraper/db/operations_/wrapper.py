@@ -23,7 +23,6 @@ from rich.console import Console
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.paths.common as common_paths
-from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")

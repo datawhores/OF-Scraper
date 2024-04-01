@@ -53,9 +53,9 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     overall_progress = progress_utils.overall_progress
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
     oldmessages = (
-        operations.get_messages_post_info(model_id=model_id, username=username)
+        await operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -128,7 +128,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     responseArray = []
 
     oldmessages = (
-        operations.get_messages_post_info(model_id=model_id, username=username)
+        await operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -205,11 +205,11 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
 
 
 def get_filterArray(after, before, oldmessages):
-    oldmessages = list(filter(lambda x: (x.get("date")) != None, oldmessages))
+    oldmessages = list(filter(lambda x: (x.get("created_at")) != None, oldmessages))
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
     oldmessages = sorted(
         oldmessages,
-        key=lambda x: arrow.get(x.get("date")).float_timestamp,
+        key=lambda x: x.get("created_at"),
         reverse=True,
     )
     if after > before:
@@ -225,16 +225,16 @@ def get_i(oldmessages, before):
     iterate through posts until a date less then or equal
     to before , set index to -1 this point
     """
-    if before >= oldmessages[1].get("date"):
+    if before >= oldmessages[1].get("created_at"):
         return 0
-    if before <= oldmessages[-1].get("date"):
+    if before <= oldmessages[-1].get("created_at"):
         return len(oldmessages) - 2
     # Use a generator expression for efficiency
     return max(
         next(
             index - 1
             for index, message in enumerate(oldmessages)
-            if message.get("date") <= before
+            if message.get("created_at") <= before
         ),
         0,
     )
@@ -245,15 +245,15 @@ def get_j(oldmessages, after):
     iterate through posts until a date less then or equal
     to after , set index to +1 this point
     """
-    if after >= oldmessages[0].get("date"):
+    if after >= oldmessages[0].get("created_at"):
         return 0
-    if after < oldmessages[-1].get("date"):
+    if after < oldmessages[-1].get("created_at"):
         return len(oldmessages) - 1
     return min(
         next(
             index + 1
             for index, message in enumerate(oldmessages)
-            if message.get("date") <= after
+            if message.get("created_at") <= after
         ),
         len(oldmessages) - 1,
     )
@@ -280,8 +280,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                     message_id=splitArrays[0][0].get("id")
                     if len(filteredArray) == len(oldmessages)
                     else None,
-                    required_ids=set([ele.get("date") for ele in splitArrays[0]]),
-                    offset=True,
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 )
             )
         )
@@ -293,7 +292,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                         model_id,
                         job_progress=job_progress,
                         message_id=splitArrays[i - 1][-1].get("id"),
-                        required_ids=set([ele.get("date") for ele in splitArrays[i]]),
+                        required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
                     )
                 )
             )
@@ -307,7 +306,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                     model_id,
                     job_progress=job_progress,
                     message_id=splitArrays[-2][-1].get("id"),
-                    required_ids=set([ele.get("date") for ele in splitArrays[-1]]),
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[-1]]),
                 )
             )
         )
@@ -510,7 +509,7 @@ def get_individual_post(model_id, postid):
                 log.debug(f"[bold]Individual message  headers:[/bold] {r.headers}")
 
 
-def get_after(model_id, username, forced_after=None):
+async def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
     elif read_args.retriveArgs().after == 0:
@@ -537,7 +536,7 @@ def get_after(model_id, username, forced_after=None):
             "Using last db date because,all downloads in db are marked as downloaded"
         )
         return arrow.get(
-            operations.get_last_message_date(model_id=model_id, username=username)
+            await operations.get_last_message_date(model_id=model_id, username=username)
         ).float_timestamp
     else:
         log.debug(
