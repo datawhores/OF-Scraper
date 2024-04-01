@@ -64,7 +64,7 @@ async def get_pinned_post(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:

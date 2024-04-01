@@ -112,7 +112,7 @@ async def get_lists():
                     new_tasks = []
                     try:
                         async with asyncio.timeout(
-                            constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                            constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
                         ):
                             for task in asyncio.as_completed(tasks):
                                 try:
@@ -245,7 +245,7 @@ async def get_list_users(lists):
                     new_tasks = []
                     try:
                         async with asyncio.timeout(
-                            constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                            constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
                         ):
                             for task in asyncio.as_completed(tasks):
                                 try:

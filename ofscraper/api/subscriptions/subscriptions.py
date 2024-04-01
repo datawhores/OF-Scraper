@@ -110,7 +110,7 @@ async def activeHelper(subscribe_count, c):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -170,7 +170,7 @@ async def expiredHelper(subscribe_count, c):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:

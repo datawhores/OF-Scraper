@@ -58,7 +58,7 @@ async def get_stories_post_progress(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -115,7 +115,7 @@ async def get_stories_post(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -251,7 +251,7 @@ async def get_highlight_list_progress(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -296,7 +296,7 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -363,7 +363,7 @@ async def get_highlight_list(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -399,7 +399,7 @@ async def get_highlights_via_list(highlightLists, c):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:

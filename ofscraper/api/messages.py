@@ -74,7 +74,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -165,7 +165,7 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
