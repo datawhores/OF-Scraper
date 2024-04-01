@@ -215,6 +215,6 @@ def create_backup(model_id, username, backup=None):
 async def table_init_create(model_id=None, username=None):
     await create_tables(model_id=model_id, username=username)
     create_backup(model_id, username)
-    # await modify_tables(model_id, username)
-    # await write_profile_table(model_id=model_id, username=username)
-    # await write_models_table(model_id=model_id, username=username)
+    await modify_tables(model_id, username)
+    await write_profile_table(model_id=model_id, username=username)
+    await write_models_table(model_id=model_id, username=username)
