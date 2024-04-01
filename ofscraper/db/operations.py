@@ -54,6 +54,7 @@ def modify_tables(model_id=None, username=None):
 
 def create_backup_transition(model_id, username):
     changes = get_schema_changes(model_id=model_id, username=username)
+    changes=[]
     groupA = [
         "media_hash",
         "media_model_id",
@@ -121,6 +122,7 @@ def add_column_tables(model_id=None, username=None):
 
 def modify_tables_constraints_and_columns(model_id=None, username=None):
     changes = get_schema_changes(model_id=model_id, username=username)
+    changes=[]
     if not "profile_username_constraint_removed" in changes:
         remove_unique_constriant_profile(model_id=model_id, username=username)
         add_flag_schema(

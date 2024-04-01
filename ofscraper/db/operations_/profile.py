@@ -45,17 +45,17 @@ SELECT * FROM profiles where user_id=(?)
 profileTableCheck = """
 SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 """
-profileInsert = f"""INSERT INTO 'profiles'(
+profileInsert = """INSERT INTO 'profiles'(
 user_id,username)
 VALUES (?, ?);"""
-profileUpdate = f"""Update 'profiles'
+profileUpdate = """Update 'profiles'
 SET
 user_id=?,username=?
 WHERE user_id=(?);"""
 modelDupeCheck = """
 SELECT * FROM models where model_id=(?)
 """
-modelInsert = f"""
+modelInsert = """
 INSERT INTO models (model_id)
 VALUES (?);
 """

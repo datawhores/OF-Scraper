@@ -468,18 +468,9 @@ async def process_labels(model_id, username, c):
             labelled_posts_ = list(
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
-            curr = set(
-                operations.get_all_labels_ids(model_id=model_id, username=username)
-            )
             for labelled_post in labelled_posts_:
-                operations.write_labels_table(
+                await operations.make_label_table_changes(
                     labelled_post,
-                    list(
-                        filter(
-                            lambda post: (labelled_post.label_id, post.id) not in curr,
-                            labelled_post.posts,
-                        )
-                    ),
                     model_id=model_id,
                     username=username,
                 )

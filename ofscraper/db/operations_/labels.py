@@ -16,7 +16,9 @@ import sqlite3
 
 from rich.console import Console
 
+import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
+import ofscraper.utils.args.read as read_args
 from ofscraper.utils.context.run_async import run
 
 console = Console()
@@ -33,11 +35,16 @@ CREATE TABLE IF NOT EXISTS labels (
     UNIQUE (post_id,label_id,model_id)
 )
 """
-labelInsert = f"""INSERT INTO 'labels'(
+labelInsert = """INSERT INTO 'labels'(
 label_id,name, type, post_id,model_id)
 VALUES ( ?,?,?,?,?);"""
-labelID = """
-SELECT id,post_id  FROM  labels where model_id=(?)
+
+
+labelUpdate = """Update 'labels'
+SET label_id=?,name=?,type=?,post_id=?,model_id=?
+WHERE label_id=(?) and model_id=(?) and post_id=(?);"""
+labelPostsID = """
+SELECT post_id  FROM  labels where model_id=(?) and label_id=(?)
 """
 labelAddColumnID = """
 ALTER TABLE labels ADD COLUMN user_id VARCHAR;
@@ -60,7 +67,7 @@ def create_labels_table(model_id=None, username=None, conn=None):
         conn.commit()
 
 
-@wrapper.operation_wrapper
+@wrapper.operation_wrapper_async
 def write_labels_table(
     label: dict, posts: dict, model_id=None, username=None, conn=None
 ):
@@ -81,22 +88,46 @@ def write_labels_table(
         conn.commit()
 
 
-@wrapper.operation_wrapper
-def write_labels_table_transition(
-    insertData: list, model_id=None, username=None, conn=None
+@wrapper.operation_wrapper_async
+def update_labels_table(
+    label: dict, posts: dict, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        insertData = [[*ele, model_id] for ele in insertData]
+        insertData = list(
+            map(
+                lambda post: (
+                    label.label_id,
+                    label.name,
+                    label.type,
+                    post.id,
+                    model_id,
+                    label.label_id,
+                    model_id,
+                    post.id
+                ),
+                posts,
+            )
+        )
+        curr.executemany(labelUpdate, insertData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper
+def write_labels_table_transition(
+    inputData: list, model_id=None, username=None, conn=None
+):
+    with contextlib.closing(conn.cursor()) as curr:
+        ordered_keys=["label_id","name", "type", "post_id"]
+        insertData = [tuple([data[key] for key in ordered_keys]+[model_id]) for data in inputData]
         curr.executemany(labelInsert, insertData)
         conn.commit()
 
 
-@wrapper.operation_wrapper
-def get_all_labels_ids(model_id=None, username=None, conn=None):
+@wrapper.operation_wrapper_async
+def get_all_labels_posts(label,model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as curr:
-        curr.execute(labelID, [model_id])
-        conn.commit()
-        return curr.fetchall()
+        curr.execute(labelPostsID, [model_id,label.label_id])
+        return [dict(row)["post_id"] for row in curr.fetchall()]
 
 
 @wrapper.operation_wrapper
@@ -122,10 +153,10 @@ def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         try:
             cur.execute(labelALLTransition)
-            return cur.fetchall()
+            return [dict(row) for row in cur.fetchall()]
         except sqlite3.OperationalError:
             cur.execute(labelALLTransition2)
-            return cur.fetchall()
+            return [dict(row) for row in cur.fetchall()]
 
 
 def modify_unique_constriant_labels(model_id=None, username=None):
@@ -133,3 +164,14 @@ def modify_unique_constriant_labels(model_id=None, username=None):
     drop_labels_table(model_id=model_id, username=username)
     create_labels_table(model_id=model_id, username=username)
     write_labels_table_transition(data, model_id=model_id, username=username)
+
+async def make_label_table_changes(label, model_id=None, username=None):
+    curr = set( await get_all_labels_posts( label,model_id=model_id,username=username))
+    new_posts = list(filter(lambda x: x.id not in curr, label.posts))
+    curr_posts = list(filter(lambda x: x.id in curr, label.posts))
+    if len(new_posts) > 0:
+        new_posts = helpers.converthelper(new_posts)
+        await write_labels_table(label,new_posts, model_id=model_id, username=username)
+    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+        curr_posts = helpers.converthelper(curr_posts)
+        await update_labels_table(label,curr_posts, model_id=model_id, username=username)

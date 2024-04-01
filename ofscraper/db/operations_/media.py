@@ -54,11 +54,11 @@ drop table medias;
 mediaUpdateAPI = f"""Update 'medias'
 SET
 media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,model_id=?
-WHERE media_id=(?);"""
+WHERE media_id=(?) and model_id=(?);"""
 mediaUpdateDownload = f"""Update 'medias'
 SET
 directory=?,filename=?,size=?,downloaded=?,hash=?
-WHERE media_id=(?);"""
+WHERE media_id=(?) and model_id=(?);"""
 mediaAddColumnHash = """
 ALTER TABLE medias ADD COLUMN hash VARCHAR;
 """
@@ -176,16 +176,14 @@ def add_column_media_ID(model_id=None, username=None, conn=None):
 def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allIDCheck)
-        conn.commit()
-        return list(map(lambda x: x[0], cur.fetchall()))
+        return [dict(row)["media_id"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper
 def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLIDCheck)
-        conn.commit()
-        return list(map(lambda x: x[0], cur.fetchall()))
+        return [dict(row)["media_id"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper
@@ -197,8 +195,7 @@ def get_dupe_media_hashes(
             cur.execute(mediaDupeHashesMedia, [mediatype])
         else:
             cur.execute(mediaDupeHashes)
-        conn.commit()
-        return list(map(lambda x: x[0], cur.fetchall()))
+        return [dict(row)["hash"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper
@@ -207,8 +204,7 @@ def get_dupe_media_files(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaDupeFiles, [hash])
-        conn.commit()
-        return list(map(lambda x: x[0], cur.fetchall()))
+        return [dict(row)["filename"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper_async
@@ -227,6 +223,7 @@ def download_media_update(
         )
         update_media_table_download_helper(
             media,
+            model_id,
             filename=filename,
             hashdata=hashdata,
             conn=conn,
@@ -259,9 +256,24 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
 
 
 @wrapper.operation_wrapper
-def write_media_table_transition(insertData, model_id=None, conn=None, **kwargs):
+def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
-        insertData = [[*ele, model_id] for ele in insertData]
+        ordered_keys = [
+        "media_id",
+        "post_id",
+        "link",
+        "directory",
+        "filename",
+        "size",
+        "api_type",
+        "media_type",
+        "preview",
+        "linked",
+        "downloaded",
+        "created_at",
+        "hash",
+    ]
+        insertData=[tuple([data[key] for key in ordered_keys]+[model_id]) for data in inputData]
         curr.executemany(mediaInsertFull, insertData)
         conn.commit()
 
@@ -271,7 +283,9 @@ def get_all_medias_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaALLTransition)
         conn.commit()
-        return cur.fetchall()
+        data = [dict(row) for row in cur.fetchall()]
+        return data
+
 
 
 @wrapper.operation_wrapper
@@ -318,20 +332,21 @@ def update_media_table_via_api_helper(
         media.date,
         model_id,
         media.id,
+        model_id
     ]
     curr.execute(mediaUpdateAPI, insertData)
     conn.commit()
 
 
 def update_media_table_download_helper(
-    media, filename=None, hashdata=None, conn=None, downloaded=None, curr=None, **kwargs
+    media,model_id, filename=None, hashdata=None, conn=None, downloaded=None, curr=None, **kwargs
 ) -> list:
     prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetchall()
     prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
     insertData = media_exist_insert_helper(
         filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
     )
-    insertData.append(media.id)
+    insertData.extend([media.id,model_id])
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
 
