@@ -47,9 +47,6 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
     job_progress = progress_utils.archived_progress
     overall_progress = progress_utils.overall_progress
 
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     oldarchived = (
         operations.get_archived_postinfo(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
@@ -67,7 +64,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
 
     after = get_after(model_id, username, forced_after)
     splitArrays = get_split_array(oldarchived, username, after)
-    get_tasks(splitArrays, c, model_id, job_progress, after)
+    tasks=get_tasks(splitArrays, c, model_id, job_progress, after)
 
     page_task = overall_progress.add_task(
         f"Archived Content Pages Progress: {page_count}", visible=True
@@ -132,7 +129,7 @@ def get_split_array(oldarchived, username, after):
     )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
-    postsDataArray = sorted(oldarchived, key=lambda x: x[0])
+    postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))
     log.info(
         f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
@@ -141,7 +138,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
 
             """
     )
-    filteredArray = list(filter(lambda x: x[0] >= after, postsDataArray))
+    filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
     # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
@@ -255,8 +252,8 @@ def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x[11] != 1, curr))
-    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
+    missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
+    missing_items = list(sorted(missing_items, key=lambda x: x.get('created_at')))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
         return operations.get_last_archived_date(model_id=model_id, username=username)
@@ -264,7 +261,7 @@ def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][12]).float_timestamp
+        return missing_items[0].get("created_at")
 
 
 @run

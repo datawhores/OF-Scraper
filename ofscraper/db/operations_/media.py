@@ -15,7 +15,7 @@ import logging
 import math
 import pathlib
 import sqlite3
-
+import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
@@ -285,27 +285,24 @@ def drop_media_table(model_id=None, username=None, conn=None) -> list:
 def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getMessagesMedia, [model_id])
-        data = list(map(lambda x: x, cur.fetchall()))
-        conn.commit()
-        return data
+        data = [dict(row) for row in cur.fetchall()]
+        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
 
 
 @wrapper.operation_wrapper
 def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getArchivedMedia, [model_id])
-        data = list(map(lambda x: x, cur.fetchall()))
-        conn.commit()
-        return data
+        data = [dict(row) for row in cur.fetchall()]
+        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
 
 
 @wrapper.operation_wrapper
 def get_timeline_media(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getTimelineMedia, [model_id])
-        data = list(map(lambda x: x, cur.fetchall()))
-        conn.commit()
-        return data
+        data = [dict(row) for row in cur.fetchall()]
+        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
 
 
 def update_media_table_via_api_helper(

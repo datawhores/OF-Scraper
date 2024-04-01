@@ -196,9 +196,9 @@ async def make_post_table_changes(all_posts, model_id=None, username=None):
 
 def get_last_archived_date(model_id=None, username=None):
     data = get_archived_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x.get("created_at"))[-1]
+    return sorted(data, key=lambda x: x.get("created_at"))[-1].get("created_at")
 
 
 def get_last_timeline_date(model_id=None, username=None):
     data = get_timeline_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x["created_at"])[-1]
+    return sorted(data, key=lambda x: x["created_at"])[-1].get("created_at")
