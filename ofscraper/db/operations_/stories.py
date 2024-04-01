@@ -128,7 +128,6 @@ def update_stories_table(stories: dict, model_id=None, username=None, conn=None)
 def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allStoriesCheck)
-        conn.commit()
         return list(map(lambda x: x[0], cur.fetchall()))
 
 

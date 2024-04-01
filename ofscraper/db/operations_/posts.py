@@ -174,7 +174,6 @@ def add_column_post_ID(conn=None, **kwargs):
             conn.rollback()
             raise e  # Rollback in case of errors
 
-        conn.close()
 
 
 @wrapper.operation_wrapper_async
