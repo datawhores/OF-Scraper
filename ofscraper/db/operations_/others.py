@@ -85,7 +85,7 @@ FROM others;
 othersDrop = """
 drop table others;
 """
-othersInsert = f"""INSERT INTO 'others'(
+othersInsert = """INSERT INTO 'others'(
 post_id, text,price,paid,archived,
 created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
@@ -100,7 +100,7 @@ FROM products;
 productsDrop = """
 drop table products;
 """
-productsInsert = f"""INSERT INTO 'products'(
+productsInsert = """INSERT INTO 'products'(
 post_id, text,price,paid,archived,
 created_at,title,model_id)
 VALUES (?, ?,?,?,?,?,?,?);"""

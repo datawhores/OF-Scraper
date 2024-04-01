@@ -36,12 +36,12 @@ CREATE TABLE IF NOT EXISTS stories (
 	UNIQUE (post_id,model_id)
 )
 """
-storiesInsert = f"""INSERT INTO 'stories'(
+storiesInsert = """INSERT INTO 'stories'(
 post_id, text,price,paid,archived,created_at,model_id)
             VALUES (?, ?,?,?,?,?,?);"""
-storiesUpdate = f"""UPDATE stories
+storiesUpdate = """UPDATE stories
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
-WHERE post_id = ?;"""
+WHERE post_id = ? and model_id=(?);"""
 
 storiesAddColumnID = """
 BEGIN TRANSACTION;
@@ -121,6 +121,7 @@ def update_stories_table(stories: dict, model_id=None, username=None, conn=None)
                     data.date,
                     model_id,
                     data.id,
+                    model_id
                 ),
                 stories,
             )

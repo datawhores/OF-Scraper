@@ -19,7 +19,6 @@ import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
-from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")
@@ -56,7 +55,7 @@ FROM medias;
 mediaDrop = """
 drop table medias;
 """
-mediaUpdateAPI = f"""Update 'medias'
+mediaUpdateAPI = """Update 'medias'
 SET
 media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,model_id=?
 WHERE media_id=(?) and model_id=(?);"""

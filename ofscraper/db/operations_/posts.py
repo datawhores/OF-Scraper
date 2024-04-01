@@ -37,12 +37,12 @@ CREATE TABLE IF NOT EXISTS posts (
 	UNIQUE (post_id,model_id)
 )
 """
-postInsert = f"""INSERT INTO 'posts'(
+postInsert = """INSERT INTO 'posts'(
 post_id, text,price,paid,archived,created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
-postUpdate = f"""UPDATE posts
+postUpdate = """UPDATE posts
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
-WHERE post_id = ?;"""
+WHERE post_id = ? and model_id=(?);"""
 timelinePostInfo = """
 SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
 """
@@ -118,6 +118,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
                     data.date,
                     model_id,
                     data.id,
+                    model_id
                 ],
                 posts,
             )

@@ -49,10 +49,6 @@ SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 profileInsert = """INSERT INTO 'profiles'(
 user_id,username)
 VALUES (?, ?);"""
-profileUpdate = """Update 'profiles'
-SET
-user_id=?,username=?
-WHERE user_id=(?);"""
 modelDupeCheck = """
 SELECT * FROM models where model_id=(?)
 """
@@ -101,9 +97,6 @@ def write_profile_table(model_id=None, username=None, conn=None) -> list:
         insertData = [model_id, username]
         if len(cur.execute(profileDupeCheck, (model_id,)).fetchall()) == 0:
             cur.execute(profileInsert, insertData)
-        else:
-            insertData.append(model_id)
-            cur.execute(profileUpdate, insertData)
         conn.commit()
 
 

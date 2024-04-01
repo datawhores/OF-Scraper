@@ -18,7 +18,6 @@ from rich.console import Console
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.utils.context.run_async import run
 
 console = Console()
 log = logging.getLogger("shared")

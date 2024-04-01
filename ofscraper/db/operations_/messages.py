@@ -39,11 +39,11 @@ PRIMARY KEY (id),
 UNIQUE (post_id,model_id)
 )
 """
-messagesInsert = f"""INSERT INTO 'messages'(
+messagesInsert = """INSERT INTO 'messages'(
 post_id, text,price,paid,archived,
 created_at,user_id,model_id)
             VALUES (?, ?,?,?,?,?,?,?);"""
-messagesUpdate = f"""UPDATE messages
+messagesUpdate = """UPDATE messages
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, user_id=?,model_id=?
 WHERE post_id = ? and model_id=(?);"""
 allMessagesCheck = """
