@@ -47,6 +47,7 @@ def operation_wrapper_async(func: abc.Callable):
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(database_path, check_same_thread=False, timeout=10)
+            conn.row_factory = sqlite3.Row
             return await loop.run_in_executor(
                 PROCESS_POOL, partial(func, *args, **kwargs, conn=conn)
             )
@@ -93,6 +94,7 @@ def operation_wrapper(func: abc.Callable):
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(database_path, check_same_thread=True, timeout=10)
+            conn.row_factory = sqlite3.Row
             return func(*args, **kwargs, conn=conn)
         except sqlite3.OperationalError as E:
             log.info("DB may be locked")

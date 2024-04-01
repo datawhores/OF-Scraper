@@ -193,7 +193,7 @@ def get_split_array(model_id, username, after):
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-    postsDataArray = sorted(oldtimeline, key=lambda x: x[0])
+    postsDataArray = sorted(oldtimeline, key=lambda x: x.get("created_at"))
     log.info(
         f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
@@ -202,9 +202,8 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
 
             """
     )
-    filteredArray = list(filter(lambda x: x[0] >= after, postsDataArray))
+    filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
-    # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
         filteredArray[i : i + min_posts]
         for i in range(0, len(filteredArray), min_posts)
@@ -221,8 +220,8 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    required_ids=set([ele[0] for ele in splitArrays[0]]),
-                    timestamp=splitArrays[0][0][0],
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
+                    timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                 )
             )
@@ -234,8 +233,8 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                         c,
                         model_id,
                         job_progress=job_progress,
-                        required_ids=set([ele[0] for ele in splitArrays[i]]),
-                        timestamp=splitArrays[i - 1][-1][0],
+                        required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
+                        timestamp=splitArrays[i - 1][-1].get("created_at"),
                         offset=False,
                     )
                 )
@@ -249,7 +248,7 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[-1][0][0],
+                    timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
                 )
             )
@@ -262,7 +261,7 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[0][0][0],
+                    timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                 )
             )

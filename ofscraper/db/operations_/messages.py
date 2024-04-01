@@ -129,8 +129,7 @@ def write_messages_table_transition(
 def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allMessagesCheck)
-        conn.commit()
-        return list(map(lambda x: x[0], cur.fetchall()))
+        return [dict(row)["post_id"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper

@@ -88,10 +88,11 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
 
 @wrapper.operation_wrapper
 def write_post_table_transition(
-    insertData: list, model_id=None, username=None, conn=None
+    inputData: list, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        insertData = [[*ele, model_id] for ele in insertData]
+        ordered_keys = ('post_id', 'text', 'price', 'paid', 'archived', 'created_at')
+        insertData = [tuple([data[key] for key in ordered_keys]+[model_id]) for data in inputData]
         cur.executemany(postInsert, insertData)
         conn.commit()
 
@@ -121,10 +122,9 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
 def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(timelinePostInfo, [model_id])
-        conn.commit()
-        return list(
-            map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
-        )
+        data=[dict(row) for row in cur.fetchall()]
+        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
+
 
 
 @wrapper.operation_wrapper
@@ -138,16 +138,14 @@ def create_post_table(model_id=None, username=None, conn=None):
 def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allPOSTCheck)
-        conn.commit()
-        return list(map(lambda x: x[0], cur.fetchall()))
+        return [dict(row)["post_id"] for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper
 def get_all_posts_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsALLTransition)
-        conn.commit()
-        return cur.fetchall()
+        return [dict(row) for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper
@@ -173,9 +171,8 @@ def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> 
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(archivedPostInfo, [model_id])
         conn.commit()
-        return list(
-            map(lambda x: (arrow.get(x[0]).float_timestamp, x[1]), cur.fetchall())
-        )
+        data=[dict(row) for row in cur.fetchall()]
+        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
 
 
 def modify_unique_constriant_posts(model_id=None, username=None):
@@ -186,7 +183,7 @@ def modify_unique_constriant_posts(model_id=None, username=None):
 
 
 async def make_post_table_changes(all_posts, model_id=None, username=None):
-    curr_id = get_all_post_ids(model_id=model_id, username=username)
+    curr_id = set(get_all_post_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
     if len(new_posts) > 0:
@@ -199,9 +196,9 @@ async def make_post_table_changes(all_posts, model_id=None, username=None):
 
 def get_last_archived_date(model_id=None, username=None):
     data = get_archived_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x[0])[-1][0]
+    return sorted(data, key=lambda x: x.get("created_at"))[-1]
 
 
 def get_last_timeline_date(model_id=None, username=None):
     data = get_timeline_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x)[-1]
+    return sorted(data, key=lambda x: x["created_at"])[-1]

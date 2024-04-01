@@ -147,8 +147,8 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None):
             conn.commit()
         except sqlite3.IntegrityError as e:
             log.debug("Error: Unique constraint on schema flags violation occurred", e)
-            # You can choose to retry the insert with a modified flag value or take other actions
             pass
+
 
 
 @wrapper.operation_wrapper

@@ -76,7 +76,7 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * len(tasks)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -160,8 +160,8 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    required_ids=set([ele[0] for ele in splitArrays[0]]),
-                    timestamp=splitArrays[0][0][0],
+                    required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
+                    timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                 )
             )
@@ -173,8 +173,8 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                         c,
                         model_id,
                         job_progress=job_progress,
-                        required_ids=set([ele[0] for ele in splitArrays[i]]),
-                        timestamp=splitArrays[i - 1][-1][0],
+                        required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
+                        timestamp=splitArrays[i - 1][-1].get("created_at"),
                         offset=False,
                     )
                 )
@@ -188,7 +188,7 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[-1][0][0],
+                    timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
                 )
             )
@@ -201,7 +201,7 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    timestamp=splitArrays[0][0][0],
+                    timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                 )
             )
