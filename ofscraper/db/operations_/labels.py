@@ -12,7 +12,7 @@ r"""
 """
 import contextlib
 import logging
-
+import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
@@ -44,14 +44,7 @@ WHERE label_id=(?) and model_id=(?) and post_id=(?);"""
 labelPostsID = """
 SELECT post_id  FROM  labels where model_id=(?) and label_id=(?)
 """
-labelAddColumnID = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('labels') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE labels ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
-"""
+
 labelALLTransition = """
 SELECT
     CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('labels') WHERE name = 'label_id')
@@ -143,9 +136,18 @@ def get_all_labels_posts(label,model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def add_column_labels_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(labelAddColumnID)
-        conn.commit() 
-
+        try:
+            # Check if column exists (separate statement)
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('labels') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE labels ADD COLUMN model_id INTEGER;")
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Raise the error for handling
 
 @wrapper.operation_wrapper_async
 def drop_labels_table(model_id=None, username=None, conn=None) -> list:

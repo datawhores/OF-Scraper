@@ -12,6 +12,7 @@ r"""
 """
 import contextlib
 import logging
+import sqlite3
 
 from rich.console import Console
 
@@ -43,14 +44,7 @@ storiesUpdate = """UPDATE stories
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ? and model_id=(?);"""
 
-storiesAddColumnID = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('stories') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE stories ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
-"""
+
 storiesALLTransition = """
 SELECT post_id,text,price,paid,archived,created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('stories') WHERE name = 'model_id')
@@ -149,8 +143,19 @@ def get_all_stories_transition(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper_async
 def add_column_stories_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(storiesAddColumnID)
-        conn.commit()
+        try:
+            # Separate statements with conditional execution
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('stories') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]
+            if alter_required == 0:
+                cur.execute("ALTER TABLE stories ADD COLUMN model_id INTEGER;")
+
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
 
 
 

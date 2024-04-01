@@ -59,27 +59,12 @@ mediaUpdateAPI = """Update 'medias'
 SET
 media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,model_id=?
 WHERE media_id=(?) and model_id=(?);"""
-mediaUpdateDownload = f"""Update 'medias'
+mediaUpdateDownload = """Update 'medias'
 SET
 directory=?,filename=?,size=?,downloaded=?,hash=?
 WHERE media_id=(?) and model_id=(?);"""
-mediaAddColumnHash = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'hash') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (hash doesn't exist)
-    ALTER TABLE medias ADD COLUMN hash VARCHAR;
-  END IF;
-COMMIT TRANSACTION;
-"""
 
-mediaAddColumnID = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE medias ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
-"""
+
 mediaDupeHashesMedia = """
 WITH x AS (
     SELECT hash, size
@@ -168,18 +153,36 @@ def create_media_table(model_id=None, username=None, conn=None):
 def add_column_media_hash(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            cur.execute(mediaAddColumnHash)
+        # Check if column exists (separate statement)
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'hash') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE medias ADD COLUMN hash VARCHAR;")
+                # Commit changes
             conn.commit()
-        except sqlite3.OperationalError as E:
-            if not str(E) == "duplicate column name: hash":
-                raise E
-
+            print("Successfully added 'hash' column (if it didn't exist).")
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
 
 @wrapper.operation_wrapper_async
 def add_column_media_ID(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(mediaAddColumnID)
-        conn.commit()
+        try:
+            # Check if column exists (separate statement)
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE medias ADD COLUMN model_id INTEGER;")
+
+                # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
 
 
 @wrapper.operation_wrapper_async

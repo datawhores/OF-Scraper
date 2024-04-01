@@ -12,6 +12,7 @@ r"""
 """
 import contextlib
 import logging
+import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
@@ -51,22 +52,7 @@ CREATE TABLE IF NOT EXISTS products (
 schemaCreate = """
 CREATE TABLE if not exists schema_flags (flag_name TEXT PRIMARY KEY, flag_value TEXT);
 """
-otherAddColumnID = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('others') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE others ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
-"""
-productsAddColumnID = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('products') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE products ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
-"""
+
 schemaAll = """
 SELECT flag_name FROM schema_flags WHERE flag_value = 1;
 """
@@ -123,15 +109,38 @@ def create_others_table(model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def add_column_other_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(otherAddColumnID)
-        conn.commit()
+
+        try:
+            # Separate statements with conditional execution
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('others') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]
+            if alter_required == 0:
+                cur.execute("ALTER TABLE others ADD COLUMN model_id INTEGER;")
+
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
 
 
 @wrapper.operation_wrapper_async
 def add_column_products_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(productsAddColumnID)
-        conn.commit()
+
+        try:
+            # Separate statements with conditional execution
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('products') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]
+            if alter_required == 0:
+                cur.execute("ALTER TABLE products ADD COLUMN model_id INTEGER;")
+
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
+
 
 
 @wrapper.operation_wrapper_async
@@ -159,8 +168,9 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def get_all_others_transition(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        data = cur.execute(othersALLTransition).fetchall()
-        return data
+        cur.execute(othersALLTransition)
+        return [dict(row) for row in cur.fetchall()]
+
 
 
 @wrapper.operation_wrapper_async
@@ -184,8 +194,8 @@ def write_others_table_transition(
 @wrapper.operation_wrapper_async
 def get_all_products_transition(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
-        data = cur.execute(productsALLTransition).fetchall()
-        return data
+        cur.execute(productsALLTransition)
+        return [dict(row) for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper_async

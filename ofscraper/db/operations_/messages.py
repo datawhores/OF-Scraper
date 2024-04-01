@@ -12,6 +12,7 @@ r"""
 """
 import contextlib
 import logging
+import sqlite3
 
 import arrow
 from rich.console import Console
@@ -62,14 +63,6 @@ drop table messages;
 """
 messagesData = """
 SELECT created_at,post_id FROM messages where model_id=(?)
-"""
-messagesAddColumnID = """
-BEGIN TRANSCTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE messages ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
 """
 
 
@@ -172,9 +165,18 @@ def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) ->
 @wrapper.operation_wrapper_async
 def add_column_messages_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesAddColumnID)
-        conn.commit()
+        try:
+            # Separate statements with conditional execution
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]
+            if alter_required == 0:
+                cur.execute("ALTER TABLE messages ADD COLUMN model_id INTEGER;")
 
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e
 
 async def modify_unique_constriant_messages(model_id=None, username=None):
     data = await get_all_messages_transition(model_id=model_id, username=username)

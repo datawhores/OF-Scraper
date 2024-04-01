@@ -12,7 +12,7 @@ r"""
 """
 import contextlib
 import logging
-
+import sqlite3
 import arrow
 from rich.console import Console
 
@@ -60,14 +60,7 @@ drop table posts;
 allPOSTCheck = """
 SELECT post_id FROM posts
 """
-postAddColumnID = """
-BEGIN TRANSACTION;
-  SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;
-  IF alter_required = 0 THEN  -- Check for false (model_id doesn't exist)
-    ALTER TABLE posts ADD COLUMN model_id INTEGER;
-  END IF;
-COMMIT TRANSACTION;
-"""
+
 archivedPostInfo = """
 SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 """
@@ -167,9 +160,21 @@ def drop_posts_table(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper_async
 def add_column_post_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(postAddColumnID)
-        conn.commit()
+        try:
+            # Check if column exists (separate statement)
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
 
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN model_id INTEGER;")
+            # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
+
+        conn.close()
 
 
 @wrapper.operation_wrapper_async
