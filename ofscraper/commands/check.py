@@ -85,7 +85,7 @@ def process_download_cart():
                     url = constants.getattr("messageTableSPECIFIC").format(
                         row[username].plain, row[post_id].plain
                     )
-                elif row[restype].plain == "post":
+                elif row[restype].plain in {"pinned","timeline","archived"}:
                     url = f"{row[post_id]}"
                 elif row[restype].plain == "highlights":
                     url = constants.getattr("storyEP").format(row[post_id].plain)

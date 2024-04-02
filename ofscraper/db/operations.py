@@ -107,7 +107,7 @@ async def add_column_tables(model_id=None, username=None):
         await add_column_media_posted_at(model_id=model_id, username=username)
         await add_flag_schema("media_posted_at", model_id=model_id, username=username)
     if not "posts_pinned" in changes:
-        await add_column_posts_pinned(model_id=model_id, username=username)
+        await add_column_post_pinned(model_id=model_id, username=username)
         await add_flag_schema("posts_pinned", model_id=model_id, username=username)    
     if not "posts_model_id" in changes:
         await add_column_post_ID(model_id=model_id, username=username)

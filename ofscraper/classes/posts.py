@@ -87,6 +87,9 @@ class Post(base.base):
             return "pinned"
         elif self.archived:
             return "self.archived"
+        elif self.post.get("responseType")=="post":
+            return "timeline"
+        return self.post.get("responseType")
         
 
     @property
