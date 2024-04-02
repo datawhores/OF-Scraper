@@ -349,9 +349,8 @@ async def get_all_paid_posts():
     )  
         seen = set()
         new_posts = [post for post in output if post['id'] not in seen and not seen.add(post['id'])]
-
         log.trace(f"all paid postids {list(map(lambda x:x.get('id'),new_posts))}")
-        log.debug(f"[bold]Paid Post count[/bold] {len(new_posts)} found")
+        log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(new_posts)} found")
         log.trace(
         "paid raw duped {posts}".format(
             posts="\n\n".join(

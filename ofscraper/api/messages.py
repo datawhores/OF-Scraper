@@ -98,12 +98,20 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     progress_utils.messages_layout.visible = False
 
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
+    log.trace(
+        "messages raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo message: {str(x)}", responseArray))
+            )
+        )
+    )
     seen = set()
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
     
+    log.debug(f"[bold]Messages Count without Dupes[/bold] {len(responseArray)} found")
 
-    log.trace(f"messages dupeset messageids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(f"messages messageids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "messages raw unduped {posts}".format(
             posts="\n\n".join(
@@ -180,10 +188,19 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
         tasks = new_tasks
 
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
-
+    log.trace(
+        "messages raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo message: {str(x)}", responseArray))
+            )
+        )
+    )
     seen = set()
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
-    log.trace(f"messages dupeset messageids {list(map(lambda x:x.get('id'),new_posts))}")
+
+    log.debug(f"[bold]Messages Count without Dupes[/bold] {len(responseArray)} found")
+
+    log.trace(f"messages messageids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "messages raw unduped {posts}".format(
             posts="\n\n".join(
