@@ -46,9 +46,19 @@ async def create_tables(model_id, username):
     await create_schema_table(model_id=model_id, username=username)
 
 async def modify_tables(model_id=None, username=None):
-    create_backup_transition(model_id, username)
-    await add_column_tables(model_id=model_id, username=username)
-    await modify_tables_constraints_and_columns(model_id=model_id, username=username)
+    backup=create_backup_transition(model_id, username)
+    try:
+        await add_column_tables(model_id=model_id, username=username)
+        await modify_tables_constraints_and_columns(model_id=model_id, username=username)
+    except Exception as E:
+        restore_backup_transition(backup,model_id,username)
+        raise E
+
+def restore_backup_transition(backup,model_id,username):
+    database=placeholder.databasePlaceholder().databasePathHelper(
+        model_id, username
+    )
+    shutil.copy2(backup, database)
 
 
 def create_backup_transition(model_id, username):
@@ -88,6 +98,7 @@ def create_backup_transition(model_id, username):
     new_path = create_backup(model_id, username, "old_schema_db_backup.db")
     log.info(f"transition backup created at {new_path}")
     check_backup(model_id, username, new_path)
+    return new_path
 
 
 async def add_column_tables(model_id=None, username=None):

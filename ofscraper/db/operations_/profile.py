@@ -50,10 +50,16 @@ profileInsert = """
 INSERT INTO 'profiles' (user_id, username)
 SELECT ?, ?
 WHERE NOT EXISTS (
-  SELECT 1 FROM 'profiles' WHERE user_id = ?
+  SELECT 1 FROM 'profiles'
+  WHERE user_id = ? AND username = ?
 );
-;"""
+"""
 
+
+profileInsertTransition = """INSERT INTO 'profiles'(
+user_id,username)
+            VALUES (?, ?);
+"""
 modelInsert = """
 INSERT INTO models (model_id)
 SELECT ?
@@ -98,7 +104,7 @@ def create_profile_table(model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def write_profile_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        insertData = [model_id, username]
+        insertData = [model_id, username,model_id,username]
         cur.execute(profileInsert, insertData)
         conn.commit()
 
@@ -106,7 +112,7 @@ def write_profile_table(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper_async
 def write_profile_table_transition(insertData, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.executemany(profileInsert, insertData)
+        cur.executemany(profileInsertTransition, insertData)
         conn.commit()
 
 
@@ -134,6 +140,7 @@ def get_all_profiles(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         try:
             profiles = cur.execute(profilesALL).fetchall()
+            conn.commit()
             return profiles
         except sqlite3.OperationalError as E:
             None
@@ -158,7 +165,7 @@ def create_models_table(model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def write_models_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(modelInsert, [model_id])
+        cur.execute(modelInsert, [model_id,model_id])
         conn.commit()
 
 
