@@ -62,7 +62,7 @@ messagesDrop = """
 drop table messages;
 """
 messagesData = """
-SELECT created_at,post_id FROM messages where model_id=(?)
+SELECT created_at,post_id,downloaded FROM messages where model_id=(?)
 """
 
 

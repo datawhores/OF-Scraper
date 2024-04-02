@@ -17,6 +17,7 @@ import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
+import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
 
@@ -175,7 +176,6 @@ def add_column_post_ID(conn=None, **kwargs):
             raise e  # Rollback in case of errors
 
 
-
 @wrapper.operation_wrapper_async
 def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -210,5 +210,5 @@ async def get_last_archived_date(model_id=None, username=None):
 
 
 async def get_last_timeline_date(model_id=None, username=None):
-    data = await get_timeline_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x["created_at"])[-1].get("created_at")
+    data = await media.get_timeline_media(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x["posted_at"])[-1].get("posted_at")
