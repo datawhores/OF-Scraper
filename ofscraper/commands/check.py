@@ -405,7 +405,7 @@ def get_all_found_media(user_name, posts):
 async def get_downloaded(user_name, model_id, paid=False):
     downloaded = {}
 
-    operations.table_init_create(model_id=model_id, username=user_name)
+    await operations.table_init_create(model_id=model_id, username=user_name)
     paid = await get_paid_ids(model_id, user_name) if paid else []
     [
         downloaded.update({ele: downloaded.get(ele, 0) + 1})

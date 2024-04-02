@@ -38,6 +38,8 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
+from ofscraper.utils.context.run_async import run
+
 
 log = logging.getLogger("shared")
 
@@ -75,7 +77,7 @@ def process_post():
 
 
 @exit.exit_wrapper
-async def process_post_user_first():
+def process_post_user_first():
     with scrape_context_manager():
         if not placeholder.check_uniquename():
             log.warning(
@@ -95,7 +97,7 @@ async def process_post_user_first():
         # log.info(f"Data retrival progressing on model {count+1}/{length}")
 
 
-async def process_user_first_helper(ele):
+def process_user_first_helper(ele):
     if constants.getattr("SHOW_AVATAR") and ele.avatar:
         log.warning(f"Avatar : {ele.avatar}")
     if bool(areas.get_download_area()):
@@ -116,27 +118,25 @@ async def process_user_first_helper(ele):
 
 
 def scrape_paid(user_dict=None):
-    output = []
-    user_dict = user_dict or {}
-    output.extend(OF.process_all_paid())
-    user_dict = user_dict or {}
-    [
-        user_dict.update(
-            {ele.post.model_id: user_dict.get(ele.post.model_id, []) + [ele]}
-        )
-        for ele in output
-    ]
+    user_dict =OF.process_all_paid()
     oldUsers = selector.get_ALL_SUBS_DICT()
-    for value in user_dict.values():
-        model_id = value[0].post.model_id
-        username = value[0].post.username
+    length=len(list(user_dict.keys()))
+    for count,value in enumerate(user_dict.values()):
+        model_id = value["model_id"]
+        username = value["username"]
+        posts=value["posts"]
+        medias=value["medias"]
+        log.warning(
+                f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
+            )
         selector.set_ALL_SUBS_DICTVManger(
             {username: models.Model(profile.scrape_profile(model_id))}
         )
         download.download_process(
             username,
             model_id,
-            value,
+            medias,
+            posts=posts
         )
     # restore og users
     selector.set_ALL_SUBS_DICT(oldUsers)

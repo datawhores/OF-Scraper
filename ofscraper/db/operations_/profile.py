@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS models (
 )
 """
 profileDupeCheck = """
-SELECT * FROM profiles where user_id=(?)
+SELECT username FROM profiles where user_id=(?)
 """
 profileTableCheck = """
 SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
@@ -73,12 +73,11 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
         return None
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            modelinfo = cur.execute(
-                profileDupeCheck, (model_id,)
-            ).fetchall() or [(None,)]
-            conn.commit()
-            return modelinfo[0][-1]
-        except sqlite3.OperationalError as E:
+           cur.execute(
+                profileDupeCheck, ([model_id])
+            )
+           return (list(map(lambda x: x[0], cur.fetchall())) or [None] )[0]
+        except sqlite3.OperationalError:
             None
         except Exception as E:
             raise E
@@ -116,9 +115,7 @@ def check_profile_table_exists(model_id=None, username=None, conn=None):
         return False
     with contextlib.closing(conn.cursor()) as cur:
         if len(cur.execute(profileTableCheck).fetchall()) > 0:
-            conn.commit()
             return True
-        conn.commit()
         return False
 
 

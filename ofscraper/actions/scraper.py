@@ -17,8 +17,6 @@ import platform
 import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
-from rich.live import Live
-
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
 import ofscraper.api.labels as labels_api
@@ -36,12 +34,13 @@ import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
+from ofscraper.utils.context.run_async import run
+
 
 log = logging.getLogger("shared")
 
@@ -378,28 +377,15 @@ async def process_profile(username, c) -> list:
 
 
 @free.space_checker
+@run
 async def process_all_paid():
     with stdout.lowstdout():
-        paid_content = paid.get_all_paid_posts()
+        paid_content = await paid.get_all_paid_posts()
         user_dict = {}
-        post_array = []
-        [
-            user_dict.update(
-                {
-                    (ele.get("fromUser", None) or ele.get("author", None) or {}).get(
-                        "id"
-                    ): user_dict.get(
-                        (
-                            ele.get("fromUser", None) or ele.get("author", None) or {}
-                        ).get("id"),
-                        [],
-                    )
-                    + [ele]
-                }
-            )
-            for ele in paid_content
-        ]
-        output = []
+        for ele in paid_content:
+            user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get("id")
+            user_dict.setdefault(user_id, []).append(ele)            
+        output = {}
         for model_id, value in user_dict.items():
             username = profile.scrape_profile(model_id).get("username")
             if username == "modeldeleted" and await operations.check_profile_table_exists(
@@ -410,36 +396,39 @@ async def process_all_paid():
                     or username
                 )
             log.info(f"Processing {username}_{model_id}")
-            operations.table_init_create(model_id=model_id, username=username)
-            log.debug(f"Created table for {username}")
+            await operations.table_init_create(model_id=model_id, username=username)
+            log.debug(f"Created table for {username}_{model_id}")
             all_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
                     value,
                 )
             )
-            new_dict = {}
-            for ele in all_posts:
-                new_dict[ele.id] = ele
-            new_posts = new_dict.values()
+            seen = set()
+            new_posts = [post for post in all_posts if post.id not in seen and not seen.add(post.id)]
+            new_medias=[item for post in new_posts for item in post.media]
+            new_medias=filters.filterMedia(new_medias)
+            new_posts=filters.filterPost(new_posts)
             await operations.make_post_table_changes(
                 new_posts,
                 model_id=model_id,
                 username=username,
             )
-            temp = []
-            [temp.extend(post.media) for post in new_posts]
-            output.extend(temp)
-            log.debug(
-                f"[bold]Paid media count {username}_{model_id}[/bold] {len(temp)}"
+            await operations.batch_mediainsert(
+                new_medias,
+                model_id=model_id,
+                username=username,
+                downloaded=False,
             )
-            log.debug(f"Added Paid {len(temp)} media items from {username}_{model_id}")
-            post_array.extend(new_posts)
+
+            output[model_id]=dict(model_id=model_id,username=username,posts=new_posts,medias=new_medias)
+            log.debug(
+                f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}")
 
         log.debug(
-            f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x.media),post_array))}"
+            f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"
         )
-        return filters.filterMedia(output)
+        return output
 
 
 @free.space_checker

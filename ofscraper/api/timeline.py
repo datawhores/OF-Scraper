@@ -82,25 +82,22 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     overall_progress.remove_task(page_task)
     progress_utils.timeline_layout.visible = False
 
-    unduped = {}
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        id = post["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = post
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
-    log.trace(f"timeline dupeset postids {list(unduped.keys())}")
+
+    log.trace(f"timeline dupeset postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "post raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo timeline: {str(x)}", unduped))
+                list(map(lambda x: f"undupedinfo timeline: {str(x)}", new_posts))
             )
         )
     )
-    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    set_check(unduped, model_id, after)
-    return list(unduped.values())
+    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
+    set_check(new_posts, model_id, after)
+    return list(new_posts)
 
 
 @run
@@ -129,7 +126,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
     after = await get_after(model_id, username, forced_after)
 
-    splitArrays = get_split_array(model_id, username, after)
+    splitArrays = await get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
 
     while bool(tasks):
@@ -154,25 +151,21 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
 
-    unduped = {}
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        id = post["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = post
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
-    log.trace(f"timeline dupeset postids {list(unduped.keys())}")
+    log.trace(f"timeline dupeset postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "post raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo timeline: {str(x)}", unduped))
+                list(map(lambda x: f"undupedinfo timeline: {str(x)}",new_posts))
             )
         )
     )
-    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(unduped)} found")
-    set_check(unduped, model_id, after)
-    return list(unduped.values())
+    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
+    set_check(new_posts, model_id, after)
+    return list(new_posts)
 
 
 async def get_split_array(model_id, username, after):
@@ -280,14 +273,11 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
 
 def set_check(unduped, model_id, after):
     if not after:
-        newCheck = {}
-        for post in cache.get(f"timeline_check_{model_id}", default=[]) + list(
-            unduped.values()
-        ):
-            newCheck[post["id"]] = post
+        seen = set()
+        new_posts = [post for post in cache.get(f"timeline_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
         cache.set(
             f"timeline_check_{model_id}",
-            list(newCheck.values()),
+            list(new_posts),
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
