@@ -66,12 +66,13 @@ def create_backup_transition(model_id, username):
     groupA = [
         "media_hash",
         "media_model_id",
-        "post_model_id",
+        "posts_model_id",
         "products_model_id",
         "other_model_id",
         "stories_model_id",
         "messages_model_id",
         "labels_model_id",
+        "media_posted_at"
     ]
     groupB = [
         "profile_username_constraint_removed",
@@ -83,15 +84,7 @@ def create_backup_transition(model_id, username):
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
     ]
-    if len(changes) == 0:
-        None
-    elif not any(groupA):
-        None
-    elif not any(groupB):
-        None
-    elif len(set(groupA + groupB)) != len(changes):
-        None
-    else:
+    if len(set(set(groupA+groupB)).difference(changes)) == 0:
         return
     # action if 1 test passes
     log.info("creating a backup before transition")

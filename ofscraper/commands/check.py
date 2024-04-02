@@ -14,6 +14,9 @@ import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid_
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
+import ofscraper.api.archive as archived
+import ofscraper.api.pinned as pinned
+
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.classes.table as table
@@ -179,13 +182,10 @@ async def post_check_helper():
                 continue
 
             oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
-            user_dict[user_name] = {}
-            user_dict[user_name] = user_dict[user_name] or []
+            user_dict[user_name] = user_dict.get(user_name) or []
             if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
                 user_dict[user_name].extend(oldtimeline)
             else:
-                user_dict[user_name] = {}
-                user_dict[user_name] = user_dict[user_name] or []
                 data = await timeline.get_timeline_media(
                     model_id, user_name, forced_after=0, c=c
                 )
@@ -195,7 +195,34 @@ async def post_check_helper():
                     data,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
-                cache.close()
+            oldarchive=cache.get(f"archived_check_{model_id}", default=[])
+            if len(oldarchive) > 0 and not read_args.retriveArgs().force:
+                user_dict[user_name].extend(oldarchive)
+            else:
+                data = await archived.get_archived_posts(
+                    model_id, user_name, forced_after=0, c=c
+                )
+                user_dict[user_name].extend(data)
+                cache.set(
+                    f"archived_check_{model_id}",
+                    data,
+                    expire=constants.getattr("DAY_SECONDS"),
+                )
+            oldpinned=cache.get(f"pinned_check_{model_id}", default=[])
+            if len(oldpinned) > 0 and not read_args.retriveArgs().force:
+                user_dict[user_name].extend(oldpinned)
+            else:
+                data = await pinned.get_pinned_posts(
+                    model_id, c=c
+                )
+                user_dict[user_name].extend(data)
+                cache.set(
+                    f"pinned_check_{model_id}",
+                    data,
+                    expire=constants.getattr("DAY_SECONDS"),
+                )
+
+            cache.close()
 
             # individual links
             for ele in list(

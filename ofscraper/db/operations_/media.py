@@ -98,18 +98,18 @@ SELECT filename
 FROM medias
 where hash=(?)
 """
-mediaInsert = f"""INSERT INTO 'medias'(
+mediaInsert = """INSERT INTO 'medias'(
 media_id,post_id,link,api_type,
 media_type,preview,linked,
 created_at,posted_at,model_id)
             VALUES (?,?,?,?,?,?,?,?,?,?);"""
 
-mediaInsertFull = f"""INSERT INTO 'medias'(
+mediaInsertFull = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
 media_type,preview,linked,
 downloaded,created_at,posted_at,hash,model_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 mediaDownloadSelect= """
 SELECT  
 directory,filename,size

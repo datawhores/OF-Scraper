@@ -56,13 +56,13 @@ def get_posts(model_id, username):
     labelled_posts = []
     options = args.like_area
     if "Pinned" in options or "All" in options:
-        pinned_posts = pinned.get_pinned_post(model_id)
+        pinned_posts = pinned.get_pinned_posts(model_id)
     if "Timeline" in options or "All" in options:
         timeline_posts = timeline.get_timeline_media_progress(
             model_id, username, forced_after=0
         )
     if "Archived" in options or "All" in options:
-        archived_posts = archive.get_archived_media(model_id, username, forced_after=0)
+        archived_posts = archive.get_archived_posts(model_id, username, forced_after=0)
     if "Labels" in options or "All" in options:
         labels_ = labels_api.get_labels(model_id)
         labelled_posts_ = labels_api.get_labelled_posts(labels_, model_id)

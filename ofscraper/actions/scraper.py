@@ -259,7 +259,7 @@ async def process_timeline_posts(model_id, username, c):
 async def process_archived_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
-            archived_posts = await archive.get_archived_media(model_id, username, c=c)
+            archived_posts = await archive.get_archived_posts_progress(model_id, username, c=c)
             archived_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, "archived"),
@@ -307,10 +307,10 @@ async def process_archived_posts(model_id, username, c):
 async def process_pinned_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
-            pinned_posts = await pinned.get_pinned_post(model_id, c=c)
+            pinned_posts = await pinned.get_pinned_posts_progress(model_id, c=c)
             pinned_posts = list(
                 map(
-                    lambda x: posts_.Post(x, model_id, username, "pinned"), pinned_posts
+                    lambda x: posts_.Post(x, model_id, username), pinned_posts
                 )
             )
             await operations.make_post_table_changes(

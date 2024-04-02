@@ -15,7 +15,7 @@ class Post(base.base):
         self._post = post
         self._model_id = int(model_id)
         self._username = username
-        self.responsetype = responsetype or post.get("responseType")
+        self._responsetype = responsetype
         self._label = label
 
     # All media return from API dict
@@ -79,6 +79,15 @@ class Post(base.base):
     @property
     def title(self):
         return self._post.get("title")
+    @property
+    def responsetype(self):
+        if self._responsetype:
+            return self._responsetype
+        elif self.pinned:
+            return "pinned"
+        elif self.archived:
+            return "self.archived"
+        
 
     @property
     def modified_responsetype(self):

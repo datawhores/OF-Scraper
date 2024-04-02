@@ -122,7 +122,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
 
 
 @wrapper.operation_wrapper_async
-def get_timeline_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_timeline_postsinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(timelinePostInfo, [model_id])
         data=[dict(row) for row in cur.fetchall()]

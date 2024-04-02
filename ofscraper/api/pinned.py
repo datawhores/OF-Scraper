@@ -25,6 +25,9 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.cache as cache
+
+
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -32,7 +35,7 @@ sem = None
 
 
 @run
-async def get_pinned_post(model_id, c=None):
+async def get_pinned_posts_progress(model_id, c=None):
     tasks = []
     responseArray = []
     page_count = 0
@@ -104,7 +107,89 @@ async def get_pinned_post(model_id, c=None):
         )
     )
     log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(new_posts)} found")
+    set_check(new_posts, model_id)
     return new_posts
+
+
+@run
+async def get_pinned_posts(model_id, c=None):
+    tasks = []
+    responseArray = []
+    page_count = 0
+    job_progress = None
+
+    # async with sessionbuilder.sessionBuilder(
+    #     limit=constants.getattr("API_MAX_CONNECTION")
+    # ) as c:
+    tasks.append(
+        asyncio.create_task(
+            scrape_pinned_posts(
+                c,
+                model_id,
+                job_progress=job_progress,
+                timestamp=read_args.retriveArgs().after.float_timestamp
+                if read_args.retriveArgs().after
+                else None,
+            )
+        )
+    )
+
+
+    while bool(tasks):
+        new_tasks = []
+        try:
+            async with asyncio.timeout(
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+            ):
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        result, new_tasks_batch = await task
+                        new_tasks.extend(new_tasks_batch)
+                        page_count = page_count + 1
+                        responseArray.extend(result)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
+        except TimeoutError as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        tasks = new_tasks
+    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
+    log.trace(
+        "pinned raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray))
+            )
+        )
+    )    
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+
+    log.trace(f"pinned postids{list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(
+        "pinned raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo pinned: {str(x)}", new_posts))
+            )
+        )
+    )
+    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(new_posts)} found")
+    set_check(new_posts, model_id)
+    return new_posts
+
+
+
+def set_check(unduped, model_id):
+    if not read_args.retriveArgs().after:
+        seen = set()
+        new_posts = [post for post in cache.get(f"pinned_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
+        cache.set(
+            f"pinned_check_{model_id}",
+            new_posts,
+            expire=constants.getattr("DAY_SECONDS"),
+        )
+        cache.close()
 
 
 async def scrape_pinned_posts(
@@ -141,7 +226,7 @@ async def scrape_pinned_posts(
                 task = job_progress.add_task(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
                     visible=True,
-                )
+                ) if job_progress else None
                 async with c.requests(url=url)() as r:
                     if r.ok:
                         posts = (await r.json_())["list"]
@@ -212,5 +297,5 @@ async def scrape_pinned_posts(
 
             finally:
                 sem.release()
-                job_progress.remove_task(task)
+                job_progress.remove_task(task) if job_progress and task else None
             return posts, new_tasks

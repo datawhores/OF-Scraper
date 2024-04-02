@@ -159,8 +159,25 @@ def drop_labels_table(model_id=None, username=None, conn=None) -> list:
 @wrapper.operation_wrapper_async
 def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(labelALLTransition)
-        return [dict(row) for row in cur.fetchall()]
+        # Check for column existence (label_id)
+        cur.execute("PRAGMA table_info('labels')")
+        columns = [row[1] for row in cur.fetchall()]  # Get column names
+
+        # Build SELECT clause dynamically
+        select_clause = "label_id" if "label_id" in columns else "id"
+        select_clause += ", model_id"  # Add model_id for clarity
+
+        # Build the full query
+        sql = f"""
+        SELECT
+            {select_clause},
+            name, type, post_id
+        FROM labels;
+        """
+        cur.execute(sql)
+        # Execute the query
+        data = [dict(row) for row in cur.fetchall()]
+        return [dict(row,label_id=row.get("label_id") or row.get("id")) for row in data]
 
 async def modify_unique_constriant_labels(model_id=None, username=None):
     data = await get_all_labels_transition(model_id=model_id, username=username)

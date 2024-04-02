@@ -11,12 +11,10 @@ import contextvars
 import logging
 import math
 import traceback
-from multiprocessing import Value
 
 import arrow
 from tenacity import (
     AsyncRetrying,
-    retry,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random,
@@ -117,7 +115,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     responseArray = []
     page_count = 0
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = await operations.get_timeline_postinfo(
+        oldtimeline = await operations.get_timeline_postsinfo(
             model_id=model_id, username=username
         )
     else:
@@ -186,7 +184,7 @@ async def get_split_array(model_id, username, after):
     min_posts = 50
 
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = await operations.get_timeline_postinfo(
+        oldtimeline = await operations.get_timeline_postsinfo(
             model_id=model_id, username=username
         )
     else:
