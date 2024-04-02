@@ -212,13 +212,14 @@ async def process_timeline_posts(model_id, username, c):
                 model_id, username, c=c
             )
 
-            timeline_only_posts=filter(lambda x:x.regular_timeline,timeline_posts)
-            timeline_only_posts = list(
+            timeline_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, "timeline"),
-                    timeline_only_posts,
+                    timeline_posts,
                 )
             )
+            timeline_only_posts=list(filter(lambda x:x.regular_timeline,timeline_posts))
+
             await operations.make_post_table_changes(
                 timeline_only_posts,
                 model_id=model_id,
