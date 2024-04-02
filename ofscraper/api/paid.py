@@ -134,10 +134,17 @@ async def get_paid_posts(model_id, username, c=None):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
+    log.debug(f"[bold]Paid Count with Dupes[/bold] {len(responseArray)} found")
+    log.trace(
+        "paid raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo paid: {str(x)}", responseArray))
+            )
+        )
+    )          
     seen = set()
     new_posts = [post for post in responseArray if post['id'] not in seen and not seen.add(post['id'])]
     log.trace(f"paid postids {list(map(lambda x:x.get('id'),new_posts))}")
-
     log.trace(
         "paid raw unduped {posts}".format(
             posts="\n\n".join(
@@ -145,6 +152,8 @@ async def get_paid_posts(model_id, username, c=None):
             )
         )
     )
+    log.debug(f"[bold]Paid Count without Dupes[/bold] {len(new_posts)} found")
+
     set_check(new_posts, model_id)
     return new_posts
 
@@ -268,7 +277,7 @@ async def get_all_paid_posts():
             overall_progress = progress_utils.overall_progress
 
             async with sessionbuilder.sessionBuilder() as c:
-                allpaid = cache.get(f"purchased_all", default=[])
+                allpaid = cache.get("purchased_all", default=[])
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
 
                 if len(allpaid) > min_posts:
@@ -329,15 +338,30 @@ async def get_all_paid_posts():
                             continue
 
                 overall_progress.remove_task(page_task)
-        outdict = {}
+        
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
-        for post in output:
-            outdict[post["id"]] = post
+        log.trace(
+        "paid raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo all paid: {str(x)}", output))
+            )
+        )
+    )  
+        seen = set()
+        new_posts = [post for post in output if post['id'] not in seen and not seen.add(post['id'])]
 
-        log.debug(f"[bold]Paid Post count[/bold] {len(outdict.values())} found")
+        log.trace(f"all paid postids {list(map(lambda x:x.get('id'),new_posts))}")
+        log.debug(f"[bold]Paid Post count[/bold] {len(new_posts)} found")
+        log.trace(
+        "paid raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo all paid: {str(x)}", new_posts))
+            )
+        )
+    )  
         cache.set(
-            f"purchased_all",
-            list(map(lambda x: x.get("id"), list(outdict.values()))),
+            "purchased_all",
+            list(map(lambda x: x.get("id"), list())),
             expire=constants.getattr("RESPONSE_EXPIRY"),
         )
         cache.close()

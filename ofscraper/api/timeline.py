@@ -83,6 +83,13 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     progress_utils.timeline_layout.visible = False
 
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
+    log.trace(
+        "post raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo timeline: {str(x)}",responseArray))
+            )
+        )
+    )
     seen = set()
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
@@ -152,6 +159,13 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
         tasks = new_tasks
 
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
+    log.trace(
+        "post raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo timeline: {str(x)}",responseArray))
+            )
+        )
+    )
     seen = set()
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 

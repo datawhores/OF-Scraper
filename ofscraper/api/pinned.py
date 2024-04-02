@@ -85,6 +85,13 @@ async def get_pinned_post(model_id, c=None):
     overall_progress.remove_task(page_task)
     progress_utils.pinned_layout.visible = False
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
+    log.trace(
+        "pinned raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray))
+            )
+        )
+    )    
     seen = set()
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 

@@ -155,7 +155,7 @@ async def get_stories_post(model_id, c=None):
     log.trace(
         "post raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo storis: {str(x)}", new_posts))
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", new_posts))
             )
         )
     )
@@ -348,7 +348,7 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
 
     log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
-        "post raw unduped {posts}".format(
+        "highlights raw unduped {posts}".format(
             posts="\n\n".join(
                 list(map(lambda x: f"undupedinfo highlights: {str(x)}", new_posts))
             )
@@ -437,7 +437,7 @@ async def get_highlights_via_list(highlightLists, c):
         tasks = new_tasks
 
     log.trace(
-        "highlight rawnduped {posts}".format(
+        "highlights raw duped {posts}".format(
             posts="\n\n".join(
                 list(
                     map(
@@ -454,7 +454,7 @@ async def get_highlights_via_list(highlightLists, c):
 
     log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
-        "post raw unduped {posts}".format(
+        "highlights raw unduped {posts}".format(
             posts="\n\n".join(
                 list(map(lambda x: f"undupedinfo highlights: {str(x)}", new_posts))
             )
