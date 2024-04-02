@@ -18,7 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from tenacity import (
     AsyncRetrying,
-    retry,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random,
@@ -26,7 +25,6 @@ from tenacity import (
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.cache as cache
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.sems as sems
@@ -80,6 +78,8 @@ async def get_paid_posts_progress(username, model_id, c=None):
         tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.paid_layout.visible = False
+    log.debug(f"[bold]Paid Count with Dupes[/bold] {len(responseArray)} found")
+
 
     seen = set()
     new_posts = [post for post in responseArray if post['id'] not in seen and not seen.add(post['id'])]
@@ -93,6 +93,8 @@ async def get_paid_posts_progress(username, model_id, c=None):
             )
         )
     )
+    log.debug(f"[bold]Paid Count without Dupes[/bold] {len(new_posts)} found")
+
     set_check(new_posts, model_id)
     return new_posts
 

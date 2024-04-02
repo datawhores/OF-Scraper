@@ -63,7 +63,7 @@ SELECT post_id FROM posts
 """
 
 archivedPostInfo = """
-SELECT created_at,post_id,downloaded FROM posts where archived=(1) and model_id=(?)
+SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 """
 
 

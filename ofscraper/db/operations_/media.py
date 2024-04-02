@@ -336,7 +336,7 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(ele,posted_at=arrow.get(ele.get("posted_at")).float_timestamp) for ele in data]
+        return [dict(ele,posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp) for ele in data]
 
 @run
 @wrapper.operation_wrapper_async
@@ -344,7 +344,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(ele,posted_at=arrow.get(ele.get("posted_at")).float_timestamp) for ele in data]
+        return [dict(ele,posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp) for ele in data]
 
 @run
 @wrapper.operation_wrapper_async
@@ -352,7 +352,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getTimelineMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(ele,posted_at=arrow.get(ele.get("posted_at")).float_timestamp) for ele in data]
+        return [dict(ele,posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp) for ele in data]
 
 
 def update_media_table_via_api_helper(

@@ -20,6 +20,8 @@ from rich.console import Console
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
+import ofscraper.db.operations_.media as media
+
 
 console = Console()
 log = logging.getLogger("shared")
@@ -62,7 +64,7 @@ messagesDrop = """
 drop table messages;
 """
 messagesData = """
-SELECT created_at,post_id,downloaded FROM messages where model_id=(?)
+SELECT created_at,post_id FROM messages where model_id=(?)
 """
 
 
@@ -198,5 +200,5 @@ async def make_messages_table_changes(all_messages, model_id=None, username=None
 
 
 async def get_last_message_date(model_id=None, username=None):
-    data = await get_messages_post_info(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x.get("created_at"))[-1].get("created_at")
+    data = await media.get_messages_media(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x.get("posted_at") or 0)[-1].get("posted_at") or 0

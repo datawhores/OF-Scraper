@@ -513,12 +513,12 @@ async def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all messages required to make sure content is not missing"
         )
         return 0
-    curr = operations.get_messages_media(model_id=model_id, username=username)
+    curr = await operations.get_messages_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x[11] != 1, curr))
-    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x[12])))
+    missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
+    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0)))
     if len(missing_items) == 0:
         log.debug(
             "Using last db date because,all downloads in db are marked as downloaded"
@@ -530,4 +530,4 @@ async def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} messages in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][12]).float_timestamp - 1000
+        return arrow.get(missing_items[0].get("posted_at") or 0).float_timestamp
