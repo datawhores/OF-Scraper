@@ -187,9 +187,6 @@ async def get_labelled_posts(labels, username, c=None):
     job_progress = progress_utils.labelled_progress
     overall_progress = progress_utils.overall_progress
 
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     [
         tasks.append(
             asyncio.create_task(
@@ -222,8 +219,9 @@ async def get_labelled_posts(labels, username, c=None):
                         new_posts = label_dedupe(new_posts)
                         log.trace(f"{label['name']} postids {list(map(lambda x:x.get('id'),new_posts))}")
                         log.trace(
-                    f"{label['name']} post raw unduped {new_posts}".format(posts="\n\n".join(
-                            list(map(lambda x: f"undupedinfo timeline: {str(x)}",new_posts))
+
+                            f"{label['name']} post raw unduped {{posts}}".format(posts="\n\n".join(
+                            list(map(lambda x: f"undupedinfo label: {str(x)}",new_posts))
                         )
                     )
                 )
