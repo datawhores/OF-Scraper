@@ -317,8 +317,8 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x.get("downloaded"), curr))
-    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at"))))
+    missing_items = list(filter(lambda x: x.get("downloaded")!=1, curr))
+    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0)))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
         return await operations.get_last_timeline_date(model_id=model_id, username=username)
@@ -326,7 +326,7 @@ async def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0]["post_date"]).float_timestamp
+        return arrow.get(missing_items[0]["posted_at"] or 0).float_timestamp
 
 
 async def scrape_timeline_posts(

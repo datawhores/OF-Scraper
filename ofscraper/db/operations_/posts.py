@@ -45,7 +45,7 @@ postUpdate = """UPDATE posts
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
 WHERE post_id = ? and model_id=(?);"""
 timelinePostInfo = """
-SELECT created_at,post_id,downloaded FROM posts where archived=(0) and model_id=(?)
+SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
 """
 postsALLTransition = """
 SELECT post_id, text, price, paid, archived, created_at,
@@ -205,10 +205,9 @@ async def make_post_table_changes(all_posts, model_id=None, username=None):
 
 
 async def get_last_archived_date(model_id=None, username=None):
-    data = await get_archived_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x.get("created_at"))[-1].get("created_at")
-
+    data = await media.get_archived_media(model_id=model_id, username=username)
+    return sorted(data, key=lambda x: x["posted_at"] or 0)[-1].get("posted_at") or 0
 
 async def get_last_timeline_date(model_id=None, username=None):
     data = await media.get_timeline_media(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x["posted_at"])[-1].get("posted_at")
+    return sorted(data, key=lambda x: x["posted_at"] or 0)[-1].get("posted_at") or 0
