@@ -220,6 +220,14 @@ async def get_labelled_posts(labels, username, c=None):
                             f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
                         )
                         new_posts = label_dedupe(new_posts)
+                        log.trace(f"{label['name']} postids {list(map(lambda x:x.get('id'),new_posts))}")
+                        log.trace(
+                    f"{label['name']} post raw unduped {new_posts}".format(posts="\n\n".join(
+                            list(map(lambda x: f"undupedinfo timeline: {str(x)}",new_posts))
+                        )
+                    )
+                )
+                        
                         log.debug(
                             f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
                         )
@@ -352,14 +360,11 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
             return label, posts, new_tasks
 
 
-def label_dedupe(posts):
-    unduped = {}
-    for post in posts:
-        id = post["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = post
-    return list(unduped.values())
+def label_dedupe(labelArray):
+    seen = set()
+    new_posts = [post for post in labelArray if post["id"] not in seen and not seen.add(post["id"])]
+    return new_posts
+
 
 
 def get_default_label_dict(labels):
