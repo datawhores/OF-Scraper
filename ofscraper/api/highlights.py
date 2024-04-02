@@ -18,7 +18,6 @@ import traceback
 
 from tenacity import (
     AsyncRetrying,
-    retry,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random,
@@ -83,20 +82,28 @@ async def get_stories_post_progress(model_id, c=None):
     progress_utils.stories_layout.visible = False
 
     log.trace(
-        "stories raw unduped {posts}".format(
+        "stories raw duped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", responseArray))
+                list(map(lambda x: f"dupedinfo stories: {str(x)}", responseArray))
             )
         )
     )
     log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
-    outdict = {}
-    for ele in responseArray:
-        outdict[ele["id"]] = ele
-    log.debug(
-        f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+
+
+    log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(
+        "post raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", new_posts))
+            )
+        )
     )
-    return list(outdict.values())
+    log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
+
+    return new_posts
 
 
 @run
@@ -135,19 +142,26 @@ async def get_stories_post(model_id, c=None):
     log.trace(
         "stories raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", responseArray))
+                list(map(lambda x: f"dupedinfo stories: {str(x)}", responseArray))
             )
         )
     )
     log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
-    outdict = {}
-    for ele in responseArray:
-        outdict[ele["id"]] = ele
-    log.debug(
-        f"[bold]stories Count with Dupes[/bold] {len(list(outdict.values()))} found"
-    )
-    return list(outdict.values())
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
+
+    log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(
+        "post raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo storis: {str(x)}", new_posts))
+            )
+        )
+    )
+    log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
+
+    return new_posts
 
 async def scrape_stories(c, user_id, job_progress=None) -> list:
     global sem
@@ -317,26 +331,32 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
     log.trace(
-        "highlight raw unduped {posts}".format(
+        "highlight raw duped {posts}".format(
             posts="\n\n".join(
                 list(
                     map(
-                        lambda x: f"undupedinfo heighlight: {str(x)}", highlightResponse
+                        lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse
                     )
                 )
             )
         )
     )
     log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
-    outdict = {}
-    for ele in highlightResponse:
-        outdict[ele["id"]] = ele
-    log.debug(
-        f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
+    seen = set()
+    new_posts = [post for post in highlightResponse if post["id"] not in seen and not seen.add(post["id"])]
+
+
+    log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(
+        "post raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo highlights: {str(x)}", new_posts))
+            )
+        )
     )
-    overall_progress.remove_task(page_task)
-    progress_utils.highlights_layout.visible = False
-    return list(outdict.values())
+    log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(new_posts)} found")
+
+    return new_posts
 
 
 @run
@@ -417,25 +437,32 @@ async def get_highlights_via_list(highlightLists, c):
         tasks = new_tasks
 
     log.trace(
-        "highlight raw unduped {posts}".format(
+        "highlight rawnduped {posts}".format(
             posts="\n\n".join(
                 list(
                     map(
-                        lambda x: f"undupedinfo heighlight: {str(x)}", highlightResponse
+                        lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse
                     )
                 )
             )
         )
     )
     log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
-    outdict = {}
-    for ele in highlightResponse:
-        outdict[ele["id"]] = ele
-    log.debug(
-        f"[bold]highlight Count with Dupes[/bold] {len(list(outdict.values()))} found"
-    )
-    return list(outdict.values())
+    seen = set()
+    new_posts = [post for post in highlightResponse if post["id"] not in seen and not seen.add(post["id"])]
 
+
+    log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(
+        "post raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo highlights: {str(x)}", new_posts))
+            )
+        )
+    )
+    log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(new_posts)} found")
+
+    return new_posts
 
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
     global sem
