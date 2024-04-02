@@ -85,14 +85,12 @@ def create_backup_transition(model_id, username):
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
     ]
-    if len(set(groupA+groupB).difference(set(changes))) == 0:
-        return
-    # action if 1 test passes
-    log.info("creating a backup before transition")
-    new_path = create_backup(model_id, username, "old_schema_db_backup.db")
-    log.info(f"transition backup created at {new_path}")
-    check_backup(model_id, username, new_path)
-    return new_path
+    if len(set(groupA+groupB).difference(set(changes)))>0:
+        log.info("creating a backup before transition")
+        new_path = create_backup(model_id, username, "old_schema_db_backup.db")
+        log.info(f"transition backup created at {new_path}")
+        check_backup(model_id, username, new_path)
+        return new_path
 
 
 async def add_column_tables(model_id=None, username=None):
