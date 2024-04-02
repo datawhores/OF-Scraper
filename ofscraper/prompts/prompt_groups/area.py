@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 
@@ -26,9 +27,11 @@ def areas_prompt() -> list:
     message = (
         "Which area(s) would you do you want to download and like"
         if "like" in args.action and len(args.like_area) == 0
-        else "Which area(s) would you want to download and unlike"
-        if "unike" in args.action and len(args.like_area) == 0
-        else "Which area(s) would you like to download"
+        else (
+            "Which area(s) would you want to download and unlike"
+            if "unike" in args.action and len(args.like_area) == 0
+            else "Which area(s) would you like to download"
+        )
     )
     more_instruction = (
         """Hint: Since you have Like or Unlike set

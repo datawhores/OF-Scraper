@@ -6,6 +6,7 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+
 import asyncio
 import contextvars
 import logging
@@ -24,10 +25,10 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.settings as settings
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.sems as sems
+import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -56,7 +57,7 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -84,13 +85,16 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     log.trace(
         "post raw duped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo timeline: {str(x)}",responseArray))
+                list(map(lambda x: f"dupedinfo timeline: {str(x)}", responseArray))
             )
         )
     )
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
-
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"timeline postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -138,7 +142,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -160,18 +164,22 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     log.trace(
         "post raw duped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo timeline: {str(x)}",responseArray))
+                list(map(lambda x: f"dupedinfo timeline: {str(x)}", responseArray))
             )
         )
     )
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"timeline postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "post raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo timeline: {str(x)}",new_posts))
+                list(map(lambda x: f"undupedinfo timeline: {str(x)}", new_posts))
             )
         )
     )
@@ -238,7 +246,9 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
                         c,
                         model_id,
                         job_progress=job_progress,
-                        required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
+                        required_ids=set(
+                            [ele.get("created_at") for ele in splitArrays[i]]
+                        ),
                         timestamp=splitArrays[i - 1][-1].get("created_at"),
                         offset=False,
                     )
@@ -286,7 +296,11 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
 def set_check(unduped, model_id, after):
     if not after:
         seen = set()
-        new_posts = [post for post in cache.get(f"timeline_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
+        new_posts = [
+            post
+            for post in cache.get(f"timeline_check_{model_id}", default=[]) + unduped
+            if post["id"] not in seen and not seen.add(post["id"])
+        ]
         cache.set(
             f"timeline_check_{model_id}",
             new_posts,
@@ -312,15 +326,13 @@ def get_individual_post(id):
 async def get_after(model_id, username, forced_after=None):
     if forced_after is not None:
         return forced_after
-    elif  not settings.get_after_enabled():
+    elif not settings.get_after_enabled():
         return 0
     elif read_args.retriveArgs().after == 0:
         return 0
     elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
-    elif (
-        cache.get(f"{model_id}_full_timeline_scrape")
-    ):
+    elif cache.get(f"{model_id}_full_timeline_scrape"):
         log.info(
             "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
         )
@@ -329,11 +341,15 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x.get("downloaded")!=1, curr))
-    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0)))
+    missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
+    missing_items = list(
+        sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0))
+    )
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return await operations.get_last_timeline_date(model_id=model_id, username=username)
+        return await operations.get_last_timeline_date(
+            model_id=model_id, username=username
+        )
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
@@ -463,7 +479,9 @@ async def scrape_timeline_posts(
 
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
             return posts, new_tasks

@@ -57,7 +57,7 @@ async def get_stories_post_progress(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -90,8 +90,11 @@ async def get_stories_post_progress(model_id, c=None):
     )
     log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
-
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -122,7 +125,7 @@ async def get_stories_post(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -148,8 +151,11 @@ async def get_stories_post(model_id, c=None):
     )
     log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
-
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -162,6 +168,7 @@ async def get_stories_post(model_id, c=None):
     log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
 
     return new_posts
+
 
 async def scrape_stories(c, user_id, job_progress=None) -> list:
     global sem
@@ -227,9 +234,11 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
 
             return stories, new_tasks
 
@@ -265,7 +274,7 @@ async def get_highlight_list_progress(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -310,7 +319,7 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -334,17 +343,18 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
         "highlight raw duped {posts}".format(
             posts="\n\n".join(
                 list(
-                    map(
-                        lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse
-                    )
+                    map(lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse)
                 )
             )
         )
     )
     log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
     seen = set()
-    new_posts = [post for post in highlightResponse if post["id"] not in seen and not seen.add(post["id"])]
-
+    new_posts = [
+        post
+        for post in highlightResponse
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -383,7 +393,7 @@ async def get_highlight_list(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -419,7 +429,7 @@ async def get_highlights_via_list(highlightLists, c):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -440,17 +450,18 @@ async def get_highlights_via_list(highlightLists, c):
         "highlights raw duped {posts}".format(
             posts="\n\n".join(
                 list(
-                    map(
-                        lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse
-                    )
+                    map(lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse)
                 )
             )
         )
     )
     log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
     seen = set()
-    new_posts = [post for post in highlightResponse if post["id"] not in seen and not seen.add(post["id"])]
-
+    new_posts = [
+        post
+        for post in highlightResponse
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -463,6 +474,7 @@ async def get_highlights_via_list(highlightLists, c):
     log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(new_posts)} found")
 
     return new_posts
+
 
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
     global sem
@@ -519,9 +531,11 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
 
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
 
             return data, new_tasks
 
@@ -574,9 +588,11 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
 
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
 
             return resp_data["stories"], new_tasks
 

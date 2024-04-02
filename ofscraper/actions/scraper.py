@@ -41,7 +41,6 @@ import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
 from ofscraper.utils.context.run_async import run
 
-
 log = logging.getLogger("shared")
 
 
@@ -97,7 +96,7 @@ async def process_paid_post(model_id, username, c):
                 paid_content,
                 model_id=model_id,
                 username=username,
-            )      
+            )
             output = []
             [output.extend(post.media) for post in paid_content]
             log.debug(f"[bold]Paid media count without locked[/bold] {len(output)}")
@@ -218,7 +217,9 @@ async def process_timeline_posts(model_id, username, c):
                     timeline_posts,
                 )
             )
-            timeline_only_posts=list(filter(lambda x:x.regular_timeline,timeline_posts))
+            timeline_only_posts = list(
+                filter(lambda x: x.regular_timeline, timeline_posts)
+            )
 
             await operations.make_post_table_changes(
                 timeline_only_posts,
@@ -259,7 +260,9 @@ async def process_timeline_posts(model_id, username, c):
 async def process_archived_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
-            archived_posts = await archive.get_archived_posts_progress(model_id, username, c=c)
+            archived_posts = await archive.get_archived_posts_progress(
+                model_id, username, c=c
+            )
             archived_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, "archived"),
@@ -309,9 +312,7 @@ async def process_pinned_posts(model_id, username, c):
         with stdout.lowstdout():
             pinned_posts = await pinned.get_pinned_posts_progress(model_id, c=c)
             pinned_posts = list(
-                map(
-                    lambda x: posts_.Post(x, model_id, username), pinned_posts
-                )
+                map(lambda x: posts_.Post(x, model_id, username), pinned_posts)
             )
             await operations.make_post_table_changes(
                 pinned_posts,
@@ -386,16 +387,23 @@ async def process_all_paid():
         paid_content = await paid.get_all_paid_posts()
         user_dict = {}
         for ele in paid_content:
-            user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get("id")
-            user_dict.setdefault(user_id, []).append(ele)            
+            user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get(
+                "id"
+            )
+            user_dict.setdefault(user_id, []).append(ele)
         output = {}
         for model_id, value in user_dict.items():
             username = profile.scrape_profile(model_id).get("username")
-            if username == "modeldeleted" and await operations.check_profile_table_exists(
-                model_id=model_id, username=username
+            if (
+                username == "modeldeleted"
+                and await operations.check_profile_table_exists(
+                    model_id=model_id, username=username
+                )
             ):
                 username = (
-                    await operations.get_profile_info(model_id=model_id, username=username)
+                    await operations.get_profile_info(
+                        model_id=model_id, username=username
+                    )
                     or username
                 )
             log.info(f"Processing {username}_{model_id}")
@@ -408,10 +416,14 @@ async def process_all_paid():
                 )
             )
             seen = set()
-            new_posts = [post for post in all_posts if post.id not in seen and not seen.add(post.id)]
-            new_medias=[item for post in new_posts for item in post.media]
-            new_medias=filters.filterMedia(new_medias)
-            new_posts=filters.filterPost(new_posts)
+            new_posts = [
+                post
+                for post in all_posts
+                if post.id not in seen and not seen.add(post.id)
+            ]
+            new_medias = [item for post in new_posts for item in post.media]
+            new_medias = filters.filterMedia(new_medias)
+            new_posts = filters.filterPost(new_posts)
             await operations.make_post_table_changes(
                 new_posts,
                 model_id=model_id,
@@ -424,9 +436,12 @@ async def process_all_paid():
                 downloaded=False,
             )
 
-            output[model_id]=dict(model_id=model_id,username=username,posts=new_posts,medias=new_medias)
+            output[model_id] = dict(
+                model_id=model_id, username=username, posts=new_posts, medias=new_medias
+            )
             log.debug(
-                f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}")
+                f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}"
+            )
 
         log.debug(
             f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"

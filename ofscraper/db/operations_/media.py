@@ -10,17 +10,18 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import math
 import pathlib
 import sqlite3
+
 import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
 from ofscraper.utils.context.run_async import run
-
 
 console = Console()
 log = logging.getLogger("shared")
@@ -110,7 +111,7 @@ filename,size,api_type,
 media_type,preview,linked,
 downloaded,created_at,posted_at,hash,model_id)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
-mediaDownloadSelect= """
+mediaDownloadSelect = """
 SELECT  
 directory,filename,size
 downloaded,hash
@@ -144,6 +145,9 @@ preview,linked,downloaded,created_at,posted_at,hash,model_id
 FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 """
 
+profileUnique = """
+SELECT DISTINCT user_id FROM profiles
+"""
 
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None):
@@ -156,8 +160,10 @@ def create_media_table(model_id=None, username=None, conn=None):
 def add_column_media_hash(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         try:
-        # Check if column exists (separate statement)
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'hash') THEN 1 ELSE 0 END AS alter_required;")
+            # Check if column exists (separate statement)
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'hash') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
             # Add column if necessary (conditional execution)
             if alter_required == 0:
@@ -175,7 +181,9 @@ def add_column_media_posted_at(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'posted_at') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'posted_at') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
 
             # Add column if necessary (conditional execution)
@@ -186,12 +194,16 @@ def add_column_media_posted_at(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Rollback in case of errors
+
+
 @wrapper.operation_wrapper_async
 def add_column_media_ID(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
 
             # Add column if necessary (conditional execution)
@@ -293,23 +305,23 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
 def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
         ordered_keys = [
-        "media_id",
-        "post_id",
-        "link",
-        "directory",
-        "filename",
-        "size",
-        "api_type",
-        "media_type",
-        "preview",
-        "linked",
-        "downloaded",
-        "created_at",
-        "posted_at",
-        "hash",
-        "model_id"
-    ]
-        insertData=[tuple([data[key] for key in ordered_keys]) for data in inputData]
+            "media_id",
+            "post_id",
+            "link",
+            "directory",
+            "filename",
+            "size",
+            "api_type",
+            "media_type",
+            "preview",
+            "linked",
+            "downloaded",
+            "created_at",
+            "posted_at",
+            "hash",
+            "model_id",
+        ]
+        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertFull, insertData)
         conn.commit()
 
@@ -317,11 +329,11 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
 @wrapper.operation_wrapper_async
 def get_all_medias_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
+        model_id=model_id if len(cur.execute(profileUnique).fetchall())>2 else None
         cur.execute(mediaALLTransition)
         conn.commit()
         data = [dict(row) for row in cur.fetchall()]
-        return data
-
+        return [dict(row,model_id=row.get("model_id") or model_id) for row in data]
 
 
 @wrapper.operation_wrapper_async
@@ -336,7 +348,11 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(ele,posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp) for ele in data]
+        return [
+            dict(ele, posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp)
+            for ele in data
+        ]
+
 
 @run
 @wrapper.operation_wrapper_async
@@ -344,7 +360,11 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(ele,posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp) for ele in data]
+        return [
+            dict(ele, posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp)
+            for ele in data
+        ]
+
 
 @run
 @wrapper.operation_wrapper_async
@@ -352,7 +372,10 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getTimelineMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(ele,posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp) for ele in data]
+        return [
+            dict(ele, posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp)
+            for ele in data
+        ]
 
 
 def update_media_table_via_api_helper(
@@ -369,23 +392,31 @@ def update_media_table_via_api_helper(
         media.postdate,
         model_id,
         media.id,
-        model_id
+        model_id,
     ]
     curr.execute(mediaUpdateAPI, insertData)
     conn.commit()
 
 
 def update_media_table_download_helper(
-    media,model_id, filename=None, hashdata=None, conn=None, downloaded=None, curr=None, **kwargs
+    media,
+    model_id,
+    filename=None,
+    hashdata=None,
+    conn=None,
+    downloaded=None,
+    curr=None,
+    **kwargs,
 ) -> list:
     prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetchall()
     prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
     insertData = media_exist_insert_helper(
         filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
     )
-    insertData.extend([media.id,model_id])
+    insertData.extend([media.id, model_id])
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
+
 
 def media_exist_insert_helper(
     filename=None, downloaded=None, hashdata=None, prevData=None

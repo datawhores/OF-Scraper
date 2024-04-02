@@ -188,9 +188,11 @@ async def alt_download_downloader(
             try:
                 _attempt = common.alt_attempt_get(item)
                 _attempt.set(_attempt.get(0) + 1)
-                pathlib.Path(placeholderObj.tempfilepath).unlink(
-                    missing_ok=True
-                ) if _attempt.get() > 1 else None
+                (
+                    pathlib.Path(placeholderObj.tempfilepath).unlink(missing_ok=True)
+                    if _attempt.get() > 1
+                    else None
+                )
                 data = await asyncio.get_event_loop().run_in_executor(
                     common_globals.cache_thread,
                     partial(cache.get, f"{item['name']}_headers"),

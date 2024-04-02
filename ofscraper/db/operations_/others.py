@@ -10,9 +10,11 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import sqlite3
+
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
@@ -112,7 +114,9 @@ def add_column_other_ID(conn=None, **kwargs):
 
         try:
             # Separate statements with conditional execution
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('others') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('others') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]
             if alter_required == 0:
                 cur.execute("ALTER TABLE others ADD COLUMN model_id INTEGER;")
@@ -130,7 +134,9 @@ def add_column_products_ID(conn=None, **kwargs):
 
         try:
             # Separate statements with conditional execution
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('products') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('products') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]
             if alter_required == 0:
                 cur.execute("ALTER TABLE products ADD COLUMN model_id INTEGER;")
@@ -140,7 +146,6 @@ def add_column_products_ID(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e
-
 
 
 @wrapper.operation_wrapper_async
@@ -164,13 +169,11 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None):
         conn.commit()
 
 
-
 @wrapper.operation_wrapper_async
 def get_all_others_transition(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(othersALLTransition)
         return [dict(row) for row in cur.fetchall()]
-
 
 
 @wrapper.operation_wrapper_async
@@ -185,7 +188,7 @@ def write_others_table_transition(
     inputData, model_id=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys=[ "text","price","paid","archived","created_at","model_id" ]
+        ordered_keys = ["text", "price", "paid", "archived", "created_at", "model_id"]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(othersInsert, insertData)
         conn.commit()
@@ -210,7 +213,7 @@ def write_products_table_transition(
     inputData, model_id=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys=[ "text","price","paid","archived","created_at","model_id" ]
+        ordered_keys = ["text", "price", "paid", "archived", "created_at", "model_id"]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(productsInsert, insertData)
         conn.commit()

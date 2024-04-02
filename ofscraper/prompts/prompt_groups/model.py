@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import inspect
 
 import arrow
@@ -82,11 +83,11 @@ def modify_subtype_prompt(args):
             {
                 "type": "list",
                 "name": "renewal",
-                "default": True
-                if read_args.retriveArgs().renewal
-                else False
-                if read_args.retriveArgs().renewal == False
-                else None,
+                "default": (
+                    True
+                    if read_args.retriveArgs().renewal
+                    else False if read_args.retriveArgs().renewal == False else None
+                ),
                 "message": "Filter account by whether it has a renewal date",
                 "choices": [
                     Choice(True, "Renewal On"),
@@ -97,11 +98,11 @@ def modify_subtype_prompt(args):
             {
                 "type": "list",
                 "name": "expire",
-                "default": True
-                if read_args.retriveArgs().sub_status
-                else False
-                if read_args.retriveArgs().sub_status == False
-                else None,
+                "default": (
+                    True
+                    if read_args.retriveArgs().sub_status
+                    else False if read_args.retriveArgs().sub_status == False else None
+                ),
                 "message": "Filter accounts based on access to content via a subscription",
                 "choices": [
                     Choice(True, "Active Only"),
@@ -140,11 +141,13 @@ def modify_active_prompt(args):
                 """,
                 "validate": prompt_validators.datevalidator(),
                 "filter": lambda x: arrow.get(x or 0),
-                "default": arrow.get(read_args.retriveArgs().last_seen_after).format(
-                    constants.getattr("PROMPT_DATE_FORMAT")
-                )
-                if read_args.retriveArgs().last_seen_after
-                else "",
+                "default": (
+                    arrow.get(read_args.retriveArgs().last_seen_after).format(
+                        constants.getattr("PROMPT_DATE_FORMAT")
+                    )
+                    if read_args.retriveArgs().last_seen_after
+                    else ""
+                ),
             },
             {
                 "type": "input",
@@ -154,11 +157,13 @@ def modify_active_prompt(args):
                 Otherwise must be in date format""",
                 "validate": prompt_validators.datevalidator(),
                 "filter": lambda x: arrow.get(x or 0),
-                "default": arrow.get(read_args.retriveArgs().last_seen_before).format(
-                    constants.getattr("PROMPT_DATE_FORMAT")
-                )
-                if read_args.retriveArgs().last_seen_before
-                else "",
+                "default": (
+                    arrow.get(read_args.retriveArgs().last_seen_before).format(
+                        constants.getattr("PROMPT_DATE_FORMAT")
+                    )
+                    if read_args.retriveArgs().last_seen_before
+                    else ""
+                ),
             },
         ],
         more_instructions="""
@@ -200,11 +205,11 @@ def modify_promo_prompt(args):
             {
                 "type": "list",
                 "name": "free-trial",
-                "default": True
-                if read_args.retriveArgs().free_trial == True
-                else False
-                if read_args.retriveArgs().free_trial == False
-                else None,
+                "default": (
+                    True
+                    if read_args.retriveArgs().free_trial == True
+                    else False if read_args.retriveArgs().free_trial == False else None
+                ),
                 "message": "Filter Accounts By whether the account is a free trial",
                 "choices": [
                     Choice(True, "Free Trial only"),
@@ -227,11 +232,11 @@ def modify_promo_prompt(args):
                     "type": "list",
                     "name": "promo",
                     "message": "Which kind of promo(s) do you want to enable",
-                    "default": True
-                    if read_args.retriveArgs().promo
-                    else False
-                    if read_args.retriveArgs().promo == False
-                    else None,
+                    "default": (
+                        True
+                        if read_args.retriveArgs().promo
+                        else False if read_args.retriveArgs().promo == False else None
+                    ),
                     "choices": [
                         Choice({"all_promo": True, "promo": True}, "Any Promo"),
                         Choice(
@@ -268,11 +273,15 @@ def modify_promo_prompt(args):
                     "type": "list",
                     "name": promo_type,
                     "message": f"Filter accounts presence of {'Any Promotions' if promo_type=='all_promo' else 'Claimable Promotions'}",
-                    "default": True
-                    if vars(read_args.retriveArgs())[promo_type]
-                    else False
-                    if vars(read_args.retriveArgs())[promo_type] == False
-                    else None,
+                    "default": (
+                        True
+                        if vars(read_args.retriveArgs())[promo_type]
+                        else (
+                            False
+                            if vars(read_args.retriveArgs())[promo_type] == False
+                            else None
+                        )
+                    ),
                     "choices": [
                         Choice(True, "Promotions Only"),
                         Choice(False, "No Promotions"),

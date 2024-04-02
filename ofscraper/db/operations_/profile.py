@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import pathlib
@@ -23,7 +24,7 @@ import ofscraper.db.operations_.wrapper as wrapper
 console = Console()
 log = logging.getLogger("shared")
 
-#user_id==modes.id cause of legacy
+# user_id==modes.id cause of legacy
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
 	id INTEGER NOT NULL, 
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS models (
 userNameList = """
 SELECT username FROM profiles where user_id=(?)
 """
+
 profileTableCheck = """
 SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 """
@@ -84,10 +86,8 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
         return None
     with contextlib.closing(conn.cursor()) as cur:
         try:
-           cur.execute(
-                userNameList, ([model_id])
-            )
-           return (list(map(lambda x: x[0], cur.fetchall())) or [None] )[0]
+            cur.execute(userNameList, ([model_id]))
+            return (list(map(lambda x: x[0], cur.fetchall())) or [None])[0]
         except sqlite3.OperationalError:
             None
         except Exception as E:
@@ -104,7 +104,7 @@ def create_profile_table(model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def write_profile_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        insertData = [model_id, username,model_id,username]
+        insertData = [model_id, username, model_id, username]
         cur.execute(profileInsert, insertData)
         conn.commit()
 
@@ -127,7 +127,6 @@ def check_profile_table_exists(model_id=None, username=None, conn=None):
         if len(cur.execute(profileTableCheck).fetchall()) > 0:
             return True
         return False
-
 
 
 @wrapper.operation_wrapper_async
@@ -165,7 +164,7 @@ def create_models_table(model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def write_models_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(modelInsert, [model_id,model_id])
+        cur.execute(modelInsert, [model_id, model_id])
         conn.commit()
 
 

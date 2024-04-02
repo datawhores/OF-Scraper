@@ -9,14 +9,13 @@ import traceback
 
 import arrow
 
+import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
 import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid_
+import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
-import ofscraper.api.archive as archived
-import ofscraper.api.pinned as pinned
-
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.classes.table as table
@@ -76,20 +75,20 @@ def process_download_cart():
             log.info("Getting items from queue")
             try:
                 row, key = app.row_queue.get()
-                restype = app.row_names.index("Responsetype")
+                restype = row[app.row_names.index("Responsetype")].plain
                 username = app.row_names.index("UserName")
                 post_id = app.row_names.index("Post_ID")
                 media_id = app.row_names.index("Media_ID")
                 url = None
-                if row[restype].plain == "message":
+                if restype == "message":
                     url = constants.getattr("messageTableSPECIFIC").format(
                         row[username].plain, row[post_id].plain
                     )
-                elif row[restype].plain in {"pinned","timeline","archived"}:
+                elif restype in {"pinned", "timeline", "archived"}:
                     url = f"{row[post_id]}"
-                elif row[restype].plain == "highlights":
+                elif restype == "highlights":
                     url = constants.getattr("storyEP").format(row[post_id].plain)
-                elif row[restype].plain == "stories":
+                elif restype == "stories":
                     url = constants.getattr("highlightsWithAStoryEP").format(
                         row[post_id].plain
                     )
@@ -195,7 +194,7 @@ async def post_check_helper():
                     data,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
-            oldarchive=cache.get(f"archived_check_{model_id}", default=[])
+            oldarchive = cache.get(f"archived_check_{model_id}", default=[])
             if len(oldarchive) > 0 and not read_args.retriveArgs().force:
                 user_dict[user_name].extend(oldarchive)
             else:
@@ -208,13 +207,11 @@ async def post_check_helper():
                     data,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
-            oldpinned=cache.get(f"pinned_check_{model_id}", default=[])
+            oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
             if len(oldpinned) > 0 and not read_args.retriveArgs().force:
                 user_dict[user_name].extend(oldpinned)
             else:
-                data = await pinned.get_pinned_posts(
-                    model_id, c=c
-                )
+                data = await pinned.get_pinned_posts(model_id, c=c)
                 user_dict[user_name].extend(data)
                 cache.set(
                     f"pinned_check_{model_id}",

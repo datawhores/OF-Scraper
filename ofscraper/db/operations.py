@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import logging
 import pathlib
 import shutil
@@ -29,9 +30,9 @@ from ofscraper.db.operations_.profile import *
 from ofscraper.db.operations_.stories import *
 from ofscraper.utils.context.run_async import run
 
-
 console = Console()
 log = logging.getLogger("shared")
+
 
 async def create_tables(model_id, username):
     await create_models_table(model_id=model_id, username=username)
@@ -45,19 +46,21 @@ async def create_tables(model_id, username):
     await create_labels_table(model_id=model_id, username=username)
     await create_schema_table(model_id=model_id, username=username)
 
+
 async def modify_tables(model_id=None, username=None):
-    backup=create_backup_transition(model_id, username)
+    backup = create_backup_transition(model_id, username)
     try:
         await add_column_tables(model_id=model_id, username=username)
-        await modify_tables_constraints_and_columns(model_id=model_id, username=username)
+        await modify_tables_constraints_and_columns(
+            model_id=model_id, username=username
+        )
     except Exception as E:
-        restore_backup_transition(backup,model_id,username)
+        restore_backup_transition(backup, model_id, username)
         raise E
 
-def restore_backup_transition(backup,model_id,username):
-    database=placeholder.databasePlaceholder().databasePathHelper(
-        model_id, username
-    )
+
+def restore_backup_transition(backup, model_id, username):
+    database = placeholder.databasePlaceholder().databasePathHelper(model_id, username)
     shutil.copy2(backup, database)
 
 
@@ -73,7 +76,7 @@ def create_backup_transition(model_id, username):
         "stories_model_id",
         "messages_model_id",
         "labels_model_id",
-        "media_posted_at"
+        "media_posted_at",
     ]
     groupB = [
         "profile_username_constraint_removed",
@@ -85,7 +88,7 @@ def create_backup_transition(model_id, username):
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
     ]
-    if len(set(groupA+groupB).difference(set(changes)))>0:
+    if len(set(groupA + groupB).difference(set(changes))) > 0:
         log.info("creating a backup before transition")
         new_path = create_backup(model_id, username, "old_schema_db_backup.db")
         log.info(f"transition backup created at {new_path}")
@@ -106,7 +109,7 @@ async def add_column_tables(model_id=None, username=None):
         await add_flag_schema("media_posted_at", model_id=model_id, username=username)
     if not "posts_pinned" in changes:
         await add_column_post_pinned(model_id=model_id, username=username)
-        await add_flag_schema("posts_pinned", model_id=model_id, username=username)    
+        await add_flag_schema("posts_pinned", model_id=model_id, username=username)
     if not "posts_model_id" in changes:
         await add_column_post_ID(model_id=model_id, username=username)
         await add_flag_schema("posts_model_id", model_id=model_id, username=username)
@@ -219,6 +222,7 @@ def create_backup(model_id, username, backup=None):
         cache.set(f"{username}_{model_id}_db_backup", now)
     cache.close()
     return database_copy
+
 
 @run
 async def table_init_create(model_id=None, username=None):

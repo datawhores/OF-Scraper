@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import json
 import logging
 import os
@@ -487,9 +488,11 @@ def advanced_config() -> dict:
                 "name": "custom",
                 "message": "edit custom value:\n",
                 "option_instruction": "This is a helper value for remapping placeholder values",
-                "default": json.dumps(custom.get_custom())
-                if not isinstance(custom.get_custom(), str)
-                else custom.get_custom() or "",
+                "default": (
+                    json.dumps(custom.get_custom())
+                    if not isinstance(custom.get_custom(), str)
+                    else custom.get_custom() or ""
+                ),
             },
             {
                 "type": "list",

@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import asyncio
 import pathlib
 from functools import partial, singledispatch
@@ -139,9 +140,7 @@ def get_unknown_content_type(ele):
     return (
         "mp4"
         if ele.mediatype.lower() == "videos"
-        else "jpg"
-        if ele.mediatype.lower() == "images"
-        else None
+        else "jpg" if ele.mediatype.lower() == "images" else None
     )
 
 

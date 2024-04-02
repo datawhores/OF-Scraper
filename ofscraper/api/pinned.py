@@ -6,6 +6,7 @@ r"""
  \____/|__| /____  >\___  >__|  (____  /\____/ \___  >__|   
                  \/     \/           \/            \/         
 """
+
 import asyncio
 import contextvars
 import logging
@@ -21,13 +22,11 @@ from tenacity import (
 )
 
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.cache as cache
-
-
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -51,9 +50,11 @@ async def get_pinned_posts_progress(model_id, c=None):
                 c,
                 model_id,
                 job_progress=job_progress,
-                timestamp=read_args.retriveArgs().after.float_timestamp
-                if read_args.retriveArgs().after
-                else None,
+                timestamp=(
+                    read_args.retriveArgs().after.float_timestamp
+                    if read_args.retriveArgs().after
+                    else None
+                ),
             )
         )
     )
@@ -65,7 +66,7 @@ async def get_pinned_posts_progress(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -94,9 +95,13 @@ async def get_pinned_posts_progress(model_id, c=None):
                 list(map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray))
             )
         )
-    )    
+    )
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"pinned postids{list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -127,19 +132,20 @@ async def get_pinned_posts(model_id, c=None):
                 c,
                 model_id,
                 job_progress=job_progress,
-                timestamp=read_args.retriveArgs().after.float_timestamp
-                if read_args.retriveArgs().after
-                else None,
+                timestamp=(
+                    read_args.retriveArgs().after.float_timestamp
+                    if read_args.retriveArgs().after
+                    else None
+                ),
             )
         )
     )
-
 
     while bool(tasks):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -162,9 +168,13 @@ async def get_pinned_posts(model_id, c=None):
                 list(map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray))
             )
         )
-    )    
+    )
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"pinned postids{list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
@@ -179,11 +189,14 @@ async def get_pinned_posts(model_id, c=None):
     return new_posts
 
 
-
 def set_check(unduped, model_id):
     if not read_args.retriveArgs().after:
         seen = set()
-        new_posts = [post for post in cache.get(f"pinned_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
+        new_posts = [
+            post
+            for post in cache.get(f"pinned_check_{model_id}", default=[]) + unduped
+            if post["id"] not in seen and not seen.add(post["id"])
+        ]
         cache.set(
             f"pinned_check_{model_id}",
             new_posts,
@@ -223,10 +236,14 @@ async def scrape_pinned_posts(
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
-                    visible=True,
-                ) if job_progress else None
+                task = (
+                    job_progress.add_task(
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                        visible=True,
+                    )
+                    if job_progress
+                    else None
+                )
                 async with c.requests(url=url)() as r:
                     if r.ok:
                         posts = (await r.json_())["list"]

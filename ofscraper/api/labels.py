@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import asyncio
 import contextvars
 import logging
@@ -57,7 +58,7 @@ async def get_labels(model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -172,9 +173,11 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
 
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
 
 
 @run
@@ -204,7 +207,7 @@ async def get_labelled_posts(labels, username, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -217,15 +220,22 @@ async def get_labelled_posts(labels, username, c=None):
                             f"[bold]Label {label['name']} new post count with Dupes[/bold] {len(new_posts)} found"
                         )
                         new_posts = label_dedupe(new_posts)
-                        log.trace(f"{label['name']} postids {list(map(lambda x:x.get('id'),new_posts))}")
                         log.trace(
-
-                            f"{label['name']} post raw unduped {{posts}}".format(posts="\n\n".join(
-                            list(map(lambda x: f"undupedinfo label: {str(x)}",new_posts))
+                            f"{label['name']} postids {list(map(lambda x:x.get('id'),new_posts))}"
                         )
-                    )
-                )
-                        
+                        log.trace(
+                            f"{label['name']} post raw unduped {{posts}}".format(
+                                posts="\n\n".join(
+                                    list(
+                                        map(
+                                            lambda x: f"undupedinfo label: {str(x)}",
+                                            new_posts,
+                                        )
+                                    )
+                                )
+                            )
+                        )
+
                         log.debug(
                             f"[bold]Label {label['name']} new post count without Dupes[/bold] {len(new_posts)} found"
                         )
@@ -351,18 +361,23 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
 
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
 
             return label, posts, new_tasks
 
 
 def label_dedupe(labelArray):
     seen = set()
-    new_posts = [post for post in labelArray if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in labelArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
     return new_posts
-
 
 
 def get_default_label_dict(labels):

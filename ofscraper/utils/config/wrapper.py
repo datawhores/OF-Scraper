@@ -9,9 +9,7 @@ def config_reader(func: abc.Callable):
         configT = (
             False
             if config == False
-            else config
-            if config != None
-            else config_file.open_config()
+            else config if config != None else config_file.open_config()
         )
         return func(config=configT, **kwargs)
 

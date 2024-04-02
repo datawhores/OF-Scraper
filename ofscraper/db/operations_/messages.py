@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import sqlite3
@@ -18,15 +19,14 @@ import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
+import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-import ofscraper.db.operations_.media as media
-
 
 console = Console()
 log = logging.getLogger("shared")
 
-#user_id==sender
+# user_id==sender
 messagesCreate = """
 CREATE TABLE IF NOT EXISTS messages (
 id INTEGER NOT NULL,
@@ -89,7 +89,7 @@ def update_messages_table(messages: dict, model_id=None, conn=None, **kwargs):
                     message.fromuser,
                     model_id,
                     message.id,
-                    model_id
+                    model_id,
                 ),
                 messages,
             )
@@ -125,7 +125,16 @@ def write_messages_table_transition(
     inputData: list, model_id=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys=["post_id", "text","price","paid","archived", "created_at","user_id","model_id"]
+        ordered_keys = [
+            "post_id",
+            "text",
+            "price",
+            "paid",
+            "archived",
+            "created_at",
+            "user_id",
+            "model_id",
+        ]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(messagesInsert, insertData)
         conn.commit()
@@ -142,8 +151,7 @@ def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
 def get_all_messages_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesALLTransition)
-        return [dict(row)for row in cur.fetchall()]
-
+        return [dict(row) for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper_async
@@ -158,10 +166,11 @@ def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) ->
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesData, [model_id])
         conn.commit()
-        data=[dict(row) for row in cur.fetchall()]
-        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
-
-
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(ele, created_at=arrow.get(ele.get("created_at")).float_timestamp)
+            for ele in data
+        ]
 
 
 @wrapper.operation_wrapper_async
@@ -169,7 +178,9 @@ def add_column_messages_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Separate statements with conditional execution
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('messages') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]
             if alter_required == 0:
                 cur.execute("ALTER TABLE messages ADD COLUMN model_id INTEGER;")
@@ -179,6 +190,7 @@ def add_column_messages_ID(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e
+
 
 async def modify_unique_constriant_messages(model_id=None, username=None):
     data = await get_all_messages_transition(model_id=model_id, username=username)

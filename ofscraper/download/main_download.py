@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import asyncio
 import pathlib
 import traceback
@@ -142,9 +143,11 @@ async def main_download_downloader(c, ele, job_progress):
             try:
                 data = await get_data(ele)
                 common_globals.attempt.set(common_globals.attempt.get(0) + 1)
-                pathlib.Path(tempholderObj.tempfilepath).unlink(
-                    missing_ok=True
-                ) if common_globals.attempt.get() > 1 else None
+                (
+                    pathlib.Path(tempholderObj.tempfilepath).unlink(missing_ok=True)
+                    if common_globals.attempt.get() > 1
+                    else None
+                )
                 if data:
                     return await main_data_handler(
                         data, c, tempholderObj, ele, job_progress

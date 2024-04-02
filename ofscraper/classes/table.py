@@ -112,7 +112,7 @@ class NumField(Horizontal):
         def __init__(
             self,
             *args,
-            **kwargs
+            **kwargs,
             # ---snip---
         ) -> None:
             super().__init__(
@@ -181,7 +181,7 @@ class PriceField(Horizontal):
         def __init__(
             self,
             *args,
-            **kwargs
+            **kwargs,
             # ---snip---
         ) -> None:
             super().__init__(
@@ -313,7 +313,7 @@ class TimeField(Horizontal):
         def __init__(
             self,
             *args,
-            **kwargs
+            **kwargs,
             # ---snip---
         ) -> None:
             super().__init__(
@@ -792,9 +792,9 @@ class InputApp(App):
                 helperNode = self.query_one("#Length")
                 self._filtered_rows = sorted(
                     self._filtered_rows,
-                    key=lambda x: helperNode.convertString(x[index])
-                    if x[index] != "N/A"
-                    else 0,
+                    key=lambda x: (
+                        helperNode.convertString(x[index]) if x[index] != "N/A" else 0
+                    ),
                     reverse=self.reverse,
                 )
                 self.make_table()
@@ -807,9 +807,9 @@ class InputApp(App):
                 helperNode = self.query_one("#Post_Date")
                 self._filtered_rows = sorted(
                     self._filtered_rows,
-                    key=lambda x: helperNode.convertString(x[index])
-                    if x[index] != "N/A"
-                    else 0,
+                    key=lambda x: (
+                        helperNode.convertString(x[index]) if x[index] != "N/A" else 0
+                    ),
                     reverse=self.reverse,
                 )
                 self.make_table()

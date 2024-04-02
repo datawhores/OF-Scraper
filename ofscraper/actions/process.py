@@ -40,7 +40,6 @@ import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.utils.context.run_async import run
 
-
 log = logging.getLogger("shared")
 
 
@@ -118,26 +117,21 @@ def process_user_first_helper(ele):
 
 
 def scrape_paid(user_dict=None):
-    user_dict =OF.process_all_paid()
+    user_dict = OF.process_all_paid()
     oldUsers = selector.get_ALL_SUBS_DICT()
-    length=len(list(user_dict.keys()))
-    for count,value in enumerate(user_dict.values()):
+    length = len(list(user_dict.keys()))
+    for count, value in enumerate(user_dict.values()):
         model_id = value["model_id"]
         username = value["username"]
-        posts=value["posts"]
-        medias=value["medias"]
+        posts = value["posts"]
+        medias = value["medias"]
         log.warning(
-                f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
-            )
+            f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
+        )
         selector.set_ALL_SUBS_DICTVManger(
             {username: models.Model(profile.scrape_profile(model_id))}
         )
-        download.download_process(
-            username,
-            model_id,
-            medias,
-            posts=posts
-        )
+        download.download_process(username, model_id, medias, posts=posts)
     # restore og users
     selector.set_ALL_SUBS_DICT(oldUsers)
 

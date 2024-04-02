@@ -33,9 +33,11 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                     downloaded=await metadata_downloaded_helper(placeholderObj),
                 )
             return (
-                ele.mediatype
-                if await metadata_downloaded_helper(placeholderObj)
-                else "forced_skipped",
+                (
+                    ele.mediatype
+                    if await metadata_downloaded_helper(placeholderObj)
+                    else "forced_skipped"
+                ),
                 0,
             )
         elif download_data and download_data.get("content-type"):
@@ -50,9 +52,11 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
                     downloaded=await metadata_downloaded_helper(placeholderObj),
                 )
             return (
-                ele.mediatype
-                if await metadata_downloaded_helper(placeholderObj)
-                else "forced_skipped",
+                (
+                    ele.mediatype
+                    if await metadata_downloaded_helper(placeholderObj)
+                    else "forced_skipped"
+                ),
                 0,
             )
         elif _ == 1:
@@ -87,7 +91,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
 
 
 async def metadata_downloaded_helper(placeholderObj):
-    placeholderObj=await placeholderObj.init()
+    placeholderObj = await placeholderObj.init()
     if read_args.retriveArgs().metadata == "none":
         return None
 

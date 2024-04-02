@@ -10,9 +10,11 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import sqlite3
+
 from rich.console import Console
 
 import ofscraper.db.operations_.helpers as helpers
@@ -106,7 +108,7 @@ def update_labels_table(
                     model_id,
                     label.label_id,
                     model_id,
-                    post.id
+                    post.id,
                 ),
                 posts,
             )
@@ -120,16 +122,16 @@ def write_labels_table_transition(
     inputData: list, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        ordered_keys=["label_id","name", "type", "post_id","model_id"]
+        ordered_keys = ["label_id", "name", "type", "post_id", "model_id"]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(labelInsert, insertData)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def get_all_labels_posts(label,model_id=None, username=None, conn=None):
+def get_all_labels_posts(label, model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as curr:
-        curr.execute(labelPostsID, [model_id,label.label_id])
+        curr.execute(labelPostsID, [model_id, label.label_id])
         return [dict(row)["post_id"] for row in curr.fetchall()]
 
 
@@ -138,7 +140,9 @@ def add_column_labels_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('labels') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('labels') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
             # Add column if necessary (conditional execution)
             if alter_required == 0:
@@ -148,6 +152,7 @@ def add_column_labels_ID(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Raise the error for handling
+
 
 @wrapper.operation_wrapper_async
 def drop_labels_table(model_id=None, username=None, conn=None) -> list:
@@ -177,7 +182,10 @@ def get_all_labels_transition(model_id=None, username=None, conn=None) -> list:
         cur.execute(sql)
         # Execute the query
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(row,label_id=row.get("label_id") or row.get("id")) for row in data]
+        return [
+            dict(row, label_id=row.get("label_id") or row.get("id")) for row in data
+        ]
+
 
 async def modify_unique_constriant_labels(model_id=None, username=None):
     data = await get_all_labels_transition(model_id=model_id, username=username)
@@ -185,13 +193,16 @@ async def modify_unique_constriant_labels(model_id=None, username=None):
     await create_labels_table(model_id=model_id, username=username)
     await write_labels_table_transition(data, model_id=model_id, username=username)
 
+
 async def make_label_table_changes(label, model_id=None, username=None):
-    curr = set( await get_all_labels_posts( label,model_id=model_id,username=username))
+    curr = set(await get_all_labels_posts(label, model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr, label.posts))
     curr_posts = list(filter(lambda x: x.id in curr, label.posts))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
-        await write_labels_table(label,new_posts, model_id=model_id, username=username)
+        await write_labels_table(label, new_posts, model_id=model_id, username=username)
     if read_args.retriveArgs().metadata and len(curr_posts) > 0:
         curr_posts = helpers.converthelper(curr_posts)
-        await update_labels_table(label,curr_posts, model_id=model_id, username=username)
+        await update_labels_table(
+            label, curr_posts, model_id=model_id, username=username
+        )

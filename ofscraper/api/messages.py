@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import asyncio
 import contextvars
 import logging
@@ -27,10 +28,10 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.settings as settings
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.sems as sems
+import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -73,7 +74,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -106,9 +107,12 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         )
     )
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
-    
     log.debug(f"[bold]Messages Count without Dupes[/bold] {len(responseArray)} found")
 
     log.trace(f"messages messageids {list(map(lambda x:x.get('id'),new_posts))}")
@@ -169,7 +173,7 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -196,7 +200,11 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
         )
     )
     seen = set()
-    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.debug(f"[bold]Messages Count without Dupes[/bold] {len(responseArray)} found")
 
@@ -285,9 +293,11 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                     c,
                     model_id,
                     job_progress=job_progress,
-                    message_id=splitArrays[0][0].get("id")
-                    if len(filteredArray) == len(oldmessages)
-                    else None,
+                    message_id=(
+                        splitArrays[0][0].get("id")
+                        if len(filteredArray) == len(oldmessages)
+                        else None
+                    ),
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 )
             )
@@ -300,7 +310,9 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                         model_id,
                         job_progress=job_progress,
                         message_id=splitArrays[i - 1][-1].get("id"),
-                        required_ids=set([ele.get("created_at") for ele in splitArrays[i]]),
+                        required_ids=set(
+                            [ele.get("created_at") for ele in splitArrays[i]]
+                        ),
                     )
                 )
             )
@@ -314,7 +326,9 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                     model_id,
                     job_progress=job_progress,
                     message_id=splitArrays[-2][-1].get("id"),
-                    required_ids=set([ele.get("created_at") for ele in splitArrays[-1]]),
+                    required_ids=set(
+                        [ele.get("created_at") for ele in splitArrays[-1]]
+                    ),
                 )
             )
         )
@@ -327,9 +341,11 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
                     model_id,
                     job_progress=job_progress,
                     required_ids=None,
-                    message_id=splitArrays[0][0].get("id")
-                    if len(filteredArray) == len(oldmessages)
-                    else None,
+                    message_id=(
+                        splitArrays[0][0].get("id")
+                        if len(filteredArray) == len(oldmessages)
+                        else None
+                    ),
                 )
             )
         )
@@ -352,7 +368,11 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
 def set_check(unduped, model_id, after):
     if not after:
         seen = set()
-        new_posts = [post for post in cache.get(f"message_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
+        new_posts = [
+            post
+            for post in cache.get(f"message_check_{model_id}", default=[]) + unduped
+            if post["id"] not in seen and not seen.add(post["id"])
+        ]
         cache.set(
             f"message_check_{model_id}",
             list(new_posts),
@@ -490,9 +510,11 @@ async def scrape_messages(
                 raise E
             finally:
                 sem.release()
-                job_progress.remove_task(
-                    task
-                ) if job_progress and task != None else None
+                (
+                    job_progress.remove_task(task)
+                    if job_progress and task != None
+                    else None
+                )
             return messages, new_tasks
 
 
@@ -517,15 +539,13 @@ def get_individual_post(model_id, postid):
 async def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
-    elif  not settings.get_after_enabled():
+    elif not settings.get_after_enabled():
         return 0
     elif read_args.retriveArgs().after == 0:
         return 0
     elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
-    elif (
-        cache.get(f"{model_id}_scrape_messages")
-    ):
+    elif cache.get(f"{model_id}_scrape_messages"):
         log.debug(
             "Used --after previously. Scraping all messages required to make sure content is not missing"
         )
@@ -535,7 +555,9 @@ async def get_after(model_id, username, forced_after=None):
         log.debug("Setting date to zero because database is empty")
         return 0
     missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
-    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0)))
+    missing_items = list(
+        sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0))
+    )
     if len(missing_items) == 0:
         log.debug(
             "Using last db date because,all downloads in db are marked as downloaded"

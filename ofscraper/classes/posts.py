@@ -48,11 +48,13 @@ class Post(base.base):
         if self.post.get("isArchived"):
             return 1
         return 0
+
     @property
     def pinned(self):
         if self.post.get("isPinned"):
             return 1
         return 0
+
     @property
     def regular_timeline(self):
         return not self.archived and not self.pinned
@@ -79,6 +81,7 @@ class Post(base.base):
     @property
     def title(self):
         return self._post.get("title")
+
     @property
     def responsetype(self):
         if self._responsetype:
@@ -87,10 +90,9 @@ class Post(base.base):
             return "pinned"
         elif self.archived:
             return "self.archived"
-        elif self.post.get("responseType")=="post":
+        elif self.post.get("responseType") == "post":
             return "timeline"
         return self.post.get("responseType")
-        
 
     @property
     def modified_responsetype(self):

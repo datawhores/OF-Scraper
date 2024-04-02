@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import sqlite3
@@ -61,6 +62,7 @@ allStoriesCheck = """
 SELECT post_id FROM stories
 """
 
+
 @wrapper.operation_wrapper_async
 def create_stories_table(model_id=None, username=None, conn=None):
     with contextlib.closing(conn.cursor()) as cur:
@@ -95,7 +97,15 @@ def write_stories_table_transition(
     inputData: dict, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys=["post_id", "text","price","paid","archived", "created_at","model_id"]
+        ordered_keys = [
+            "post_id",
+            "text",
+            "price",
+            "paid",
+            "archived",
+            "created_at",
+            "model_id",
+        ]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(storiesInsert, insertData)
         conn.commit()
@@ -115,7 +125,7 @@ def update_stories_table(stories: dict, model_id=None, username=None, conn=None)
                     data.date,
                     model_id,
                     data.id,
-                    model_id
+                    model_id,
                 ),
                 stories,
             )
@@ -144,7 +154,9 @@ def add_column_stories_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Separate statements with conditional execution
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('stories') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('stories') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]
             if alter_required == 0:
                 cur.execute("ALTER TABLE stories ADD COLUMN model_id INTEGER;")
@@ -154,8 +166,6 @@ def add_column_stories_ID(conn=None, **kwargs):
         except sqlite3.Error as e:
             conn.rollback()
             raise e
-
-
 
 
 @wrapper.operation_wrapper_async

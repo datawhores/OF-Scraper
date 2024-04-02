@@ -199,9 +199,7 @@ class Placeholders(basePlaceholder):
                 "current_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_current_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_current_price == 0 else "Paid"
                 )
             }
         )
@@ -210,9 +208,7 @@ class Placeholders(basePlaceholder):
                 "regular_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_regular_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_regular_price == 0 else "Paid"
                 )
             }
         )
@@ -221,9 +217,7 @@ class Placeholders(basePlaceholder):
                 "promo_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_promo_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_promo_price == 0 else "Paid"
                 )
             }
         )
@@ -232,9 +226,7 @@ class Placeholders(basePlaceholder):
                 "renewal_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_renewal_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_renewal_price == 0 else "Paid"
                 )
             }
         )
@@ -405,9 +397,7 @@ class Textholders(basePlaceholder):
                 "current_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_current_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_current_price == 0 else "Paid"
                 )
             }
         )
@@ -416,9 +406,7 @@ class Textholders(basePlaceholder):
                 "regular_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_regular_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_regular_price == 0 else "Paid"
                 )
             }
         )
@@ -427,9 +415,7 @@ class Textholders(basePlaceholder):
                 "promo_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_promo_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_promo_price == 0 else "Paid"
                 )
             }
         )
@@ -438,9 +424,7 @@ class Textholders(basePlaceholder):
                 "renewal_price": (
                     constants.getattr("MODEL_PRICE_PLACEHOLDER")
                     if not modelObj
-                    else "Free"
-                    if modelObj.final_renewal_price == 0
-                    else "Paid"
+                    else "Free" if modelObj.final_renewal_price == 0 else "Paid"
                 )
             }
         )

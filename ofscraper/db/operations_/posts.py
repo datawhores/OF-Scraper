@@ -10,9 +10,11 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import contextlib
 import logging
 import sqlite3
+
 import arrow
 from rich.console import Console
 
@@ -94,7 +96,16 @@ def write_post_table_transition(
     inputData: list, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = ('post_id', 'text', 'price', 'paid', 'archived', "pinned",'created_at',"model_id")
+        ordered_keys = (
+            "post_id",
+            "text",
+            "price",
+            "paid",
+            "archived",
+            "pinned",
+            "created_at",
+            "model_id",
+        )
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(postInsert, insertData)
         conn.commit()
@@ -113,7 +124,7 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
                     data.date,
                     model_id,
                     data.id,
-                    model_id
+                    model_id,
                 ],
                 posts,
             )
@@ -126,9 +137,11 @@ def update_posts_table(posts: list, model_id=None, username=None, conn=None):
 def get_timeline_postsinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(timelinePostInfo, [model_id])
-        data=[dict(row) for row in cur.fetchall()]
-        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
-
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(ele, created_at=arrow.get(ele.get("created_at")).float_timestamp)
+            for ele in data
+        ]
 
 
 @wrapper.operation_wrapper_async
@@ -149,8 +162,8 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
 def get_all_posts_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsALLTransition)
-        data=[dict(row) for row in cur.fetchall()]
-        return [dict(row,pinned=row.get("pinned")) for row in data]
+        data = [dict(row) for row in cur.fetchall()]
+        return [dict(row, pinned=row.get("pinned")) for row in data]
 
 
 @wrapper.operation_wrapper_async
@@ -165,7 +178,9 @@ def add_column_post_ID(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'model_id') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
 
             # Add column if necessary (conditional execution)
@@ -183,7 +198,9 @@ def add_column_post_pinned(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
-            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'pinned') THEN 1 ELSE 0 END AS alter_required;")
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'pinned') THEN 1 ELSE 0 END AS alter_required;"
+            )
             alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
 
             # Add column if necessary (conditional execution)
@@ -191,7 +208,7 @@ def add_column_post_pinned(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN pinned INTEGER;")
             # Commit changes
             conn.commit()
-            
+
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Rollback in case of errors
@@ -202,8 +219,11 @@ def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> 
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(archivedPostInfo, [model_id])
         conn.commit()
-        data=[dict(row) for row in cur.fetchall()]
-        return [dict(ele,created_at=arrow.get(ele.get("created_at")).float_timestamp) for ele in data]
+        data = [dict(row) for row in cur.fetchall()]
+        return [
+            dict(ele, created_at=arrow.get(ele.get("created_at")).float_timestamp)
+            for ele in data
+        ]
 
 
 async def modify_unique_constriant_posts(model_id=None, username=None):
@@ -228,6 +248,7 @@ async def make_post_table_changes(all_posts, model_id=None, username=None):
 async def get_last_archived_date(model_id=None, username=None):
     data = await media.get_archived_media(model_id=model_id, username=username)
     return sorted(data, key=lambda x: x["posted_at"] or 0)[-1].get("posted_at") or 0
+
 
 async def get_last_timeline_date(model_id=None, username=None):
     data = await media.get_timeline_media(model_id=model_id, username=username)

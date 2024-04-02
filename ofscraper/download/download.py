@@ -15,7 +15,6 @@ from ofscraper.download.common.common import textDownloader
 from ofscraper.utils.context.run_async import run
 
 
-
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
     if not read_args.retriveArgs().dupe:

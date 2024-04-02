@@ -10,6 +10,7 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
+
 import asyncio
 import contextvars
 import logging
@@ -56,7 +57,7 @@ async def get_paid_posts_progress(username, model_id, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -80,9 +81,12 @@ async def get_paid_posts_progress(username, model_id, c=None):
     progress_utils.paid_layout.visible = False
     log.debug(f"[bold]Paid Count with Dupes[/bold] {len(responseArray)} found")
 
-
     seen = set()
-    new_posts = [post for post in responseArray if post['id'] not in seen and not seen.add(post['id'])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
 
     log.trace(f"paid postids {list(map(lambda x:x.get('id'),new_posts))}")
 
@@ -118,7 +122,7 @@ async def get_paid_posts(model_id, username, c=None):
         new_tasks = []
         try:
             async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks),2)
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
             ):
                 for task in asyncio.as_completed(tasks):
                     try:
@@ -141,9 +145,13 @@ async def get_paid_posts(model_id, username, c=None):
                 list(map(lambda x: f"dupedinfo paid: {str(x)}", responseArray))
             )
         )
-    )          
+    )
     seen = set()
-    new_posts = [post for post in responseArray if post['id'] not in seen and not seen.add(post['id'])]
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
     log.trace(f"paid postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "paid raw unduped {posts}".format(
@@ -160,7 +168,11 @@ async def get_paid_posts(model_id, username, c=None):
 
 def set_check(unduped, model_id):
     seen = set()
-    new_posts = [post for post in cache.get(f"purchase_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
+    new_posts = [
+        post
+        for post in cache.get(f"purchase_check_{model_id}", default=[]) + unduped
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
     cache.set(
         f"purchased_check_{model_id}",
         new_posts,
@@ -236,9 +248,11 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
                                     )
                                 )
                             )
-                        job_progress.remove_task(
-                            task
-                        ) if task and job_progress else None
+                        (
+                            job_progress.remove_task(task)
+                            if task and job_progress
+                            else None
+                        )
 
                     else:
                         log.debug(f"[bold]paid response status code:[/bold]{r.status}")
@@ -338,26 +352,30 @@ async def get_all_paid_posts():
                             continue
 
                 overall_progress.remove_task(page_task)
-        
+
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
         log.trace(
-        "paid raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo all paid: {str(x)}", output))
+            "paid raw duped {posts}".format(
+                posts="\n\n".join(
+                    list(map(lambda x: f"dupedinfo all paid: {str(x)}", output))
+                )
             )
         )
-    )  
         seen = set()
-        new_posts = [post for post in output if post['id'] not in seen and not seen.add(post['id'])]
+        new_posts = [
+            post
+            for post in output
+            if post["id"] not in seen and not seen.add(post["id"])
+        ]
         log.trace(f"all paid postids {list(map(lambda x:x.get('id'),new_posts))}")
         log.debug(f"[bold]Paid Post count without Dupes[/bold] {len(new_posts)} found")
         log.trace(
-        "paid raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo all paid: {str(x)}", new_posts))
+            "paid raw duped {posts}".format(
+                posts="\n\n".join(
+                    list(map(lambda x: f"undupedinfo all paid: {str(x)}", new_posts))
+                )
             )
         )
-    )  
         cache.set(
             "purchased_all",
             list(map(lambda x: x.get("id"), list())),
