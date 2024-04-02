@@ -44,7 +44,7 @@ postUpdate = """UPDATE posts
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
 WHERE post_id = ? and model_id=(?);"""
 timelinePostInfo = """
-SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
+SELECT created_at,post_id,downloaded FROM posts where archived=(0) and model_id=(?)
 """
 postsALLTransition = """
 SELECT post_id, text, price, paid, archived, created_at,
@@ -62,7 +62,7 @@ SELECT post_id FROM posts
 """
 
 archivedPostInfo = """
-SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
+SELECT created_at,post_id,downloaded FROM posts where archived=(1) and model_id=(?)
 """
 
 

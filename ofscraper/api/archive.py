@@ -15,17 +15,14 @@ import traceback
 import arrow
 from tenacity import (
     AsyncRetrying,
-    retry,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random,
 )
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
@@ -61,7 +58,6 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
-
     after = await get_after(model_id, username, forced_after)
     splitArrays = get_split_array(oldarchived, username, after)
     tasks=get_tasks(splitArrays, c, model_id, job_progress, after)
@@ -98,24 +94,20 @@ async def get_archived_media(model_id, username, forced_after=None, c=None):
     overall_progress.remove_task(page_task)
     progress_utils.archived_layout.visible = False
 
-    unduped = {}
-    log.debug(f"[bold]Archived Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        id = post["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = post
-    log.trace(f"archive dupeset postids {list(unduped.keys())}")
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+
+    log.trace(f"archive postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "archived raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo archive: {str(x)}", unduped))
+                list(map(lambda x: f"undupedinfo archive: {str(x)}", new_posts))
             )
         )
     )
-    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(unduped)} found")
-    set_check(unduped, model_id, after)
-    return list(unduped.values())
+    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(new_posts)} found")
+    set_check(new_posts, model_id, after)
+    return new_posts
 
 
 def get_split_array(oldarchived, username, after):
@@ -217,14 +209,12 @@ def get_tasks(splitArrays, c, model_id, job_progress, after):
 
 def set_check(unduped, model_id, after):
     if not after:
-        newCheck = {}
-        for post in cache.get(f"archived_check_{model_id}", default=[]) + list(
-            unduped.values()
-        ):
-            newCheck[post["id"]] = post
+        seen = set()
+        new_posts = [post for post in cache.get(f"archived_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
+        
         cache.set(
             f"archived_check_{model_id}",
-            list(newCheck.values()),
+            new_posts,
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
@@ -247,8 +237,7 @@ async def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all archived posts required to make sure content is not missing"
         )
         return 0
-    curr = operations.get_archived_media(model_id=model_id, username=username)
-
+    curr = await operations.get_archived_postinfo(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
@@ -261,7 +250,7 @@ async def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return missing_items[0].get("created_at")
+        return missing_items[0]["created_at"]
 
 
 @run
