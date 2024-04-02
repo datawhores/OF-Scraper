@@ -86,20 +86,20 @@ async def get_pinned_post(model_id, c=None):
         tasks = new_tasks
     overall_progress.remove_task(page_task)
     progress_utils.pinned_layout.visible = False
-    outdict = {}
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
-    for post in responseArray:
-        outdict[post["id"]] = post
-    log.trace(f"pinned dupeset postids {outdict.keys()}")
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+
+    log.trace(f"pinned postids{list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "pinned raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo pinned: {str(x)}", outdict.values()))
+                list(map(lambda x: f"undupedinfo pinned: {str(x)}", new_posts))
             )
         )
     )
-    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(outdict.values())} found")
-    return list(outdict.values())
+    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(new_posts)} found")
+    return new_posts
 
 
 async def scrape_pinned_posts(

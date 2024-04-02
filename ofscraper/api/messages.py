@@ -18,7 +18,6 @@ import traceback
 import arrow
 from tenacity import (
     AsyncRetrying,
-    retry,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random,
@@ -98,25 +97,22 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     overall_progress.remove_task(page_task)
     progress_utils.messages_layout.visible = False
 
-    unduped = {}
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
-    for message in responseArray:
-        id = message["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = message
+    
 
-    log.trace(f"messages dupeset messageids {unduped.keys()}")
+    log.trace(f"messages dupeset messageids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "messages raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo message: {str(x)}", unduped))
+                list(map(lambda x: f"undupedinfo message: {str(x)}", new_posts))
             )
         )
     )
-    set_check(unduped, model_id, after)
-    return list(unduped.values())
+    set_check(new_posts, model_id, after)
+    return new_posts
 
 
 @run
@@ -183,25 +179,20 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
 
-    unduped = {}
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
 
-    for message in responseArray:
-        id = message["id"]
-        if unduped.get(id):
-            continue
-        unduped[id] = message
-
-    log.trace(f"messages dupeset messageids {unduped.keys()}")
+    seen = set()
+    new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
+    log.trace(f"messages dupeset messageids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "messages raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo message: {str(x)}", unduped))
+                list(map(lambda x: f"undupedinfo message: {str(x)}", new_posts))
             )
         )
     )
-    set_check(unduped, model_id, after)
-    return list(unduped.values())
+    set_check(new_posts, model_id, after)
+    return new_posts
 
 
 def get_filterArray(after, before, oldmessages):
@@ -343,14 +334,11 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c
 
 def set_check(unduped, model_id, after):
     if not after:
-        newCheck = {}
-        for post in cache.get(f"message_check_{model_id}", default=[]) + list(
-            unduped.values()
-        ):
-            newCheck[post["id"]] = post
+        seen = set()
+        new_posts = [post for post in cache.get(f"message_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
         cache.set(
             f"message_check_{model_id}",
-            list(newCheck.values()),
+            list(new_posts),
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()

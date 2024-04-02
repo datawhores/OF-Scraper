@@ -81,18 +81,20 @@ async def get_paid_posts_progress(username, model_id, c=None):
     overall_progress.remove_task(page_task)
     progress_utils.paid_layout.visible = False
 
-    outdict = {}
-    for post in responseArray:
-        outdict[post["id"]] = post
+    seen = set()
+    new_posts = [post for post in responseArray if post['id'] not in seen and not seen.add(post['id'])]
+
+    log.trace(f"paid postids {list(map(lambda x:x.get('id'),new_posts))}")
+
     log.trace(
         "paid raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo paid: {str(x)}", outdict.values()))
+                list(map(lambda x: f"undupedinfo paid: {str(x)}", new_posts))
             )
         )
     )
-    set_check(outdict, model_id)
-    return list(outdict.values())
+    set_check(new_posts, model_id)
+    return new_posts
 
 
 @run
@@ -130,29 +132,27 @@ async def get_paid_posts(model_id, username, c=None):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
-    outdict = {}
-    for post in responseArray:
-        outdict[post["id"]] = post
+    seen = set()
+    new_posts = [post for post in responseArray if post['id'] not in seen and not seen.add(post['id'])]
+    log.trace(f"paid postids {list(map(lambda x:x.get('id'),new_posts))}")
+
     log.trace(
         "paid raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo paid: {str(x)}", outdict.values()))
+                list(map(lambda x: f"undupedinfo paid: {str(x)}", new_posts))
             )
         )
     )
-    set_check(outdict, model_id)
-    return list(outdict.values())
+    set_check(new_posts, model_id)
+    return new_posts
 
 
 def set_check(unduped, model_id):
-    newCheck = {}
-    for post in cache.get(f"purchased_check_{model_id}", default=[]) + list(
-        unduped.values()
-    ):
-        newCheck[post["id"]] = post
+    seen = set()
+    new_posts = [post for post in cache.get(f"purchase_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
     cache.set(
         f"purchased_check_{model_id}",
-        list(newCheck.values()),
+        new_posts,
         expire=constants.getattr("DAY_SECONDS"),
     )
     cache.close()

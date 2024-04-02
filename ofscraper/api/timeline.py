@@ -87,7 +87,7 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
 
-    log.trace(f"timeline dupeset postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(f"timeline postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "post raw unduped {posts}".format(
             posts="\n\n".join(
@@ -97,7 +97,7 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     )
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id, after)
-    return list(new_posts)
+    return new_posts
 
 
 @run
@@ -155,7 +155,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     seen = set()
     new_posts = [post for post in responseArray if post["id"] not in seen and not seen.add(post["id"])]
 
-    log.trace(f"timeline dupeset postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(f"timeline postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "post raw unduped {posts}".format(
             posts="\n\n".join(
@@ -165,7 +165,7 @@ async def get_timeline_media(model_id, username, forced_after=None, c=None):
     )
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id, after)
-    return list(new_posts)
+    return new_posts
 
 
 async def get_split_array(model_id, username, after):
@@ -185,7 +185,7 @@ async def get_split_array(model_id, username, after):
         )
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    oldtimeline = list(filter(lambda x: x != None, oldtimeline))
+    oldtimeline = list(filter(lambda x: x is not None, oldtimeline))
     postsDataArray = sorted(oldtimeline, key=lambda x: x.get("created_at"))
     log.info(
         f"""
@@ -277,7 +277,7 @@ def set_check(unduped, model_id, after):
         new_posts = [post for post in cache.get(f"timeline_check_{model_id}", default=[]) +unduped if post["id"] not in seen and not seen.add(post["id"])]
         cache.set(
             f"timeline_check_{model_id}",
-            list(new_posts),
+            new_posts,
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
@@ -298,7 +298,7 @@ def get_individual_post(id):
 
 
 async def get_after(model_id, username, forced_after=None):
-    if forced_after != None:
+    if forced_after is not None:
         return forced_after
     elif read_args.retriveArgs().after == 0:
         return 0
@@ -313,7 +313,7 @@ async def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
         )
         return 0
-    curr = operations.get_timeline_media(model_id=model_id, username=username)
+    curr = await operations.get_timeline_postinfo(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
@@ -326,7 +326,7 @@ async def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0][12]).float_timestamp
+        return arrow.get(missing_items[0]["created_at"]).float_timestamp
 
 
 async def scrape_timeline_posts(
@@ -340,7 +340,7 @@ async def scrape_timeline_posts(
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
     ):
-        return [], new_tasks
+        return [], []
     url = (
         constants.getattr("timelineNextEP").format(model_id, str(timestamp))
         if timestamp
