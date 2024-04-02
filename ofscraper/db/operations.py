@@ -67,7 +67,7 @@ def create_backup_transition(model_id, username):
         "media_hash",
         "media_model_id",
         "posts_model_id",
-        "posts_pinned"
+        "posts_pinned",
         "products_model_id",
         "other_model_id",
         "stories_model_id",
@@ -85,7 +85,7 @@ def create_backup_transition(model_id, username):
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
     ]
-    if len(set(set(groupA+groupB)).difference(changes)) == 0:
+    if len(set(groupA+groupB).difference(set(changes))) == 0:
         return
     # action if 1 test passes
     log.info("creating a backup before transition")
