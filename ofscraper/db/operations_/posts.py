@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS posts (
 )
 """
 postInsert = """INSERT INTO 'posts'(
-post_id, text,price,paid,archived,created_at,model_id)
+post_id, text,price,paid,archived,pinned,created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
 postUpdate = """UPDATE posts
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
@@ -78,6 +78,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
                     data.price,
                     data.paid,
                     data.archived,
+                    data.pinned,
                     data.date,
                     model_id,
                 ),
@@ -93,7 +94,7 @@ def write_post_table_transition(
     inputData: list, model_id=None, username=None, conn=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        ordered_keys = ('post_id', 'text', 'price', 'paid', 'archived', 'created_at',"model_id")
+        ordered_keys = ('post_id', 'text', 'price', 'paid', 'archived', "pinned",'created_at',"model_id")
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(postInsert, insertData)
         conn.commit()
@@ -148,7 +149,8 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
 def get_all_posts_transition(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsALLTransition)
-        return [dict(row) for row in cur.fetchall()]
+        data=[dict(row) for row in cur.fetchall()]
+        return [dict(row,pinned=row.get("pinned")) for row in data]
 
 
 @wrapper.operation_wrapper_async
@@ -171,6 +173,25 @@ def add_column_post_ID(conn=None, **kwargs):
                 cur.execute("ALTER TABLE posts ADD COLUMN model_id INTEGER;")
             # Commit changes
             conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
+
+
+@wrapper.operation_wrapper_async
+def add_column_post_pinned(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            # Check if column exists (separate statement)
+            cur.execute("SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('posts') WHERE name = 'pinned') THEN 1 ELSE 0 END AS alter_required;")
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE posts ADD COLUMN pinned INTEGER;")
+            # Commit changes
+            conn.commit()
+            
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Rollback in case of errors
