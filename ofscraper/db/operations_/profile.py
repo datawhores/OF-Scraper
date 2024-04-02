@@ -40,21 +40,26 @@ CREATE TABLE IF NOT EXISTS models (
 	PRIMARY KEY (id)
 )
 """
-profileDupeCheck = """
+userNameList = """
 SELECT username FROM profiles where user_id=(?)
 """
 profileTableCheck = """
 SELECT name FROM sqlite_master WHERE type='table' AND name='profiles';
 """
-profileInsert = """INSERT INTO 'profiles'(
-user_id,username)
-VALUES (?, ?);"""
-modelDupeCheck = """
-SELECT * FROM models where model_id=(?)
-"""
+profileInsert = """
+INSERT INTO 'profiles' (user_id, username)
+SELECT ?, ?
+WHERE NOT EXISTS (
+  SELECT 1 FROM 'profiles' WHERE user_id = ?
+);
+;"""
+
 modelInsert = """
 INSERT INTO models (model_id)
-VALUES (?);
+SELECT ?
+WHERE NOT EXISTS (
+  SELECT 1 FROM models WHERE model_id = ?
+);
 """
 profilesALL = """
 select user_id,username from profiles
@@ -74,7 +79,7 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         try:
            cur.execute(
-                profileDupeCheck, ([model_id])
+                userNameList, ([model_id])
             )
            return (list(map(lambda x: x[0], cur.fetchall())) or [None] )[0]
         except sqlite3.OperationalError:
@@ -94,8 +99,7 @@ def create_profile_table(model_id=None, username=None, conn=None):
 def write_profile_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [model_id, username]
-        if len(cur.execute(profileDupeCheck, (model_id,)).fetchall()) == 0:
-            cur.execute(profileInsert, insertData)
+        cur.execute(profileInsert, insertData)
         conn.commit()
 
 
@@ -130,7 +134,6 @@ def get_all_profiles(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         try:
             profiles = cur.execute(profilesALL).fetchall()
-            conn.commit()
             return profiles
         except sqlite3.OperationalError as E:
             None
@@ -155,9 +158,8 @@ def create_models_table(model_id=None, username=None, conn=None):
 @wrapper.operation_wrapper_async
 def write_models_table(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        if len(cur.execute(modelDupeCheck, (model_id,)).fetchall()) == 0:
-            cur.execute(modelInsert, [model_id])
-            conn.commit()
+        cur.execute(modelInsert, [model_id])
+        conn.commit()
 
 
 async def remove_unique_constriant_profile(model_id=None, username=None):
