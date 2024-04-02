@@ -211,23 +211,25 @@ async def process_timeline_posts(model_id, username, c):
             timeline_posts = await timeline.get_timeline_media_progress(
                 model_id, username, c=c
             )
-            timeline_posts = list(
+
+            timeline_only_posts=filter(lambda x:x.regular_timeline,timeline_posts)
+            timeline_only_posts = list(
                 map(
                     lambda x: posts_.Post(x, model_id, username, "timeline"),
-                    timeline_posts,
+                    timeline_only_posts,
                 )
             )
             await operations.make_post_table_changes(
-                timeline_posts,
+                timeline_only_posts,
                 model_id=model_id,
                 username=username,
             )
             log.debug(
-                f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_posts))}"
+                f"[bold]Timeline media count with locked[/bold] {sum(map(lambda x:len(x.post_media),timeline_only_posts))}"
             )
             log.debug("Removing locked timeline media")
             output = []
-            [output.extend(post.media) for post in timeline_posts]
+            [output.extend(post.media) for post in timeline_only_posts]
             log.debug(f"[bold]Timeline media count without locked[/bold] {len(output)}")
 
             await operations.batch_mediainsert(
@@ -242,7 +244,7 @@ async def process_timeline_posts(model_id, username, c):
             )
             return (
                 list(filter(lambda x: isinstance(x, media.Media), output)),
-                timeline_posts,
+                timeline_only_posts,
             )
     except Exception as E:
         try:

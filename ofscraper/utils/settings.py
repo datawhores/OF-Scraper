@@ -138,3 +138,6 @@ def get_ffmpeg():
         or shutil.which(constants.getattr("FFMPEG_DECRYPT"))
         or ""
     )
+
+def get_after_enabled():
+    return (read_args.retriveArgs().after is not None or not config_data.get_disable_after())

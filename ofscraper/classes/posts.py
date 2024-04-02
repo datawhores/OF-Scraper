@@ -48,6 +48,14 @@ class Post(base.base):
         if self.post.get("isArchived"):
             return 1
         return 0
+    @property
+    def pinned(self):
+        if self.post.get("isPinned"):
+            return 1
+        return 0
+    @property
+    def regular_timeline(self):
+        return not self.archived and not self.pinned
 
     @property
     def db_sanitized_text(self):

@@ -27,6 +27,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -223,6 +224,8 @@ def set_check(unduped, model_id, after):
 async def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
+    elif  not settings.get_after_enabled():
+        return 0
     elif read_args.retriveArgs().after == 0:
         return 0
     elif read_args.retriveArgs().after:
@@ -230,19 +233,17 @@ async def get_after(model_id, username, forced_after=None):
 
     elif (
         cache.get(f"{model_id}_full_archived_scrape")
-        and not read_args.retriveArgs().after
-        and not data.get_disable_after()
     ):
         log.info(
             "Used --after previously. Scraping all archived posts required to make sure content is not missing"
         )
         return 0
-    curr = await operations.get_archived_postinfo(model_id=model_id, username=username)
+    curr = await operations.get_archived_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
     missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
-    missing_items = list(sorted(missing_items, key=lambda x: x.get('created_at')))
+    missing_items = list(sorted(missing_items, key=lambda x: x.get('posted_at') or 0))
     if len(missing_items) == 0:
         log.debug("Using last db date because,all downloads in db marked as downloaded")
         return await operations.get_last_archived_date(model_id=model_id, username=username)
@@ -250,7 +251,7 @@ async def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return missing_items[0]["created_at"]
+        return missing_items[0].get("posted_at") or 9
 
 
 @run

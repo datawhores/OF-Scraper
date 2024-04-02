@@ -27,7 +27,7 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as data
+import ofscraper.utils.settings as settings
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.sems as sems
@@ -517,14 +517,14 @@ def get_individual_post(model_id, postid):
 async def get_after(model_id, username, forced_after=None):
     if forced_after != None:
         return forced_after
+    elif  not settings.get_after_enabled():
+        return 0
     elif read_args.retriveArgs().after == 0:
         return 0
     elif read_args.retriveArgs().after:
         return read_args.retriveArgs().after.float_timestamp
     elif (
         cache.get(f"{model_id}_scrape_messages")
-        and not read_args.retriveArgs().after
-        and not data.get_disable_after()
     ):
         log.debug(
             "Used --after previously. Scraping all messages required to make sure content is not missing"
