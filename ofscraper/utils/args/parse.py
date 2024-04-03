@@ -859,6 +859,15 @@ Accepts space or comma seperated list
         action="store_true",
     )
 
+    post_check.add_argument(
+        "-fo",
+        "--check-area",
+        help="which areas to check",
+        default=["Timeline","Pinned","Archived"],
+        action="store_true",
+        type=helpers.post_check_area
+    )
+
     message_check = subparser.add_parser(
         "msg_check",
         help="Generate a table of key information from model-extracted messages\nCache lasts for 24 hours",
