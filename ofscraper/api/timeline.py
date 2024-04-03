@@ -73,11 +73,9 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
     after = await get_after(model_id, username, forced_after)
 
-    live=progress_utils.set_up_api_timeline()
-
-    splitArrays = await get_split_array(model_id, username, after)
-    tasks = get_tasks(splitArrays, c, model_id, after)
-    with live:
+    with progress_utils.set_up_api_timeline():
+        splitArrays = await get_split_array(model_id, username, after)
+        tasks = get_tasks(splitArrays, c, model_id, after)
         return await process_tasks(tasks,model_id,after)
 
 

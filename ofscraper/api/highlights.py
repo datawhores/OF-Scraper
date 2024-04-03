@@ -245,7 +245,7 @@ async def get_highlight_list(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
 
-    with progress_utils.set_up_api_highlights():
+    with progress_utils.set_up_api_highlights_lists():
         tasks = []
         tasks.append(
             asyncio.create_task(scrape_highlight_list(c, model_id, job_progress=progress_utils.highlights_progress))
@@ -269,6 +269,7 @@ async def process_task_get_highlight_list(tasks):
 
     page_count = 0
     overall_progress = progress_utils.overall_progress
+    
     page_task = overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )

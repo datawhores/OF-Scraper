@@ -257,15 +257,40 @@ def set_up_api_stories():
             progress_group, refresh_per_second=5, console=console_.get_shared_console()
     )        
 
-def set_up_api_highlights():
+def set_up_api_highlights_lists():
     global overall_progress
     global highlights_progress
     overall_progress = Progress(
             SpinnerColumn(style=Style(color="blue")),
-            TextColumn(f"Getting highlights...\n{{task.description}}")
+            TextColumn(f"Getting highlights lists...\n{{task.description}}")
     )
     highlights_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
     return Live(
             progress_group, refresh_per_second=5, console=console_.get_shared_console()
-    )            
+    ) 
+def set_up_api_highlights():
+    global overall_progress
+    global highlights_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting highlights via list..\n{{task.description}}")
+    )
+    highlights_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+    )    
+
+def set_up_api_labels():
+    global overall_progress
+    global labelled_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting Posts via labels\n{{task.description}}")
+    )
+    labelled_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+    )    

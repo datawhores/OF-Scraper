@@ -40,39 +40,78 @@ import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
-
-from ..api import timeline
-
-sem = semaphoreDelayed(1)
-log = logging.getLogger("shared")
+import ofscraper.utils.args.areas as areas
+import ofscraper.utils.system.system as system
+import ofscraper.api.timeline as timeline
+import ofscraper.utils.progress as progress_utils
+import ofscraper.classes.posts as posts_
 import ofscraper.utils.args.read as read_args
 
 
-def get_posts(model_id, username):
-    args = read_args.retriveArgs()
-    pinned_posts = []
-    timeline_posts = []
-    archived_posts = []
-    labelled_posts = []
-    options = args.like_area
-    if "Pinned" in options or "All" in options:
-        pinned_posts = pinned.get_pinned_posts(model_id)
-    if "Timeline" in options or "All" in options:
-        timeline_posts = timeline.get_timeline_posts(
-            model_id, username, forced_after=0
-        )
-    if "Archived" in options or "All" in options:
-        archived_posts = archive.get_archived_posts(model_id, username, forced_after=0)
-    if "Labels" in options or "All" in options:
-        labels_ = labels_api.get_labels(model_id)
-        labelled_posts_ = labels_api.get_labelled_posts(labels_, model_id)
-        labelled_posts_ = list(
-            map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
-        )
-    log.debug(
-        f"[bold]Number of Post Found[/bold] {len(pinned_posts) + len(timeline_posts) + len(archived_posts)}"
-    )
-    return pinned_posts + timeline_posts + archived_posts + labelled_posts
+
+
+sem = semaphoreDelayed(1)
+log = logging.getLogger("shared")
+
+@run
+async def get_posts(model_id, username):
+    responses=[]
+    final_post_areas = set(areas.get_like_area())
+    tasks = []
+    with progress_utils.setup_api_split_progress_live():
+        async with sessionbuilder.sessionBuilder() as c:
+            while True:
+                max_count = min(
+                    constants.getattr("API_MAX_AREAS"),
+                    system.getcpu_count(),
+                    len(final_post_areas),
+                )
+                if not bool(tasks) and not bool(final_post_areas):
+                    break
+                for _ in range(max_count - len(tasks)):
+                    if "Pinned" in final_post_areas:
+                        tasks.append(asyncio.create_task(pinned.get_pinned_posts_progress(model_id,c)))
+                        progress_utils.pinned_layout.visible=True
+                        final_post_areas.remove("Pinned")
+                    elif "Timeline" in final_post_areas:
+                        tasks.append(
+                            asyncio.create_task(
+                                timeline.get_timeline_posts_progress(model_id=model_id,username=username,c=c,forced_after=read_args.retriveArgs().after or 0)
+                            )
+                        )
+                        progress_utils.timeline_layout.visible=True
+                        final_post_areas.remove("Timeline")
+                    if "Archived" in final_post_areas:
+                        tasks.append(
+                            asyncio.create_task(
+                                archive.get_archived_posts_progress(model_id=model_id,username=username,c=c,forced_after=read_args.retriveArgs().after or 0)
+                            )
+                        )
+                        progress_utils.archived_layout.visible=True
+                        final_post_areas.remove("Archived")
+
+                    elif "Labels" in final_post_areas:
+                        tasks.append(asyncio.create_task(labels_api.get_labels_posts_progress(model_id=model_id,c=c)))
+                        progress_utils.labelled_layout.visible=True
+                        final_post_areas.remove("Labels")
+                if not bool(tasks):
+                    break
+                done, pending = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                await asyncio.sleep(1)
+                tasks = list(pending)
+                for results in done:
+                    try:
+                        data = await results or []
+                        responses.extend(data)
+                        await asyncio.sleep(1)
+                    except Exception as E:
+                        await asyncio.sleep(1)
+                        log.debug(E)
+                        continue
+    return pre_filter(list(map(lambda x:posts_.Post(x,model_id=model_id,username=username),responses)))
+
 
 
 def get_posts_for_unlike(model_id, username):
@@ -86,20 +125,30 @@ def get_post_for_like(model_id, username):
 
 
 def filter_for_unfavorited(posts: list) -> list:
-    output = list(filter(lambda x: x.get("isFavorite") == False, posts))
+    output = list(filter(lambda x: x.favorited == False, posts))
     log.debug(f"[bold]Number of unliked post[/bold] {len(output)}")
     return output
 
 
 def filter_for_favorited(posts: list) -> list:
-    output = list(filter(lambda x: x.get("isFavorite") == True, posts))
+    output = list(filter(lambda x: x.favorited == True, posts))
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
+def pre_filter(posts):
+    valid_post = list(filter(lambda x: x.opened, posts))
+    seen = set()
+    return  [
+        post
+        for post in valid_post
+        if post.id not in seen and not seen.add(post.id)
+    ]
+
+
+
 
 def get_post_ids(posts: list) -> list:
-    valid_post = list(filter(lambda x: x.get("isOpened") == True, posts))
-    return list(map(lambda x: x.get("id"), valid_post))
+    return list(map(lambda x: x.id, posts))
 
 
 def like(model_id, username, ids: list):

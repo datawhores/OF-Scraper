@@ -453,7 +453,7 @@ async def process_all_paid():
 async def process_labels(model_id, username, c):
     try:
         with stdout.lowstdout():
-            labels_ = await labels_api.get_labels(model_id, c=c)
+            labels_ = await labels_api.get_labels_posts_progress(model_id, c=c)
 
             labels_ = (
                 labels_
@@ -537,7 +537,7 @@ async def process_task(model_id, username, ele):
             )
             if not bool(tasks) and not bool(final_post_areas):
                 break
-            for i in range(max_count - len(tasks)):
+            for _ in range(max_count - len(tasks)):
                 if "Profile" in final_post_areas:
                     tasks.append(asyncio.create_task(process_profile(username, c)))
                     final_post_areas.remove("Profile")

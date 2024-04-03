@@ -34,22 +34,35 @@ sem = None
 
 
 @run
-async def get_labels(model_id, c=None):
+async def get_labels_posts_progress(model_id, c=None):
     global sem
     sem = sems.get_req_sem()
-    responseArray = []
     tasks = []
+    tasks.append(
+        asyncio.create_task(scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress))
+    )
+    progress_utils.labelled_layout.visible = False
+    return await process_task(tasks)
+
+
+@run
+async def get_labels_posts(model_id, c=None):
+    global sem
+    sem = sems.get_req_sem()
+    tasks = []
+    tasks.append(
+        asyncio.create_task(scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress))
+    )
+    with progress_utils.set_up_api_labels():
+        return await process_task(tasks)
+
+
+
+async def process_task(tasks):
+    responseArray = []
 
     page_count = 0
-    job_progress = progress_utils.labelled_progress
     overall_progress = progress_utils.overall_progress
-
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
-    tasks.append(
-        asyncio.create_task(scrape_labels(c, model_id, job_progress=job_progress))
-    )
 
     page_task = overall_progress.add_task(
         f"Label Names Pages Progresss: {page_count}", visible=True
@@ -79,7 +92,6 @@ async def get_labels(model_id, c=None):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     overall_progress.remove_task(page_task)
-    progress_utils.labelled_layout.visible = False
     log.trace(
         "post label names unduped {posts}".format(
             posts="\n\n".join(map(lambda x: f" label name unduped:{x}", responseArray))
@@ -89,7 +101,6 @@ async def get_labels(model_id, c=None):
         f"[bold]Labels name count without Dupes[/bold] {len(responseArray)} found"
     )
     return responseArray
-
 
 async def scrape_labels(c, model_id, job_progress=None, offset=0):
     global sem

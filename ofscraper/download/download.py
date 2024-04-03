@@ -37,7 +37,7 @@ def medialist_filter(medialist, model_id, username):
 
 def download_process(username, model_id, medialist, posts=None):
     medialist = medialist_filter(medialist, model_id, username)
-    medialist = helpers.post_count_filter(medialist)
+    medialist = helpers.ele_count_filter(medialist)
     textDownloader(posts, username=username)
     download_picker(username, model_id, medialist)
     remove_downloads_with_hashes(username, model_id)

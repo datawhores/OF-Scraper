@@ -54,7 +54,7 @@ def timeline_array_filter(posts):
     return out
 
 
-def post_count_filter(media):
+def ele_count_filter(media):
     count = settings.get_max_post_count() or None
     return media[:count]
 

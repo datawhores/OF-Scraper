@@ -193,7 +193,7 @@ def process_like():
                 model_id = ele.id
                 operations.table_init_create(model_id, ele.name)
                 unfavorited_posts = like.get_post_for_like(model_id, ele.name)
-                unfavorited_posts = filters.media_filter_for_like(
+                unfavorited_posts = filters.post_filter_for_like(
                     unfavorited_posts, like=True
                 )
                 post_ids = like.get_post_ids(unfavorited_posts)
@@ -220,7 +220,7 @@ def process_unlike():
                 model_id = profile.get_id(ele.name)
                 operations.table_init_create(model_id, ele.name)
                 favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
-                favorited_posts = filters.media_filter_for_like(
+                favorited_posts = filters.post_filter_for_like(
                     favorited_posts, like=False
                 )
                 post_ids = like.get_post_ids(favorited_posts)

@@ -92,9 +92,6 @@ async def process_tasks(tasks,model_id):
     overall_progress = progress_utils.overall_progress
 
     page_task = overall_progress.add_task(
-    f" Timeline Content Pages Progress: {page_count}", visible=True
-    )
-    page_task = overall_progress.add_task(
         f"Pinned Content Pages Progress: {page_count}", visible=True
     )
     while bool(tasks):
@@ -261,10 +258,10 @@ async def scrape_pinned_posts(
                             )
                     else:
                         log.debug(
-                            f"[bold]timeline response status code:[/bold]{r.status}"
+                            f"[bold]t response status code:[/bold]{r.status}"
                         )
-                        log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                        log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
+                        log.debug(f"[bold]pinned response:[/bold] {await r.text_()}")
+                        log.debug(f"[bold]pinned headers:[/bold] {r.headers}")
                         r.raise_for_status()
             except Exception as E:
                 await asyncio.sleep(1)

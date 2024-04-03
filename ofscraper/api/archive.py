@@ -84,6 +84,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
         tasks = get_tasks(splitArrays, c, model_id, after)
         return await process_tasks(tasks,model_id,after)
 
+
 async def process_tasks(tasks,model_id,after):
     responseArray = []
     page_count = 0
@@ -288,7 +289,6 @@ async def get_after(model_id, username, forced_after=None):
         return missing_items[0].get("posted_at") or 9
 
 
-@run
 async def scrape_archived_posts(
     c, model_id, job_progress=None, timestamp=None, required_ids=None, offset=False
 ) -> list:
@@ -335,9 +335,7 @@ async def scrape_archived_posts(
                     if r.ok:
                         posts = (await r.json_())["list"]
                         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
-                        if not posts:
-                            posts = []
-                        if len(posts) == 0:
+                        if not posts or len(posts) == 0:
                             log.debug(f" {log_id} -> number of post found 0")
                         elif len(posts) > 0:
                             log.debug(
