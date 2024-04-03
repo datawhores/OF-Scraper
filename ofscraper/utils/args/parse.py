@@ -126,10 +126,17 @@ like and unlike can not be combined
 
     post.add_argument(
         "-e",
-        "--dupe",
+        "--force-all",
         action="store_true",
         default=False,
-        help="Bypass the dupe check and redownload all files",
+        help="Downloads all files regardless of whether it is in the database",
+    )
+    post.add_argument(
+        "-eq",
+        "--force-model-unique",
+        action="store_true",
+        default=False,
+        help="Only download if the file is not present for the current model in the database",
     )
 
     post.add_argument(

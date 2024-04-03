@@ -17,9 +17,12 @@ from ofscraper.utils.context.run_async import run
 
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
-    if not read_args.retriveArgs().dupe:
+    if read_args.retriveArgs().force_all:
+        log.info(f"forcing all downloads media count {len(medialist)}")
+    elif read_args.retriveArgs().force_model_unique:
+        log.info(f"Downloading unique for model")
         media_ids = set(
-            operations.get_media_ids_downloaded(model_id=model_id, username=username)
+            operations.get_media_ids_downloaded_model(model_id=model_id, username=username)
         )
         log.debug(
             f"Number of unique media ids in database for {username}: {len(media_ids)}"
@@ -29,9 +32,19 @@ def medialist_filter(medialist, model_id, username):
         medialist = seperate.seperate_avatars(medialist)
         log.debug("Removed previously downloaded avatars/headers")
         log.debug(f"Final Number of media to download {len(medialist)}")
-
     else:
-        log.info(f"forcing all downloads media count {len(medialist)}")
+        log.info(f"Downloading unique across all models")
+        media_ids = set(
+            operations.get_media_ids_downloaded(model_id=model_id, username=username)
+        )
+        log.debug(
+            f"Number of unique media ids in database for all models"
+        )
+        medialist = seperate.separate_by_id(medialist, media_ids)
+        log.debug(f"Number of new mediaids with dupe ids removed: {len(medialist)}")
+        medialist = seperate.seperate_avatars(medialist)
+        log.debug("Removed previously downloaded avatars/headers")
+        log.debug(f"Final Number of media to download {len(medialist)} ")
     return medialist
 
 

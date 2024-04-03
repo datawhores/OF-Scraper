@@ -41,7 +41,7 @@ def manual_download(urls=None):
 
 def allow_manual_dupes():
     args = read_args.retriveArgs()
-    args.dupe = True
+    args.force_all = True
     write_args.setArgs(args)
 
 
