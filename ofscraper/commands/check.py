@@ -179,44 +179,47 @@ async def post_check_helper():
                 continue
             if user_dict.get(user_name):
                 continue
-
-            oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+            areas=read_args.retriveArgs().check_area
             user_dict[user_name] = user_dict.get(user_name) or []
-            if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
-                user_dict[user_name].extend(oldtimeline)
-            else:
-                data = await timeline.get_timeline_posts(
-                    model_id, user_name, forced_after=0, c=c
-                )
-                user_dict[user_name].extend(data)
-                cache.set(
-                    f"timeline_check_{model_id}",
-                    data,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
-            oldarchive = cache.get(f"archived_check_{model_id}", default=[])
-            if len(oldarchive) > 0 and not read_args.retriveArgs().force:
-                user_dict[user_name].extend(oldarchive)
-            else:
-                data = await archived.get_archived_posts(
-                    model_id, user_name, forced_after=0, c=c
-                )
-                user_dict[user_name].extend(data)
-                cache.set(
-                    f"archived_check_{model_id}",
-                    data,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
-            oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
-            if len(oldpinned) > 0 and not read_args.retriveArgs().force:
-                user_dict[user_name].extend(oldpinned)
-            else:
-                data = await pinned.get_pinned_posts(model_id, c=c)
-                user_dict[user_name].extend(data)
-                cache.set(
-                    f"pinned_check_{model_id}",
-                    data,
-                    expire=constants.getattr("DAY_SECONDS"),
+            if "Timeline" in areas:
+                oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+                if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
+                    user_dict[user_name].extend(oldtimeline)
+                else:
+                    data = await timeline.get_timeline_posts(
+                        model_id, user_name, forced_after=0, c=c
+                    )
+                    user_dict[user_name].extend(data)
+                    cache.set(
+                        f"timeline_check_{model_id}",
+                        data,
+                        expire=constants.getattr("DAY_SECONDS"),
+                    )
+            if "Archived" in areas:
+                oldarchive = cache.get(f"archived_check_{model_id}", default=[])
+                if len(oldarchive) > 0 and not read_args.retriveArgs().force:
+                    user_dict[user_name].extend(oldarchive)
+                else:
+                    data = await archived.get_archived_posts(
+                        model_id, user_name, forced_after=0, c=c
+                    )
+                    user_dict[user_name].extend(data)
+                    cache.set(
+                        f"archived_check_{model_id}",
+                        data,
+                        expire=constants.getattr("DAY_SECONDS"),
+                    )
+            if "Pinned" in areas:
+                oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
+                if len(oldpinned) > 0 and not read_args.retriveArgs().force:
+                    user_dict[user_name].extend(oldpinned)
+                else:
+                    data = await pinned.get_pinned_posts(model_id, c=c)
+                    user_dict[user_name].extend(data)
+                    cache.set(
+                        f"pinned_check_{model_id}",
+                        data,
+                        expire=constants.getattr("DAY_SECONDS"),
                 )
 
             cache.close()
@@ -239,7 +242,7 @@ async def post_check_helper():
                     user_name = name_match.group(1)
                     post_id = num_match.group(1)
                     model_id = profile.get_id(user_name)
-                    log.info(f"Getting Invidiual Link for {user_name}")
+                    log.info(f"Getting individual link for {user_name}")
                     if not user_dict.get(user_name):
                         user_dict[name_match.group(1)] = {}
                     data = timeline.get_individual_post(post_id)
