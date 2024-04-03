@@ -45,10 +45,9 @@ async def get_timeline_posts_progress(model_id, username, forced_after=None, c=N
 
     splitArrays = await get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
-    data=await process_tasks(tasks,model_id,after)
+    data = await process_tasks(tasks, model_id, after)
     progress_utils.timeline_layout.visible = False
     return data
-
 
 
 @run
@@ -76,16 +75,16 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     with progress_utils.set_up_api_timeline():
         splitArrays = await get_split_array(model_id, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
-        return await process_tasks(tasks,model_id,after)
+        return await process_tasks(tasks, model_id, after)
 
 
-async def process_tasks(tasks,model_id,after):
+async def process_tasks(tasks, model_id, after):
     responseArray = []
     page_count = 0
     overall_progress = progress_utils.overall_progress
 
     page_task = overall_progress.add_task(
-    f" Timeline Content Pages Progress: {page_count}", visible=True
+        f" Timeline Content Pages Progress: {page_count}", visible=True
     )
     while bool(tasks):
         new_tasks = []
@@ -141,9 +140,9 @@ async def process_tasks(tasks,model_id,after):
     set_check(new_posts, model_id, after)
     return new_posts
 
+
 async def get_split_array(model_id, username, after):
     min_posts = 50
-
 
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_postsinfo(

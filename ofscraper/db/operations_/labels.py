@@ -163,7 +163,9 @@ def drop_labels_table(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def get_all_labels_transition(model_id=None, username=None, conn=None,database_model=None) -> list:
+def get_all_labels_transition(
+    model_id=None, username=None, conn=None, database_model=None
+) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         # Check for column existence (label_id)
         cur.execute("PRAGMA table_info('labels')")
@@ -184,12 +186,20 @@ def get_all_labels_transition(model_id=None, username=None, conn=None,database_m
         # Execute the query
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(row, label_id=row.get("label_id") or row.get("id"),model_id=row.get("model_id") or database_model) for row in data]
+            dict(
+                row,
+                label_id=row.get("label_id") or row.get("id"),
+                model_id=row.get("model_id") or database_model,
+            )
+            for row in data
+        ]
 
 
 async def modify_unique_constriant_labels(model_id=None, username=None):
-    database_model=get_single_model(model_id=model_id,username=username)
-    data = await get_all_labels_transition(model_id=model_id, username=username,database_model=database_model)
+    database_model = get_single_model(model_id=model_id, username=username)
+    data = await get_all_labels_transition(
+        model_id=model_id, username=username, database_model=database_model
+    )
     await drop_labels_table(model_id=model_id, username=username)
     await create_labels_table(model_id=model_id, username=username)
     await write_labels_table_transition(data, model_id=model_id, username=username)

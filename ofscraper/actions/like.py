@@ -34,28 +34,26 @@ from tenacity import (
 import ofscraper.api.archive as archive
 import ofscraper.api.labels as labels_api
 import ofscraper.api.pinned as pinned
+import ofscraper.api.timeline as timeline
 import ofscraper.classes.labels as labels
+import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.utils.args.areas as areas
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
+import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.system.system as system
 from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.args.areas as areas
-import ofscraper.utils.system.system as system
-import ofscraper.api.timeline as timeline
-import ofscraper.utils.progress as progress_utils
-import ofscraper.classes.posts as posts_
-import ofscraper.utils.args.read as read_args
-
-
-
 
 sem = semaphoreDelayed(1)
 log = logging.getLogger("shared")
 
+
 @run
 async def get_posts(model_id, username):
-    responses=[]
+    responses = []
     final_post_areas = set(areas.get_like_area())
     tasks = []
     with progress_utils.setup_api_split_progress_live():
@@ -70,29 +68,49 @@ async def get_posts(model_id, username):
                     break
                 for _ in range(max_count - len(tasks)):
                     if "Pinned" in final_post_areas:
-                        tasks.append(asyncio.create_task(pinned.get_pinned_posts_progress(model_id,c)))
-                        progress_utils.pinned_layout.visible=True
+                        tasks.append(
+                            asyncio.create_task(
+                                pinned.get_pinned_posts_progress(model_id, c)
+                            )
+                        )
+                        progress_utils.pinned_layout.visible = True
                         final_post_areas.remove("Pinned")
                     elif "Timeline" in final_post_areas:
                         tasks.append(
                             asyncio.create_task(
-                                timeline.get_timeline_posts_progress(model_id=model_id,username=username,c=c,forced_after=read_args.retriveArgs().after or 0)
+                                timeline.get_timeline_posts_progress(
+                                    model_id=model_id,
+                                    username=username,
+                                    c=c,
+                                    forced_after=read_args.retriveArgs().after or 0,
+                                )
                             )
                         )
-                        progress_utils.timeline_layout.visible=True
+                        progress_utils.timeline_layout.visible = True
                         final_post_areas.remove("Timeline")
                     if "Archived" in final_post_areas:
                         tasks.append(
                             asyncio.create_task(
-                                archive.get_archived_posts_progress(model_id=model_id,username=username,c=c,forced_after=read_args.retriveArgs().after or 0)
+                                archive.get_archived_posts_progress(
+                                    model_id=model_id,
+                                    username=username,
+                                    c=c,
+                                    forced_after=read_args.retriveArgs().after or 0,
+                                )
                             )
                         )
-                        progress_utils.archived_layout.visible=True
+                        progress_utils.archived_layout.visible = True
                         final_post_areas.remove("Archived")
 
                     elif "Labels" in final_post_areas:
-                        tasks.append(asyncio.create_task(labels_api.get_labels_posts_progress(model_id=model_id,c=c)))
-                        progress_utils.labelled_layout.visible=True
+                        tasks.append(
+                            asyncio.create_task(
+                                labels_api.get_labels_posts_progress(
+                                    model_id=model_id, c=c
+                                )
+                            )
+                        )
+                        progress_utils.labelled_layout.visible = True
                         final_post_areas.remove("Labels")
                 if not bool(tasks):
                     break
@@ -110,8 +128,14 @@ async def get_posts(model_id, username):
                         await asyncio.sleep(1)
                         log.debug(E)
                         continue
-    return pre_filter(list(map(lambda x:posts_.Post(x,model_id=model_id,username=username),responses)))
-
+    return pre_filter(
+        list(
+            map(
+                lambda x: posts_.Post(x, model_id=model_id, username=username),
+                responses,
+            )
+        )
+    )
 
 
 def get_posts_for_unlike(model_id, username):
@@ -135,16 +159,13 @@ def filter_for_favorited(posts: list) -> list:
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
+
 def pre_filter(posts):
     valid_post = list(filter(lambda x: x.opened, posts))
     seen = set()
-    return  [
-        post
-        for post in valid_post
-        if post.id not in seen and not seen.add(post.id)
+    return [
+        post for post in valid_post if post.id not in seen and not seen.add(post.id)
     ]
-
-
 
 
 def get_post_ids(posts: list) -> list:

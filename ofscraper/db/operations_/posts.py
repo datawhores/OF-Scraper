@@ -24,7 +24,6 @@ import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
 from ofscraper.db.operations_.profile import get_single_model
 
-
 console = Console()
 log = logging.getLogger("shared")
 
@@ -162,11 +161,20 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def get_all_posts_transition(model_id=None, username=None, conn=None,database_model=None) -> list:
+def get_all_posts_transition(
+    model_id=None, username=None, conn=None, database_model=None
+) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsALLTransition)
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(row, pinned=row.get("pinned"),model_id=row.get("model_id") or database_model) for row in data]
+        return [
+            dict(
+                row,
+                pinned=row.get("pinned"),
+                model_id=row.get("model_id") or database_model,
+            )
+            for row in data
+        ]
 
 
 @wrapper.operation_wrapper_async
@@ -230,8 +238,10 @@ def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> 
 
 
 async def modify_unique_constriant_posts(model_id=None, username=None):
-    database_model=get_single_model(model_id=model_id,username=username)
-    data = await get_all_posts_transition(model_id=model_id, username=username,database_model=database_model)
+    database_model = get_single_model(model_id=model_id, username=username)
+    data = await get_all_posts_transition(
+        model_id=model_id, username=username, database_model=database_model
+    )
     await drop_posts_table(model_id=model_id, username=username)
     await create_post_table(model_id=model_id, username=username)
     await write_post_table_transition(data, model_id=model_id, username=username)

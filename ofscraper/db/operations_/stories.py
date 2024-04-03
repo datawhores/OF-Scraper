@@ -22,7 +22,6 @@ import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
 from ofscraper.db.operations_.profile import get_single_model
 
-
 console = Console()
 log = logging.getLogger("shared")
 
@@ -144,11 +143,15 @@ def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def get_all_stories_transition(model_id=None, username=None, conn=None,database_model=None) -> list:
+def get_all_stories_transition(
+    model_id=None, username=None, conn=None, database_model=None
+) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesALLTransition)
-        return [dict(row,model_id=row.get("model_id") or database_model) for row in cur.fetchall()]
-
+        return [
+            dict(row, model_id=row.get("model_id") or database_model)
+            for row in cur.fetchall()
+        ]
 
 
 @wrapper.operation_wrapper_async
@@ -178,8 +181,10 @@ def drop_stories_table(model_id=None, username=None, conn=None) -> list:
 
 
 async def modify_unique_constriant_stories(model_id=None, username=None):
-    database_model=get_single_model(model_id=model_id,username=username)
-    data = await get_all_stories_transition(model_id=model_id, username=username,database_model=database_model)
+    database_model = get_single_model(model_id=model_id, username=username)
+    data = await get_all_stories_transition(
+        model_id=model_id, username=username, database_model=database_model
+    )
     await drop_stories_table(model_id=model_id, username=username)
     await create_stories_table(model_id=model_id, username=username)
     await write_stories_table_transition(data, model_id=model_id, username=username)

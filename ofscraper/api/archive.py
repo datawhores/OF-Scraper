@@ -57,10 +57,9 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     after = await get_after(model_id, username, forced_after)
     splitArrays = get_split_array(oldarchived, username, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
-    data=await process_tasks(tasks,model_id,after)
+    data = await process_tasks(tasks, model_id, after)
     progress_utils.archived_layout.visible = False
     return data
-
 
 
 @run
@@ -82,10 +81,10 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     with progress_utils.set_up_api_archived():
         splitArrays = get_split_array(oldarchived, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
-        return await process_tasks(tasks,model_id,after)
+        return await process_tasks(tasks, model_id, after)
 
 
-async def process_tasks(tasks,model_id,after):
+async def process_tasks(tasks, model_id, after):
     responseArray = []
     page_count = 0
     overall_progress = progress_utils.overall_progress
@@ -137,7 +136,8 @@ async def process_tasks(tasks,model_id,after):
     )
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id, after)
-    return new_posts    
+    return new_posts
+
 
 def get_split_array(oldarchived, username, after):
     min_posts = 50
@@ -169,7 +169,7 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
     return splitArrays
 
 
-def get_tasks(splitArrays, c, model_id,after):
+def get_tasks(splitArrays, c, model_id, after):
     tasks = []
     job_progress = progress_utils.archived_progress
     if len(splitArrays) > 2:

@@ -81,6 +81,7 @@ profileUnique = """
 SELECT DISTINCT user_id FROM profiles
 """
 
+
 @wrapper.operation_wrapper_async
 def get_profile_info(model_id=None, username=None, conn=None) -> list:
     database_path = placeholder.databasePlaceholder().databasePathHelper(
@@ -171,11 +172,14 @@ def write_models_table(model_id=None, username=None, conn=None) -> list:
         cur.execute(modelInsert, [model_id, model_id])
         conn.commit()
 
+
 @wrapper.operation_wrapper
 def get_single_model(model_id=None, username=None, conn=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        models_ids=[dict(row)["user_id"] for row in cur.execute(profileUnique).fetchall()]
-        return models_ids[0] if len(models_ids)==1 else None
+        models_ids = [
+            dict(row)["user_id"] for row in cur.execute(profileUnique).fetchall()
+        ]
+        return models_ids[0] if len(models_ids) == 1 else None
 
 
 async def remove_unique_constriant_profile(model_id=None, username=None):

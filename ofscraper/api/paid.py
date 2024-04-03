@@ -47,11 +47,10 @@ async def get_paid_posts_progress(username, model_id, c=None):
     tasks.append(
         asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
     )
-    data=await process_tasks(tasks,model_id)
+    data = await process_tasks(tasks, model_id)
 
     progress_utils.paid_layout.visible = False
     return data
-
 
 
 @run
@@ -64,19 +63,20 @@ async def get_paid_posts(model_id, username, c=None):
     #     limit=constants.getattr("API_MAX_CONNECTION")
     # ) as c:
     with progress_utils.set_up_api_paid():
-        job_progress=progress_utils.paid_progress
+        job_progress = progress_utils.paid_progress
         tasks.append(
             asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
         )
-        return await process_tasks(tasks,model_id)
+        return await process_tasks(tasks, model_id)
 
-async def process_tasks(tasks,model_id):
-    page_count=0
-    overall_progress=progress_utils.overall_progress
+
+async def process_tasks(tasks, model_id):
+    page_count = 0
+    overall_progress = progress_utils.overall_progress
     page_task = overall_progress.add_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
-    responseArray=[]
+    responseArray = []
     while bool(tasks):
         new_tasks = []
         try:
@@ -124,6 +124,7 @@ async def process_tasks(tasks,model_id):
 
     set_check(new_posts, model_id)
     return new_posts
+
 
 def set_check(unduped, model_id):
     seen = set()

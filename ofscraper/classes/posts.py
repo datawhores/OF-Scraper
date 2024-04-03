@@ -54,6 +54,7 @@ class Post(base.base):
         if self.post.get("isPinned"):
             return 1
         return 0
+
     @property
     def favorited(self):
         return self.post.get("isFavorite")

@@ -49,10 +49,11 @@ async def get_stories_post_progress(model_id, c=None):
         asyncio.create_task(scrape_stories(c, model_id, job_progress=job_progress))
     )
 
-    data=await process_stories_tasks(tasks)
+    data = await process_stories_tasks(tasks)
 
     progress_utils.stories_layout.visible = False
     return data
+
 
 @run
 async def get_stories_post(model_id, c=None):
@@ -60,7 +61,13 @@ async def get_stories_post(model_id, c=None):
     sem = semaphoreDelayed(1)
     tasks = []
     with progress_utils.set_up_api_stories():
-        tasks.append(asyncio.create_task(scrape_stories(c, model_id, job_progress=progress_utils.stories_progress)))
+        tasks.append(
+            asyncio.create_task(
+                scrape_stories(
+                    c, model_id, job_progress=progress_utils.stories_progress
+                )
+            )
+        )
         return await process_stories_tasks(tasks)
 
 
@@ -144,7 +151,7 @@ async def process_stories_tasks(tasks):
     page_task = overall_progress.add_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
-    
+
     while bool(tasks):
         new_tasks = []
         try:
@@ -198,10 +205,13 @@ async def process_stories_tasks(tasks):
     log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
 
     return new_posts
+
+
 ##############################################################################
 #### Highlights
 ####
 ##############################################################################
+
 
 @run
 async def get_highlight_post_progress(model_id, c=None):
@@ -216,23 +226,25 @@ async def get_highlight_list_progress(model_id, c=None):
     tasks = []
     tasks.append(
         asyncio.create_task(
-            scrape_highlight_list(c, model_id, job_progress=progress_utils.highlights_progress)
+            scrape_highlight_list(
+                c, model_id, job_progress=progress_utils.highlights_progress
+            )
         )
     )
     return await process_task_get_highlight_list(tasks)
+
 
 async def get_highlights_via_list_progress(highlightLists, c=None):
     tasks = []
     [
         tasks.append(
-            asyncio.create_task(scrape_highlights(c, i, job_progress=progress_utils.highlights_progress))
+            asyncio.create_task(
+                scrape_highlights(c, i, job_progress=progress_utils.highlights_progress)
+            )
         )
         for i in highlightLists
     ]
     return await process_task_highlights(tasks)
-
-
-
 
 
 @run
@@ -248,9 +260,14 @@ async def get_highlight_list(model_id, c=None):
     with progress_utils.set_up_api_highlights_lists():
         tasks = []
         tasks.append(
-            asyncio.create_task(scrape_highlight_list(c, model_id, job_progress=progress_utils.highlights_progress))
+            asyncio.create_task(
+                scrape_highlight_list(
+                    c, model_id, job_progress=progress_utils.highlights_progress
+                )
+            )
         )
         return await process_task_get_highlight_list(tasks)
+
 
 async def get_highlights_via_list(highlightLists, c):
     tasks = []
@@ -258,18 +275,23 @@ async def get_highlights_via_list(highlightLists, c):
 
         [
             tasks.append(
-                asyncio.create_task(scrape_highlights(c, i, job_progress=progress_utils.highlights_progress))
+                asyncio.create_task(
+                    scrape_highlights(
+                        c, i, job_progress=progress_utils.highlights_progress
+                    )
+                )
             )
             for i in highlightLists
         ]
         return await process_task_highlights(tasks)
+
 
 async def process_task_get_highlight_list(tasks):
     highlightLists = []
 
     page_count = 0
     overall_progress = progress_utils.overall_progress
-    
+
     page_task = overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
@@ -300,7 +322,6 @@ async def process_task_get_highlight_list(tasks):
         tasks = new_tasks
     overall_progress.remove_task(page_task)
     return highlightLists
-
 
 
 async def process_task_highlights(tasks):
@@ -362,8 +383,6 @@ async def process_task_highlights(tasks):
     log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(new_posts)} found")
 
     return new_posts
-
-
 
 
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:

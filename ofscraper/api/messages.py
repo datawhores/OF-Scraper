@@ -45,7 +45,6 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     sem = sems.get_req_sem()
     global after
 
-
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
     oldmessages = (
@@ -80,13 +79,10 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
 
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
-    tasks = get_tasks(
-        splitArrays, filteredArray, oldmessages, model_id, c
-    )
-    data= await process_tasks(tasks,model_id)
+    tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
+    data = await process_tasks(tasks, model_id)
     progress_utils.messages_layout.visible = False
     return data
-
 
 
 @run
@@ -131,11 +127,13 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
         splitArrays, filteredArray, oldmessages, model_id, job_progress, c
     )
     with progress_utils.set_up_api_messages():
-        return await process_tasks(tasks,model_id)
-async def process_tasks(tasks,model_id):
-    page_count=0
-    responseArray=[]
-    overall_progress=progress_utils.overall_progress
+        return await process_tasks(tasks, model_id)
+
+
+async def process_tasks(tasks, model_id):
+    page_count = 0
+    responseArray = []
+    overall_progress = progress_utils.overall_progress
     page_task = overall_progress.add_task(
         f" Message Content Pages Progress: {page_count}", visible=True
     )
@@ -194,6 +192,7 @@ async def process_tasks(tasks,model_id):
     )
     set_check(new_posts, model_id, after)
     return new_posts
+
 
 def get_filterArray(after, before, oldmessages):
     oldmessages = list(filter(lambda x: (x.get("created_at")) != None, oldmessages))
@@ -261,7 +260,6 @@ def get_split_array(filteredArray):
 def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
     tasks = []
     job_progress = progress_utils.messages_progress
-
 
     if len(splitArrays) > 2:
         tasks.append(

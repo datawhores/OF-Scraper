@@ -55,11 +55,9 @@ async def get_pinned_posts_progress(model_id, c=None):
             )
         )
     )
-    data=await process_tasks(tasks,model_id)
+    data = await process_tasks(tasks, model_id)
     progress_utils.pinned_layout.visible = False
     return data
-
-
 
 
 @run
@@ -81,12 +79,10 @@ async def get_pinned_posts(model_id, c=None):
                 )
             )
         )
-    return await process_tasks(tasks,model_id)
+    return await process_tasks(tasks, model_id)
 
 
-
-
-async def process_tasks(tasks,model_id):
+async def process_tasks(tasks, model_id):
     responseArray = []
     page_count = 0
     overall_progress = progress_utils.overall_progress
@@ -145,6 +141,7 @@ async def process_tasks(tasks,model_id):
     log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id)
     return new_posts
+
 
 def set_check(unduped, model_id):
     if not read_args.retriveArgs().after:
@@ -257,9 +254,7 @@ async def scrape_pinned_posts(
                                 )
                             )
                     else:
-                        log.debug(
-                            f"[bold]t response status code:[/bold]{r.status}"
-                        )
+                        log.debug(f"[bold]t response status code:[/bold]{r.status}")
                         log.debug(f"[bold]pinned response:[/bold] {await r.text_()}")
                         log.debug(f"[bold]pinned headers:[/bold] {r.headers}")
                         r.raise_for_status()

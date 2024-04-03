@@ -39,7 +39,9 @@ async def get_labels_posts_progress(model_id, c=None):
     sem = sems.get_req_sem()
     tasks = []
     tasks.append(
-        asyncio.create_task(scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress))
+        asyncio.create_task(
+            scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress)
+        )
     )
     progress_utils.labelled_layout.visible = False
     return await process_task(tasks)
@@ -51,11 +53,12 @@ async def get_labels_posts(model_id, c=None):
     sem = sems.get_req_sem()
     tasks = []
     tasks.append(
-        asyncio.create_task(scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress))
+        asyncio.create_task(
+            scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress)
+        )
     )
     with progress_utils.set_up_api_labels():
         return await process_task(tasks)
-
 
 
 async def process_task(tasks):
@@ -101,6 +104,7 @@ async def process_task(tasks):
         f"[bold]Labels name count without Dupes[/bold] {len(responseArray)} found"
     )
     return responseArray
+
 
 async def scrape_labels(c, model_id, job_progress=None, offset=0):
     global sem

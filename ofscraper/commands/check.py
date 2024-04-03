@@ -249,8 +249,12 @@ async def post_check_helper():
     ROWS = []
     for user_name in user_dict.keys():
         downloaded = await get_downloaded(user_name, model_id, True)
-        posts=list(map(lambda x: posts_.Post(x, model_id, user_name), user_dict[user_name]))
-        await operations.make_post_table_changes(posts,model_id=model_id,username=user_name)
+        posts = list(
+            map(lambda x: posts_.Post(x, model_id, user_name), user_dict[user_name])
+        )
+        await operations.make_post_table_changes(
+            posts, model_id=model_id, username=user_name
+        )
         media = get_all_found_media(user_name, posts)
         ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
@@ -321,9 +325,13 @@ async def message_checker_helper():
                     messages,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
-            message_posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), messages))
-            operations.make_messages_table_changes(message_posts_array,model_id=model_id,username=user_name)
-            
+            message_posts_array = list(
+                map(lambda x: posts_.Post(x, model_id, user_name), messages)
+            )
+            operations.make_messages_table_changes(
+                message_posts_array, model_id=model_id, username=user_name
+            )
+
             oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
             paid = None
             # paid content
@@ -336,10 +344,16 @@ async def message_checker_helper():
                     paid,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
-            paid_posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
-            operations.make_post_table_changes(message_posts_array,model_id=model_id,username=user_name)
+            paid_posts_array = list(
+                map(lambda x: posts_.Post(x, model_id, user_name), paid)
+            )
+            operations.make_post_table_changes(
+                message_posts_array, model_id=model_id, username=user_name
+            )
 
-            media = get_all_found_media(user_name, paid_posts_array+message_posts_array)
+            media = get_all_found_media(
+                user_name, paid_posts_array + message_posts_array
+            )
             unduped = []
             id_set = set()
             for ele in media:
@@ -380,7 +394,9 @@ async def purchase_checker_helper():
                     expire=constants.getattr("DAY_SECONDS"),
                 )
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
-            operations.write_post_table(posts_arrray,model_id=model_id,username=user_name)
+            operations.write_post_table(
+                posts_arrray, model_id=model_id, username=user_name
+            )
             downloaded = await get_downloaded(user_name, model_id)
             media = get_all_found_media(user_name, posts_array)
             ROWS.extend(row_gather(media, downloaded, user_name))
