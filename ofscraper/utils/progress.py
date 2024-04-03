@@ -37,7 +37,7 @@ def setup_all_paid_live():
     )
 
 
-def setup_api_progress_live():
+def setup_api_split_progress_live():
     global timeline_layout
     global pinned_layout
     global archived_layout
@@ -177,3 +177,56 @@ def setupDownloadProgressBar(multi=False):
         max(15, console_.get_shared_console().size[1] - 2) if downloadprogress else 0
     )
     return progress_group, overall_progress, job_progress
+
+def set_up_api_timeline():
+    global overall_progress
+    global timeline_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting timeline posts...\n{{task.description}}"),
+    )
+    timeline_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(timeline_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+        )
+def set_up_api_pinned():
+    global overall_progress
+    global pinned_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting pinned posts...\n{{task.description}}"),
+    )
+    pinned_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(pinned_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+        )
+
+
+def set_up_api_paid():
+    global overall_progress
+    global paid_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting paid posts...\n{{task.description}}"),
+    )
+    paid_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(paid_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+        )
+
+
+def set_up_api_messages():
+    global overall_progress
+    global messages_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting messages...\n{{task.description}}"),
+    )
+    messages_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(messages_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+        )

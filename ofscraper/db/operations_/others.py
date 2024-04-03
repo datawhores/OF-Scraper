@@ -18,6 +18,8 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
+from ofscraper.db.operations_.profile import get_single_model
+
 
 console = Console()
 log = logging.getLogger("shared")
@@ -170,10 +172,10 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None):
 
 
 @wrapper.operation_wrapper_async
-def get_all_others_transition(model_id=None, username=None, conn=None):
+def get_all_others_transition(model_id=None, username=None, conn=None,database_model=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(othersALLTransition)
-        return [dict(row) for row in cur.fetchall()]
+        return [dict(row,model_id=row.get("model_id") or database_model) for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper_async
@@ -195,10 +197,10 @@ def write_others_table_transition(
 
 
 @wrapper.operation_wrapper_async
-def get_all_products_transition(model_id=None, username=None, conn=None):
+def get_all_products_transition(model_id=None, username=None, conn=None,database_model=None):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(productsALLTransition)
-        return [dict(row) for row in cur.fetchall()]
+        return [dict(row,model_id=row.get("model_id") or database_model) for row in cur.fetchall()]
 
 
 @wrapper.operation_wrapper_async
@@ -220,14 +222,16 @@ def write_products_table_transition(
 
 
 async def modify_unique_constriant_others(model_id=None, username=None):
-    data = await get_all_others_transition(model_id=model_id, username=username)
+    database_model=get_single_model(model_id=model_id,username=username)
+    data = await get_all_others_transition(model_id=model_id, username=username,database_model=database_model)
     await drop_others_table(model_id=model_id, username=username)
     await create_others_table(model_id=model_id, username=username)
     await write_others_table_transition(data, model_id=model_id, username=username)
 
 
 async def modify_unique_constriant_products(model_id=None, username=None):
-    data = await get_all_products_transition(model_id=model_id, username=username)
+    database_model=get_single_model(model_id=model_id,username=username)
+    data = await get_all_products_transition(model_id=model_id, username=username,database_model=database_model)
     await drop_products_table(model_id=model_id, username=username)
     await create_products_table(model_id=model_id, username=username)
     await write_products_table_transition(data, model_id=model_id, username=username)

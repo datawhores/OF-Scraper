@@ -185,7 +185,7 @@ async def post_check_helper():
             if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
                 user_dict[user_name].extend(oldtimeline)
             else:
-                data = await timeline.get_timeline_media(
+                data = await timeline.get_timeline_posts(
                     model_id, user_name, forced_after=0, c=c
                 )
                 user_dict[user_name].extend(data)

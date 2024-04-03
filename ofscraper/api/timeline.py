@@ -37,21 +37,57 @@ sem = None
 
 
 @run
-async def get_timeline_media_progress(model_id, username, forced_after=None, c=None):
+async def get_timeline_posts_progress(model_id, username, forced_after=None, c=None):
     global sem
     sem = sems.get_req_sem()
-    tasks = []
-    responseArray = []
-    page_count = 0
 
-    job_progress = progress_utils.timeline_progress
-    overall_progress = progress_utils.overall_progress
     after = await get_after(model_id, username, forced_after)
 
     splitArrays = await get_split_array(model_id, username, after)
-    tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
+    tasks = get_tasks(splitArrays, c, model_id, after)
+    data=await process_tasks(tasks,model_id,after)
+    progress_utils.timeline_layout.visible = False
+    return data
+
+
+
+@run
+async def get_timeline_posts(model_id, username, forced_after=None, c=None):
+    global sem
+    sem = sems.get_req_sem()
+
+    if not read_args.retriveArgs().no_cache:
+        oldtimeline = await operations.get_timeline_postsinfo(
+            model_id=model_id, username=username
+        )
+    else:
+        oldtimeline = []
+    log.trace(
+        "oldtimeline {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"oldtimeline: {str(x)}", oldtimeline))
+            )
+        )
+    )
+    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
+    oldtimeline = list(filter(lambda x: x != None, oldtimeline))
+    after = await get_after(model_id, username, forced_after)
+
+    live=progress_utils.set_up_api_timeline()
+
+    splitArrays = await get_split_array(model_id, username, after)
+    tasks = get_tasks(splitArrays, c, model_id, after)
+    with live:
+        return await process_tasks(tasks,model_id,after)
+
+
+async def process_tasks(tasks,model_id,after):
+    responseArray = []
+    page_count = 0
+    overall_progress = progress_utils.overall_progress
+
     page_task = overall_progress.add_task(
-        f" Timeline Content Pages Progress: {page_count}", visible=True
+    f" Timeline Content Pages Progress: {page_count}", visible=True
     )
     while bool(tasks):
         new_tasks = []
@@ -79,7 +115,6 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
     overall_progress.remove_task(page_task)
-    progress_utils.timeline_layout.visible = False
 
     log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
     log.trace(
@@ -107,89 +142,10 @@ async def get_timeline_media_progress(model_id, username, forced_after=None, c=N
     log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id, after)
     return new_posts
-
-
-@run
-async def get_timeline_media(model_id, username, forced_after=None, c=None):
-    global sem
-    job_progress = None
-
-    sem = sems.get_req_sem()
-
-    responseArray = []
-    page_count = 0
-    if not read_args.retriveArgs().no_cache:
-        oldtimeline = await operations.get_timeline_postsinfo(
-            model_id=model_id, username=username
-        )
-    else:
-        oldtimeline = []
-    log.trace(
-        "oldtimeline {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"oldtimeline: {str(x)}", oldtimeline))
-            )
-        )
-    )
-    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    oldtimeline = list(filter(lambda x: x != None, oldtimeline))
-    after = await get_after(model_id, username, forced_after)
-
-    splitArrays = await get_split_array(model_id, username, after)
-    tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
-
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            cache.set(f"{model_id}_full_timeline_scrape")
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-
-    log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "post raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo timeline: {str(x)}", responseArray))
-            )
-        )
-    )
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"timeline postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "post raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo timeline: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
-    set_check(new_posts, model_id, after)
-    return new_posts
-
 
 async def get_split_array(model_id, username, after):
     min_posts = 50
+
 
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_postsinfo(
@@ -224,8 +180,10 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format('Y
     return splitArrays
 
 
-def get_tasks(splitArrays, c, model_id, job_progress, after):
+def get_tasks(splitArrays, c, model_id, after):
     tasks = []
+    job_progress = progress_utils.timeline_progress
+
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(

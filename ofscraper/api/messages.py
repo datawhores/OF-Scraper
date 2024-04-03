@@ -45,12 +45,6 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     sem = sems.get_req_sem()
     global after
 
-    tasks = []
-    responseArray = []
-    page_count = 0
-    # require a min num of posts to be returned
-    job_progress = progress_utils.messages_progress
-    overall_progress = progress_utils.overall_progress
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
@@ -60,71 +54,39 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         else []
     )
 
+    log.trace(
+        "oldmessage {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
+            )
+        )
+    )
+
+    before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
+    after = get_after(model_id, username, forced_after)
+
+    log.debug(f"Messages after = {after}")
+
+    log.debug(f"Messages before = {before}")
+
+    log.info(
+        f"""
+Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM.DD')}
+[yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --dupe' to command to force scan of all messages + download/re-download of all files[/yellow]
+
+        """
+    )
+
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
     tasks = get_tasks(
-        splitArrays, filteredArray, oldmessages, model_id, job_progress, c
+        splitArrays, filteredArray, oldmessages, model_id, c
     )
-
-    page_task = overall_progress.add_task(
-        f" Message Content Pages Progress: {page_count}", visible=True
-    )
-
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task,
-                            description=f"Message Content Pages Progress: {page_count}",
-                        )
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            cache.set(f"{model_id}_scrape_messages")
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-    overall_progress.remove_task(page_task)
+    data= await process_tasks(tasks,model_id)
     progress_utils.messages_layout.visible = False
+    return data
 
-    log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "messages raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo message: {str(x)}", responseArray))
-            )
-        )
-    )
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.debug(f"[bold]Messages Count without Dupes[/bold] {len(responseArray)} found")
-
-    log.trace(f"messages messageids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "messages raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo message: {str(x)}", new_posts))
-            )
-        )
-    )
-    set_check(new_posts, model_id, after)
-    return new_posts
 
 
 @run
@@ -133,7 +95,6 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     sem = sems.get_req_sem()
     global after
     job_progress = None
-    responseArray = []
 
     oldmessages = (
         await operations.get_messages_post_info(model_id=model_id, username=username)
@@ -169,6 +130,16 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
     tasks = get_tasks(
         splitArrays, filteredArray, oldmessages, model_id, job_progress, c
     )
+    with progress_utils.set_up_api_messages():
+        return await process_tasks(tasks,model_id)
+async def process_tasks(tasks,model_id):
+    page_count=0
+    responseArray=[]
+    overall_progress=progress_utils.overall_progress
+    page_task = overall_progress.add_task(
+        f" Message Content Pages Progress: {page_count}", visible=True
+    )
+
     while bool(tasks):
         new_tasks = []
         try:
@@ -180,6 +151,10 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
                         result, new_tasks_batch = await task
                         new_tasks.extend(new_tasks_batch)
                         page_count = page_count + 1
+                        overall_progress.update(
+                            page_task,
+                            description=f"Message Content Pages Progress: {page_count}",
+                        )
                         responseArray.extend(result)
                     except Exception as E:
                         log.traceback_(E)
@@ -190,6 +165,7 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
+    overall_progress.remove_task(page_task)
 
     log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
     log.trace(
@@ -218,7 +194,6 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
     )
     set_check(new_posts, model_id, after)
     return new_posts
-
 
 def get_filterArray(after, before, oldmessages):
     oldmessages = list(filter(lambda x: (x.get("created_at")) != None, oldmessages))
@@ -283,8 +258,10 @@ def get_split_array(filteredArray):
     ]
 
 
-def get_tasks(splitArrays, filteredArray, oldmessages, model_id, job_progress, c):
+def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
     tasks = []
+    job_progress = progress_utils.messages_progress
+
 
     if len(splitArrays) > 2:
         tasks.append(

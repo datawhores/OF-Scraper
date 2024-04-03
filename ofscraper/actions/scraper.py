@@ -207,7 +207,7 @@ async def process_highlights(model_id, username, c):
 async def process_timeline_posts(model_id, username, c):
     try:
         with stdout.lowstdout():
-            timeline_posts = await timeline.get_timeline_media_progress(
+            timeline_posts = await timeline.get_timeline_posts_progress(
                 model_id, username, c=c
             )
 
@@ -514,7 +514,7 @@ async def process_areas(ele, model_id) -> list:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             output = []
-            with progress_utils.setup_api_progress_live():
+            with progress_utils.setup_api_split_progress_live():
                 medias, posts = await process_task(model_id, username, ele)
                 output.extend(medias)
         return filters.filterMedia(output), filters.filterPost(posts)

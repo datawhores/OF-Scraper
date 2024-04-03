@@ -36,10 +36,7 @@ sem = None
 @run
 async def get_pinned_posts_progress(model_id, c=None):
     tasks = []
-    responseArray = []
-    page_count = 0
     job_progress = progress_utils.pinned_progress
-    overall_progress = progress_utils.overall_progress
 
     # async with sessionbuilder.sessionBuilder(
     #     limit=constants.getattr("API_MAX_CONNECTION")
@@ -58,7 +55,45 @@ async def get_pinned_posts_progress(model_id, c=None):
             )
         )
     )
+    data=await process_tasks(tasks,model_id)
+    progress_utils.pinned_layout.visible = False
+    return data
 
+
+
+
+@run
+async def get_pinned_posts(model_id, c=None):
+    tasks = []
+    with progress_utils.set_up_api_pinned():
+
+        tasks.append(
+            asyncio.create_task(
+                scrape_pinned_posts(
+                    c,
+                    model_id,
+                    job_progress=progress_utils.pinned_progress,
+                    timestamp=(
+                        read_args.retriveArgs().after.float_timestamp
+                        if read_args.retriveArgs().after
+                        else None
+                    ),
+                )
+            )
+        )
+    return await process_tasks(tasks,model_id)
+
+
+
+
+async def process_tasks(tasks,model_id):
+    responseArray = []
+    page_count = 0
+    overall_progress = progress_utils.overall_progress
+
+    page_task = overall_progress.add_task(
+    f" Timeline Content Pages Progress: {page_count}", visible=True
+    )
     page_task = overall_progress.add_task(
         f"Pinned Content Pages Progress: {page_count}", visible=True
     )
@@ -87,7 +122,6 @@ async def get_pinned_posts_progress(model_id, c=None):
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
     overall_progress.remove_task(page_task)
-    progress_utils.pinned_layout.visible = False
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
     log.trace(
         "pinned raw duped {posts}".format(
@@ -114,80 +148,6 @@ async def get_pinned_posts_progress(model_id, c=None):
     log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id)
     return new_posts
-
-
-@run
-async def get_pinned_posts(model_id, c=None):
-    tasks = []
-    responseArray = []
-    page_count = 0
-    job_progress = None
-
-    # async with sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
-    tasks.append(
-        asyncio.create_task(
-            scrape_pinned_posts(
-                c,
-                model_id,
-                job_progress=job_progress,
-                timestamp=(
-                    read_args.retriveArgs().after.float_timestamp
-                    if read_args.retriveArgs().after
-                    else None
-                ),
-            )
-        )
-    )
-
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-    log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "pinned raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray))
-            )
-        )
-    )
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"pinned postids{list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "pinned raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo pinned: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Pinned Count without Dupes[/bold] {len(new_posts)} found")
-    set_check(new_posts, model_id)
-    return new_posts
-
 
 def set_check(unduped, model_id):
     if not read_args.retriveArgs().after:

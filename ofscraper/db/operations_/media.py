@@ -22,6 +22,9 @@ from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
 from ofscraper.utils.context.run_async import run
+from ofscraper.db.operations_.profile import get_single_model
+
+
 
 console = Console()
 log = logging.getLogger("shared")
@@ -145,9 +148,6 @@ preview,linked,downloaded,created_at,posted_at,hash,model_id
 FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 """
 
-profileUnique = """
-SELECT DISTINCT user_id FROM profiles
-"""
 
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None):
@@ -170,7 +170,6 @@ def add_column_media_hash(model_id=None, username=None, conn=None):
                 cur.execute("ALTER TABLE medias ADD COLUMN hash VARCHAR;")
                 # Commit changes
             conn.commit()
-            print("Successfully added 'hash' column (if it didn't exist).")
         except sqlite3.Error as e:
             conn.rollback()
             raise e  # Rollback in case of errors
@@ -327,13 +326,12 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def get_all_medias_transition(model_id=None, username=None, conn=None) -> list:
+def get_all_medias_transition(model_id=None, username=None, conn=None,database_model=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        model_id=model_id if len(cur.execute(profileUnique).fetchall())>2 else None
         cur.execute(mediaALLTransition)
         conn.commit()
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(row,model_id=row.get("model_id") or model_id) for row in data]
+        return [dict(row,model_id=row.get("model_id") or database_model) for row in data]
 
 
 @wrapper.operation_wrapper_async
@@ -457,7 +455,8 @@ async def batch_mediainsert(media, **kwargs):
 
 
 async def modify_unique_constriant_media(model_id=None, username=None):
-    data = await get_all_medias_transition(model_id=model_id, username=username)
+    database_model=get_single_model(model_id=model_id,username=username)
+    data = await get_all_medias_transition(model_id=model_id, username=username,database_model=database_model)
     await drop_media_table(model_id=model_id, username=username)
     await create_media_table(model_id=model_id, username=username)
     await write_media_table_transition(data, model_id=model_id, username=username)

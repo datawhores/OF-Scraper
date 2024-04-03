@@ -22,6 +22,8 @@ import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
+from ofscraper.db.operations_.profile import get_single_model
+
 
 console = Console()
 log = logging.getLogger("shared")
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS posts (
 	price INTEGER, 
 	paid INTEGER, 
 	archived BOOLEAN, 
+    pinned BOOLEAN,
 	created_at TIMESTAMP, 
     model_id INTEGER, 
 	PRIMARY KEY (id), 
@@ -42,7 +45,7 @@ CREATE TABLE IF NOT EXISTS posts (
 """
 postInsert = """INSERT INTO 'posts'(
 post_id, text,price,paid,archived,pinned,created_at,model_id)
-VALUES (?, ?,?,?,?,?,?);"""
+VALUES (?, ?,?,?,?,?,?,?);"""
 postUpdate = """UPDATE posts
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ?, model_id=?
 WHERE post_id = ? and model_id=(?);"""
@@ -159,11 +162,11 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def get_all_posts_transition(model_id=None, username=None, conn=None) -> list:
+def get_all_posts_transition(model_id=None, username=None, conn=None,database_model=None) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsALLTransition)
         data = [dict(row) for row in cur.fetchall()]
-        return [dict(row, pinned=row.get("pinned")) for row in data]
+        return [dict(row, pinned=row.get("pinned"),model_id=row.get("model_id") or database_model) for row in data]
 
 
 @wrapper.operation_wrapper_async
@@ -205,7 +208,7 @@ def add_column_post_pinned(conn=None, **kwargs):
 
             # Add column if necessary (conditional execution)
             if alter_required == 0:
-                cur.execute("ALTER TABLE posts ADD COLUMN pinned INTEGER;")
+                cur.execute("ALTER TABLE posts ADD COLUMN pinned BOOLEAN;")
             # Commit changes
             conn.commit()
 
@@ -227,7 +230,8 @@ def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> 
 
 
 async def modify_unique_constriant_posts(model_id=None, username=None):
-    data = await get_all_posts_transition(model_id=model_id, username=username)
+    database_model=get_single_model(model_id=model_id,username=username)
+    data = await get_all_posts_transition(model_id=model_id, username=username,database_model=database_model)
     await drop_posts_table(model_id=model_id, username=username)
     await create_post_table(model_id=model_id, username=username)
     await write_post_table_transition(data, model_id=model_id, username=username)

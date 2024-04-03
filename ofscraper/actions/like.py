@@ -58,7 +58,7 @@ def get_posts(model_id, username):
     if "Pinned" in options or "All" in options:
         pinned_posts = pinned.get_pinned_posts(model_id)
     if "Timeline" in options or "All" in options:
-        timeline_posts = timeline.get_timeline_media_progress(
+        timeline_posts = timeline.get_timeline_posts(
             model_id, username, forced_after=0
         )
     if "Archived" in options or "All" in options:

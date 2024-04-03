@@ -41,18 +41,42 @@ sem = None
 async def get_paid_posts_progress(username, model_id, c=None):
     global sem
     sem = sems.get_req_sem()
-    responseArray = []
     tasks = []
 
-    page_count = 0
     job_progress = progress_utils.paid_progress
-    overall_progress = progress_utils.overall_progress
     tasks.append(
         asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
     )
+    data=await process_tasks(tasks,model_id)
+
+    progress_utils.paid_layout.visible = False
+    return data
+
+
+
+@run
+async def get_paid_posts(model_id, username, c=None):
+    global sem
+    sem = sems.get_req_sem()
+    tasks = []
+
+    # async with c or sessionbuilder.sessionBuilder(
+    #     limit=constants.getattr("API_MAX_CONNECTION")
+    # ) as c:
+    with progress_utils.set_up_api_paid():
+        job_progress=progress_utils.paid_progress
+        tasks.append(
+            asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
+        )
+        return await process_tasks(tasks,model_id)
+
+async def process_tasks(tasks,model_id):
+    page_count=0
+    overall_progress=progress_utils.overall_progress
     page_task = overall_progress.add_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
+    responseArray=[]
     while bool(tasks):
         new_tasks = []
         try:
@@ -78,7 +102,6 @@ async def get_paid_posts_progress(username, model_id, c=None):
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
     overall_progress.remove_task(page_task)
-    progress_utils.paid_layout.visible = False
     log.debug(f"[bold]Paid Count with Dupes[/bold] {len(responseArray)} found")
 
     seen = set()
@@ -101,70 +124,6 @@ async def get_paid_posts_progress(username, model_id, c=None):
 
     set_check(new_posts, model_id)
     return new_posts
-
-
-@run
-async def get_paid_posts(model_id, username, c=None):
-    global sem
-    sem = sems.get_req_sem()
-    responseArray = []
-    tasks = []
-    job_progress = None
-    page_count = 0
-
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
-    tasks.append(
-        asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
-    )
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-    log.debug(f"[bold]Paid Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "paid raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo paid: {str(x)}", responseArray))
-            )
-        )
-    )
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-    log.trace(f"paid postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "paid raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo paid: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Paid Count without Dupes[/bold] {len(new_posts)} found")
-
-    set_check(new_posts, model_id)
-    return new_posts
-
 
 def set_check(unduped, model_id):
     seen = set()
