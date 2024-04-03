@@ -243,3 +243,29 @@ def set_up_api_archived():
     return Live(
             progress_group, refresh_per_second=5, console=console_.get_shared_console()
         )
+
+def set_up_api_stories():
+    global overall_progress
+    global stories_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting stories...\n{{task.description}}")
+    )
+    stories_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(stories_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+    )        
+
+def set_up_api_highlights():
+    global overall_progress
+    global highlights_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting highlights...\n{{task.description}}")
+    )
+    highlights_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+    )            

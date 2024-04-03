@@ -34,140 +34,34 @@ sem = None
 attempt = contextvars.ContextVar("attempt")
 
 
+#############################################################################
+#### Stories
+####
+##############################################################################
 @run
 async def get_stories_post_progress(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
-    responseArray = []
-    page_count = 0
     tasks = []
     job_progress = progress_utils.stories_progress
-    overall_progress = progress_utils.overall_progress
 
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     tasks.append(
         asyncio.create_task(scrape_stories(c, model_id, job_progress=job_progress))
     )
-    page_task = overall_progress.add_task(
-        f"Stories Pages Progress: {page_count}", visible=True
-    )
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task,
-                            description=f"Stories Content Pages Progress: {page_count}",
-                        )
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
 
-    overall_progress.remove_task(page_task)
+    data=await process_stories_tasks(tasks)
+
     progress_utils.stories_layout.visible = False
-
-    log.trace(
-        "stories raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo stories: {str(x)}", responseArray))
-            )
-        )
-    )
-    log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "post raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
-
-    return new_posts
-
+    return data
 
 @run
 async def get_stories_post(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
-    responseArray = []
-    page_count = 0
     tasks = []
-
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
-    tasks.append(asyncio.create_task(scrape_stories(c, model_id, None)))
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-
-    log.trace(
-        "stories raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo stories: {str(x)}", responseArray))
-            )
-        )
-    )
-    log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "post raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
-
-    return new_posts
+    with progress_utils.set_up_api_stories():
+        tasks.append(asyncio.create_task(scrape_stories(c, model_id, job_progress=progress_utils.stories_progress)))
+        return await process_stories_tasks(tasks)
 
 
 async def scrape_stories(c, user_id, job_progress=None) -> list:
@@ -243,6 +137,72 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
             return stories, new_tasks
 
 
+async def process_stories_tasks(tasks):
+    responseArray = []
+    page_count = 0
+    overall_progress = progress_utils.overall_progress
+    page_task = overall_progress.add_task(
+        f"Stories Pages Progress: {page_count}", visible=True
+    )
+    
+    while bool(tasks):
+        new_tasks = []
+        try:
+            async with asyncio.timeout(
+                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
+            ):
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        result, new_tasks_batch = await task
+                        new_tasks.extend(new_tasks_batch)
+                        page_count = page_count + 1
+                        overall_progress.update(
+                            page_task,
+                            description=f"Stories Content Pages Progress: {page_count}",
+                        )
+                        responseArray.extend(result)
+                    except Exception as E:
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                        continue
+        except TimeoutError as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        tasks = new_tasks
+
+    overall_progress.remove_task(page_task)
+
+    log.trace(
+        "stories raw duped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"dupedinfo stories: {str(x)}", responseArray))
+            )
+        )
+    )
+    log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
+    seen = set()
+    new_posts = [
+        post
+        for post in responseArray
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
+
+    log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(
+        "post raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo stories: {str(x)}", new_posts))
+            )
+        )
+    )
+    log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
+
+    return new_posts
+##############################################################################
+#### Highlights
+####
+##############################################################################
+
 @run
 async def get_highlight_post_progress(model_id, c=None):
     highlightLists = await get_highlight_list_progress(model_id, c)
@@ -253,20 +213,62 @@ async def get_highlight_list_progress(model_id, c=None):
     global sem
     sem = semaphoreDelayed(1)
 
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
+    tasks = []
+    tasks.append(
+        asyncio.create_task(
+            scrape_highlight_list(c, model_id, job_progress=progress_utils.highlights_progress)
+        )
+    )
+    return await process_task_get_highlight_list(tasks)
+
+async def get_highlights_via_list_progress(highlightLists, c=None):
+    tasks = []
+    [
+        tasks.append(
+            asyncio.create_task(scrape_highlights(c, i, job_progress=progress_utils.highlights_progress))
+        )
+        for i in highlightLists
+    ]
+    return await process_task_highlights(tasks)
+
+
+
+
+
+@run
+async def get_highlight_post(model_id, c=None):
+    highlightList = await get_highlight_list(model_id, c)
+    return await get_highlights_via_list(highlightList, c)
+
+
+async def get_highlight_list(model_id, c=None):
+    global sem
+    sem = semaphoreDelayed(1)
+
+    with progress_utils.set_up_api_highlights():
+        tasks = []
+        tasks.append(
+            asyncio.create_task(scrape_highlight_list(c, model_id, job_progress=progress_utils.highlights_progress))
+        )
+        return await process_task_get_highlight_list(tasks)
+
+async def get_highlights_via_list(highlightLists, c):
+    tasks = []
+    with progress_utils.set_up_api_highlights():
+
+        [
+            tasks.append(
+                asyncio.create_task(scrape_highlights(c, i, job_progress=progress_utils.highlights_progress))
+            )
+            for i in highlightLists
+        ]
+        return await process_task_highlights(tasks)
+
+async def process_task_get_highlight_list(tasks):
     highlightLists = []
 
     page_count = 0
-    tasks = []
-    job_progress = progress_utils.highlights_progress
     overall_progress = progress_utils.overall_progress
-    tasks.append(
-        asyncio.create_task(
-            scrape_highlight_list(c, model_id, job_progress=job_progress)
-        )
-    )
     page_task = overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
@@ -299,19 +301,11 @@ async def get_highlight_list_progress(model_id, c=None):
     return highlightLists
 
 
-async def get_highlights_via_list_progress(highlightLists, c=None):
-    job_progress = progress_utils.highlights_progress
-    overall_progress = progress_utils.overall_progress
-    tasks = []
-    [
-        tasks.append(
-            asyncio.create_task(scrape_highlights(c, i, job_progress=job_progress))
-        )
-        for i in highlightLists
-    ]
 
+async def process_task_highlights(tasks):
     highlightResponse = []
     page_count = 0
+    overall_progress = progress_utils.overall_progress
     page_task = overall_progress.add_task(
         f"Highlight Content via List Pages Progress: {page_count}", visible=True
     )
@@ -369,111 +363,6 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
     return new_posts
 
 
-@run
-async def get_highlight_post(model_id, c=None):
-    highlightList = await get_highlight_list(model_id, c)
-    return await get_highlights_via_list(highlightList, c)
-
-
-async def get_highlight_list(model_id, c=None):
-    global sem
-    sem = semaphoreDelayed(1)
-
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
-    highlightLists = []
-
-    page_count = 0
-    tasks = []
-    tasks.append(
-        asyncio.create_task(scrape_highlight_list(c, model_id, job_progress=None))
-    )
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        highlightLists.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-
-        tasks = new_tasks
-    return highlightLists
-
-
-async def get_highlights_via_list(highlightLists, c):
-    job_progress = None
-    tasks = []
-    [
-        tasks.append(
-            asyncio.create_task(scrape_highlights(c, i, job_progress=job_progress))
-        )
-        for i in highlightLists
-    ]
-
-    highlightResponse = []
-    page_count = 0
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        highlightResponse.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-
-    log.trace(
-        "highlights raw duped {posts}".format(
-            posts="\n\n".join(
-                list(
-                    map(lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse)
-                )
-            )
-        )
-    )
-    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
-    seen = set()
-    new_posts = [
-        post
-        for post in highlightResponse
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "highlights raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo highlights: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(new_posts)} found")
-
-    return new_posts
 
 
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
