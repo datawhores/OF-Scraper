@@ -230,3 +230,16 @@ def set_up_api_messages():
     return Live(
             progress_group, refresh_per_second=5, console=console_.get_shared_console()
         )
+
+def set_up_api_archived():
+    global overall_progress
+    global archived_progress
+    overall_progress = Progress(
+            SpinnerColumn(style=Style(color="blue")),
+            TextColumn(f"Getting archived...\n{{task.description}}"),
+    )
+    archived_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(archived_progress)))
+    return Live(
+            progress_group, refresh_per_second=5, console=console_.get_shared_console()
+        )

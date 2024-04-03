@@ -39,12 +39,6 @@ sem = None
 
 @run
 async def get_archived_posts_progress(model_id, username, forced_after=None, c=None):
-    tasks = []
-    new_tasks = []
-    responseArray = []
-    page_count = 0
-    job_progress = progress_utils.archived_progress
-    overall_progress = progress_utils.overall_progress
 
     oldarchived = (
         await operations.get_archived_postinfo(model_id=model_id, username=username)
@@ -62,7 +56,38 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     after = await get_after(model_id, username, forced_after)
     splitArrays = get_split_array(oldarchived, username, after)
-    tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
+    tasks = get_tasks(splitArrays, c, model_id, after)
+    data=await process_tasks(tasks,model_id,after)
+    progress_utils.archived_layout.visible = False
+    return data
+
+
+
+@run
+async def get_archived_posts(model_id, username, forced_after=None, c=None):
+    oldarchived = (
+        await operations.get_archived_postinfo(model_id=model_id, username=username)
+        if not read_args.retriveArgs().no_cache
+        else []
+    )
+    log.trace(
+        "oldarchive {posts}".format(
+            posts="\n\n".join(list(map(lambda x: f"oldarchive: {str(x)}", oldarchived)))
+        )
+    )
+
+    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    after = await get_after(model_id, username, forced_after)
+    with progress_utils.set_up_api_archived():
+        splitArrays = get_split_array(oldarchived, username, after)
+        tasks = get_tasks(splitArrays, c, model_id, after)
+        return await process_tasks(tasks,model_id,after)
+
+async def process_tasks(tasks,model_id,after):
+    responseArray = []
+    page_count = 0
+    overall_progress = progress_utils.overall_progress
 
     page_task = overall_progress.add_task(
         f"Archived Content Pages Progress: {page_count}", visible=True
@@ -94,8 +119,6 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 
         tasks = new_tasks
     overall_progress.remove_task(page_task)
-    progress_utils.archived_layout.visible = False
-
     seen = set()
     new_posts = [
         post
@@ -113,77 +136,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     )
     log.debug(f"[bold]Archived Count without Dupes[/bold] {len(new_posts)} found")
     set_check(new_posts, model_id, after)
-    return new_posts
-
-
-@run
-async def get_archived_posts(model_id, username, forced_after=None, c=None):
-    tasks = []
-    new_tasks = []
-    responseArray = []
-    page_count = 0
-
-    oldarchived = (
-        await operations.get_archived_postinfo(model_id=model_id, username=username)
-        if not read_args.retriveArgs().no_cache
-        else []
-    )
-    job_progress = None
-
-    log.trace(
-        "oldarchive {posts}".format(
-            posts="\n\n".join(list(map(lambda x: f"oldarchive: {str(x)}", oldarchived)))
-        )
-    )
-
-    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x != None, oldarchived))
-    after = await get_after(model_id, username, forced_after)
-    splitArrays = get_split_array(oldarchived, username, after)
-    tasks = get_tasks(splitArrays, c, model_id, job_progress, after)
-
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            cache.set(f"{model_id}_full_archived_scrape", True)
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-
-        tasks = new_tasks
-
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"archive postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "archived raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo archive: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(new_posts)} found")
-    set_check(new_posts, model_id, after)
-    return new_posts
-
+    return new_posts    
 
 def get_split_array(oldarchived, username, after):
     min_posts = 50
@@ -215,8 +168,9 @@ Setting initial archived scan date for {username} to {arrow.get(after).format('Y
     return splitArrays
 
 
-def get_tasks(splitArrays, c, model_id, job_progress, after):
+def get_tasks(splitArrays, c, model_id,after):
     tasks = []
+    job_progress = progress_utils.archived_progress
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
