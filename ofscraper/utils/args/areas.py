@@ -9,7 +9,7 @@ def get_like_area():
         "Timeline",
         "Pinned",
     ]
-    all_choices.append("Label") if const.getattr("INCLUDED_LABELS_ALL") else None
+    all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
     if len(read_args.retriveArgs().like_area) == 0:
         post = set(read_args.retriveArgs().posts)
     else:
@@ -44,7 +44,7 @@ def get_download_area():
         "Purchased",
         "Profile",
     ]
-    all_choices.append("Label") if const.getattr("INCLUDED_LABELS_ALL") else None
+    all_choices.append("Label") if const.getattr("INCLUDE_LABELS_ALL") else None
     if len(read_args.retriveArgs().download_area) == 0:
         post = set(read_args.retriveArgs().posts)
     else:
