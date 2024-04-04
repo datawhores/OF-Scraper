@@ -33,7 +33,7 @@ class base:
 
     def file_cleanup(self, text, mediatype=None):
         text = str(text)
-        text = re.sub("<[^>]*>", "", text)
+        text = re.sub('<[^>]+>', "", text)
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
