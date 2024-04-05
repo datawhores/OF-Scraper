@@ -76,6 +76,8 @@ def common_params(func):
                 case_sensitive=False,
             ),
             default=None,
+                callback=lambda ctx, param, value: value.upper() if value else None
+
         ),
         click.option(
             "-dc",
@@ -86,6 +88,8 @@ def common_params(func):
                 case_sensitive=False,
             ),
             default="OFF",
+                            callback=lambda ctx, param, value: value.upper() if value else None
+
         ),
         click.option(
             "-p",
@@ -96,10 +100,83 @@ def common_params(func):
                 case_sensitive=False,
             ),
             default="NORMAL",
+                            callback=lambda ctx, param, value: value.upper() if value else None
+
         ),
         help="Settigns for logging"
 
     )
+    @click.option_group(
+    "advanced args",
+    click.option(
+        "-uf",
+        "--users-first",
+        help="Scrape all users first rather than one at a time (affects --action)",
+        default=False,
+        is_flag=True,  # Shorthand for action="store_true"
+    ),
+    click.option(
+        "-nc",
+        "--no-cache",
+        help="Disable cache",
+        default=False,
+        is_flag=True,
+    ),click.option(
+        "-k",
+        "--key-mode",
+        help="Key mode override",
+        default=None,
+        type=click.Choice(KEY_OPTIONS),
+    ),
+    click.option(
+        "-dr",
+        "--dynamic-rules",
+        help="Dynamic signing",
+        default=None,
+        type=click.Choice(["dc", "deviint"],case_sensitive=False),
+        callback=lambda ctx, param, value: value.lower() if value else None
+
+    ),
+    click.option(
+        "-ar",
+        "--no-auto-resume",
+        help="Cleanup temp .part files (removes resume ability)",
+        default=False,
+        is_flag=True,
+    ),
+    click.option(
+        "-db",
+        "--downloadbars",
+        help="Show individual download progress bars",
+        default=False,
+        is_flag=True,
+    ),
+    click.option(
+        "-sd",
+        "--downloadsems",
+        help="Number of concurrent downloads per thread",
+        default=None,
+        type=int,
+    ),
+    click.option(
+        "-dp",
+        "--downloadthreads",
+        help="Number of threads to use (minimum 1)",
+        default=None,
+        type=int,
+    ),
+    click.option(
+        "-up",
+        "--update-profile",
+        help="Get up-to-date profile info instead of cache",
+        default=False,
+        is_flag=True,
+    ),
+
+
+
+            help="advanced global args for all commands"
+        )
     @functools.wraps(func)
     @click.pass_context
     def wrapper(ctx,*args, **kwargs):
@@ -152,10 +229,10 @@ def common_params(func):
     Select batch action(s) to perform [like,unlike,download].
     Accepts space or comma-separated list. Like and unlike cannot be combined.
     """,
-        type=click.Choice(["like", "unlike", "download"]),  # Enforce valid choices
         multiple=True,
+        callback=lambda ctx, param, value: helpers.action_helper(value) if value else None
+
     ),
-    help="basic options for actions"
 )
 @click.option_group(
     "user filters",
@@ -165,7 +242,8 @@ def common_params(func):
         help="Filter accounts based on either the subscription price, lowest claimable promotional price, or regular price",
         default=None,
         required=False,
-                type=click.Choice(["paid", "free"]),
+                type=click.Choice(["paid", "free"],case_sensitive= False ),
+        callback=lambda ctx, param, value: value.lower() if value else None
     ),
     click.option(
         "-rp",
@@ -173,7 +251,9 @@ def common_params(func):
         help="Filter accounts based on either the lowest claimable promotional price, or regular price",
         default=None,
         required=False,
-                type=click.Choice(["paid", "free"]),
+            type=click.Choice(["paid", "free"],case_sensitive= False),
+        callback=lambda ctx, param, value: value.lower() if value else None
+
     ),
     click.option(
         "-gp",
@@ -181,7 +261,9 @@ def common_params(func):
         help="Filter accounts based on the regular price",
         default=None,
         required=False,
-                type=click.Choice(["paid", "free"]),
+                type=click.Choice(["paid", "free"],case_sensitive= False),
+                    callback=lambda ctx, param, value: value.lower() if value else None
+
     ),
     click.option(
         "-pp",
@@ -189,7 +271,9 @@ def common_params(func):
         help="Filter accounts based on either the lowest promotional price regardless of claimability, or regular price",
         default=None,
         required=False,
-                type=click.Choice(["paid", "free"]),
+                type=click.Choice(["paid", "free"],case_sensitive= False),
+        callback=lambda ctx, param, value: value.lower() if value else None
+
     ),
     click.constraints.mutually_exclusive(
         click.option(
@@ -403,6 +487,28 @@ click.option(
 help="Advanced filtering of accounts based on more precise user-defined parameters"
 
 )
+@click.option_group(
+    "Model Sort",
+    click.option(
+    "-st",
+    "--sort",
+    help="What to sort the model list by",
+    default="Name",
+    type=click.Choice(["name", "subscribed", "expired", "current-price", "renewal-price", "regular-price", "promo-price", "last-seen"],case_sensitive=False),
+    callback=lambda ctx, param, value: value.lower() if value else None
+
+
+),
+click.option(
+    "-ds",
+    "--desc",
+    help="Sort the model list in descending order",
+    is_flag=True,
+    default=False,
+),
+
+    help="Controls the order of the model selection list and the scraping order"
+)
 @common_params
 @click.pass_context
 def program(ctx,*args,**kwargs):
@@ -438,7 +544,8 @@ def program(ctx,*args,**kwargs):
     "--check-area",
     help="Select areas to check (multiple allowed, separated by spaces)",
     default=["Timeline", "Pinned", "Archived"],
-    type=click.Choice(["Timeline", "Pinned", "Archived"]),
+    type=click.Choice(["Timeline", "Pinned", "Archived"],case_sensitive=False),
+    callback=lambda ctx, param, value:helpers.post_check_area(value) if value else None,
     multiple=True,
 )
 @common_params
@@ -695,167 +802,18 @@ def parse_args():
 
 
 
-#     adv_filters = parser.add_argument_group(
-#         "Advanced model filters",
-#         description="Advanced filtering of accounts based on more precise user-defined parameters",
-#     )
 
-#     adv_filters.add_argument(
-#         "-ppn",
-#         "--promo-price-min",
-#         help="Filter accounts to those where the lowest promo price matches or falls above the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-ppm",
-#         "--promo-price-max",
-#         help="Filter accounts where the lowest promo price matches or falls below the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-gpn",
-#         "--regular-price-min",
-#         help="Filter accounts where the regular price matches or falls above the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-gpm",
-#         "--regular-price-max",
-#         help="Filter accounts where the regular price matches or falls below the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-cpn",
-#         "--current-price-min",
-#         help="Filter accounts where the current regular price matches or falls above the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-cpm",
-#         "--current-price-max",
-#         help="Filter accounts where the current price matches or falls below the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-rpn",
-#         "--renewal-price-min",
-#         help="Filter accounts where the renewal regular price matches or falls above the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-rpm",
-#         "--renewal-price-max",
-#         help="Filter accounts where the renewal price matches or falls below the provided value",
-#         default=None,
-#         required=False,
-#         type=int,
-#     )
-
-#     adv_filters.add_argument(
-#         "-lsb",
-#         "--last-seen-before",
-#         help="Filter accounts by last seen being at or before the given date",
-#         default=None,
-#         required=False,
-#         type=helpers.arrow_helper,
-#     )
-#     adv_filters.add_argument(
-#         "-lsa",
-#         "--last-seen-after",
-#         help="Filter accounts by last seen being at or after the given date",
-#         default=None,
-#         required=False,
-#         type=helpers.arrow_helper,
-#     )
-
-#     adv_filters.add_argument(
-#         "-ea",
-#         "--expired-after",
-#         help="Filter accounts by expiration/renewal being at or after the given date",
-#         default=None,
-#         required=False,
-#         type=helpers.arrow_helper,
-#     )
-#     adv_filters.add_argument(
-#         "-eb",
-#         "--expired-before",
-#         help="Filter accounts by expiration/renewal being at or before the given date",
-#         default=None,
-#         required=False,
-#         type=helpers.arrow_helper,
-#     )
-#     adv_filters.add_argument(
-#         "-sa",
-#         "--subscribed-after",
-#         help="Filter accounts by subscription date being after  the given date",
-#         default=None,
-#         required=False,
-#         type=helpers.arrow_helper,
-#     )
-#     adv_filters.add_argument(
-#         "-sb",
-#         "--subscribed-before",
-#         help="Filter accounts by sub date being at or before the given date",
-#         default=None,
-#         required=False,
-#         type=helpers.arrow_helper,
-#     )
 
 #     sort = parser.add_argument_group(
 #         "Model sort",
 #         description="Controls the order of the model selection list and the scraping order",
-#     )
-#     sort.add_argument(
-#         "-st",
-#         "--sort",
-#         help="What to sort the model list by",
-#         default="Name",
-#         choices=[
-#             "name",
-#             "subscribed",
-#             "expired",
-#             "current-price",
-#             "renewal-price",
-#             "regular-price",
-#             "promo-price",
-#             "last-seen",
-#         ],
-#         type=str.lower,
-#     )
-#     sort.add_argument(
-#         "-ds",
-#         "--desc",
-#         help="Sort the model list in descending order",
-#         action="store_true",
-#         default=False,
 #     )
 
 #     advanced = parser.add_argument_group("Advanced", description="Advanced Args")
 #     advanced.add_argument(
 #         "-uf",
 #         "--users-first",
-#         help="Scrape all users first rather then one at a time. This only effects downloading posts",
+#         help="Scrape all users first rather then one at a time. This only effects --action",
 #         default=False,
 #         required=False,
 #         action="store_true",
