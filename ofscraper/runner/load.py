@@ -24,6 +24,8 @@ def main():
         check()
         run.main()
     except Exception as E:
+        print(E)
+        print(traceback.format_exc())
         try:
             logging.getLogger("shared").debug(traceback.format_exc())
             logging.getLogger("shared").debug(E)

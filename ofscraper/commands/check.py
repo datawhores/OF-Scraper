@@ -179,7 +179,7 @@ async def post_check_helper():
                 continue
             if user_dict.get(user_name):
                 continue
-            areas=read_args.retriveArgs().check_area
+            areas = read_args.retriveArgs().check_area
             user_dict[user_name] = user_dict.get(user_name) or []
             if "Timeline" in areas:
                 oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
@@ -220,7 +220,7 @@ async def post_check_helper():
                         f"pinned_check_{model_id}",
                         data,
                         expire=constants.getattr("DAY_SECONDS"),
-                )
+                    )
 
             cache.close()
 

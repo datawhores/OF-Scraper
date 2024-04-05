@@ -96,6 +96,7 @@ def like_helper(x):
         )
     return words
 
+
 def post_check_area(x):
     choices = set(["All", "Archived", "Timeline", "Pinned", "Labels"])
     if isinstance(x, str):
@@ -109,6 +110,8 @@ def post_check_area(x):
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
     return words
+
+
 def mediatype_helper(x):
     choices = set(["Videos", "Audios", "Images", "Text"])
     if isinstance(x, str):

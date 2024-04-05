@@ -1,8 +1,11 @@
 import argparse
-import click
+import functools
+import itertools
 import re
 import sys
 
+import cloup as click
+# import click
 from humanfriendly import parse_size
 
 import ofscraper.utils.args.helpers as helpers
@@ -12,255 +15,454 @@ from ofscraper.__version__ import __version__
 from ofscraper.const.constants import KEY_OPTIONS
 
 
+class AutoDotDict(dict):
+    """
+    Class that automatically converts a dictionary to an object-like structure
+    with dot notation access for top-level keys.
+    """
+
+    def __getattr__(self, attr):
+        """
+        Overrides getattr to access dictionary keys using dot notation.
+        Raises AttributeError if the key is not found.
+        """
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError(f"Attribute '{attr}' not found")
+
+    def __setattr__(self, attr, value):
+        """
+        Overrides setattr to set values using dot notation.
+        """
+        self[attr] = value
+
+
+def common_params(func):
+
+    @click.option_group(
+        "global",
+        click.version_option(version=__version__),
+        click.option(
+            "-cg",
+            "--config",
+            help="Change location of config folder/file",
+            default=None,
+        ),
+        click.option(
+            "-r",
+            "--profile",
+            help="""
+    Change which profile you want to use
+    If not set then the config file is used
+    Profiles are always within the config file parent directory
+    """,
+            default=None,
+            callback=lambda ctx, param, value: (
+                f"{re.sub('_profile','', value)}_profile" if value else None
+            ),
+        ),
+        help="global options for all commands"
+
+    )
+    @click.option_group(
+        "output",
+        click.option(
+            "-l",
+            "--log",
+            help="Set log file level",
+            type=click.Choice(
+                ["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
+                case_sensitive=False,
+            ),
+            default=None,
+        ),
+        click.option(
+            "-dc",
+            "--discord",
+            help="Set discord log level",
+            type=click.Choice(
+                ["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
+                case_sensitive=False,
+            ),
+            default="OFF",
+        ),
+        click.option(
+            "-p",
+            "--output",
+            help="Set console output log level",
+            type=click.Choice(
+                ["PROMPT", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
+                case_sensitive=False,
+            ),
+            default="NORMAL",
+        ),
+        help="Settigns for logging"
+
+    )
+    @functools.wraps(func)
+    @click.pass_context
+    def wrapper(ctx,*args, **kwargs):
+        return func(ctx,*args, **kwargs)
+    return wrapper
+
+
+
+
+
+
 
 @click.group(
-    cls=click.Group,
-    chain=False,  # Inherit options from subcommands
     help="Program Args",
+    context_settings=dict(help_option_names=["-h", "--help"]),
+    invoke_without_command=True
 )
-@click.pass_context
-def program(ctx):
-    # Common options for all subcommands
-    ctx.ensure_object(dict)
-    ctx.obj["version"] = __version__
-    ctx.obj["config"] = None
-    ctx.obj["profile"] = None
-    print("d")
+@click.option_group(
+    "scraper",
+    click.option(
+        "-u",
+        "--usernames",
+        help="Select which username to process (name,name2). Set to ALL for all users.",
+        type=helpers.username_helper,  # Assuming you'll still use this helper function
+        multiple=True,  # Use `multiple=True` for accepting multiple values
+    ),
+    click.option(
+        "-eu",
+        "--excluded-username",
+        help="Select which usernames to exclude (name,name2). Has preference over --username.",
+        type=helpers.username_helper,
+        multiple=True,
+    ),
+    click.option(
+        "-d",
+        "--daemon",
+        help="Run script in the background. Set value to minimum minutes between script runs. Overdue runs will run as soon as previous run finishes.",
+        type=float,
+    ),
+    click.option(
+        "-g",
+        "--original",
+        help="Don't truncate long paths",
+        is_flag=True,  # Use `is_flag=True` for boolean flags
+    ),
+    click.option(
+        "-a",
+        "--action",
+        help="""
+    Select batch action(s) to perform [like,unlike,download].
+    Accepts space or comma-separated list. Like and unlike cannot be combined.
+    """,
+        type=click.Choice(["like", "unlike", "download"]),  # Enforce valid choices
+        multiple=True,
+    ),
+    help="basic options for actions"
+)
+@click.option_group(
+    "user filters",
+    click.option(
+        "-cp",
+        "--current-price",
+        help="Filter accounts based on either the subscription price, lowest claimable promotional price, or regular price",
+        default=None,
+        required=False,
+                type=click.Choice(["paid", "free"]),
+    ),
+    click.option(
+        "-rp",
+        "--renewal-price",
+        help="Filter accounts based on either the lowest claimable promotional price, or regular price",
+        default=None,
+        required=False,
+                type=click.Choice(["paid", "free"]),
+    ),
+    click.option(
+        "-gp",
+        "--regular-price",
+        help="Filter accounts based on the regular price",
+        default=None,
+        required=False,
+                type=click.Choice(["paid", "free"]),
+    ),
+    click.option(
+        "-pp",
+        "--promo-price",
+        help="Filter accounts based on either the lowest promotional price regardless of claimability, or regular price",
+        default=None,
+        required=False,
+                type=click.Choice(["paid", "free"]),
+    ),
+    click.constraints.mutually_exclusive(
+        click.option(
+            "-lo",
+            "--last-seen-only",
+            "last_seen",
+            help="Filter accounts to ones where last seen is visible",
+            default=None,
+            required=False,
+            is_flag=True,
+        ),
+        click.option(
+            "-ls",
+            "--last-seen-skip",
+            "last_seen",
+            help="Filter accounts to ones where last seen is hidden",
+            default=False,
+            required=False,
+            is_flag=True,
+        ),
+    ),
+        click.option(
+            "-fo",
+            "--free-trial-only/--free-trial-skip",
+            "free_trail",  # Positional argument for destination attribute
+            # help="Filter accounts to only those currently in a free trial (normally paid)",
+            # default=None,
+            required=False,
+            is_flag=True,
+            default=None
+        ),
 
 
+                click.option(
+                    "-po",
+                    "--promo-only/--promo-skip",
+                    "promo",  # Change dest to be the third element in the list
+                    help="Filter accounts with any claimable promo price",
+                    default=None,
+                    required=False,
+                              is_flag=True,
+                            flag_value=True            ),
 
-@program.command()
-@click.version_option(version=__version__)
-@click.option(
-    "-cg",
-    "--config",
-    help="Change location of config folder/file",
+                click.option(
+                    "-ao",
+                    "--all-promo-only/--all-promo-skip",
+                    "all_promo",  # Keep the provided dest
+                    help="Filter accounts with any promo price",
+                    default=None,
+                    required=False,
+                              is_flag=True,
+                            flag_value=True           ),
+        click.option(
+            "-ts",
+            "--active-subscription/--expired-subscription",
+            "sub_status",
+            help="Filter accounts to those with non-expired status",
+            default=None,
+            required=False,
+                              is_flag=True,
+                            flag_value=True
+        ),
+        click.option(
+            "-ro",
+            "--renew-on/--renew-off",
+            "renewal",
+            help="Filter accounts to those with the renew flag on",
+            default=None,
+            required=False,
+            is_flag=True,
+            flag_value=True,
+        ),
+
+        click.option(
+    "-ul",
+    "--user-list",
+    help="Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
+    default=[],
+    callback=lambda ctx, param, value: list(set(itertools.chain.from_iterable([
+    re.split(r"[,\s]+",item.lower()) if isinstance(item, str) else item
+    for item in value
+]))),
+),
+click.option(
+    "-bl",
+    "--black-list",
+    help="Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
     default=None,
+    multiple=True,
+    callback=lambda ctx, param, value: list(set(itertools.chain.from_iterable([
+    re.split(r"[,\s]+",item.lower()) if isinstance(item, str) else item
+    for item in value
+]))),
+),
+help="Filters out usernames based on selected parameters"
 )
-@click.option(
-    "-r",
-    "--profile",
-    help="""
-Change which profile you want to use
-If not set then the config file is used
-Profiles are always within the config file parent directory
-""",
+@click.option_group(
+"advanced filters",
+click.option(
+    "-ppn",
+    "--promo-price-min",
+    help="Filter accounts where the lowest promo price matches or falls above the provided value",
     default=None,
-    callback=lambda ctx, param, value: f"{re.sub('_profile','', value)}_profile",
+    required=False,
+    type=int,
+),
+click.option(
+    "-ppm",
+    "--promo-price-max",
+    help="Filter accounts where the lowest promo price matches or falls below the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-gpn",
+    "--regular-price-min",
+    help="Filter accounts where the regular price matches or falls above the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-gpm",
+    "--regular-price-max",
+    help="Filter accounts where the regular price matches or falls below the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-cpn",
+    "--current-price-min",
+    help="Filter accounts where the current regular price matches or falls above the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-cpm",
+    "--current-price-max",
+    help="Filter accounts where the current price matches or falls below the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-rpn",
+    "--renewal-price-min",
+    help="Filter accounts where the renewal regular price matches or falls above the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-rpm",
+    "--renewal-price-max",
+    help="Filter accounts where the renewal price matches or falls below the provided value",
+    default=None,
+    required=False,
+    type=int,
+),
+click.option(
+    "-lsb",
+    "--last-seen-before",
+    help="Filter accounts by last seen being at or before the given date (YYYY-MM-DD format)",
+    default=None,
+    required=False,
+    callback=lambda ctx, param, value: helpers.arrow_helper(value)  if value else None,
+),
+click.option(
+    "-lsa",
+    "--last-seen-after",
+    help="Filter accounts by last seen being at or after the given date (YYYY-MM-DD format)",
+    default=None,
+    required=False,
+    callback=lambda ctx, param, value: helpers.arrow_helper(value)  if value else None,
+),
+click.option(
+    "-ea",
+    "--expired-after",
+    help="Filter accounts by expiration/renewal being at or after the given date (YYYY-MM-DD format)",
+    default=None,
+    required=False,
+    callback=lambda ctx, param, value: helpers.arrow_helper(value) if value else None,
+),
+click.option(
+    "-eb",
+    "--expired-before",
+    help="Filter accounts by expiration/renewal being at or before the given date (YYYY-MM-DD format)",
+    default=None,
+    required=False,
+    callback=lambda ctx, param, value: helpers.arrow_helper(value)  if value else None,
+),
+click.option(
+    "-sa",
+    "--subscribed-after",
+    help="Filter accounts by subscription date being after the given date (YYYY-MM-DD format)",
+    default=None,
+    required=False,
+    callback=lambda ctx, param, value: helpers.arrow_helper(value)  if value else None
+),
+click.option(
+    "-sb",
+    "--subscribed-before",
+    help="Filter accounts by sub date being at or before the given date (YYYY-MM-DD format)",
+    default=None,
+    required=False,
+    callback=lambda ctx, param, value: helpers.arrow_helper(value) if value else None
+),
+help="Advanced filtering of accounts based on more precise user-defined parameters"
+
 )
-def common_options(config, profile):
-    # Handle common options here
-    program.obj["config"] = config
-    program.obj["profile"] = profile
-
-
-@program.group(cls=click.Group, name="scraper", help="General Arguments for scraper")
+@common_params
 @click.pass_context
-def scraper(ctx):
-    ctx.ensure_object(dict)
-    ctx.obj["username"] = []
-    ctx.obj["excluded_username"] = []
-    ctx.obj["daemon"] = None
-    ctx.obj["original"] = False
-    ctx.obj["action"] = []
+def program(ctx,*args,**kwargs):
+    return ctx.params
 
 
-@scraper.command()
+
+@program.command("post_check",help="produce a table of models posts")
 @click.option(
     "-u",
-    "--usernames",
-    help="select which username to process (name,name2)\nSet to ALL for all users",
-    type=helpers.username_helper,
+    "--url",
+    help="Scan posts via url. You can provide multiple URLs separated by spaces.",
+    default=None,
+    multiple=True,
+    type=helpers.check_strhelper,
+)
+@click.option(
+    "-f",
+    "--file",
+    help="Scan posts via file\nWith line-separated URL(s)",
+    default=None,
+    type=helpers.check_filehelper,  # Open file for reading
+)
+@click.option(
+    "-fo",
+    "--force",
+    help="Force retrieval of new posts info from API",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "-ca",
+    "--check-area",
+    help="Select areas to check (multiple allowed, separated by spaces)",
+    default=["Timeline", "Pinned", "Archived"],
+    type=click.Choice(["Timeline", "Pinned", "Archived"]),
     multiple=True,
 )
-@click.option(
-    "-eu",
-    "--excluded-username",
-    help="select which usernames to exclude (name,name2)\nThis has preference over --username",
-    type=helpers.username_helper,
-    multiple=True,
-)
-@click.option(
-    "-d",
-    "--daemon",
-    help="run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes",
-    type=float,
-)
-@click.option("-g", "--original", help="don't truncate long paths", is_flag=True)
-@click.option(
-    "-a",
-    "--action",
-    help="""
-Select batch action(s) to perform
-[like,unlike,download]
-Accepts space or comma seperated list
-like and unlike can not be combined
-""",
-    multiple=True,
-    type=helpers.action_helper,
-)
-def scraper_options(usernames, excluded_username, daemon, original, action):
-    scraper.obj["username"] = usernames
-    scraper.obj["excluded_username"] = excluded_username
-    scraper.obj["daemon"] = daemon
-    scraper.obj["original"] = original
-    scraper.obj["action"] = action
-
-
-@program.group(cls=click.Group, name="post", help="What type of post to scrape")
-def post():
-    pass
-
-
-@post.command()
-@click.option("-e", "--dupe", help="Bypass the dupe check and redownload all files", is_flag=True)
-@click.option(
-    "-q",
-    "--quality",
-    default="source",
-    help="Set the minimum allowed quality for videos",
-    type=click.Choice(["240", "720", "source"]),
-)
-@click.option(
-    "-o",
-    "--posts",
-    help="""
-Select area(s) for batch action(s)
-Select from [HighLights,Archived,Messages,Timeline,Pinned,Stories,Purchased,Profile,Labels] or All
-Accepts space or comma seperated list
-""",
-    multiple=True,
-    type=helpers.posttype_helper,
-)
-def post_options(dupe, quality, posts):
-    # Handle post options here
-    pass
-
+@common_params
+@click.pass_context
+def post_check(ctx, *args,**kwargs):
+    return ctx.params
 def parse_args():
-    return program()
+    try:
+        args = program(standalone_mode=False)
+        if args==0:
+            quit()
+        d = AutoDotDict(args)
+        import pprint
+        pprint.pprint(d)
 
-
-
-
-
+        quit()
+    except SystemExit as e:
+        if e.code != 0:
+            raise
 
 
 
 # def create_parser(input=None):
-#     if "pytest" in sys.modules and input == None:
-#         input = []
-#     elif input == None:
-#         input = sys.argv[1:]
-#     if not system.get_parent():
-#         input = []
-#     parent_parser = argparse.ArgumentParser(
-#         add_help=False, allow_abbrev=True, formatter_class=argparse.RawTextHelpFormatter
-#     )
-#     global_parser=parent_parser.add_argument_group("Program", description="Global args")
-#     general = global_parser.add_argument_group("Program", description="Program Args")
-#     general.add_argument(
-#         "-v", "--version", action="version", version=__version__, default=__version__
-#     )
-#     general.add_argument(
-#         "-cg", "--config", help="Change location of config folder/file", default=None
-#     )
-#     general.add_argument(
-#         "-r",
-#         "--profile",
-#         help="Change which profile you want to use\nIf not set then the config file is used\nProfiles are always within the config file parent directory",
-#         default=None,
-#         type=lambda x: f"{re.sub('_profile','', x)}_profile",
-#     )
-#     output = global_parser.add_argument_group(
-#         "Logging", description="Arguments for output controls"
-#     )
-
-#     output.add_argument(
-#         "-l",
-#         "--log",
-#         help="set log file level",
-#         type=str.upper,
-#         default=None,
-#         choices=["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
-#     ),
-#     output.add_argument(
-#         "-dc",
-#         "--discord",
-#         help="set discord log level",
-#         type=str.upper,
-#         default="OFF",
-#         choices=["OFF", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
-#     )
-
-#     output.add_argument(
-#         "-p",
-#         "--output",
-#         help="set console output log level",
-#         type=str.upper,
-#         default="NORMAL",
-#         choices=["PROMPT", "STATS", "LOW", "NORMAL", "DEBUG", "TRACE"],
-#     )
-
-#     parser = argparse.ArgumentParser(
-#         add_help=False,
-#         parents=[global_parser],
-#         prog="OF-Scraper",
-#         epilog="Visit https://of-scraper.gitbook.io/of-scraper/command-reference\n For more details on command usage",
-#         formatter_class=argparse.RawTextHelpFormatter,
-#     )
-#     parser.add_argument("-h", "--help", action="help")
-#     scraper = parser.add_argument_group(
-#         "scraper", description="General Arguments for scraper"
-#     )
-#     scraper.add_argument(
-#         "-u",
-#         "--usernames",
-#         help="select which username to process (name,name2)\nSet to ALL for all users",
-#         type=helpers.username_helper,
-#         action="extend",
-#         dest="username",
-#     )
-#     scraper.add_argument(
-#         "-eu",
-#         "--excluded-username",
-#         help="select which usernames to exclude  (name,name2)\nThis has preference over --username",
-#         type=helpers.username_helper,
-#         action="extend",
-#     )
-
-#     scraper.add_argument(
-#         "-d",
-#         "--daemon",
-#         help="run script in the background\nSet value to minimum minutes between script runs\nOverdue runs will run as soon as previous run finishes",
-#         type=float,
-#         default=None,
-#     )
-
-#     scraper.add_argument(
-#         "-g",
-#         "--original",
-#         help="don't truncate long paths",
-#         default=None,
-#         action="store_true",
-#     )
-#     scraper.add_argument(
-#         "-a",
-#         "--action",
-#         help="""
-# Select batch action(s) to perform
-# [like,unlike,download]
-# Accepts space or comma seperated list
-# like and unlike can not be combined
-#         """,
-#         default=[],
-#         required=False,
-#         type=helpers.action_helper,
-#         action="extend",
-#     )
-
 #     post = parser.add_argument_group("Post", description="What type of post to scrape")
-
-
 
 #     post.add_argument(
 #         "-q",
@@ -488,203 +690,10 @@ def parse_args():
 #         dest="timed_only",
 #     )
 
-#     # Filters for accounts
-#     filters = parser.add_argument_group(
-#         "Model filters",
-#         description="Filters out usernames based on selected parameters",
-#     )
 
-#     filters.add_argument(
-#         "-cp",
-#         "--current-price",
-#         help="Filter accounts based on either the subscription price, lowest claimable promotional price, or regular price",
-#         default=None,
-#         required=False,
-#         type=str.lower,
-#         choices=["paid", "free"],
-#     )
 
-#     filters.add_argument(
-#         "-rp",
-#         "--renewal-price",
-#         help="Filter accounts based on either the lowest claimable promotional price, or regular price",
-#         default=None,
-#         required=False,
-#         type=str.lower,
-#         choices=["paid", "free"],
-#     )
 
-#     filters.add_argument(
-#         "-gp",
-#         "--regular-price",
-#         help="Filter accounts based on the regular price",
-#         default=None,
-#         required=False,
-#         type=str.lower,
-#         choices=["paid", "free"],
-#     )
 
-#     filters.add_argument(
-#         "-pp",
-#         "--promo-price",
-#         help="Filter accounts based on either the lowest promotional price regardless of claimability, or regular price",
-#         default=None,
-#         required=False,
-#         type=str.lower,
-#         choices=["paid", "free"],
-#     )
-
-#     group3 = filters.add_mutually_exclusive_group()
-#     group3.add_argument(
-#         "-lo",
-#         "--last-seen-only",
-#         help="Filter accounts to ones where last seen is visible",
-#         default=None,
-#         required=False,
-#         const=True,
-#         dest="last_seen",
-#         action="store_const",
-#     )
-#     group3.add_argument(
-#         "-ls",
-#         "--last-seen-skip",
-#         help="Filter accounts to ones where last seen is hidden",
-#         default=None,
-#         required=False,
-#         const=False,
-#         dest="last_seen",
-#         action="store_const",
-#     )
-
-#     group4 = filters.add_mutually_exclusive_group()
-#     group4.add_argument(
-#         "-fo",
-#         "--free-trial-only",
-#         help="Filter accounts to only those currently in a free trial (normally paid)",
-#         default=None,
-#         required=False,
-#         const=True,
-#         dest="free_trial",
-#         action="store_const",
-#     )
-#     group4.add_argument(
-#         "-fs",
-#         "--free-trial-skip",
-#         help="Filter accounts to only those currently not in  a free trial (normally paid)",
-#         default=None,
-#         required=False,
-#         const=False,
-#         dest="free_trial",
-#         action="store_const",
-#     )
-
-#     group5 = filters.add_mutually_exclusive_group()
-#     group5.add_argument(
-#         "-po",
-#         "-promo-only",
-#         help="Filter accounts to ones with any claimable promo price",
-#         default=None,
-#         required=False,
-#         const=True,
-#         dest="promo",
-#         action="store_const",
-#     )
-#     group5.add_argument(
-#         "-ps",
-#         "--promo-skip",
-#         help="Filter accounts to ones without any claimable promo price",
-#         default=None,
-#         required=False,
-#         const=False,
-#         dest="promo",
-#         action="store_const",
-#     )
-
-#     group6 = filters.add_mutually_exclusive_group()
-#     group6.add_argument(
-#         "-ao",
-#         "--all-promo-only",
-#         help="Filter accounts to ones with any promo price",
-#         default=None,
-#         required=False,
-#         const=True,
-#         dest="all_promo",
-#         action="store_const",
-#     )
-#     group6.add_argument(
-#         "-as",
-#         "--all-promo-skip",
-#         help="Filter accounts to ones without any promo price",
-#         default=None,
-#         required=False,
-#         const=False,
-#         dest="all_promo",
-#         action="store_const",
-#     )
-
-#     group7 = filters.add_mutually_exclusive_group()
-#     group7.add_argument(
-#         "-ts",
-#         "--active-subscription",
-#         help="Filter accounts to those with non-expired status",
-#         default=None,
-#         required=False,
-#         const=True,
-#         dest="sub_status",
-#         action="store_const",
-#     )
-#     group7.add_argument(
-#         "-es",
-#         "--expired-subscription",
-#         help="Filter accounts to those with expired status",
-#         default=None,
-#         required=False,
-#         const=False,
-#         dest="sub_status",
-#         action="store_const",
-#     )
-
-#     group8 = filters.add_mutually_exclusive_group()
-#     group8.add_argument(
-#         "-ro",
-#         "--renew-on",
-#         help="Filter accounts to those with the renew flag on",
-#         default=None,
-#         required=False,
-#         const=True,
-#         dest="renewal",
-#         action="store_const",
-#     )
-#     group8.add_argument(
-#         "-rf",
-#         "--renew-off",
-#         help="Filter accounts to those with the renew flag off",
-#         default=None,
-#         required=False,
-#         const=False,
-#         dest="renewal",
-#         action="store_const",
-#     )
-
-#     filters.add_argument(
-#         "-ul",
-#         "--user-list",
-#         help='Filter by userlist\n Note:  the lists "ofscraper.main,ofscraper.expired,ofscraper.active" are reserved  and should not be the name of any list you have on OF',
-#         default=[],
-#         required=False,
-#         type=lambda x: list(map(lambda x: x.lower(), x.split(","))),
-#         action="extend",
-#     )
-
-#     filters.add_argument(
-#         "-bl",
-#         "--black-list",
-#         help='Remove all users from selected list\n Note: the lists "ofscraper.main,ofscraper.expired,ofscraper.active" are reserved should not be the name of any list you have on OF',
-#         default=[],
-#         required=False,
-#         type=lambda x: list(map(lambda x: x.lower(), x.split(","))),
-#         action="extend",
-#     )
 
 #     adv_filters = parser.add_argument_group(
 #         "Advanced model filters",
