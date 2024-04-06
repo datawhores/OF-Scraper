@@ -38,8 +38,8 @@ def main_menu_action():
                 continue
             else:
                 count > 0 and reset_menu_helper()
-                functs = process_actions.add_selected_areas()
                 actions.set_scrape_paid()
+                functs = process_actions.add_selected_areas()
                 run.run_helper(*functs)
                 count = count + 1
         elif result_main_prompt == "auth":

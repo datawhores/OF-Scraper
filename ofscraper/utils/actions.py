@@ -56,6 +56,7 @@ def remove_like_area():
 def remove_download_area():
     args = read_args.retriveArgs()
     args.download_area = {}
+    args.scrape_paid = None
     write_args.setArgs(args)
 
 

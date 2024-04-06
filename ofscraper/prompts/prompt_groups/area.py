@@ -149,7 +149,7 @@ def reset_areas_prompt() -> bool:
                 "name": name,
                 "message": "Do you want to reset selected area(s)",
                 "choices": [
-                    Choice("Download", "Download area only"),
+                    Choice("Download", "Download area only + Scrape Paid"),
                     Choice("Like", "Like area only"),
                     "Both",
                     "No",

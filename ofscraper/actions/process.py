@@ -115,7 +115,7 @@ def process_user_first_helper(ele):
         log.traceback_(traceback.format_exc())
 
 
-def scrape_paid(user_dict=None):
+def scrape_paid_all(user_dict=None):
     user_dict = OF.process_all_paid()
     oldUsers = selector.get_ALL_SUBS_DICT()
     length = len(list(user_dict.keys()))
@@ -247,5 +247,5 @@ def add_selected_areas():
         actions.select_areas()
         functs.append(process_unlike)
     if read_args.retriveArgs().scrape_paid:
-        functs.append(scrape_paid)
+        functs.append(scrape_paid_all)
     return functs
