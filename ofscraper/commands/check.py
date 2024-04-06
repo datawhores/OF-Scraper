@@ -261,7 +261,7 @@ async def post_check_helper():
         await operations.make_post_table_changes(
             posts, model_id=model_id, username=user_name
         )
-        media = process_post_media(user_name, model_id,posts)
+        media = await process_post_media(user_name, model_id,posts)
         ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -359,7 +359,7 @@ async def message_checker_helper():
                 message_posts_array, model_id=model_id, username=user_name
             )
 
-            media = process_post_media(
+            media = await process_post_media(
                 user_name,model_id, paid_posts_array + message_posts_array
             )
 
@@ -405,7 +405,7 @@ async def purchase_checker_helper():
                 posts_array, model_id=model_id, username=user_name
             )
             downloaded = await get_downloaded(user_name, model_id)
-            media = process_post_media(user_name, model_id,posts_array)
+            media = await process_post_media(user_name, model_id,posts_array)
             ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -438,7 +438,7 @@ async def stories_checker_helper():
             )
 
             downloaded = await get_downloaded(user_name, model_id)
-            media = process_post_media(user_name,model_id,stories+highlights_)
+            media = await process_post_media(user_name,model_id,stories+highlights_)
             ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -450,7 +450,8 @@ def url_helper():
     return map(lambda x: x.strip(), out)
 
 
-def process_post_media(username,model_id,posts_array):
+@run
+async def process_post_media(username,model_id,posts_array):
     seen = set()
     unduped = [
     post
@@ -459,7 +460,7 @@ def process_post_media(username,model_id,posts_array):
     ]
     temp = []
     [temp.extend(ele.all_media) for ele in unduped]
-    operations.batch_mediainsert(
+    await operations.batch_mediainsert(
                 temp,
                 model_id=model_id,
                 username=username,
@@ -500,7 +501,7 @@ async def get_paid_ids(model_id, user_name):
                 paid,
                 expire=constants.getattr("DAY_SECONDS"),
             )
-    media = process_post_media(user_name,model_id, paid)
+    media = await process_post_media(user_name,model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
 
