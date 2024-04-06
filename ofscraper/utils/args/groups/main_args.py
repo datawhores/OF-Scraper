@@ -204,7 +204,7 @@ import ofscraper.utils.args.helpers as helpers
             "-mm/-ms",
             "--mass-only/--mass-skip",
             "mass_msg",
-            help="Flag for downloading mass content or promos",
+            help="Flag for downloading mass content or promos [select one mass-only or mass-skip]",
             default=None,
             required=False,
         ),
@@ -213,7 +213,7 @@ import ofscraper.utils.args.helpers as helpers
             "--only-timed/--skip-timed",
             "timed_only",
             default=None,
-            help="Download only promotional or temporary posts",
+            help="Download only promotional or temporary posts [select one only-timed or skip-timed]",
         ),
     ),
     help="options for posts",
@@ -253,7 +253,7 @@ import ofscraper.utils.args.helpers as helpers
         "-g",
         "--original",
         help="Don't truncate long paths",
-        is_flag=True,  # Use `is_flag=True` for boolean flags
+        is_flag=True,  
     ),
     click.option(
         "-a",
@@ -333,7 +333,7 @@ import ofscraper.utils.args.helpers as helpers
         "-fo/-fs",
         "--free-trial-only/--free-trial-skip",
         "free_trail",  # Positional argument for destination attribute
-        # help="Filter accounts to only those currently in a free trial (normally paid)",
+        help="Filter accounts to only those currently in a free trial (normally paid) [select one free-trial-only or free-trial-skip]",
         # default=None,
         required=False,
         is_flag=True,
@@ -342,8 +342,8 @@ import ofscraper.utils.args.helpers as helpers
     click.option(
         "-po/-ps",
         "--promo-only/--promo-skip",
-        "promo",  # Change dest to be the third element in the list
-        help="Filter accounts with any claimable promo price",
+        "promo", 
+        help="Filter accounts with any claimable promo price  [select one promo-only or promo-skip]",
         default=None,
         required=False,
         is_flag=True,
@@ -352,8 +352,8 @@ import ofscraper.utils.args.helpers as helpers
     click.option(
         "-ao",
         "--all-promo-only/--all-promo-skip",
-        "all_promo",  # Keep the provided dest
-        help="Filter accounts with any promo price",
+        "all_promo",  
+        help="Filter accounts with any promo price [select one all-promo-only or all-promo-skip]",
         default=None,
         required=False,
         is_flag=True,
@@ -373,7 +373,7 @@ import ofscraper.utils.args.helpers as helpers
         "-ro/-rf",
         "--renew-on/--renew-off",
         "renewal",
-        help="Filter accounts to those with the renew flag on",
+        help="Filter accounts to those with the renew flag on [select one renew-on or renew-off]",
         default=None,
         required=False,
         is_flag=True,

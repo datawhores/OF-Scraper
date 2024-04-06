@@ -158,21 +158,21 @@ def common_params(func):
             "-md",
             "--metadata",
             "metadata",
-            help="Skip media downloads and gather metadata only (no change to download status)",
+            help="Skip media downloads and gather metadata only (no change to download status [select only one metadata arg])",
             flag_value="none",  # Enforce "none" as the only valid value
         ),
         click.option(
             "-mu",
             "--metadata-update",
             "metadata",
-            help="Skip media downloads, gather metadata, and update download status based on file presence",
+            help="Skip media downloads, gather metadata, and update download status based on file presence [select only one metadata arg]",
             flag_value="file",
         ),
         click.option(
             "-mc",
             "--metadata-complete",
             "metadata",
-            help="Skip media downloads, gather metadata, and mark all media as downloaded",
+            help="Skip media downloads, gather metadata, and mark all media as downloaded [select only one metadata arg]",
             flag_value="complete",
         ),
         help="advanced global args for all commands",
@@ -192,7 +192,7 @@ def common_other_params(func):
             "-g",
             "--original",
             help="Don't truncate long paths",
-            is_flag=True,  # Use `is_flag=True` for boolean flags
+            is_flag=True,  
         ),
         click.option(
             "-q",
