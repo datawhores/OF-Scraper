@@ -181,6 +181,8 @@ async def post_check_helper():
                 continue
             areas = read_args.retriveArgs().check_area
             user_dict[user_name] = user_dict.get(user_name) or []
+
+            await operations.table_init_create(username=user_name, model_id=model_id)
             if "Timeline" in areas:
                 oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
                 if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
@@ -312,6 +314,8 @@ async def message_checker_helper():
             else:
                 continue
             log.info(f"Getting Messages/Paid content for {user_name}")
+
+            await operations.table_init_create(model_id=model_id, username=user_name)
             # messages
             messages = None
             oldmessages = cache.get(f"message_check_{model_id}", default=[])
@@ -357,6 +361,7 @@ async def message_checker_helper():
             media = get_all_found_media(
                 user_name, paid_posts_array + message_posts_array
             )
+            
             unduped = []
             id_set = set()
             for ele in media:
@@ -384,8 +389,12 @@ async def purchase_checker_helper():
             user_name = profile.scrape_profile(user_name)["username"]
             user_dict[user_name] = user_dict.get(user_name, [])
             model_id = profile.get_id(user_name)
+
+            await operations.table_init_create(model_id=model_id, username=user_name)
+
             oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
             paid = None
+
 
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                 paid = oldpaid
@@ -398,7 +407,7 @@ async def purchase_checker_helper():
                 )
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             operations.write_post_table(
-                posts_arrray, model_id=model_id, username=user_name
+                posts_array, model_id=model_id, username=user_name
             )
             downloaded = await get_downloaded(user_name, model_id)
             media = get_all_found_media(user_name, posts_array)
@@ -420,6 +429,7 @@ async def stories_checker_helper():
             user_name = profile.scrape_profile(user_name)["username"]
             user_dict[user_name] = user_dict.get(user_name, [])
             model_id = profile.get_id(user_name)
+            await operations.table_init_create(model_id=model_id, username=user_name)
             stories = await highlights.get_stories_post(model_id, c=c)
             highlights_ = await highlights.get_highlight_post(model_id, c=c)
             highlights_ = list(
@@ -433,8 +443,7 @@ async def stories_checker_helper():
             )
 
             downloaded = await get_downloaded(user_name, model_id)
-            media = []
-            [media.extend(ele.all_media) for ele in stories + highlights_]
+            media = get_all_found_media(stories+highlights_)
             ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -446,7 +455,7 @@ def url_helper():
     return map(lambda x: x.strip(), out)
 
 
-def get_all_found_media(user_name, posts_array):
+def get_all_found_media(posts_array):
     temp = []
     [temp.extend(ele.all_media) for ele in posts_array]
     return temp
