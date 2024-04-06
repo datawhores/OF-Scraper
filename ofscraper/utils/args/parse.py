@@ -621,7 +621,7 @@ click.option(
 def message_check(ctx, *args,**kwargs):
     return ctx.params
 
-@program.command("paid_check",help="produce a table of models posts")
+@program.command("paid_check",help="produce a table of purchases from a model")
 @click.constraints.require_one(
 click.option(
     "-u",
@@ -651,6 +651,63 @@ def paid_check(ctx, *args,**kwargs):
     return ctx.params
 
 
+
+@program.command("story_check",help="produce a table of models stories/highlights")
+@click.constraints.require_one(
+click.option(
+    "-u",
+    "--username",
+    help="Scan stories/highlights via username(s)",
+    default=None,
+    multiple=True,
+    type=helpers.check_strhelper,
+),
+click.option(
+    "-f",
+    "--file",
+    help="Scan stories/highlights via a file with line-separated URL(s)",
+    default=None,
+    type=helpers.check_filehelper,  # Open file for reading
+))
+@click.option(
+    "-fo",
+    "--force",
+    help="Force retrieval of new messages info from API",
+    is_flag=True,
+    default=False,
+)
+@common_params
+@click.pass_context
+def story_check(ctx, *args,**kwargs):
+    return ctx.params
+@program.command("manual",help="Manually download content via url or ID")
+@click.constraints.require_one(
+click.option(
+    "-u",
+    "--url",
+    help="A space or comma seperated list of urls to download",
+    default=None,
+    multiple=True,
+    type=helpers.check_strhelper,
+),
+click.optiomn(
+    "-f",
+    "--file",
+    help="file with line-separated URL(s) for downloading",
+    default=None,
+    type=helpers.check_filehelper,  # Open file for reading
+))
+@click.option(
+    "-fo",
+    "--force",
+    help="Force retrieval of new messages info from API",
+    is_flag=True,
+    default=False,
+)
+@common_params
+@click.pass_context
+def manual(ctx, *args,**kwargs):
+    return ctx.params
 
 
 def parse_args():
@@ -905,87 +962,7 @@ def parse_args():
 
 
 
-
-#     paid_check = subparser.add_parser(
-#         "paid_check",
-#         help="Generate a table of key information from model-extracted purchases\nCache last for 24 hours",
-#         parents=[parent_parser],
-#     )
-#     paid_check.add_argument(
-#         "-fo",
-#         "--force",
-#         help="force retrieval of new purchases info from API",
-#         default=False,
-#         action="store_true",
-#     )
-#     paid_check.add_argument(
-#         "-f",
-#         "--file",
-#         help="Scan purchases via file\nWith line seperated usernames(s)",
-#         default=None,
-#         required=False,
-#         type=helpers.check_filehelper,
-#     )
-
-#     paid_check.add_argument(
-#         "-u",
-#         "--username",
-#         help="Scan purchases via usernames",
-#         type=helpers.check_strhelper,
-#         action="extend",
-#     )
-
-#     story_check = subparser.add_parser(
-#         "story_check",
-#         help="Generate a table of key information from model-extracted story/highlights\nCache last for 24 hours",
-#         parents=[parent_parser],
-#     )
-#     story_check.add_argument(
-#         "-fo",
-#         "--force",
-#         help="force retrieval of new posts info from API",
-#         default=False,
-#         action="store_true",
-#     )
-#     story_check.add_argument(
-#         "-f",
-#         "--file",
-#         help="Scan mevia file",
-#         default=None,
-#         required=False,
-#         type=helpers.check_filehelper,
-#     )
-
-#     story_check.add_argument(
-#         "-u",
-#         "--username",
-#         help="link to conversation",
-#         type=helpers.check_strhelper,
-#         action="extend",
-#     )
-
-#     manual = subparser.add_parser(
-#         "manual",
-#         help="Manually download content via url or ID",
-#         parents=[parent_parser],
-#     )
-#     manual.add_argument(
-#         "-f",
-#         "--file",
-#         help="Pass links/IDs to download via file",
-#         default=None,
-#         required=False,
-#         type=helpers.check_filehelper,
-#     )
-#     manual.add_argument(
-#         "-u",
-#         "--url",
-#         help="pass links to download via url",
-#         type=helpers.check_strhelper,
-#         action="extend",
-#     )
-
-#     return parser
+#
 
 
 # def parse_args(input=None):
