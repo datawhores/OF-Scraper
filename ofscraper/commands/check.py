@@ -16,6 +16,7 @@ import ofscraper.api.paid as paid_
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
+import ofscraper.api.labels as labels
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.classes.table as table
@@ -260,7 +261,7 @@ async def post_check_helper():
         await operations.make_post_table_changes(
             posts, model_id=model_id, username=user_name
         )
-        media = get_all_found_media(user_name, posts)
+        media = process_post_media(user_name, model_id,posts)
         ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -358,19 +359,13 @@ async def message_checker_helper():
                 message_posts_array, model_id=model_id, username=user_name
             )
 
-            media = get_all_found_media(
-                user_name, paid_posts_array + message_posts_array
+            media = process_post_media(
+                user_name,model_id, paid_posts_array + message_posts_array
             )
-            
-            unduped = []
-            id_set = set()
-            for ele in media:
-                if ele.id == None or ele.id not in id_set:
-                    unduped.append(ele)
-                    id_set.add(ele.id)
+
             downloaded = await get_downloaded(user_name, model_id, True)
 
-            ROWS.extend(row_gather(unduped, downloaded, user_name))
+            ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
 
@@ -410,7 +405,7 @@ async def purchase_checker_helper():
                 posts_array, model_id=model_id, username=user_name
             )
             downloaded = await get_downloaded(user_name, model_id)
-            media = get_all_found_media(user_name, posts_array)
+            media = process_post_media(user_name, model_id,posts_array)
             ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -443,7 +438,7 @@ async def stories_checker_helper():
             )
 
             downloaded = await get_downloaded(user_name, model_id)
-            media = get_all_found_media(stories+highlights_)
+            media = process_post_media(user_name,model_id,stories+highlights_)
             ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
@@ -455,9 +450,21 @@ def url_helper():
     return map(lambda x: x.strip(), out)
 
 
-def get_all_found_media(posts_array):
+def process_post_media(username,model_id,posts_array):
+    seen = set()
+    unduped = [
+    post
+        for post in posts_array
+    if (post.id,post.username) not in seen and not seen.add((post.id,post.username))
+    ]
     temp = []
-    [temp.extend(ele.all_media) for ele in posts_array]
+    [temp.extend(ele.all_media) for ele in unduped]
+    operations.batch_mediainsert(
+                temp,
+                model_id=model_id,
+                username=username,
+                downloaded=False,
+    )
     return temp
 
 
@@ -493,7 +500,7 @@ async def get_paid_ids(model_id, user_name):
                 paid,
                 expire=constants.getattr("DAY_SECONDS"),
             )
-    media = get_all_found_media(user_name, paid)
+    media = process_post_media(user_name,model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
 

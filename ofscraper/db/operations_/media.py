@@ -459,6 +459,7 @@ def media_exist_insert_helper(
     return insertData
 
 
+@run
 async def batch_mediainsert(media, **kwargs):
     curr = set(await get_media_ids(**kwargs) or [])
     mediaDict = {}
