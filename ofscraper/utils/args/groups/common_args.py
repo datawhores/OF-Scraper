@@ -12,7 +12,7 @@ from ofscraper.const.constants import KEY_OPTIONS
 def common_params(func):
 
     @click.option_group(
-        "global",
+        "Program Options",
         click.version_option(version=__version__),
         click.option(
             "-cg",
@@ -33,10 +33,10 @@ def common_params(func):
                 f"{re.sub('_profile','', value)}_profile" if value else None
             ),
         ),
-        help="global options for all commands",
+        help="Control the application's behavior with these settings",
     )
     @click.option_group(
-        "output",
+        "Logging Options",
         click.option(
             "-l",
             "--log",
@@ -70,10 +70,10 @@ def common_params(func):
             default="NORMAL",
             callback=lambda ctx, param, value: value.upper() if value else None,
         ),
-        help="Settigns for logging",
+        help="Settings for logging",
     )
     @click.option_group(
-        "advanced args",
+        "Advanced Options",
         click.option(
             "-uf",
             "--users-first",
@@ -185,7 +185,7 @@ def common_params(func):
             [select onw one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="complete",
         ),
-        help="advanced global args for all commands",
+        help="advanced program options for all modes",
     )
     @functools.wraps(func)
     @click.pass_context
@@ -197,7 +197,7 @@ def common_params(func):
 
 def common_other_params(func):
     click.option_group(
-        "download options",
+        "Downloading options",
         click.option(
             "-g",
             "--original",
@@ -221,7 +221,7 @@ def common_other_params(func):
             ),
             multiple=True,
         ),
-        help="Scraper options specific to downloading",
+        help="Options for controlling download behavior",
     )
 
     @functools.wraps(func)
