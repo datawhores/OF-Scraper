@@ -234,11 +234,11 @@ def common_other_params(func):
     "-lb",
     "--label",
     help="Filter by label (use helpers.label_helper to process)",
-    default=None,
+    default=[],
     required=False,
     type=helpers.label_helper,
     callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
     ),
     multiple=True,
 ),
@@ -269,15 +269,16 @@ def common_other_params(func):
     click.option(
         "-o",
         "--posts",
+        "--post",
         help="""
         Select areas for batch actions (comma or space separated).
         Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
         """,
-        default=None,
+        default=[],
         required=False,
         type=helpers.posttype_helper,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
         multiple=True,
     ),
@@ -290,11 +291,11 @@ def common_other_params(func):
         Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
         Has preference over --posts
         """,
-        default=None,
+        default=[],
         required=False,
         type=helpers.download_helper,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
         multiple=True,
     ),
@@ -306,11 +307,11 @@ def common_other_params(func):
         Options: Archived, Timeline, Pinned, Labels, All
         Has preference over --posts
         """,
-        default=None,
+        default=[],
         required=False,
         type=helpers.like_helper,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
         multiple=True,
     ),
@@ -334,7 +335,7 @@ def common_other_params(func):
         "-sp",
         "--scrape-paid",
         help="Scrape entire paid page (can take a very long time)",
-        default=False,
+        default=None,
         is_flag=True,
     ),
     click.option(
@@ -399,11 +400,11 @@ click.option(
     "-lb",
     "--label",
     help="Filter by label (use helpers.label_helper to process)",
-    default=None,
+    default=[],
     required=False,
     type=helpers.label_helper,
     callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
     ),
     multiple=True,
 )
@@ -427,7 +428,7 @@ click.option(
     required=False,
     type=helpers.mediatype_helper,
     callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     multiple=True,
 )
@@ -474,11 +475,13 @@ click.option(
     click.option(
         "-u",
         "--usernames",
+        "--username",
         help="Select which username to process (name,name2). Set to ALL for all users.",
+        default=None,
         type=helpers.username_helper,  # Assuming you'll still use this helper function
         multiple=True,  # Use `multiple=True` for accepting multiple values
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
     click.option(
@@ -486,9 +489,10 @@ click.option(
         "--excluded-username",
         help="Select which usernames to exclude (name,name2). Has preference over --username.",
         type=helpers.username_helper,
+        default=None,
         multiple=True,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
     click.option(
@@ -511,8 +515,11 @@ click.option(
     Accepts space or comma-separated list. Like and unlike cannot be combined.
     """,
         multiple=True,
-        callback=lambda ctx, param, value: (
-            helpers.action_helper(value) if value else None
+        type=helpers.action_helper,
+        default=None,
+
+     callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
     help="Scraping options",
@@ -643,7 +650,7 @@ click.option(
                         for item in value
                     ]
                 )
-            )
+            ) if value else []
         ),
     ),
     click.option(
@@ -663,7 +670,7 @@ click.option(
                         )
                         for item in value
                     ]
-                )
+                ) if value else []
             )
         ),
     ),
@@ -844,7 +851,7 @@ def program(ctx, *args, **kwargs):
         multiple=True,
         type=helpers.check_strhelper,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
     click.option(
@@ -855,7 +862,7 @@ def program(ctx, *args, **kwargs):
         type=helpers.check_filehelper,
         multiple=True,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
 )
@@ -896,7 +903,7 @@ def post_check(ctx, *args, **kwargs):
         multiple=True,
         type=helpers.check_strhelper,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
     click.option(
@@ -907,7 +914,7 @@ def post_check(ctx, *args, **kwargs):
         type=helpers.check_filehelper,
         multiple=True,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),  # Open file for reading
     ),
 )
@@ -943,7 +950,7 @@ def message_check(ctx, *args, **kwargs):
         type=helpers.check_filehelper,
         multiple=True,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
 )
@@ -979,7 +986,7 @@ def paid_check(ctx, *args, **kwargs):
         type=helpers.check_filehelper,
         multiple=True,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
 )
@@ -1015,7 +1022,7 @@ def story_check(ctx, *args, **kwargs):
         type=helpers.check_filehelper,
         multiple=True,
         callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else None
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
 )
@@ -1041,38 +1048,8 @@ def parse_args():
         args, command = result
         args["command"] = command
         d = AutoDotDict(args)
-        import pprint
-
-        pprint.pprint(d)
-        quit()
+        write_args.setArgs(d)
         return d
     except SystemExit as e:
         if e.code != 0:
             raise
-
-
-# def parse_args(input=None):
-#     parser = create_parser(input)
-
-#     args = parser.parse_args(input)
-
-#     # fix args
-#     args.username = set(args.username or [])
-#     args.excluded_username = set(args.excluded_username or [])
-#     args.label = set(args.label) if args.label else args.label
-#     if args.command in set(["post_check", "msg_check"]) and not (args.url or args.file):
-#         raise argparse.ArgumentTypeError(
-#             "error: argument missing --url or --file must be specified )"
-#         )
-#     elif args.command in set(["story_check", "paid_check"]) and not (
-#         args.username or args.file
-#     ):
-#         raise argparse.ArgumentTypeError(
-#             "error: argument missing --username or --file must be specified )"
-#         )
-#     elif args.command in set(["manual"]) and not (args.url or args.file):
-#         raise argparse.ArgumentTypeError(
-#             "error: argument missing --url or --file must be specified )"
-#         )
-#     write_args.setArgs(args)
-#     return args
