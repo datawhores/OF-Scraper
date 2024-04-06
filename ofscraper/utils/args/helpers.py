@@ -40,16 +40,13 @@ def posttype_helper(x):
         ]
     )
     if isinstance(x, str):
-        words = re.split(",| ", x)
-        words = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), words))
-    if (
-        len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
-        > 0
-    ):
+        x = re.split(",| ", x)
+        x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
+    if len(list(filter(lambda y: y not in choices and y[1:] not in choices, x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -o/--posts: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
-    return words
+    return x
 
 
 def download_helper(x):
@@ -71,20 +68,13 @@ def download_helper(x):
     )
     if isinstance(x, str):
         x = re.split(",| ", x)
-        x= list(map(lambda x: re.sub("[^a-zA-Z\*\+]", "", str.title(x)), x))
-    if (
-        len(list(filter(lambda y: y not in choices and y[1:] not in choices), x))
-        > 0
-    ):
+        x = list(map(lambda x: re.sub("[^a-zA-Z\*\+]", "", str.title(x)), x))
+    if len(list(filter(lambda y: y not in choices and y[1:] not in choices), x)) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -da/--download-area: invalid choice: (choose from 'highlights', 'all', 'archived', 'messages', 'timeline', 'pinned', 'stories', 'purchased','profile','labels')"
         )
     seen = set()
-    return [
-            post
-            for post in x
-            if post not in seen and not seen.add(post)
-        ]
+    return [post for post in x if post not in seen and not seen.add(post)]
 
 
 def like_helper(x):
@@ -92,20 +82,12 @@ def like_helper(x):
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
-    if (
-        len(list(filter(lambda y: y not in choices and y[1:] not in choices, words)))
-        > 0
-    ):
+    if len(list(filter(lambda y: y not in choices and y[1:] not in choices, x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
     seen = set()
-    return [
-            post
-            for post in x
-            if post not in seen and not seen.add(post)
-        ]
-
+    return [post for post in x if post not in seen and not seen.add(post)]
 
 
 def post_check_area(x):
@@ -113,19 +95,12 @@ def post_check_area(x):
     if isinstance(x, str):
         x = re.split(",| ", x)
         x = list(map(lambda x: re.sub("[^a-zA-Z-\*\+]", "", str.title(x)), x))
-    if (
-        len(list(filter(lambda y: y not in choices and y[1:] not in choices, x)))
-        > 0
-    ):
+    if len(list(filter(lambda y: y not in choices and y[1:] not in choices, x))) > 0:
         raise argparse.ArgumentTypeError(
             "error: argument -la/--like-area: invalid choice: (choose from 'all', 'archived', 'timeline', 'pinned','labels')"
         )
     seen = set()
-    return [
-            post
-            for post in x
-            if post not in seen and not seen.add(post)
-        ]
+    return [post for post in x if post not in seen and not seen.add(post)]
 
 
 def mediatype_helper(x):
@@ -138,11 +113,7 @@ def mediatype_helper(x):
             "error: argument -o/--mediatype: invalid choice: (choose from 'images','audios','videos','text')"
         )
     seen = set()
-    return [
-            post
-            for post in x
-            if post not in seen and not seen.add(post)
-        ]
+    return [post for post in x if post not in seen and not seen.add(post)]
 
 
 def action_helper(x):
