@@ -241,7 +241,7 @@ def common_other_params(func):
             list(set(itertools.chain.from_iterable(value))) if value else None
     ),
     multiple=True,
-)
+),
     help="Scraper options specific to downloading"
     )
 
@@ -444,6 +444,25 @@ click.option(
     help="Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)",
     required=False,
     type=parse_size,
+),
+
+click.option(
+    "-mm/-ms",
+    "--mass-only/--mass-skip",
+    "mass_msg",
+    help="Flag for downloading mass content or promos",
+    default=None,
+    required=False,
+
+),
+
+
+click.option(
+    "-ok/-sk",
+    "--only-timed/--skip-timed",
+    "timed_only",
+    default=None,
+    help="Download only promotional or temporary posts",
 )
 
 ),
@@ -1030,104 +1049,6 @@ def parse_args():
     except SystemExit as e:
         if e.code != 0:
             raise
-
-
-# def create_parser(input=None):
-#     post = parser.add_argument_group("Post", description="What type of post to scrape")
-
-
-
-#     post.add_argument(
-#         "-lb",
-#         "--label",
-#         help="Filter by label",
-#         default=None,
-#         required=False,
-#         type=helpers.label_helper,
-#         action="extend",
-#     )
-#     post.add_argument(
-#         "-be",
-#         "--before",
-#         help="Process post at or before the given date general synax is Month/Day/Year\nWorks for like,unlike, and downloading posts",
-#         type=helpers.arrow_helper,
-#     )
-#     post.add_argument(
-#         "-af",
-#         "--after",
-#         help="Process post at or after the given date Month/Day/Year\nnWorks for like,unlike, and downloading posts",
-#         type=helpers.arrow_helper,
-#     )
-#     post.add_argument(
-#         "-mt",
-#         "--mediatype",
-#         help="Filter by media in the following areas [Videos,Audios,Images]",
-#         default=[],
-#         required=False,
-#         type=helpers.mediatype_helper,
-#         action="extend",
-#     )
-#     post.add_argument(
-#         "-sx",
-#         "--size-max",
-#         help="Filter out files greater then given size supported inputs include int in bytes or human-readable such as 10mb",
-#         required=False,
-#         type=parse_size,
-#     )
-#     post.add_argument(
-#         "-sm",
-#         "--size-min",
-#         help="Filter out files greater smaller then the given size bytes or human-readable such as 10mb",
-#         required=False,
-#         type=parse_size,
-#     )
-
-#     # mutual exclusive groups
-#     group1 = post.add_mutually_exclusive_group()
-
-#     group1.add_argument(
-#         "-mm",
-#         "--mass-only",
-#         help="download mass messages only",
-#         default=None,
-#         required=False,
-#         action="store_const",
-#         dest="mass_msg",
-#         const=True,
-#     )
-
-#     group1.add_argument(
-#         "-ms",
-#         "--mass-skip",
-#         help="skip mass messages",
-#         default=None,
-#         required=False,
-#         action="store_const",
-#         dest="mass_msg",
-#         const=False,
-#     )
-#     group2 = post.add_mutually_exclusive_group()
-#     group2.add_argument(
-#         "-sk",
-#         "--skip-timed",
-#         default=None,
-#         help="skip promotional or temporary post",
-#         action="store_const",
-#         const=False,
-#         dest="timed_only",
-#     )
-#     group2.add_argument(
-#         "-ok",
-#         "--only-timed",
-#         default=None,
-#         help="skip promotional or temporary post",
-#         action="store_const",
-#         const=True,
-#         dest="timed_only",
-#     )
-
-
-#
 
 
 # def parse_args(input=None):
