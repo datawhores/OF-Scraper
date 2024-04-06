@@ -690,7 +690,7 @@ click.option(
     multiple=True,
     type=helpers.check_strhelper,
 ),
-click.optiomn(
+click.option(
     "-f",
     "--file",
     help="file with line-separated URL(s) for downloading",
