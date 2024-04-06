@@ -91,7 +91,7 @@ import ofscraper.utils.args.helpers as helpers
         "-sp",
         "--scrape-paid",
         help="Scrape entire paid page (can take a very long time)",
-        default=None,
+        default=False,
         is_flag=True,
     ),
     click.option(
@@ -369,26 +369,18 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         type=click.Choice(["paid", "free"], case_sensitive=False),
         callback=lambda ctx, param, value: value.lower() if value else None,
     ),
-    click.constraints.mutually_exclusive(
-        click.option(
-            "-lo",
-            "--last-seen-only",
+    click.option(
+            "-lo/-ls",
+            "--last-seen-only/--last-seen-skip",
             "last_seen",
-            help="Filter accounts to ones where last seen is visible",
+            help="""
+            \b
+            Flag for filtering accounts based on last seen being visible
+            select one --free-trial-only or --free-trial-skip]""",
             default=None,
             required=False,
             is_flag=True,
         ),
-        click.option(
-            "-ls",
-            "--last-seen-skip",
-            "last_seen",
-            help="Filter accounts to ones where last seen is hidden",
-            default=False,
-            required=False,
-            is_flag=True,
-        ),
-    ),
     click.option(
         "-fo/-fs",
         "--free-trial-only/--free-trial-skip",
@@ -414,7 +406,6 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         default=None,
         required=False,
         is_flag=True,
-        flag_value=True,
     ),
     click.option(
         "-ao",
@@ -427,7 +418,6 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         default=None,
         required=False,
         is_flag=True,
-        flag_value=True,
     ),
     click.option(
         "-ts/-es",
@@ -439,7 +429,6 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         default=None,
         required=False,
         is_flag=True,
-        flag_value=True,
     ),
     click.option(
         "-ro/-rf",
@@ -453,7 +442,6 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         default=None,
         required=False,
         is_flag=True,
-        flag_value=True,
     ),
 
     help="Filter users with options like price (current/renewal/regular/promo), free trial, promo availability, alongside userlist filters (include/exclude)",

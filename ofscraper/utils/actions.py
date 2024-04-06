@@ -43,7 +43,6 @@ def select_areas(action=None, reset=False):
     write_args.setArgs(args)
     set_post_area(action)
     set_download_area(action)
-    set_scrape_paid(action)
     set_like_area(action)
     remove_post_area()
 
@@ -115,6 +114,6 @@ def set_scrape_paid(action=None):
     if "download" not in action:
         return
     args.scrape_paid = (
-        prompts.scrape_paid_prompt() if args.scrape_paid != None else args.scrape_paid
+        prompts.scrape_paid_prompt() if not args.scrape_paid else args.scrape_paid
     )
     write_args.setArgs(args)
