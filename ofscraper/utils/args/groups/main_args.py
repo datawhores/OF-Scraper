@@ -11,12 +11,12 @@ import ofscraper.utils.args.helpers as helpers
 
 
 @click.group(
-    help="Program Args",
+    help="OF-Scraper Options",
     context_settings=dict(help_option_names=["-h", "--help"]),
     invoke_without_command=True,
 )
 @click.option_group(
-    "posts",
+    "Content Options",
     click.option(
         "-q",
         "--quality",
@@ -222,45 +222,20 @@ import ofscraper.utils.args.helpers as helpers
             [select one --only-timed or --skip-timed]""",
         ),
     ),
-    help="options for posts",
+    help="""
+    \b
+    Define what posts to target (areas, filters) and actions to perform (like, unlike, download)
+    Filter by type, date, label, size, and media type""",
 )
 @click.option_group(
-    "scraper",
-    click.option(
-        "-u",
-        "--usernames",
-        "--username",
-        help="Select which username to process (name,name2). Set to ALL for all users.",
-        default=None,
-        type=helpers.username_helper,  # Assuming you'll still use this helper function
-        multiple=True,  # Use `multiple=True` for accepting multiple values
-        callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else []
-        ),
-    ),
-    click.option(
-        "-eu",
-        "--excluded-username",
-        help="Select which usernames to exclude (name,name2). Has preference over --username.",
-        type=helpers.username_helper,
-        default=None,
-        multiple=True,
-        callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else []
-        ),
-    ),
+    "Automation Options",
     click.option(
         "-d",
         "--daemon",
-        help="Run script in the background. Set value to minimum minutes between script runs. Overdue runs will run as soon as previous run finishes.",
+        help="Run script in the background. Set value to minimum minutes between script runs. Overdue runs will run as soon as previous run finishes",
         type=float,
     ),
-    click.option(
-        "-g",
-        "--original",
-        help="Don't truncate long paths",
-        is_flag=True,  
-    ),
+
     click.option(
         "-a",
         "--action",
@@ -275,10 +250,89 @@ import ofscraper.utils.args.helpers as helpers
             list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
-    help="Scraping options",
+    help="Control automated actions (like/unlike/download) and background execution",
 )
+
 @click.option_group(
-    "user filters",
+    "User Selection Options",
+    click.option(
+        "-u",
+        "--usernames",
+        "--username",
+        help="Select which username to process (name,name2). Set to ALL for all users",
+        default=None,
+        type=helpers.username_helper,  # Assuming you'll still use this helper function
+        multiple=True,  # Use `multiple=True` for accepting multiple values
+        callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
+        ),
+    ),
+    click.option(
+        "-eu",
+        "--excluded-username",
+        help="Select which usernames to exclude (name,name2). Has preference over --username",
+        type=helpers.username_helper,
+        default=None,
+        multiple=True,
+        callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
+        ),
+    ),
+
+        click.option(
+        "-ul",
+        "--user-list",
+        help="Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
+        default=None,
+        multiple=True,
+        callback=lambda ctx, param, value: list(
+            set(
+                itertools.chain.from_iterable(
+                    [
+                        (
+                            re.split(r"[,\s]+", item.lower())
+                            if isinstance(item, str)
+                            else item
+                        )
+                        for item in value
+                    ]
+                )
+            )
+            if value
+            else []
+        ),
+    ),
+    click.option(
+        "-bl",
+        "--black-list",
+        help="Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
+        default=None,
+        multiple=True,
+        callback=lambda ctx, param, value: list(
+            set(
+                itertools.chain.from_iterable(
+                    [
+                        (
+                            re.split(r"[,\s]+", item.lower())
+                            if isinstance(item, str)
+                            else item
+                        )
+                        for item in value
+                    ]
+                )
+                if value
+                else []
+            )
+        ),
+    ),
+
+help="""Specify users for scraping  with usernames, userlists, or blacklists"""
+)
+
+
+
+@click.option_group(
+    "User List Filter Options",
     click.option(
         "-cp",
         "--current-price",
@@ -401,56 +455,11 @@ import ofscraper.utils.args.helpers as helpers
         is_flag=True,
         flag_value=True,
     ),
-    click.option(
-        "-ul",
-        "--user-list",
-        help="Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
-        default=None,
-        multiple=True,
-        callback=lambda ctx, param, value: list(
-            set(
-                itertools.chain.from_iterable(
-                    [
-                        (
-                            re.split(r"[,\s]+", item.lower())
-                            if isinstance(item, str)
-                            else item
-                        )
-                        for item in value
-                    ]
-                )
-            )
-            if value
-            else []
-        ),
-    ),
-    click.option(
-        "-bl",
-        "--black-list",
-        help="Remove all users from selected list. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
-        default=None,
-        multiple=True,
-        callback=lambda ctx, param, value: list(
-            set(
-                itertools.chain.from_iterable(
-                    [
-                        (
-                            re.split(r"[,\s]+", item.lower())
-                            if isinstance(item, str)
-                            else item
-                        )
-                        for item in value
-                    ]
-                )
-                if value
-                else []
-            )
-        ),
-    ),
-    help="Filters out usernames based on selected parameters",
+
+    help="Filter users with options like price (current/renewal/regular/promo), free trial, promo availability, alongside userlist filters (include/exclude)",
 )
 @click.option_group(
-    "advanced filters",
+    "Advanced User List Filter Options",
     click.option(
         "-ppn",
         "--promo-price-min",
@@ -575,10 +584,10 @@ import ofscraper.utils.args.helpers as helpers
             helpers.arrow_helper(value) if value else None
         ),
     ),
-    help="Advanced filtering of accounts based on more precise user-defined parameters",
+    help="Precise user filtering with price ranges (current/renewal/regular/promo), last seen dates, expiration dates, and subscription dates",
 )
 @click.option_group(
-    "Model Sort",
+    "Model Sort & Processing Order Options",
     click.option(
         "-st",
         "--sort",
@@ -606,9 +615,37 @@ import ofscraper.utils.args.helpers as helpers
         is_flag=True,
         default=False,
     ),
-    help="Controls the order of the model selection list and the scraping order",
+    help="Define the order in which models are displayed and processed for actions like liking posts, downloading content, or data gathering",
+)
+@click.option_group(
+    "Advanced Search & Processing Options",
+        click.option(
+            "-uf",
+            "--users-first",
+            help="Process all users first rather than one at a time (affects --action)",
+            default=False,
+            is_flag=True,  # Shorthand for action="store_true"
+        ),
+            click.constraints.mutually_exclusive(
+            click.option(
+                "-fi",
+                "--individual",
+                help="Search each username as a separate request when --username is provided",
+                default=False,
+                is_flag=True,
+            ),
+            click.option(
+                "-fl",
+                "--list",
+                help="Search entire enabled lists before filtering for usernames when --username is provided",
+                default=False,
+                is_flag=True,
+            ),
+        ),
+        help="Choose how usernames are searched, and define the order in which users are processed for actions"
 )
 @common.common_params
 @click.pass_context
 def program(ctx, *args, **kwargs):
     return ctx.params, ctx.invoked_subcommand
+

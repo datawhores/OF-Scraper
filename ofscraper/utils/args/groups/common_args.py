@@ -73,14 +73,7 @@ def common_params(func):
         help="Settings for logging",
     )
     @click.option_group(
-        "Advanced Options",
-        click.option(
-            "-uf",
-            "--users-first",
-            help="Scrape all users first rather than one at a time (affects --action)",
-            default=False,
-            is_flag=True,  # Shorthand for action="store_true"
-        ),
+        "Advanced Program Options",
         click.option(
             "-nc",
             "--no-cache",
@@ -138,22 +131,6 @@ def common_params(func):
             default=False,
             is_flag=True,
         ),
-        click.constraints.mutually_exclusive(
-            click.option(
-                "-fi",
-                "--individual",
-                help="Search each username as a separate request when --username is provided",
-                default=False,
-                is_flag=True,
-            ),
-            click.option(
-                "-fl",
-                "--list",
-                help="Search entire enabled lists before filtering for usernames when --username is provided",
-                default=False,
-                is_flag=True,
-            ),
-        ),
         click.option(
             "-md",
             "--metadata",
@@ -185,7 +162,7 @@ def common_params(func):
             [select onw one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="complete",
         ),
-        help="advanced program options for all modes",
+        help="Advanced control of program behavior",
     )
     @functools.wraps(func)
     @click.pass_context
