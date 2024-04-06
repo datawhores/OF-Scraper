@@ -45,8 +45,6 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     sem = sems.get_req_sem()
     global after
 
-    before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = await get_after(model_id, username, forced_after)
     oldmessages = (
         await operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
@@ -60,9 +58,8 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
             )
         )
     )
-
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
 
     log.debug(f"Messages after = {after}")
 
@@ -70,7 +67,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -90,7 +87,6 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     global sem
     sem = sems.get_req_sem()
     global after
-    job_progress = None
 
     oldmessages = (
         await operations.get_messages_post_info(model_id=model_id, username=username)
@@ -106,7 +102,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     )
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
 
     log.debug(f"Messages after = {after}")
 
@@ -114,7 +110,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -123,10 +119,10 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
 
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
-    tasks = get_tasks(
-        splitArrays, filteredArray, oldmessages, model_id, job_progress, c
-    )
     with progress_utils.set_up_api_messages():
+        tasks = get_tasks(
+        splitArrays, filteredArray, oldmessages, model_id, c
+    )
         return await process_tasks(tasks, model_id)
 
 

@@ -48,4 +48,4 @@ Allows unlocked media entries to be directly downloaded through the table
 @common.common_other_params
 @click.pass_context
 def message_check(ctx, *args, **kwargs):
-    return ctx.params, ctx.invoked_subcommand
+    return ctx.params, ctx.info_name

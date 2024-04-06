@@ -635,5 +635,5 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
 @common.common_params
 @click.pass_context
 def program(ctx, *args, **kwargs):
-    return ctx.params, ctx.invoked_subcommand
+    return ctx.params, ctx.info_name
 

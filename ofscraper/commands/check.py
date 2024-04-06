@@ -326,7 +326,7 @@ async def message_checker_helper():
                 messages = oldmessages
             else:
                 messages = await messages_.get_messages(
-                    model_id, user_name, forced_after=0
+                    model_id, user_name, forced_after=0,c=c
                 )
                 cache.set(
                     f"message_check_{model_id}",
@@ -336,7 +336,7 @@ async def message_checker_helper():
             message_posts_array = list(
                 map(lambda x: posts_.Post(x, model_id, user_name), messages)
             )
-            operations.make_messages_table_changes(
+            await operations.make_messages_table_changes(
                 message_posts_array, model_id=model_id, username=user_name
             )
 
@@ -355,7 +355,7 @@ async def message_checker_helper():
             paid_posts_array = list(
                 map(lambda x: posts_.Post(x, model_id, user_name), paid)
             )
-            operations.make_post_table_changes(
+            await operations.make_post_table_changes(
                 message_posts_array, model_id=model_id, username=user_name
             )
 
@@ -401,7 +401,7 @@ async def purchase_checker_helper():
                     expire=constants.getattr("DAY_SECONDS"),
                 )
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
-            operations.write_post_table(
+            await operations.write_post_table(
                 posts_array, model_id=model_id, username=user_name
             )
             downloaded = await get_downloaded(user_name, model_id)
