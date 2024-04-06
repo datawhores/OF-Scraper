@@ -20,6 +20,7 @@ def check_filehelper(x):
     if isinstance(x, str) and pathlib.Path(x).exists():
         with open(x, "r") as _:
             return _.readlines()
+    return []
 
 
 def posttype_helper(x):
