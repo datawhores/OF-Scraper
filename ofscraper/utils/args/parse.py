@@ -172,10 +172,47 @@ def common_params(func):
         default=False,
         is_flag=True,
     ),
+    click.constraints.mutually_exclusive(
+         click.option(
+    "-fi",
+    "--individual",
+    help="Search each username as a separate request when --username is provided",
+    default=False,
+    is_flag=True,
+),
+click.option(
+    "-fl",
+    "--list",
+    help="Search entire enabled lists before filtering for usernames when --username is provided",
+    default=False,
+    is_flag=True,
+)
+        ),
+   click.option(
+    "-md",
+    "--metadata",
+        "metadata2",
 
+    help="Skip media downloads and gather metadata only (no change to download status)",
+  flag_value='none'  # Enforce "none" as the only valid value
+),
+click.option(
+    "-mu",
+    "--metadata-update",
+        "metadata3",
 
+    help="Skip media downloads, gather metadata, and update download status based on file presence",
+   flag_value='file',
+),
+click.option(
+    "-mc",
+    "--metadata-complete",
+    "metadata",
+    help="Skip media downloads, gather metadata, and mark all media as downloaded",
+flag_value='complete'
+),
 
-            help="advanced global args for all commands"
+    help="advanced global args for all commands"
         )
     @functools.wraps(func)
     @click.pass_context
@@ -296,7 +333,7 @@ def common_params(func):
         ),
     ),
         click.option(
-            "-fo",
+            "-fo/-fs",
             "--free-trial-only/--free-trial-skip",
             "free_trail",  # Positional argument for destination attribute
             # help="Filter accounts to only those currently in a free trial (normally paid)",
@@ -308,7 +345,7 @@ def common_params(func):
 
 
                 click.option(
-                    "-po",
+                    "-po/-ps",
                     "--promo-only/--promo-skip",
                     "promo",  # Change dest to be the third element in the list
                     help="Filter accounts with any claimable promo price",
@@ -327,7 +364,7 @@ def common_params(func):
                               is_flag=True,
                             flag_value=True           ),
         click.option(
-            "-ts",
+            "-ts/-es",
             "--active-subscription/--expired-subscription",
             "sub_status",
             help="Filter accounts to those with non-expired status",
@@ -337,7 +374,7 @@ def common_params(func):
                             flag_value=True
         ),
         click.option(
-            "-ro",
+            "-ro/-rf",
             "--renew-on/--renew-off",
             "renewal",
             help="Filter accounts to those with the renew flag on",
@@ -351,7 +388,8 @@ def common_params(func):
     "-ul",
     "--user-list",
     help="Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
-    default=[],
+    default=None,
+    multiple=True,
     callback=lambda ctx, param, value: list(set(itertools.chain.from_iterable([
     re.split(r"[,\s]+",item.lower()) if isinstance(item, str) else item
     for item in value
@@ -517,20 +555,22 @@ def program(ctx,*args,**kwargs):
 
 
 @program.command("post_check",help="produce a table of models posts")
-@click.option(
+@click.constraints.require_one(
+click.option(
     "-u",
     "--url",
-    help="Scan posts via url. You can provide multiple URLs separated by spaces.",
+    help="Scan posts via space or comma seperated list of urls",
     default=None,
     multiple=True,
     type=helpers.check_strhelper,
-)
-@click.option(
+),
+click.option(
     "-f",
     "--file",
-    help="Scan posts via file\nWith line-separated URL(s)",
+    help="Scan posts via a file with line-separated URL(s)",
     default=None,
     type=helpers.check_filehelper,  # Open file for reading
+)
 )
 @click.option(
     "-fo",
@@ -544,7 +584,7 @@ def program(ctx,*args,**kwargs):
     "--check-area",
     help="Select areas to check (multiple allowed, separated by spaces)",
     default=["Timeline", "Pinned", "Archived"],
-    type=click.Choice(["Timeline", "Pinned", "Archived"],case_sensitive=False),
+    type=click.Choice(["Timeline", "Pinned", "Archived","Labels"],case_sensitive=False),
     callback=lambda ctx, param, value:helpers.post_check_area(value) if value else None,
     multiple=True,
 )
@@ -552,6 +592,67 @@ def program(ctx,*args,**kwargs):
 @click.pass_context
 def post_check(ctx, *args,**kwargs):
     return ctx.params
+@program.command("msg_check",help="produce a table of models messages")
+@click.constraints.require_one(
+click.option(
+    "-u",
+    "--url",
+    help="Scan messages via space or comma seperated list of urls",
+    default=None,
+    multiple=True,
+    type=helpers.check_strhelper,
+),
+click.option(
+    "-f",
+    "--file",
+    help="Scan messages via a file with line-separated URL(s)",
+    default=None,
+    type=helpers.check_filehelper,  # Open file for reading
+))
+@click.option(
+    "-fo",
+    "--force",
+    help="Force retrieval of new messages info from API",
+    is_flag=True,
+    default=False,
+)
+@common_params
+@click.pass_context
+def message_check(ctx, *args,**kwargs):
+    return ctx.params
+
+@program.command("paid_check",help="produce a table of models posts")
+@click.constraints.require_one(
+click.option(
+    "-u",
+    "--username",
+    help="Scan purchases via username(s)",
+    default=None,
+    multiple=True,
+    type=helpers.check_strhelper,
+),
+click.option(
+    "-f",
+    "--file",
+    help="Scan pu via a file with line-separated URL(s)",
+    default=None,
+    type=helpers.check_filehelper,  # Open file for reading
+))
+@click.option(
+    "-fo",
+    "--force",
+    help="Force retrieval of new purchases info from API",
+    is_flag=True,
+    default=False,
+)
+@common_params
+@click.pass_context
+def paid_check(ctx, *args,**kwargs):
+    return ctx.params
+
+
+
+
 def parse_args():
     try:
         args = program(standalone_mode=False)
@@ -804,201 +905,6 @@ def parse_args():
 
 
 
-#     sort = parser.add_argument_group(
-#         "Model sort",
-#         description="Controls the order of the model selection list and the scraping order",
-#     )
-
-#     advanced = parser.add_argument_group("Advanced", description="Advanced Args")
-#     advanced.add_argument(
-#         "-uf",
-#         "--users-first",
-#         help="Scrape all users first rather then one at a time. This only effects --action",
-#         default=False,
-#         required=False,
-#         action="store_true",
-#     )
-#     advanced.add_argument(
-#         "-nc",
-#         "--no-cache",
-#         help="disable cache",
-#         default=False,
-#         required=False,
-#         action="store_true",
-#     )
-#     advanced.add_argument(
-#         "-k",
-#         "--key-mode",
-#         help="key mode override",
-#         default=None,
-#         required=False,
-#         choices=KEY_OPTIONS,
-#         type=str.lower,
-#     )
-#     advanced.add_argument(
-#         "-dr",
-#         "--dynamic-rules",
-#         help="Dynamic signing",
-#         default=None,
-#         required=False,
-#         choices=["dc", "deviint"],
-#         type=str.lower,
-#     )
-#     advanced.add_argument(
-#         "-ar",
-#         "--no-auto-resume",
-#         help="Cleanup temp .part files\nNote this removes the ability to resume from downloads",
-#         default=False,
-#         action="store_true",
-#     )
-
-#     advanced.add_argument(
-#         "-db",
-#         "--downloadbars",
-#         help="show individual download progress bars",
-#         default=False,
-#         action="store_true",
-#     )
-
-#     advanced.add_argument(
-#         "-sd",
-#         "--downloadsems",
-#         help="Number of sems or concurrent downloads per thread",
-#         default=None,
-#         type=int,
-#     )
-
-#     advanced.add_argument(
-#         "-dp",
-#         "--downloadthreads",
-#         help="Number threads to use minimum will always be 1, total used never be higher then (total threads) -1",
-#         default=None,
-#         type=int,
-#     )
-
-#     advanced.add_argument(
-#         "-up",
-#         "--update-profile",
-#         help="get up to date profile info instead of using cache",
-#         default=False,
-#         action="store_true",
-#     )
-#     group11 = advanced.add_mutually_exclusive_group()
-
-#     group11.add_argument(
-#         "-fi",
-#         "--individual",
-#         help="When --username arg is provided searches each username as a seperate request",
-#         default=False,
-#         action="store_true",
-#     )
-
-#     group11.add_argument(
-#         "-fl",
-#         "--list",
-#         help="When --username arg is provided searches entire enabled list(s) before filtering for usernames",
-#         default=False,
-#         action="store_true",
-#     )
-
-#     group12 = advanced.add_mutually_exclusive_group()
-#     group12.add_argument(
-#         "-md",
-#         "--metadata",
-#         help="Skip all media downloads and gathers metadata only\nNo change to download status in media table",
-#         default=None,
-#         action="store_const",
-#         dest="metadata",
-#         const="none",
-#     )
-#     group12.add_argument(
-#         "-mu",
-#         "--metadata-update",
-#         help="Skip all media downloads and gathers metadata only\nUpdates downloaded status in media table based on file presence",
-#         default=None,
-#         action="store_const",
-#         dest="metadata",
-#         const="file",
-#     )
-#     group12.add_argument(
-#         "-mc",
-#         "--metadata-complete",
-#         help="Skip all media downloads and gathers metadata only\nMarks each media item as downloaded in media table",
-#         default=None,
-#         action="store_const",
-#         dest="metadata",
-#         const="complete",
-#     )
-
-#     subparser = parser.add_subparsers(help="commands", dest="command")
-#     post_check = subparser.add_parser(
-#         "post_check",
-#         help="Generate a table of key information from model-extracted posts\nCache lasts for 24 hours",
-#         parents=[global_parser],
-#     )
-#     post_check.add_argument(
-#         "-u",
-#         "--url",
-#         help="Scan posts via url",
-#         default=None,
-#         required=False,
-#         type=helpers.check_strhelper,
-#         action="extend",
-#     )
-
-#     post_check.add_argument(
-#         "-f",
-#         "--file",
-#         help="Scan posts via file\nWith line seperated URL(s)",
-#         default=None,
-#         required=False,
-#         type=helpers.check_filehelper,
-#     )
-
-#     post_check.add_argument(
-#         "-fo",
-#         "--force",
-#         help="force retrieval of new posts info from API",
-#         default=False,
-#         action="store_true",
-#     )
-
-#     post_check.add_argument(
-#         "-ca",
-#         "--check-area",
-#         help="which areas to check",
-#         default=["Timeline","Pinned","Archived"],
-#         type=helpers.post_check_area
-#     )
-
-#     message_check = subparser.add_parser(
-#         "msg_check",
-#         help="Generate a table of key information from model-extracted messages\nCache lasts for 24 hours",
-#         parents=[parent_parser],
-#     )
-#     message_check.add_argument(
-#         "-fo",
-#         "--force",
-#         help="force retrieval of new messages info from API",
-#         default=False,
-#         action="store_true",
-#     )
-#     message_check.add_argument(
-#         "-f",
-#         "--file",
-#         help="Scan messages via file\nWith line seperated URL(s)",
-#         default=None,
-#         required=False,
-#         type=helpers.check_filehelper,
-#     )
-
-#     message_check.add_argument(
-#         "-u",
-#         "--url",
-#         help="scan messages via file",
-#         type=helpers.check_strhelper,
-#         action="extend",
-#     )
 
 #     paid_check = subparser.add_parser(
 #         "paid_check",
