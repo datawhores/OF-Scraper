@@ -26,15 +26,34 @@ from tenacity import (
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.sems as sems
+import ofscraper.utils.args.read as read_args
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.cache as cache
+
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 sem = None
 
-
 @run
-async def get_labels_posts_progress(model_id, c=None):
+async def get_labels_progress(model_id, c=None):
+    labels_ = await get_labels_data_progress(model_id, c=c)
+    labels_ = (
+        labels_
+        if not read_args.retriveArgs().label
+        else list(
+            filter(
+                lambda x: x.get("name").lower()
+                in read_args.retriveArgs().label,
+                labels_,
+            )
+        )
+    )
+    return await get_posts_for_labels_progress(
+                labels_, model_id, c=c
+     )
+@run
+async def get_labels_data_progress(model_id, c=None):
     global sem
     sem = sems.get_req_sem()
     tasks = []
@@ -44,11 +63,45 @@ async def get_labels_posts_progress(model_id, c=None):
         )
     )
     progress_utils.labelled_layout.visible = False
-    return await process_task(tasks)
+    return await process_tasks_labels(tasks)
+@run
+async def get_posts_for_labels_progress(labels, model_id, c=None):
+    global sem
+    sem = sems.get_req_sem()
+    tasks = []
+
+    [
+        tasks.append(
+            asyncio.create_task(
+                scrape_posts_labels(c, label, model_id, job_progress= progress_utils.labelled_progress)
+            )
+        )
+        for label in labels
+    ]
+    labels_final=await process_tasks_get_posts_for_labels(tasks,labels,model_id)
+    progress_utils.labelled_layout.visible = False
+    return labels_final
 
 
 @run
-async def get_labels_posts(model_id, c=None):
+async def get_labels(model_id, c=None):
+    labels_ = await get_labels_data(model_id, c=c)
+    labels_ = (
+        labels_
+        if not read_args.retriveArgs().label
+        else list(
+            filter(
+                lambda x: x.get("name").lower()
+                in read_args.retriveArgs().label,
+                labels_,
+            )
+        )
+    )
+    return await get_posts_for_labels(
+                labels_, model_id, c=c
+     )
+@run
+async def get_labels_data(model_id, c=None):
     global sem
     sem = sems.get_req_sem()
     tasks = []
@@ -58,17 +111,32 @@ async def get_labels_posts(model_id, c=None):
         )
     )
     with progress_utils.set_up_api_labels():
-        return await process_task(tasks)
+        return await process_tasks_labels(tasks)
 
+@run
+async def get_posts_for_labels(labels, model_id, c=None):
+    global sem
+    sem = sems.get_req_sem()
+    with progress_utils.set_up_api_labels():
+        tasks = []
+        [
+            tasks.append(
+                asyncio.create_task(
+                    scrape_posts_labels(c, label, model_id, job_progress= progress_utils.labelled_progress)
+                )
+            )
+            for label in labels
+        ]
+        return await process_tasks_get_posts_for_labels(tasks,labels,model_id)
 
-async def process_task(tasks):
+async def process_tasks_labels(tasks):
     responseArray = []
 
     page_count = 0
     overall_progress = progress_utils.overall_progress
 
     page_task = overall_progress.add_task(
-        f"Label Names Pages Progresss: {page_count}", visible=True
+        f"Label Names Pages Progress: {page_count}", visible=True
     )
     while bool(tasks):
         new_tasks = []
@@ -105,7 +173,7 @@ async def process_task(tasks):
     )
     return responseArray
 
-
+ 
 async def scrape_labels(c, model_id, job_progress=None, offset=0):
     global sem
     labels = None
@@ -195,30 +263,18 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
                 )
 
 
-@run
-async def get_labelled_posts(labels, username, c=None):
-    global sem
-    sem = sems.get_req_sem()
-    responseDict = get_default_label_dict(labels)
-    tasks = []
-    page_count = 0
-    job_progress = progress_utils.labelled_progress
-    overall_progress = progress_utils.overall_progress
+async def process_tasks_get_posts_for_labels(tasks,labels,model_id):
+    responseDict =get_default_label_dict(labels)
 
-    [
-        tasks.append(
-            asyncio.create_task(
-                scrape_labelled_posts(c, label, username, job_progress=job_progress)
-            )
-        )
-        for label in labels
-    ]
+    page_count = 0
+    overall_progress = progress_utils.overall_progress
 
     page_task = overall_progress.add_task(
         f" Labels Progress: {page_count}", visible=True
     )
 
     while bool(tasks):
+
         new_tasks = []
         try:
             async with asyncio.timeout(
@@ -267,27 +323,25 @@ async def get_labelled_posts(labels, username, c=None):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
-    overall_progress.remove_task(page_task)
-    progress_utils.labelled_layout.visible = False
-
+    labels=list(responseDict.values())
+    set_check(labels, model_id)
     log.trace(
         "post label joined {posts}".format(
             posts="\n\n".join(
                 list(
                     map(
                         lambda x: f"label post joined: {str(x)}",
-                        list(responseDict.values()),
+                        list(),
                     )
                 )
             )
         )
     )
-    log.debug(f"[bold]Labels count without Dupes[/bold] {len(responseDict)} found")
+    log.debug(f"[bold]Labels count without Dupes[/bold] {len(labels)} found")
+    overall_progress.remove_task(page_task)
+    return labels
 
-    return list(responseDict.values())
-
-
-async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0):
+async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     global sem
     posts = None
     attempt.set(0)
@@ -348,7 +402,7 @@ async def scrape_labelled_posts(c, label, model_id, job_progress=None, offset=0)
                             offset += len(posts)
                             new_tasks.append(
                                 asyncio.create_task(
-                                    scrape_labelled_posts(
+                                    scrape_posts_labels(
                                         c,
                                         label,
                                         model_id,
@@ -400,3 +454,17 @@ def get_default_label_dict(labels):
     for label in labels:
         output[label["id"]] = label
     return output
+
+def set_check(unduped, model_id):
+    seen = set()
+    new_posts = [
+        post
+        for post in cache.get(f"labels_check_{model_id}", default=[]) + unduped
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
+    cache.set(
+        f"labels_check_{model_id}",
+        new_posts,
+        expire=constants.getattr("DAY_SECONDS"),
+    )
+    cache.close()

@@ -453,22 +453,8 @@ async def process_all_paid():
 async def process_labels(model_id, username, c):
     try:
         with stdout.lowstdout():
-            labels_ = await labels_api.get_labels_posts_progress(model_id, c=c)
+            labelled_posts_ = await labels_api.get_labels_progress(model_id, c=c)
 
-            labels_ = (
-                labels_
-                if not read_args.retriveArgs().label
-                else list(
-                    filter(
-                        lambda x: x.get("name").lower()
-                        in read_args.retriveArgs().label,
-                        labels_,
-                    )
-                )
-            )
-            labelled_posts_ = await labels_api.get_labelled_posts(
-                labels_, model_id, c=c
-            )
             labelled_posts_ = list(
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
