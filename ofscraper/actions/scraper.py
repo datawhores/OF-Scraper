@@ -133,7 +133,7 @@ async def process_stories(model_id, username, c):
                     stories,
                 )
             )
-            await operations.make_stories_tables_changes(
+            await operations.make_stories_table_changes(
                 stories,
                 model_id=model_id,
                 username=username,
@@ -173,7 +173,7 @@ async def process_highlights(model_id, username, c):
                     highlights_,
                 )
             )
-            await operations.make_stories_tables_changes(
+            await operations.make_stories_table_changes(
                 highlights_,
                 model_id=model_id,
                 username=username,
