@@ -104,20 +104,20 @@ async def get_labels(model_id, c=None):
 async def get_labels_data(model_id, c=None):
     global sem
     sem = sems.get_req_sem()
-    tasks = []
-    tasks.append(
-        asyncio.create_task(
-            scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress)
-        )
-    )
     with progress_utils.set_up_api_labels():
+        tasks = []
+        tasks.append(
+            asyncio.create_task(
+                scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress)
+            )
+        )
         return await process_tasks_labels(tasks)
 
 @run
 async def get_posts_for_labels(labels, model_id, c=None):
     global sem
     sem = sems.get_req_sem()
-    with progress_utils.set_up_api_labels():
+    with progress_utils.set_up_api_posts_labels():
         tasks = []
         [
             tasks.append(
@@ -462,9 +462,10 @@ def set_check(unduped, model_id):
         for post in cache.get(f"labels_check_{model_id}", default=[]) + unduped
         if post["id"] not in seen and not seen.add(post["id"])
     ]
+    posts_labels=[post for label in new_posts for post in label["posts"]]
     cache.set(
         f"labels_check_{model_id}",
-        new_posts,
+        posts_labels,
         expire=constants.getattr("DAY_SECONDS"),
     )
     cache.close()

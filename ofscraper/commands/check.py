@@ -193,11 +193,6 @@ async def post_check_helper():
                         model_id, user_name, forced_after=0, c=c
                     )
                     user_dict[user_name].extend(data)
-                    cache.set(
-                        f"timeline_check_{model_id}",
-                        data,
-                        expire=constants.getattr("DAY_SECONDS"),
-                    )
             if "Archived" in areas:
                 oldarchive = cache.get(f"archived_check_{model_id}", default=[])
                 if len(oldarchive) > 0 and not read_args.retriveArgs().force:
@@ -207,11 +202,6 @@ async def post_check_helper():
                         model_id, user_name, forced_after=0, c=c
                     )
                     user_dict[user_name].extend(data)
-                    cache.set(
-                        f"archived_check_{model_id}",
-                        data,
-                        expire=constants.getattr("DAY_SECONDS"),
-                    )
             if "Pinned" in areas:
                 oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
                 if len(oldpinned) > 0 and not read_args.retriveArgs().force:
@@ -219,14 +209,16 @@ async def post_check_helper():
                 else:
                     data = await pinned.get_pinned_posts(model_id, c=c)
                     user_dict[user_name].extend(data)
-                    cache.set(
-                        f"pinned_check_{model_id}",
-                        data,
-                        expire=constants.getattr("DAY_SECONDS"),
-                    )
-
+            if "Pinned" in areas:
+                oldlabels = cache.get(f"labels_check_{model_id}", default=[])
+                if len(oldlabels) > 0 and not read_args.retriveArgs().force:
+                    user_dict[user_name].extend(oldlabels)
+                else:
+                    data = await labels.get_labels(model_id, c=c)
+                    await operations.make_label_table_changes(data,posts=False)
+                    posts_labels=[post for label in data for post in label["posts"]]
+                    user_dict[user_name].extend(posts_labels)
             cache.close()
-
             # individual links
             for ele in list(
                 filter(
@@ -328,11 +320,6 @@ async def message_checker_helper():
                 messages = await messages_.get_messages(
                     model_id, user_name, forced_after=0,c=c
                 )
-                cache.set(
-                    f"message_check_{model_id}",
-                    messages,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
             message_posts_array = list(
                 map(lambda x: posts_.Post(x, model_id, user_name), messages)
             )
@@ -347,11 +334,6 @@ async def message_checker_helper():
                 paid = oldpaid
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-                cache.set(
-                    f"purchased_check_{model_id}",
-                    paid,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
             paid_posts_array = list(
                 map(lambda x: posts_.Post(x, model_id, user_name), paid)
             )
@@ -395,11 +377,6 @@ async def purchase_checker_helper():
                 paid = oldpaid
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-                cache.set(
-                    f"purchased_check_{model_id}",
-                    paid,
-                    expire=constants.getattr("DAY_SECONDS"),
-                )
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             await operations.make_changes_to_content_tables(
                 posts_array, model_id=model_id, username=user_name
@@ -496,11 +473,6 @@ async def get_paid_ids(model_id, user_name):
     else:
         async with sessionbuilder.sessionBuilder(backend="httpx") as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-            cache.set(
-                f"purchased_check_{model_id}",
-                paid,
-                expire=constants.getattr("DAY_SECONDS"),
-            )
     media = await process_post_media(user_name,model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
