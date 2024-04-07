@@ -193,6 +193,11 @@ async def post_check_helper():
                         model_id, user_name, forced_after=0, c=c
                     )
                     user_dict[user_name].extend(data)
+                    cache.set(
+                        f"timeline_check_{model_id}",
+                        data,
+                        expire=constants.getattr("DAY_SECONDS"),
+                    )
             if "Archived" in areas:
                 oldarchive = cache.get(f"archived_check_{model_id}", default=[])
                 if len(oldarchive) > 0 and not read_args.retriveArgs().force:
@@ -202,6 +207,11 @@ async def post_check_helper():
                         model_id, user_name, forced_after=0, c=c
                     )
                     user_dict[user_name].extend(data)
+                    cache.set(
+                        f"archived_check_{model_id}",
+                        data,
+                        expire=constants.getattr("DAY_SECONDS"),
+                    )
             if "Pinned" in areas:
                 oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
                 if len(oldpinned) > 0 and not read_args.retriveArgs().force:
@@ -209,6 +219,11 @@ async def post_check_helper():
                 else:
                     data = await pinned.get_pinned_posts(model_id, c=c)
                     user_dict[user_name].extend(data)
+                    cache.set(
+                        f"pinned_check_{model_id}",
+                        data,
+                        expire=constants.getattr("DAY_SECONDS"),
+                    )
 
             cache.close()
 
