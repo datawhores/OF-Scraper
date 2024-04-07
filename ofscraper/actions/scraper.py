@@ -472,12 +472,11 @@ async def process_labels(model_id, username, c):
             labelled_posts_ = list(
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
-            for labelled_post in labelled_posts_:
-                await operations.make_label_table_changes(
-                    labelled_post,
+            await operations.make_label_table_changes(
+                    labelled_posts_,
                     model_id=model_id,
                     username=username,
-                )
+            )
 
             log.debug(
                 f"[bold]Label media count with locked[/bold] {sum(map(lambda x:len(x),[post.post_media for labelled_post in labelled_posts_ for post in labelled_post.posts]))}"

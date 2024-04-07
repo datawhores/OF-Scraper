@@ -98,7 +98,7 @@ def process_download_cart():
                     continue
                 log.info(f"Added url {url}")
                 log.info("Sending URLs to OF-Scraper")
-                media_dict, post_dict = manual.get_media_from_urls(urls=[url])
+                url_dicts= manual.process_urls(urls=[url])
                 # None for stories and highlights
                 matchID = int(row[media_id].plain)
                 medialist = list(
@@ -114,7 +114,7 @@ def process_download_cart():
                     model_id = media.post.model_id
                     username = model_id = media.post.username
                     args = read_args.retriveArgs()
-                    args.username = set([username])
+                    args.usernames = set([username])
                     write_args.setArgs(args)
                     selector.all_subs_helper()
                     log.info(
@@ -275,7 +275,7 @@ def reset_url():
     if argdict.get("file"):
         read_args.retriveArgs().file = None
     if argdict.get("username"):
-        read_args.retriveArgs().username = None
+        read_args.retriveArgs().usernames = None
     write_args.setArgs(args)
 
 
@@ -355,8 +355,8 @@ async def message_checker_helper():
             paid_posts_array = list(
                 map(lambda x: posts_.Post(x, model_id, user_name), paid)
             )
-            await operations.make_post_table_changes(
-                message_posts_array, model_id=model_id, username=user_name
+            await operations.make_changes_to_content_tables(
+                paid_posts_array, model_id=model_id, username=user_name
             )
 
             media = await process_post_media(
@@ -380,7 +380,7 @@ async def purchase_checker_helper():
     auth_requests.make_headers()
     ROWS = []
     async with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        for user_name in read_args.retriveArgs().username:
+        for user_name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(user_name)["username"]
             user_dict[user_name] = user_dict.get(user_name, [])
             model_id = profile.get_id(user_name)
@@ -401,7 +401,7 @@ async def purchase_checker_helper():
                     expire=constants.getattr("DAY_SECONDS"),
                 )
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
-            await operations.write_post_table(
+            await operations.make_changes_to_content_tables(
                 posts_array, model_id=model_id, username=user_name
             )
             downloaded = await get_downloaded(user_name, model_id)
@@ -420,7 +420,7 @@ async def stories_checker_helper():
     user_dict = {}
     ROWS = []
     async with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        for user_name in read_args.retriveArgs().username:
+        for user_name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(user_name)["username"]
             user_dict[user_name] = user_dict.get(user_name, [])
             model_id = profile.get_id(user_name)

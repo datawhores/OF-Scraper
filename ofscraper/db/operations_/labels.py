@@ -21,6 +21,7 @@ import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
 from ofscraper.db.operations_.profile import get_single_model
+import ofscraper.db.operations_.posts as post_
 
 console = Console()
 log = logging.getLogger("shared")
@@ -205,15 +206,19 @@ async def modify_unique_constriant_labels(model_id=None, username=None):
     await write_labels_table_transition(data, model_id=model_id, username=username)
 
 
-async def make_label_table_changes(label, model_id=None, username=None):
-    curr = set(await get_all_labels_posts(label, model_id=model_id, username=username))
-    new_posts = list(filter(lambda x: x.id not in curr, label.posts))
-    curr_posts = list(filter(lambda x: x.id in curr, label.posts))
-    if len(new_posts) > 0:
-        new_posts = helpers.converthelper(new_posts)
-        await write_labels_table(label, new_posts, model_id=model_id, username=username)
-    if read_args.retriveArgs().metadata and len(curr_posts) > 0:
-        curr_posts = helpers.converthelper(curr_posts)
-        await update_labels_table(
-            label, curr_posts, model_id=model_id, username=username
-        )
+async def make_label_table_changes(labels, model_id=None, username=None):
+    for label in labels:
+        curr = set(await get_all_labels_posts(label, model_id=model_id, username=username))
+        new_posts = list(filter(lambda x: x.id not in curr, label.posts))
+        curr_posts = list(filter(lambda x: x.id in curr, label.posts))
+        if len(new_posts) > 0:
+            new_posts = helpers.converthelper(new_posts)
+            await write_labels_table(label, new_posts, model_id=model_id, username=username)
+        if read_args.retriveArgs().metadata and len(curr_posts) > 0:
+            curr_posts = helpers.converthelper(curr_posts)
+            await update_labels_table(
+                label, curr_posts, model_id=model_id, username=username
+            )
+    #insert posts
+    all_posts = [post for label in labels for post in label.posts]
+    await post_.make_post_table_changes(all_posts, model_id=model_id, username=username)

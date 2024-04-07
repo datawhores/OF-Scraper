@@ -106,17 +106,17 @@ def parsed_subscriptions_helper(reset=False):
     global PARSED_SUBS
     args = read_args.retriveArgs()
     if reset == True:
-        args.username = None
+        args.usernames = None
         write_args.setArgs(args)
-    if not bool(args.username):
+    if not bool(args.usernames):
         selectedusers = retriver.get_selected_model(filterNSort())
-        read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
+        read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         write_args.setArgs(args)
-    elif "ALL" in args.username:
+    elif "ALL" in args.usernames:
         PARSED_SUBS = filterNSort()
-    elif args.username:
-        usernameset = set(args.username)
+    elif args.usernames:
+        usernameset = set(args.usernames)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
     return PARSED_SUBS
 

@@ -15,6 +15,9 @@ import ofscraper.utils.args.helpers as helpers
         default=None,
         multiple=True,
         type=helpers.check_strhelper,
+        callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
+        ),
     ),
     click.option(
         "-f",

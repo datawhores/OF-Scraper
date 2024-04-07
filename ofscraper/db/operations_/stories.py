@@ -190,12 +190,14 @@ async def modify_unique_constriant_stories(model_id=None, username=None):
     await write_stories_table_transition(data, model_id=model_id, username=username)
 
 
-async def make_stories_tables_changes(
+async def make_stories_table_changes(
     all_stories: dict, model_id=None, username=None, conn=None
 ):
+    all_stories_filtered = filter(lambda x: x.responsetype in {"stories","highlights"}, all_stories)
+
     curr_id = set(await get_all_stories_ids(model_id=model_id, username=username))
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_stories))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_stories))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_stories_filtered))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_stories_filtered))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
         await write_stories_table(new_posts, model_id=model_id, username=username)

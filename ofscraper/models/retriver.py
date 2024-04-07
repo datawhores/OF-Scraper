@@ -16,15 +16,15 @@ def get_models() -> list:
     """
     with stdout.lowstdout():
         count = get_sub_count()
-        if not bool(read_args.retriveArgs().username):
+        if not bool(read_args.retriveArgs().usernames):
             return get_via_list(count)
-        elif "ALL" in read_args.retriveArgs().username:
+        elif "ALL" in read_args.retriveArgs().usernames:
             return get_via_list(count)
         elif read_args.retriveArgs().individual:
             return get_via_individual()
         elif read_args.retriveArgs().list:
             return get_via_list(count)
-        elif (sum(count) // 10) > len(read_args.retriveArgs().username):
+        elif (sum(count) // 10) > len(read_args.retriveArgs().usernames):
             return get_via_individual()
         else:
             return get_via_list(count)
