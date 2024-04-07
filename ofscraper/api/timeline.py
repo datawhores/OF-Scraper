@@ -251,14 +251,14 @@ def get_tasks(splitArrays, c, model_id, after):
 def set_check(unduped, model_id, after):
     if not after:
         seen = set()
-        new_posts = [
+        all_posts = [
             post
             for post in cache.get(f"timeline_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
         cache.set(
             f"timeline_check_{model_id}",
-            new_posts,
+            all_posts,
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()

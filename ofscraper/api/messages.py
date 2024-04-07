@@ -339,14 +339,14 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
 def set_check(unduped, model_id, after):
     if not after:
         seen = set()
-        new_posts = [
+        all_posts = [
             post
             for post in cache.get(f"message_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
         cache.set(
             f"message_check_{model_id}",
-            list(new_posts),
+            list(all_posts),
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
