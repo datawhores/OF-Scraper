@@ -99,8 +99,7 @@ async def process_paid_post(model_id, username, c):
                 model_id=model_id,
                 username=username,
             )
-            operations.update_posts_table_helper(model_id=model_id,
-                username=username)
+            operations.update_posts_table(model_id=model_id, username=username)
 
             output = []
             [output.extend(post.media) for post in paid_content]
