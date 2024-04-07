@@ -209,13 +209,13 @@ async def post_check_helper():
                 else:
                     data = await pinned.get_pinned_posts(model_id, c=c)
                     user_dict[user_name].extend(data)
-            if "Pinned" in areas:
+            if "Labels" in areas:
                 oldlabels = cache.get(f"labels_check_{model_id}", default=[])
                 if len(oldlabels) > 0 and not read_args.retriveArgs().force:
                     user_dict[user_name].extend(oldlabels)
                 else:
                     data = await labels.get_labels(model_id, c=c)
-                    await operations.make_label_table_changes(data,posts=False)
+                    await operations.make_label_table_changes(data,model_id=model_id,username=user_name,posts=False)
                     posts_labels=[post for label in data for post in label["posts"]]
                     user_dict[user_name].extend(posts_labels)
             cache.close()

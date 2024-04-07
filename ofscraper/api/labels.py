@@ -457,15 +457,15 @@ def get_default_label_dict(labels):
 
 def set_check(unduped, model_id):
     seen = set()
-    new_posts = [
+    new_posts = [post for label in unduped for post in label["posts"]]
+    all_posts = [
         post
-        for post in cache.get(f"labels_check_{model_id}", default=[]) + unduped
+        for post in cache.get(f"labels_check_{model_id}", default=[]) + new_posts
         if post["id"] not in seen and not seen.add(post["id"])
     ]
-    posts_labels=[post for label in new_posts for post in label["posts"]]
     cache.set(
         f"labels_check_{model_id}",
-        posts_labels,
+        all_posts,
         expire=constants.getattr("DAY_SECONDS"),
     )
     cache.close()

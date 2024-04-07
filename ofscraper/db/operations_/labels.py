@@ -211,7 +211,7 @@ async def modify_unique_constriant_labels(model_id=None, username=None):
 
 async def make_label_table_changes(labels, model_id=None, username=None,posts=True):
     labels = list(
-                map(lambda x: labels.Label(x, model_id, username) if not isinstance(x,labels_class.Label) else x , labels)
+                map(lambda x: labels_class.Label(x, model_id, username) if not isinstance(x,labels_class.Label) else x , labels)
     )
     for label in labels:
         curr = set(await get_all_labels_posts(label, model_id=model_id, username=username))
