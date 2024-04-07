@@ -16,7 +16,9 @@ Allows unlocked media entries to be directly downloaded through the table
 @click.constraints.require_one(
     click.option(
         "-u",
+        "--usernames",
         "--username",
+        "usernames",
         help="Scan purchases via username(s)",
         default=None,
         multiple=True,
