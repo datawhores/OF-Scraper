@@ -49,7 +49,7 @@ async def create_tables(model_id, username):
 @run
 async def make_changes_to_content_tables(posts,model_id,username):
     await make_post_table_changes(filter(lambda x: x.responsetype in {"timeline","pinned","archived"}, posts),model_id=model_id,username=username)
-    await make_messages_table_changes(filter(lambda x: x.responsetype=="messages", posts),model_id=model_id,username=username)
+    await make_messages_table_changes(filter(lambda x: x.responsetype=="message", posts),model_id=model_id,username=username)
     await make_stories_table_changes(filter(lambda x: x.responsetype in {"stories","highlights"}, posts),model_id=model_id,username=username)
     await make_label_table_changes(filter(lambda x: isinstance(x,labels.Label), posts),model_id,username)
 

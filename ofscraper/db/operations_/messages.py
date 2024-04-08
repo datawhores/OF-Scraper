@@ -210,10 +210,8 @@ async def modify_unique_constriant_messages(model_id=None, username=None):
 
 async def make_messages_table_changes(all_messages, model_id=None, username=None):
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
-    all_messages_filtered = filter(lambda x: x.responsetype=="messages", all_messages)
-
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages_filtered))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages_filtered))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
         await write_messages_table(new_posts, model_id=model_id, username=username)
