@@ -86,6 +86,7 @@ def process_urls(urls):
         elif type == "msg2":
             user_data=profile.scrape_profile(model)
             username= user_data.get("username")
+            model_id=user_data.get("id")
             out_dict.setdefault(model_id, {})["model_id"]= model_id
             out_dict.setdefault(model_id, {})["username"]= username
 
@@ -112,8 +113,8 @@ def process_urls(urls):
             out_dict.setdefault(model_id, {})["model_id"]= model_id
             out_dict.setdefault(model_id, {})["username"]= username
 
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value))
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value,responsetype="highlights"))
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value,responsetype="highlights"))
             # special case
         elif type == "stories":
             value = highlights_.get_individual_stories(postid) or {}
@@ -123,8 +124,8 @@ def process_urls(urls):
             username= profile.scrape_profile(model_id).get("username")
             out_dict.setdefault(model_id, {})["model_id"]= model_id
             out_dict.setdefault(model_id, {})["username"]= username
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value))
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value,responsetype="stories"))
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value,responsetype="stories"))
             # special case
     return out_dict
 
@@ -133,21 +134,21 @@ def unknown_type_helper(postid):
     return timeline.get_individual_post(postid)
 
 
-def get_post_item(model_id, value, inputtype=None):
+def get_post_item(model_id, value, responsetype=None):
     if value == None:
         return []
     user_name = profile.scrape_profile(model_id)["username"]
-    post = posts_.Post(value, model_id, user_name, responsetype=inputtype)
+    post = posts_.Post(value, model_id, user_name, responsetype=responsetype)
     return [post]
 
 
-def get_all_media(posts_id, model_id, value, inputtype=None):
+def get_all_media(posts_id, model_id, value,responsetype=None):
     value = value or {}
     media = []
     if model_id == None:
         return {}
     user_name = profile.scrape_profile(model_id)["username"]
-    post_item = posts_.Post(value, model_id, user_name, responsetype=inputtype)
+    post_item = posts_.Post(value, model_id, user_name, responsetype=responsetype)
     media = post_item.media
     media = list(
         filter(
