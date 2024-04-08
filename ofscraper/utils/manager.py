@@ -1,6 +1,9 @@
+import multiprocess
+import asyncio
 manager = None
 manager_dict = None
-import multiprocess
+
+
 
 
 def get_manager():
@@ -11,7 +14,7 @@ def get_manager():
     return manager
 
 
-def get_manager_dict():
+def get_manager_process_dict():
     global manager_dict
     manager = get_manager()
     if not manager_dict:
@@ -27,6 +30,6 @@ def shutdown():
 
 
 def update_dict(new_dict):
-    manager_dict = get_manager_dict()
+    manager_dict = get_manager_process_dict()
     manager_dict.update(new_dict)
     return manager_dict

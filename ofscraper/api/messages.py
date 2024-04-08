@@ -356,7 +356,6 @@ async def scrape_messages(
     c, model_id, job_progress=None, message_id=None, required_ids=None
 ) -> list:
     global sem
-    global tasks
     messages = None
     attempt.set(0)
     ep = (

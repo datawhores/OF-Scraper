@@ -55,7 +55,7 @@ def get_ALL_SUBS():
 
 
 def get_ALL_SUBS_DICTVManger():
-    return manager.get_manager_dict().get("subs")
+    return manager.get_manager_process_dict().get("subs")
 
 
 def getselected_usernames(rescan=False, reset=False):

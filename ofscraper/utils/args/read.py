@@ -7,9 +7,9 @@ import ofscraper.utils.manager as manager
 
 def retriveArgsVManager():
     try:
-        if not manager.get_manager_dict().get("args"):
-            manager.get_manager_dict()["args"] = parse_args.parse_args()
-        return manager.get_manager_dict().get("args")
+        if not manager.get_manager_process_dict().get("args"):
+            manager.get_manager_process_dict()["args"] = parse_args.parse_args()
+        return manager.get_manager_process_dict().get("args")
     except SystemExit as E:
         if not any(ele in sys.argv[1:] for ele in ["-h", "-v"]):
             print(f"Passed Args {sys.argv[1:]}")
