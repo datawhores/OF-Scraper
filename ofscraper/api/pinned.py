@@ -192,7 +192,7 @@ async def scrape_pinned_posts(
                 attempt.set(attempt.get(0) + 1)
                 task = (
                     job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
                         visible=True,
                     )
                     if job_progress
@@ -211,7 +211,7 @@ async def scrape_pinned_posts(
                                 posts,
                             )
                         )
-                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
+                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
                         if not posts:
                             posts = []
                         if len(posts) == 0:

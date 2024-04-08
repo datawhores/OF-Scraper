@@ -67,7 +67,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -110,7 +110,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -365,7 +365,7 @@ async def scrape_messages(
         else constants.getattr("messagesEP")
     )
     url = ep.format(model_id, message_id)
-    log.debug(f"{message_id if message_id else 'init'}{url}")
+    log.debug(f"{message_id if message_id else 'init'} {url}")
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -402,10 +402,10 @@ async def scrape_messages(
                                 f"{log_id} -> number of messages found {len(messages)}"
                             )
                             log.debug(
-                                f"{log_id} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}"
+                                f"{log_id} -> first date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
                             )
                             log.debug(
-                                f"{log_id} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}"
+                                f"{log_id} -> last date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
                             )
                             log.debug(
                                 f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
