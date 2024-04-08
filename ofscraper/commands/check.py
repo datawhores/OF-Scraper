@@ -191,7 +191,7 @@ async def post_check_helper():
                 if "Timeline" in areas:
                     oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
                     if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
-                        data=oldtimeline.get
+                        data=oldtimeline
                     else:
                         data = await timeline.get_timeline_posts(
                             model_id, user_name, forced_after=0, c=c
