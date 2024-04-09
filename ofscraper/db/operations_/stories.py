@@ -47,7 +47,7 @@ SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ? and model_id=(?);"""
 
 
-storiesALLTransition = """
+storiesSelectTransition = """
 SELECT post_id,text,price,paid,archived,created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('stories') WHERE name = 'model_id')
             THEN model_id
@@ -147,7 +147,7 @@ def get_all_stories_transition(
     model_id=None, username=None, conn=None, database_model=None
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(storiesALLTransition)
+        cur.execute(storiesSelectTransition)
         return [
             dict(row, model_id=row.get("model_id") or database_model)
             for row in cur.fetchall()

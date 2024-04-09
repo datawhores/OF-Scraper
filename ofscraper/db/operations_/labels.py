@@ -52,7 +52,7 @@ labelPostsID = """
 SELECT post_id  FROM  labels where model_id=(?) and label_id=(?)
 """
 
-labelALLTransition = """
+labelSelectTransition = """
 SELECT
     CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('labels') WHERE name = 'label_id')
         THEN label_id

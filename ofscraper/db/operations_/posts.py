@@ -51,7 +51,7 @@ WHERE post_id = ? and model_id=(?);"""
 timelinePostInfo = """
 SELECT created_at,post_id FROM posts where archived=(0) and model_id=(?)
 """
-postsALLTransition = """
+postsSelectTransition = """
 SELECT post_id, text, price, paid, archived, created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('posts') WHERE name = 'model_id')
             THEN model_id
@@ -165,7 +165,7 @@ def get_all_posts_transition(
     model_id=None, username=None, conn=None, database_model=None
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(postsALLTransition)
+        cur.execute(postsSelectTransition)
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(

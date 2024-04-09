@@ -34,6 +34,8 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.common.common import textDownloader
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.args.user as user_helper
+
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -56,90 +58,90 @@ ROW_NAMES = (
 )
 ROWS = []
 app = None
-
-
+prev_names=prev_names=set()
 def process_download_cart():
     while True:
         global app
-        while app and not app.row_queue.empty():
-            if process_download_cart.counter == 0:
-                if not network.check_cdm():
-                    log.info(
-                        "error was raised by cdm checker\ncdm will not be check again\n\n"
-                    )
-                else:
-                    log.info("cdm checker was fine\ncdm will not be check again\n\n")
-                # should be done once before downloads
-                log.info("Getting Models")
-
-            process_download_cart.counter = process_download_cart.counter + 1
-            log.info("Getting items from queue")
-            try:
-                row, key = app.row_queue.get()
-                restype = row[app.row_names.index("Responsetype")].plain
-                username = app.row_names.index("UserName")
-                post_id = app.row_names.index("Post_ID")
-                media_id = app.row_names.index("Media_ID")
-                url = None
-                if restype == "message":
-                    url = constants.getattr("messageTableSPECIFIC").format(
-                        row[username].plain, row[post_id].plain
-                    )
-                elif restype in {"pinned", "timeline", "archived"}:
-                    url = f"{row[post_id]}"
-                elif restype == "highlights":
-                    url = constants.getattr("storyEP").format(row[post_id].plain)
-                elif restype == "stories":
-                    url = constants.getattr("highlightsWithAStoryEP").format(
-                        row[post_id].plain
-                    )
-                else:
-                    log.info("URL not supported")
-                    continue
-                log.info(f"Added url {url}")
-                log.info("Sending URLs to OF-Scraper")
-                url_dicts= manual.process_urls(urls=[url])
-                # None for stories and highlights
-                matchID = int(row[media_id].plain)
-                medialist = list(
-                    filter(
-                        lambda x: x.id == matchID if x.id else None,
-                        list(media_dict.values())[0],
-                    )
+        if not app or app.row_queue.empty():
+            time.sleep(10)
+            continue
+        if process_download_cart.counter == 0:
+            if not network.check_cdm():
+                log.info(
+                    "error was raised by cdm checker\ncdm will not be check again\n\n"
                 )
-                if settings.get_mediatypes() == ["Text"]:
-                    textDownloader(post_dict.values(), username=username)
-                elif len(medialist) > 0 and len(settings.get_mediatypes()) > 1:
-                    media = medialist[0]
-                    model_id = media.post.model_id
-                    username = model_id = media.post.username
-                    args = read_args.retriveArgs()
-                    args.usernames = set([username])
-                    write_args.setArgs(args)
-                    selector.all_subs_helper()
-                    log.info(
-                        f"Downloading individual media ({media.filename}) to disk for {username}"
-                    )
-                    operations.table_init_create(model_id=model_id, username=username)
+            else:
+                log.info("cdm checker was fine\ncdm will not be check again\n\n")
+            # should be done once before downloads
+            log.info("Getting Models")
 
-                    textDownloader(post_dict.values(), username=username)
+        process_download_cart.counter = process_download_cart.counter + 1
+        log.info("Getting items from cart")
+        try:
+            row, key = app.row_queue.get()
+            restype = row[app.row_names.index("Responsetype")].plain
+            username = app.row_names.index("UserName")
+            post_id = app.row_names.index("Post_ID")
+            media_id = app.row_names.index("Media_ID")
+            url = None
+            if restype == "message":
+                url = constants.getattr("messageTableSPECIFIC").format(
+                    row[username].plain, row[post_id].plain
+                )
+            elif restype in {"pinned", "timeline", "archived"}:
+                url = f"{row[post_id]}"
+            elif restype == "highlights":
+                url = constants.getattr("storyEP").format(row[post_id].plain)
+            elif restype == "stories":
+                url = constants.getattr("highlightsWithAStoryEP").format(
+                    row[post_id].plain
+                )
+            else:
+                log.info("URL not supported")
+                continue
+            log.info(f"Added url {url}")
+            log.info("Sending URLs to OF-Scraper")
+            url_dicts= manual.process_urls(urls=[url])
+            set_user_data(url_dicts)
+            # None for stories and highlights
+            matchID = int(row[media_id].plain)
+            medialist = list(
+                filter(
+                    lambda x: x.id == matchID if x.id else None,
+                    [element for inner_list in url_dicts.values() for element in inner_list.get("media_list")],
+                )
+            )
+            postList=[element for inner_list in url_dicts.values() for element in inner_list.get("post_list")]
+            if settings.get_mediatypes() == ["Text"]:
+                textDownloader(postList, username=username)
+            elif len(medialist) > 0 and len(settings.get_mediatypes()) > 1:
+                media = medialist[0]
+                model_id = media.post.model_id
+                username = model_id = media.post.username
+                log.info(
+                    f"Downloading individual media ({media.filename}) to disk for {username}"
+                )
+                operations.table_init_create(model_id=model_id, username=username)
 
-                    values = downloadnormal.process_dicts(username, model_id, [media])
-                    if values == None or values[-1] == 1:
-                        raise Exception("Download is marked as skipped")
-                else:
-                    raise Exception("Issue getting download")
+                textDownloader(postList, username=username)
 
-                log.info("Download Finished")
-                app.update_cell(key, "Download_Cart", "[downloaded]")
-                app.update_cell(key, "Downloaded", True)
+                values = downloadnormal.process_dicts(username, model_id, [media])
+                if values == None or values[-1] == 1:
+                    raise Exception("Download is marked as skipped")
+            else:
+                raise Exception("Issue getting download")
 
-            except Exception as E:
-                app.update_downloadcart_cell(key, "[failed]")
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-        time.sleep(10)
+            log.info("Download Finished")
+            app.update_cell(key, "Download_Cart", "[downloaded]")
+            app.update_cell(key, "Downloaded", True)
 
+        except Exception as E:
+            app.update_downloadcart_cell(key, "[failed]")
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        
+        if app.row_queue.empty():
+            log.info("Download cart is currently empty")
 
 def checker():
     args = read_args.retriveArgs()
@@ -168,87 +170,92 @@ async def post_check_helper():
                 f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
             )
             name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
+            user_name=None
+            model_id=None
 
             if name_match:
                 user_name = name_match.group(1)
                 log.info(f"Getting Full Timeline for {user_name}")
                 model_id = profile.get_id(user_name)
+                user_dict.setdefault(model_id, {})["model_id"]= model_id
+                user_dict.setdefault(model_id, {})["username"]= user_name
+
             elif name_match2:
                 user_name = name_match2.group(0)
                 model_id = profile.get_id(user_name)
-            else:
-                continue
-            if user_dict.get(user_name):
-                continue
-            areas = read_args.retriveArgs().check_area
-            user_dict[user_name] = user_dict.get(user_name) or []
+                user_dict.setdefault(model_id, {})["model_id"]= model_id
+                user_dict.setdefault(model_id, {})["username"]= user_name
+            if user_dict.get(model_id) and model_id and user_name:
+                areas = read_args.retriveArgs().check_area
+                await operations.table_init_create(username=user_name, model_id=model_id)
+                if "Timeline" in areas:
+                    oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
+                    if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
+                        data=oldtimeline
+                    else:
+                        data = await timeline.get_timeline_posts(
+                            model_id, user_name, forced_after=0, c=c
+                        )
+                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                if "Archived" in areas:
+                    oldarchive = cache.get(f"archived_check_{model_id}", default=[])
+                    if len(oldarchive) > 0 and not read_args.retriveArgs().force:
+                        data=oldarchive
+                    else:
+                        data = await archived.get_archived_posts(
+                            model_id, user_name, forced_after=0, c=c
+                        )
+                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                if "Pinned" in areas:
+                    oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
+                    if len(oldpinned) > 0 and not read_args.retriveArgs().force:
+                        data=oldpinned
+                    else:
+                        data = await pinned.get_pinned_posts(model_id, c=c)
+                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                if "Labels" in areas:
+                    oldlabels = cache.get(f"labels_check_{model_id}", default=[])
+                    if len(oldlabels) > 0 and not read_args.retriveArgs().force:
+                        data=oldlabels
+                    else:
+                        labels_data = await labels.get_labels(model_id, c=c)
+                        await operations.make_label_table_changes(labels_data ,model_id=model_id,username=user_name,posts=False)
+                        data=[post for label in labels_data for post in label["posts"]]
+                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                cache.close()
+        # individual links
+        for ele in list(
+            filter(
+                lambda x: re.search(
+                    f"onlyfans.com/{constants.getattr('NUMBER_REGEX')}+/{constants.getattr('USERNAME_REGEX')}+$",
+                    x,
+                ),
+                links,
+            )
+        ):
+            name_match = re.search(
+                f"/({constants.getattr('USERNAME_REGEX')}+$)", ele
+            )
+            num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
+            if name_match and num_match:
+                user_name = name_match.group(1)
+                model_id = profile.get_id(user_name)
+                user_dict.setdefault(model_id, {})["model_id"]= model_id
+                user_dict.setdefault(model_id, {})["username"]= user_name
 
-            await operations.table_init_create(username=user_name, model_id=model_id)
-            if "Timeline" in areas:
-                oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
-                if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
-                    user_dict[user_name].extend(oldtimeline)
-                else:
-                    data = await timeline.get_timeline_posts(
-                        model_id, user_name, forced_after=0, c=c
-                    )
-                    user_dict[user_name].extend(data)
-            if "Archived" in areas:
-                oldarchive = cache.get(f"archived_check_{model_id}", default=[])
-                if len(oldarchive) > 0 and not read_args.retriveArgs().force:
-                    user_dict[user_name].extend(oldarchive)
-                else:
-                    data = await archived.get_archived_posts(
-                        model_id, user_name, forced_after=0, c=c
-                    )
-                    user_dict[user_name].extend(data)
-            if "Pinned" in areas:
-                oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
-                if len(oldpinned) > 0 and not read_args.retriveArgs().force:
-                    user_dict[user_name].extend(oldpinned)
-                else:
-                    data = await pinned.get_pinned_posts(model_id, c=c)
-                    user_dict[user_name].extend(data)
-            if "Labels" in areas:
-                oldlabels = cache.get(f"labels_check_{model_id}", default=[])
-                if len(oldlabels) > 0 and not read_args.retriveArgs().force:
-                    user_dict[user_name].extend(oldlabels)
-                else:
-                    data = await labels.get_labels(model_id, c=c)
-                    await operations.make_label_table_changes(data,model_id=model_id,username=user_name,posts=False)
-                    posts_labels=[post for label in data for post in label["posts"]]
-                    user_dict[user_name].extend(posts_labels)
-            cache.close()
-            # individual links
-            for ele in list(
-                filter(
-                    lambda x: re.search(
-                        f"onlyfans.com/{constants.getattr('NUMBER_REGEX')}+/{constants.getattr('USERNAME_REGEX')}+$",
-                        x,
-                    ),
-                    links,
-                )
-            ):
-                name_match = re.search(
-                    f"/({constants.getattr('USERNAME_REGEX')}+$)", ele
-                )
-                num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
-                if name_match and num_match:
-                    user_name = name_match.group(1)
-                    post_id = num_match.group(1)
-                    model_id = profile.get_id(user_name)
-                    log.info(f"Getting individual link for {user_name}")
-                    if not user_dict.get(user_name):
-                        user_dict[name_match.group(1)] = {}
-                    data = timeline.get_individual_post(post_id)
-                    user_dict[user_name] = user_dict[user_name] or []
-                    user_dict[user_name].append(data)
 
+                post_id = num_match.group(1)   
+                log.info(f"Getting individual link for {user_name}")
+                if not user_dict.get(user_name):
+                    user_dict[name_match.group(1)] = {}
+                data = timeline.get_individual_post(post_id)
+                user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
     ROWS = []
-    for user_name in user_dict.keys():
+    for val in user_dict.values():
+        user_name=val.get("username")
         downloaded = await get_downloaded(user_name, model_id, True)
         posts = list(
-            map(lambda x: posts_.Post(x, model_id, user_name), user_dict[user_name])
+            map(lambda x: posts_.Post(x, model_id, user_name), val.get("post_list", []))
         )
         await operations.make_post_table_changes(
             posts, model_id=model_id, username=user_name
@@ -304,50 +311,48 @@ async def message_checker_helper():
             elif name_match:
                 user_name = name_match.group(0)
                 model_id = profile.get_id(user_name)
-            else:
-                continue
-            log.info(f"Getting Messages/Paid content for {user_name}")
+            if model_id and user_name:
+                log.info(f"Getting Messages/Paid content for {user_name}")
+                await operations.table_init_create(model_id=model_id, username=user_name)
+                # messages
+                messages = None
+                oldmessages = cache.get(f"message_check_{model_id}", default=[])
+                log.debug(f"Number of messages in cache {len(oldmessages)}")
 
-            await operations.table_init_create(model_id=model_id, username=user_name)
-            # messages
-            messages = None
-            oldmessages = cache.get(f"message_check_{model_id}", default=[])
-            log.debug(f"Number of messages in cache {len(oldmessages)}")
-
-            if len(oldmessages) > 0 and not read_args.retriveArgs().force:
-                messages = oldmessages
-            else:
-                messages = await messages_.get_messages(
-                    model_id, user_name, forced_after=0,c=c
+                if len(oldmessages) > 0 and not read_args.retriveArgs().force:
+                    messages = oldmessages
+                else:
+                    messages = await messages_.get_messages(
+                        model_id, user_name, forced_after=0,c=c
+                    )
+                message_posts_array = list(
+                    map(lambda x: posts_.Post(x, model_id, user_name), messages)
                 )
-            message_posts_array = list(
-                map(lambda x: posts_.Post(x, model_id, user_name), messages)
-            )
-            await operations.make_messages_table_changes(
-                message_posts_array, model_id=model_id, username=user_name
-            )
+                await operations.make_messages_table_changes(
+                    message_posts_array, model_id=model_id, username=user_name
+                )
 
-            oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
-            paid = None
-            # paid content
-            if len(oldpaid) > 0 and not read_args.retriveArgs().force:
-                paid = oldpaid
-            else:
-                paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-            paid_posts_array = list(
-                map(lambda x: posts_.Post(x, model_id, user_name), paid)
-            )
-            await operations.make_changes_to_content_tables(
-                paid_posts_array, model_id=model_id, username=user_name
-            )
+                oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
+                paid = None
+                # paid content
+                if len(oldpaid) > 0 and not read_args.retriveArgs().force:
+                    paid = oldpaid
+                else:
+                    paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                paid_posts_array = list(
+                    map(lambda x: posts_.Post(x, model_id, user_name), paid)
+                )
+                await operations.make_changes_to_content_tables(
+                    paid_posts_array, model_id=model_id, username=user_name
+                )
 
-            media = await process_post_media(
-                user_name,model_id, paid_posts_array + message_posts_array
-            )
+                media = await process_post_media(
+                    user_name,model_id, paid_posts_array + message_posts_array
+                )
 
-            downloaded = await get_downloaded(user_name, model_id, True)
+                downloaded = await get_downloaded(user_name, model_id, True)
 
-            ROWS.extend(row_gather(media, downloaded, user_name))
+                ROWS.extend(row_gather(media, downloaded, user_name))
     return ROWS
 
 
@@ -426,6 +431,16 @@ def url_helper():
     out.extend(read_args.retriveArgs().url or [])
     return map(lambda x: x.strip(), out)
 
+
+@run
+async def set_user_data(url_dicts):
+    global prev_names
+    all_usernames=[nested_dict.get("username") for nested_dict in url_dicts.values()]
+    new_usernames=list(filter(lambda x: x not in prev_names,all_usernames))
+    if len(new_usernames)>0:
+        prev_names.update(new_usernames)
+        user_helper.set_users_arg(new_usernames)
+        await selector.all_subs_helper()
 
 @run
 async def process_post_media(username,model_id,posts_array):
@@ -558,7 +573,7 @@ def row_gather(media, downloaded, username):
                 or cache.get(ele.filename) != None,
                 unlocked_helper(ele),
                 times_helper(ele, mediadict, downloaded),
-                ele.numeric_length,
+                ele.numeric_duration,
                 ele.mediatype,
                 datehelper(ele.formatted_postdate),
                 len(ele._post.post_media),

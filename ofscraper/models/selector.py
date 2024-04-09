@@ -15,6 +15,7 @@ import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager
 import ofscraper.utils.settings as settings
+from ofscraper.utils.context.run_async import run
 
 ALL_SUBS = None
 PARSED_SUBS = None
@@ -85,12 +86,13 @@ def getselected_usernames(rescan=False, reset=False):
 
 
 
-def all_subs_helper(refetch=True, main=False, check=True):
+@run
+async def all_subs_helper(refetch=True, main=False, check=True):
     global ALL_SUBS
     if bool(ALL_SUBS) and not refetch:
         return
     while True:
-        ALL_SUBS = retriver.get_models()
+        ALL_SUBS = await retriver.get_models()
         if len(ALL_SUBS) > 0 or not check:
             set_ALL_SUBS_DICTVManger(subsDict=ALL_SUBS)
             break

@@ -2,6 +2,7 @@ on:
   push:
 jobs:
   create_version:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-20.04
     name: create version doc
     steps:
@@ -37,6 +38,7 @@ jobs:
   #       - name: list files 4
   #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
   linux:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version]
     runs-on: ubuntu-20.04
     name: create linux release
@@ -117,6 +119,7 @@ jobs:
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
 
   windows_dir:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version]
     runs-on: windows-latest
     name: create windows release dir
@@ -183,6 +186,7 @@ jobs:
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
 
   windows_file:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version]
     runs-on: windows-latest
     name: create windows release file
@@ -254,6 +258,7 @@ jobs:
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
 
   mac:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version]
     runs-on: macos-latest
     name: create mac release
@@ -351,6 +356,7 @@ jobs:
           path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
 
   publish_release:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     name: publish
     needs: [mac, windows_dir, windows_file, linux]

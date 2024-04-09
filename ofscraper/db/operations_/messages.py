@@ -53,7 +53,7 @@ WHERE post_id = ? and model_id=(?);"""
 allMessagesCheck = """
 SELECT post_id FROM messages
 """
-messagesALLTransition = """
+messagesSelectTransition = """
 SELECT post_id, text, price, paid, archived, created_at, user_id,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'model_id')
             THEN model_id
@@ -153,11 +153,12 @@ def get_all_messages_transition(
     model_id=None, username=None, conn=None, database_model=None
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesALLTransition)
-        return [
-            dict(row, model_id=row.get("model_id") or database_model)
+        cur.execute(messagesSelectTransition)
+        data=[
+            dict(row)
             for row in cur.fetchall()
         ]
+        return [dict(row, model_id=row.get("model_id") or database_model) for row in data]
 
 
 @wrapper.operation_wrapper_async
@@ -210,10 +211,8 @@ async def modify_unique_constriant_messages(model_id=None, username=None):
 
 async def make_messages_table_changes(all_messages, model_id=None, username=None):
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
-    all_messages_filtered = filter(lambda x: x.responsetype=="messages", all_messages)
-
-    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages_filtered))
-    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages_filtered))
+    new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
+    curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
     if len(new_posts) > 0:
         new_posts = helpers.converthelper(new_posts)
         await write_messages_table(new_posts, model_id=model_id, username=username)

@@ -63,7 +63,7 @@ schemaInsert = """
 INSERT OR REPLACE INTO schema_flags (flag_name, flag_value)
 VALUES (?, ?);
 """
-othersALLTransition = """
+othersSelectTransition = """
 SELECT text,price,paid,archived,created_at ,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('others') WHERE name = 'model_id')
             THEN model_id
@@ -78,7 +78,7 @@ othersInsert = """INSERT INTO 'others'(
 post_id, text,price,paid,archived,
 created_at,model_id)
 VALUES (?, ?,?,?,?,?,?);"""
-productsALLTransition = """
+productsSelectTransition = """
 SELECT text,price,paid,archived,created_at ,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('products') WHERE name = 'model_id')
             THEN model_id
@@ -175,7 +175,7 @@ def get_all_others_transition(
     model_id=None, username=None, conn=None, database_model=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(othersALLTransition)
+        cur.execute(othersSelectTransition)
         return [
             dict(row, model_id=row.get("model_id") or database_model)
             for row in cur.fetchall()
@@ -205,7 +205,7 @@ def get_all_products_transition(
     model_id=None, username=None, conn=None, database_model=None
 ):
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(productsALLTransition)
+        cur.execute(productsSelectTransition)
         return [
             dict(row, model_id=row.get("model_id") or database_model)
             for row in cur.fetchall()
