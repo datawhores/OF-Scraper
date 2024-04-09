@@ -6,7 +6,6 @@ import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
-import ofscraper.utils.checkers as checkers
 import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
@@ -39,6 +38,7 @@ def main_menu_action():
                 continue
             else:
                 count > 0 and reset_menu_helper()
+                actions.set_scrape_paid()
                 functs = process_actions.add_selected_areas()
                 run.run_helper(*functs)
                 count = count + 1

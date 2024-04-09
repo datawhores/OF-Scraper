@@ -15,6 +15,7 @@ import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.manager as manager
 import ofscraper.utils.settings as settings
+from ofscraper.utils.context.run_async import run
 
 ALL_SUBS = None
 PARSED_SUBS = None
@@ -55,7 +56,7 @@ def get_ALL_SUBS():
 
 
 def get_ALL_SUBS_DICTVManger():
-    return manager.get_manager_dict().get("subs")
+    return manager.get_manager_process_dict().get("subs")
 
 
 def getselected_usernames(rescan=False, reset=False):
@@ -84,12 +85,14 @@ def getselected_usernames(rescan=False, reset=False):
     return PARSED_SUBS
 
 
-def all_subs_helper(refetch=True, main=False, check=True):
+
+@run
+async def all_subs_helper(refetch=True, main=False, check=True):
     global ALL_SUBS
     if bool(ALL_SUBS) and not refetch:
         return
     while True:
-        ALL_SUBS = retriver.get_models()
+        ALL_SUBS = await retriver.get_models()
         if len(ALL_SUBS) > 0 or not check:
             set_ALL_SUBS_DICTVManger(subsDict=ALL_SUBS)
             break
@@ -106,17 +109,17 @@ def parsed_subscriptions_helper(reset=False):
     global PARSED_SUBS
     args = read_args.retriveArgs()
     if reset == True:
-        args.username = None
+        args.usernames = None
         write_args.setArgs(args)
-    if not bool(args.username):
+    if not bool(args.usernames):
         selectedusers = retriver.get_selected_model(filterNSort())
-        read_args.retriveArgs().username = list(map(lambda x: x.name, selectedusers))
+        read_args.retriveArgs().usernames = list(map(lambda x: x.name, selectedusers))
         PARSED_SUBS = selectedusers
         write_args.setArgs(args)
-    elif "ALL" in args.username:
+    elif "ALL" in args.usernames:
         PARSED_SUBS = filterNSort()
-    elif args.username:
-        usernameset = set(args.username)
+    elif args.usernames:
+        usernameset = set(args.usernames)
         PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
     return PARSED_SUBS
 

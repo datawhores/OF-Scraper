@@ -1,4 +1,6 @@
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.write as write_args
+
 
 
 def resetUserFilters():
@@ -20,3 +22,8 @@ def resetUserFilters():
     args.sort = "name"
     args.desc = False
     return args
+
+def set_users_arg(input_):
+    args = read_args.retriveArgs()
+    args.usernames=input_
+    write_args.setArgs(args)

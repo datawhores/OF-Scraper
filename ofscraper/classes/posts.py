@@ -97,7 +97,7 @@ class Post(base.base):
         elif self.pinned:
             return "pinned"
         elif self.archived:
-            return "self.archived"
+            return "archived"
         elif self.post.get("responseType") == "post":
             return "timeline"
         return self.post.get("responseType")

@@ -162,7 +162,7 @@ async def get_split_array(model_id, username, after):
     postsDataArray = sorted(oldtimeline, key=lambda x: x.get("created_at"))
     log.info(
         f"""
-Setting initial timeline scan date for {username} to {arrow.get(after).format('YYYY.MM.DD')}
+Setting initial timeline scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
 
@@ -251,14 +251,14 @@ def get_tasks(splitArrays, c, model_id, after):
 def set_check(unduped, model_id, after):
     if not after:
         seen = set()
-        new_posts = [
+        all_posts = [
             post
             for post in cache.get(f"timeline_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
         cache.set(
             f"timeline_check_{model_id}",
-            new_posts,
+            all_posts,
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
@@ -347,7 +347,7 @@ async def scrape_timeline_posts(
                 attempt.set(attempt.get(0) + 1)
                 task = (
                     job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
                         visible=True,
                     )
                     if job_progress
@@ -357,7 +357,7 @@ async def scrape_timeline_posts(
                 async with c.requests(url=url)() as r:
                     if r.ok:
                         posts = (await r.json_())["list"]
-                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
+                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
                         if not posts:
                             posts = []
                         if len(posts) == 0:

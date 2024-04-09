@@ -146,14 +146,14 @@ async def process_tasks(tasks, model_id):
 def set_check(unduped, model_id):
     if not read_args.retriveArgs().after:
         seen = set()
-        new_posts = [
+        all_posts = [
             post
             for post in cache.get(f"pinned_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
         cache.set(
             f"pinned_check_{model_id}",
-            new_posts,
+            all_posts,
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
@@ -192,7 +192,7 @@ async def scrape_pinned_posts(
                 attempt.set(attempt.get(0) + 1)
                 task = (
                     job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}",
+                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
                         visible=True,
                     )
                     if job_progress
@@ -211,7 +211,7 @@ async def scrape_pinned_posts(
                                 posts,
                             )
                         )
-                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))) if timestamp!=None  else 'initial'}"
+                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
                         if not posts:
                             posts = []
                         if len(posts) == 0:

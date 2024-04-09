@@ -133,7 +133,7 @@ async def process_stories(model_id, username, c):
                     stories,
                 )
             )
-            await operations.make_stories_tables_changes(
+            await operations.make_stories_table_changes(
                 stories,
                 model_id=model_id,
                 username=username,
@@ -173,7 +173,7 @@ async def process_highlights(model_id, username, c):
                     highlights_,
                 )
             )
-            await operations.make_stories_tables_changes(
+            await operations.make_stories_table_changes(
                 highlights_,
                 model_id=model_id,
                 username=username,
@@ -453,31 +453,16 @@ async def process_all_paid():
 async def process_labels(model_id, username, c):
     try:
         with stdout.lowstdout():
-            labels_ = await labels_api.get_labels_posts_progress(model_id, c=c)
+            labelled_posts_ = await labels_api.get_labels_progress(model_id, c=c)
 
-            labels_ = (
-                labels_
-                if not read_args.retriveArgs().label
-                else list(
-                    filter(
-                        lambda x: x.get("name").lower()
-                        in read_args.retriveArgs().label,
-                        labels_,
-                    )
-                )
-            )
-            labelled_posts_ = await labels_api.get_labelled_posts(
-                labels_, model_id, c=c
-            )
             labelled_posts_ = list(
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
-            for labelled_post in labelled_posts_:
-                await operations.make_label_table_changes(
-                    labelled_post,
+            await operations.make_label_table_changes(
+                    labelled_posts_,
                     model_id=model_id,
                     username=username,
-                )
+            )
 
             log.debug(
                 f"[bold]Label media count with locked[/bold] {sum(map(lambda x:len(x),[post.post_media for labelled_post in labelled_posts_ for post in labelled_post.posts]))}"

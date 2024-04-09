@@ -33,7 +33,7 @@ log = logging.getLogger("shared")
 async def get_subscription(accounts=None):
     global sem
     sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
-    accounts = accounts or read_args.retriveArgs().username
+    accounts = accounts or read_args.retriveArgs().usernames
     if not isinstance(accounts, list) and not isinstance(accounts, set):
         accounts = set([accounts])
     with ThreadPoolExecutor(

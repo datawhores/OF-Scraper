@@ -38,7 +38,6 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 
@@ -116,7 +115,7 @@ def process_user_first_helper(ele):
         log.traceback_(traceback.format_exc())
 
 
-def scrape_paid(user_dict=None):
+def scrape_paid_all(user_dict=None):
     user_dict = OF.process_all_paid()
     oldUsers = selector.get_ALL_SUBS_DICT()
     length = len(list(user_dict.keys()))
@@ -161,7 +160,7 @@ def normal_post_process():
             )
             try:
                 model_id = ele.id
-                operations.table_init_create(model_id, ele.name)
+                operations.table_init_create(model_id=model_id, username=ele.name)
                 combined_urls, posts = asyncio.run(OF.process_areas(ele, model_id))
                 download.download_process(
                     ele.name, model_id, combined_urls, posts=posts
@@ -191,8 +190,8 @@ def process_like():
                     f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
                 model_id = ele.id
-                operations.table_init_create(model_id, ele.name)
-                unfavorited_posts = like.get_post_for_like(model_id, ele.name)
+                operations.table_init_create(model_id=model_id, username=ele.name)
+                unfavorited_posts = like.get_post_for_like(model_id=model_id, username=ele.name)
                 unfavorited_posts = filters.post_filter_for_like(
                     unfavorited_posts, like=True
                 )
@@ -218,7 +217,7 @@ def process_unlike():
                     f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
                 model_id = profile.get_id(ele.name)
-                operations.table_init_create(model_id, ele.name)
+                operations.table_init_create(model_id=model_id, username=ele.name)
                 favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
                 favorited_posts = filters.post_filter_for_like(
                     favorited_posts, like=False
@@ -248,5 +247,5 @@ def add_selected_areas():
         actions.select_areas()
         functs.append(process_unlike)
     if read_args.retriveArgs().scrape_paid:
-        functs.append(scrape_paid)
+        functs.append(scrape_paid_all)
     return functs

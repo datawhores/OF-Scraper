@@ -291,7 +291,22 @@ def set_up_api_highlights():
     )
 
 
+
+
 def set_up_api_labels():
+    global overall_progress
+    global labelled_progress
+    overall_progress = Progress(
+        SpinnerColumn(style=Style(color="blue")),
+        TextColumn(f"Getting Labels\n{{task.description}}"),
+    )
+    labelled_progress = Progress("{task.description}")
+    progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
+    return Live(
+        progress_group, refresh_per_second=5, console=console_.get_shared_console()
+    )
+
+def set_up_api_posts_labels():
     global overall_progress
     global labelled_progress
     overall_progress = Progress(

@@ -45,8 +45,6 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     sem = sems.get_req_sem()
     global after
 
-    before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = await get_after(model_id, username, forced_after)
     oldmessages = (
         await operations.get_messages_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
@@ -60,9 +58,8 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
             )
         )
     )
-
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
 
     log.debug(f"Messages after = {after}")
 
@@ -70,7 +67,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -90,7 +87,6 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     global sem
     sem = sems.get_req_sem()
     global after
-    job_progress = None
 
     oldmessages = (
         await operations.get_messages_post_info(model_id=model_id, username=username)
@@ -106,7 +102,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     )
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
-    after = get_after(model_id, username, forced_after)
+    after = await get_after(model_id, username, forced_after)
 
     log.debug(f"Messages after = {after}")
 
@@ -114,7 +110,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 
     log.info(
         f"""
-Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM.DD')}
+Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
 
@@ -123,10 +119,10 @@ Setting initial message scan date for {username} to {arrow.get(after).b('YYYY.MM
 
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
-    tasks = get_tasks(
-        splitArrays, filteredArray, oldmessages, model_id, job_progress, c
-    )
     with progress_utils.set_up_api_messages():
+        tasks = get_tasks(
+        splitArrays, filteredArray, oldmessages, model_id, c
+    )
         return await process_tasks(tasks, model_id)
 
 
@@ -343,14 +339,14 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
 def set_check(unduped, model_id, after):
     if not after:
         seen = set()
-        new_posts = [
+        all_posts = [
             post
             for post in cache.get(f"message_check_{model_id}", default=[]) + unduped
             if post["id"] not in seen and not seen.add(post["id"])
         ]
         cache.set(
             f"message_check_{model_id}",
-            list(new_posts),
+            list(all_posts),
             expire=constants.getattr("DAY_SECONDS"),
         )
         cache.close()
@@ -360,7 +356,6 @@ async def scrape_messages(
     c, model_id, job_progress=None, message_id=None, required_ids=None
 ) -> list:
     global sem
-    global tasks
     messages = None
     attempt.set(0)
     ep = (
@@ -369,7 +364,7 @@ async def scrape_messages(
         else constants.getattr("messagesEP")
     )
     url = ep.format(model_id, message_id)
-    log.debug(f"{message_id if message_id else 'init'}{url}")
+    log.debug(f"{message_id if message_id else 'init'} {url}")
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -406,10 +401,10 @@ async def scrape_messages(
                                 f"{log_id} -> number of messages found {len(messages)}"
                             )
                             log.debug(
-                                f"{log_id} -> first date {messages[-1].get('createdAt') or messages[0].get('postedAt')}"
+                                f"{log_id} -> first date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
                             )
                             log.debug(
-                                f"{log_id} -> last date {messages[-1].get('createdAt') or messages[0].get('postedAt')}"
+                                f"{log_id} -> last date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
                             )
                             log.debug(
                                 f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"

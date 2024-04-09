@@ -128,14 +128,14 @@ async def process_tasks(tasks, model_id):
 
 def set_check(unduped, model_id):
     seen = set()
-    new_posts = [
+    all_posts = [
         post
         for post in cache.get(f"purchase_check_{model_id}", default=[]) + unduped
         if post["id"] not in seen and not seen.add(post["id"])
     ]
     cache.set(
         f"purchased_check_{model_id}",
-        new_posts,
+        all_posts,
         expire=constants.getattr("DAY_SECONDS"),
     )
     cache.close()

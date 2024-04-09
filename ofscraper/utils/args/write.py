@@ -3,7 +3,7 @@ import ofscraper.utils.manager as manager
 
 
 def setArgsV(changed):
-    manager.get_manager_dict().update({"args": changed})
+    manager.get_manager_process_dict().update({"args": changed})
     setArgs(changed)
 
 

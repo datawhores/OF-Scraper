@@ -22,6 +22,7 @@ import ofscraper.utils.args.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.helpers as log_helpers
+import ofscraper.utils.dates as dates
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -69,14 +70,14 @@ class Media(base.base):
             return f"{self._media['type']}s".lower()
 
     @property
-    def length(self):
+    def duration(self):
         return self._media.get("duration") or self.media_source.get("duration")
 
     @property
-    def numeric_length(self):
-        if not self.length:
+    def numeric_duration(self):
+        if not self.duration:
             return "N/A"
-        return str((arrow.get(self.length) - arrow.get(0)))
+        return str((arrow.get(self.duration) - arrow.get(0)))
 
     @property
     def url(self):
@@ -414,6 +415,9 @@ class Media(base.base):
     def model_id(self):
         return self._post.model_id
 
+    @property
+    def duration_string(self):
+        return dates.format_seconds(self.duration) if self.duration else None
     def get_text(self):
         if self.responsetype != "Profile":
             text = (
