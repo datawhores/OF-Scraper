@@ -33,6 +33,7 @@ class base:
 
     def file_cleanup(self, text, mediatype=None):
         text = str(text)
+        text = re.sub('<[^>]*>', "", text)
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
@@ -40,7 +41,7 @@ class base:
         return text
 
     def db_cleanup(self, string):
-        text = str(text)
         string = re.sub("<[^>]*>", "", string)
         string = " ".join(string.split())
         string = BeautifulSoup(string, html_parser).get_text()
+        return string

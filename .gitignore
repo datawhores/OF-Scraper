@@ -149,3 +149,6 @@ doc*
 out*
 *.txt
 *.log
+# Idea
+/workspace.xml
+.idea
