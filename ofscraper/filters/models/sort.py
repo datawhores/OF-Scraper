@@ -4,7 +4,8 @@ import arrow
 
 def sort_models_helper(models):
     sort = read_args.retriveArgs().sort
-    reverse = read_args.retriveArgs().desc
+    reverse = read_args.retr
+    iveArgs().desc
     if sort == "name":
         return sorted(models, reverse=reverse, key=lambda x: x.name)
 
@@ -12,7 +13,7 @@ def sort_models_helper(models):
         return sorted(
             models,
             reverse=reverse,
-            key=lambda x: x.final_last_seen,
+            key=lambda x: arrow.get(x.final_last_seen),
         )
     elif sort == "expired":
         return sorted(
@@ -24,7 +25,7 @@ def sort_models_helper(models):
         return sorted(
             models,
             reverse=reverse,
-            key=lambda x: x.final_subscribed,
+            key=lambda x: arrow.get(x.final_subscribed),
         )
     elif sort == "current-price":
         return sorted(
