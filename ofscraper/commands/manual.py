@@ -27,6 +27,7 @@ def manual_download(urls=None):
     log.debug(f"Number of values from media dict  {len(list(media_dict.values()))}")
     usernames=get_manual_usernames(media_dict)
     if len(usernames)==0:
+        log.debug("No usernames with unlocked media")
         return
     set_usernames_manual(usernames)
     for value in filter(lambda x: len(x) > 0, media_dict.values()):

@@ -498,9 +498,9 @@ def get_dynamic(config=None):
         if value
         and value.lower()
         in set(
-            ["deviint", "digitalcriminals", "dv", "dev", "dc", "digital", "digitials"]
+            ["deviint", "digitalcriminals", "dv", "dev", "dc", "digital", "digitials","sneaky"]
         )
-        else "deviint"
+        else "sneaky"
     )
 
 

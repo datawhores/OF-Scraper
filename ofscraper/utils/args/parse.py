@@ -729,7 +729,7 @@ Accepts space or comma seperated list
         help="Dynamic signing",
         default=None,
         required=False,
-        choices=["dc", "deviint"],
+        choices=["dc", "deviint","sneaky"],
         type=str.lower,
     )
     advanced.add_argument(

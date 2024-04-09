@@ -464,7 +464,7 @@ def advanced_config() -> dict:
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules",
                 "default": data.get_dynamic(),
-                "choices": ["deviint", "digitalcriminals"],
+                "choices": ["deviint", "digitalcriminals","sneaky"],
             },
             {
                 "type": "list",
