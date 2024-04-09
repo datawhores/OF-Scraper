@@ -38,11 +38,11 @@ async def get_via_list(count):
         "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://of-scraper.gitbook.io/of-scraper/faq#number-of-users-doesnt-match-account-number[/yellow]"
     )
 
-    other_subscriptions = lists.get_otherlist()
+    other_subscriptions = await lists.get_otherlist()
     out.extend(active_subscriptions)
     out.extend(expired_subscriptions)
     out.extend(other_subscriptions)
-    black_list = lists.get_blacklist()
+    black_list = await lists.get_blacklist()
     out = list(filter(lambda x: x.get("id") not in black_list, out))
     models_objects = list(map(lambda x: models.Model(x), out))
     return models_objects

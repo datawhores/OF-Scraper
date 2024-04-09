@@ -573,7 +573,7 @@ def row_gather(media, downloaded, username):
                 or cache.get(ele.filename) != None,
                 unlocked_helper(ele),
                 times_helper(ele, mediadict, downloaded),
-                ele.numeric_length,
+                ele.numeric_duration,
                 ele.mediatype,
                 datehelper(ele.formatted_postdate),
                 len(ele._post.post_media),

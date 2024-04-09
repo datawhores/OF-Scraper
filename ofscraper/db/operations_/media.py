@@ -43,18 +43,33 @@ CREATE TABLE IF NOT EXISTS medias (
 	downloaded INTEGER, 
 	created_at TIMESTAMP, 
     posted_at TIMESTAMP,
+    duration VARCHAR,
 	hash VARCHAR,
     model_id INTEGER,
 	PRIMARY KEY (id), 
 	UNIQUE (media_id,model_id)
 );"""
-mediaALLTransition = """
+mediaSelectTransition = """
 SELECT  media_id,post_id,link,directory,filename,size,api_type,
-media_type,preview,linked,downloaded,created_at,posted_at,hash,
+media_type,preview,linked,downloaded,created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
        END AS model_id
+      CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
+            THEN posted_at
+            ELSE NULL
+       END AS posted_at
+
+        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
+            THEN hash
+            ELSE NULL
+       END AS hash
+
+        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'duration')
+            THEN duration
+            ELSE NULL
+       END AS duration
 FROM medias;
 """
 mediaDrop = """
@@ -62,7 +77,7 @@ drop table medias;
 """
 mediaUpdateAPI = """Update 'medias'
 SET
-media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?
+media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?
 WHERE media_id=(?) and model_id=(?);"""
 mediaUpdateDownload = """Update 'medias'
 SET
@@ -100,18 +115,18 @@ SELECT filename
 FROM medias
 where hash=(?)
 """
-mediaInsert = """INSERT INTO 'medias'(
+mediaInsertAPI = """INSERT INTO 'medias'(
 media_id,post_id,link,api_type,
 media_type,preview,linked,
-created_at,posted_at,model_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?);"""
+created_at,posted_at,model_id,duration)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?);"""
 
-mediaInsertFull = """INSERT INTO 'medias'(
+mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
 media_type,preview,linked,
-downloaded,created_at,posted_at,hash,model_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+downloaded,created_at,posted_at,hash,model_id,duration)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 mediaDownloadSelect = """
 SELECT  
 directory,filename,size
@@ -219,6 +234,24 @@ def add_column_media_ID(model_id=None, username=None, conn=None):
 
 
 @wrapper.operation_wrapper_async
+def add_column_media_duration(model_id=None, username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            # Check if column exists (separate statement)
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'duration') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE medias ADD COLUMN duration VARCHAR;")
+                # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
+
+@wrapper.operation_wrapper_async
 def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allIDCheck)
@@ -303,11 +336,12 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.date,
                     media.postdate,
                     model_id,
+                    media.duration_string
                 ],
                 medias,
             )
         )
-        curr.executemany(mediaInsert, insertData)
+        curr.executemany(mediaInsertAPI, insertData)
         conn.commit()
 
 
@@ -330,9 +364,10 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
             "posted_at",
             "hash",
             "model_id",
+            "duration"
         ]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
-        curr.executemany(mediaInsertFull, insertData)
+        curr.executemany(mediaInsertTransition, insertData)
         conn.commit()
 
 
@@ -341,11 +376,11 @@ def get_all_medias_transition(
     model_id=None, username=None, conn=None, database_model=None
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(mediaALLTransition)
+        cur.execute(mediaSelectTransition)
         conn.commit()
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(row, model_id=row.get("model_id") or database_model) for row in data
+            dict(row, model_id=row.get("model_id") or database_model,duration=row.get("duration")) for row in data
         ]
 
 
@@ -394,6 +429,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
 def update_media_table_via_api_helper(
     media, model_id=None, conn=None, curr=None, **kwargs
 ) -> list:
+
     insertData = [
         media.id,
         media.postid,
@@ -404,6 +440,7 @@ def update_media_table_via_api_helper(
         media.date,
         media.postdate,
         model_id,
+        media.duration_string,
         media.id,
         model_id,
     ]

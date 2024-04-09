@@ -101,3 +101,28 @@ def resetLogDate():
     global dateDict
     dateDict = None
     setLogDate()
+
+def format_seconds(total_seconds):
+  """
+  Formats a given time in seconds to "dd:hh:mm:ss" format.
+
+  Args:
+      total_seconds: The total number of seconds to be formatted.
+
+  Returns:
+      A string representing the formatted time in "dd:hh:mm:ss" format.
+  """
+  # Calculate days
+  days = total_seconds // 86400
+  # Remaining seconds after days
+  remaining_seconds = total_seconds % 86400
+  # Calculate hours
+  hours = remaining_seconds // 3600
+  # Remaining seconds after hours
+  remaining_seconds = remaining_seconds % 3600
+  # Calculate minutes
+  minutes = remaining_seconds // 60
+  # Remaining seconds
+  seconds = remaining_seconds % 60
+  # Format the output string
+  return f"{days:02d}:{hours:02d}:{minutes:02d}:{seconds:02d}"

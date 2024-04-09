@@ -53,7 +53,7 @@ WHERE post_id = ? and model_id=(?);"""
 allMessagesCheck = """
 SELECT post_id FROM messages
 """
-messagesALLTransition = """
+messagesSelectTransition = """
 SELECT post_id, text, price, paid, archived, created_at, user_id,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('messages') WHERE name = 'model_id')
             THEN model_id
@@ -153,7 +153,7 @@ def get_all_messages_transition(
     model_id=None, username=None, conn=None, database_model=None
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(messagesALLTransition)
+        cur.execute(messagesSelectTransition)
         return [
             dict(row, model_id=row.get("model_id") or database_model)
             for row in cur.fetchall()
