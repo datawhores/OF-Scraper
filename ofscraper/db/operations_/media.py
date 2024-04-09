@@ -55,17 +55,15 @@ media_type,preview,linked,downloaded,created_at,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
-       END AS model_id
+       END AS model_id,
       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
             THEN posted_at
             ELSE NULL
-       END AS posted_at
-
+       END AS posted_at,
         CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
             THEN hash
             ELSE NULL
-       END AS hash
-
+       END AS hash,
         CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'duration')
             THEN duration
             ELSE NULL
@@ -377,7 +375,6 @@ def get_all_medias_transition(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaSelectTransition)
-        conn.commit()
         data = [dict(row) for row in cur.fetchall()]
         return [
             dict(row, model_id=row.get("model_id") or database_model,duration=row.get("duration")) for row in data
