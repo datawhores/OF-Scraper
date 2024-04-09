@@ -91,7 +91,7 @@ class Model:
         if not self.subscribed_data:
             return self.subscribed_expired_date
         else:
-            return self.subscribed_data.get("expiredAt") or self.subscribed_expired_date
+            return self.subscribed_data.get("expiredAt") 
 
     @property
     def final_expired(self):

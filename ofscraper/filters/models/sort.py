@@ -1,4 +1,5 @@
 import ofscraper.utils.args.read as read_args
+import arrow
 
 
 def sort_models_helper(models):
@@ -17,7 +18,7 @@ def sort_models_helper(models):
         return sorted(
             models,
             reverse=reverse,
-            key=lambda x: x.final_expired,
+            key=lambda x: arrow.get(x.final_expired),
         )
     elif sort == "subscribed":
         return sorted(
