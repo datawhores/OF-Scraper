@@ -25,8 +25,10 @@ def manual_download(urls=None):
     allow_manual_dupes()
     media_dict = get_media_from_urls(urls)
     log.debug(f"Number of values from media dict  {len(list(media_dict.values()))}")
-    get_manual_usernames(media_dict)
-    selector.all_subs_helper()
+    usernames=get_manual_usernames(media_dict)
+    if len(usernames)==0:
+        return
+    set_usernames_manual(usernames)
     for value in filter(lambda x: len(x) > 0, media_dict.values()):
         model_id = value[0].post.model_id
         username = value[0].post.username
@@ -48,10 +50,13 @@ def get_manual_usernames(media_dict):
         if len(value) == 0:
             continue
         usernames.append(value[0].post.username)
-    args = read_args.retriveArgs()
-    args.usernames = set(usernames)
-    write_args.setArgs(args)
+    return usernames
 
+def set_usernames_manual(names):
+    args = read_args.retriveArgs()
+    args.usernames = set(names)
+    write_args.setArgs(args)
+    selector.all_subs_helper()
 
 def get_media_from_urls(urls):
     user_name_dict = {}
