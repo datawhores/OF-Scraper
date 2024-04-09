@@ -54,7 +54,7 @@ def get_manual_usernames(media_dict):
 
 def set_usernames_manual(names):
     args = read_args.retriveArgs()
-    args.usernames = set(names)
+    args.username = set(names)
     write_args.setArgs(args)
     selector.all_subs_helper()
 
