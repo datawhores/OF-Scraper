@@ -298,7 +298,7 @@ async def get_all_paid_posts():
         )
         cache.close()
         # filter at user level
-        return output
+        return outdict.values()
 
 
 async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):

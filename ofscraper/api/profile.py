@@ -198,6 +198,10 @@ def get_id(username):
 
 
 def get_id_helper(c, username):
+    if username.isnumeric():
+        return username
+    if username== "modeldeleted":
+        raise Exception("could not get ID")
     attempt.set(0)
     id = cache.get(f"model_id_{username}")
     if id:

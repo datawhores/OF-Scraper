@@ -210,7 +210,7 @@ def post_checker():
 
     ROWS = []
     for user_name in user_dict.keys():
-        downloaded = get_downloaded(user_name, model_id, True)
+        downloaded = get_downloaded(user_name, True,model_id=model_id)
         media = get_all_found_media(user_name, user_dict[user_name])
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
@@ -301,15 +301,31 @@ def purchase_checker():
     user_dict = {}
     auth_requests.make_headers()
     ROWS = []
-    for user_name in read_args.retriveArgs().username:
-        user_name = profile.scrape_profile(user_name)["username"]
-        user_dict[user_name] = user_dict.get(user_name, [])
-        model_id = profile.get_id(user_name)
+    for name in read_args.retriveArgs().username:
+        user_name = profile.scrape_profile(name)["username"]
+        model_id = name if name.isnumeric() else profile.get_id(user_name)
+        user_dict[model_id] = user_dict.get(model_id, [])
+
         oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
         paid = None
-
         if len(oldpaid) > 0 and not read_args.retriveArgs().force:
             paid = oldpaid
+        if user_name=="modeldeleted":
+            all_paid=paid_.get_all_paid_posts()
+            paid_user_dict = {}
+            for ele in all_paid:
+                # Get the user ID from either "fromUser" or "author" key (handle missing keys)
+                user_id = (
+                    ele.get("fromUser", None)
+                    or ele.get("author", None)
+                    or {}
+                ).get("id", None)
+
+                # If user_id is found, update the paid_user_dict
+                if user_id:
+                    paid_user_dict.setdefault(str(user_id), []).append(ele)
+            paid=paid_user_dict.get(str(model_id), [])
+
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
             cache.set(
@@ -318,7 +334,7 @@ def purchase_checker():
                 expire=constants.getattr("DAY_SECONDS"),
             )
         downloaded = get_downloaded(user_name, model_id)
-        media = get_all_found_media(user_name, paid)
+        media = get_all_found_media(user_name, paid,model_id=model_id)
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
     set_count(ROWS)
@@ -361,9 +377,9 @@ def url_helper():
     return map(lambda x: x.strip(), out)
 
 
-def get_all_found_media(user_name, posts):
+def get_all_found_media(user_name,posts,model_id=None):
     temp = []
-    model_id = profile.get_id(user_name)
+    model_id=model_id if model_id else profile.get_id(user_name)
     posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), posts))
     [temp.extend(ele.all_media) for ele in posts_array]
     return temp
@@ -395,7 +411,7 @@ def get_paid_ids(model_id, user_name):
         cache.set(
             f"purchased_check_{model_id}", paid, expire=constants.getattr("DAY_SECONDS")
         )
-    media = get_all_found_media(user_name, paid)
+    media = get_all_found_media(user_name,paid,model_id=model_id)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
 
