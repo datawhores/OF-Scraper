@@ -443,7 +443,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
 
 def get_last_timeline_date(model_id=None, username=None):
     data = get_timeline_postinfo(model_id=model_id, username=username)
-    return sorted(data, key=lambda x: x)[-1]
+    return sorted(data, key=lambda x: x)[-1][0]
 
 
 @operation_wrapper
