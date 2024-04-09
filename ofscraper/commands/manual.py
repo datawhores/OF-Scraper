@@ -49,7 +49,7 @@ def get_manual_usernames(media_dict):
             continue
         usernames.append(value[0].post.username)
     args = read_args.retriveArgs()
-    args.username = set(usernames)
+    args.usernames = set(usernames)
     write_args.setArgs(args)
 
 
