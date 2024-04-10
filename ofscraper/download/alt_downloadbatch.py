@@ -49,6 +49,12 @@ from ofscraper.download.common.common import (
 from ofscraper.utils.context.run_async import run
 
 
+async def alt_download_metadata(c, ele, username, model_id):
+    sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
+    return await metadata(
+            c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
+    )
+
 async def alt_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} Downloading with batch protected media downloader"
@@ -57,10 +63,7 @@ async def alt_download(c, ele, username, model_id):
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
     sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-    if read_args.retriveArgs().metadata != None:
-        return await metadata(
-            c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
-        )
+    
     audio, video = await ele.mpd_dict
     path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
     audio = await alt_download_downloader(audio, c, ele)

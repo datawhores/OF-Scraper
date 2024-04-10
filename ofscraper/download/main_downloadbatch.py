@@ -33,7 +33,6 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
@@ -57,7 +56,13 @@ from ofscraper.download.common.common import (
     size_checker,
 )
 from ofscraper.utils.context.run_async import run
-
+async def main_download_metadata(c, ele, username, model_id):
+    return await metadata(
+        c,
+        ele,
+        username,
+        model_id,
+    )
 
 async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
@@ -66,13 +71,6 @@ async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} download url: {get_url_log(ele)}"
     )
-    if read_args.retriveArgs().metadata != None:
-        return await metadata(
-            c,
-            ele,
-            username,
-            model_id,
-        )
 
     result = list(await main_download_downloader(c, ele))
     if result[0] == 0:

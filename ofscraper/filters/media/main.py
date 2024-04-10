@@ -214,25 +214,6 @@ def filterMedia(media):
         )
     )
 
-    media = helpers.url_filter(media)
-    count += 1
-    log.trace(
-        "\n\n\n".join(
-            list(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  valid url filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            )
-        )
-    )
-    log.debug(f"filter{count}->  all media valid url filter count {len(media)}")
-
     media = helpers.final_post_sort(media)
     count += 1
     log.trace(

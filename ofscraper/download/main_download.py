@@ -57,20 +57,19 @@ from ofscraper.download.common.common import (
     set_time,
     size_checker,
 )
-
-
-async def main_download(c, ele, username, model_id, job_progress):
-    common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
-    common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
-    # total may be none if no .part file
-    if read_args.retriveArgs().metadata != None:
-        return await metadata(
+async def main_download_metadata(c, ele, username, model_id):
+     return await metadata(
             c,
             ele,
             username,
             model_id,
         )
-    result = await main_download_downloader(
+
+async def main_download(c, ele, username, model_id, job_progress):
+    common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
+    common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
+    # total may be none if no .part file
+    await main_download_downloader(
         c,
         ele,
         job_progress,

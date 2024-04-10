@@ -57,9 +57,12 @@ from ofscraper.download.common.common import (
     set_time,
     size_checker,
     temp_file_logger,
-    update_total,
 )
-
+async def alt_download_metadata(c, ele, username, model_id):
+    sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
+    return await metadata(
+        c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
+    )
 
 async def alt_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(

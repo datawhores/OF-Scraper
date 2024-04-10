@@ -30,16 +30,18 @@ import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
-from ofscraper.download.alt_download import alt_download
+from ofscraper.download.alt_download import alt_download,alt_download_metadata
 from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
     log_download_progress,
     setDirectoriesDate,
 )
-from ofscraper.download.main_download import main_download
+from ofscraper.download.main_download import main_download,main_download_metadata
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
+import ofscraper.utils.args.read as read_args
+
 
 
 @run
@@ -177,23 +179,42 @@ async def process_dicts(username, model_id, medialist):
 
 async def download(c, ele, model_id, username, job_progress):
     async with common_globals.maxfile_sem:
+        metadata=read_args.retriveArgs().metadata
         try:
-            if ele.url:
-                return await main_download(
-                    c,
-                    ele,
-                    username,
-                    model_id,
-                    job_progress,
-                )
-            elif ele.mpd:
-                return await alt_download(
-                    c,
-                    ele,
-                    username,
-                    model_id,
-                    job_progress,
-                )
+            if not metadata:
+                if ele.url:
+                        return await main_download(
+                            c,
+                            ele,
+                            username,
+                            model_id,
+                            job_progress,
+                        )
+                elif ele.mpd:
+                    return await alt_download(
+                        c,
+                        ele,
+                        username,
+                        model_id,
+                        job_progress,
+                    )
+            else:
+                if ele.url:
+                        return await main_download_metadata(
+                            c,
+                            ele,
+                            username,
+                            model_id,
+                            job_progress,
+                        )
+                elif ele.mpd:
+                    return await alt_download_metadata(
+                        c,
+                        ele,
+                        username,
+                        model_id,
+                    )
+                       
         except Exception as E:
             common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
             common_globals.log.debug(
