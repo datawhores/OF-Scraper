@@ -76,7 +76,7 @@ def get_request_auth():
 
 def get_request_auth_deviint():
     with sessionbuilder.sessionBuilder(
-        backend="httpx", set_header=False, set_cookies=False, set_sign=False
+        backend="httpx"
     ) as c:
         for _ in Retrying(
             retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -84,7 +84,7 @@ def get_request_auth_deviint():
             wait=wait_fixed(8),
         ):
             with _:
-                with c.requests(constants.getattr("DEVIINT"))() as r:
+                with c.requests(constants.getattr("DEVIINT"), headers=False, cookies=False, sign=False)() as r:
                     if r.ok:
                         content = r.json_()
                         static_param = content["static_param"]
@@ -118,7 +118,7 @@ def get_request_auth_sneaky():
                         r.raise_for_status()
 def get_request_auth_digitalcriminals():
     with sessionbuilder.sessionBuilder(
-        backend="httpx", set_header=False, set_cookies=False, set_sign=False
+        backend="httpx"
     ) as c:
         for _ in Retrying(
             retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -126,7 +126,7 @@ def get_request_auth_digitalcriminals():
             wait=wait_fixed(8),
         ):
             with _:
-                with c.requests(constants.getattr("DIGITALCRIMINALS"))() as r:
+                with c.requests(constants.getattr("DIGITALCRIMINALS"), headers=False, cookies=False, sign=False)() as r:
                     if r.ok:
                         content = r.json_()
                         static_param = content["static_param"]

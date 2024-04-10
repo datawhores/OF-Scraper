@@ -21,9 +21,6 @@ class sessionBuilder:
     def __init__(
         self,
         backend=None,
-        set_header=True,
-        set_sign=True,
-        set_cookies=True,
         connect_timeout=None,
         total_timeout=None,
         read_timeout=None,
@@ -44,9 +41,6 @@ class sessionBuilder:
         proxy = proxy or constants.getattr("PROXY")
         proxy_auth = proxy_auth or constants.getattr("PROXY_AUTH")
         self._backend = backend or data.get_backend()
-        self._set_cookies = set_cookies
-        self._set_header = set_header
-        self._set_sign = set_sign
         self._connect_timeout = connect_timeout
         self._total_timeout = total_timeout
         self._read_timeout = read_timeout
