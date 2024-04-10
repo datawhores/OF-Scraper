@@ -120,9 +120,6 @@ class DiscordHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.sess = sessionbuilder.sessionBuilder(
             backend="httpx",
-            set_header=False,
-            set_cookies=False,
-            set_sign=False,
             total_timeout=10,
         )
 
@@ -138,6 +135,8 @@ class DiscordHandler(logging.Handler):
                         with sess.requests(
                             url,
                             "post",
+                            cookies=False, 
+                            sign=False,
                             headers={"Content-type": "application/json"},
                             json={"content": log_entry},
                         )() as r:
