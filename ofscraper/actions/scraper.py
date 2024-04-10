@@ -386,6 +386,7 @@ async def process_all_paid():
     with stdout.lowstdout():
         paid_content = await paid.get_all_paid_posts()
         user_dict = {}
+        
         for ele in paid_content:
             user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get(
                 "id"

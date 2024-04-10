@@ -156,8 +156,8 @@ def checker():
 
 
 def post_checker():
-    ROWS = post_check_helper()
-    start_helper(ROWS)
+    ROWS ,media= post_check_helper()
+    start_helper(ROWS,media)
 
 
 @run
@@ -260,7 +260,6 @@ async def post_check_helper():
         )
         media = await process_post_media(user_name, model_id,posts)
         ROWS.extend(row_gather(media, downloaded, user_name))
-    return ROWS
 
 
 def reset_url():
@@ -380,7 +379,7 @@ async def purchase_checker_helper():
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                 paid = oldpaid
             if user_name=="modeldeleted":
-                all_paid=paid_.get_all_paid_posts()
+                all_paid=await paid_.get_all_paid_posts()
                 paid_user_dict = {}
                 for ele in all_paid:
                     # Get the user ID from either "fromUser" or "author" key (handle missing keys)
@@ -408,12 +407,12 @@ async def purchase_checker_helper():
             downloaded = await get_downloaded(user_name, model_id)
             media = await process_post_media(user_name, model_id,posts_array)
             ROWS.extend(row_gather(media, downloaded, user_name))
-    return ROWS
+    return ROWS,media
 
 
 def stories_checker():
-    ROWS = stories_checker_helper()
-    start_helper(ROWS)
+    ROWS,media = stories_checker_helper()
+    start_helper(ROWS,media)
 
 
 @run

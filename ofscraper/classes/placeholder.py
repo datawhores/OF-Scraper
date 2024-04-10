@@ -341,7 +341,9 @@ class Placeholders(basePlaceholder):
         return out
 
     def _addcount(self, ele, out):
-        if not ele.needs_count:
+        if not constants.getattr("FILE_COUNT_PLACEHOLDER"):
+            return
+        elif not ele.needs_count:
             return out
         out = re.sub(" $", "", out)
         # insert count
