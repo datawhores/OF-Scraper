@@ -329,7 +329,7 @@ def purchase_checker():
             paid = [
                 post
                 for post in paid_user_dict.get(str(model_id), [])
-                if post["od"] not in seen and not seen.add(post["id"])
+                if post["id"] not in seen and not seen.add(post["id"])
             ]
 
         else:
