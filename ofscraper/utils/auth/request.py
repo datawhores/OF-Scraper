@@ -64,10 +64,15 @@ def get_request_auth():
         "dv",
         "dev",
     }:
+        
         return get_request_auth_deviint()
+    elif (settings.get_dynamic_rules()) in {
+        "sneaky",
+    }:
+        
+        return get_request_auth_sneaky()    
     else:
-        return get_request_digitalcriminals()
-
+        return get_request_auth_digitalcriminals()
 
 def get_request_auth_deviint():
     with sessionbuilder.sessionBuilder(
@@ -91,7 +96,27 @@ def get_request_auth_deviint():
                         r.raise_for_status()
 
 
-def get_request_digitalcriminals():
+def get_request_auth_sneaky():
+    with sessionbuilder.sessionBuilder(
+        backend="httpx"
+    ) as c:
+        for _ in Retrying(
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
+            wait=wait_fixed(8),
+        ):
+            with _:
+                with c.requests(constants.getattr("SNEAKY"),headers=False, cookies=False, sign=False)() as r:
+                    if r.ok:
+                        content = r.json_()
+                        static_param = content["static_param"]
+                        fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+                        checksum_indexes = content["checksum_indexes"]
+                        checksum_constant = content["checksum_constant"]
+                        return (static_param, fmt, checksum_indexes, checksum_constant)
+                    else:
+                        r.raise_for_status()
+def get_request_auth_digitalcriminals():
     with sessionbuilder.sessionBuilder(
         backend="httpx", set_header=False, set_cookies=False, set_sign=False
     ) as c:
