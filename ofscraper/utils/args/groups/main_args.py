@@ -123,6 +123,9 @@ import ofscraper.utils.args.helpers as helpers
         click.option(
             "-e",
             "--force-all",
+            "--dupe",
+            "--dupe-all",
+            "force_all",
             help="Download all files regardless of database presence",
             default=False,
             is_flag=True,
@@ -130,6 +133,9 @@ import ofscraper.utils.args.helpers as helpers
         click.option(
             "-eq",
             "--force-model-unique",
+            "--dupe-model-unique",
+            "--dupe-model",
+            "--force_model_unique",
             help="Only download files not present for the current model in the database",
             default=False,
             is_flag=True,
