@@ -210,7 +210,7 @@ def post_checker():
 
     ROWS = []
     for user_name in user_dict.keys():
-        downloaded = get_downloaded(user_name, True,model_id=model_id)
+        downloaded = get_downloaded(user_name,model_id,True)
         media = get_all_found_media(user_name, user_dict[user_name])
         ROWS.extend(row_gather(media, downloaded, user_name))
     reset_url()
