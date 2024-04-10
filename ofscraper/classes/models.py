@@ -178,10 +178,10 @@ class Model:
 
     @property
     def final_regular_price(self):
-        if self.regular_price is not None:
-            return self.regular_price
-        else:
-            return 0
+        if self.subscribed_data:
+            return self.subscribed_data.get("regularPrice")
+        elif self.model:
+            return self.model.get("subscribePrice")
 
     @property
     def final_promo_price(self):
