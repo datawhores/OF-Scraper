@@ -50,7 +50,6 @@ from ofscraper.download.common.common import (
     get_medialog,
     get_resume_size,
     get_url_log,
-    metadata,
     moveHelper,
     path_to_file_logger,
     sem_wrapper,
@@ -58,11 +57,7 @@ from ofscraper.download.common.common import (
     size_checker,
     temp_file_logger,
 )
-async def alt_download_metadata(c, ele, username, model_id):
-    sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-    return await metadata(
-        c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
-    )
+
 
 async def alt_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(
@@ -70,10 +65,6 @@ async def alt_download(c, ele, username, model_id, job_progress):
     )
     sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
-    if read_args.retriveArgs().metadata != None:
-        return await metadata(
-            c, ele, username, model_id, placeholderObj=sharedPlaceholderObj
-        )
 
     audio, video = await ele.mpd_dict
     path_to_file_logger(sharedPlaceholderObj, ele)

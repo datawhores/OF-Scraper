@@ -301,6 +301,7 @@ def download_media_update(
     filename=None,
     downloaded=None,
     hashdata=None,
+    changed=False,
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
@@ -316,6 +317,8 @@ def download_media_update(
             curr=curr,
             downloaded=downloaded,
         )
+        return curr.rowcount if changed else None
+
 
 
 @wrapper.operation_wrapper_async

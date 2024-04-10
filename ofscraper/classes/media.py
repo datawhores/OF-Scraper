@@ -271,7 +271,7 @@ class Media(base.base):
 
     @property
     async def final_filename(self):
-        filename = self.filename or self.id
+        filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z0-9]+$", f"", filename)
             filename = f"{filename}_{await self.selected_quality}"
@@ -288,7 +288,7 @@ class Media(base.base):
 
     @property
     def no_quality_final_filename(self):
-        filename = self.filename or self.id
+        filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z]+", f"", filename)
         # cleanup

@@ -31,16 +31,17 @@ import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.download.alt_downloadbatch import alt_download,alt_download_metadata
+from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.common.common import (
     addGlobalDir,
     convert_num_bytes,
     get_medialog,
+    metadata,
     log_download_progress,
     setDirectoriesDate,
     subProcessVariableInit,
 )
-from ofscraper.download.main_downloadbatch import main_download,main_download_metadata
+from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
 
@@ -423,18 +424,13 @@ async def download(c, ele, model_id, username):
             name=str(ele.id), main_=aioprocessing.Queue(), other_=aioprocessing.Queue()
         )
         common_globals.innerlog.set(templog_)
-        metadata=read_args.retriveArgs().metadata
         try:
-            if not metadata:
-                if ele.url:
+            if read_args.retriveArgs().metadata:
+                  return await metadata(c, ele, username, model_id)
+            elif ele.url:
                     return await main_download(c, ele, username, model_id)
-                if ele.mpd:
+            elif ele.mpd:
                     return await alt_download(c, ele, username, model_id)
-            else:
-                if ele.url:
-                    return await main_download_metadata(c, ele, username, model_id)
-                if ele.mpd:
-                    return await alt_download_metadata(c, ele, username, model_id)
         except Exception as e:
             common_globals.innerlog.get().traceback_(
                 f"{get_medialog(ele)} Download Failed\n{e}"

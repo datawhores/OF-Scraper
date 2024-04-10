@@ -57,12 +57,7 @@ downloads total [{common_globals.video_count} videos, {common_globals.audio_coun
 
 
 def final_log(username, log=None):
-    skipped_word = "skipped"
-    (log or common_globals.log).warning(
-        f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
-        f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
-        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
-    )
+
     if read_args.retriveArgs().metadata:
         skipped_word = "media metadata unchanged"
         (log or common_globals.log).warning(
@@ -71,6 +66,13 @@ def final_log(username, log=None):
             f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
         )
         log.info("This only includes updates for the media table")
+    else:
+        skipped_word = "skipped"
+        (log or common_globals.log).warning(
+            f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
+            f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
+            f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
+        )
 
 
 def text_log(username, value=0, fails=0, exists=0, log=None):

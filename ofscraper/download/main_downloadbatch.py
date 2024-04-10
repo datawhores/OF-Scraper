@@ -47,7 +47,6 @@ from ofscraper.download.common.common import (
     get_resume_size,
     get_unknown_content_type,
     get_url_log,
-    metadata,
     moveHelper,
     path_to_file_logger,
     sem_wrapper,
@@ -56,13 +55,6 @@ from ofscraper.download.common.common import (
     size_checker,
 )
 from ofscraper.utils.context.run_async import run
-async def main_download_metadata(c, ele, username, model_id):
-    return await metadata(
-        c,
-        ele,
-        username,
-        model_id,
-    )
 
 async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(

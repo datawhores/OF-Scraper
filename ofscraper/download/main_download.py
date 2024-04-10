@@ -49,7 +49,6 @@ from ofscraper.download.common.common import (
     get_resume_size,
     get_unknown_content_type,
     get_url_log,
-    metadata,
     moveHelper,
     path_to_file_logger,
     sem_wrapper,
@@ -57,23 +56,17 @@ from ofscraper.download.common.common import (
     set_time,
     size_checker,
 )
-async def main_download_metadata(c, ele, username, model_id):
-     return await metadata(
-            c,
-            ele,
-            username,
-            model_id,
-        )
 
 async def main_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     # total may be none if no .part file
-    await main_download_downloader(
+    result= await main_download_downloader(
         c,
         ele,
         job_progress,
     )
+    
     # special case for zero byte files
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":

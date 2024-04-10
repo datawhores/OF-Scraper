@@ -19,79 +19,32 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common_globals.log.info(
         f"{get_medialog(ele)} skipping adding download to disk because metadata is on"
     )
-    download_data = await asyncio.get_event_loop().run_in_executor(
-        common_globals.cache_thread, partial(cache.get, f"{ele.id}_headers")
+    placeholderObj=placeholderObj or await placeholderObjHelper(c,ele)
+    await placeholderObj.init()
+    effected=None
+    if ele.id:
+        effected=await operations.download_media_update(
+            ele,
+            filename=placeholderObj.trunicated_filepath,
+            model_id=model_id,
+            username=username,
+            downloaded=await metadata_downloaded_helper(placeholderObj),
+            changed=True
+        )
+
+    return (
+        (
+            ele.mediatype
+            if effected
+            else "forced_skipped"
+        ),
+        0,
     )
-    for _ in range(2):
-        if placeholderObj:
-            if ele.id:
-                await operations.download_media_update(
-                    ele,
-                    filename=placeholderObj.trunicated_filepath,
-                    model_id=model_id,
-                    username=username,
-                    downloaded=await metadata_downloaded_helper(placeholderObj),
-                )
-            return (
-                (
-                    ele.mediatype
-                    if await metadata_downloaded_helper(placeholderObj)
-                    else "forced_skipped"
-                ),
-                0,
-            )
-        elif download_data and download_data.get("content-type"):
-            content_type = download_data.get("content-type").split("/")[-1]
-            placeholderObj = await placeholder.Placeholders(ele, content_type).init()
-            if ele.id:
-                await operations.download_media_update(
-                    ele,
-                    filename=placeholderObj.trunicated_filepath,
-                    model_id=model_id,
-                    username=username,
-                    downloaded=await metadata_downloaded_helper(placeholderObj),
-                )
-            return (
-                (
-                    ele.mediatype
-                    if await metadata_downloaded_helper(placeholderObj)
-                    else "forced_skipped"
-                ),
-                0,
-            )
-        elif _ == 1:
-            break
-        else:
-            try:
-                async for _ in AsyncRetrying(
-                    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-                    wait=wait_random(
-                        min=constants.getattr("OF_MIN"), max=constants.getattr("OF_MAX")
-                    ),
-                    reraise=True,
-                ):
-                    with _:
-                        try:
-                            placeholderObj = await metadata_helper(
-                                c, ele, placeholderObj
-                            )
-                        except Exception as E:
-                            raise E
-            except Exception as E:
-                common_globals.log.traceback_(
-                    f"{get_medialog(ele)} Could not get placeholderObj {E}"
-                )
-                common_globals.log.traceback_(
-                    f"{get_medialog(ele)} Could not get placeholderObj {traceback.format_exc()}"
-                )
-                common_globals.log.debug(
-                    f"{get_medialog(ele)} using a generic placeholderObj"
-                )
-                placeholderObj = await meta_data_placeholder(ele)
+
+
 
 
 async def metadata_downloaded_helper(placeholderObj):
-    placeholderObj = await placeholderObj.init()
     if read_args.retriveArgs().metadata == "none":
         return None
 
@@ -103,56 +56,61 @@ async def metadata_downloaded_helper(placeholderObj):
 
 
 @sem_wrapper
-async def metadata_helper(c, ele, placeholderObj=None):
-    url = ele.url or ele.mpd
+async def metadata_helper(c, ele):
+    if not ele.url and  not ele.mpd:
+        placeholderObj = placeholder.Placeholders(ele, ext=content_type_missing(ele))
+        return placeholderObj
+    else:
+        url= ele.url or ele.mpd
+        params = (
+            {
+                "Policy": ele.policy,
+                "Key-Pair-Id": ele.keypair,
+                "Signature": ele.signature,
+            }
+            if ele.mpd
+            else None
+        )
+        common_globals.attempt.set(common_globals.attempt.get() + 1)
+        common_globals.log.debug(
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}]  Getting data for metadata insert"
+        )
+        async with c.requests(url=url, headers=None, params=params)() as r:
+            if r.ok:
+                headers = r.headers
+                await asyncio.get_event_loop().run_in_executor(
+                        common_globals.cache_thread,
+                        partial(
+                            cache.set,
+                            f"{ele.id}_headers",
+                            {
+                                "content-length": headers.get("content-length"),
+                                "content-type": headers.get("content-type"),
+                            },
+                        ),
+                    )
+                content_type = headers.get("content-type").split("/")[-1] or content_type_missing(ele)
+                placeholderObj = await (
+                placeholderObj or placeholder.Placeholders(ele, ext=content_type)).init()
+                return placeholderObj
 
-    params = (
-        {
-            "Policy": ele.policy,
-            "Key-Pair-Id": ele.keypair,
-            "Signature": ele.signature,
-        }
-        if ele.mpd
-        else None
+
+            else:
+                r.raise_for_status()
+async def placeholderObjHelper(c,ele):
+    download_data=await asyncio.get_event_loop().run_in_executor(
+        common_globals.cache_thread, partial(cache.get, f"{ele.id}_headers")
     )
-    common_globals.attempt.set(common_globals.attempt.get() + 1)
-    common_globals.log.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}]  Getting data for metadata insert"
-    )
-    async with c.requests(url=url, headers=None, params=params)() as r:
-        if r.ok:
-            headers = r.headers
-            await asyncio.get_event_loop().run_in_executor(
-                common_globals.cache_thread,
-                partial(
-                    cache.set,
-                    f"{ele.id}_headers",
-                    {
-                        "content-length": headers.get("content-length"),
-                        "content-type": headers.get("content-type"),
-                    },
-                ),
-            )
-            content_type = headers.get("content-type").split("/")[-1]
-            if not content_type and ele.mediatype.lower() == "videos":
-                content_type = "mp4"
-            elif not content_type and ele.mediatype.lower() == "images":
-                content_type = "jpg"
-            placeholderObj = await (
-                placeholderObj or placeholder.Placeholders(ele, ext=content_type)
-            ).init()
-            return placeholderObj
+    if download_data:
+        content_type = download_data.get("content-type").split("/")[-1] or content_type_missing(ele)
+        return placeholder.Placeholders(ele, content_type)
+    #final fallback
+    return await metadata_helper(c,ele)
 
-        else:
-            r.raise_for_status()
-
-
-async def meta_data_placeholder(ele):
+def content_type_missing(ele):
     if ele.mediatype.lower() == "videos":
-        content_type = "mp4"
-    elif ele.mediatype.lower() == "images":
-        content_type = "jpg"
+        return "mp4"
+    elif  ele.mediatype.lower() == "images":
+         return "jpg"
     elif ele.mediatype.lower() == "audios":
-        content_type = "mp3"
-    placeholderObj = await placeholder.Placeholders(ele, ext=content_type).init()
-    return placeholderObj
+        return "mp3"
