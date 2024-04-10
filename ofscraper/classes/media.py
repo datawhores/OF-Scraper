@@ -274,7 +274,7 @@ class Media(base.base):
         filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z0-9]+$", f"", filename)
-            filename = f"{filename}_{await self.selected_quality}"
+            filename = f"{filename}_{await self.selected_quality or constants.getattr("QUALITY_UNKNOWN_DEFAULT")}"
         # cleanup
         try:
             filename = self.file_cleanup(filename)
@@ -378,6 +378,9 @@ class Media(base.base):
             return self.normal_quality_helper()
         return await self.alt_quality_helper()
 
+    @property
+    async def selected_quality_placeholder(self):
+        return await self.selected_quality or constants.getattr("QUALITY_UNKNOWN_DEFAULT")
     @property
     def protected(self):
         if self.mediatype not in {"videos", "texts"}:

@@ -256,7 +256,7 @@ class Placeholders(basePlaceholder):
         self._variables.update({"label": ele.label_string})
         self._variables.update({"download_type": ele.downloadtype})
         self._variables.update({"modelObj": selector.get_model_fromParsed(username)})
-        self._variables.update({"quality": await ele.selected_quality})
+        self._variables.update({"quality": await ele.selected_quality_placeholder})
         self._variables.update({"file_name": await ele.final_filename})
         self._variables.update({"original_filename": ele.filename})
         self._variables.update({"only_file_name": ele.no_quality_final_filename})

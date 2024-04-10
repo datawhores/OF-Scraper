@@ -4,4 +4,3 @@ TABLE_STR_MAX = 100
 SPACE_DOWNLOAD_MESSAGE = "Skipping download because space min has been reached"
 DOWNLOAD_THREAD_MIN = 5
 DOWNLOAD_SLEEP = 0
-REMOVE_UNVIEWABLE_METADATA=True
