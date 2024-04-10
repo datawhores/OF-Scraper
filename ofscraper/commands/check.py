@@ -324,7 +324,13 @@ def purchase_checker():
                 # If user_id is found, update the paid_user_dict
                 if user_id:
                     paid_user_dict.setdefault(str(user_id), []).append(ele)
-            paid=paid_user_dict.get(str(model_id), [])
+            # dedupe paid
+            seen = set()
+            paid = [
+                post
+                for post in paid_user_dict.get(str(model_id), [])
+                if post.id not in seen and not seen.add(post.id)
+            ]
 
         else:
             paid = paid_.get_paid_posts(user_name, model_id)
