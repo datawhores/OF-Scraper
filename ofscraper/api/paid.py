@@ -285,20 +285,15 @@ async def get_all_paid_posts():
                     tasks.extend(new_tasks)
                     new_tasks = []
                 overall_progress.remove_task(page_task)
-        outdict = {}
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
-        for post in output:
-            outdict[post["id"]] = post
-
-        log.debug(f"[bold]Paid Post count[/bold] {len(outdict.values())} found")
         cache.set(
             f"purchased_all",
-            list(map(lambda x: x.get("id"), list(outdict.values()))),
+            list(map(lambda x: x.get("id"), list(output))),
             expire=constants.getattr("RESPONSE_EXPIRY"),
         )
         cache.close()
         # filter at user level
-        return outdict.values()
+        return output
 
 
 async def scrape_all_paid(c, job_progress, offset=0, count=0, required=0):
