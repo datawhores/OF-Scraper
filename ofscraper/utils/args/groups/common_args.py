@@ -139,7 +139,7 @@ def common_params(func):
             \b
             Skip media downloads and gather metadata only 
             [no change to download status] 
-            [select onw one --metadata or --metadata-update or --metadata-complete]""",
+            [select one one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="none",  # Enforce "none" as the only valid value
         ),
         click.option(
