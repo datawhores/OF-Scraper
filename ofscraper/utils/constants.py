@@ -14,5 +14,5 @@ def getattr(val):
         except Exception as E:
             print(E)
             raise E
-    return (custom or {}).get(val) or globals()[val]
+    return (custom or {}).get(val) if (custom or {}).get(val) is not None else globals()[val]
 

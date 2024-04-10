@@ -274,7 +274,7 @@ class Media(base.base):
         filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z0-9]+$", f"", filename)
-            filename = f"{filename}_{await self.selected_quality or constants.getattr("QUALITY_UNKNOWN_DEFAULT")}"
+            filename = f"{filename}_{await self.selected_quality_placeholder}"
         # cleanup
         try:
             filename = self.file_cleanup(filename)

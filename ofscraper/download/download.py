@@ -50,7 +50,8 @@ def medialist_filter(medialist, model_id, username):
 
 def download_process(username, model_id, medialist, posts=None):
     if read_args.retriveArgs().metadata:
-        medialist=list(filter(lambda x: x.canview, medialist)) if constants.getattr("REMOVE_UNVIEWABLE_METADATA")
+        medialist=list(filter(lambda x: x.canview, medialist)) if constants.getattr("REMOVE_UNVIEWABLE_METADATA") else medialist
+        logging.getLogger().info(f"Final media count for metadata {len(medialist)}")
         medialist = medialist_filter(medialist, model_id, username)
         medialist = helpers.ele_count_filter(medialist)
         download_picker(username, model_id, medialist)
