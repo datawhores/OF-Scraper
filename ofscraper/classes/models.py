@@ -51,9 +51,11 @@ class Model:
 
     @property
     def regular_price(self):
-        if not self.subscribed_data:
+        if self.subscribed_data:
+            return self.subscribed_data.get("regularPrice")
+        elif self.model:
             return self.model.get("subscribePrice")
-        return self.subscribed_data.get("regularPrice")
+
 
     @property
     def all_claimable_promo(self):
