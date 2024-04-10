@@ -246,8 +246,6 @@ async def post_check_helper():
 
                 post_id = num_match.group(1)   
                 log.info(f"Getting individual link for {user_name}")
-                if not user_dict.get(user_name):
-                    user_dict[name_match.group(1)] = {}
                 data = timeline.get_individual_post(post_id)
                 user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
     ROWS = []
@@ -367,10 +365,11 @@ async def purchase_checker_helper():
     auth_requests.make_headers()
     ROWS = []
     async with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        for user_name in read_args.retriveArgs().usernames:
-            user_name = profile.scrape_profile(user_name)["username"]
-            user_dict[user_name] = user_dict.get(user_name, [])
-            model_id = profile.get_id(user_name)
+        for name in read_args.retriveArgs().usernames:
+            user_name = profile.scrape_profile(name)["username"]
+            model_id = name if name.isnumeric() else profile.get_id(user_name)
+            user_dict[model_id] = user_dict.get(model_id, [])
+
 
             await operations.table_init_create(model_id=model_id, username=user_name)
 
@@ -380,6 +379,26 @@ async def purchase_checker_helper():
 
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                 paid = oldpaid
+            if user_name=="modeldeleted":
+                all_paid=paid_.get_all_paid_posts()
+                paid_user_dict = {}
+                for ele in all_paid:
+                    # Get the user ID from either "fromUser" or "author" key (handle missing keys)
+                    user_id = (
+                        ele.get("fromUser", None)
+                        or ele.get("author", None)
+                        or {}
+                    ).get("id", None)
+
+                    # If user_id is found, update the paid_user_dict
+                    if user_id:
+                        paid_user_dict.setdefault(str(user_id), []).append(ele)
+                seen=set()
+                paid=[
+                post
+                for post in paid_user_dict.get(str(model_id), [])
+                if post["id"] not in seen and not seen.add(post["id"])
+                ]
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
@@ -404,8 +423,8 @@ async def stories_checker_helper():
     async with sessionbuilder.sessionBuilder(backend="httpx") as c:
         for user_name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(user_name)["username"]
-            user_dict[user_name] = user_dict.get(user_name, [])
             model_id = profile.get_id(user_name)
+            user_dict[model_id] = user_dict.get(user_name, [])
             await operations.table_init_create(model_id=model_id, username=user_name)
             stories = await highlights.get_stories_post(model_id, c=c)
             highlights_ = await highlights.get_highlight_post(model_id, c=c)
