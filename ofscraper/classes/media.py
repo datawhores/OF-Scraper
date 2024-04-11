@@ -21,8 +21,8 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.dates as dates
+import ofscraper.utils.logs.helpers as log_helpers
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -327,22 +327,16 @@ class Media(base.base):
             "Key-Pair-Id": self.keypair,
             "Signature": self.signature,
         }
-        async with sessionbuilder.sessionBuilder() as c:
-            async for _ in AsyncRetrying(
-                retry=retry_if_not_exception_type(KeyboardInterrupt),
-                stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-                wait=wait_random(
-                    min=constants.getattr("OF_MIN_WAIT"),
-                    max=constants.getattr("OF_MAX_WAIT"),
-                ),
-                reraise=True,
-            ):
-                with _:
-                    async with c.requests_async(url=self.mpd, params=params) as r:
-                        if not r.ok:
-                            r.raise_for_status()
-                        self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
-                        return self._cached_parse_mpd
+        async with sessionbuilder.sessionBuilder(
+            retries=constants.getattr("MPD_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT"),
+            wait_max=constants.getattr("OF_MAX_WAIT"),
+        ) as c:
+            async with c.requests_async(url=self.mpd, params=params) as r:
+                if not r.ok:
+                    r.raise_for_status()
+                self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
+                return self._cached_parse_mpd
 
     @property
     async def mpd_dict(self):
@@ -380,7 +374,10 @@ class Media(base.base):
 
     @property
     async def selected_quality_placeholder(self):
-        return await self.selected_quality or constants.getattr("QUALITY_UNKNOWN_DEFAULT")
+        return await self.selected_quality or constants.getattr(
+            "QUALITY_UNKNOWN_DEFAULT"
+        )
+
     @property
     def protected(self):
         if self.mediatype not in {"videos", "texts"}:
@@ -421,6 +418,7 @@ class Media(base.base):
     @property
     def duration_string(self):
         return dates.format_seconds(self.duration) if self.duration else None
+
     def get_text(self):
         if self.responsetype != "Profile":
             text = (

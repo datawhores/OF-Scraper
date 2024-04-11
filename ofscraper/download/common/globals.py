@@ -18,6 +18,7 @@ innerlog = None
 localDirSet = None
 desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
 
+
 def reset_globals():
     # reset globals_z
     main_globals()
@@ -65,7 +66,6 @@ def main_globals():
     localDirSet = set()
     global fileHashes
     fileHashes = {}
-
 
 
 def set_up_contexvars():

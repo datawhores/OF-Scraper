@@ -395,11 +395,10 @@ async def process_all_paid():
         output = {}
         for model_id, value in user_dict.items():
             username = profile.scrape_profile(model_id).get("username")
-            if (
-                username == constants.getattr("DELETED_MODEL_PLACEHOLDER")
-                and await operations.check_profile_table_exists(
-                    model_id=model_id, username=username
-                )
+            if username == constants.getattr(
+                "DELETED_MODEL_PLACEHOLDER"
+            ) and await operations.check_profile_table_exists(
+                model_id=model_id, username=username
             ):
                 username = (
                     await operations.get_profile_info(
@@ -460,9 +459,9 @@ async def process_labels(model_id, username, c):
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
             await operations.make_label_table_changes(
-                    labelled_posts_,
-                    model_id=model_id,
-                    username=username,
+                labelled_posts_,
+                model_id=model_id,
+                username=username,
             )
 
             log.debug(
@@ -514,7 +513,12 @@ async def process_task(model_id, username, ele):
     postObjs = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
-    async with sessionbuilder.sessionBuilder(sems=constants.getattr("API_REQ_SEM_MAX")) as c:
+    async with sessionbuilder.sessionBuilder(
+        sems=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
+    ) as c:
         while True:
             max_count = min(
                 constants.getattr("API_MAX_AREAS"),

@@ -2,7 +2,6 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 
 
-
 def resetUserFilters():
     args = read_args.retriveArgs()
     args.user_list = []
@@ -23,7 +22,8 @@ def resetUserFilters():
     args.desc = False
     return args
 
+
 def set_users_arg(input_):
     args = read_args.retriveArgs()
-    args.usernames=input_
+    args.usernames = input_
     write_args.setArgs(args)

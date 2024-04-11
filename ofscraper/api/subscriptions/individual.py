@@ -44,11 +44,19 @@ async def get_subscription(accounts=None):
             task1 = job_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
+            async with sessionbuilder.sessionBuilder(
+                sems=constants.getattr("SUBSCRIPTION_SEMS"),
+                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT"),
+                wait_max=constants.getattr("OF_MAX_WAIT"),
+            ) as c:
                 out = await get_subscription_helper(c, accounts)
                 job_progress.remove_task(task1)
         outdict = {}
-        for ele in filter(lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"), out):
+        for ele in filter(
+            lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),
+            out,
+        ):
             outdict[ele["id"]] = ele
         log.debug(f"Total subscriptions found {len(outdict.values())}")
         return list(outdict.values())

@@ -93,7 +93,7 @@ def common_params(func):
             "--dynamic-rules",
             help="Dynamic signing",
             default=None,
-            type=click.Choice(["dc", "deviint","sneaky"], case_sensitive=False),
+            type=click.Choice(["dc", "deviint", "sneaky"], case_sensitive=False),
             callback=lambda ctx, param, value: value.lower() if value else None,
         ),
         click.option(
@@ -179,7 +179,7 @@ def common_other_params(func):
             "-g",
             "--original",
             help="Don't truncate long paths",
-            is_flag=True,  
+            is_flag=True,
         ),
         click.option(
             "-q",

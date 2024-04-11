@@ -291,8 +291,6 @@ def set_up_api_highlights():
     )
 
 
-
-
 def set_up_api_labels():
     global overall_progress
     global labelled_progress
@@ -305,6 +303,7 @@ def set_up_api_labels():
     return Live(
         progress_group, refresh_per_second=5, console=console_.get_shared_console()
     )
+
 
 def set_up_api_posts_labels():
     global overall_progress

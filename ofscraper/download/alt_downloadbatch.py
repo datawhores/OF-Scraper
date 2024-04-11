@@ -9,7 +9,6 @@ import aiofiles
 import arrow
 from tenacity import (
     AsyncRetrying,
-    retry,
     retry_if_not_exception_message,
     stop_after_attempt,
     wait_random,
@@ -24,7 +23,6 @@ import ofscraper.db.operations as operations
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.download.common.keyhelpers as keyhelpers
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
@@ -55,7 +53,7 @@ async def alt_download(c, ele, username, model_id):
         f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
     )
     sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-    
+
     audio, video = await ele.mpd_dict
     path_to_file_logger(sharedPlaceholderObj, ele, common_globals.innerlog.get())
     audio = await alt_download_downloader(audio, c, ele)
@@ -170,7 +168,7 @@ async def alt_download_downloader(
     item["total"] = None
 
     async for _ in AsyncRetrying(
-        stop=stop_after_attempt(constants.getattr("DOWNLOAD_RETRIES")),
+        stop=stop_after_attempt(constants.getattr("DOWNLOAD_FILE_RETRIES")),
         wait=wait_random(
             min=constants.getattr("OF_MIN_WAIT"), max=constants.getattr("OF_MAX_WAIT")
         ),
@@ -198,21 +196,21 @@ async def alt_download_downloader(
                     return await alt_data_handler(item, c, ele, placeholderObj)
             except OSError as E:
                 common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
                 )
                 common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Number of unique open files across all processes-> {len(system.getOpenFiles())}"
                 )
                 common_globals.log.debug(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Unique files data across all process -> {list(map(lambda x:(x.path,x.fd),(system.getOpenFiles())))}"
                 )
                 raise E
             except Exception as E:
                 common_globals.innerlog.get().traceback_(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {traceback.format_exc()}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] {traceback.format_exc()}"
                 )
                 common_globals.innerlog.get().traceback_(
-                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] {E}"
+                    f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] {E}"
                 )
                 raise E
 
@@ -246,7 +244,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
         f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
     )
     common_globals.innerlog.get().debug(
-        f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {placeholderObj.tempfilepath}"
+        f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] download temp path {placeholderObj.tempfilepath}"
     )
     item["total"] = item["total"] if _attempt.get() == 1 else None
 
@@ -259,7 +257,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
             f"{get_medialog(ele)} Attempting to download media {item['origname']} with {url}"
         )
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}] download temp path {placeholderObj.tempfilepath}"
+            f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] download temp path {placeholderObj.tempfilepath}"
         )
         return await send_req_inner(c, ele, item, placeholderObj)
     except OSError as E:
@@ -287,42 +285,30 @@ async def send_req_inner(c, ele, item, placeholderObj):
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
         async with c.requests_async(url=url, headers=headers, params=params) as l:
-            if l.ok:
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
-                    partial(
-                        cache.set,
-                        f"{item['name']}_headers",
-                        {
-                            "content-length": l.headers.get("content-length"),
-                            "content-type": l.headers.get("content-type"),
-                        },
-                    ),
-                )
-                new_total = int(l.headers["content-length"])
-                temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
-                if await check_forced_skip(ele, new_total) == 0:
-                    item["total"] = 0
-                    await common.batch_total_change_helper(old_total, 0)
-                    return item
-                elif item["total"] == resume_size:
-                    None
-                else:
-                    item["total"] = new_total
-                    total = new_total
-                    await common.batch_total_change_helper(old_total, total)
-                    await download_fileobject_writer(total, l, ele, placeholderObj)
+            await asyncio.get_event_loop().run_in_executor(
+                common_globals.cache_thread,
+                partial(
+                    cache.set,
+                    f"{item['name']}_headers",
+                    {
+                        "content-length": l.headers.get("content-length"),
+                        "content-type": l.headers.get("content-type"),
+                    },
+                ),
+            )
+            new_total = int(l.headers["content-length"])
+            temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+            if await check_forced_skip(ele, new_total) == 0:
+                item["total"] = 0
+                await common.batch_total_change_helper(old_total, 0)
+                return item
+            elif item["total"] == resume_size:
+                None
             else:
-                common_globals.innerlog.get().debug(
-                    f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
-                )
-                common_globals.innerlog.get().debug(
-                    f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
-                )
-                common_globals.innerlog.get().debug(
-                    f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
-                )
-                l.raise_for_status()
+                item["total"] = new_total
+                total = new_total
+                await common.batch_total_change_helper(old_total, total)
+                await download_fileobject_writer(total, l, ele, placeholderObj)
         await size_checker(placeholderObj.tempfilepath, ele, item["total"])
         return item
     except Exception as E:

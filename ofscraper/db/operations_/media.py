@@ -249,6 +249,7 @@ def add_column_media_duration(model_id=None, username=None, conn=None):
             conn.rollback()
             raise e  # Rollback in case of errors
 
+
 @wrapper.operation_wrapper_async
 def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
@@ -320,7 +321,6 @@ def download_media_update(
         return curr.rowcount if changed else None
 
 
-
 @wrapper.operation_wrapper_async
 def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as curr:
@@ -337,7 +337,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.date,
                     media.postdate,
                     model_id,
-                    media.duration_string
+                    media.duration_string,
                 ],
                 medias,
             )
@@ -365,7 +365,7 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
             "posted_at",
             "hash",
             "model_id",
-            "duration"
+            "duration",
         ]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertTransition, insertData)
@@ -380,7 +380,12 @@ def get_all_medias_transition(
         cur.execute(mediaSelectTransition)
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(row, model_id=row.get("model_id") or database_model,duration=row.get("duration")) for row in data
+            dict(
+                row,
+                model_id=row.get("model_id") or database_model,
+                duration=row.get("duration"),
+            )
+            for row in data
         ]
 
 

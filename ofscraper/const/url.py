@@ -37,7 +37,7 @@ DIGITALCRIMINALS = (
 )
 
 DEVIINT = "https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json"
-SNEAKY="https://raw.githubusercontent.com/SneakyOvis/onlyfans-dynamic-rules/main/rules.json"
+SNEAKY = "https://raw.githubusercontent.com/SneakyOvis/onlyfans-dynamic-rules/main/rules.json"
 
 donateEP = "https://www.buymeacoffee.com/excludedBittern"
 

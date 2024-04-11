@@ -21,7 +21,9 @@ from rich.live import Live
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -35,16 +37,12 @@ from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
     log_download_progress,
+    metadata,
     setDirectoriesDate,
-    metadata
 )
 from ofscraper.download.main_download import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as config_data
-
-
 
 
 @run
@@ -76,8 +74,13 @@ async def process_dicts(username, model_id, medialist):
             ):
                 aws = []
 
-                async with sessionbuilder.sessionBuilder(sems=config_data.get_download_semaphores() or constants.getattr("MAX_SEMS_SINGLE_THREAD_DOWNLOAD")
-            ) as c:
+                async with sessionbuilder.sessionBuilder(
+                    sems=config_data.get_download_semaphores()
+                    or constants.getattr("MAX_SEMS_SINGLE_THREAD_DOWNLOAD"),
+                    retries=constants.getattr("DOWNLOAD_RETRIES"),
+                    wait_min=constants.getattr("OF_MIN_WAIT"),
+                    wait_max=constants.getattr("OF_MAX_WAIT"),
+                ) as c:
                     for ele in medialist:
                         aws.append(
                             asyncio.create_task(
@@ -184,17 +187,15 @@ async def download(c, ele, model_id, username, job_progress):
     async with common_globals.maxfile_sem:
         try:
             if read_args.retriveArgs().metadata:
-                  return await metadata(
-            c, ele, username, model_id
-            )
+                return await metadata(c, ele, username, model_id)
             elif ele.url:
-                    return await main_download(
-                        c,
-                        ele,
-                        username,
-                        model_id,
-                        job_progress,
-                    )
+                return await main_download(
+                    c,
+                    ele,
+                    username,
+                    model_id,
+                    job_progress,
+                )
             elif ele.mpd:
                 return await alt_download(
                     c,
@@ -203,8 +204,7 @@ async def download(c, ele, model_id, username, job_progress):
                     model_id,
                     job_progress,
                 )
-        
-                       
+
         except Exception as E:
             common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
             common_globals.log.debug(

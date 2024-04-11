@@ -2,7 +2,7 @@ import asyncio
 
 
 class semaphoreDelayed(asyncio.Semaphore):
-    def __init__(self, delay=-1,sems=None) -> None:
+    def __init__(self, delay=-1, sems=None) -> None:
         self._delay = delay or 0
         super().__init__(sems or 10000000)
 

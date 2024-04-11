@@ -176,13 +176,9 @@ def get_all_others_transition(
 ):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(othersSelectTransition)
-        data=[
-            dict(row)
-            for row in cur.fetchall()
-        ]
+        data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(row, model_id=row.get("model_id") or database_model)
-            for row in data
+            dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
 
 
@@ -210,13 +206,9 @@ def get_all_products_transition(
 ):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(productsSelectTransition)
-        data=[
-            dict(row)
-            for row in cur.fetchall()
-        ]
+        data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(row, model_id=row.get("model_id") or database_model)
-            for row in data
+            dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
 
 

@@ -32,7 +32,13 @@ def check_cdm():
         elif keymode == "cdrm2":
             url = constants.getattr("CDRM2")
         try:
-            with sessionbuilder.sessionBuilder(backend="httpx", total_timeout=30) as c:
+            with sessionbuilder.sessionBuilder(
+                backend="httpx",
+                total_timeout=30,
+                retries=constants.getattr("CDM_NUM_TRIES"),
+                wait_min=constants.getattr("CDM_MIN_WAIT"),
+                wait_max=constants.getattr("CDM_MAX_WAIT"),
+            ) as c:
                 with c.requests(url=url) as r:
                     if r.ok:
                         console.print(

@@ -11,12 +11,12 @@ import arrow
 
 import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
+import ofscraper.api.labels as labels
 import ofscraper.api.messages as messages_
 import ofscraper.api.paid as paid_
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
-import ofscraper.api.labels as labels
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.classes.table as table
@@ -24,6 +24,7 @@ import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.args.user as user_helper
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
@@ -33,8 +34,6 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.common.common import textDownloader
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.args.user as user_helper
-
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -57,8 +56,10 @@ ROW_NAMES = (
 )
 ROWS = []
 app = None
-prev_names=prev_names=set()
-ALL_MEDIA={}
+prev_names = prev_names = set()
+ALL_MEDIA = {}
+
+
 def process_download_cart():
     while True:
         global app
@@ -68,15 +69,15 @@ def process_download_cart():
         try:
             process_item()
         except Exception as E:
-           #handle getting new downloads
-           None
+            # handle getting new downloads
+            None
+
+
 def process_item():
     global app
     if process_download_cart.counter == 0:
         if not network.check_cdm():
-            log.info(
-                "error was raised by cdm checker\ncdm will not be check again\n\n"
-            )
+            log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
         else:
             log.info("cdm checker was fine\ncdm will not be check again\n\n")
         # should be done once before downloads
@@ -90,14 +91,14 @@ def process_item():
         post_id = row[app.row_names.index("Post_ID")].plain
         media_id = int(row[app.row_names.index("Media_ID")].plain)
 
-        media= ALL_MEDIA.get(f"{media_id}_{post_id}_{username}")
+        media = ALL_MEDIA.get(f"{media_id}_{post_id}_{username}")
         if not media:
             raise Exception(f"No data for {media_id}_{post_id}_{username}")
-        
+
         log.info(f"Added url {media.url or media.mpd}")
         log.info("Sending URLs to OF-Scraper")
         selector.set_data_all_subs_dict(username)
-        post=media.post
+        post = media.post
         if settings.get_mediatypes() == ["Text"]:
             textDownloader(post, username=username)
         elif len(settings.get_mediatypes()) > 1:
@@ -125,9 +126,10 @@ def process_item():
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
-    
+
     if app.row_queue.empty():
         log.info("Download cart is currently empty")
+
 
 def checker():
     args = read_args.retriveArgs()
@@ -150,64 +152,87 @@ def post_checker():
 async def post_check_helper():
     user_dict = {}
     links = list(url_helper())
-    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
+    async with sessionbuilder.sessionBuilder(
+        backend="httpx",
+        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        retries=constants.getattr("API_CHECK_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
+    ) as c:
         for ele in links:
             name_match = re.search(
                 f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
             )
             name_match2 = re.search(f"^{constants.getattr('USERNAME_REGEX')}+$", ele)
-            user_name=None
-            model_id=None
+            user_name = None
+            model_id = None
 
             if name_match:
                 user_name = name_match.group(1)
                 log.info(f"Getting Full Timeline for {user_name}")
                 model_id = profile.get_id(user_name)
-                user_dict.setdefault(model_id, {})["model_id"]= model_id
-                user_dict.setdefault(model_id, {})["username"]= user_name
+                user_dict.setdefault(model_id, {})["model_id"] = model_id
+                user_dict.setdefault(model_id, {})["username"] = user_name
 
             elif name_match2:
                 user_name = name_match2.group(0)
                 model_id = profile.get_id(user_name)
-                user_dict.setdefault(model_id, {})["model_id"]= model_id
-                user_dict.setdefault(model_id, {})["username"]= user_name
+                user_dict.setdefault(model_id, {})["model_id"] = model_id
+                user_dict.setdefault(model_id, {})["username"] = user_name
             if user_dict.get(model_id) and model_id and user_name:
                 areas = read_args.retriveArgs().check_area
-                await operations.table_init_create(username=user_name, model_id=model_id)
+                await operations.table_init_create(
+                    username=user_name, model_id=model_id
+                )
                 if "Timeline" in areas:
                     oldtimeline = cache.get(f"timeline_check_{model_id}", default=[])
                     if len(oldtimeline) > 0 and not read_args.retriveArgs().force:
-                        data=oldtimeline
+                        data = oldtimeline
                     else:
                         data = await timeline.get_timeline_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
-                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                    user_dict.setdefault(model_id, {}).setdefault(
+                        "post_list", []
+                    ).extend(data)
                 if "Archived" in areas:
                     oldarchive = cache.get(f"archived_check_{model_id}", default=[])
                     if len(oldarchive) > 0 and not read_args.retriveArgs().force:
-                        data=oldarchive
+                        data = oldarchive
                     else:
                         data = await archived.get_archived_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
-                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                    user_dict.setdefault(model_id, {}).setdefault(
+                        "post_list", []
+                    ).extend(data)
                 if "Pinned" in areas:
                     oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
                     if len(oldpinned) > 0 and not read_args.retriveArgs().force:
-                        data=oldpinned
+                        data = oldpinned
                     else:
                         data = await pinned.get_pinned_posts(model_id, c=c)
-                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                    user_dict.setdefault(model_id, {}).setdefault(
+                        "post_list", []
+                    ).extend(data)
                 if "Labels" in areas:
                     oldlabels = cache.get(f"labels_check_{model_id}", default=[])
                     if len(oldlabels) > 0 and not read_args.retriveArgs().force:
-                        data=oldlabels
+                        data = oldlabels
                     else:
                         labels_data = await labels.get_labels(model_id, c=c)
-                        await operations.make_label_table_changes(labels_data ,model_id=model_id,username=user_name,posts=False)
-                        data=[post for label in labels_data for post in label["posts"]]
-                    user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                        await operations.make_label_table_changes(
+                            labels_data,
+                            model_id=model_id,
+                            username=user_name,
+                            posts=False,
+                        )
+                        data = [
+                            post for label in labels_data for post in label["posts"]
+                        ]
+                    user_dict.setdefault(model_id, {}).setdefault(
+                        "post_list", []
+                    ).extend(data)
                 cache.close()
         # individual links
         for ele in list(
@@ -219,23 +244,22 @@ async def post_check_helper():
                 links,
             )
         ):
-            name_match = re.search(
-                f"/({constants.getattr('USERNAME_REGEX')}+$)", ele
-            )
+            name_match = re.search(f"/({constants.getattr('USERNAME_REGEX')}+$)", ele)
             num_match = re.search(f"/({constants.getattr('NUMBER_REGEX')}+)", ele)
             if name_match and num_match:
                 user_name = name_match.group(1)
                 model_id = profile.get_id(user_name)
-                user_dict.setdefault(model_id, {})["model_id"]= model_id
-                user_dict.setdefault(model_id, {})["username"]= user_name
+                user_dict.setdefault(model_id, {})["model_id"] = model_id
+                user_dict.setdefault(model_id, {})["username"] = user_name
 
-
-                post_id = num_match.group(1)   
+                post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
                 data = timeline.get_individual_post(post_id)
-                user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
+                user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                    data
+                )
     for val in user_dict.values():
-        user_name=val.get("username")
+        user_name = val.get("username")
         downloaded = await get_downloaded(user_name, model_id, True)
         posts = list(
             map(lambda x: posts_.Post(x, model_id, user_name), val.get("post_list", []))
@@ -243,8 +267,8 @@ async def post_check_helper():
         await operations.make_post_table_changes(
             posts, model_id=model_id, username=user_name
         )
-        await process_post_media(user_name, model_id,posts)
-        row_gather( downloaded, user_name)
+        await process_post_media(user_name, model_id, posts)
+        row_gather(downloaded, user_name)
 
 
 def reset_url():
@@ -281,7 +305,12 @@ def message_checker():
 @run
 async def message_checker_helper():
     links = list(url_helper())
-    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+    async with sessionbuilder.sessionBuilder(
+        backend="httpx",
+        retries=constants.getattr("API_CHECK_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
+    ) as c:
         for item in links:
             num_match = re.search(
                 f"({constants.getattr('NUMBER_REGEX')}+)", item
@@ -295,7 +324,9 @@ async def message_checker_helper():
                 model_id = profile.get_id(user_name)
             if model_id and user_name:
                 log.info(f"Getting Messages/Paid content for {user_name}")
-                await operations.table_init_create(model_id=model_id, username=user_name)
+                await operations.table_init_create(
+                    model_id=model_id, username=user_name
+                )
                 # messages
                 messages = None
                 oldmessages = cache.get(f"message_check_{model_id}", default=[])
@@ -305,7 +336,7 @@ async def message_checker_helper():
                     messages = oldmessages
                 else:
                     messages = await messages_.get_messages(
-                        model_id, user_name, forced_after=0,c=c
+                        model_id, user_name, forced_after=0, c=c
                     )
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
@@ -329,7 +360,7 @@ async def message_checker_helper():
                 )
 
                 await process_post_media(
-                    user_name,model_id, paid_posts_array + message_posts_array
+                    user_name, model_id, paid_posts_array + message_posts_array
                 )
 
                 downloaded = await get_downloaded(user_name, model_id, True)
@@ -346,41 +377,42 @@ def purchase_checker():
 async def purchase_checker_helper():
     user_dict = {}
     auth_requests.make_headers()
-    ROWS = []
-    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
+    async with sessionbuilder.sessionBuilder(
+        backend="httpx",
+        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        retries=constants.getattr("API_CHECK_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
+    ) as c:
         for name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
             user_dict[model_id] = user_dict.get(model_id, [])
-
 
             await operations.table_init_create(model_id=model_id, username=user_name)
 
             oldpaid = cache.get(f"purchased_check_{model_id}", default=[])
             paid = None
 
-
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                 paid = oldpaid
-            if user_name==constants.getattr("DELETED_MODEL_PLACEHOLDER"):
-                all_paid=await paid_.get_all_paid_posts()
+            if user_name == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
+                all_paid = await paid_.get_all_paid_posts()
                 paid_user_dict = {}
                 for ele in all_paid:
                     # Get the user ID from either "fromUser" or "author" key (handle missing keys)
                     user_id = (
-                        ele.get("fromUser", None)
-                        or ele.get("author", None)
-                        or {}
+                        ele.get("fromUser", None) or ele.get("author", None) or {}
                     ).get("id", None)
 
                     # If user_id is found, update the paid_user_dict
                     if user_id:
                         paid_user_dict.setdefault(str(user_id), []).append(ele)
-                seen=set()
-                paid=[
-                post
-                for post in paid_user_dict.get(str(model_id), [])
-                if post["id"] not in seen and not seen.add(post["id"])
+                seen = set()
+                paid = [
+                    post
+                    for post in paid_user_dict.get(str(model_id), [])
+                    if post["id"] not in seen and not seen.add(post["id"])
                 ]
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
@@ -389,8 +421,8 @@ async def purchase_checker_helper():
                 posts_array, model_id=model_id, username=user_name
             )
             downloaded = await get_downloaded(user_name, model_id)
-            await process_post_media(user_name, model_id,posts_array)
-            row_gather( downloaded, user_name)
+            await process_post_media(user_name, model_id, posts_array)
+            row_gather(downloaded, user_name)
 
 
 def stories_checker():
@@ -401,8 +433,13 @@ def stories_checker():
 @run
 async def stories_checker_helper():
     user_dict = {}
-    ROWS = []
-    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
+    async with sessionbuilder.sessionBuilder(
+        backend="httpx",
+        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        retries=constants.getattr("API_CHECK_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
+    ) as c:
         for user_name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
@@ -420,8 +457,8 @@ async def stories_checker_helper():
                 map(lambda x: posts_.Post(x, model_id, user_name, "stories"), stories)
             )
             downloaded = await get_downloaded(user_name, model_id)
-            await process_post_media(user_name,model_id,stories+highlights_)
-            row_gather( downloaded, user_name)
+            await process_post_media(user_name, model_id, stories + highlights_)
+            row_gather(downloaded, user_name)
 
 
 def url_helper():
@@ -432,22 +469,23 @@ def url_helper():
 
 
 @run
-async def process_post_media(username,model_id,posts_array):
+async def process_post_media(username, model_id, posts_array):
     seen = set()
     unduped = [
-    post
+        post
         for post in posts_array
-    if (post.id,post.username) not in seen and not seen.add((post.id,post.username))
+        if (post.id, post.username) not in seen
+        and not seen.add((post.id, post.username))
     ]
     temp = []
     [temp.extend(ele.all_media) for ele in unduped]
     await operations.batch_mediainsert(
-                temp,
-                model_id=model_id,
-                username=username,
-                downloaded=False,
+        temp,
+        model_id=model_id,
+        username=username,
+        downloaded=False,
     )
-    new_media={f"{ele.id}_{ele.postid}_{ele.username}": ele for ele in temp}
+    new_media = {f"{ele.id}_{ele.postid}_{ele.username}": ele for ele in temp}
     ALL_MEDIA.update(new_media)
     return list(new_media.values())
 
@@ -477,9 +515,15 @@ async def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
+        async with sessionbuilder.sessionBuilder(
+            backend="httpx",
+            sems=constants.getattr("API_REQ_CHECK_MAX"),
+            retries=constants.getattr("API_CHECK_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT"),
+            wait_max=constants.getattr("OF_MAX_WAIT"),
+        ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
-    media = await process_post_media(user_name,model_id, paid)
+    media = await process_post_media(user_name, model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
 
@@ -543,7 +587,7 @@ def checkmarkhelper(ele):
     return "[]" if unlocked_helper(ele) else "Not Unlocked"
 
 
-def row_gather( downloaded, username):
+def row_gather(downloaded, username):
     # fix text
     global ROWS
 
@@ -553,7 +597,9 @@ def row_gather( downloaded, username):
         for ele in list(filter(lambda x: x.canview, ALL_MEDIA.values()))
     ]
     out = []
-    media_sorted = sorted(ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True)
+    media_sorted = sorted(
+        ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
+    )
     for _, ele in enumerate(media_sorted):
         out.append(
             [
@@ -576,5 +622,5 @@ def row_gather( downloaded, username):
                 texthelper(ele.text),
             ]
         )
-    ROWS=ROWS or []
+    ROWS = ROWS or []
     ROWS.extend(out)

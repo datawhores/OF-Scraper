@@ -241,7 +241,6 @@ import ofscraper.utils.args.helpers as helpers
         help="Run script in the background. Set value to minimum minutes between script runs. Overdue runs will run as soon as previous run finishes",
         type=float,
     ),
-
     click.option(
         "-a",
         "--action",
@@ -258,7 +257,6 @@ import ofscraper.utils.args.helpers as helpers
     ),
     help="Control automated actions (like/unlike/download) and background execution",
 )
-
 @click.option_group(
     "User Selection Options",
     click.option(
@@ -284,8 +282,7 @@ import ofscraper.utils.args.helpers as helpers
             list(set(itertools.chain.from_iterable(value))) if value else []
         ),
     ),
-
-        click.option(
+    click.option(
         "-ul",
         "--user-list",
         help="Filter by userlist. Note: the lists 'ofscraper.main', 'ofscraper.expired', and 'ofscraper.active' are reserved and should not be the name of any list you have on OF",
@@ -331,12 +328,8 @@ import ofscraper.utils.args.helpers as helpers
             )
         ),
     ),
-
-help="""Specify users for scraping  with usernames, userlists, or blacklists"""
+    help="""Specify users for scraping  with usernames, userlists, or blacklists""",
 )
-
-
-
 @click.option_group(
     "User List Filter Options",
     click.option(
@@ -376,17 +369,17 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         callback=lambda ctx, param, value: value.lower() if value else None,
     ),
     click.option(
-            "-lo/-ls",
-            "--last-seen-only/--last-seen-skip",
-            "last_seen",
-            help="""
+        "-lo/-ls",
+        "--last-seen-only/--last-seen-skip",
+        "last_seen",
+        help="""
             \b
             Flag for filtering accounts based on last seen being visible
             select one --free-trial-only or --free-trial-skip]""",
-            default=None,
-            required=False,
-            is_flag=True,
-        ),
+        default=None,
+        required=False,
+        is_flag=True,
+    ),
     click.option(
         "-fo/-fs",
         "--free-trial-only/--free-trial-skip",
@@ -404,7 +397,7 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
     click.option(
         "-po/-ps",
         "--promo-only/--promo-skip",
-        "promo", 
+        "promo",
         help="""
         \b
         Flag for enabling/disabling accounts with a claimable promo price
@@ -416,7 +409,7 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
     click.option(
         "-ao",
         "--all-promo-only/--all-promo-skip",
-        "all_promo",  
+        "all_promo",
         help="""
             \b
             Flag for enabling/disabling  accounts with any promo price
@@ -440,8 +433,7 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         "-ro/-rf",
         "--renew-on/--renew-off",
         "renewal",
-        help=\
-        """
+        help="""
         \b
         Flag for enabling/disabling accounts set to renew renew flag on 
         [select one --renew-on or --renew-off]""",
@@ -449,7 +441,6 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
         required=False,
         is_flag=True,
     ),
-
     help="Filter users with options like price (current/renewal/regular/promo), free trial, promo availability, alongside userlist filters (include/exclude)",
 )
 @click.option_group(
@@ -613,33 +604,32 @@ help="""Specify users for scraping  with usernames, userlists, or blacklists"""
 )
 @click.option_group(
     "Advanced Search & Processing Options",
+    click.option(
+        "-uf",
+        "--users-first",
+        help="Process all users first rather than one at a time (affects --action)",
+        default=False,
+        is_flag=True,  # Shorthand for action="store_true"
+    ),
+    click.constraints.mutually_exclusive(
         click.option(
-            "-uf",
-            "--users-first",
-            help="Process all users first rather than one at a time (affects --action)",
+            "-fi",
+            "--individual",
+            help="Search each username as a separate request when --username is provided",
             default=False,
-            is_flag=True,  # Shorthand for action="store_true"
+            is_flag=True,
         ),
-            click.constraints.mutually_exclusive(
-            click.option(
-                "-fi",
-                "--individual",
-                help="Search each username as a separate request when --username is provided",
-                default=False,
-                is_flag=True,
-            ),
-            click.option(
-                "-fl",
-                "--list",
-                help="Search entire enabled lists before filtering for usernames when --username is provided",
-                default=False,
-                is_flag=True,
-            ),
+        click.option(
+            "-fl",
+            "--list",
+            help="Search entire enabled lists before filtering for usernames when --username is provided",
+            default=False,
+            is_flag=True,
         ),
-        help="Choose how usernames are searched, and define the order in which users are processed for actions"
+    ),
+    help="Choose how usernames are searched, and define the order in which users are processed for actions",
 )
 @common.common_params
 @click.pass_context
 def program(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name
-

@@ -115,6 +115,7 @@ def posts_date_filter(media):
         )
     return media
 
+
 def post_timed_filter(media):
     if read_args.retriveArgs().timed_only is False:
         return list(filter(lambda x: not x.expires, media))

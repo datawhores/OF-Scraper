@@ -148,13 +148,9 @@ def get_all_stories_transition(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesSelectTransition)
-        data=[
-            dict(row)
-            for row in cur.fetchall()
-        ]
+        data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(row, model_id=row.get("model_id") or database_model)
-            for row in data
+            dict(row, model_id=row.get("model_id") or database_model) for row in data
         ]
 
 
@@ -197,7 +193,9 @@ async def modify_unique_constriant_stories(model_id=None, username=None):
 async def make_stories_table_changes(
     all_stories: dict, model_id=None, username=None, conn=None
 ):
-    all_stories_filtered = filter(lambda x: x.responsetype in {"stories","highlights"}, all_stories)
+    all_stories_filtered = filter(
+        lambda x: x.responsetype in {"stories", "highlights"}, all_stories
+    )
 
     curr_id = set(await get_all_stories_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_stories_filtered))

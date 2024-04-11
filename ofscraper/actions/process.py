@@ -191,12 +191,14 @@ def process_like():
                 )
                 model_id = ele.id
                 operations.table_init_create(model_id=model_id, username=ele.name)
-                unfavorited_posts = like.get_post_for_like(model_id=model_id, username=ele.name)
+                unfavorited_posts = like.get_post_for_like(
+                    model_id=model_id, username=ele.name
+                )
                 unfavorited_posts = filters.post_filter_for_like(
                     unfavorited_posts, like=True
                 )
                 post_ids = like.get_post_ids(unfavorited_posts)
-                like.like(model_id, ele.name, post_ids)
+                like.like(model_id, post_ids)
 
 
 @exit.exit_wrapper
@@ -223,7 +225,7 @@ def process_unlike():
                     favorited_posts, like=False
                 )
                 post_ids = like.get_post_ids(favorited_posts)
-                like.unlike(model_id, ele.name, post_ids)
+                like.unlike(model_id, post_ids)
 
 
 def add_selected_areas():

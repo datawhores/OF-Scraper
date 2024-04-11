@@ -56,7 +56,7 @@ async def get_otherlist():
         out.extend(await get_lists())
     out = list(
         filter(
-            lambda x: x.get("name").lower() in read_args.retriveArgs().user_list or[],
+            lambda x: x.get("name").lower() in read_args.retriveArgs().user_list or [],
             out,
         )
     )
@@ -102,7 +102,12 @@ async def get_lists():
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
-            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
+            async with sessionbuilder.sessionBuilder(
+                sems=constants.getattr("SUBSCRIPTION_SEMS"),
+                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT"),
+                wait_max=constants.getattr("OF_MAX_WAIT"),
+            ) as c:
                 tasks.append(asyncio.create_task(scrape_for_list(c, job_progress)))
                 page_task = overall_progress.add_task(
                     f"UserList Pages Progress: {page_count}", visible=True
@@ -145,65 +150,53 @@ async def get_lists():
 
 async def scrape_for_list(c, job_progress, offset=0):
     attempt.set(0)
-    async for _ in AsyncRetrying(
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN_WAIT"),
-            max=constants.getattr("OF_MAX_WAIT"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            try:
-                attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : getting lists offset -> {offset}",
-                    visible=True,
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        task = job_progress.add_task(
+            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} : getting lists offset -> {offset}",
+            visible=True,
+        )
+        async with c.requests_async(
+            url=constants.getattr("listEP").format(offset)
+        ) as r:
+            if r.ok:
+                data = await r.json_()
+                out_list = data["list"] or []
+                log.debug(
+                    f"offset:{offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
                 )
-                async with c.requests_async(
-                    url=constants.getattr("listEP").format(offset)
-                ) as r:
-                    if r.ok:
-                        data = await r.json_()
-                        out_list = data["list"] or []
-                        log.debug(
-                            f"offset:{offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
-                        )
-                        log.debug(
-                            f"offset:{offset} -> number of lists found {len(out_list)}"
-                        )
-                        log.debug(
-                            f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
-                        )
-                        log.trace(
-                            "offset:{offset} -> label names raw: {posts}".format(
-                                offset=offset, posts=data
-                            )
-                        )
+                log.debug(f"offset:{offset} -> number of lists found {len(out_list)}")
+                log.debug(
+                    f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+                )
+                log.trace(
+                    "offset:{offset} -> label names raw: {posts}".format(
+                        offset=offset, posts=data
+                    )
+                )
 
-                        if data.get("hasMore") and len(out_list) > 0:
-                            offset = offset + len(out_list)
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_for_list(c, job_progress, offset=offset)
-                                )
-                            )
+                if data.get("hasMore") and len(out_list) > 0:
+                    offset = offset + len(out_list)
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_for_list(c, job_progress, offset=offset)
+                        )
+                    )
 
-                    else:
-                        log.debug(f"[bold]lists response status code:[/bold]{r.status}")
-                        log.debug(f"[bold]lists response:[/bold] {await r.text_()}")
-                        log.debug(f"[bold]lists headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
+            else:
+                log.debug(f"[bold]lists response status code:[/bold]{r.status}")
+                log.debug(f"[bold]lists response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]lists headers:[/bold] {r.headers}")
+                r.raise_for_status()
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
 
-            finally:
-                job_progress.remove_task(task)
-            return out_list, new_tasks
+    finally:
+        job_progress.remove_task(task)
+    return out_list, new_tasks
 
 
 async def get_list_users(lists):
@@ -226,9 +219,16 @@ async def get_list_users(lists):
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
-            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
+            async with sessionbuilder.sessionBuilder(
+                sems=constants.getattr("SUBSCRIPTION_SEMS"),
+                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT"),
+                wait_max=constants.getattr("OF_MAX_WAIT"),
+            ) as c:
                 [
-                    tasks.append(asyncio.create_task(scrape_list_members(c, id, job_progress)))
+                    tasks.append(
+                        asyncio.create_task(scrape_list_members(c, id, job_progress))
+                    )
                     for id in lists
                 ]
                 page_task = overall_progress.add_task(
@@ -278,78 +278,62 @@ async def get_list_users(lists):
 async def scrape_list_members(c, item, job_progress, offset=0):
     users = None
     attempt.set(0)
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN_WAIT"),
-            max=constants.getattr("OF_MAX_WAIT"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            try:
-                attempt.set(attempt.get(0) + 1)
-                task = job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : offset -> {offset} + list name -> {item.get('name')}",
-                    visible=True,
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        task = job_progress.add_task(
+            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} : offset -> {offset} + list name -> {item.get('name')}",
+            visible=True,
+        )
+
+        async with c.requests_async(
+            url=constants.getattr("listusersEP").format(item.get("id"), offset)
+        ) as r:
+            log_id = f"offset:{offset} list:{item.get('name')} =>"
+            if r.ok:
+                data = await r.json_()
+                users = data.get("list") or []
+                log.debug(f"{log_id} -> names found {len(users)}")
+                log.debug(
+                    f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
                 )
+                log.debug(
+                    f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
+                )
+                log.trace(
+                    "offset: {offset} list: {item} -> {posts}".format(
+                        item=item.get("name"),
+                        offset=offset,
+                        posts="\n\n".join(
+                            list(map(lambda x: f"scrapeinfo list {str(x)}", users))
+                        ),
+                    )
+                )
+                if (
+                    data.get("hasMore")
+                    and len(users) > 0
+                    and offset != data.get("nextOffset")
+                ):
+                    offset += len(users)
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_list_members(c, item, job_progress, offset=offset)
+                        )
+                    )
 
-                async with c.requests_async(
-                    url=constants.getattr("listusersEP").format(item.get("id"), offset)
-                ) as r:
-                    log_id = f"offset:{offset} list:{item.get('name')} =>"
-                    if r.ok:
-                        data = await r.json_()
-                        users = data.get("list") or []
-                        log.debug(f"{log_id} -> names found {len(users)}")
-                        log.debug(
-                            f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
-                        )
-                        log.debug(
-                            f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
-                        )
-                        log.trace(
-                            "offset: {offset} list: {item} -> {posts}".format(
-                                item=item.get("name"),
-                                offset=offset,
-                                posts="\n\n".join(
-                                    list(
-                                        map(
-                                            lambda x: f"scrapeinfo list {str(x)}", users
-                                        )
-                                    )
-                                ),
-                            )
-                        )
-                        if (
-                            data.get("hasMore")
-                            and len(users) > 0
-                            and offset != data.get("nextOffset")
-                        ):
-                            offset += len(users)
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_list_members(c, item, job_progress, offset=offset)
-                                )
-                            )
+            else:
+                log.debug(
+                    f"[bold]labelled posts response status code:[/bold]{r.status}"
+                )
+                log.debug(f"[bold]labelled posts response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
 
-                    else:
-                        log.debug(
-                            f"[bold]labelled posts response status code:[/bold]{r.status}"
-                        )
-                        log.debug(
-                            f"[bold]labelled posts response:[/bold] {await r.text_()}"
-                        )
-                        log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
+                r.raise_for_status()
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
 
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
-
-            finally:
-                job_progress.remove_task(task)
-            return users, new_tasks
+    finally:
+        job_progress.remove_task(task)
+    return users, new_tasks

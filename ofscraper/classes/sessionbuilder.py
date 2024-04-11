@@ -1,27 +1,29 @@
 import contextlib
 import ssl
+import logging
+import traceback
 
 import aiohttp
 import certifi
 import httpx
 from tenacity import (
     AsyncRetrying,
+    Retrying,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random,
 )
+
+import ofscraper.classes.semaphoreDelayed as semdelayed
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-import ofscraper.classes.semaphoreDelayed as semdelayed
-
 
 ####
 #  This class allows the user to select which backend aiohttp or httpx they want to use
 #  httpx has better compatiblilty but is slower
 #
 #####
-
 
 
 class sessionBuilder:
@@ -41,7 +43,8 @@ class sessionBuilder:
         sems=None,
         retries=None,
         wait_min=None,
-        wait_max=None
+        wait_max=None,
+        log=None
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -62,11 +65,11 @@ class sessionBuilder:
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
         self._proxy_auth = proxy_auth
-        self._sem=semdelayed.semaphoreDelayed(sems=sems,delay=delay)
-        self._retries=retries or constants.getattr("NUM_TRIES_DEFAULT")
-        self._wait_min=wait_min or constants.getattr("OF_MIN_WAIT_DEFAULT")
-        self._wait_max=wait_max or constants.getattr("OF_MAX_WAIT_DEFAULT")
-
+        self._sem = semdelayed.semaphoreDelayed(sems=sems, delay=delay)
+        self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
+        self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_DEFAULT")
+        self._wait_max = wait_max or constants.getattr("OF_MAX_WAIT_DEFAULT")
+        self._log=logging.getLogger("shared")
     async def __aenter__(self):
         self._async = True
         if self._backend == "aio":
@@ -127,7 +130,7 @@ class sessionBuilder:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)
 
-    def _create_headers(self, headers, url,sign):
+    def _create_headers(self, headers, url, sign):
         headers = headers or {}
         new_headers = auth_requests.make_headers()
         headers.update(new_headers)
@@ -152,22 +155,60 @@ class sessionBuilder:
         params=None,
         redirects=True,
         data=None,
-        sign=None
+        sign=None,
+        retries=None,
+        wait_min=None,
+        wait_max=None,
+        log=None
     ):
-        headers = self._create_headers(headers, url,sign) if headers is None else None
+        headers = self._create_headers(headers, url, sign) if headers is None else None
         cookies = self._create_cookies() if cookies is None else None
         json = json or None
         params = params or None
-        t=self._httpx_funct(
-                method,
-                url=url,
-                follow_redirects=redirects,
-                params=params,
-                cookies=cookies,
-                headers=headers,
-                json=json,
-                data=data)
-        yield t
+        r=None
+        for _ in Retrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(retries or self._retries),
+        wait=wait_random(
+            min=wait_min or self._wait_min,
+            max=wait_max or self._wait_max,
+        )):
+            r=None
+            with _:
+                try:
+                    r = self._httpx_funct(
+                        method,
+                        url=url,
+                        follow_redirects=redirects,
+                        params=params,
+                        cookies=cookies,
+                        headers=headers,
+                        json=json,
+                        data=data,
+                    )
+                    if not r.ok:
+                        (log or self._log).debug(
+                            f"[bold]failed: [bold] {r.url}"
+                        )
+                        (log or self._log).debug(
+                                f"[bold]status: [bold] {r.status}"
+                        )
+                        (log or self._log).debug(
+                            f"[bold]response text [/bold]: {r.text_()}"
+                        )
+                        (log or self._log).debug(
+                            f"[bold]headers[/bold]: {r.headers}"
+                        )
+                        r.raise_for_status()
+                except Exception as E:
+                    (log or self._log).traceback_(E)
+                    (log or self._log).traceback_(traceback.format_exc())
+                    raise E
+        yield r
+
+
+
+
     @contextlib.asynccontextmanager
     async def requests_async(
         self,
@@ -179,56 +220,82 @@ class sessionBuilder:
         params=None,
         redirects=True,
         data=None,
-        sign=None
+        sign=None,
+        wait_min=None,
+        wait_max=None,
+        retries=None,
+        log=None
     ):
-     async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(self._retries),
-        wait=wait_random(
-            min=self._wait_min,
-            max=self._wait_max,
-        ),
-        reraise=True,
-    ):
-        async with _:
-            await self._sem.acquire()
-            try:
-                headers = self._create_headers(headers, url,sign) if headers is None else None
-                cookies = self._create_cookies() if cookies is None else None
-                json = json or None
-                params = params or None
-                if self._backend == "aio":
-                    r=await self._aio_funct(
-                        method,
-                        url,
-                        headers=headers,
-                        cookies=cookies,
-                        allow_redirects=redirects,
-                        proxy=self._proxy,
-                        proxy_auth=self._proxy_auth,
-                        params=params,
-                        json=json,
-                        data=data,
-                        ssl=ssl.create_default_context(cafile=certifi.where()))
-                    yield r
-                else:
-                        t=await self._httpx_funct_async(  
+        r=None
+        async for _ in AsyncRetrying(
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            stop=stop_after_attempt(retries or self._retries),
+            wait=wait_random(
+                min=wait_min or self._wait_min,
+                max=wait_max or self._wait_max,
+            ),
+            reraise=True,
+        ):
+            with _:
+                await self._sem.acquire()
+                try:
+                    headers = (
+                        self._create_headers(headers, url, sign)
+                        if headers is None
+                        else None
+                    )
+                    cookies = self._create_cookies() if cookies is None else None
+                    json = json or None
+                    params = params or None
+                    if self._backend == "aio":
+                        r = await self._aio_funct(
+                            method,
+                            url,
+                            headers=headers,
+                            cookies=cookies,
+                            allow_redirects=redirects,
+                            proxy=self._proxy,
+                            proxy_auth=self._proxy_auth,
+                            params=params,
+                            json=json,
+                            data=data,
+                            ssl=ssl.create_default_context(cafile=certifi.where()),
+                        )
+                    else:
+                        r = await self._httpx_funct_async(
                             method,
                             follow_redirects=redirects,
                             url=url,
                             cookies=cookies,
                             headers=headers,
                             json=json,
-                            params=params)
-                        yield t
-            except Exception as e:
-                raise e
-            finally:
-                self._sem.release()
+                            params=params,
+                        )
+                    if not r.ok:
+                            (log or self._log).debug(
+                                f"[bold]failed: [bold] {r.url}"
+                            )
+                            (log or self._log).debug(
+                                f"[bold]status: [bold] {r.status}"
+                            )
+                            (log or self._log).debug(
+                                f"[bold]response text [/bold]: {await r.text_()}"
+                            )
+                            (log or self._log).debug(
+                                f"[bold]headers[/bold]: {r.headers}"
+                            )
+                            r.raise_for_status()
+                except Exception as E:
+                    (log or self._log).traceback_(E)
+                    (log or self._log).traceback_(traceback.format_exc())
+                    raise E
+                finally:
+                    self._sem.release()
+        yield r
 
 
-    async def _httpx_funct_async(self,*args,**kwargs):
-        t = await    self._session.request(*args,**kwargs)
+    async def _httpx_funct_async(self, *args, **kwargs):
+        t = await self._session.request(*args, **kwargs)
         t.json_ = lambda: self.factoryasync(t.json)
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
@@ -244,13 +311,13 @@ class sessionBuilder:
         t.iter_chunked = t.iter_bytes
         return t
 
-    async def _aio_funct(self,method, *args, **kwargs):
-            #public function forces context manager use
-            r = await self._session._request(method,*args,**kwargs)
-            r.text_ = r.text
-            r.json_ = r.json
-            r.iter_chunked = r.content.iter_chunked
-            return r
+    async def _aio_funct(self, method, *args, **kwargs):
+        # public function forces context manager use
+        r = await self._session._request(method, *args, **kwargs)
+        r.text_ = r.text
+        r.json_ = r.json
+        r.iter_chunked = r.content.iter_chunked
+        return r
 
     async def factoryasync(self, input):
         if callable(input):
@@ -260,6 +327,7 @@ class sessionBuilder:
     @property
     def delay(self):
         return self._sem.delay
+
     @delay.setter
     def delay(self, value):
         self._sem.delay = value

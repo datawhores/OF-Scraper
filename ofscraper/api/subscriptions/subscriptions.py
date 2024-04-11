@@ -51,7 +51,12 @@ async def get_subscriptions(subscribe_count, account="active"):
             task1 = job_progress.add_task(
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
+            async with sessionbuilder.sessionBuilder(
+                sems=constants.getattr("SUBSCRIPTION_SEMS"),
+                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT"),
+                wait_max=constants.getattr("OF_MAX_WAIT"),
+            ) as c:
                 if account == "active":
                     out = await activeHelper(subscribe_count, c)
                 else:
@@ -186,116 +191,85 @@ async def expiredHelper(subscribe_count, c):
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
     attempt.set(0)
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN_WAIT"),
-            max=constants.getattr("OF_MAX_WAIT"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            try:
-                attempt.set(attempt.get(0) + 1)
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        log.debug(
+            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} usernames active offset {offset}"
+        )
+        async with c.requests_async(
+            constants.getattr("subscriptionsActiveEP").format(offset)
+        ) as r:
+            if r.ok:
+                subscriptions = (await r.json_())["list"]
                 log.debug(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} usernames active offset {offset}"
+                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                 )
-                async with c.requests_async(
-                    constants.getattr("subscriptionsActiveEP").format(offset)
-                ) as r:
-                    if r.ok:
-                        subscriptions = (await r.json_())["list"]
-                        log.debug(
-                            f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                        )
-                        if len(subscriptions) == 0:
-                            return subscriptions
-                        elif recur == False:
-                            None
-                        elif (await r.json_())["hasMore"] == True:
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_subscriptions_active(
-                                        c,
-                                        recur=True,
-                                        offset=offset + len(subscriptions),
-                                    )
-                                )
+                if len(subscriptions) == 0:
+                    return subscriptions
+                elif recur == False:
+                    None
+                elif (await r.json_())["hasMore"] == True:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_subscriptions_active(
+                                c,
+                                recur=True,
+                                offset=offset + len(subscriptions),
                             )
-                        return subscriptions, new_tasks
-                    else:
-                        log.debug(
-                            f"[bold]subscriptions response status code:[/bold]{r.status}"
                         )
-                        log.debug(
-                            f"[bold]subscriptions response:[/bold] {await r.text_()}"
-                        )
-                        log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
-
+                    )
+                return subscriptions, new_tasks
+            else:
+                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                r.raise_for_status()
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
     attempt.set(0)
-
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN_WAIT"),
-            max=constants.getattr("OF_MAX_WAIT"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            try:
-                attempt.set(attempt.get(0) + 1)
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        log.debug(
+            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} usernames offset expired {offset}"
+        )
+        async with c.requests_async(
+            constants.getattr("subscriptionsExpiredEP").format(offset)
+        ) as r:
+            if r.ok:
+                subscriptions = (await r.json_())["list"]
                 log.debug(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} usernames offset expired {offset}"
+                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                 )
-                async with c.requests_async(
-                    constants.getattr("subscriptionsExpiredEP").format(offset)
-                ) as r:
-                    if r.ok:
-                        subscriptions = (await r.json_())["list"]
-                        log.debug(
-                            f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                        )
 
-                        if len(subscriptions) == 0:
-                            return subscriptions
-                        elif recur == False:
-                            None
-                        elif (await r.json_())["hasMore"] == True:
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_subscriptions_disabled(
-                                        c,
-                                        recur=True,
-                                        offset=offset + len(subscriptions),
-                                    )
-                                )
+                if len(subscriptions) == 0:
+                    return subscriptions
+                elif recur == False:
+                    None
+                elif (await r.json_())["hasMore"] == True:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_subscriptions_disabled(
+                                c,
+                                recur=True,
+                                offset=offset + len(subscriptions),
                             )
-
-                        return subscriptions, new_tasks
-                    else:
-                        log.debug(
-                            f"[bold]subscriptions response status code:[/bold]{r.status}"
                         )
-                        log.debug(
-                            f"[bold]subscriptions response:[/bold] {await r.text_()}"
-                        )
-                        log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
+                    )
 
+                return subscriptions, new_tasks
+            else:
+                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
+                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
+                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
+                r.raise_for_status()
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
