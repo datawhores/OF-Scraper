@@ -65,7 +65,6 @@ def final_log(username, log=None):
             f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
             f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
         )
-        log.info("This only includes updates for the media table")
     else:
         skipped_word = "skipped"
         (log or common_globals.log).error(

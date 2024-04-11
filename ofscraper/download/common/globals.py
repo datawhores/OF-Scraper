@@ -41,8 +41,6 @@ def main_globals():
     skipped = 0
     global forced_skipped
     forced_skipped = 0
-    global data
-    data = 0
     global total_data
     total_data = 0
     global count_lock
