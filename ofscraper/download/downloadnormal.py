@@ -69,8 +69,6 @@ async def process_dicts(username, model_id, medialist):
                 console=console.shared_console,
             ):
                 aws = []
-                desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
-
                 async with sessionbuilder.sessionBuilder() as c:
                     for ele in medialist:
                         aws.append(
@@ -79,7 +77,7 @@ async def process_dicts(username, model_id, medialist):
                             )
                         )
                     task1 = overall_progress.add_task(
-                        desc.format(
+                        common_globals.desc.format(
                             p_count=0,
                             v_count=0,
                             a_count=0,
@@ -130,7 +128,7 @@ async def process_dicts(username, model_id, medialist):
                         log_download_progress(media_type)
                         overall_progress.update(
                             task1,
-                            description=desc.format(
+                            description=common_globals.desc.format(
                                 p_count=common_globals.photo_count,
                                 v_count=common_globals.video_count,
                                 a_count=common_globals.audio_count,
