@@ -148,9 +148,13 @@ def get_all_stories_transition(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesSelectTransition)
+        data=[
+            dict(row)
+            for row in cur.fetchall()
+        ]
         return [
             dict(row, model_id=row.get("model_id") or database_model)
-            for row in cur.fetchall()
+            for row in data
         ]
 
 
