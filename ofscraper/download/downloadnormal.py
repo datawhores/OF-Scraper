@@ -83,12 +83,12 @@ async def process_dicts(username, model_id, medialist):
                         )
                     task1 = overall_progress.add_task(
                         common_globals.desc.format(
-                            p_count=common_globals.photo_count,
-                            v_count=common_globals.video_count,
-                            a_count=common_globals.audio_count,
-                            skipped=common_globals.skipped,
+                            p_count=0,
+                            v_count=0,
+                            a_count=0,
+                            skipped=0,
                             mediacount=len(medialist),
-                            forced_skipped=common_globals.forced_skipped,
+                            forced_skipped=0,
                             sumcount=0,
                             total_bytes_download=0,
                             total_bytes=0,
