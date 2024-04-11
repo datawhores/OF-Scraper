@@ -101,18 +101,15 @@ def process_dicts(username, model_id, filtered_medialist):
 
         task1 = overall_progress.add_task(
             common_globals.desc.format(
-                p_count=common_globals.photo_count,
-                v_count=common_globals.video_count,
-                a_count=common_globals.audio_count,
-                skipped=common_globals.skipped,
-                mediacount=len(filtered_medialist),
-                sumcount=common_globals.video_count
-                + common_globals.audio_count
-                + common_globals.photo_count
-                + common_globals.skipped,
-                forced_skipped=common_globals.forced_skipped,
-                total_bytes_download=0,
-                total_bytes=0
+                p_count=0,
+                            v_count=0,
+                            a_count=0,
+                            skipped=0,
+                            mediacount=len(filtered_medialist),
+                            forced_skipped=0,
+                            sumcount=0,
+                            total_bytes_download=0,
+                            total_bytes=0,
             ),
             total=len(filtered_medialist),
             visible=True,
