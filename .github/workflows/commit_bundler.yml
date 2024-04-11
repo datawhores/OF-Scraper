@@ -55,7 +55,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_version
           path: ofscraper
@@ -136,7 +136,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_version
           path: ofscraper
@@ -203,7 +203,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_version
           path: ofscraper
@@ -275,7 +275,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_version
           path: ofscraper
@@ -364,28 +364,28 @@ jobs:
       contents: write
     steps:
       - name: Download linux
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_linux
       - name: Download linux zip
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_linux_zip
 
       - name: Download mac
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_macos
       - name: Download mac zip
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_macos_zip
       - name: Download windows
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_windows
       - name: Download windows zip
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ofscraper_windows_zip
       - name: commit
