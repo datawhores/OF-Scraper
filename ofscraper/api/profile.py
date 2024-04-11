@@ -79,7 +79,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                         log.trace(f"username date: {r.json()}")
                         return r.json()
                     elif r.status == 404:
-                        return {"username": "modeldeleted"}
+                        return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
                     else:
                         log.debug(
                             f"[bold]profile response status code:[/bold]{r.status}"
@@ -128,7 +128,7 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                         log.trace(f"username date: {await r.json_()}")
                         return await r.json_()
                     elif r.status == 404:
-                        return {"username": "modeldeleted"}
+                        return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
                     else:
                         log.debug(
                             f"[bold]profile response status code:[/bold]{r.status}"
@@ -207,7 +207,7 @@ def get_id(username, c=None):
 def get_id_helper(c, username):
     if username.isnumeric():
         return username
-    if username== "modeldeleted":
+    if username== constants.getattr("DELETED_MODEL_PLACEHOLDER"):
         raise Exception("could not get ID")
     attempt.set(0)
     id = cache.get(f"model_id_{username}")

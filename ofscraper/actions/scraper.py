@@ -386,7 +386,7 @@ async def process_all_paid():
     with stdout.lowstdout():
         paid_content = await paid.get_all_paid_posts()
         user_dict = {}
-        
+
         for ele in paid_content:
             user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get(
                 "id"
@@ -396,7 +396,7 @@ async def process_all_paid():
         for model_id, value in user_dict.items():
             username = profile.scrape_profile(model_id).get("username")
             if (
-                username == "modeldeleted"
+                username == constants.getattr("DELETED_MODEL_PLACEHOLDER")
                 and await operations.check_profile_table_exists(
                     model_id=model_id, username=username
                 )

@@ -57,8 +57,7 @@ def allow_manual_dupes():
 
 
 def set_user_data(url_dicts):
-    user_helper.set_users_arg([nested_dict.get("username") for nested_dict in url_dicts.values()])
-    selector.all_subs_helper()
+    selector.set_data_all_subs_dict([nested_dict.get("username") for nested_dict in url_dicts.values()])
 
 def process_urls(urls):
     out_dict={}

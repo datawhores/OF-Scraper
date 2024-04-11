@@ -19,7 +19,7 @@ from ofscraper.utils.context.run_async import run
 
 ALL_SUBS = None
 PARSED_SUBS = None
-ALL_SUBS_DICT = None
+ALL_SUBS_DICT = {}
 log = logging.getLogger("shared")
 
 
@@ -83,6 +83,26 @@ def getselected_usernames(rescan=False, reset=False):
         all_subs_helper(refetch=False)
         parsed_subscriptions_helper()
     return PARSED_SUBS
+@run
+async def set_data_all_subs_dict(usernames):
+    args=read_args.retriveArgs()
+    oldusernames=args.usernames or set
+    all_usernames=set()
+    all_usernames=all_usernames.update([usernames] if not isinstance(usernames, list) else usernames)
+    all_usernames.update(oldusernames)
+    
+    seen = set()
+    new_names = [
+        username
+        for username in all_usernames
+        if username not in seen and not seen.add(username) and username not in oldusernames and username!=constants.getattr("DELETED_MODEL_PLACEHOLDER")
+    ]
+
+    args.usernames=set(new_names)
+    write_args.setArgs(args)
+    await all_subs_helper()
+    args.usernames=set(all_usernames)
+
 
 
 
@@ -92,7 +112,7 @@ async def all_subs_helper(refetch=True, main=False, check=True):
     if bool(ALL_SUBS) and not refetch:
         return
     while True:
-        ALL_SUBS = await retriver.get_models()
+        ALL_SUBS =await retriver.get_models()
         if len(ALL_SUBS) > 0 or not check:
             set_ALL_SUBS_DICTVManger(subsDict=ALL_SUBS)
             break

@@ -51,7 +51,7 @@ async def get_subscription(accounts=None):
                 out = await get_subscription_helper(c, accounts)
                 job_progress.remove_task(task1)
         outdict = {}
-        for ele in filter(lambda x: x["username"] != "modeldeleted", out):
+        for ele in filter(lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"), out):
             outdict[ele["id"]] = ele
         log.debug(f"Total subscriptions found {len(outdict.values())}")
         return list(outdict.values())
