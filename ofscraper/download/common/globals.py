@@ -43,9 +43,9 @@ def main_globals():
     forced_skipped = 0
     global desc
     desc = (
-        "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})"
+        "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_downloaded}/{total_bytes})"
         if not read_args.retriveArgs().metadata
-        else "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} metadata unchanged, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})"
+        else "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} metadata unchanged, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_downloaded}/{total_bytes})"
     )
     global count_lock
     count_lock = aioprocessing.AioLock()

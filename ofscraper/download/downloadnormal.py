@@ -85,7 +85,7 @@ async def process_dicts(username, model_id, medialist):
                             mediacount=len(medialist),
                             forced_skipped=0,
                             sumcount=0,
-                            total_bytes_download=0,
+                            total_bytes_downloaded=0,
                             total_bytes=0,
                         ),
                         total=len(aws),
@@ -139,7 +139,7 @@ async def process_dicts(username, model_id, medialist):
                                 total_bytes=convert_num_bytes(
                                     common_globals.total_bytes
                                 ),
-                                total_bytes_download=convert_num_bytes(
+                                total_bytes_downloaded=convert_num_bytes(
                                     common_globals.total_bytes_downloaded
                                 ),
                             ),
