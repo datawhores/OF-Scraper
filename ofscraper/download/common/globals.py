@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import aioprocessing
 
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
@@ -18,6 +17,7 @@ total_count2 = None
 innerlog = None
 localDirSet = None
 req_sem = None
+desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
 
 
 def reset_globals():
