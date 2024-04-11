@@ -41,10 +41,6 @@ def main_globals():
     skipped = 0
     global forced_skipped
     forced_skipped = 0
-    global data
-    data = 0
-    global total_data
-    total_data = 0
     global desc
     desc = (
         "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{data}/{total})"
