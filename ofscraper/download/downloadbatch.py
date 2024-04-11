@@ -111,7 +111,6 @@ def process_dicts(username, model_id, filtered_medialist):
                 + common_globals.photo_count
                 + common_globals.skipped,
                 forced_skipped=common_globals.forced_skipped,
-                total=common_globals.total_data,
                 total_bytes_download=0,
                 total_bytes=0
             ),
