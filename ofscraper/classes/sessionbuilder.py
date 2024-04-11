@@ -129,8 +129,6 @@ class sessionBuilder:
     def _create_cookies(self):
         return auth_requests.add_cookies()
 
-    
-    
     @contextlib.contextmanager
     def requests(
         self,
@@ -225,6 +223,7 @@ class sessionBuilder:
         return t
 
     async def _aio_funct(self,method, *args, **kwargs):
+            #public function forces context manager use
             r = await self._session._request(method,*args,**kwargs)
             r.text_ = r.text
             r.json_ = r.json

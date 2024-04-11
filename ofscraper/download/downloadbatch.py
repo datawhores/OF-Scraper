@@ -380,7 +380,6 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(
         f"{pid_log_helper()} process mediasplit from total {len(medialist)}"
     )
-
     aws = []
     async with sessionbuilder.sessionBuilder(sems=config_data.get_download_semaphores() or constants.getattr("MAX_SEMS_BATCH_DOWNLOAD")) as c:
         for ele in medialist:
