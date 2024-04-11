@@ -73,8 +73,8 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -374,8 +374,8 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -435,8 +435,8 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):

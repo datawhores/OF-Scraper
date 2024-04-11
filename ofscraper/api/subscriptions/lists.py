@@ -86,7 +86,7 @@ async def get_blacklist():
 
 async def get_lists():
     with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+        max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -149,8 +149,8 @@ async def scrape_for_list(c, job_progress, offset=0):
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -208,7 +208,7 @@ async def scrape_for_list(c, job_progress, offset=0):
 
 async def get_list_users(lists):
     with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+        max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
         overall_progress = Progress(
@@ -282,8 +282,8 @@ async def scrape_list_members(c, item, job_progress, offset=0):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):

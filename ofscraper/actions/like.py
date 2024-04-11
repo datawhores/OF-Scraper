@@ -217,8 +217,8 @@ async def _like_request(c, id, model_id):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):

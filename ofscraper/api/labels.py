@@ -171,8 +171,8 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -335,8 +335,8 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):

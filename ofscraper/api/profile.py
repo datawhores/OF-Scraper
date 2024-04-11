@@ -57,8 +57,8 @@ def scrape_profile_helper(c, username: Union[int, str]):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -103,8 +103,8 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -217,8 +217,8 @@ def get_id_helper(c, username):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):

@@ -34,7 +34,7 @@ async def get_subscription(accounts=None):
     if not isinstance(accounts, list) and not isinstance(accounts, set):
         accounts = set([accounts])
     with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+        max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 

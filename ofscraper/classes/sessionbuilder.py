@@ -1,14 +1,20 @@
 import contextlib
-import functools
 import ssl
 
 import aiohttp
 import certifi
 import httpx
+from tenacity import (
+    AsyncRetrying,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random,
+)
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.classes.semaphoreDelayed as semdelayed
+
 
 ####
 #  This class allows the user to select which backend aiohttp or httpx they want to use
@@ -32,7 +38,10 @@ class sessionBuilder:
         proxy=None,
         proxy_auth=None,
         delay=None,
-        sems=None
+        sems=None,
+        retries=None,
+        wait_min=None,
+        wait_max=None
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -54,6 +63,9 @@ class sessionBuilder:
         self._proxy = proxy
         self._proxy_auth = proxy_auth
         self._sem=semdelayed.semaphoreDelayed(sems=sems,delay=delay)
+        self._retries=retries or constants.getattr("NUM_TRIES_DEFAULT")
+        self._wait_min=wait_min or constants.getattr("OF_MIN_WAIT_DEFAULT")
+        self._wait_max=wait_max or constants.getattr("OF_MAX_WAIT_DEFAULT")
 
     async def __aenter__(self):
         self._async = True
@@ -169,40 +181,50 @@ class sessionBuilder:
         data=None,
         sign=None
     ):
-        await self._sem.acquire()
-        try:
-            headers = self._create_headers(headers, url,sign) if headers is None else None
-            cookies = self._create_cookies() if cookies is None else None
-            json = json or None
-            params = params or None
-            if self._backend == "aio":
-                r=await self._aio_funct(
-                    method,
-                    url,
-                    headers=headers,
-                    cookies=cookies,
-                    allow_redirects=redirects,
-                    proxy=self._proxy,
-                    proxy_auth=self._proxy_auth,
-                    params=params,
-                    json=json,
-                    data=data,
-                    ssl=ssl.create_default_context(cafile=certifi.where()))
-                yield r
-            else:
-                    t=await self._httpx_funct_async(  
-                         method,
-                        follow_redirects=redirects,
-                        url=url,
-                        cookies=cookies,
+     async for _ in AsyncRetrying(
+        retry=retry_if_not_exception_type(KeyboardInterrupt),
+        stop=stop_after_attempt(self._retries),
+        wait=wait_random(
+            min=self._wait_min,
+            max=self._wait_max,
+        ),
+        reraise=True,
+    ):
+        async with _:
+            await self._sem.acquire()
+            try:
+                headers = self._create_headers(headers, url,sign) if headers is None else None
+                cookies = self._create_cookies() if cookies is None else None
+                json = json or None
+                params = params or None
+                if self._backend == "aio":
+                    r=await self._aio_funct(
+                        method,
+                        url,
                         headers=headers,
+                        cookies=cookies,
+                        allow_redirects=redirects,
+                        proxy=self._proxy,
+                        proxy_auth=self._proxy_auth,
+                        params=params,
                         json=json,
-                        params=params)
-                    yield t
-        except Exception as e:
-            raise e
-        finally:
-            self._sem.release()
+                        data=data,
+                        ssl=ssl.create_default_context(cafile=certifi.where()))
+                    yield r
+                else:
+                        t=await self._httpx_funct_async(  
+                            method,
+                            follow_redirects=redirects,
+                            url=url,
+                            cookies=cookies,
+                            headers=headers,
+                            json=json,
+                            params=params)
+                        yield t
+            except Exception as e:
+                raise e
+            finally:
+                self._sem.release()
 
 
     async def _httpx_funct_async(self,*args,**kwargs):

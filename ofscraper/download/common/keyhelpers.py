@@ -92,8 +92,8 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -142,8 +142,8 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -192,8 +192,8 @@ async def key_helper_keydb(c, pssh, licence_url, id):
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
         wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
+            min=constants.getattr("OF_MIN_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT"),
         ),
         reraise=True,
     ):
@@ -266,8 +266,8 @@ async def key_helper_manual(c, pssh, licence_url, id):
             retry=retry_if_not_exception_type(KeyboardInterrupt),
             stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
             wait=wait_random(
-                min=constants.getattr("OF_MIN"),
-                max=constants.getattr("OF_MAX"),
+                min=constants.getattr("OF_MIN_WAIT"),
+                max=constants.getattr("OF_MAX_WAIT"),
             ),
             reraise=True,
         ):
