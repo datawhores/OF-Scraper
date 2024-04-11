@@ -108,8 +108,8 @@ def process_dicts(username, model_id, filtered_medialist):
                 + common_globals.photo_count
                 + common_globals.skipped,
                 forced_skipped=common_globals.forced_skipped,
-                data=common_globals.data,
-                total=common_globals.total_data,
+                total_bytes=common_globals.total_bytes,
+                total_bytes_downloaded=common_globals.total_bytes_downloaded,
             ),
             total=len(filtered_medialist),
             visible=True,
@@ -271,8 +271,8 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                         a_count=common_globals.audio_count,
                         skipped=common_globals.skipped,
                         forced_skipped=common_globals.forced_skipped,
-                        data=convert_num_bytes(common_globals.total_bytes_downloaded),
-                        total=convert_num_bytes(common_globals.total_bytes),
+                        total_bytes_downloaded=convert_num_bytes(common_globals.total_bytes_downloaded),
+                        total_bytes=convert_num_bytes(common_globals.total_bytes),
                         mediacount=total,
                         sumcount=common_globals.video_count
                         + common_globals.audio_count
