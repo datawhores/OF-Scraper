@@ -23,7 +23,6 @@ import ofscraper.api.profile as profile
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -31,8 +30,6 @@ log = logging.getLogger("shared")
 
 @run
 async def get_subscription(accounts=None):
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     accounts = accounts or read_args.retriveArgs().usernames
     if not isinstance(accounts, list) and not isinstance(accounts, set):
         accounts = set([accounts])
@@ -47,7 +44,7 @@ async def get_subscription(accounts=None):
             task1 = job_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder() as c:
+            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
                 out = await get_subscription_helper(c, accounts)
                 job_progress.remove_task(task1)
         outdict = {}

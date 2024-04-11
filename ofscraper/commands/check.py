@@ -150,7 +150,7 @@ def post_checker():
 async def post_check_helper():
     user_dict = {}
     links = list(url_helper())
-    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
         for ele in links:
             name_match = re.search(
                 f"onlyfans.com/({constants.getattr('USERNAME_REGEX')}+$)", ele
@@ -281,7 +281,6 @@ def message_checker():
 @run
 async def message_checker_helper():
     links = list(url_helper())
-    ROWS = []
     async with sessionbuilder.sessionBuilder(backend="httpx") as c:
         for item in links:
             num_match = re.search(
@@ -348,7 +347,7 @@ async def purchase_checker_helper():
     user_dict = {}
     auth_requests.make_headers()
     ROWS = []
-    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
         for name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
@@ -403,7 +402,7 @@ def stories_checker():
 async def stories_checker_helper():
     user_dict = {}
     ROWS = []
-    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
         for user_name in read_args.retriveArgs().usernames:
             user_name = profile.scrape_profile(user_name)["username"]
             model_id = profile.get_id(user_name)
@@ -478,7 +477,7 @@ async def get_paid_ids(model_id, user_name):
     if len(oldpaid) > 0 and not read_args.retriveArgs().force:
         paid = oldpaid
     else:
-        async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+        async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
     media = await process_post_media(user_name,model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))

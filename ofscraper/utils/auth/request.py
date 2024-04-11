@@ -84,7 +84,7 @@ def get_request_auth_deviint():
             wait=wait_fixed(8),
         ):
             with _:
-                with c.requests(constants.getattr("DEVIINT"), headers=False, cookies=False, sign=False)() as r:
+                with c.requests(constants.getattr("DEVIINT"), headers=False, cookies=False, sign=False) as r:
                     if r.ok:
                         content = r.json_()
                         static_param = content["static_param"]
@@ -106,7 +106,7 @@ def get_request_auth_sneaky():
             wait=wait_fixed(8),
         ):
             with _:
-                with c.requests(constants.getattr("SNEAKY"),headers=False, cookies=False, sign=False)() as r:
+                with c.requests(constants.getattr("SNEAKY"),headers=False, cookies=False, sign=False) as r:
                     if r.ok:
                         content = r.json_()
                         static_param = content["static_param"]
@@ -126,7 +126,7 @@ def get_request_auth_digitalcriminals():
             wait=wait_fixed(8),
         ):
             with _:
-                with c.requests(constants.getattr("DIGITALCRIMINALS"), headers=False, cookies=False, sign=False)() as r:
+                with c.requests_async(constants.getattr("DIGITALCRIMINALS"), headers=False, cookies=False, sign=False) as r:
                     if r.ok:
                         content = r.json_()
                         static_param = content["static_param"]

@@ -28,19 +28,15 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 
 @run
 async def get_paid_posts_progress(username, model_id, c=None):
-    global sem
-    sem = sems.get_req_sem()
     tasks = []
 
     job_progress = progress_utils.paid_progress
@@ -55,13 +51,7 @@ async def get_paid_posts_progress(username, model_id, c=None):
 
 @run
 async def get_paid_posts(model_id, username, c=None):
-    global sem
-    sem = sems.get_req_sem()
     tasks = []
-
-    # async with c or sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     with progress_utils.set_up_api_paid():
         job_progress = progress_utils.paid_progress
         tasks.append(
@@ -146,7 +136,6 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
     """
-    global sem
     media = None
 
     attempt.set(0)
@@ -161,7 +150,6 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
         reraise=True,
     ):
         with _:
-            await sem.acquire()
             await asyncio.sleep(1)
 
             new_tasks = []
@@ -180,11 +168,11 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
                     else None
                 )
 
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("purchased_contentEP").format(
                         offset, username
                     )
-                )() as r:
+                ) as r:
                     if r.ok:
                         data = await r.json_()
                         log.trace("paid raw {posts}".format(posts=data))
@@ -227,7 +215,6 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
                 raise E
 
             finally:
-                sem.release()
                 job_progress.remove_task(task) if task and job_progress else None
 
         return media, new_tasks
@@ -235,8 +222,6 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
 
 @run
 async def get_all_paid_posts():
-    global sem
-    sem = sems.get_req_sem()
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_REQUEST_WORKERS")
     ) as executor:
@@ -249,8 +234,7 @@ async def get_all_paid_posts():
         with progress_utils.setup_all_paid_live():
             job_progress = progress_utils.all_paid_progress
             overall_progress = progress_utils.overall_progress
-
-            async with sessionbuilder.sessionBuilder() as c:
+            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SCRAPE_PAID_SEMS")) as c:
                 allpaid = cache.get("purchased_all", default=[])
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
 
@@ -335,7 +319,6 @@ async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
     """
-    global sem
     media = None
 
     attempt.set(0)
@@ -349,7 +332,6 @@ async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
         reraise=True,
     ):
         with _:
-            await sem.acquire()
             await asyncio.sleep(1)
             new_tasks = []
             try:
@@ -359,9 +341,9 @@ async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
                     visible=True,
                 )
 
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("purchased_contentALL").format(offset)
-                )() as r:
+                ) as r:
                     if r.ok:
                         log_id = f"offset {offset or 0}:"
                         data = await r.json_()
@@ -421,7 +403,6 @@ async def scrape_all_paid(c, job_progress=None, offset=0, count=0, required=0):
                 raise E
 
             finally:
-                sem.release()
                 job_progress.remove_task(task)
 
             return media, new_tasks

@@ -68,7 +68,7 @@ def scrape_profile_helper(c, username: Union[int, str]):
                 log.info(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
                 )
-                with c.requests(constants.getattr("profileEP").format(username))() as r:
+                with c.requests(constants.getattr("profileEP").format(username)) as r:
                     if r.ok:
                         cache.set(
                             f"username_{username}",
@@ -115,9 +115,9 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get profile {username}"
                 )
                 await asyncio.sleep(1)
-                async with c.requests(
+                async with c.requests_async(
                     constants.getattr("profileEP").format(username)
-                )() as r:
+                ) as r:
                     if r.ok:
                         cache.set(
                             f"username_{username}",
@@ -229,7 +229,7 @@ def get_id_helper(c, username):
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} to get id {username}"
                 )
 
-                with c.requests(constants.getattr("profileEP").format(username))() as r:
+                with c.requests(constants.getattr("profileEP").format(username)) as r:
                     if r.ok:
                         id = r.json()["id"]
                         cache.set(

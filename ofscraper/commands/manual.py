@@ -172,7 +172,7 @@ async def paid_failback(post_id, model_id, username):
         "Using failback search because query return 0 media"
     )
     post_id = str(post_id)
-    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+    async with sessionbuilder.sessionBuilder(backend="httpx",sems=constants.getattr("API_REQ_CHECK_MAX")) as c:
         data = await paid.get_paid_posts(id, username, c=c) or []
         posts = list(
             map(lambda x: posts_.Post(x, model_id, username, responsetype="paid"), data)

@@ -1,9 +1,7 @@
 import asyncio
 import pathlib
-import traceback
 from functools import partial
 
-from tenacity import AsyncRetrying, retry, stop_after_attempt, wait_random
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
@@ -12,7 +10,6 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.download.common.log import get_medialog
-from ofscraper.download.common.sem import sem_wrapper
 
 
 async def metadata(c, ele, username, model_id, placeholderObj=None):
@@ -55,7 +52,6 @@ async def metadata_downloaded_helper(placeholderObj):
     return 0
 
 
-@sem_wrapper
 async def metadata_helper(c, ele):
     if not ele.url and  not ele.mpd:
         placeholderObj = placeholder.Placeholders(ele, ext=content_type_missing(ele))
@@ -75,7 +71,7 @@ async def metadata_helper(c, ele):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_RETRIES')}]  Getting data for metadata insert"
         )
-        async with c.requests(url=url, headers=None, params=params)() as r:
+        async with c.requests_async(url=url, headers=None, params=params) as r:
             if r.ok:
                 headers = r.headers
                 await asyncio.get_event_loop().run_in_executor(

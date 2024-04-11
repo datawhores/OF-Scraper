@@ -52,7 +52,7 @@ def _scraper_user_helper(c):
     ):
         with _:
             try:
-                with c.requests(constants.getattr("meEP"))() as r:
+                with c.requests(constants.getattr("meEP")) as r:
                     if r.ok:
                         data = r.json_()
                         log_helpers.updateSenstiveDict(data["id"], "userid")
@@ -93,7 +93,7 @@ def parse_subscriber_count():
         ):
             with _:
                 try:
-                    with c.requests(constants.getattr("subscribeCountEP"))() as r:
+                    with c.requests(constants.getattr("subscribeCountEP")) as r:
                         if r.ok:
                             data = r.json_()
                             return (

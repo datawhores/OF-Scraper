@@ -40,7 +40,6 @@ from ofscraper.download.common.common import (
     get_url_log,
     moveHelper,
     path_to_file_logger,
-    sem_wrapper,
     set_time,
     size_checker,
     temp_file_logger,
@@ -287,44 +286,43 @@ async def send_req_inner(c, ele, item, placeholderObj):
         }
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
-        async with sem_wrapper(common_globals.req_sem):
-            async with c.requests(url=url, headers=headers, params=params)() as l:
-                if l.ok:
-                    await asyncio.get_event_loop().run_in_executor(
-                        common_globals.cache_thread,
-                        partial(
-                            cache.set,
-                            f"{item['name']}_headers",
-                            {
-                                "content-length": l.headers.get("content-length"),
-                                "content-type": l.headers.get("content-type"),
-                            },
-                        ),
-                    )
-                    new_total = int(l.headers["content-length"])
-                    temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
-                    if await check_forced_skip(ele, new_total) == 0:
-                        item["total"] = 0
-                        await common.batch_total_change_helper(old_total, 0)
-                        return item
-                    elif item["total"] == resume_size:
-                        None
-                    else:
-                        item["total"] = new_total
-                        total = new_total
-                        await common.batch_total_change_helper(old_total, total)
-                        await download_fileobject_writer(total, l, ele, placeholderObj)
+        async with c.requests_async(url=url, headers=headers, params=params) as l:
+            if l.ok:
+                await asyncio.get_event_loop().run_in_executor(
+                    common_globals.cache_thread,
+                    partial(
+                        cache.set,
+                        f"{item['name']}_headers",
+                        {
+                            "content-length": l.headers.get("content-length"),
+                            "content-type": l.headers.get("content-type"),
+                        },
+                    ),
+                )
+                new_total = int(l.headers["content-length"])
+                temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
+                if await check_forced_skip(ele, new_total) == 0:
+                    item["total"] = 0
+                    await common.batch_total_change_helper(old_total, 0)
+                    return item
+                elif item["total"] == resume_size:
+                    None
                 else:
-                    common_globals.innerlog.get().debug(
-                        f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
-                    )
-                    common_globals.innerlog.get().debug(
-                        f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
-                    )
-                    common_globals.innerlog.get().debug(
-                        f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
-                    )
-                    l.raise_for_status()
+                    item["total"] = new_total
+                    total = new_total
+                    await common.batch_total_change_helper(old_total, total)
+                    await download_fileobject_writer(total, l, ele, placeholderObj)
+            else:
+                common_globals.innerlog.get().debug(
+                    f"[bold]  {get_medialog(ele)}  main download data finder status[/bold]: {l.status}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"[bold] {get_medialog(ele)}  main download data finder text [/bold]: {await l.text_()}"
+                )
+                common_globals.innerlog.get().debug(
+                    f"[bold]  {get_medialog(ele)} main download data finder headers [/bold]: {l.headers}"
+                )
+                l.raise_for_status()
         await size_checker(placeholderObj.tempfilepath, ele, item["total"])
         return item
     except Exception as E:

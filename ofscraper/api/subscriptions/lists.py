@@ -34,12 +34,10 @@ import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-import ofscraper.utils.sems as sems
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 
 @run
@@ -104,8 +102,8 @@ async def get_lists():
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
-            async with sessionbuilder.sessionBuilder() as c:
-                tasks.append(asyncio.create_task(scrape_lists(c, job_progress)))
+            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
+                tasks.append(asyncio.create_task(scrape_for_list(c, job_progress)))
                 page_task = overall_progress.add_task(
                     f"UserList Pages Progress: {page_count}", visible=True
                 )
@@ -145,10 +143,7 @@ async def get_lists():
         return output
 
 
-async def scrape_lists(c, job_progress, offset=0):
-    global sem
-    global tasks
-    sem = sems.get_req_sem()
+async def scrape_for_list(c, job_progress, offset=0):
     attempt.set(0)
     async for _ in AsyncRetrying(
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -161,16 +156,15 @@ async def scrape_lists(c, job_progress, offset=0):
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = job_progress.add_task(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} : getting lists offset -> {offset}",
                     visible=True,
                 )
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("listEP").format(offset)
-                )() as r:
+                ) as r:
                     if r.ok:
                         data = await r.json_()
                         out_list = data["list"] or []
@@ -193,7 +187,7 @@ async def scrape_lists(c, job_progress, offset=0):
                             offset = offset + len(out_list)
                             new_tasks.append(
                                 asyncio.create_task(
-                                    scrape_lists(c, job_progress, offset=offset)
+                                    scrape_for_list(c, job_progress, offset=offset)
                                 )
                             )
 
@@ -208,14 +202,11 @@ async def scrape_lists(c, job_progress, offset=0):
                 raise E
 
             finally:
-                sem.release()
                 job_progress.remove_task(task)
             return out_list, new_tasks
 
 
 async def get_list_users(lists):
-    global sem
-    sem = sems.get_req_sem()
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_REQUEST_WORKERS")
     ) as executor:
@@ -235,9 +226,9 @@ async def get_list_users(lists):
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
-            async with sessionbuilder.sessionBuilder() as c:
+            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
                 [
-                    tasks.append(asyncio.create_task(scrape_list(c, id, job_progress)))
+                    tasks.append(asyncio.create_task(scrape_list_members(c, id, job_progress)))
                     for id in lists
                 ]
                 page_task = overall_progress.add_task(
@@ -284,9 +275,7 @@ async def get_list_users(lists):
     return outdict.values()
 
 
-async def scrape_list(c, item, job_progress, offset=0):
-    global sem
-    global tasks
+async def scrape_list_members(c, item, job_progress, offset=0):
     users = None
     attempt.set(0)
     async for _ in AsyncRetrying(
@@ -300,7 +289,6 @@ async def scrape_list(c, item, job_progress, offset=0):
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
                 task = job_progress.add_task(
@@ -308,9 +296,9 @@ async def scrape_list(c, item, job_progress, offset=0):
                     visible=True,
                 )
 
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("listusersEP").format(item.get("id"), offset)
-                )() as r:
+                ) as r:
                     log_id = f"offset:{offset} list:{item.get('name')} =>"
                     if r.ok:
                         data = await r.json_()
@@ -343,7 +331,7 @@ async def scrape_list(c, item, job_progress, offset=0):
                             offset += len(users)
                             new_tasks.append(
                                 asyncio.create_task(
-                                    scrape_list(c, item, job_progress, offset=offset)
+                                    scrape_list_members(c, item, job_progress, offset=offset)
                                 )
                             )
 
@@ -363,6 +351,5 @@ async def scrape_list(c, item, job_progress, offset=0):
                 raise E
 
             finally:
-                sem.release()
                 job_progress.remove_task(task)
             return users, new_tasks

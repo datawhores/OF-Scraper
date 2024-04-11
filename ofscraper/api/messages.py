@@ -30,19 +30,15 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.sems as sems
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 
 @run
 async def get_messages_progress(model_id, username, forced_after=None, c=None):
-    global sem
-    sem = sems.get_req_sem()
     global after
 
     oldmessages = (
@@ -84,8 +80,6 @@ Setting initial message scan date for {username} to {arrow.get(after).format(con
 
 @run
 async def get_messages(model_id, username, forced_after=None, c=None):
-    global sem
-    sem = sems.get_req_sem()
     global after
 
     oldmessages = (
@@ -355,7 +349,6 @@ def set_check(unduped, model_id, after):
 async def scrape_messages(
     c, model_id, job_progress=None, message_id=None, required_ids=None
 ) -> list:
-    global sem
     messages = None
     attempt.set(0)
     ep = (
@@ -376,10 +369,9 @@ async def scrape_messages(
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
-                async with c.requests(url=url)() as r:
+                async with c.requests_async(url=url) as r:
                     attempt.set(attempt.get(0) + 1)
 
                     task = (
@@ -479,7 +471,6 @@ async def scrape_messages(
                 log.traceback_(traceback.format_exc())
                 raise E
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None
@@ -494,7 +485,7 @@ def get_individual_post(model_id, postid):
     ) as c:
         with c.requests(
             url=constants.getattr("messageSPECIFIC").format(model_id, postid)
-        )() as r:
+        ) as r:
             if r.ok:
                 log.trace(f"message raw individual {r.json()}")
                 return r.json()["list"][0]

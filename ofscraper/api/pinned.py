@@ -25,22 +25,16 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 
 @run
 async def get_pinned_posts_progress(model_id, c=None):
     tasks = []
     job_progress = progress_utils.pinned_progress
-
-    # async with sessionbuilder.sessionBuilder(
-    #     limit=constants.getattr("API_MAX_CONNECTION")
-    # ) as c:
     tasks.append(
         asyncio.create_task(
             scrape_pinned_posts(
@@ -162,8 +156,6 @@ def set_check(unduped, model_id):
 async def scrape_pinned_posts(
     c, model_id, job_progress=None, timestamp=None, count=0
 ) -> list:
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     posts = None
     attempt.set(0)
 
@@ -186,7 +178,6 @@ async def scrape_pinned_posts(
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -198,7 +189,7 @@ async def scrape_pinned_posts(
                     if job_progress
                     else None
                 )
-                async with c.requests(url=url)() as r:
+                async with c.requests_async(url=url) as r:
                     if r.ok:
                         posts = (await r.json_())["list"]
                         posts = list(
@@ -265,6 +256,5 @@ async def scrape_pinned_posts(
                 raise E
 
             finally:
-                sem.release()
                 job_progress.remove_task(task) if job_progress and task else None
             return posts, new_tasks

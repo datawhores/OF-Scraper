@@ -16,7 +16,6 @@ total_count = None
 total_count2 = None
 innerlog = None
 localDirSet = None
-req_sem = None
 desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
 
 def reset_globals():
@@ -66,14 +65,7 @@ def main_globals():
     localDirSet = set()
     global fileHashes
     fileHashes = {}
-    global req_sem
-    req_sem = semaphoreDelayed(
-        min(
-            constants.getattr("REQ_SEMAPHORE_MULTI"),
-            config_data.get_download_semaphores()
-            * constants.getattr("REQ_SEMAPHORE_MULTI"),
-        )
-    )
+
 
 
 def set_up_contexvars():

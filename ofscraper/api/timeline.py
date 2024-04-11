@@ -27,19 +27,15 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.sems as sems
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 
 @run
 async def get_timeline_posts_progress(model_id, username, forced_after=None, c=None):
-    global sem
-    sem = sems.get_req_sem()
 
     after = await get_after(model_id, username, forced_after)
 
@@ -52,9 +48,6 @@ async def get_timeline_posts_progress(model_id, username, forced_after=None, c=N
 
 @run
 async def get_timeline_posts(model_id, username, forced_after=None, c=None):
-    global sem
-    sem = sems.get_req_sem()
-
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_postsinfo(
             model_id=model_id, username=username
@@ -266,7 +259,7 @@ def set_check(unduped, model_id, after):
 
 def get_individual_post(id):
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id))() as r:
+        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
             if r.ok:
                 log.trace(f"post raw individual {r.json()}")
                 return r.json()
@@ -340,7 +333,6 @@ async def scrape_timeline_posts(
         reraise=True,
     ):
         with _:
-            await sem.acquire()
             await asyncio.sleep(1)
             new_tasks = []
             try:
@@ -354,7 +346,7 @@ async def scrape_timeline_posts(
                     else None
                 )
 
-                async with c.requests(url=url)() as r:
+                async with c.requests_async(url=url) as r:
                     if r.ok:
                         posts = (await r.json_())["list"]
                         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
@@ -433,7 +425,6 @@ async def scrape_timeline_posts(
                 raise E
 
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None

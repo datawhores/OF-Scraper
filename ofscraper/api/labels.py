@@ -25,7 +25,6 @@ from tenacity import (
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.sems as sems
 import ofscraper.utils.args.read as read_args
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.cache as cache
@@ -33,7 +32,6 @@ import ofscraper.utils.cache as cache
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 @run
 async def get_labels_progress(model_id, c=None):
@@ -54,8 +52,6 @@ async def get_labels_progress(model_id, c=None):
      )
 @run
 async def get_labels_data_progress(model_id, c=None):
-    global sem
-    sem = sems.get_req_sem()
     tasks = []
     tasks.append(
         asyncio.create_task(
@@ -66,8 +62,6 @@ async def get_labels_data_progress(model_id, c=None):
     return await process_tasks_labels(tasks)
 @run
 async def get_posts_for_labels_progress(labels, model_id, c=None):
-    global sem
-    sem = sems.get_req_sem()
     tasks = []
 
     [
@@ -102,8 +96,6 @@ async def get_labels(model_id, c=None):
      )
 @run
 async def get_labels_data(model_id, c=None):
-    global sem
-    sem = sems.get_req_sem()
     with progress_utils.set_up_api_labels():
         tasks = []
         tasks.append(
@@ -115,8 +107,6 @@ async def get_labels_data(model_id, c=None):
 
 @run
 async def get_posts_for_labels(labels, model_id, c=None):
-    global sem
-    sem = sems.get_req_sem()
     with progress_utils.set_up_api_posts_labels():
         tasks = []
         [
@@ -175,7 +165,6 @@ async def process_tasks_labels(tasks):
 
  
 async def scrape_labels(c, model_id, job_progress=None, offset=0):
-    global sem
     labels = None
     attempt.set(0)
     async for _ in AsyncRetrying(
@@ -189,7 +178,6 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -202,9 +190,9 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
                     if job_progress
                     else None
                 )
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("labelsEP").format(model_id, offset)
-                )() as r:
+                ) as r:
                     if r.ok:
                         data = await r.json_()
                         labels = list(
@@ -255,7 +243,6 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
                 raise E
 
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None
@@ -342,7 +329,6 @@ async def process_tasks_get_posts_for_labels(tasks,labels,model_id):
     return labels
 
 async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
-    global sem
     posts = None
     attempt.set(0)
     async for _ in AsyncRetrying(
@@ -356,7 +342,6 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -368,11 +353,11 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                     if job_progress
                     else None
                 )
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("labelledPostsEP").format(
                         model_id, offset, label["id"]
                     )
-                )() as r:
+                ) as r:
                     if r.ok:
                         data = await r.json_()
                         posts = list(
@@ -429,7 +414,6 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                 raise E
 
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None

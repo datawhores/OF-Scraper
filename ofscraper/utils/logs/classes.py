@@ -148,7 +148,7 @@ class DiscordHandler(logging.Handler):
                                     "content": date
                                     or dates_manager.getLogDate().get("now"),
                                 },
-                            )() as r:
+                            ) as r:
                                 if r.status == 200:
                                     resp_data = r.json()
                                     self._url = "{url}?thread_id={id}".format(
@@ -182,7 +182,7 @@ class DiscordHandler(logging.Handler):
                                     "content": log_entry,
                                     "thread_name": self._thread,
                                 },
-                            )() as r:
+                            ) as r:
                                 if not r.status == 204:
                                     raise Exception
                         except Exception:

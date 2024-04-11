@@ -33,7 +33,7 @@ def check_cdm():
             url = constants.getattr("CDRM2")
         try:
             with sessionbuilder.sessionBuilder(backend="httpx", total_timeout=30) as c:
-                with c.requests(url=url)() as r:
+                with c.requests(url=url) as r:
                     if r.ok:
                         console.print(
                             "[green] CDM service seems to be working\n[/green]"

@@ -52,7 +52,6 @@ from ofscraper.download.common.common import (
     get_url_log,
     moveHelper,
     path_to_file_logger,
-    sem_wrapper,
     set_time,
     size_checker,
     temp_file_logger,
@@ -283,45 +282,44 @@ async def send_req_inner(c, ele, item, placeholderObj, job_progress):
         }
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
-        async with sem_wrapper(common_globals.req_sem):
-            async with c.requests(url=url, headers=headers, params=params)() as l:
-                if l.ok:
-                    await asyncio.get_event_loop().run_in_executor(
-                        common_globals.cache_thread,
-                        partial(
-                            cache.set,
-                            f"{item['name']}_headers",
-                            {
-                                "content-length": l.headers.get("content-length"),
-                                "content-type": l.headers.get("content-type"),
-                            },
-                        ),
-                    )
-                    new_total = int(l.headers["content-length"])
-                    temp_file_logger(placeholderObj, ele)
-                    if await check_forced_skip(ele, new_total):
-                        item["total"] = 0
-                        await common.total_change_helper(None, old_total)
-                    elif total == resume_size:
-                        None
-                    else:
-                        item["total"] = new_total
-                        total = new_total
-                        await common.total_change_helper(old_total, total)
-                        await download_fileobject_writer(
-                            total, l, ele, job_progress, placeholderObj
-                        )
+        async with c.requests_async(url=url, headers=headers, params=params) as l:
+            if l.ok:
+                await asyncio.get_event_loop().run_in_executor(
+                    common_globals.cache_thread,
+                    partial(
+                        cache.set,
+                        f"{item['name']}_headers",
+                        {
+                            "content-length": l.headers.get("content-length"),
+                            "content-type": l.headers.get("content-type"),
+                        },
+                    ),
+                )
+                new_total = int(l.headers["content-length"])
+                temp_file_logger(placeholderObj, ele)
+                if await check_forced_skip(ele, new_total):
+                    item["total"] = 0
+                    await common.total_change_helper(None, old_total)
+                elif total == resume_size:
+                    None
                 else:
-                    common_globals.log.debug(
-                        f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
+                    item["total"] = new_total
+                    total = new_total
+                    await common.total_change_helper(old_total, total)
+                    await download_fileobject_writer(
+                        total, l, ele, job_progress, placeholderObj
                     )
-                    common_globals.log.debug(
-                        f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}"
-                    )
-                    common_globals.log.debug(
-                        f"[bold]  {get_medialog(ele)} alt download  headers [/bold]: {l.headers}"
-                    )
-                    l.raise_for_status()
+            else:
+                common_globals.log.debug(
+                    f"[bold]  {get_medialog(ele)}  alt download status[/bold]: {l.status}"
+                )
+                common_globals.log.debug(
+                    f"[bold] {get_medialog(ele)}  alt download text [/bold]: {await l.text_()}"
+                )
+                common_globals.log.debug(
+                    f"[bold]  {get_medialog(ele)} alt download  headers [/bold]: {l.headers}"
+                )
+                l.raise_for_status()
 
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item

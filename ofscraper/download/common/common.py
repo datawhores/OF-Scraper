@@ -32,7 +32,6 @@ from ofscraper.download.common.message import *
 from ofscraper.download.common.metadata import *
 from ofscraper.download.common.paths import *
 from ofscraper.download.common.progress import *
-from ofscraper.download.common.sem import sem_wrapper
 from ofscraper.download.common.text import *
 from ofscraper.utils.context.run_async import run
 

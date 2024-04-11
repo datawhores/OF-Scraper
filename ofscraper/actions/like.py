@@ -44,10 +44,8 @@ import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.system as system
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
-sem = semaphoreDelayed(1)
 log = logging.getLogger("shared")
 
 
@@ -57,7 +55,7 @@ async def get_posts(model_id, username):
     final_post_areas = set(areas.get_like_area())
     tasks = []
     with progress_utils.setup_api_split_progress_live():
-        async with sessionbuilder.sessionBuilder() as c:
+        async with sessionbuilder.sessionBuilder(sems=constants.getattr("LIKE_MAX_SEMS")) as c:
             while True:
                 max_count = min(
                     constants.getattr("API_MAX_AREAS"),
@@ -183,8 +181,6 @@ def unlike(model_id, username, ids: list):
 @run
 async def _like(model_id, username, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
-    global sem
-    sem.delay = 3
     with Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
@@ -192,7 +188,7 @@ async def _like(model_id, username, ids: list, like_action: bool):
         MofNCompleteColumn(),
         console=console.get_shared_console(),
     ) as overall_progress:
-        async with sessionbuilder.sessionBuilder() as c:
+        async with sessionbuilder.sessionBuilder(delay=3,sems=1) as c:
             tasks = []
             task1 = overall_progress.add_task(f"{title} posts...\n", total=len(ids))
 
@@ -207,17 +203,16 @@ async def _like(model_id, username, ids: list, like_action: bool):
                 )
 
                 if count + 1 % 60 == 0 and count + 1 % 50 == 0:
-                    sem.delay = 15
+                    c.delay = 15
                 elif count + 1 % 60 == 0:
-                    sem.delay = 3
+                    c.delay = 3
                 elif count + 1 % 50 == 0:
-                    sem.delay = 30
+                    c.delay = 30
 
                 overall_progress.update(task1, advance=1, refresh=True)
 
 
 async def _like_request(c, id, model_id):
-    global sem
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -228,11 +223,10 @@ async def _like_request(c, id, model_id):
         reraise=True,
     ):
         with _:
-            await sem.acquire()
             try:
-                async with c.requests(
+                async with c.requests_async(
                     constants.getattr("favoriteEP").format(id, model_id), "post"
-                )() as r:
+                ) as r:
                     if r.ok:
                         return id
                     else:
@@ -246,5 +240,3 @@ async def _like_request(c, id, model_id):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 raise E
-            finally:
-                sem.release()

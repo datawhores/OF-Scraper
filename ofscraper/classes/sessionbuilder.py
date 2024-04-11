@@ -5,17 +5,17 @@ import ssl
 import aiohttp
 import certifi
 import httpx
-
-import ofscraper.utils.auth.file as files
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+import ofscraper.classes.semaphoreDelayed as semdelayed
 
 ####
 #  This class allows the user to select which backend aiohttp or httpx they want to use
 #  httpx has better compatiblilty but is slower
 #
 #####
+
 
 
 class sessionBuilder:
@@ -31,6 +31,8 @@ class sessionBuilder:
         keep_alive_exp=None,
         proxy=None,
         proxy_auth=None,
+        delay=None,
+        sems=None
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -51,6 +53,7 @@ class sessionBuilder:
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
         self._proxy_auth = proxy_auth
+        self._sem=semdelayed.semaphoreDelayed(sems=sems,delay=delay)
 
     async def __aenter__(self):
         self._async = True
@@ -126,6 +129,9 @@ class sessionBuilder:
     def _create_cookies(self):
         return auth_requests.add_cookies()
 
+    
+    
+    @contextlib.contextmanager
     def requests(
         self,
         url=None,
@@ -142,42 +148,7 @@ class sessionBuilder:
         cookies = self._create_cookies() if cookies is None else None
         json = json or None
         params = params or None
-
-        if self._backend == "aio":
-            funct = functools.partial(
-                self._aio_funct_async,
-                method,
-                url=url,
-                headers=headers,
-                cookies=cookies,
-                allow_redirects=redirects,
-                proxy=self._proxy,
-                proxy_auth=self._proxy_auth,
-                params=params,
-                json=json,
-                data=data,
-                ssl=ssl.create_default_context(cafile=certifi.where()),
-            )
-
-        # elif self._backend=="httpx" and self._async:
-        #     funct=functools.partial(self._httpx_funct_async,method,url=url,follow_redirects=redirects,params=params,cookies=cookies,headers=headers,json=json,data=data)
-
-        elif self._backend == "httpx" and self._async:
-            inner_func = functools.partial(
-                self._session.request,
-                method,
-                follow_redirects=redirects,
-                url=url,
-                cookies=cookies,
-                headers=headers,
-                json=json,
-                params=params,
-            )
-            funct = functools.partial(self._httpx_funct_async, inner_func)
-
-        elif self._backend == "httpx" and not self._async:
-            funct = functools.partial(
-                self._httpx_funct,
+        t=self._httpx_funct(
                 method,
                 url=url,
                 follow_redirects=redirects,
@@ -185,55 +156,89 @@ class sessionBuilder:
                 cookies=cookies,
                 headers=headers,
                 json=json,
-                data=data,
-            )
-
-        return funct
-
-    # context providers are used to provide access to object before exit
+                data=data)
+        yield t
     @contextlib.asynccontextmanager
-    async def _httpx_funct_async(self, funct):
-        t = await funct()
-        t.ok = not t.is_error
+    async def requests_async(
+        self,
+        url=None,
+        method="get",
+        headers=None,
+        cookies=None,
+        json=None,
+        params=None,
+        redirects=True,
+        data=None,
+        sign=None
+    ):
+        await self._sem.acquire()
+        try:
+            headers = self._create_headers(headers, url,sign) if headers is None else None
+            cookies = self._create_cookies() if cookies is None else None
+            json = json or None
+            params = params or None
+            if self._backend == "aio":
+                r=await self._aio_funct(
+                    method,
+                    url,
+                    headers=headers,
+                    cookies=cookies,
+                    allow_redirects=redirects,
+                    proxy=self._proxy,
+                    proxy_auth=self._proxy_auth,
+                    params=params,
+                    json=json,
+                    data=data,
+                    ssl=ssl.create_default_context(cafile=certifi.where()))
+                yield r
+            else:
+                    t=await self._httpx_funct_async(  
+                         method,
+                        follow_redirects=redirects,
+                        url=url,
+                        cookies=cookies,
+                        headers=headers,
+                        json=json,
+                        params=params)
+                    yield t
+        except Exception as e:
+            raise e
+        finally:
+            self._sem.release()
+
+
+    async def _httpx_funct_async(self,*args,**kwargs):
+        t = await    self._session.request(*args,**kwargs)
         t.json_ = lambda: self.factoryasync(t.json)
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
-        yield t
-        None
+        return t
 
-    # context providers are used to provide access to object before exit
-    @contextlib.contextmanager
     def _httpx_funct(self, method, **kwargs):
-        try:
-            t = self._session.request(method.upper(), **kwargs)
-        except Exception as E:
-            raise E
-
+        t = self._session.request(method.upper(), **kwargs)
         t.ok = not t.is_error
         t.json_ = t.json
         t.text_ = lambda: t.text
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
-        yield t
-        None
+        return t
+
+    async def _aio_funct(self,method, *args, **kwargs):
+            r = await self._session._request(method,*args,**kwargs)
+            r.text_ = r.text
+            r.json_ = r.json
+            r.iter_chunked = r.content.iter_chunked
+            return r
 
     async def factoryasync(self, input):
         if callable(input):
             return input()
         return input
 
-    # context providers are used to provide access to object before exit
-    @contextlib.asynccontextmanager
-    async def _aio_funct_async(self, method, **kwargs):
-        try:
-            resp = self._session.request(method, **kwargs)
-        except Exception as E:
-            raise E
-        async with resp as r:
-            r.text_ = r.text
-            r.json_ = r.json
-            r.iter_chunked = r.content.iter_chunked
-            yield r
-
-        None
+    @property
+    def delay(self):
+        return self._sem.delay
+    @delay.setter
+    def delay(self, value):
+        self._sem.delay = value

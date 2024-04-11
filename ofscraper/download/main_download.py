@@ -34,11 +34,9 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates
-import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.settings as settings
 from ofscraper.download.common.common import (
     addGlobalDir,
@@ -51,7 +49,6 @@ from ofscraper.download.common.common import (
     get_url_log,
     moveHelper,
     path_to_file_logger,
-    sem_wrapper,
     set_profile_cache_helper,
     set_time,
     size_checker,
@@ -242,50 +239,49 @@ async def send_req_inner(
             if resume_size == 0 or not total
             else {"Range": f"bytes={resume_size}-{total}"}
         )
-        async with sem_wrapper(common_globals.req_sem):
-            async with c.requests(url=ele.url, headers=headers)() as r:
-                if r.ok:
-                    await asyncio.get_event_loop().run_in_executor(
-                        common_globals.cache_thread,
-                        partial(
-                            cache.set,
-                            f"{ele.id}_headers",
-                            {
-                                "content-length": r.headers.get("content-length"),
-                                "content-type": r.headers.get("content-type"),
-                            },
-                        ),
-                    )
-                    new_total = int(r.headers["content-length"])
-                    content_type = r.headers.get("content-type").split("/")[-1]
-                    content_type = content_type or get_unknown_content_type(ele)
-                    if not placeholderObj:
-                        placeholderObj = await placeholder.Placeholders(
-                            ele, content_type
-                        ).init()
-                    path_to_file_logger(placeholderObj, ele)
-                    if await check_forced_skip(ele, new_total):
-                        total = 0
-                        await common.total_change_helper(old_total, total)
-                    elif total == resume_size:
-                        None
-                    else:
-                        total = new_total
-                        await common.total_change_helper(old_total, total)
-                        await download_fileobject_writer(
-                            r, job_progress, ele, tempholderObj, placeholderObj, total
-                        )
+        async with c.requests_async(url=ele.url, headers=headers) as r:
+            if r.ok:
+                await asyncio.get_event_loop().run_in_executor(
+                    common_globals.cache_thread,
+                    partial(
+                        cache.set,
+                        f"{ele.id}_headers",
+                        {
+                            "content-length": r.headers.get("content-length"),
+                            "content-type": r.headers.get("content-type"),
+                        },
+                    ),
+                )
+                new_total = int(r.headers["content-length"])
+                content_type = r.headers.get("content-type").split("/")[-1]
+                content_type = content_type or get_unknown_content_type(ele)
+                if not placeholderObj:
+                    placeholderObj = await placeholder.Placeholders(
+                        ele, content_type
+                    ).init()
+                path_to_file_logger(placeholderObj, ele)
+                if await check_forced_skip(ele, new_total):
+                    total = 0
+                    await common.total_change_helper(old_total, total)
+                elif total == resume_size:
+                    None
                 else:
-                    common_globals.log.debug(
-                        f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
+                    total = new_total
+                    await common.total_change_helper(old_total, total)
+                    await download_fileobject_writer(
+                        r, job_progress, ele, tempholderObj, placeholderObj, total
                     )
-                    common_globals.log.debug(
-                        f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}"
-                    )
-                    common_globals.log.debug(
-                        f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}"
-                    )
-                    r.raise_for_status()
+            else:
+                common_globals.log.debug(
+                    f"[bold] {get_medialog(ele)} main download response status code [/bold]: {r.status}"
+                )
+                common_globals.log.debug(
+                    f"[bold] {get_medialog(ele)}  main download  response text [/bold]: {await r.text_()}"
+                )
+                common_globals.log.debug(
+                    f"[bold] {get_medialog(ele)}  main download headers [/bold]: {r.headers}"
+                )
+                r.raise_for_status()
 
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)

@@ -31,19 +31,15 @@ from tenacity import (
 import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 console = Console()
-sem = None
 
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_REQUEST_WORKERS")
     ) as executor:
@@ -55,7 +51,7 @@ async def get_subscriptions(subscribe_count, account="active"):
             task1 = job_progress.add_task(
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder() as c:
+            async with sessionbuilder.sessionBuilder(sems=constants.getattr("SUBSCRIPTION_SEMS")) as c:
                 if account == "active":
                     out = await activeHelper(subscribe_count, c)
                 else:
@@ -189,7 +185,6 @@ async def expiredHelper(subscribe_count, c):
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -202,15 +197,14 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
                 log.debug(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} usernames active offset {offset}"
                 )
-                async with c.requests(
+                async with c.requests_async(
                     constants.getattr("subscriptionsActiveEP").format(offset)
-                )() as r:
+                ) as r:
                     if r.ok:
                         subscriptions = (await r.json_())["list"]
                         log.debug(
@@ -245,13 +239,10 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
                 log.traceback_(traceback.format_exc())
                 raise E
 
-            finally:
-                sem.release()
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
     attempt.set(0)
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
 
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -264,15 +255,14 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
                 log.debug(
                     f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} usernames offset expired {offset}"
                 )
-                async with c.requests(
+                async with c.requests_async(
                     constants.getattr("subscriptionsExpiredEP").format(offset)
-                )() as r:
+                ) as r:
                     if r.ok:
                         subscriptions = (await r.json_())["list"]
                         log.debug(
@@ -309,5 +299,3 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
                 log.traceback_(traceback.format_exc())
                 raise E
 
-            finally:
-                sem.release()

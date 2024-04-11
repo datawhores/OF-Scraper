@@ -27,7 +27,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -161,7 +160,6 @@ Setting initial archived scan date for {username} to {arrow.get(after).format(co
     )
     filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
-    # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
         filteredArray[i : i + min_posts]
         for i in range(0, len(filteredArray), min_posts)
@@ -295,7 +293,6 @@ async def scrape_archived_posts(
     global sem
     posts = None
     attempt.set(0)
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     if timestamp and (
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
@@ -331,7 +328,7 @@ async def scrape_archived_posts(
                     if job_progress
                     else None
                 )
-                async with c.requests(url)() as r:
+                async with c.requests_async(url) as r:
                     if r.ok:
                         posts = (await r.json_())["list"]
                         log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"

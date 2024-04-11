@@ -42,6 +42,8 @@ from ofscraper.download.main_download import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
 import ofscraper.utils.args.read as read_args
+import ofscraper.utils.config.data as config_data
+
 
 
 
@@ -74,7 +76,8 @@ async def process_dicts(username, model_id, medialist):
             ):
                 aws = []
 
-                async with sessionbuilder.sessionBuilder() as c:
+                async with sessionbuilder.sessionBuilder(sems=config_data.get_download_semaphores() or constants.getattr("MAX_SEMS_SINGLE_THREAD_DOWNLOAD")
+            ) as c:
                     for ele in medialist:
                         aws.append(
                             asyncio.create_task(

@@ -31,6 +31,7 @@ import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+import ofscraper.utils.config.data as config_data
 from ofscraper.download.alt_downloadbatch import alt_download
 from ofscraper.download.common.common import (
     addGlobalDir,
@@ -381,7 +382,7 @@ async def process_dicts_split(username, model_id, medialist):
     )
 
     aws = []
-    async with sessionbuilder.sessionBuilder() as c:
+    async with sessionbuilder.sessionBuilder(sems=config_data.get_download_semaphores() or constants.getattr("MAX_SEMS_BATCH_DOWNLOAD")) as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
         for coro in asyncio.as_completed(aws):

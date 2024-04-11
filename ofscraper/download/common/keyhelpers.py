@@ -112,9 +112,9 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
                     "proxy": "",
                     "cache": True,
                 }
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("CDRM"), method="post", json=json_data
-                )() as r:
+                ) as r:
                     if r.ok:
                         httpcontent = await r.text_()
                         log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -162,9 +162,9 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
                     "proxy": "",
                     "cache": True,
                 }
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("CDRM2"), method="post", json=json_data
-                )() as r:
+                ) as r:
                     if r.ok:
                         httpcontent = await r.text_()
                         log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -219,12 +219,12 @@ async def key_helper_keydb(c, pssh, licence_url, id):
                     "X-API-Key": config_data.get_keydb_api(),
                 }
 
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("KEYDB"),
                     method="post",
                     json=json_data,
                     headers=headers,
-                )() as r:
+                ) as r:
                     if r.ok:
                         data = await r.json_()
                         log.debug(f"keydb json {data}")
@@ -300,9 +300,9 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
                     keys = None
                     challenge = cdm.get_license_challenge(session_id, pssh_obj)
-                    async with c.requests(
+                    async with c.requests_async(
                         url=licence_url, method="post", data=challenge
-                    )() as r:
+                    ) as r:
                         cdm.parse_license(session_id, (await r.content.read()))
 
                         # cdm.parse_license(session_id, (await r.content.read()))

@@ -26,11 +26,9 @@ from tenacity import (
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-sem = None
 attempt = contextvars.ContextVar("attempt")
 
 
@@ -40,8 +38,6 @@ attempt = contextvars.ContextVar("attempt")
 ##############################################################################
 @run
 async def get_stories_post_progress(model_id, c=None):
-    global sem
-    sem = semaphoreDelayed(1)
     tasks = []
     job_progress = progress_utils.stories_progress
 
@@ -57,8 +53,6 @@ async def get_stories_post_progress(model_id, c=None):
 
 @run
 async def get_stories_post(model_id, c=None):
-    global sem
-    sem = semaphoreDelayed(1)
     tasks = []
     with progress_utils.set_up_api_stories():
         tasks.append(
@@ -72,8 +66,6 @@ async def get_stories_post(model_id, c=None):
 
 
 async def scrape_stories(c, user_id, job_progress=None) -> list:
-    global sem
-    global tasks
     stories = None
     attempt.set(0)
 
@@ -88,7 +80,6 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -100,9 +91,9 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
                     if job_progress
                     else None
                 )
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("highlightsWithAStoryEP").format(user_id)
-                )() as r:
+                ) as r:
                     if r.ok:
                         stories = await r.json_()
                         log.debug(
@@ -134,7 +125,6 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
                 raise E
 
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None
@@ -220,9 +210,6 @@ async def get_highlight_post_progress(model_id, c=None):
 
 
 async def get_highlight_list_progress(model_id, c=None):
-    global sem
-    sem = semaphoreDelayed(1)
-
     tasks = []
     tasks.append(
         asyncio.create_task(
@@ -254,9 +241,6 @@ async def get_highlight_post(model_id, c=None):
 
 
 async def get_highlight_list(model_id, c=None):
-    global sem
-    sem = semaphoreDelayed(1)
-
     with progress_utils.set_up_api_highlights_lists():
         tasks = []
         tasks.append(
@@ -386,8 +370,6 @@ async def process_task_highlights(tasks):
 
 
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
-    global sem
-    attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
         stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
@@ -399,7 +381,6 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -411,11 +392,11 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
                     if job_progress
                     else None
                 )
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("highlightsWithStoriesEP").format(
                         user_id, offset
                     )
-                )() as r:
+                ) as r:
                     if r.ok:
                         resp_data = await r.json_()
                         log.trace(
@@ -439,7 +420,6 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
                 raise E
 
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None
@@ -450,7 +430,6 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
 
 
 async def scrape_highlights(c, id, job_progress=None) -> list:
-    global sem
     attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -463,7 +442,6 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
     ):
         with _:
             new_tasks = []
-            await sem.acquire()
             await asyncio.sleep(1)
             try:
                 attempt.set(attempt.get(0) + 1)
@@ -475,9 +453,9 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
                     if job_progress
                     else None
                 )
-                async with c.requests(
+                async with c.requests_async(
                     url=constants.getattr("storyEP").format(id)
-                )() as r:
+                ) as r:
                     if r.ok:
                         resp_data = await r.json_()
                         log.trace(f"highlights: -> found highlights data {resp_data}")
@@ -496,7 +474,6 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
                 raise E
 
             finally:
-                sem.release()
                 (
                     job_progress.remove_task(task)
                     if job_progress and task != None
@@ -526,7 +503,7 @@ def get_highlightList(data):
 
 def get_individual_highlights(id):
     return get_individual_stories(id)
-    # with c.requests(constants.getattr("highlightSPECIFIC").format(id))() as r:
+    # with c.requests_async(constants.getattr("highlightSPECIFIC").format(id)) as r:
     #     if r.ok:
     #         log.trace(f"highlight raw highlight individua; {r.json()}")
     #         return r.json()
@@ -538,7 +515,7 @@ def get_individual_highlights(id):
 
 def get_individual_stories(id, c=None):
     with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        with c.requests(constants.getattr("storiesSPECIFIC").format(id))() as r:
+        with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
             if r.ok:
                 log.trace(f"highlight raw highlight individua; {r.json_()}")
                 return r.json()

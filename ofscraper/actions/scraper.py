@@ -514,7 +514,7 @@ async def process_task(model_id, username, ele):
     postObjs = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
-    async with sessionbuilder.sessionBuilder() as c:
+    async with sessionbuilder.sessionBuilder(sems=constants.getattr("API_REQ_SEM_MAX")) as c:
         while True:
             max_count = min(
                 constants.getattr("API_MAX_AREAS"),

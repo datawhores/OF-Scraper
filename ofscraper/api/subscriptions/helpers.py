@@ -26,13 +26,11 @@ from tenacity import (
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 console = Console()
-sem = None
 
 
 def get_user_list_helper():
@@ -44,8 +42,6 @@ def get_black_list_helper():
 
 
 async def sort_list(c) -> list:
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     attempt.set(0)
     async for _ in AsyncRetrying(
         retry=retry_if_not_exception_type(KeyboardInterrupt),
@@ -57,14 +53,13 @@ async def sort_list(c) -> list:
         reraise=True,
     ):
         with _:
-            await sem.acquire()
             try:
                 attempt.set(attempt.get(0) + 1)
-                async with c.requests(
+                async with c.requests_async(
                     constants.getattr("sortSubscription"),
                     method="post",
                     json={"order": "users.name", "direction": "desc", "type": "all"},
-                )() as r:
+                ) as r:
                     if r.ok:
                         None
                     else:
@@ -81,5 +76,3 @@ async def sort_list(c) -> list:
                 log.traceback_(traceback.format_exc())
                 raise E
 
-            finally:
-                sem.release()

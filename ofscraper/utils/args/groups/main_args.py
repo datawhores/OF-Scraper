@@ -156,77 +156,77 @@ import ofscraper.utils.args.helpers as helpers
             default=False,
             is_flag=True,
         ),
-        click.option(
-            "-lb",
-            "--label",
-            help="Filter by label (use helpers.label_helper to process)",
-            default=[],
-            required=False,
-            type=helpers.label_helper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-            multiple=True,
+    ),
+    click.option(
+        "-lb",
+        "--label",
+        help="Filter by label (use helpers.label_helper to process)",
+        default=[],
+        required=False,
+        type=helpers.label_helper,
+        callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
-        click.option(
-            "-be",
-            "--before",
-            help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-            type=helpers.arrow_helper,
+        multiple=True,
+    ),
+    click.option(
+        "-be",
+        "--before",
+        help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+        type=helpers.arrow_helper,
+    ),
+    click.option(
+        "-af",
+        "--after",
+        help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
+        type=helpers.arrow_helper,
+    ),
+    click.option(
+        "-mt",
+        "--mediatype",
+        help="Filter by media type (Videos, Audios, Images)",
+        default=[],
+        required=False,
+        type=helpers.mediatype_helper,
+        callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
         ),
-        click.option(
-            "-af",
-            "--after",
-            help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-            type=helpers.arrow_helper,
-        ),
-        click.option(
-            "-mt",
-            "--mediatype",
-            help="Filter by media type (Videos, Audios, Images)",
-            default=[],
-            required=False,
-            type=helpers.mediatype_helper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-            multiple=True,
-        ),
-        click.option(
-            "-sx",
-            "--size-max",
-            help="Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)",
-            required=False,
-            type=parse_size,
-        ),
-        click.option(
-            "-sm",
-            "--size-min",
-            help="Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)",
-            required=False,
-            type=parse_size,
-        ),
-        click.option(
-            "-mm/-ms",
-            "--mass-only/--mass-skip",
-            "mass_msg",
-            help="""
-            \b
-            Flag for enabling/disabling mass content or promos 
-            [select one --mass-only or --mass-skip]""",
-            default=None,
-            required=False,
-        ),
-        click.option(
-            "-ok/-sk",
-            "--only-timed/--skip-timed",
-            "timed_only",
-            default=None,
-            help="""
-            \b
-            Flag for enabling/disabling promotional or temporary posts
-            [select one --only-timed or --skip-timed]""",
-        ),
+        multiple=True,
+    ),
+    click.option(
+        "-sx",
+        "--size-max",
+        help="Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)",
+        required=False,
+        type=parse_size,
+    ),
+    click.option(
+        "-sm",
+        "--size-min",
+        help="Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)",
+        required=False,
+        type=parse_size,
+    ),
+    click.option(
+        "-mm/-ms",
+        "--mass-only/--mass-skip",
+        "mass_msg",
+        help="""
+        \b
+        Flag for enabling/disabling mass content or promos 
+        [select one --mass-only or --mass-skip]""",
+        default=None,
+        required=False,
+    ),
+    click.option(
+        "-ok/-sk",
+        "--only-timed/--skip-timed",
+        "timed_only",
+        default=None,
+        help="""
+        \b
+        Flag for enabling/disabling promotional or temporary posts
+        [select one --only-timed or --skip-timed]""",
     ),
     help="""
     \b
