@@ -210,9 +210,13 @@ def get_all_products_transition(
 ):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(productsSelectTransition)
+        data=[
+            dict(row)
+            for row in cur.fetchall()
+        ]
         return [
             dict(row, model_id=row.get("model_id") or database_model)
-            for row in cur.fetchall()
+            for row in data
         ]
 
 
