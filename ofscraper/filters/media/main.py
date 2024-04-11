@@ -97,7 +97,7 @@ def filterMedia(media):
     )
 
     log.debug(f"filter {count}-> all media post media type filter count: {len(media)}")
-    media = helpers.posts_date_filter(media)
+    media = helpers.posts_date_filter_media(media)
     count += 1
 
     log.trace(
