@@ -25,7 +25,7 @@ jobs:
       - name: show file
         run: cat ofscraper/__version__.py
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_version
           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
@@ -84,7 +84,7 @@ jobs:
             echo "list files dir"
             ls dist
       - name: upload one file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_linux
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
@@ -113,7 +113,7 @@ jobs:
             ls dist
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
@@ -180,7 +180,7 @@ jobs:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
@@ -243,7 +243,7 @@ jobs:
           pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_windows
           path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
@@ -252,7 +252,7 @@ jobs:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
@@ -323,7 +323,7 @@ jobs:
           poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
           deactivate
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_macos
           path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
@@ -350,7 +350,7 @@ jobs:
           files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
           dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
