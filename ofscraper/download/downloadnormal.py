@@ -133,7 +133,7 @@ async def process_dicts(username, model_id, medialist):
                         log_download_progress(media_type)
                         overall_progress.update(
                             task1,
-                            description=desc.format(
+                            description=common_globals.desc.format(
                                 p_count=common_globals.photo_count,
                                 v_count=common_globals.video_count,
                                 a_count=common_globals.audio_count,
