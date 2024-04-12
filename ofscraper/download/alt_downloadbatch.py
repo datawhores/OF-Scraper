@@ -284,6 +284,11 @@ async def send_req_inner(c, ele, item, placeholderObj):
         }
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
+
+        common_globals.log.debug(
+             f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Downloading media with url {url}"
+        )
+    
         async with c.requests_async(url=url, headers=headers, params=params) as l:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,

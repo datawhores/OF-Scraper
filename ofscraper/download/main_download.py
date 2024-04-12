@@ -240,6 +240,9 @@ async def send_req_inner(
             if resume_size == 0 or not total
             else {"Range": f"bytes={resume_size}-{total}"}
         )
+        common_globals.log.debug(
+             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Downloading media with url {ele.url}"
+        )
         async with c.requests_async(url=ele.url, headers=headers) as r:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,

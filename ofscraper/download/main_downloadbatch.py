@@ -22,7 +22,6 @@ from tenacity import (
     AsyncRetrying,
     retry_if_not_exception_message,
     stop_after_attempt,
-    wait_random,
 )
 
 try:
@@ -220,6 +219,9 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
             None
             if resume_size == 0 or not old_total
             else {"Range": f"bytes={resume_size}-{total}"}
+        )
+        common_globals.log.debug(
+             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Downloading media with url {ele.url}"
         )
         async with c.requests_async(url=ele.url, headers=headers) as r:
             await asyncio.get_event_loop().run_in_executor(
