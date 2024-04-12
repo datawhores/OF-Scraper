@@ -266,9 +266,7 @@ async def send_req_inner(
             if await check_forced_skip(ele, new_total):
                 total = 0
                 await common.total_change_helper(old_total, total)
-            elif total == resume_size:
-                None
-            else:
+            elif total!=resume_size:
                 total = new_total
                 await common.total_change_helper(old_total, total)
                 await download_fileobject_writer(

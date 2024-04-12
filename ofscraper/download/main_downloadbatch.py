@@ -248,9 +248,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
                 total = 0
                 await common.batch_total_change_helper(old_total, total)
                 return (total, tempholderObj.tempfilepath, placeholderObj)
-            elif total == resume_size:
-                None
-            else:
+            elif total!=resume_size:
                 total = new_total
                 await common.batch_total_change_helper(old_total, total)
                 await download_fileobject_writer(

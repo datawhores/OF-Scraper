@@ -307,9 +307,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
                 item["total"] = 0
                 await common.batch_total_change_helper(old_total, 0)
                 return item
-            elif item["total"] == resume_size:
-                None
-            else:
+            elif total!=resume_size:
                 item["total"] = new_total
                 total = new_total
                 await common.batch_total_change_helper(old_total, total)

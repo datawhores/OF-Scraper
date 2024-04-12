@@ -303,9 +303,7 @@ async def send_req_inner(c, ele, item, placeholderObj, job_progress):
             if await check_forced_skip(ele, new_total):
                 item["total"] = 0
                 await common.total_change_helper(None, old_total)
-            elif total == resume_size:
-                None
-            else:
+            elif total!=resume_size:
                 item["total"] = new_total
                 total = new_total
                 await common.total_change_helper(old_total, total)
