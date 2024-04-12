@@ -385,6 +385,5 @@ async def scrape_archived_posts(
         raise E
 
     finally:
-        sem.release()
         job_progress.remove_task(task) if job_progress and task else None
     return posts, new_tasks

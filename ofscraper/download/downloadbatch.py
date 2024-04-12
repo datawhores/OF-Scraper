@@ -78,7 +78,7 @@ def process_dicts(username, model_id, filtered_medialist):
             )
             for i in range(len(shared))
         ]
-        shared_semaphore=aioprocessing.AioSemaphore(100)
+        shared_semaphore=aioprocessing.AioSemaphore(50)
         processes = [
             aioprocessing.AioProcess(
                 target=process_dict_starter,
