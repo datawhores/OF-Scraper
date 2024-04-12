@@ -1,4 +1,5 @@
 import contextlib
+import asyncio
 import logging
 import ssl
 import traceback
@@ -14,7 +15,6 @@ from tenacity import (
     wait_random,
 )
 
-import ofscraper.classes.semaphoreDelayed as semdelayed
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
@@ -67,7 +67,7 @@ class sessionBuilder:
         self._proxy = proxy
         self._proxy_auth = proxy_auth
         self._delay = delay or 0
-        self._sem = semaphore or semdelayed.semaphoreDelayed(sems=sems, delay=self._delay)
+        self._sem = semaphore or asyncio.Semaphore(sems or 100000)
         self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_MAX_WAIT_DEFAULT")
@@ -193,7 +193,7 @@ class sessionBuilder:
                     if r.status_code == 404:
                         pass
                     elif r.status_code == 429:
-                        self._sem._delay = self._sem._delay + 10
+                        pass
                     elif not r.ok:
                         (log or self._log).debug(f"[bold]failed: [bold] {r.url}")
                         (log or self._log).debug(f"[bold]status: [bold] {r.status}")
@@ -203,7 +203,8 @@ class sessionBuilder:
                         (log or self._log).debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                     else:
-                        self._sem._delay = max(self._sem._delay - 10, self._delay)
+                        # self._sem._delay = max(self._sem._delay - 10, self._delay)
+                        pass
                 except Exception as E:
                     (log or self._log).traceback_(E)
                     (log or self._log).traceback_(traceback.format_exc())
@@ -278,7 +279,15 @@ class sessionBuilder:
                     if r.status_code == 404:
                         pass
                     elif r.status_code == 429:
-                        self._sem._delay = self._sem._delay + 10
+                        # self._sem._delay = self._sem._delay + 10
+                        pass
+                        (log or self._log).debug(f"[bold]failed: [bold] {r.url}")
+                        (log or self._log).debug(f"[bold]status: [bold] {r.status}")
+                        (log or self._log).debug(
+                            f"[bold]response text [/bold]: {await r.text_()}"
+                        )
+                        (log or self._log).debug(f"[bold]headers[/bold]: {r.headers}")
+                        r.raise_for_status()
                     elif not r.ok:
                         (log or self._log).debug(f"[bold]failed: [bold] {r.url}")
                         (log or self._log).debug(f"[bold]status: [bold] {r.status}")
@@ -287,8 +296,8 @@ class sessionBuilder:
                         )
                         (log or self._log).debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
-                    else:
-                        self._sem._delay = max(self._sem._delay - 10, self._delay)
+                    # else:
+                    #     self._sem._delay = max(self._sem._delay - 10, self._delay)
                 except Exception as E:
                     (log or self._log).traceback_(E)
                     (log or self._log).traceback_(traceback.format_exc())
