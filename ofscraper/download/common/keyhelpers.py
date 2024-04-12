@@ -102,17 +102,11 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT"),
             wait_max=constants.getattr("OF_MAX_WAIT"),
         ) as r:
-            if r.ok:
-                httpcontent = await r.text_()
-                log.debug(f"ID:{id} key_response: {httpcontent}")
-                soup = BeautifulSoup(httpcontent, "html.parser")
-                out = soup.find("li").contents[0]
-            else:
-                log.debug(f"[bold]  key helper cdrm status[/bold]: {r.status}")
-                log.debug(f"[bold]  key helper cdrm text [/bold]: {await r.text_()}")
-                log.debug(f"[bold]  key helper cdrm headers [/bold]: {r.headers}")
-                r.raise_for_status()
-            return out
+            httpcontent = await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, "html.parser")
+            out = soup.find("li").contents[0]
+        return out
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -143,16 +137,10 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT"),
             wait_max=constants.getattr("OF_MAX_WAIT"),
         ) as r:
-            if r.ok:
-                httpcontent = await r.text_()
-                log.debug(f"ID:{id} key_response: {httpcontent}")
-                soup = BeautifulSoup(httpcontent, "html.parser")
-                out = soup.find("li").contents[0]
-            else:
-                log.debug(f"[bold]  key helper cdrm2 status[/bold]: {r.status}")
-                log.debug(f"[bold]  key helper cdrm2 text [/bold]: {await r.text_()}")
-                log.debug(f"[bold]  key helper cdrm2 headers [/bold]: {r.headers}")
-                r.raise_for_status()
+            httpcontent = await r.text_()
+            log.debug(f"ID:{id} key_response: {httpcontent}")
+            soup = BeautifulSoup(httpcontent, "html.parser")
+            out = soup.find("li").contents[0]
         return out
     except Exception as E:
         log.traceback_(E)
@@ -192,29 +180,23 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT"),
             wait_max=constants.getattr("OF_MAX_WAIT"),
         ) as r:
-            if r.ok:
-                data = await r.json_()
-                log.debug(f"keydb json {data}")
-                if isinstance(data, str):
-                    out = data
-                elif isinstance(data["keys"][0], str):
-                    out = data["keys"][0]
-                elif isinstance(data["keys"][0], object):
-                    out = data["keys"][0]["key"]
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
-                    partial(
-                        cache.set,
-                        licence_url,
-                        out,
-                        expire=constants.getattr("KEY_EXPIRY"),
-                    ),
-                )
-            else:
-                log.debug(f"[bold]  key helper keydb status[/bold]: {r.status}")
-                log.debug(f"[bold]  key helper keydb text [/bold]: {await r.text_()}")
-                log.debug(f"[bold]  key helper keydb headers [/bold]: {r.headers}")
-                r.raise_for_status()
+            data = await r.json_()
+            log.debug(f"keydb json {data}")
+            if isinstance(data, str):
+                out = data
+            elif isinstance(data["keys"][0], str):
+                out = data["keys"][0]
+            elif isinstance(data["keys"][0], object):
+                out = data["keys"][0]["key"]
+            await asyncio.get_event_loop().run_in_executor(
+                common_globals.cache_thread,
+                partial(
+                    cache.set,
+                    licence_url,
+                    out,
+                    expire=constants.getattr("KEY_EXPIRY"),
+                ),
+            )
         return out
     except Exception as E:
         log.traceback_(E)

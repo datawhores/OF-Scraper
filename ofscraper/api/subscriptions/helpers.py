@@ -50,13 +50,7 @@ async def sort_list(c) -> list:
             method="post",
             json={"order": "users.name", "direction": "desc", "type": "all"},
         ) as r:
-            if r.ok:
-                None
-            else:
-                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            pass
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

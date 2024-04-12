@@ -88,15 +88,12 @@ def get_request_auth_deviint():
             cookies=False,
             sign=False,
         ) as r:
-            if r.ok:
-                content = r.json_()
-                static_param = content["static_param"]
-                fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
-                checksum_indexes = content["checksum_indexes"]
-                checksum_constant = content["checksum_constant"]
-                return (static_param, fmt, checksum_indexes, checksum_constant)
-            else:
-                r.raise_for_status()
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
 def get_request_auth_sneaky():
@@ -112,15 +109,12 @@ def get_request_auth_sneaky():
             cookies=False,
             sign=False,
         ) as r:
-            if r.ok:
-                content = r.json_()
-                static_param = content["static_param"]
-                fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
-                checksum_indexes = content["checksum_indexes"]
-                checksum_constant = content["checksum_constant"]
-                return (static_param, fmt, checksum_indexes, checksum_constant)
-            else:
-                r.raise_for_status()
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
 def get_request_auth_digitalcriminals():
@@ -136,15 +130,12 @@ def get_request_auth_digitalcriminals():
             cookies=False,
             sign=False,
         ) as r:
-            if r.ok:
-                content = r.json_()
-                static_param = content["static_param"]
-                fmt = content["format"]
-                checksum_indexes = content["checksum_indexes"]
-                checksum_constant = content["checksum_constant"]
-                return (static_param, fmt, checksum_indexes, checksum_constant)
-            else:
-                r.raise_for_status()
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = content["format"]
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
 def make_headers():

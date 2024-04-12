@@ -224,18 +224,7 @@ async def _like(model_id, ids: list, like_action: bool):
 
 
 async def _like_request(c, id, model_id):
-    try:
-        async with c.requests_async(
-            constants.getattr("favoriteEP").format(id, model_id), "post"
-        ) as r:
-            if r.ok:
-                return id
-            else:
-                log.debug(f"[bold]timeline response status code:[/bold]{r.status}")
-                log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                r.raise_for_status()
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+    async with c.requests_async(
+        constants.getattr("favoriteEP").format(id, model_id), "post"
+    ) as _:
+        pass

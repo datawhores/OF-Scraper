@@ -241,7 +241,7 @@ async def send_req_inner(
             else {"Range": f"bytes={resume_size}-{total}"}
         )
         common_globals.log.debug(
-             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Downloading media with url {ele.url}"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Downloading media with url {ele.url}"
         )
         async with c.requests_async(url=ele.url, headers=headers) as r:
             await asyncio.get_event_loop().run_in_executor(
@@ -266,13 +266,12 @@ async def send_req_inner(
             if await check_forced_skip(ele, new_total):
                 total = 0
                 await common.total_change_helper(old_total, total)
-            elif total!=resume_size:
+            elif total != resume_size:
                 total = new_total
                 await common.total_change_helper(old_total, total)
                 await download_fileobject_writer(
                     r, job_progress, ele, tempholderObj, placeholderObj, total
                 )
-
 
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)

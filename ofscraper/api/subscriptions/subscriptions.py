@@ -200,31 +200,25 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
         async with c.requests_async(
             constants.getattr("subscriptionsActiveEP").format(offset)
         ) as r:
-            if r.ok:
-                subscriptions = (await r.json_())["list"]
-                log.debug(
-                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                )
-                if len(subscriptions) == 0:
-                    return subscriptions
-                elif recur == False:
-                    None
-                elif (await r.json_())["hasMore"] == True:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_subscriptions_active(
-                                c,
-                                recur=True,
-                                offset=offset + len(subscriptions),
-                            )
+            subscriptions = (await r.json_())["list"]
+            log.debug(
+                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
+            )
+            if len(subscriptions) == 0:
+                return subscriptions
+            elif recur == False:
+                None
+            elif (await r.json_())["hasMore"] == True:
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_subscriptions_active(
+                            c,
+                            recur=True,
+                            offset=offset + len(subscriptions),
                         )
                     )
-                return subscriptions, new_tasks
-            else:
-                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                r.raise_for_status()
+                )
+            return subscriptions, new_tasks
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -242,33 +236,27 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
         async with c.requests_async(
             constants.getattr("subscriptionsExpiredEP").format(offset)
         ) as r:
-            if r.ok:
-                subscriptions = (await r.json_())["list"]
-                log.debug(
-                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                )
+            subscriptions = (await r.json_())["list"]
+            log.debug(
+                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
+            )
 
-                if len(subscriptions) == 0:
-                    return subscriptions
-                elif recur == False:
-                    None
-                elif (await r.json_())["hasMore"] == True:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_subscriptions_disabled(
-                                c,
-                                recur=True,
-                                offset=offset + len(subscriptions),
-                            )
+            if len(subscriptions) == 0:
+                return subscriptions
+            elif recur == False:
+                None
+            elif (await r.json_())["hasMore"] == True:
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_subscriptions_disabled(
+                            c,
+                            recur=True,
+                            offset=offset + len(subscriptions),
                         )
                     )
+                )
 
-                return subscriptions, new_tasks
-            else:
-                log.debug(f"[bold]subscriptions response status code:[/bold]{r.status}")
-                log.debug(f"[bold]subscriptions response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            return subscriptions, new_tasks
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

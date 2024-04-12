@@ -1,6 +1,6 @@
 import contextlib
-import ssl
 import logging
+import ssl
 import traceback
 
 import aiohttp
@@ -44,7 +44,8 @@ class sessionBuilder:
         retries=None,
         wait_min=None,
         wait_max=None,
-        log=None
+        log=None,
+        semaphore=None
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -65,11 +66,13 @@ class sessionBuilder:
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
         self._proxy_auth = proxy_auth
-        self._sem = semdelayed.semaphoreDelayed(sems=sems, delay=delay)
+        self._delay = delay or 0
+        self._sem = semaphore or semdelayed.semaphoreDelayed(sems=sems, delay=self._delay)
         self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_MAX_WAIT_DEFAULT")
-        self._log=logging.getLogger("shared")
+        self._log = logging.getLogger("shared")
+
     async def __aenter__(self):
         self._async = True
         if self._backend == "aio":
@@ -159,21 +162,22 @@ class sessionBuilder:
         retries=None,
         wait_min=None,
         wait_max=None,
-        log=None
+        log=None,
     ):
         headers = self._create_headers(headers, url, sign) if headers is None else None
         cookies = self._create_cookies() if cookies is None else None
         json = json or None
         params = params or None
-        r=None
+        r = None
         for _ in Retrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(retries or self._retries),
-        wait=wait_random(
-            min=wait_min or self._wait_min,
-            max=wait_max or self._wait_max,
-        )):
-            r=None
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            stop=stop_after_attempt(retries or self._retries),
+            wait=wait_random(
+                min=wait_min or self._wait_min,
+                max=wait_max or self._wait_max,
+            ),
+        ):
+            r = None
             with _:
                 try:
                     r = self._httpx_funct(
@@ -186,28 +190,25 @@ class sessionBuilder:
                         json=json,
                         data=data,
                     )
-                    if not r.ok:
-                        (log or self._log).debug(
-                            f"[bold]failed: [bold] {r.url}"
-                        )
-                        (log or self._log).debug(
-                                f"[bold]status: [bold] {r.status}"
-                        )
+                    if r.status_code == 404:
+                        pass
+                    elif r.status_code == 429:
+                        self._sem._delay = self._sem._delay + 10
+                    elif not r.ok:
+                        (log or self._log).debug(f"[bold]failed: [bold] {r.url}")
+                        (log or self._log).debug(f"[bold]status: [bold] {r.status}")
                         (log or self._log).debug(
                             f"[bold]response text [/bold]: {r.text_()}"
                         )
-                        (log or self._log).debug(
-                            f"[bold]headers[/bold]: {r.headers}"
-                        )
+                        (log or self._log).debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
+                    else:
+                        self._sem._delay = max(self._sem._delay - 10, self._delay)
                 except Exception as E:
                     (log or self._log).traceback_(E)
                     (log or self._log).traceback_(traceback.format_exc())
                     raise E
         yield r
-
-
-
 
     @contextlib.asynccontextmanager
     async def requests_async(
@@ -224,9 +225,9 @@ class sessionBuilder:
         wait_min=None,
         wait_max=None,
         retries=None,
-        log=None
+        log=None,
     ):
-        r=None
+        r = None
         async for _ in AsyncRetrying(
             retry=retry_if_not_exception_type(KeyboardInterrupt),
             stop=stop_after_attempt(retries or self._retries),
@@ -237,7 +238,10 @@ class sessionBuilder:
             reraise=True,
         ):
             with _:
-                await self._sem.acquire()
+                try:
+                    await (getattr(self._sem,'coro_acquire',None) or getattr(self._sem, 'acquire',None))()
+                except Exception as E:
+                    print(E)
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
@@ -245,8 +249,8 @@ class sessionBuilder:
                         else None
                     )
                     cookies = self._create_cookies() if cookies is None else None
-                    json = json or None
-                    params = params or None
+                    json = json
+                    params = params
                     if self._backend == "aio":
                         r = await self._aio_funct(
                             method,
@@ -271,28 +275,27 @@ class sessionBuilder:
                             json=json,
                             params=params,
                         )
-                    if not r.ok:
-                            (log or self._log).debug(
-                                f"[bold]failed: [bold] {r.url}"
-                            )
-                            (log or self._log).debug(
-                                f"[bold]status: [bold] {r.status}"
-                            )
-                            (log or self._log).debug(
-                                f"[bold]response text [/bold]: {await r.text_()}"
-                            )
-                            (log or self._log).debug(
-                                f"[bold]headers[/bold]: {r.headers}"
-                            )
-                            r.raise_for_status()
+                    if r.status_code == 404:
+                        pass
+                    elif r.status_code == 429:
+                        self._sem._delay = self._sem._delay + 10
+                    elif not r.ok:
+                        (log or self._log).debug(f"[bold]failed: [bold] {r.url}")
+                        (log or self._log).debug(f"[bold]status: [bold] {r.status}")
+                        (log or self._log).debug(
+                            f"[bold]response text [/bold]: {await r.text_()}"
+                        )
+                        (log or self._log).debug(f"[bold]headers[/bold]: {r.headers}")
+                        r.raise_for_status()
+                    else:
+                        self._sem._delay = max(self._sem._delay - 10, self._delay)
                 except Exception as E:
                     (log or self._log).traceback_(E)
                     (log or self._log).traceback_(traceback.format_exc())
-                    raise E
-                finally:
                     self._sem.release()
+                    raise E                    
         yield r
-
+        self._sem.release()
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
@@ -317,17 +320,10 @@ class sessionBuilder:
         r.text_ = r.text
         r.json_ = r.json
         r.iter_chunked = r.content.iter_chunked
+        r.status_code = r.status
         return r
 
     async def factoryasync(self, input):
         if callable(input):
             return input()
         return input
-
-    @property
-    def delay(self):
-        return self._sem.delay
-
-    @delay.setter
-    def delay(self, value):
-        self._sem.delay = value

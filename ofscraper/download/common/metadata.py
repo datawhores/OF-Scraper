@@ -65,29 +65,25 @@ async def metadata_helper(c, ele):
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}]  Getting data for metadata insert"
         )
         async with c.requests_async(url=url, headers=None, params=params) as r:
-            if r.ok:
-                headers = r.headers
-                await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
-                    partial(
-                        cache.set,
-                        f"{ele.id}_headers",
-                        {
-                            "content-length": headers.get("content-length"),
-                            "content-type": headers.get("content-type"),
-                        },
-                    ),
-                )
-                content_type = headers.get("content-type").split("/")[
-                    -1
-                ] or content_type_missing(ele)
-                placeholderObj = await (
-                    placeholderObj or placeholder.Placeholders(ele, ext=content_type)
-                ).init()
-                return placeholderObj
-
-            else:
-                r.raise_for_status()
+            headers = r.headers
+            await asyncio.get_event_loop().run_in_executor(
+                common_globals.cache_thread,
+                partial(
+                    cache.set,
+                    f"{ele.id}_headers",
+                    {
+                        "content-length": headers.get("content-length"),
+                        "content-type": headers.get("content-type"),
+                    },
+                ),
+            )
+            content_type = headers.get("content-type").split("/")[
+                -1
+            ] or content_type_missing(ele)
+            placeholderObj = await (
+                placeholderObj or placeholder.Placeholders(ele, ext=content_type)
+            ).init()
+            return placeholderObj
 
 
 async def placeholderObjHelper(c, ele):

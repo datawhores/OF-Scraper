@@ -194,42 +194,36 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
         async with c.requests_async(
             url=constants.getattr("labelsEP").format(model_id, offset)
         ) as r:
-            if r.ok:
-                data = await r.json_()
-                labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
-                log.debug(f"offset:{offset} -> labels names found {len(labels)}")
-                log.debug(
-                    f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+            data = await r.json_()
+            labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
+            log.debug(f"offset:{offset} -> labels names found {len(labels)}")
+            log.debug(
+                f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+            )
+            log.trace(
+                "offset:{offset} -> label names raw: {posts}".format(
+                    offset=offset, posts=data
                 )
-                log.trace(
-                    "offset:{offset} -> label names raw: {posts}".format(
-                        offset=offset, posts=data
-                    )
-                )
+            )
 
-                if (
-                    data.get("hasMore")
-                    and len(data.get("list")) > 0
-                    and data.get("nextOffset") != offset
-                ):
-                    offset = offset + len(data.get("list"))
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_labels(
-                                c,
-                                model_id,
-                                job_progress=job_progress,
-                                offset=offset,
-                            )
+            if (
+                data.get("hasMore")
+                and len(data.get("list")) > 0
+                and data.get("nextOffset") != offset
+            ):
+                offset = offset + len(data.get("list"))
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_labels(
+                            c,
+                            model_id,
+                            job_progress=job_progress,
+                            offset=offset,
                         )
                     )
-                return data.get("list"), new_tasks
+                )
+            return data.get("list"), new_tasks
 
-            else:
-                log.debug(f"[bold]labels response status code:[/bold]{r.status}")
-                log.debug(f"[bold]labels response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]labels headers:[/bold] {r.headers}")
-                r.raise_for_status()
     except Exception as E:
         await asyncio.sleep(1)
 
@@ -340,49 +334,40 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                 model_id, offset, label["id"]
             )
         ) as r:
-            if r.ok:
-                data = await r.json_()
-                posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
-                log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
-                log.debug(
-                    f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
-                )
-                log.trace(
-                    "{offset} -> {posts}".format(
-                        offset=offset,
-                        posts="\n\n".join(
-                            list(
-                                map(
-                                    lambda x: f"scrapeinfo label {str(x)}",
-                                    posts,
-                                )
-                            )
-                        ),
-                    )
-                )
-
-                if data.get("hasMore") and len(posts) > 0:
-                    offset += len(posts)
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_posts_labels(
-                                c,
-                                label,
-                                model_id,
-                                job_progress=job_progress,
-                                offset=offset,
+            data = await r.json_()
+            posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
+            log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
+            log.debug(
+                f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+            )
+            log.trace(
+                "{offset} -> {posts}".format(
+                    offset=offset,
+                    posts="\n\n".join(
+                        list(
+                            map(
+                                lambda x: f"scrapeinfo label {str(x)}",
+                                posts,
                             )
                         )
-                    )
-
-            else:
-                log.debug(
-                    f"[bold]labelled posts response status code:[/bold]{r.status}"
+                    ),
                 )
-                log.debug(f"[bold]labelled posts response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
+            )
 
-                r.raise_for_status()
+            if data.get("hasMore") and len(posts) > 0:
+                offset += len(posts)
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_posts_labels(
+                            c,
+                            label,
+                            model_id,
+                            job_progress=job_progress,
+                            offset=offset,
+                        )
+                    )
+                )
+
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)

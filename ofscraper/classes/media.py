@@ -333,8 +333,6 @@ class Media(base.base):
             wait_max=constants.getattr("OF_MAX_WAIT"),
         ) as c:
             async with c.requests_async(url=self.mpd, params=params) as r:
-                if not r.ok:
-                    r.raise_for_status()
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
                 return self._cached_parse_mpd
 

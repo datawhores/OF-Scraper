@@ -142,17 +142,10 @@ class DiscordHandler(logging.Handler):
                         json={
                             "thread_name": date
                             or dates_manager.getLogDate().get("now"),
-                            "content": date
-                            or dates_manager.getLogDate().get("now"),
+                            "content": date or dates_manager.getLogDate().get("now"),
                         },
                     ) as r:
-                        if r.status == 200:
-                            resp_data = r.json()
-                            self._url = "{url}?thread_id={id}".format(
-                                url=self._baseurl, id=resp_data.get("id")
-                            )
-                        else:
-                            r.raise_for_status()
+                        pass
                 except Exception as E:
                     None
 

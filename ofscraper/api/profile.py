@@ -42,8 +42,11 @@ attempt = contextvars.ContextVar("attempt")
 # can get profile from username or id
 def scrape_profile(username: Union[int, str]) -> dict:
     with sessionbuilder.sessionBuilder(
-        backend="httpx", limit=constants.getattr("API_MAX_CONNECTION"),        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),wait_min=constants.getattr("OF_MIN_WAIT"),wait_max=constants.getattr("OF_MAX_WAIT")
-
+        backend="httpx",
+        limit=constants.getattr("API_MAX_CONNECTION"),
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
     ) as c:
         return scrape_profile_helper(c, username)
 
@@ -60,26 +63,17 @@ def scrape_profile_helper(c, username: Union[int, str]):
             f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} to get profile {username}"
         )
         with c.requests(constants.getattr("profileEP").format(username)) as r:
-            if r.ok:
-                cache.set(
-                    f"username_{username}",
-                    r.json(),
-                    int(constants.getattr("PROFILE_DATA_EXPIRY")),
-                )
-                cache.close()
-                log.trace(f"username date: {r.json()}")
-                return r.json()
-            elif r.status == 404:
-                return {
-                    "username": constants.getattr("DELETED_MODEL_PLACEHOLDER")
-                }
-            else:
-                log.debug(
-                    f"[bold]profile response status code:[/bold]{r.status}"
-                )
-                log.debug(f"[bold]profile response:[/bold] {r.text_()}")
-                log.debug(f"[bold]profile headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            if r.status == 404:
+                return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
+
+            cache.set(
+                f"username_{username}",
+                r.json(),
+                int(constants.getattr("PROFILE_DATA_EXPIRY")),
+            )
+            cache.close()
+            log.trace(f"username date: {r.json()}")
+            return r.json()
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -101,26 +95,16 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
         async with c.requests_async(
             constants.getattr("profileEP").format(username)
         ) as r:
-            if r.ok:
-                cache.set(
-                    f"username_{username}",
-                    await r.json_(),
-                    int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
-                )
-                cache.close()
-                log.trace(f"username date: {await r.json_()}")
-                return await r.json_()
-            elif r.status == 404:
-                return {
-                    "username": constants.getattr("DELETED_MODEL_PLACEHOLDER")
-                }
-            else:
-                log.debug(
-                    f"[bold]profile response status code:[/bold]{r.status}"
-                )
-                log.debug(f"[bold]profile response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]profile headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            if r.status == 404:
+                return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
+            cache.set(
+                f"username_{username}",
+                await r.json_(),
+                int(constants.getattr("PROFILE_DATA_EXPIRY_ASYNC")),
+            )
+            cache.close()
+            log.trace(f"username date: {await r.json_()}")
+            return await r.json_()
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -184,8 +168,12 @@ def print_profile_info(info):
 
 
 def get_id(username, c=None):
-    c = c or sessionbuilder.sessionBuilder(backend="httpx",        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),wait_min=constants.getattr("OF_MIN_WAIT"),wait_max=constants.getattr("OF_MAX_WAIT")
-)
+    c = c or sessionbuilder.sessionBuilder(
+        backend="httpx",
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT"),
+        wait_max=constants.getattr("OF_MAX_WAIT"),
+    )
     with c as c:
         return get_id_helper(c, username)
 
@@ -206,18 +194,11 @@ def get_id_helper(c, username):
         )
 
         with c.requests(constants.getattr("profileEP").format(username)) as r:
-            if r.ok:
-                id = r.json()["id"]
-                cache.set(
-                    f"model_id_{username}", id, constants.getattr("DAY_SECONDS")
-                )
-                cache.close()
-                return id
-            else:
-                log.debug(f"[bold]id response status code:[/bold]{r.status}")
-                log.debug(f"[bold]id response:[/bold] {r.text_()}")
-                log.debug(f"[bold]id headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            id = r.json()["id"]
+            cache.set(f"model_id_{username}", id, constants.getattr("DAY_SECONDS"))
+            cache.close()
+            return id
+
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

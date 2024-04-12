@@ -43,24 +43,17 @@ def scrape_user():
 def _scraper_user_helper(c):
     try:
         with c.requests(constants.getattr("meEP")) as r:
-            if r.ok:
-                data = r.json_()
-                log_helpers.updateSenstiveDict(data["id"], "userid")
-                log_helpers.updateSenstiveDict(
-                    f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
-                    "username",
-                )
-                log_helpers.updateSenstiveDict(
-                    f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
-                    "name",
-                )
-            else:
-                log.debug(
-                    f"[bold]user request response status code:[/bold]{r.status}"
-                )
-                log.debug(f"[bold]user request response:[/bold] {r.text_()}")
-                log.debug(f"[bold]user request headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            data = r.json_()
+            log_helpers.updateSenstiveDict(data["id"], "userid")
+            log_helpers.updateSenstiveDict(
+                f"{data['username']} | {data['username']}|\\b{data['username']}\\b",
+                "username",
+            )
+            log_helpers.updateSenstiveDict(
+                f"{data['name']} | {data['name']}|\\b{data['name']}\\b",
+                "name",
+            )
+
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -78,22 +71,12 @@ def parse_subscriber_count():
     ) as c:
         try:
             with c.requests(constants.getattr("subscribeCountEP")) as r:
-                if r.ok:
-                    data = r.json_()
-                    return (
-                        data["subscriptions"]["active"],
-                        data["subscriptions"]["expired"],
-                    )
-                else:
-                    log.debug(
-                        f"[bold]subscriber count response status code:[/bold]{r.status}"
-                    )
-                    log.debug(
-                        f"[bold]subscriber countresponse:[/bold] {r.text_()}"
-                    )
-                    log.debug(
-                        f"[bold]subscriber count headers:[/bold] {r.headers}"
-                    )
+                data = r.json_()
+                return (
+                    data["subscriptions"]["active"],
+                    data["subscriptions"]["expired"],
+                )
+
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())

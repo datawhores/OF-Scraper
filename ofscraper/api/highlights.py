@@ -83,28 +83,22 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
         async with c.requests_async(
             url=constants.getattr("highlightsWithAStoryEP").format(user_id)
         ) as r:
-            if r.ok:
-                stories = await r.json_()
-                log.debug(
-                    f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
-                )
-                log.trace(
-                    "stories: -> stories raw {posts}".format(
-                        posts="\n\n".join(
-                            list(
-                                map(
-                                    lambda x: f"scrapeinfo stories: {str(x)}",
-                                    stories,
-                                )
+            stories = await r.json_()
+            log.debug(
+                f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
+            )
+            log.trace(
+                "stories: -> stories raw {posts}".format(
+                    posts="\n\n".join(
+                        list(
+                            map(
+                                lambda x: f"scrapeinfo stories: {str(x)}",
+                                stories,
                             )
                         )
                     )
                 )
-            else:
-                log.debug(f"[bold]stories response status code:[/bold]{r.status}")
-                log.debug(f"[bold]stories response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]stories headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            )
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -368,18 +362,11 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
         async with c.requests_async(
             url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
         ) as r:
-            if r.ok:
-                resp_data = await r.json_()
-                log.trace(f"highlights list: -> found highlights list data {resp_data}")
-                data = get_highlightList(resp_data)
-                log.debug(f"highlights list: -> found list ids {data}")
+            resp_data = await r.json_()
+            log.trace(f"highlights list: -> found highlights list data {resp_data}")
+            data = get_highlightList(resp_data)
+            log.debug(f"highlights list: -> found list ids {data}")
 
-            else:
-                log.debug(
-                    f"[bold]highlight list response status code:[/bold]{r.status}"
-                )
-                log.debug(f"[bold]highlight list response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]highlight list headers:[/bold] {r.headers}")
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -406,17 +393,11 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
             else None
         )
         async with c.requests_async(url=constants.getattr("storyEP").format(id)) as r:
-            if r.ok:
-                resp_data = await r.json_()
-                log.trace(f"highlights: -> found highlights data {resp_data}")
-                log.debug(
-                    f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
-                )
-            else:
-                log.debug(f"[bold]highlight status code:[/bold]{r.status}")
-                log.debug(f"[bold]highlight response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]h ighlight headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            resp_data = await r.json_()
+            log.trace(f"highlights: -> found highlights data {resp_data}")
+            log.debug(
+                f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
+            )
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -449,14 +430,6 @@ def get_highlightList(data):
 
 def get_individual_highlights(id):
     return get_individual_stories(id)
-    # with c.requests_async(constants.getattr("highlightSPECIFIC").format(id)) as r:
-    #     if r.ok:
-    #         log.trace(f"highlight raw highlight individua; {r.json()}")
-    #         return r.json()
-    #     else:
-    #         log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
-    #         log.debug(f"[bold]highlightresponse:[/bold] {await r.text_()}")
-    #         log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
 
 
 def get_individual_stories(id, c=None):
@@ -467,10 +440,5 @@ def get_individual_stories(id, c=None):
         wait_max=constants.getattr("OF_MAX_WAIT"),
     ) as c:
         with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
-            if r.ok:
-                log.trace(f"highlight raw highlight individua; {r.json_()}")
-                return r.json()
-            else:
-                log.debug(f"[bold]highlight response status code:[/bold]{r.status}")
-                log.debug(f"[bold]highlightresponse:[/bold] {r.text_()}")
-                log.debug(f"[bold]highlight headers:[/bold] {r.headers}")
+            log.trace(f"highlight raw highlight individua; {r.json_()}")
+            return r.json()

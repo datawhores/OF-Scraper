@@ -160,35 +160,26 @@ async def scrape_for_list(c, job_progress, offset=0):
         async with c.requests_async(
             url=constants.getattr("listEP").format(offset)
         ) as r:
-            if r.ok:
-                data = await r.json_()
-                out_list = data["list"] or []
-                log.debug(
-                    f"offset:{offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
+            data = await r.json_()
+            out_list = data["list"] or []
+            log.debug(
+                f"offset:{offset} -> lists names found {list(map(lambda x:x['name'],out_list))}"
+            )
+            log.debug(f"offset:{offset} -> number of lists found {len(out_list)}")
+            log.debug(
+                f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
+            )
+            log.trace(
+                "offset:{offset} -> label names raw: {posts}".format(
+                    offset=offset, posts=data
                 )
-                log.debug(f"offset:{offset} -> number of lists found {len(out_list)}")
-                log.debug(
-                    f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
-                )
-                log.trace(
-                    "offset:{offset} -> label names raw: {posts}".format(
-                        offset=offset, posts=data
-                    )
-                )
+            )
 
-                if data.get("hasMore") and len(out_list) > 0:
-                    offset = offset + len(out_list)
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_for_list(c, job_progress, offset=offset)
-                        )
-                    )
-
-            else:
-                log.debug(f"[bold]lists response status code:[/bold]{r.status}")
-                log.debug(f"[bold]lists response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]lists headers:[/bold] {r.headers}")
-                r.raise_for_status()
+            if data.get("hasMore") and len(out_list) > 0:
+                offset = offset + len(out_list)
+                new_tasks.append(
+                    asyncio.create_task(scrape_for_list(c, job_progress, offset=offset))
+                )
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -290,45 +281,35 @@ async def scrape_list_members(c, item, job_progress, offset=0):
             url=constants.getattr("listusersEP").format(item.get("id"), offset)
         ) as r:
             log_id = f"offset:{offset} list:{item.get('name')} =>"
-            if r.ok:
-                data = await r.json_()
-                users = data.get("list") or []
-                log.debug(f"{log_id} -> names found {len(users)}")
-                log.debug(
-                    f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
+            data = await r.json_()
+            users = data.get("list") or []
+            log.debug(f"{log_id} -> names found {len(users)}")
+            log.debug(
+                f"{log_id}  -> hasMore value in json {data.get('hasMore','undefined') }"
+            )
+            log.debug(
+                f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
+            )
+            log.trace(
+                "offset: {offset} list: {item} -> {posts}".format(
+                    item=item.get("name"),
+                    offset=offset,
+                    posts="\n\n".join(
+                        list(map(lambda x: f"scrapeinfo list {str(x)}", users))
+                    ),
                 )
-                log.debug(
-                    f"usernames {log_id} : usernames retrived -> {list(map(lambda x:x.get('username'),users))}"
-                )
-                log.trace(
-                    "offset: {offset} list: {item} -> {posts}".format(
-                        item=item.get("name"),
-                        offset=offset,
-                        posts="\n\n".join(
-                            list(map(lambda x: f"scrapeinfo list {str(x)}", users))
-                        ),
+            )
+            if (
+                data.get("hasMore")
+                and len(users) > 0
+                and offset != data.get("nextOffset")
+            ):
+                offset += len(users)
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_list_members(c, item, job_progress, offset=offset)
                     )
                 )
-                if (
-                    data.get("hasMore")
-                    and len(users) > 0
-                    and offset != data.get("nextOffset")
-                ):
-                    offset += len(users)
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_list_members(c, item, job_progress, offset=offset)
-                        )
-                    )
-
-            else:
-                log.debug(
-                    f"[bold]labelled posts response status code:[/bold]{r.status}"
-                )
-                log.debug(f"[bold]labelled posts response:[/bold] {await r.text_()}")
-                log.debug(f"[bold]labelled posts headers:[/bold] {r.headers}")
-
-                r.raise_for_status()
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
