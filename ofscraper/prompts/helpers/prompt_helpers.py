@@ -11,6 +11,8 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
+import ofscraper.filters.models.sort as sort
+
 
 console = Console()
 
@@ -116,6 +118,7 @@ def model_funct(prompt):
     userselector.setfilter()
     with stdout.nostdout():
         models = userselector.filterOnly()
+        models=sort.sort_models_helper(models)
         choices = list(
             map(
                 lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
@@ -139,6 +142,33 @@ def model_funct(prompt):
         prompt.content_control._format_choices()
         return prompt
 
+
+
+def model_select_funct(prompt):
+    with stdout.nostdout():
+        models = userselector.filterOnly()
+        choices = list(
+            map(
+                lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
+                enumerate(models),
+            )
+        )
+        selectedSet = set(
+            map(
+                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                prompt.selected_choices or [],
+            )
+        )
+        for model in choices:
+            name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+            if name in selectedSet:
+                model.enabled = True
+        prompt.content_control._raw_choices = choices
+        prompt.content_control.choices = prompt.content_control._get_choices(
+            prompt.content_control._raw_choices, prompt.content_control._default
+        )
+        prompt.content_control._format_choices()
+        return prompt
 
 def user_list(model_str):
     model_list = re.split("(,|\n)", model_str)
