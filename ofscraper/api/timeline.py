@@ -100,7 +100,7 @@ async def process_tasks(tasks, model_id, after):
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
-            cache.set(f"{model_id}_full_timeline_scrape")
+            cache.set(f"{model_id}_full_timeline_scrape",True)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks

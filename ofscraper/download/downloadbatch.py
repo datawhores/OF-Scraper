@@ -78,7 +78,6 @@ def process_dicts(username, model_id, filtered_medialist):
             )
             for i in range(len(shared))
         ]
-        shared_semaphore=aioprocessing.AioSemaphore(50)
         processes = [
             aioprocessing.AioProcess(
                 target=process_dict_starter,
@@ -86,7 +85,6 @@ def process_dicts(username, model_id, filtered_medialist):
                     username,
                     model_id,
                     mediasplits[i],
-                    shared_semaphore,
                     logqueues_[i // split_val],
                     otherqueues_[i // split_val],
                     connect_tuples[i][1],
@@ -304,7 +302,6 @@ def process_dict_starter(
     username,
     model_id,
     ele,
-    semaphore,
     p_logqueue_,
     p_otherqueue_,
     pipe_,
@@ -328,7 +325,7 @@ def process_dict_starter(
 
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     try:
-        process_dicts_split(username, model_id, ele,semaphore)
+        process_dicts_split(username, model_id, ele)
     except KeyboardInterrupt as E:
         with exit.DelayedKeyboardInterrupt():
             try:
@@ -371,7 +368,7 @@ def setpriority():
 
 
 @run
-async def process_dicts_split(username, model_id, medialist,semaphore):
+async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
     # set variables based on parent process
     # start consumer for other
@@ -391,7 +388,7 @@ async def process_dicts_split(username, model_id, medialist,semaphore):
         wait_min=constants.getattr("OF_MIN_WAIT"),
         wait_max=constants.getattr("OF_MAX_WAIT"),
         log=common_globals.log,
-        semaphore=semaphore
+        sems=config_data.get_download_semaphores() or constants.getattr("MAX_SEMS_BATCH_DOWNLOAD")
     ) as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
