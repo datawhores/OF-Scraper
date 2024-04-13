@@ -5,8 +5,6 @@ import traceback
 import httpx
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout

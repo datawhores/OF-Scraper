@@ -31,38 +31,24 @@ class retry_if_http_429_error(retry_if_exception):
     def __init__(self):
         def is_http_429_error(exception):
             print(
-                (
-                    isinstance(exception, aiohttp.ClientResponseError)
-                    or isinstance(exception, httpx.Request)
-                )
-                and exception.status == 429
+                               [(isinstance(exception, aiohttp.ClientResponseError) and exception.status == 429) or (isinstance(exception, httpx.Request) and exception.status_code == 429),"test1"]
+
             )
-            return (
-                isinstance(exception, aiohttp.ClientResponseError)
-                or isinstance(exception, httpx.Request)
-            ) and exception.status == 429
-
-
+            return (isinstance(exception, aiohttp.ClientResponseError) and exception.status == 429) or (isinstance(exception, httpx.Request) and exception.status_code == 429)
+        super().__init__(predicate=is_http_429_error)
 class retry_if_not_http_429_error(retry_if_exception):
     def __init__(self):
         def is_http_429_error(exception):
             print(
-                (
-                    (
-                        isinstance(exception, aiohttp.ClientResponseError)
-                        or isinstance(exception, httpx.Request)
-                    )
-                    and exception.status == 429
-                )
-                is False,
-                "test2",
+                
+                [(
+               (isinstance(exception, aiohttp.ClientResponseError) and exception.status == 429)
+                        or (isinstance(exception, httpx.Request) and exception.status_code == 429)
+            ) is False,"test2"]
             )
             return (
-                (
-                    isinstance(exception, aiohttp.ClientResponseError)
-                    or isinstance(exception, httpx.Request)
-                )
-                and exception.status == 429
+               (isinstance(exception, aiohttp.ClientResponseError) and exception.status == 429)
+                        or (isinstance(exception, httpx.Request) and exception.status_code == 429)
             ) is False
 
         super().__init__(predicate=is_http_429_error)
@@ -298,8 +284,6 @@ class sessionBuilder:
             attempt.set(attempt.get(0) + 1)
             if attempt.get() > 1:
                 log.debug(f"[bold]attempt: [bold] {attempt.get()} for url {url}")
-            r.status = 429
-            r.raise_for_status()
             try:
                 headers = (
                     self._create_headers(headers, url, sign)
