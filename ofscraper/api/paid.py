@@ -17,7 +17,7 @@ import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
@@ -198,11 +198,11 @@ async def get_all_paid_posts():
         with progress_utils.setup_all_paid_live():
             job_progress = progress_utils.all_paid_progress
             overall_progress = progress_utils.overall_progress
-            async with sessionbuilder.sessionBuilder(
+            async with sessionManager.sessionManager(
                 sems=constants.getattr("SCRAPE_PAID_SEMS"),
                 retries=constants.getattr("API_PAID_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT"),
-                wait_max=constants.getattr("OF_MAX_WAIT"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 allpaid = cache.get("purchased_all", default=[])
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")

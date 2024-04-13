@@ -2,7 +2,7 @@ import copy
 import logging
 import re
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
@@ -111,7 +111,7 @@ class NoDebug(logging.Filter):
 class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
-        self.sess = sessionbuilder.sessionBuilder(
+        self.sess = sessionManager.sessionManager(
             backend="httpx",
             total_timeout=10,
             retries=constants.getattr("DISCORD_NUM_TRIES"),

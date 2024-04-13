@@ -20,7 +20,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
 
 import ofscraper.api.profile as profile
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
@@ -44,11 +44,11 @@ async def get_subscription(accounts=None):
             task1 = job_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder(
+            async with sessionManager.sessionManager(
                 sems=constants.getattr("SUBSCRIPTION_SEMS"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT"),
-                wait_max=constants.getattr("OF_MAX_WAIT"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 out = await get_subscription_helper(c, accounts)
                 job_progress.remove_task(task1)

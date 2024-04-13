@@ -23,7 +23,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
@@ -95,11 +95,11 @@ async def get_lists():
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
-            async with sessionbuilder.sessionBuilder(
+            async with sessionManager.sessionManager(
                 sems=constants.getattr("SUBSCRIPTION_SEMS"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT"),
-                wait_max=constants.getattr("OF_MAX_WAIT"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 tasks.append(asyncio.create_task(scrape_for_list(c, job_progress)))
                 page_task = overall_progress.add_task(
@@ -203,11 +203,11 @@ async def get_list_users(lists):
         with Live(
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
-            async with sessionbuilder.sessionBuilder(
+            async with sessionManager.sessionManager(
                 sems=constants.getattr("SUBSCRIPTION_SEMS"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT"),
-                wait_max=constants.getattr("OF_MAX_WAIT"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 [
                     tasks.append(

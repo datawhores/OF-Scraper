@@ -14,7 +14,7 @@ r"""
 import logging
 import traceback
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.helpers as log_helpers
 
@@ -22,7 +22,7 @@ log = logging.getLogger("shared")
 
 
 def scrape_user():
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         limit=constants.getattr("API_MAX_CONNECTION"),
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
@@ -54,12 +54,12 @@ def _scraper_user_helper(c):
 
 
 def parse_subscriber_count():
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         limit=constants.getattr("API_MAX_CONNECTION"),
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         try:
             with c.requests(constants.getattr("subscribeCountEP")) as r:

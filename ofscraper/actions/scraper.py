@@ -28,7 +28,7 @@ import ofscraper.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.areas as areas
@@ -513,11 +513,11 @@ async def process_task(model_id, username, ele):
     postObjs = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
-    async with sessionbuilder.sessionBuilder(
+    async with sessionManager.sessionManager(
         sems=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         while True:
             max_count = min(

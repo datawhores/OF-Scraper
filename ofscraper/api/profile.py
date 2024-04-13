@@ -20,7 +20,7 @@ from typing import Union
 from rich.console import Console
 from xxhash import xxh128
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -34,12 +34,12 @@ attempt = contextvars.ContextVar("attempt")
 
 # can get profile from username or id
 def scrape_profile(username: Union[int, str]) -> dict:
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         limit=constants.getattr("API_MAX_CONNECTION"),
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         return scrape_profile_helper(c, username)
 
@@ -161,11 +161,11 @@ def print_profile_info(info):
 
 
 def get_id(username, c=None):
-    c = c or sessionbuilder.sessionBuilder(
+    c = c or sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     )
     with c as c:
         return get_id_helper(c, username)

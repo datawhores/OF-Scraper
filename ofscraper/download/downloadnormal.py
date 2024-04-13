@@ -18,7 +18,7 @@ import traceback
 from humanfriendly import format_size
 from rich.live import Live
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.args.read as read_args
@@ -74,12 +74,12 @@ async def process_dicts(username, model_id, medialist):
             ):
                 aws = []
 
-                async with sessionbuilder.sessionBuilder(
+                async with sessionManager.sessionManager(
                     sems=config_data.get_download_semaphores()
                     or constants.getattr("MAX_SEMS_SINGLE_THREAD_DOWNLOAD"),
                     retries=constants.getattr("DOWNLOAD_RETRIES"),
-                    wait_min=constants.getattr("OF_MIN_WAIT"),
-                    wait_max=constants.getattr("OF_MAX_WAIT"),
+                    wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                    wait_max=constants.getattr("OF_MAX_WAIT_API"),
                 ) as c:
                     for ele in medialist:
                         aws.append(

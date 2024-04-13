@@ -17,8 +17,7 @@ import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
@@ -69,7 +68,7 @@ def get_request_auth():
 
 
 def get_request_auth_deviint():
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -90,7 +89,7 @@ def get_request_auth_deviint():
 
 
 def get_request_auth_sneaky():
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
@@ -111,7 +110,7 @@ def get_request_auth_sneaky():
 
 
 def get_request_auth_digitalcriminals():
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),

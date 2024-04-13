@@ -28,7 +28,7 @@ import ofscraper.api.labels as labels_api
 import ofscraper.api.pinned as pinned
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
@@ -46,11 +46,11 @@ async def get_posts(model_id, username):
     final_post_areas = set(areas.get_like_area())
     tasks = []
     with progress_utils.setup_api_split_progress_live():
-        async with sessionbuilder.sessionBuilder(
+        async with sessionManager.sessionManager(
             sems=constants.getattr("LIKE_MAX_SEMS"),
             retries=constants.getattr("API_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT"),
-            wait_max=constants.getattr("OF_MAX_WAIT"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
             while True:
                 max_count = min(
@@ -184,12 +184,12 @@ async def _like(model_id, ids: list, like_action: bool):
         MofNCompleteColumn(),
         console=console.get_shared_console(),
     ) as overall_progress:
-        async with sessionbuilder.sessionBuilder(
+        async with sessionManager.sessionManager(
             delay=3,
             sems=1,
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT"),
-            wait_max=constants.getattr("OF_MAX_WAIT"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
             tasks = []
             task1 = overall_progress.add_task(f"{title} posts...\n", total=len(ids))

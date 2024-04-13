@@ -18,7 +18,7 @@ import traceback
 
 import arrow
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
@@ -443,11 +443,11 @@ async def scrape_messages(
 
 
 def get_individual_post(model_id, postid):
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         with c.requests(
             url=constants.getattr("messageSPECIFIC").format(model_id, postid)

@@ -16,7 +16,7 @@ import contextvars
 import logging
 import traceback
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
@@ -426,11 +426,11 @@ def get_individual_highlights(id):
 
 
 def get_individual_stories(id, c=None):
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
             log.trace(f"highlight raw highlight individua; {r.json_()}")

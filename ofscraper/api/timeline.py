@@ -15,7 +15,7 @@ import traceback
 
 import arrow
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
@@ -252,11 +252,11 @@ def set_check(unduped, model_id, after):
 
 
 def get_individual_post(id):
-    with sessionbuilder.sessionBuilder(
+    with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
         with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
             log.trace(f"post raw individual {r.json()}")

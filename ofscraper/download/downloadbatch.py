@@ -14,7 +14,7 @@ import psutil
 from aioprocessing import AioPipe
 from rich.live import Live
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.models.selector as selector
@@ -383,10 +383,10 @@ async def process_dicts_split(username, model_id, medialist):
         f"{pid_log_helper()} process mediasplit from total {len(medialist)}"
     )
     aws = []
-    async with sessionbuilder.sessionBuilder(
+    async with sessionManager.sessionManager(
         retries=constants.getattr("DOWNLOAD_RETRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT"),
-        wait_max=constants.getattr("OF_MAX_WAIT"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
         log=common_globals.log,
         sems=config_data.get_download_semaphores()
         or constants.getattr("MAX_SEMS_BATCH_DOWNLOAD"),
