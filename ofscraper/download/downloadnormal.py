@@ -108,7 +108,7 @@ async def process_dicts(username, model_id, medialist):
                             common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                             media_type, num_bytes_downloaded = pack
                         except Exception as e:
-                            common_globals.log.traceback_(
+                            common_globals.log.info(
                                 f"Download Failed because\n{e}"
                             )
                             common_globals.log.traceback_(traceback.format_exc())
