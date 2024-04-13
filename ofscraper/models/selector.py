@@ -199,3 +199,12 @@ Renewal Price Filter: {read_args.retriveArgs().renewal_price or 'No Filter'}
         )
 
         setfilter(forced=True)
+
+def filterOnly(usernames=None):
+    usernames = usernames or ALL_SUBS
+    filterusername = subtype.subType(usernames)
+    filterusername = price.pricePaidFreeFilterHelper(filterusername)
+    filterusername = flags.promoFilterHelper(filterusername)
+    filterusername = date_.dateFilters(filterusername)
+    filterusername = other.otherFilters(filterusername)
+    return filterusername

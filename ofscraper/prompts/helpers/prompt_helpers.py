@@ -11,6 +11,8 @@ import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.settings as settings
+import ofscraper.filters.models.sort as sort
+
 
 console = Console()
 
@@ -114,7 +116,8 @@ PRESS ENTER TO RETURN
 
 def model_funct(prompt):
     userselector.setfilter()
-    models = userselector.parsed_subscriptions_helper()
+    models = userselector.filterOnly()
+    models=sort.sort_models_helper(models)
     choices = list(
         map(
             lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
