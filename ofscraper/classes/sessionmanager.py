@@ -10,19 +10,13 @@ import aiohttp.web_exceptions
 import certifi
 import httpx
 import tenacity
-from tenacity import (
-    AsyncRetrying,
-    Retrying,
-    retry_if_not_exception_type,
-)
+from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
 attempt = contextvars.ContextVar("attempt")
-
-
 
 
 class CustomTenacity(AsyncRetrying):
@@ -32,27 +26,34 @@ class CustomTenacity(AsyncRetrying):
 
     def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.wait_random = wait_random or  tenacity.wait.wait_random(min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"), max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"))
-        self.wait_exponential = wait_exponential or tenacity.wait_exponential(min=constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAUL"),max=constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAUL"))
-        self.wait=self._wait_picker
+        self.wait_random = wait_random or tenacity.wait.wait_random(
+            min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
+            max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
+        )
+        self.wait_exponential = wait_exponential or tenacity.wait_exponential(
+            min=constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAUL"),
+            max=constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAUL"),
+        )
+        self.wait = self._wait_picker
+
     def _wait_picker(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
-        is_429=(
-                isinstance(exception, aiohttp.ClientResponseError)
-                and getattr(exception, "status_code", None) == 429
-            ) or (
-                isinstance(exception, httpx.HTTPStatusError)
-                and (getattr(exception.response, "status_code", None)
-                or getattr(exception.response, "status", None)) == 429
+        is_429 = (
+            isinstance(exception, aiohttp.ClientResponseError)
+            and getattr(exception, "status_code", None) == 429
+        ) or (
+            isinstance(exception, httpx.HTTPStatusError)
+            and (
+                getattr(exception.response, "status_code", None)
+                or getattr(exception.response, "status", None)
             )
+            == 429
+        )
         if is_429:
-            sleep=self.wait_exponential(retry_state)
+            sleep = self.wait_exponential(retry_state)
         else:
-            sleep=self.wait_random(retry_state)
+            sleep = self.wait_random(retry_state)
         return sleep
-
-
-
 
 
 class sessionManager:
@@ -102,8 +103,12 @@ class sessionManager:
         self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
-        self._wait_min_exponential =wait_min_exponential or constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT")
-        self._wait_max_exponential =wait_max_exponential or constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT")
+        self._wait_min_exponential = wait_min_exponential or constants.getattr(
+            "OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"
+        )
+        self._wait_max_exponential = wait_max_exponential or constants.getattr(
+            "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
+        )
         self._log = log or logging.getLogger("shared")
 
     async def __aenter__(self):
@@ -245,16 +250,24 @@ class sessionManager:
 
     @contextlib.asynccontextmanager
     async def requests_async(
-        self, url,wait_min=None, wait_max=None,wait_min_exponential=None,wait_max_exponential=None, retries=None,
-            method="get",
-            headers=None,
-            cookies=None,
-            json=None,
-            params=None,
-            redirects=True,
-            data=None,
-            sign=None,
-            log=None, *args, **kwargs
+        self,
+        url,
+        wait_min=None,
+        wait_max=None,
+        wait_min_exponential=None,
+        wait_max_exponential=None,
+        retries=None,
+        method="get",
+        headers=None,
+        cookies=None,
+        json=None,
+        params=None,
+        redirects=True,
+        data=None,
+        sign=None,
+        log=None,
+        *args,
+        **kwargs,
     ):
         # @retry(
         #     wait=wait_random(
@@ -282,15 +295,20 @@ class sessionManager:
         #     sign=None,
         #     log=None,
         # ):
-        wait_min=wait_min or self._wait_min
-        wait_max=wait_max or self._wait_max
-        wait_min_exponential =wait_min_exponential or self._wait_min_exponential
-        wait_max_exponential =wait_max_exponential or self._wait_max_exponential
+        wait_min = wait_min or self._wait_min
+        wait_max = wait_max or self._wait_max
+        wait_min_exponential = wait_min_exponential or self._wait_min_exponential
+        wait_max_exponential = wait_max_exponential or self._wait_max_exponential
 
-        retries=retries or self._retries
+        retries = retries or self._retries
 
-
-        async for _ in CustomTenacity(wait_exponential=tenacity.wait.wait_exponential(multiplier=2, min=wait_min_exponential, max=wait_max_exponential),wait_random=tenacity.wait_random(min=wait_min,max=wait_max),stop=tenacity.stop.stop_after_attempt(retries)):
+        async for _ in CustomTenacity(
+            wait_exponential=tenacity.wait.wait_exponential(
+                multiplier=2, min=wait_min_exponential, max=wait_max_exponential
+            ),
+            wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
+            stop=tenacity.stop.stop_after_attempt(retries),
+        ):
             with _:
                 r = None
                 await self._sem.acquire()
@@ -346,7 +364,6 @@ class sessionManager:
                     raise E
                 self._sem.release()
                 yield r
-
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
