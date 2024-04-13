@@ -171,7 +171,7 @@ async def alt_download_downloader(
         stop=stop_after_attempt(constants.getattr("DOWNLOAD_FILE_RETRIES")),
         wait=wait_random(
             min=constants.getattr("OF_MIN_WAIT_API"),
-            max=constants.getattr("OF_MAX_WAIT"),
+            max=constants.getattr("OF_MAX_WAIT_API"),
         ),
         retry=retry_if_not_exception_message(
             constants.getattr("SPACE_DOWNLOAD_MESSAGE")
