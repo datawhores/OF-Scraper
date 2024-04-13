@@ -14,12 +14,6 @@ import math
 import traceback
 
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache

@@ -16,13 +16,6 @@ import contextvars
 import logging
 import traceback
 
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
-
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
@@ -106,7 +99,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task != None else None)
+        (job_progress.remove_task(task) if job_progress and task is not None else None)
 
     return stories, new_tasks
 

@@ -17,13 +17,6 @@ import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
-
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants

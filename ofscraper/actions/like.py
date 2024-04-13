@@ -13,7 +13,6 @@ r"""
 
 import asyncio
 import logging
-import traceback
 
 from rich.progress import (
     BarColumn,
@@ -23,19 +22,11 @@ from rich.progress import (
     TextColumn,
 )
 from rich.style import Style
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.api.archive as archive
 import ofscraper.api.labels as labels_api
 import ofscraper.api.pinned as pinned
 import ofscraper.api.timeline as timeline
-import ofscraper.classes.labels as labels
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.args.areas as areas

@@ -14,12 +14,6 @@ import math
 import traceback
 
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
@@ -100,7 +94,7 @@ async def process_tasks(tasks, model_id, after):
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
-            cache.set(f"{model_id}_full_timeline_scrape",True)
+            cache.set(f"{model_id}_full_timeline_scrape", True)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks

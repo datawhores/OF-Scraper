@@ -8,13 +8,6 @@ import warnings
 import arrow
 from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.classes.base as base
 import ofscraper.classes.sessionbuilder as sessionbuilder

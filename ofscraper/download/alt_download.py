@@ -37,7 +37,6 @@ import ofscraper.db.operations as operations
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.download.common.keyhelpers as keyhelpers
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates

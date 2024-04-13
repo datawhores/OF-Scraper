@@ -20,13 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionbuilder as sessionbuilder
@@ -206,9 +199,9 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
             )
             if len(subscriptions) == 0:
                 return subscriptions
-            elif recur == False:
-                None
-            elif (await r.json_())["hasMore"] == True:
+            elif recur is False:
+                pass
+            elif (await r.json_())["hasMore"] is True:
                 new_tasks.append(
                     asyncio.create_task(
                         scrape_subscriptions_active(
@@ -243,9 +236,9 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
 
             if len(subscriptions) == 0:
                 return subscriptions
-            elif recur == False:
-                None
-            elif (await r.json_())["hasMore"] == True:
+            elif recur is False:
+                pass
+            elif (await r.json_())["hasMore"] is True:
                 new_tasks.append(
                     asyncio.create_task(
                         scrape_subscriptions_disabled(

@@ -16,13 +16,6 @@ import logging
 import traceback
 
 from rich.console import Console
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
@@ -49,7 +42,7 @@ async def sort_list(c) -> list:
             constants.getattr("sortSubscription"),
             method="post",
             json={"order": "users.name", "direction": "desc", "type": "all"},
-        ) as r:
+        ) as _:
             pass
     except Exception as E:
         log.traceback_(E)

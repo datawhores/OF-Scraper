@@ -17,12 +17,6 @@ import logging
 import traceback
 
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.db.operations as operations
@@ -405,7 +399,7 @@ async def scrape_messages(
 
                 if timestamp < after:
                     attempt.set(0)
-                elif required_ids == None:
+                elif required_ids is None:
                     attempt.set(0)
                     new_tasks.append(
                         asyncio.create_task(

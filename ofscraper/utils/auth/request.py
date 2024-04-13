@@ -17,13 +17,6 @@ import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-from tenacity import (
-    Retrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
 
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.auth.file as auth_file

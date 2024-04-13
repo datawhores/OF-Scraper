@@ -2,14 +2,6 @@ import copy
 import logging
 import re
 
-from tenacity import (
-    Retrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
-
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
@@ -144,7 +136,7 @@ class DiscordHandler(logging.Handler):
                             or dates_manager.getLogDate().get("now"),
                             "content": date or dates_manager.getLogDate().get("now"),
                         },
-                    ) as r:
+                    ) as _:
                         pass
                 except Exception as E:
                     None

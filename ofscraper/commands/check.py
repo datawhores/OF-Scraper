@@ -24,7 +24,6 @@ import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.args.user as user_helper
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache

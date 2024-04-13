@@ -14,12 +14,6 @@ import math
 import traceback
 
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
@@ -318,7 +312,7 @@ async def scrape_archived_posts(
         )
         async with c.requests_async(url) as r:
             posts = (await r.json_())["list"]
-            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
+            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not posts or len(posts) == 0:
                 log.debug(f" {log_id} -> number of post found 0")
             elif len(posts) > 0:

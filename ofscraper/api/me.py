@@ -14,14 +14,6 @@ r"""
 import logging
 import traceback
 
-from tenacity import (
-    Retrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
-
 import ofscraper.classes.sessionbuilder as sessionbuilder
 import ofscraper.utils.constants as constants
 import ofscraper.utils.logs.helpers as log_helpers

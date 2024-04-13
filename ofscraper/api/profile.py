@@ -18,13 +18,6 @@ import traceback
 from typing import Union
 
 from rich.console import Console
-from tenacity import (
-    Retrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 from xxhash import xxh128
 
 import ofscraper.classes.sessionbuilder as sessionbuilder

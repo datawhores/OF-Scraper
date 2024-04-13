@@ -1,6 +1,6 @@
+import asyncio
 import contextlib
 import contextvars
-import asyncio
 import logging
 import ssl
 import traceback
@@ -11,49 +11,63 @@ import certifi
 import httpx
 from tenacity import (
     Retrying,
+    retry,
+    retry_if_exception,
     retry_if_not_exception_type,
     stop_after_attempt,
+    wait_exponential,
     wait_random,
-    retry, retry_if_exception, wait_exponential,
-    retry_if_exception_type
 )
-
-
 
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+
 attempt = contextvars.ContextVar("attempt")
-
-
 
 
 class retry_if_http_429_error(retry_if_exception):
 
     def __init__(self):
         def is_http_429_error(exception):
-            print( (isinstance(exception, aiohttp.ClientResponseError) or isinstance(exception,httpx.Request)) and
-                exception.status == 429)
-            return (
-                (isinstance(exception, aiohttp.ClientResponseError) or isinstance(exception,httpx.Request)) and
-                exception.status == 429
+            print(
+                (
+                    isinstance(exception, aiohttp.ClientResponseError)
+                    or isinstance(exception, httpx.Request)
+                )
+                and exception.status == 429
             )
-
+            return (
+                isinstance(exception, aiohttp.ClientResponseError)
+                or isinstance(exception, httpx.Request)
+            ) and exception.status == 429
 
 
 class retry_if_not_http_429_error(retry_if_exception):
     def __init__(self):
         def is_http_429_error(exception):
-            print((
-                (isinstance(exception, aiohttp.ClientResponseError) or isinstance(exception,httpx.Request)) and
-                exception.status == 429
-            ) is False,"test2")
-            return(
-                (isinstance(exception, aiohttp.ClientResponseError) or isinstance(exception,httpx.Request)) and
-                exception.status == 429
+            print(
+                (
+                    (
+                        isinstance(exception, aiohttp.ClientResponseError)
+                        or isinstance(exception, httpx.Request)
+                    )
+                    and exception.status == 429
+                )
+                is False,
+                "test2",
+            )
+            return (
+                (
+                    isinstance(exception, aiohttp.ClientResponseError)
+                    or isinstance(exception, httpx.Request)
+                )
+                and exception.status == 429
             ) is False
 
         super().__init__(predicate=is_http_429_error)
+
+
 ####
 #  This class allows the user to select which backend aiohttp or httpx they want to use
 #  httpx has better compatiblilty but is slower
@@ -80,7 +94,7 @@ class sessionBuilder:
         wait_min=None,
         wait_max=None,
         log=None,
-        semaphore=None
+        semaphore=None,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -204,17 +218,19 @@ class sessionBuilder:
         json = json or None
         params = params or None
         r = None
-        log=(log or self._log)
-        for count,_ in enumerate(Retrying(
-            retry=retry_if_not_exception_type(KeyboardInterrupt),
-            stop=stop_after_attempt(retries or self._retries),
-            wait=wait_random(
-                min=wait_min or self._wait_min,
-                max=wait_max or self._wait_max,
-            ),
-        )):
+        log = log or self._log
+        for count, _ in enumerate(
+            Retrying(
+                retry=retry_if_not_exception_type(KeyboardInterrupt),
+                stop=stop_after_attempt(retries or self._retries),
+                wait=wait_random(
+                    min=wait_min or self._wait_min,
+                    max=wait_max or self._wait_max,
+                ),
+            )
+        ):
             r = None
-            if count>1:
+            if count > 1:
                 log.debug(f"[bold]attempt: [bold] {count} for url {url}")
 
             with _:
@@ -234,9 +250,7 @@ class sessionBuilder:
                     elif not r.ok:
                         log.debug(f"[bold]failed: [bold] {r.url}")
                         log.debug(f"[bold]status: [bold] {r.status}")
-                        log.debug(
-                            f"[bold]response text [/bold]: {r.text_()}"
-                        )
+                        log.debug(f"[bold]response text [/bold]: {r.text_()}")
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                     else:
@@ -250,41 +264,41 @@ class sessionBuilder:
 
     @contextlib.asynccontextmanager
     async def requests_async(
-        self,
-        wait_min=None,
-        wait_max=None,
-        retries=None,
-        log=None,
-        *args, **kwargs):
+        self, wait_min=None, wait_max=None, retries=None, log=None, *args, **kwargs
+    ):
         @retry(
-            wait=wait_random(min=wait_min or self._wait_min, max=wait_max or self._wait_max),
+            wait=wait_random(
+                min=wait_min or self._wait_min, max=wait_max or self._wait_max
+            ),
             reraise=True,
             retry=retry_if_not_http_429_error(),
             stop=stop_after_attempt(retries or self._retries),
-
         )
         @retry(
             retry=retry_if_http_429_error(),
             wait=wait_exponential(multiplier=2, max=300),  # Exponential backoff for 429
             reraise=True,
         )
-        async def inner( self,url=None,
-        method="get",
-        headers=None,
-        cookies=None,
-        json=None,
-        params=None,
-        redirects=True,
-        data=None,
-        sign=None,
-        log=None):
+        async def inner(
+            self,
+            url=None,
+            method="get",
+            headers=None,
+            cookies=None,
+            json=None,
+            params=None,
+            redirects=True,
+            data=None,
+            sign=None,
+            log=None,
+        ):
             r = None
             await self._sem.acquire()
-            log=(log or self._log)
+            log = log or self._log
             attempt.set(attempt.get(0) + 1)
-            if attempt.get()>1:
+            if attempt.get() > 1:
                 log.debug(f"[bold]attempt: [bold] {attempt.get()} for url {url}")
-            r.status=429
+            r.status = 429
             r.raise_for_status()
             try:
                 headers = (
@@ -324,9 +338,7 @@ class sessionBuilder:
                 elif not r.ok:
                     log.debug(f"[bold]failed: [bold] {r.url}")
                     log.debug(f"[bold]status: [bold] {r.status}")
-                    log.debug(
-                        f"[bold]response text [/bold]: {await r.text_()}"
-                    )
+                    log.debug(f"[bold]response text [/bold]: {await r.text_()}")
                     log.debug(f"[bold]headers[/bold]: {r.headers}")
                     r.raise_for_status()
             except Exception as E:
@@ -336,7 +348,8 @@ class sessionBuilder:
                 raise E
             self._sem.release()
             return r
-        yield await inner(self,*args,log=log, **kwargs)
+
+        yield await inner(self, *args, log=log, **kwargs)
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
