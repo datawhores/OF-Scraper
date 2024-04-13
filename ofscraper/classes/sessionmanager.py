@@ -362,8 +362,9 @@ class sessionManager:
                     log.traceback_(traceback.format_exc())
                     self._sem.release()
                     raise E
-                self._sem.release()
                 yield r
+                self._sem.release()
+
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
