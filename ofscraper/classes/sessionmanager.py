@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import contextvars
 import logging
 import ssl
 import traceback
@@ -16,7 +15,6 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
-attempt = contextvars.ContextVar("attempt")
 
 
 class CustomTenacity(AsyncRetrying):
@@ -302,20 +300,18 @@ class sessionManager:
 
         retries = retries or self._retries
 
-        async for _ in CustomTenacity(
+        async for count,_ in enumerate(CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
-        ):
+        )):
             with _:
                 r = None
                 await self._sem.acquire()
-                log = log or self._log
-                attempt.set(attempt.get(0) + 1)
-                if attempt.get() > 1:
-                    log.debug(f"[bold]attempt: [bold] {attempt.get()} for url {url}")
+                if count > 0:
+                    log.debug(f"[bold]attempt: [bold] {count+1} for url {url}")
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
