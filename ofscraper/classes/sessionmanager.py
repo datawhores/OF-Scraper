@@ -206,20 +206,22 @@ class sessionManager:
         params = params or None
         r = None
         log = log or self._log
-        for count, _ in enumerate(
-            Retrying(
-                retry=retry_if_not_exception_type(KeyboardInterrupt),
-                stop=tenacity.stop.stop_after_attempt(retries or self._retries),
-                wait=tenacity.wait.wait_random(
-                    min=wait_min or self._wait_min,
-                    max=wait_max or self._wait_max,
-                ),
-            )
-        ):
-            r = None
-            if count > 1:
-                log.debug(f"[bold]attempt: [bold] {count} for url {url}")
+        min=wait_min or self._wait_min
+        max=wait_max or self._wait_max
+        retries=retries or self._retries
 
+
+        for  _  in Retrying(
+                retry=retry_if_not_exception_type(KeyboardInterrupt),
+                stop=tenacity.stop.stop_after_attempt(retries),
+                wait=tenacity.wait.wait_random(
+                    min=min,
+                    max=max
+                ),
+                before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None
+
+            ):
+            r = None
             with _:
                 try:
                     r = self._httpx_funct(
@@ -267,51 +269,23 @@ class sessionManager:
         *args,
         **kwargs,
     ):
-        # @retry(
-        #     wait=wait_random(
-        #         min=wait_min or self._wait_min, max=wait_max or self._wait_max
-        #     ),
-        #     reraise=True,
-        #     retry=(retry_if_not_http_429_error() and retry_if_not_exception_type(KeyboardInterrupt)),
-        #     stop=stop_after_attempt(retries or self._retries),
-        # )
-        # @retry(
-        #     retry=(retry_if_http_429_error() and retry_if_not_exception_type(KeyboardInterrupt)),
-        #     wait=wait_exponential(multiplier=2, max=300),  # Exponential backoff for 429
-        #     reraise=True,
-        # )
-        # async def inner(
-        #     self,
-        #     url=None,
-        #     method="get",
-        #     headers=None,
-        #     cookies=None,
-        #     json=None,
-        #     params=None,
-        #     redirects=True,
-        #     data=None,
-        #     sign=None,
-        #     log=None,
-        # ):
         wait_min = wait_min or self._wait_min
         wait_max = wait_max or self._wait_max
         wait_min_exponential = wait_min_exponential or self._wait_min_exponential
         wait_max_exponential = wait_max_exponential or self._wait_max_exponential
-
+        log=log or self._log
         retries = retries or self._retries
-
-        async for count,_ in enumerate(CustomTenacity(
+        async for _ in CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
-        )):
+            before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None
+        ):
             with _:
                 r = None
                 await self._sem.acquire()
-                if count > 0:
-                    log.debug(f"[bold]attempt: [bold] {count+1} for url {url}")
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
