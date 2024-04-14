@@ -514,7 +514,7 @@ async def process_task(model_id, username, ele):
     final_post_areas = set(areas.get_download_area())
     tasks = []
     async with sessionManager.sessionManager(
-        sems=constants.getattr("API_REQ_SEM_MAX"),
+        sem=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),

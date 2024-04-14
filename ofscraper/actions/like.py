@@ -47,7 +47,7 @@ async def get_posts(model_id, username):
     tasks = []
     with progress_utils.setup_api_split_progress_live():
         async with sessionManager.sessionManager(
-            sems=constants.getattr("LIKE_MAX_SEMS"),
+            sem=constants.getattr("LIKE_MAX_sem"),
             retries=constants.getattr("API_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -186,7 +186,7 @@ async def _like(model_id, ids: list, like_action: bool):
     ) as overall_progress:
         async with sessionManager.sessionManager(
             delay=3,
-            sems=1,
+            sem=1,
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),

@@ -112,7 +112,7 @@ def common_params(func):
         ),
         click.option(
             "-sd",
-            "--downloadsems",
+            "--downloadsem",
             help="Number of concurrent downloads per thread",
             default=None,
             type=int,

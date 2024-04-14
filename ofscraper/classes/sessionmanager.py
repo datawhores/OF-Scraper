@@ -68,7 +68,7 @@ class sessionManager:
         proxy=None,
         proxy_auth=None,
         delay=None,
-        sems=None,
+        sem=None,
         retries=None,
         wait_min=None,
         wait_max=None,
@@ -97,7 +97,7 @@ class sessionManager:
         self._proxy = proxy
         self._proxy_auth = proxy_auth
         self._delay = delay or 0
-        self._sem = semaphore or asyncio.Semaphore(sems or 100000)
+        self._sem = semaphore or asyncio.Semaphore(sem or 100000)
         self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
@@ -251,7 +251,7 @@ class sessionManager:
     @contextlib.asynccontextmanager
     async def requests_async(
         self,
-        url,
+        url=None,
         wait_min=None,
         wait_max=None,
         wait_min_exponential=None,
@@ -266,6 +266,7 @@ class sessionManager:
         data=None,
         sign=None,
         log=None,
+        sem=None,
         *args,
         **kwargs,
     ):
@@ -275,6 +276,7 @@ class sessionManager:
         wait_max_exponential = wait_max_exponential or self._wait_max_exponential
         log=log or self._log
         retries = retries or self._retries
+        sem=sem or self._sem
         async for _ in CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
@@ -285,7 +287,7 @@ class sessionManager:
         ):
             with _:
                 r = None
-                await self._sem.acquire()
+                await sem.acquire()
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
@@ -333,7 +335,7 @@ class sessionManager:
                     self._sem.release()
                     raise E
                 yield r
-                self._sem.release()
+                sem.release()
 
 
     async def _httpx_funct_async(self, *args, **kwargs):

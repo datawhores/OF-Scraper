@@ -96,7 +96,7 @@ async def get_lists():
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
             async with sessionManager.sessionManager(
-                sems=constants.getattr("SUBSCRIPTION_SEMS"),
+                sem=constants.getattr("SUBSCRIPTION_sem"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -204,7 +204,7 @@ async def get_list_users(lists):
             progress_group, refresh_per_second=5, console=console.get_shared_console()
         ):
             async with sessionManager.sessionManager(
-                sems=constants.getattr("SUBSCRIPTION_SEMS"),
+                sem=constants.getattr("SUBSCRIPTION_sem"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),

@@ -215,7 +215,7 @@ async def paid_failback(post_id, model_id, username):
     post_id = str(post_id)
     async with sessionManager.sessionManager(
         backend="httpx",
-        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        sem=constants.getattr("API_REQ_CHECK_MAX"),
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),

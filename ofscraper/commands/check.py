@@ -153,7 +153,7 @@ async def post_check_helper():
     links = list(url_helper())
     async with sessionManager.sessionManager(
         backend="httpx",
-        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        sem=constants.getattr("API_REQ_CHECK_MAX"),
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -378,7 +378,7 @@ async def purchase_checker_helper():
     auth_requests.make_headers()
     async with sessionManager.sessionManager(
         backend="httpx",
-        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        sem=constants.getattr("API_REQ_CHECK_MAX"),
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -434,7 +434,7 @@ async def stories_checker_helper():
     user_dict = {}
     async with sessionManager.sessionManager(
         backend="httpx",
-        sems=constants.getattr("API_REQ_CHECK_MAX"),
+        sem=constants.getattr("API_REQ_CHECK_MAX"),
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -516,7 +516,7 @@ async def get_paid_ids(model_id, user_name):
     else:
         async with sessionManager.sessionManager(
             backend="httpx",
-            sems=constants.getattr("API_REQ_CHECK_MAX"),
+            sem=constants.getattr("API_REQ_CHECK_MAX"),
             retries=constants.getattr("API_CHECK_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
