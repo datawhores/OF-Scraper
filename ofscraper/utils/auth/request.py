@@ -116,7 +116,7 @@ def get_request_auth_digitalcriminals():
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
     ) as c:
-        with c.requests_async(
+        with c.requests(
             constants.getattr("DIGITALCRIMINALS"),
             headers=False,
             cookies=False,

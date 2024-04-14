@@ -388,8 +388,12 @@ async def process_dicts_split(username, model_id, medialist):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         log=common_globals.log,
+<<<<<<< HEAD
         sem=config_data.get_download_semaphores()
         or constants.getattr("MAX_sem_BATCH_DOWNLOAD"),
+=======
+        sems=config_data.get_download_semaphores(),
+>>>>>>> 7f943369ea5b865b9065cae1167aa8f0fbc133dd
     ) as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
