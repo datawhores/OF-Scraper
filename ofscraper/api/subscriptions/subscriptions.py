@@ -45,7 +45,7 @@ async def get_subscriptions(subscribe_count, account="active"):
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
             async with sessionManager.sessionManager(
-                sem=constants.getattr("SUBSCRIPTION_sem"),
+                sem=constants.getattr("SUBSCRIPTION_SEMS"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),

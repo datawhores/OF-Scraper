@@ -199,7 +199,7 @@ async def get_all_paid_posts():
             job_progress = progress_utils.all_paid_progress
             overall_progress = progress_utils.overall_progress
             async with sessionManager.sessionManager(
-                sem=constants.getattr("SCRAPE_PAID_sem"),
+                sem=constants.getattr("SCRAPE_PAID_SEMS"),
                 retries=constants.getattr("API_PAID_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),

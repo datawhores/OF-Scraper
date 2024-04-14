@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import contextlib
 import logging
 import ssl
@@ -76,6 +77,8 @@ class sessionManager:
         wait_max_exponential=None,
         log=None,
         semaphore=None,
+        sync_sem=None,
+        sync_semaphore=None
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -98,6 +101,7 @@ class sessionManager:
         self._proxy_auth = proxy_auth
         self._delay = delay or 0
         self._sem = semaphore or asyncio.Semaphore(sem or 100000)
+        self._sync_sem=sync_semaphore or threading.Semaphore(sync_sem or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT"))
         self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
@@ -209,8 +213,7 @@ class sessionManager:
         min=wait_min or self._wait_min
         max=wait_max or self._wait_max
         retries=retries or self._retries
-
-
+        sync_sem=self._sync_sem or sync_sem
         for  _  in Retrying(
                 retry=retry_if_not_exception_type(KeyboardInterrupt),
                 stop=tenacity.stop.stop_after_attempt(retries),
@@ -223,6 +226,7 @@ class sessionManager:
             ):
             r = None
             with _:
+                sync_sem.acquire()
                 try:
                     r = self._httpx_funct(
                         method,
@@ -247,6 +251,7 @@ class sessionManager:
                     log.traceback_(traceback.format_exc())
                     raise E
         yield r
+        sync_sem.release()
 
     @contextlib.asynccontextmanager
     async def requests_async(

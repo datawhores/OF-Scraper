@@ -75,7 +75,7 @@ async def process_dicts(username, model_id, medialist):
                 aws = []
 
                 async with sessionManager.sessionManager(
-                    sems=config_data.get_download_semaphores(),
+                    sem=config_data.get_download_semaphores(),
                     retries=constants.getattr("DOWNLOAD_RETRIES"),
                     wait_min=constants.getattr("OF_MIN_WAIT_API"),
                     wait_max=constants.getattr("OF_MAX_WAIT_API"),
