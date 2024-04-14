@@ -26,7 +26,6 @@ from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem=asyncio.Semaphore(constants.getattr("TIMELINE_SEMS_MAX"))
 
 
 @run
@@ -259,7 +258,7 @@ def get_individual_post(id):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
-        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id),sem=sem) as r:
+        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
             log.trace(f"post raw individual {r.json()}")
             return r.json()
 
