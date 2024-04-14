@@ -1,6 +1,7 @@
 import inspect
 import re
 
+import pynumparser
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
@@ -12,6 +13,7 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 import ofscraper.filters.models.sort as sort
+import ofscraper.prompts.promptConvert as promptConvert
 
 
 console = Console()
@@ -147,22 +149,22 @@ def model_funct(prompt):
 def model_select_funct(prompt):
     with stdout.nostdout():
         models = userselector.filterOnly()
+        models=sort.sort_models_helper(models)
         choices = list(
             map(
                 lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
                 enumerate(models),
             )
         )
-        selectedSet = set(
-            map(
-                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
-                prompt.selected_choices or [],
-            )
-        )
-        for model in choices:
-            name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
-            if name in selectedSet:
-                model.enabled = True
+        try:
+            select=set(pynumparser.NumberSequence().parse(promptConvert.multiline_input_prompt(message="Enter Num Sequences: ",more_instruction="Example Input: '1-2,20-50 => [1,2,20...50] inclusive' ")))
+        except Exception as _:
+            return prompt
+        for count,model in enumerate(choices):
+            if count+1 in select:
+                model.enabled=True
+            else:
+                model.enabled = False
         prompt.content_control._raw_choices = choices
         prompt.content_control.choices = prompt.content_control._get_choices(
             prompt.content_control._raw_choices, prompt.content_control._default

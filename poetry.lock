@@ -1939,6 +1939,16 @@ files = [
 construct = "2.8.8"
 
 [[package]]
+name = "pynumparser"
+version = "1.4.1"
+description = "A library to parse arguments of numbers and number sequences, usable directly or with argparse. Allows concise representation of contiguous or non-contiguous sequences. Example: 1,5-10,40-50/5,200+100/25"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pynumparser-1.4.1.tar.gz", hash = "sha256:8fbd5280490ef89fb46e817d63067f6e4542a66b0051c0eaa70afb4961f0aa67"},
+]
+
+[[package]]
 name = "pyreadline3"
 version = "3.4.1"
 description = "A python implementation of GNU readline."
@@ -2894,4 +2904,4 @@ pyinstaller = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.14"
-content-hash = "77df2143b87b636e263336dcce497629fb8d6de1ed17cc15eed8a5847eaf983e"
+content-hash = "c37d01597254ce2b20f9bf3dbc35693463b7ffbf3d1b900b9a6cbbf43b3d7726"
