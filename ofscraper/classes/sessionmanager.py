@@ -220,7 +220,8 @@ class sessionManager:
                     min=min,
                     max=max
                 ),
-                before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None
+                before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None,
+                reraise=True
 
             ):
             r = None
@@ -287,7 +288,8 @@ class sessionManager:
             ),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
-            before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None
+            before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None,
+            reraise=True
         ):
             with _:
                 r = None
@@ -351,6 +353,7 @@ class sessionManager:
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
+        t.read=t.aread
         return t
 
     def _httpx_funct(self, method, **kwargs):
@@ -369,6 +372,7 @@ class sessionManager:
         r.json_ = r.json
         r.iter_chunked = r.content.iter_chunked
         r.status_code = r.status
+        r.read=r.content.read
         return r
 
     async def factoryasync(self, input):
