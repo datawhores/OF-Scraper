@@ -6,7 +6,6 @@ import threading
 import traceback
 
 import aiohttp
-import aiohttp.web_exceptions
 import certifi
 import httpx
 import tenacity
