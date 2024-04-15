@@ -146,8 +146,6 @@ class sessionBuilder:
     ):
         headers = self._create_headers(headers, url,sign) if headers is None else None
         cookies = self._create_cookies() if cookies is None else None
-        json = json or None
-        params = params or None
 
         if self._backend == "aio":
             funct = functools.partial(
