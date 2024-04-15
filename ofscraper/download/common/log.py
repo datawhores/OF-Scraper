@@ -14,20 +14,20 @@ def get_medialog(ele):
 def path_to_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.filename}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.filename}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] full path from config {placeholderObj.filepath}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] full path from config {placeholderObj.filepath}"
     )
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] full path trunicated from config {placeholderObj.trunicated_filepath}"
     )
 
 
 def temp_file_logger(placeholderObj, ele, innerlog=None):
     innerlog = innerlog or common_globals.log
     innerlog.debug(
-        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
+        f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('API_NUM_TRIES')}] filename from config {placeholderObj.tempfilepath}"
     )
 
 
@@ -57,20 +57,21 @@ downloads total [{common_globals.video_count} videos, {common_globals.audio_coun
 
 
 def final_log(username, log=None):
-    skipped_word = "skipped"
-    (log or common_globals.log).warning(
-        f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
-        f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
-        f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
-    )
+
     if read_args.retriveArgs().metadata:
         skipped_word = "media metadata unchanged"
-        (log or common_globals.log).warning(
+        (log or common_globals.log).error(
             f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
             f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
             f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
         )
-        log.info("This only includes updates for the media table")
+    else:
+        skipped_word = "skipped"
+        (log or common_globals.log).error(
+            f"[bold]{username}[/bold] ({format_size(common_globals.total_bytes )}) ({common_globals.photo_count+common_globals.audio_count+common_globals.video_count}"
+            f" downloads total [{common_globals.video_count} videos, {common_globals.audio_count} audios, {common_globals.photo_count} photos], "
+            f"{common_globals.forced_skipped} {skipped_word}, {common_globals.skipped} failed)"
+        )
 
 
 def text_log(username, value=0, fails=0, exists=0, log=None):

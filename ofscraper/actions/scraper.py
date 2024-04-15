@@ -28,7 +28,7 @@ import ofscraper.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 import ofscraper.utils.args.areas as areas
@@ -63,7 +63,7 @@ async def process_messages(model_id, username, c):
             )
             log.debug("Removing locked messages media")
             output = []
-            [output.extend(message.media) for message in messages_]
+            [output.extend(message.all_media) for message in messages_]
             log.debug(f"[bold]Messages media count[/bold] {len(output)}")
             # Update after database
             cache.set(
@@ -98,7 +98,7 @@ async def process_paid_post(model_id, username, c):
                 username=username,
             )
             output = []
-            [output.extend(post.media) for post in paid_content]
+            [output.extend(post.all_media) for post in paid_content]
             log.debug(f"[bold]Paid media count without locked[/bold] {len(output)}")
 
             await operations.batch_mediainsert(
@@ -143,7 +143,7 @@ async def process_stories(model_id, username, c):
                 f"[bold]Story media count[/bold] {sum(map(lambda x:len(x.post_media), stories))}"
             )
             output = []
-            [output.extend(stories.media) for stories in stories]
+            [output.extend(stories.all_media) for stories in stories]
             await operations.batch_mediainsert(
                 output,
                 model_id=model_id,
@@ -183,7 +183,7 @@ async def process_highlights(model_id, username, c):
                 f"[bold]highlight media count[/bold] {sum(map(lambda x:len(x.post_media), highlights_))}"
             )
             output = []
-            [output.extend(stories.media) for stories in highlights_]
+            [output.extend(stories.all_media) for stories in highlights_]
             await operations.batch_mediainsert(
                 output,
                 model_id=model_id,
@@ -231,7 +231,7 @@ async def process_timeline_posts(model_id, username, c):
             )
             log.debug("Removing locked timeline media")
             output = []
-            [output.extend(post.media) for post in timeline_only_posts]
+            [output.extend(post.all_media) for post in timeline_only_posts]
             log.debug(f"[bold]Timeline media count without locked[/bold] {len(output)}")
 
             await operations.batch_mediainsert(
@@ -281,7 +281,7 @@ async def process_archived_posts(model_id, username, c):
             )
             log.debug("Removing locked archived media")
             output = []
-            [output.extend(post.media) for post in archived_posts]
+            [output.extend(post.all_media) for post in archived_posts]
             log.debug(f"[bold]Archived media count without locked[/bold] {len(output)}")
 
             await operations.batch_mediainsert(
@@ -325,7 +325,7 @@ async def process_pinned_posts(model_id, username, c):
             )
             log.debug("Removing locked pinned media")
             output = []
-            [output.extend(post.media) for post in pinned_posts]
+            [output.extend(post.all_media) for post in pinned_posts]
             log.debug(f"[bold]Pinned media count without locked[/bold] {len(output)}")
 
             await operations.batch_mediainsert(
@@ -386,6 +386,7 @@ async def process_all_paid():
     with stdout.lowstdout():
         paid_content = await paid.get_all_paid_posts()
         user_dict = {}
+
         for ele in paid_content:
             user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get(
                 "id"
@@ -394,11 +395,10 @@ async def process_all_paid():
         output = {}
         for model_id, value in user_dict.items():
             username = profile.scrape_profile(model_id).get("username")
-            if (
-                username == "modeldeleted"
-                and await operations.check_profile_table_exists(
-                    model_id=model_id, username=username
-                )
+            if username == constants.getattr(
+                "DELETED_MODEL_PLACEHOLDER"
+            ) and await operations.check_profile_table_exists(
+                model_id=model_id, username=username
             ):
                 username = (
                     await operations.get_profile_info(
@@ -421,7 +421,7 @@ async def process_all_paid():
                 for post in all_posts
                 if post.id not in seen and not seen.add(post.id)
             ]
-            new_medias = [item for post in new_posts for item in post.media]
+            new_medias = [item for post in new_posts for item in post.all_media]
             new_medias = filters.filterMedia(new_medias)
             new_posts = filters.filterPost(new_posts)
             await operations.make_post_table_changes(
@@ -459,9 +459,9 @@ async def process_labels(model_id, username, c):
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
             await operations.make_label_table_changes(
-                    labelled_posts_,
-                    model_id=model_id,
-                    username=username,
+                labelled_posts_,
+                model_id=model_id,
+                username=username,
             )
 
             log.debug(
@@ -469,7 +469,7 @@ async def process_labels(model_id, username, c):
             )
             log.debug("Removing locked messages media")
             output = [
-                post.media
+                post.all_media
                 for labelled_post in labelled_posts_
                 for post in labelled_post.posts
             ]
@@ -513,7 +513,12 @@ async def process_task(model_id, username, ele):
     postObjs = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
-    async with sessionbuilder.sessionBuilder() as c:
+    async with sessionManager.sessionManager(
+        sem=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
         while True:
             max_count = min(
                 constants.getattr("API_MAX_AREAS"),

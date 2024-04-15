@@ -4,9 +4,7 @@ import traceback
 
 import httpx
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
-import ofscraper.utils.args.read as read_args
-import ofscraper.utils.config.data as data
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
@@ -32,8 +30,14 @@ def check_cdm():
         elif keymode == "cdrm2":
             url = constants.getattr("CDRM2")
         try:
-            with sessionbuilder.sessionBuilder(backend="httpx", total_timeout=30) as c:
-                with c.requests(url=url)() as r:
+            with sessionManager.sessionManager(
+                backend="httpx",
+                total_timeout=30,
+                retries=constants.getattr("CDM_NUM_TRIES"),
+                wait_min=constants.getattr("CDM_MIN_WAIT"),
+                wait_max=constants.getattr("CDM_MAX_WAIT"),
+            ) as c:
+                with c.requests(url=url) as r:
                     if r.ok:
                         console.print(
                             "[green] CDM service seems to be working\n[/green]"

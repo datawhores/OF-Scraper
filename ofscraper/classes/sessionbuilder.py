@@ -6,6 +6,7 @@ import aiohttp
 import certifi
 import httpx
 
+import ofscraper.utils.auth.file as files
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
@@ -117,21 +118,18 @@ class sessionBuilder:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)
 
-    def _create_headers(self, headers, url):
-        headers = headers or {}
-        if self._set_header:
-            new_headers = auth_requests.make_headers()
-            headers.update(new_headers)
-        headers = self._create_sign(headers, url)
+    def _create_headers(self, headers, url,sign):
+        new_headers = auth_requests.make_headers()
+        headers.update(new_headers)
+        headers = self._create_sign(headers, url) if sign is None else headers
         return headers
 
     def _create_sign(self, headers, url):
-        auth_requests.create_sign(url, headers) if self._set_sign else None
+        auth_requests.create_sign(url, headers)
         return headers
 
     def _create_cookies(self):
-        if self._set_cookies:
-            return auth_requests.add_cookies()
+        return auth_requests.add_cookies()
 
     def requests(
         self,
@@ -143,9 +141,10 @@ class sessionBuilder:
         params=None,
         redirects=True,
         data=None,
+        sign=None
     ):
-        headers = self._create_headers(headers, url)
-        cookies = cookies or self._create_cookies()
+        headers = self._create_headers(headers, url,sign) if headers is None else headers
+        cookies = self._create_cookies() if cookies is None else cookies
         json = json or None
         params = params or None
 
@@ -234,12 +233,12 @@ class sessionBuilder:
     async def _aio_funct_async(self, method, **kwargs):
         try:
             resp = self._session.request(method, **kwargs)
-            async with resp as r:
-                r.text_ = r.text
-                r.json_ = r.json
-                r.iter_chunked = r.content.iter_chunked
-                yield r
-        except aiohttp.ClientConnectionError as E:
-            raise E
         except Exception as E:
             raise E
+        async with resp as r:
+            r.text_ = r.text
+            r.json_ = r.json
+            r.iter_chunked = r.content.iter_chunked
+            yield r
+
+        None

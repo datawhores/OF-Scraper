@@ -1,6 +1,7 @@
 import inspect
 import re
 
+import pynumparser
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
@@ -11,6 +12,9 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
+import ofscraper.filters.models.sort as sort
+import ofscraper.prompts.promptConvert as promptConvert
+
 
 console = Console()
 
@@ -116,6 +120,7 @@ def model_funct(prompt):
     userselector.setfilter()
     with stdout.nostdout():
         models = userselector.filterOnly()
+        models=sort.sort_models_helper(models)
         choices = list(
             map(
                 lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
@@ -139,6 +144,33 @@ def model_funct(prompt):
         prompt.content_control._format_choices()
         return prompt
 
+
+
+def model_select_funct(prompt):
+    with stdout.nostdout():
+        models = userselector.filterOnly()
+        models=sort.sort_models_helper(models)
+        choices = list(
+            map(
+                lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
+                enumerate(models),
+            )
+        )
+        try:
+            select=set(pynumparser.NumberSequence().parse(promptConvert.multiline_input_prompt(message="Enter Num Sequences: ",more_instruction="Example Input: '1-2,20-50 => [1,2,20...50] inclusive' ")))
+        except Exception as _:
+            return prompt
+        for count,model in enumerate(choices):
+            if count+1 in select:
+                model.enabled=True
+            else:
+                model.enabled = False
+        prompt.content_control._raw_choices = choices
+        prompt.content_control.choices = prompt.content_control._get_choices(
+            prompt.content_control._raw_choices, prompt.content_control._default
+        )
+        prompt.content_control._format_choices()
+        return prompt
 
 def user_list(model_str):
     model_list = re.split("(,|\n)", model_str)

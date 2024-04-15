@@ -47,6 +47,7 @@ lxml = "^5.1.0"
 multiprocess = "^0.70.16"
 dill = "^0.3.8"
 cloup = "^3.0.5"
+pynumparser = "^1.4.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -14,32 +14,22 @@ import math
 import traceback
 
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.sems as sems
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
-sem = None
 
 
 @run
 async def get_timeline_posts_progress(model_id, username, forced_after=None, c=None):
-    global sem
-    sem = sems.get_req_sem()
 
     after = await get_after(model_id, username, forced_after)
 
@@ -52,9 +42,6 @@ async def get_timeline_posts_progress(model_id, username, forced_after=None, c=N
 
 @run
 async def get_timeline_posts(model_id, username, forced_after=None, c=None):
-    global sem
-    sem = sems.get_req_sem()
-
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_postsinfo(
             model_id=model_id, username=username
@@ -107,7 +94,7 @@ async def process_tasks(tasks, model_id, after):
                         log.traceback_(traceback.format_exc())
                         continue
         except TimeoutError as E:
-            cache.set(f"{model_id}_full_timeline_scrape")
+            cache.set(f"{model_id}_full_timeline_scrape", True)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         tasks = new_tasks
@@ -265,17 +252,15 @@ def set_check(unduped, model_id, after):
 
 
 def get_individual_post(id):
-    with sessionbuilder.sessionBuilder(backend="httpx") as c:
-        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id))() as r:
-            if r.ok:
-                log.trace(f"post raw individual {r.json()}")
-                return r.json()
-            else:
-                log.debug(
-                    f"[bold]individual post response status code:[/bold]{r.status}"
-                )
-                log.debug(f"[bold]individual post response:[/bold] {r.text_()}")
-                log.debug(f"[bold]individual post headers:[/bold] {r.headers}")
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
+        with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
+            log.trace(f"post raw individual {r.json()}")
+            return r.json()
 
 
 async def get_after(model_id, username, forced_after=None):
@@ -330,113 +315,89 @@ async def scrape_timeline_posts(
         else constants.getattr("timelineEP").format(model_id)
     )
     log.debug(url)
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            await sem.acquire()
-            await asyncio.sleep(1)
-            new_tasks = []
-            try:
-                attempt.set(attempt.get(0) + 1)
-                task = (
-                    job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
-                        visible=True,
+    await asyncio.sleep(1)
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        task = (
+            job_progress.add_task(
+                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
+                visible=True,
+            )
+            if job_progress
+            else None
+        )
+
+        async with c.requests_async(url=url) as r:
+            posts = (await r.json_())["list"]
+            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
+            if not posts:
+                posts = []
+            if len(posts) == 0:
+                log.debug(f"{log_id} -> number of post found 0")
+
+            elif len(posts) > 0:
+                log.debug(f"{log_id} -> number of post found {len(posts)}")
+                log.debug(
+                    f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
+                )
+                log.debug(
+                    f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
+                )
+                log.debug(
+                    f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
+                )
+                log.trace(
+                    "{log_id} -> post raw {posts}".format(
+                        log_id=log_id,
+                        posts="\n\n".join(
+                            list(
+                                map(
+                                    lambda x: f"scrapeinfo timeline: {str(x)}",
+                                    posts,
+                                )
+                            )
+                        ),
                     )
-                    if job_progress
-                    else None
                 )
-
-                async with c.requests(url=url)() as r:
-                    if r.ok:
-                        posts = (await r.json_())["list"]
-                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
-                        if not posts:
-                            posts = []
-                        if len(posts) == 0:
-                            log.debug(f"{log_id} -> number of post found 0")
-
-                        elif len(posts) > 0:
-                            log.debug(f"{log_id} -> number of post found {len(posts)}")
-                            log.debug(
-                                f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
+                if not required_ids:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_timeline_posts(
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=posts[-1]["postedAtPrecise"],
+                                offset=False,
                             )
-                            log.debug(
-                                f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-                            )
-                            log.debug(
-                                f"{log_id} -> found postids {list(map(lambda x:x.get('id'),posts))}"
-                            )
-                            log.trace(
-                                "{log_id} -> post raw {posts}".format(
-                                    log_id=log_id,
-                                    posts="\n\n".join(
-                                        list(
-                                            map(
-                                                lambda x: f"scrapeinfo timeline: {str(x)}",
-                                                posts,
-                                            )
-                                        )
-                                    ),
-                                )
-                            )
-                            if not required_ids:
-                                new_tasks.append(
-                                    asyncio.create_task(
-                                        scrape_timeline_posts(
-                                            c,
-                                            model_id,
-                                            job_progress=job_progress,
-                                            timestamp=posts[-1]["postedAtPrecise"],
-                                            offset=False,
-                                        )
-                                    )
-                                )
-                            else:
-                                [
-                                    required_ids.discard(float(ele["postedAtPrecise"]))
-                                    for ele in posts
-                                ]
-                                if len(required_ids) > 0 and float(
-                                    (timestamp) or 0
-                                ) <= max(required_ids):
-                                    new_tasks.append(
-                                        asyncio.create_task(
-                                            scrape_timeline_posts(
-                                                c,
-                                                model_id,
-                                                job_progress=job_progress,
-                                                timestamp=posts[-1]["postedAtPrecise"],
-                                                required_ids=required_ids,
-                                                offset=False,
-                                            )
-                                        )
-                                    )
-                    else:
-                        log.debug(
-                            f"[bold]timeline response status code:[/bold]{r.status}"
                         )
-                        log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                        log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                await asyncio.sleep(1)
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
+                    )
+                else:
+                    [
+                        required_ids.discard(float(ele["postedAtPrecise"]))
+                        for ele in posts
+                    ]
+                    if len(required_ids) > 0 and float((timestamp) or 0) <= max(
+                        required_ids
+                    ):
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_timeline_posts(
+                                    c,
+                                    model_id,
+                                    job_progress=job_progress,
+                                    timestamp=posts[-1]["postedAtPrecise"],
+                                    required_ids=required_ids,
+                                    offset=False,
+                                )
+                            )
+                        )
+    except Exception as E:
+        await asyncio.sleep(1)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
 
-            finally:
-                sem.release()
-                (
-                    job_progress.remove_task(task)
-                    if job_progress and task != None
-                    else None
-                )
-            return posts, new_tasks
+    finally:
+        (job_progress.remove_task(task) if job_progress and task != None else None)
+    return posts, new_tasks

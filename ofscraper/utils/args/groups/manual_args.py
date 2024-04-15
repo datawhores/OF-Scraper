@@ -6,7 +6,11 @@ import ofscraper.utils.args.groups.common_args as common
 import ofscraper.utils.args.helpers as helpers
 
 
-@click.command("manual",help= "Manually download media by providing a list of urls or IDs",short_help="Manually download media by providing a list of urls or IDs")
+@click.command(
+    "manual",
+    help="Manually download media by providing a list of urls or IDs",
+    short_help="Manually download media by providing a list of urls or IDs",
+)
 @click.constraints.require_one(
     click.option(
         "-u",

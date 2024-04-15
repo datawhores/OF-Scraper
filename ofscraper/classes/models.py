@@ -97,7 +97,7 @@ class Model:
     def final_expired(self):
         if not self.expired:
             return 0
-        return self.expired
+        return arrow.get(self.expired).float_timestamp
 
     """
     Best values to retrive depends on how many times subscribed
@@ -178,10 +178,10 @@ class Model:
 
     @property
     def final_regular_price(self):
-        if self.regular_price is not None:
-            return self.regular_price
-        else:
-            return 0
+        if self.subscribed_data:
+            return self.subscribed_data.get("regularPrice")
+        elif self.model:
+            return self.model.get("subscribePrice")
 
     @property
     def final_promo_price(self):
@@ -201,9 +201,9 @@ class Model:
     def final_last_seen(self):
         last_seen = self._model.get("lastSeen")
         if not last_seen:
-            return arrow.now()
+            return arrow.now().float_timestamp
         else:
-            return arrow.get(last_seen)
+            return arrow.get(last_seen).float_timestamp
 
     @property
     def renewed_string(self):

@@ -93,7 +93,7 @@ def common_params(func):
             "--dynamic-rules",
             help="Dynamic signing",
             default=None,
-            type=click.Choice(["dc", "deviint"], case_sensitive=False),
+            type=click.Choice(["dc", "deviint", "sneaky"], case_sensitive=False),
             callback=lambda ctx, param, value: value.lower() if value else None,
         ),
         click.option(
@@ -112,7 +112,7 @@ def common_params(func):
         ),
         click.option(
             "-sd",
-            "--downloadsems",
+            "--downloadsem",
             help="Number of concurrent downloads per thread",
             default=None,
             type=int,
@@ -139,7 +139,7 @@ def common_params(func):
             \b
             Skip media downloads and gather metadata only 
             [no change to download status] 
-            [select onw one --metadata or --metadata-update or --metadata-complete]""",
+            [select one one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="none",  # Enforce "none" as the only valid value
         ),
         click.option(
@@ -179,7 +179,7 @@ def common_other_params(func):
             "-g",
             "--original",
             help="Don't truncate long paths",
-            is_flag=True,  
+            is_flag=True,
         ),
         click.option(
             "-q",

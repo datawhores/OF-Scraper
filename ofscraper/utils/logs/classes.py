@@ -2,15 +2,7 @@ import copy
 import logging
 import re
 
-from tenacity import (
-    Retrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
-
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.dates as dates_manager
@@ -119,12 +111,12 @@ class NoDebug(logging.Filter):
 class DiscordHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)
-        self.sess = sessionbuilder.sessionBuilder(
+        self.sess = sessionManager.sessionManager(
             backend="httpx",
-            set_header=False,
-            set_cookies=False,
-            set_sign=False,
             total_timeout=10,
+            retries=constants.getattr("DISCORD_NUM_TRIES"),
+            wait_min=constants.getattr("DISCORD_MIN_WAIT"),
+            wait_max=constants.getattr("DISCORD_MAX_WAIT"),
         )
         self._thread = None
         self._baseurl = data.get_discord()
@@ -134,33 +126,20 @@ class DiscordHandler(logging.Handler):
     def _appendhelper(self, date=None):
         if constants.getattr("DISCORD_THREAD_OVERRIDE"):
             with self.sess as sess:
-                for _ in Retrying(
-                    retry=retry_if_not_exception_type(KeyboardInterrupt),
-                    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-                    wait=wait_fixed(8),
-                ):
-                    with _:
-                        try:
-                            with sess.requests(
-                                "{url}?wait=true".format(url=self._baseurl),
-                                "post",
-                                headers={"Content-type": "application/json"},
-                                json={
-                                    "thread_name": date
-                                    or dates_manager.getLogDate().get("now"),
-                                    "content": date
-                                    or dates_manager.getLogDate().get("now"),
-                                },
-                            )() as r:
-                                if r.status == 200:
-                                    resp_data = r.json()
-                                    self._url = "{url}?thread_id={id}".format(
-                                        url=self._baseurl, id=resp_data.get("id")
-                                    )
-                                else:
-                                    r.raise_for_status()
-                        except Exception as E:
-                            None
+                try:
+                    with sess.requests(
+                        "{url}?wait=true".format(url=self._baseurl),
+                        "post",
+                        headers={"Content-type": "application/json"},
+                        json={
+                            "thread_name": date
+                            or dates_manager.getLogDate().get("now"),
+                            "content": date or dates_manager.getLogDate().get("now"),
+                        },
+                    ) as _:
+                        pass
+                except Exception as E:
+                    None
 
     def emit(self, record):
         if isinstance(record, str):
@@ -169,26 +148,22 @@ class DiscordHandler(logging.Handler):
 
         def inner(sess):
             with sess:
-                for _ in Retrying(
-                    retry=retry_if_not_exception_type(KeyboardInterrupt),
-                    stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-                    wait=wait_fixed(8),
-                ):
-                    with _:
-                        try:
-                            with sess.requests(
-                                self._url,
-                                "post",
-                                headers={"Content-type": "application/json"},
-                                json={
-                                    "content": log_entry,
-                                    "thread_name": self._thread,
-                                },
-                            )() as r:
-                                if not r.status == 204:
-                                    raise Exception
-                        except Exception:
-                            None
+                try:
+                    with sess.requests(
+                        self._url,
+                        "post",
+                        cookies=False,
+                        sign=False,
+                        headers={"Content-type": "application/json"},
+                        json={
+                            "content": log_entry,
+                            "thread_name": self._thread,
+                        },
+                    ) as r:
+                        if not r.status == 204:
+                            raise Exception
+                except Exception:
+                    None
 
         log_entry = self.format(record)
         url = data.get_discord()

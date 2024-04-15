@@ -14,12 +14,6 @@ import math
 import traceback
 
 import arrow
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
@@ -27,7 +21,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -161,7 +154,6 @@ Setting initial archived scan date for {username} to {arrow.get(after).format(co
     )
     filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
-    # c= c or sessionbuilder.sessionBuilder( limit=constants.getattr("API_MAX_CONNECTION"))
     splitArrays = [
         filteredArray[i : i + min_posts]
         for i in range(0, len(filteredArray), min_posts)
@@ -295,7 +287,6 @@ async def scrape_archived_posts(
     global sem
     posts = None
     attempt.set(0)
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     if timestamp and (
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
@@ -308,108 +299,85 @@ async def scrape_archived_posts(
         else constants.getattr("archivedEP").format(model_id)
     )
     log.debug(url)
-
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            await sem.acquire()
-            try:
-                attempt.set(attempt.get(0) + 1)
-                task = (
-                    job_progress.add_task(
-                        f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
-                        visible=True,
-                    )
-                    if job_progress
-                    else None
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        task = (
+            job_progress.add_task(
+                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
+                visible=True,
+            )
+            if job_progress
+            else None
+        )
+        async with c.requests_async(url) as r:
+            posts = (await r.json_())["list"]
+            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
+            if not posts or len(posts) == 0:
+                log.debug(f" {log_id} -> number of post found 0")
+            elif len(posts) > 0:
+                log.debug(f"{log_id} -> number of archived post found {len(posts)}")
+                log.debug(
+                    f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
                 )
-                async with c.requests(url)() as r:
-                    if r.ok:
-                        posts = (await r.json_())["list"]
-                        log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
-                        if not posts or len(posts) == 0:
-                            log.debug(f" {log_id} -> number of post found 0")
-                        elif len(posts) > 0:
-                            log.debug(
-                                f"{log_id} -> number of archived post found {len(posts)}"
-                            )
-                            log.debug(
-                                f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
-                            )
-                            log.debug(
-                                f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-                            )
-                            log.debug(
-                                f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
-                            )
-                            log.trace(
-                                "{log_id} -> archive raw {posts}".format(
-                                    log_id=log_id,
-                                    posts="\n\n".join(
-                                        list(
-                                            map(
-                                                lambda x: f"scrapeinfo archive: {str(x)}",
-                                                posts,
-                                            )
-                                        )
-                                    ),
+                log.debug(
+                    f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
+                )
+                log.debug(
+                    f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
+                )
+                log.trace(
+                    "{log_id} -> archive raw {posts}".format(
+                        log_id=log_id,
+                        posts="\n\n".join(
+                            list(
+                                map(
+                                    lambda x: f"scrapeinfo archive: {str(x)}",
+                                    posts,
                                 )
                             )
+                        ),
+                    )
+                )
 
-                            if not required_ids:
-                                new_tasks.append(
-                                    asyncio.create_task(
-                                        scrape_archived_posts(
-                                            c,
-                                            model_id,
-                                            job_progress=job_progress,
-                                            timestamp=posts[-1]["postedAtPrecise"],
-                                            offset=False,
-                                        )
-                                    )
-                                )
-                            else:
-                                [
-                                    required_ids.discard(float(ele["postedAtPrecise"]))
-                                    for ele in posts
-                                ]
-
-                                if len(required_ids) > 0 and float(
-                                    timestamp or 0
-                                ) < max(required_ids):
-                                    new_tasks.append(
-                                        asyncio.create_task(
-                                            scrape_archived_posts(
-                                                c,
-                                                model_id,
-                                                job_progress=job_progress,
-                                                timestamp=posts[-1]["postedAtPrecise"],
-                                                required_ids=required_ids,
-                                                offset=False,
-                                            )
-                                        )
-                                    )
-                    else:
-                        log.debug(
-                            f"[bold]archived response status code:[/bold]{r.status}"
+                if not required_ids:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_archived_posts(
+                                c,
+                                model_id,
+                                job_progress=job_progress,
+                                timestamp=posts[-1]["postedAtPrecise"],
+                                offset=False,
+                            )
                         )
-                        log.debug(f"[bold]archived response:[/bold] {await r.text_()}")
-                        log.debug(f"[bold]archived headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
+                    )
+                else:
+                    [
+                        required_ids.discard(float(ele["postedAtPrecise"]))
+                        for ele in posts
+                    ]
 
-            finally:
-                sem.release()
-                job_progress.remove_task(task) if job_progress and task else None
-            return posts, new_tasks
+                    if len(required_ids) > 0 and float(timestamp or 0) < max(
+                        required_ids
+                    ):
+                        new_tasks.append(
+                            asyncio.create_task(
+                                scrape_archived_posts(
+                                    c,
+                                    model_id,
+                                    job_progress=job_progress,
+                                    timestamp=posts[-1]["postedAtPrecise"],
+                                    required_ids=required_ids,
+                                    offset=False,
+                                )
+                            )
+                        )
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
+
+    finally:
+        job_progress.remove_task(task) if job_progress and task else None
+    return posts, new_tasks

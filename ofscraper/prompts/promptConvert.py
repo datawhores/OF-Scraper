@@ -39,59 +39,71 @@ def wrapper(funct):
         altv_action = kwargs.pop("altv", None) or long_message
         altx_action = kwargs.pop("altx", None)
         altd_action = kwargs.pop("altd", None)
-        action_set = set()
+        additional_keys = kwargs.pop("additional_keys", {})
+        action = [None]
         prompt_ = funct(*args, **kwargs)
 
-        register_keys(prompt_, altx_action, altd_action, action_set)
+        register_keys(prompt_, altx_action, altd_action, additional_keys, action)
 
         while True:
             out = prompt_.execute()
             prompt_._default = get_default(funct, prompt_)
-            if "altx" in action_set:
+            select= action[0]
+            action[0]=None
+            if select == "altx":
                 prompt_ = altx_action(prompt_)
-            elif "altv" in action_set:
+            elif select == "altv":
                 altv_action()
-            elif "alt-d" in action_set:
+            elif select == "altd":
                 altd_action(prompt_)
+            elif additional_keys.get(select):
+                prompt_ = additional_keys.get(select)(prompt_)
             else:
                 break
-            action_set.clear()
 
         return out
 
     return inner
 
 
-def register_keys(prompt_, altx_action, altd_action, action_set):
+def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
+    for key in (additional_keys).keys():
+        extra_key_helper(prompt_,key,action)
+
     if altx_action:
 
         @prompt_.register_kb("alt-x")
         def _handle_alt_x(event):
-            action_set.add("altx")
+            action[0] = "altx"
             event.app.exit()
 
         @prompt_.register_kb("c-b")
         def _handle_alt_x(event):
-            action_set.add("altx")
+            action[0] = "altx"
             event.app.exit()
 
     if altd_action:
 
         @prompt_.register_kb("alt-d")
         def _handle_altd(event):
-            action_set.add("alt-d")
+            action[0] = "altd"
             event.app.exit()
 
     @prompt_.register_kb("alt-v")
     def _handle_alt_v(event):
-        action_set.add("altv")
+        action[0] = "altd"
         event.app.exit()
 
     @prompt_.register_kb("c-v")
     def _handle_alt_v(event):
-        action_set.add("altv")
+        action[0] = "altv"
         event.app.exit()
 
+def extra_key_helper(prompt_,key,action):
+    @prompt_.register_kb(key.lower())
+    def _handle_alt(event):
+        action[0] = key
+        event.app.exit()
 
 def get_default(funct, prompt):
     if funct.__name__ in {"getChecklistSelection", "getFuzzySelection", "checkbox"}:

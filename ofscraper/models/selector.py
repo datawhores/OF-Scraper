@@ -19,7 +19,7 @@ from ofscraper.utils.context.run_async import run
 
 ALL_SUBS = None
 PARSED_SUBS = None
-ALL_SUBS_DICT = None
+ALL_SUBS_DICT = {}
 log = logging.getLogger("shared")
 
 
@@ -84,6 +84,31 @@ def getselected_usernames(rescan=False, reset=False):
         parsed_subscriptions_helper()
     return PARSED_SUBS
 
+
+@run
+async def set_data_all_subs_dict(usernames):
+    args = read_args.retriveArgs()
+    oldusernames = args.usernames or set
+    all_usernames = set()
+    all_usernames = all_usernames.update(
+        [usernames] if not isinstance(usernames, list) else usernames
+    )
+    all_usernames.update(oldusernames)
+
+    seen = set()
+    new_names = [
+        username
+        for username in all_usernames
+        if username not in seen
+        and not seen.add(username)
+        and username not in oldusernames
+        and username != constants.getattr("DELETED_MODEL_PLACEHOLDER")
+    ]
+
+    args.usernames = set(new_names)
+    write_args.setArgs(args)
+    await all_subs_helper()
+    args.usernames = set(all_usernames)
 
 
 @run
@@ -160,6 +185,10 @@ def setfilter(forced=False):
             ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
                 print("Updating Models")
                 all_subs_helper(check=False)
+        elif choice=="select":
+            old_args = read_args.retriveArgs()
+            args = prompts.modify_list_prompt(old_args)
+
         write_args.setArgs(args)
 
 

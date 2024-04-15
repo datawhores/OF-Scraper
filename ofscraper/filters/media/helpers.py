@@ -76,7 +76,7 @@ def posts_type_filter(media):
     return media
 
 
-def posts_date_filter(media):
+def posts_date_filter_media(media):
     if read_args.retriveArgs().before:
         media = list(
             filter(
@@ -90,6 +90,26 @@ def posts_date_filter(media):
             filter(
                 lambda x: x.postdate is None
                 or arrow.get(x.postdate) >= read_args.retriveArgs().after,
+                media,
+            )
+        )
+    return media
+
+
+def posts_date_filter(media):
+    if read_args.retriveArgs().before:
+        media = list(
+            filter(
+                lambda x: x.date is None
+                or arrow.get(x.date) <= read_args.retriveArgs().before,
+                media,
+            )
+        )
+    if read_args.retriveArgs().after:
+        media = list(
+            filter(
+                lambda x: x.date is None
+                or arrow.get(x.date) >= read_args.retriveArgs().after,
                 media,
             )
         )
