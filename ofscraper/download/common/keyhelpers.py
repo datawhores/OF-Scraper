@@ -234,6 +234,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
         async with c.requests_async(
             url=licence_url,
+            backend="aio",
             method="post",
             data=challenge,
             retries=constants.getattr("CDM_RETRIES"),
