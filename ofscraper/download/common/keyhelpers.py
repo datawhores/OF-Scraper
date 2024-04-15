@@ -34,20 +34,20 @@ async def un_encrypt(item, c, ele, input_=None):
     keymode = settings.get_key_mode()
     past_key = await asyncio.get_event_loop().run_in_executor(
         common_globals.cache_thread, partial(cache.get, ele.license)
-    )
+    ) if constants.getattr("USE_CACHE_KEY") else None
     if past_key:
         key = past_key
         log.debug(f"{get_medialog(ele)} got key from cache")
-        if keymode == "manual":
-            key = await key_helper_manual(c, item["pssh"], ele.license, ele.id)
-        elif keymode == "keydb":
-            key = await key_helper_keydb(c, item["pssh"], ele.license, ele.id)
-        elif keymode == "cdrm":
-            key = await key_helper_cdrm(c, item["pssh"], ele.license, ele.id)
-        elif keymode == "cdrm2":
-            key = await key_helper_cdrm2(c, item["pssh"], ele.license, ele.id)
-        if key == None:
-            raise Exception(f"{get_medialog(ele)} Could not get key")
+    if keymode == "manual":
+        key = await key_helper_manual(c, item["pssh"], ele.license, ele.id)
+    elif keymode == "keydb":
+        key = await key_helper_keydb(c, item["pssh"], ele.license, ele.id)
+    elif keymode == "cdrm":
+        key = await key_helper_cdrm(c, item["pssh"], ele.license, ele.id)
+    elif keymode == "cdrm2":
+        key = await key_helper_cdrm2(c, item["pssh"], ele.license, ele.id)
+    if not key:
+        raise Exception(f"{get_medialog(ele)} Could not get key")
     await asyncio.get_event_loop().run_in_executor(
         common_globals.cache_thread,
         partial(cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")),
