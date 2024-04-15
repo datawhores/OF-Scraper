@@ -18,6 +18,7 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.download.common.common import get_medialog
+import ofscraper.classes.sessionmanager as sessionManager
 
 log = None
 
@@ -232,21 +233,21 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
-        async with c.requests_async(
-            url=licence_url,
-            backend="aio",
-            method="post",
-            data=challenge,
-            retries=constants.getattr("CDM_RETRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        ) as r:
-            cdm.parse_license(session_id, (await r.content.read()))
+        async with sessionManager.sessionManager(backend="aio",sem=common_globals.sem) as c:
+            async with c.requests_async(
+                url=licence_url,
+                method="post",
+                data=challenge,
+                retries=constants.getattr("CDM_RETRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            ) as r:
+                cdm.parse_license(session_id, (await r.content.read()))
 
-            # cdm.parse_license(session_id, (await r.content.read()))
-            keys = cdm.get_keys(session_id)
-            cdm.close(session_id)
-        keyobject = list(filter(lambda x: x.type == "CONTENT", keys))[0]
+                # cdm.parse_license(session_id, (await r.content.read()))
+                keys = cdm.get_keys(session_id)
+                cdm.close(session_id)
+            keyobject = list(filter(lambda x: x.type == "CONTENT", keys))[0]
 
         key = "{}:{}".format(keyobject.kid.hex, keyobject.key.hex())
         return key

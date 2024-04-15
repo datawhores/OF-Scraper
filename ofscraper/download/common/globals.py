@@ -49,13 +49,11 @@ def main_globals():
     global thread
     thread = ThreadPoolExecutor(max_workers=config_data.get_download_semaphores() * 2)
     global sem
-    sem = semaphoreDelayed(config_data.get_download_semaphores())
+    sem = config_data.get_download_semaphores()
     global cache_thread
     cache_thread = ThreadPoolExecutor()
     global dirSet
     dirSet = set()
-    global mpd_sem
-    mpd_sem = semaphoreDelayed(config_data.get_download_semaphores())
     global lock
     lock = asyncio.Lock()
     global maxfile_sem

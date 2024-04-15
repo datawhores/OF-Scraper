@@ -102,7 +102,7 @@ class sessionManager:
         self._delay = delay or 0
         self._sem = semaphore or asyncio.Semaphore(sem or 100000)
         self._sync_sem=sync_semaphore or threading.Semaphore(sync_sem or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT"))
-        self._retries = retries or constants.getattr("NUM_TRIES_DEFAULT")
+        self._retries = retries or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
         self._wait_min_exponential = wait_min_exponential or constants.getattr(
