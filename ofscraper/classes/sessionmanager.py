@@ -175,9 +175,8 @@ class sessionManager:
 
     def _create_headers(self, headers, url, sign):
         headers = headers or {}
-        new_headers = auth_requests.make_headers()
-        headers.update(new_headers)
-        headers = self._create_sign(new_headers, url) if sign is None else headers
+        headers.update(auth_requests.make_headers())
+        headers = self._create_sign(headers, url) if sign is None else headers
         return headers
 
     def _create_sign(self, headers, url):
@@ -337,10 +336,10 @@ class sessionManager:
                 except Exception as E:
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
-                    self._sem.release()
+                    sem.release()
                     raise E
-                yield r
-                sem.release()
+        yield r
+        sem.release()
 
 
     async def _httpx_funct_async(self, *args, **kwargs):
