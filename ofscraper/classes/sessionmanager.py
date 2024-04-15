@@ -324,6 +324,8 @@ class sessionManager:
                             headers=headers,
                             json=json,
                             params=params,
+                            data=data
+
                         )
                     if r.status_code == 404:
                         pass
