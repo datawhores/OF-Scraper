@@ -112,30 +112,36 @@ async def process_stories_tasks(tasks):
         f"Stories Pages Progress: {page_count}", visible=True
     )
 
-    while bool(tasks):
+
+
+    while tasks:
         new_tasks = []
         try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task,
-                            description=f"Stories Content Pages Progress: {page_count}",
-                        )
-                        responseArray.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
+            for task in asyncio.as_completed(tasks,timeout=constants.getattr("API_TIMEOUT_PER_TASK")):
+                try:
+                    result,new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    page_count = page_count + 1
+                    overall_progress.update(
+                                page_task,
+                                description=f"Stories Content Pages Progress: {page_count}",
+                    )
+                    responseArray .extend(result)
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                    break
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+        except asyncio.TimeoutError:
+                log.traceback_("Task timed out")
+                log.traceback_(traceback.format_exc())
+                [ele.cancel() for ele in tasks]
+        tasks=new_tasks
+
 
     overall_progress.remove_task(page_task)
 
@@ -249,31 +255,34 @@ async def process_task_get_highlight_list(tasks):
     page_task = overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
-    while bool(tasks):
+    while tasks:
         new_tasks = []
         try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task,
-                            description=f"Highlights List Pages Progress: {page_count}",
-                        )
-                        highlightLists.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
+            for task in asyncio.as_completed(tasks,timeout=constants.getattr("API_TIMEOUT_PER_TASK")):
+                try:
+                    result,new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    page_count = page_count + 1
+                    overall_progress.update(
+                                page_task,
+                                description=f"Highlights List Pages Progress: {page_count}",
+                    )
+                    highlightLists.extend(result)
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                    break
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+        except asyncio.TimeoutError:
+                log.traceback_("Task timed out")
+                log.traceback_(traceback.format_exc())
+                [ele.cancel() for ele in tasks]
+        tasks=new_tasks
 
-        tasks = new_tasks
     overall_progress.remove_task(page_task)
     return highlightLists
 
@@ -285,30 +294,33 @@ async def process_task_highlights(tasks):
     page_task = overall_progress.add_task(
         f"Highlight Content via List Pages Progress: {page_count}", visible=True
     )
-    while bool(tasks):
+    while tasks:
         new_tasks = []
         try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        overall_progress.update(
-                            page_task,
-                            description=f"Highlight Content via List Pages Progress: {page_count}",
-                        )
-                        highlightResponse.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
+            for task in asyncio.as_completed(tasks,timeout=constants.getattr("API_TIMEOUT_PER_TASK")):
+                try:
+                    result,new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    page_count = page_count + 1
+                    overall_progress.update(
+                                page_task,
+                                description=f"Highlight Content via List Pages Progress: {page_count}",
+                    )
+                    highlightResponse .extend(result)
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                    break
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+        except asyncio.TimeoutError:
+                log.traceback_("Task timed out")
+                log.traceback_(traceback.format_exc())
+                [ele.cancel() for ele in tasks]
+        tasks=new_tasks
     log.trace(
         "highlight raw duped {posts}".format(
             posts="\n\n".join(

@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 import re
 import string
 
@@ -23,7 +23,9 @@ warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 log = logging.getLogger("shared")
 
-semaphore=asyncio.Semaphore(constants.getattr("MPD_MAX_SEMS"))
+semaphore = asyncio.Semaphore(constants.getattr("MPD_MAX_SEMS"))
+
+
 class Media(base.base):
     def __init__(self, media, count, post):
         super().__init__()
@@ -325,7 +327,7 @@ class Media(base.base):
             retries=constants.getattr("MPD_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            semaphore=semaphore
+            semaphore=semaphore,
         ) as c:
             async with c.requests_async(url=self.mpd, params=params) as r:
                 self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())

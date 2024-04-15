@@ -105,32 +105,35 @@ async def get_lists():
                 page_task = overall_progress.add_task(
                     f"UserList Pages Progress: {page_count}", visible=True
                 )
-                while bool(tasks):
-                    new_tasks = []
-                    try:
-                        async with asyncio.timeout(
-                            constants.getattr("API_TIMEOUT_PER_TASKS")
-                            * max(len(tasks), 2)
-                        ):
-                            for task in asyncio.as_completed(tasks):
-                                try:
-                                    result, new_tasks_batch = await task
-                                    new_tasks.extend(new_tasks_batch)
-                                    page_count = page_count + 1
-                                    overall_progress.update(
-                                        page_task,
-                                        description=f"UserList Pages Progress: {page_count}",
-                                    )
-                                    output.extend(result)
-                                except Exception as E:
-                                    log.traceback_(E)
-                                    log.traceback_(traceback.format_exc())
-                                    continue
-                    except TimeoutError as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                    tasks = new_tasks
-
+            while tasks:
+                new_tasks = []
+                try:
+                    for task in asyncio.as_completed(
+                        tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
+                    ):
+                        try:
+                            result, new_tasks_batch = await task
+                            new_tasks.extend(new_tasks_batch)
+                            page_count = page_count + 1
+                            overall_progress.update(
+                                page_task,
+                                description=f"UserList Pages Progress: {page_count}",
+                            )
+                            output.extend(result)
+                        except asyncio.TimeoutError:
+                            log.traceback_("Task timed out")
+                            log.traceback_(traceback.format_exc())
+                            [ele.cancel() for ele in tasks]
+                            break
+                        except Exception as E:
+                            log.traceback_(E)
+                            log.traceback_(traceback.format_exc())
+                            continue
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                tasks = new_tasks
         overall_progress.remove_task(page_task)
         log.trace(
             "list unduped {posts}".format(
@@ -218,32 +221,36 @@ async def get_list_users(lists):
                 page_task = overall_progress.add_task(
                     f"UserList Users Pages Progress: {page_count}", visible=True
                 )
-                while bool(tasks):
-                    new_tasks = []
-                    try:
-                        async with asyncio.timeout(
-                            constants.getattr("API_TIMEOUT_PER_TASKS")
-                            * max(len(tasks), 2)
-                        ):
-                            for task in asyncio.as_completed(tasks):
-                                try:
-                                    result, new_tasks_batch = await task
-                                    new_tasks.extend(new_tasks_batch)
-                                    page_count = page_count + 1
-                                    overall_progress.update(
-                                        page_task,
-                                        description=f"UserList Users Pages Progress: {page_count}",
-                                    )
-                                    output.extend(result)
-                                except Exception as E:
-                                    log.traceback_(E)
-                                    log.traceback_(traceback.format_exc())
-                                    continue
-                    except TimeoutError as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
+            while tasks:
+                new_tasks = []
+                try:
+                    for task in asyncio.as_completed(
+                        tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
+                    ):
+                        try:
+                            result, new_tasks_batch = await task
+                            new_tasks.extend(new_tasks_batch)
+                            page_count = page_count + 1
+                            overall_progress.update(
+                                page_task,
+                                description=f"UserList Users Pages Progress: {page_count}",
+                            )
+                            output.extend(result)
+                        except asyncio.TimeoutError:
+                            log.traceback_("Task timed out")
+                            log.traceback_(traceback.format_exc())
+                            [ele.cancel() for ele in tasks]
+                            break
+                        except Exception as E:
+                            log.traceback_(E)
+                            log.traceback_(traceback.format_exc())
+                            continue
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                tasks = new_tasks
 
-                    tasks = new_tasks
     overall_progress.remove_task(page_task)
     outdict = {}
     for ele in output:

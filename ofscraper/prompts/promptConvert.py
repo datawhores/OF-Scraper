@@ -48,8 +48,8 @@ def wrapper(funct):
         while True:
             out = prompt_.execute()
             prompt_._default = get_default(funct, prompt_)
-            select= action[0]
-            action[0]=None
+            select = action[0]
+            action[0] = None
             if select == "altx":
                 prompt_ = altx_action(prompt_)
             elif select == "altv":
@@ -68,7 +68,7 @@ def wrapper(funct):
 
 def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
     for key in (additional_keys).keys():
-        extra_key_helper(prompt_,key,action)
+        extra_key_helper(prompt_, key, action)
 
     if altx_action:
 
@@ -99,11 +99,13 @@ def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
         action[0] = "altv"
         event.app.exit()
 
-def extra_key_helper(prompt_,key,action):
+
+def extra_key_helper(prompt_, key, action):
     @prompt_.register_kb(key.lower())
     def _handle_alt(event):
         action[0] = key
         event.app.exit()
+
 
 def get_default(funct, prompt):
     if funct.__name__ in {"getChecklistSelection", "getFuzzySelection", "checkbox"}:

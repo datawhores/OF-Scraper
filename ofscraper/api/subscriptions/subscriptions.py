@@ -63,8 +63,6 @@ async def get_subscriptions(subscribe_count, account="active"):
 
 
 async def activeHelper(subscribe_count, c):
-    output = []
-
     if any(
         x in helpers.get_black_list_helper()
         for x in [
@@ -100,30 +98,10 @@ async def activeHelper(subscribe_count, c):
         for offset in range(0, subscribe_count + 1, 10)
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        output.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-    return output
+    return await process_task(tasks)
 
 
 async def expiredHelper(subscribe_count, c):
-    output = []
     if any(
         x in helpers.get_black_list_helper()
         for x in [
@@ -160,24 +138,34 @@ async def expiredHelper(subscribe_count, c):
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
 
-    while bool(tasks):
+    return await process_task(tasks)
+
+
+async def process_task(tasks):
+    output = []
+    while tasks:
         new_tasks = []
         try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
+            for task in asyncio.as_completed(
+                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
             ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        output.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
+                try:
+                    result, new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    output.extend(result)
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                    break
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+        except asyncio.TimeoutError:
+            log.traceback_("Task timed out")
             log.traceback_(traceback.format_exc())
+            [ele.cancel() for ele in tasks]
         tasks = new_tasks
     return output
 

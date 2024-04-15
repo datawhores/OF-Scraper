@@ -11,6 +11,7 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
@@ -18,7 +19,6 @@ import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.download.common.common import get_medialog
-import ofscraper.classes.sessionmanager as sessionManager
 
 log = None
 
@@ -32,9 +32,13 @@ async def un_encrypt(item, c, ele, input_=None):
     setLog(input_ or common_globals.log)
     key = None
     keymode = settings.get_key_mode()
-    past_key = await asyncio.get_event_loop().run_in_executor(
-        common_globals.cache_thread, partial(cache.get, ele.license)
-    ) if constants.getattr("USE_CACHE_KEY") else None
+    past_key = (
+        await asyncio.get_event_loop().run_in_executor(
+            common_globals.cache_thread, partial(cache.get, ele.license)
+        )
+        if constants.getattr("USE_CACHE_KEY")
+        else None
+    )
     if past_key:
         key = past_key
         log.debug(f"{get_medialog(ele)} got key from cache")
@@ -233,7 +237,9 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
-        async with sessionManager.sessionManager(backend="httpx",sem=common_globals.sem) as c:
+        async with sessionManager.sessionManager(
+            backend="httpx", sem=common_globals.sem
+        ) as c:
             async with c.requests_async(
                 url=licence_url,
                 method="post",

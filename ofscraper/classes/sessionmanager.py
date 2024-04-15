@@ -1,8 +1,8 @@
 import asyncio
-import threading
 import contextlib
 import logging
 import ssl
+import threading
 import traceback
 
 import aiohttp
@@ -15,7 +15,6 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-
 
 
 class CustomTenacity(AsyncRetrying):
@@ -78,7 +77,7 @@ class sessionManager:
         log=None,
         semaphore=None,
         sync_sem=None,
-        sync_semaphore=None
+        sync_semaphore=None,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -101,7 +100,9 @@ class sessionManager:
         self._proxy_auth = proxy_auth
         self._delay = delay or 0
         self._sem = semaphore or asyncio.Semaphore(sem or 100000)
-        self._sync_sem=sync_semaphore or threading.Semaphore(sync_sem or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT"))
+        self._sync_sem = sync_semaphore or threading.Semaphore(
+            sync_sem or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
+        )
         self._retries = retries or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
         self._wait_min = wait_min or constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT")
         self._wait_max = wait_max or constants.getattr("OF_NUM_RETRIES_SESSION_DEFAULT")
@@ -209,21 +210,21 @@ class sessionManager:
         params = params or None
         r = None
         log = log or self._log
-        min=wait_min or self._wait_min
-        max=wait_max or self._wait_max
-        retries=retries or self._retries
-        sync_sem=self._sync_sem or sync_sem
-        for  _  in Retrying(
-                retry=retry_if_not_exception_type(KeyboardInterrupt),
-                stop=tenacity.stop.stop_after_attempt(retries),
-                wait=tenacity.wait.wait_random(
-                    min=min,
-                    max=max
-                ),
-                before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None,
-                reraise=True
-
-            ):
+        min = wait_min or self._wait_min
+        max = wait_max or self._wait_max
+        retries = retries or self._retries
+        sync_sem = self._sync_sem or sync_sem
+        for _ in Retrying(
+            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            stop=tenacity.stop.stop_after_attempt(retries),
+            wait=tenacity.wait.wait_random(min=min, max=max),
+            before=lambda x: (
+                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
+                if x.attempt_number > 1
+                else None
+            ),
+            reraise=True,
+        ):
             r = None
             with _:
                 sync_sem.acquire()
@@ -279,17 +280,21 @@ class sessionManager:
         wait_max = wait_max or self._wait_max
         wait_min_exponential = wait_min_exponential or self._wait_min_exponential
         wait_max_exponential = wait_max_exponential or self._wait_max_exponential
-        log=log or self._log
+        log = log or self._log
         retries = retries or self._retries
-        sem=sem or self._sem
+        sem = sem or self._sem
         async for _ in CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
-            before=lambda x:log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}" )if x.attempt_number>1 else None,
-            reraise=True
+            before=lambda x: (
+                log.debug(f"[bold]attempt: {x.attempt_number}[bold] for {url}")
+                if x.attempt_number > 1
+                else None
+            ),
+            reraise=True,
         ):
             with _:
                 r = None
@@ -326,8 +331,7 @@ class sessionManager:
                             headers=headers,
                             json=json,
                             params=params,
-                            data=data
-
+                            data=data,
                         )
                     if r.status_code == 404:
                         pass
@@ -345,7 +349,6 @@ class sessionManager:
         yield r
         sem.release()
 
-
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)
         t.ok = not t.is_error
@@ -353,7 +356,7 @@ class sessionManager:
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
-        t.read=t.aread
+        t.read = t.aread
         return t
 
     def _httpx_funct(self, method, **kwargs):
@@ -372,7 +375,7 @@ class sessionManager:
         r.json_ = r.json
         r.iter_chunked = r.content.iter_chunked
         r.status_code = r.status
-        r.read=r.content.read
+        r.read = r.content.read
         return r
 
     async def factoryasync(self, input):

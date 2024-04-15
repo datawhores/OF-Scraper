@@ -185,7 +185,7 @@ def setfilter(forced=False):
             ) or not list(sorted(old_list)) == list(sorted(args.user_list)):
                 print("Updating Models")
                 all_subs_helper(check=False)
-        elif choice=="select":
+        elif choice == "select":
             old_args = read_args.retriveArgs()
             args = prompts.modify_list_prompt(old_args)
 
