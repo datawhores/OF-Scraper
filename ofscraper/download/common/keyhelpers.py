@@ -248,7 +248,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as r:
-                cdm.parse_license(session_id, (await r.read()))
+                cdm.parse_license(session_id, (await r.read_()))
                 keys = cdm.get_keys(session_id)
                 cdm.close(session_id)
             keyobject = list(filter(lambda x: x.type == "CONTENT", keys))[0]
