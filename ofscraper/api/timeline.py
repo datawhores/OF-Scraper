@@ -23,6 +23,8 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
+import ofscraper.api.common.logs as common_logs
+
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -73,6 +75,7 @@ async def process_tasks(tasks, model_id, after):
     page_task = overall_progress.add_task(
         f" Timeline Content Pages Progress: {page_count}", visible=True
     )
+    seen=set()
     while tasks:
         new_tasks = []
         try:
@@ -87,7 +90,15 @@ async def process_tasks(tasks, model_id, after):
                         page_task,
                         description=f"Timeline Content Pages Progress: {page_count}",
                     )
-                    responseArray.extend(result)
+                    new_posts = [
+                        post
+                        for post in result
+                        if post["id"] not in seen and not seen.add(post["id"])
+                    ]
+                    log.debug(f"{common_logs.PROGRESS_IDS.format('Timeline')} {list(map(lambda x:x['id'],new_posts))}")
+                    log.trace(f"{common_logs.PROGRESS_RAW.format('Timeline')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
+
+                    responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
                     log.traceback_(traceback.format_exc())
@@ -104,33 +115,11 @@ async def process_tasks(tasks, model_id, after):
         tasks = new_tasks
 
     overall_progress.remove_task(page_task)
+    log.debug(f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}")
+    log.trace(f"{common_logs.FINAL_RAW.format('Timeline')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)))))
+    log.debug(f"{common_logs.FINAL_COUNT.format('Timeline')} {len(responseArray)}")
 
-    log.debug(f"[bold]Timeline Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "post raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo timeline: {str(x)}", responseArray))
-            )
-        )
-    )
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"timeline postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "post raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo timeline: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Timeline Count without Dupes[/bold] {len(new_posts)} found")
-    set_check(new_posts, model_id, after)
-    return new_posts
+    return responseArray
 
 
 async def get_split_array(model_id, username, after):
