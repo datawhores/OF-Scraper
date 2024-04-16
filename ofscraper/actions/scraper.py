@@ -455,22 +455,22 @@ async def process_labels(model_id, username, c):
         with stdout.lowstdout():
             labelled_posts_ = await labels_api.get_labels_progress(model_id, c=c)
 
-            labelled_posts_ = list(
+            labelled_posts_labels = list(
                 map(lambda x: labels.Label(x, model_id, username), labelled_posts_)
             )
             await operations.make_label_table_changes(
-                labelled_posts_,
+                labelled_posts_labels,
                 model_id=model_id,
                 username=username,
             )
 
             log.debug(
-                f"[bold]Label media count with locked[/bold] {sum(map(lambda x:len(x),[post.post_media for labelled_post in labelled_posts_ for post in labelled_post.posts]))}"
+                f"[bold]Label media count with locked[/bold] {sum(map(lambda x:len(x),[post.post_media for labelled_post in labelled_posts_labels for post in labelled_post.posts]))}"
             )
             log.debug("Removing locked messages media")
             output = [
                 post.all_media
-                for labelled_post in labelled_posts_
+                for labelled_post in labelled_posts_labels
                 for post in labelled_post.posts
             ]
             log.debug(
@@ -478,7 +478,7 @@ async def process_labels(model_id, username, c):
             )
 
             return [item for sublist in output for item in sublist], [
-                post for ele in labelled_posts_ for post in ele.posts
+                post for ele in labelled_posts_labels for post in ele.posts
             ]
     except Exception as E:
         try:

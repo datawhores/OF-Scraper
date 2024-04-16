@@ -147,10 +147,7 @@ async def process_stories_tasks(tasks):
                 log.traceback_(traceback.format_exc())
                 [ele.cancel() for ele in tasks]
         tasks=new_tasks
-
-
     overall_progress.remove_task(page_task)
-
     log.trace(
         "stories raw duped {posts}".format(
             posts="\n\n".join(
@@ -269,7 +266,7 @@ async def process_task_get_highlight_list(tasks):
                     new_posts = [
                         post
                         for post in result
-                        if post["id"] not in seen and not seen.add(post["id"])
+                        if post not in seen and not seen.add(post)
                     ]
 
                     highlightLists.extend(new_posts)
