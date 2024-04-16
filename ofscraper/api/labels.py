@@ -155,8 +155,8 @@ async def process_tasks_labels(tasks):
                         for post in result
                         if post["id"] not in seen and not seen.add(post["id"])
                     ]
-                    log.debug(f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],result))}")
-                    log.trace(f"{common_logs.PROGRESS_RAW.format('Label Names')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", result)))))
+                    log.debug(f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}")
+                    log.trace(f"{common_logs.PROGRESS_RAW.format('Label Names')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
                     responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")

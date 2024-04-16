@@ -156,7 +156,7 @@ async def process_stories_tasks(tasks):
     log.debug(f"{common_logs.FINAL_COUNT.format('Stories')} {len(responseArray)}")
 
 
-    return new_posts
+    return responseArray
 
 
 ##############################################################################
