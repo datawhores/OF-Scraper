@@ -20,6 +20,7 @@ import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
+import ofscraper.api.common.logs as common_logs
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -131,6 +132,8 @@ async def process_stories_tasks(tasks):
                         for post in result
                         if post["id"] not in seen and not seen.add(post["id"])
                     ]
+                    log.debug(f"{common_logs.PROGRESS_IDS.format('Stories')} {list(map(lambda x:x['id'],new_posts))}")
+                    log.trace(f"{common_logs.PROGRESS_RAW.format('Stories')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
 
                     responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
@@ -148,22 +151,10 @@ async def process_stories_tasks(tasks):
                 [ele.cancel() for ele in tasks]
         tasks=new_tasks
     overall_progress.remove_task(page_task)
-    log.trace(
-        "stories raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo stories: {str(x)}", responseArray))
-            )
-        )
-    )
-    log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
-    log.trace(
-        "post raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo stories: {str(x)}", new_posts))
-            )
-        )
-    )
-    log.debug(f"[bold]Stories Count without Dupes[/bold] {len(new_posts)} found")
+    log.debug(f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}")
+    log.trace(f"{common_logs.FINAL_RAW.format('Stories')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)))))
+    log.debug(f"{common_logs.FINAL_COUNT.format('Stories')} {len(responseArray)}")
+
 
     return new_posts
 
@@ -262,12 +253,14 @@ async def process_task_get_highlight_list(tasks):
                     overall_progress.update(
                                 page_task,
                                 description=f"Highlights List Pages Progress: {page_count}",
-                    )
+                        )
                     new_posts = [
                         post
                         for post in result
                         if post not in seen and not seen.add(post)
                     ]
+                    log.debug(f"{common_logs.PROGRESS_IDS.format('Highlight List')} {list(map(lambda x:x,new_posts))}")
+
 
                     highlightLists.extend(new_posts)
                 except asyncio.TimeoutError:
@@ -286,15 +279,9 @@ async def process_task_get_highlight_list(tasks):
         tasks=new_tasks
 
     overall_progress.remove_task(page_task)
-    log.trace(f"highlights lists ids {list(map(lambda x:x.get('id'),highlightLists))}")
-    log.trace(
-        "highlights lists raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo archive: {str(x)}", highlightLists))
-            )
-        )
-    )
-    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(highlightLists)} found")
+    log.trace(f"{common_logs.FINAL_IDS.format('Highlight List')} {list(map(lambda x:x,highlightLists))}")
+    log.debug(f"{common_logs.FINAL_COUNT.format('Highlight List')} {len(highlightLists)}")
+
     return highlightLists
 
 
@@ -316,13 +303,15 @@ async def process_task_highlights(tasks):
                     page_count = page_count + 1
                     overall_progress.update(
                                 page_task,
-                                description=f"Highlight Content via List Pages Progress: {page_count}",
+                                description=f"Highlights Content via list Pages Progress: {page_count}",
                     )
                     new_posts = [
                         post
                         for post in result
                         if post["id"] not in seen and not seen.add(post["id"])
                     ]
+                    log.debug(f"{common_logs.PROGRESS_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],new_posts))}")
+                    log.trace(f"{common_logs.PROGRESS_RAW.format('Highlight List Posts')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
 
                     highlightResponse.extend(new_posts)
                 except asyncio.TimeoutError:
@@ -339,16 +328,9 @@ async def process_task_highlights(tasks):
                 log.traceback_(traceback.format_exc())
                 [ele.cancel() for ele in tasks]
         tasks=new_tasks
-    log.trace(f"highlights postids {list(map(lambda x:x.get('id'),highlightResponse))}")
-    log.trace(
-        "highlights raw unduped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo highlights: {str(x)}", highlightResponse))
-            )
-        )
-    )
-    log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(highlightResponse)} found")
-
+        log.debug(f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}")
+        log.trace(f"{common_logs.FINAL_RAW.format('Highlight List Posts')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", highlightResponse)))))
+        log.debug(f"{common_logs.FINAL_COUNT.format('Highlight List Posts')} {len(highlightResponse)}")
     return highlightResponse
 
 
