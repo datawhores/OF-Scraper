@@ -119,7 +119,7 @@ async def process_tasks(tasks, model_id):
     page_task = overall_progress.add_task(
         f" Message Content Pages Progress: {page_count}", visible=True
     )
-
+    seen=set()
     while tasks:
         new_tasks = []
         try:
@@ -134,7 +134,13 @@ async def process_tasks(tasks, model_id):
                         page_task,
                         description=f"Message Content Pages Progress: {page_count}",
                     )
-                    responseArray.extend(result)
+                    new_posts = [
+                        post
+                        for post in result
+                        if post["id"] not in seen and not seen.add(post["id"])
+                    ]
+
+                    responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
                     log.traceback_(traceback.format_exc())
@@ -152,33 +158,19 @@ async def process_tasks(tasks, model_id):
 
     overall_progress.remove_task(page_task)
 
-    log.debug(f"[bold]Messages Count with Dupes[/bold] {len(responseArray)} found")
-    log.trace(
-        "messages raw duped {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo message: {str(x)}", responseArray))
-            )
-        )
-    )
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
 
     log.debug(f"[bold]Messages Count without Dupes[/bold] {len(responseArray)} found")
 
-    log.trace(f"messages messageids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(f"messages messageids {list(map(lambda x:x.get('id'),responseArray))}")
     log.trace(
         "messages raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo message: {str(x)}", new_posts))
+                list(map(lambda x: f"undupedinfo message: {str(x)}", responseArray))
             )
         )
     )
-    set_check(new_posts, model_id, after)
-    return new_posts
+    set_check(responseArray, model_id, after)
+    return responseArray
 
 
 def get_filterArray(after, before, oldmessages):

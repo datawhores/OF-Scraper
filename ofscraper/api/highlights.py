@@ -113,7 +113,7 @@ async def process_stories_tasks(tasks):
     )
 
 
-
+    seen=set()
     while tasks:
         new_tasks = []
         try:
@@ -126,7 +126,13 @@ async def process_stories_tasks(tasks):
                                 page_task,
                                 description=f"Stories Content Pages Progress: {page_count}",
                     )
-                    responseArray .extend(result)
+                    new_posts = [
+                        post
+                        for post in result
+                        if post["id"] not in seen and not seen.add(post["id"])
+                    ]
+
+                    responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
                     log.traceback_(traceback.format_exc())
@@ -152,14 +158,6 @@ async def process_stories_tasks(tasks):
             )
         )
     )
-    log.debug(f"[bold]stories Count with Dupes[/bold] {len(responseArray)} found")
-    seen = set()
-    new_posts = [
-        post
-        for post in responseArray
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
     log.trace(f"stories postids {list(map(lambda x:x.get('id'),new_posts))}")
     log.trace(
         "post raw unduped {posts}".format(
@@ -255,6 +253,7 @@ async def process_task_get_highlight_list(tasks):
     page_task = overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
+    seen=set()
     while tasks:
         new_tasks = []
         try:
@@ -267,7 +266,13 @@ async def process_task_get_highlight_list(tasks):
                                 page_task,
                                 description=f"Highlights List Pages Progress: {page_count}",
                     )
-                    highlightLists.extend(result)
+                    new_posts = [
+                        post
+                        for post in result
+                        if post["id"] not in seen and not seen.add(post["id"])
+                    ]
+
+                    highlightLists.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
                     log.traceback_(traceback.format_exc())
@@ -284,6 +289,15 @@ async def process_task_get_highlight_list(tasks):
         tasks=new_tasks
 
     overall_progress.remove_task(page_task)
+    log.trace(f"highlights lists ids {list(map(lambda x:x.get('id'),highlightLists))}")
+    log.trace(
+        "highlights lists raw unduped {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"undupedinfo archive: {str(x)}", highlightLists))
+            )
+        )
+    )
+    log.debug(f"[bold]Archived Count without Dupes[/bold] {len(highlightLists)} found")
     return highlightLists
 
 
@@ -294,6 +308,7 @@ async def process_task_highlights(tasks):
     page_task = overall_progress.add_task(
         f"Highlight Content via List Pages Progress: {page_count}", visible=True
     )
+    seen=set()
     while tasks:
         new_tasks = []
         try:
@@ -306,7 +321,13 @@ async def process_task_highlights(tasks):
                                 page_task,
                                 description=f"Highlight Content via List Pages Progress: {page_count}",
                     )
-                    highlightResponse .extend(result)
+                    new_posts = [
+                        post
+                        for post in result
+                        if post["id"] not in seen and not seen.add(post["id"])
+                    ]
+
+                    highlightResponse.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
                     log.traceback_(traceback.format_exc())
@@ -321,34 +342,17 @@ async def process_task_highlights(tasks):
                 log.traceback_(traceback.format_exc())
                 [ele.cancel() for ele in tasks]
         tasks=new_tasks
-    log.trace(
-        "highlight raw duped {posts}".format(
-            posts="\n\n".join(
-                list(
-                    map(lambda x: f"dupedinfo heighlight: {str(x)}", highlightResponse)
-                )
-            )
-        )
-    )
-    log.debug(f"[bold]highlight Count with Dupes[/bold] {len(highlightResponse)} found")
-    seen = set()
-    new_posts = [
-        post
-        for post in highlightResponse
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-
-    log.trace(f"highlights postids {list(map(lambda x:x.get('id'),new_posts))}")
+    log.trace(f"highlights postids {list(map(lambda x:x.get('id'),highlightResponse))}")
     log.trace(
         "highlights raw unduped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"undupedinfo highlights: {str(x)}", new_posts))
+                list(map(lambda x: f"undupedinfo highlights: {str(x)}", highlightResponse))
             )
         )
     )
-    log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(new_posts)} found")
+    log.debug(f"[bold]Highlights Count without Dupes[/bold] {len(highlightResponse)} found")
 
-    return new_posts
+    return highlightResponse
 
 
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
