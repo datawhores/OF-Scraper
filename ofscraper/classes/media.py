@@ -111,7 +111,7 @@ class Media(base.base):
     @property
     def canview(self):
         return (
-            self._media.get("canView") or True
+            self._media.get("canView")
             if (self.url or self.mpd) != None
             else False
         )
