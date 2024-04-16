@@ -355,7 +355,7 @@ class sessionManager:
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
-        t.read = t.aread
+        t.read_ = t.aread
         return t
 
     def _httpx_funct(self, method, **kwargs):
@@ -365,6 +365,7 @@ class sessionManager:
         t.text_ = lambda: t.text
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
+        t.read_ = t.read
         return t
 
     async def _aio_funct(self, method, *args, **kwargs):
