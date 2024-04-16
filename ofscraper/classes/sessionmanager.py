@@ -125,6 +125,7 @@ class sessionManager:
                 ),
                 connector=aiohttp.TCPConnector(limit=self._connect_limit),
             )
+            self._request_func=self._aio_funct
 
         elif self._backend == "httpx":
             self._session = httpx.AsyncClient(
@@ -142,6 +143,7 @@ class sessionManager:
                     read=self._read_timeout,
                 ),
             )
+            self._request_func=self._httpx_funct_async
 
         return self
 
@@ -253,7 +255,6 @@ class sessionManager:
         yield r
         sync_sem.release()
 
-    @contextlib.asynccontextmanager
     async def requests_async(
         self,
         url=None,
@@ -296,88 +297,73 @@ class sessionManager:
             reraise=True,
         ):
             with _:
-                r = None
                 await sem.acquire()
-                try:
-                    headers = (
-                        self._create_headers(headers, url, sign)
+                headers = (
+                self._create_headers(headers, url, sign)
                         if headers is None
                         else headers
-                    )
-                    cookies = self._create_cookies() if cookies is None else None
-                    json = json
-                    params = params
-                    if self._backend == "aio":
-                        r = await self._aio_funct(
-                            method,
-                            url,
+                )
+                cookies = self._create_cookies() if cookies is None else None
+
+                self._request_func(method,url,sem,log,
                             headers=headers,
                             cookies=cookies,
-                            allow_redirects=redirects,
-                            proxy=self._proxy,
-                            proxy_auth=self._proxy_auth,
+                            redirects=redirects,
                             params=params,
-                            json=json,
-                            data=data,
-                            ssl=ssl.create_default_context(cafile=certifi.where()),
-                        )
-                    else:
-                        r = await self._httpx_funct_async(
-                            method,
-                            follow_redirects=redirects,
-                            url=url,
-                            cookies=cookies,
-                            headers=headers,
-                            json=json,
-                            params=params,
-                            data=data,
-                        )
-                    if r.status_code == 404:
-                        pass
-                    elif not r.ok:
-                        log.debug(f"[bold]failed: [bold] {r.url}")
-                        log.debug(f"[bold]status: [bold] {r.status}")
-                        log.debug(f"[bold]response text [/bold]: {await r.text_()}")
-                        log.debug(f"[bold]headers[/bold]: {r.headers}")
-                        r.raise_for_status()
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    sem.release()
-                    raise E
-        yield r
+                            json=json)
         sem.release()
 
-    async def _httpx_funct_async(self, *args, **kwargs):
-        t = await self._session.request(*args, **kwargs)
-        t.ok = not t.is_error
-        t.json_ = lambda: self.factoryasync(t.json)
-        t.text_ = lambda: self.factoryasync(t.text)
-        t.status = t.status_code
-        t.iter_chunked = t.aiter_bytes
-        t.read = t.aread
-        return t
-
-    def _httpx_funct(self, method, **kwargs):
-        t = self._session.request(method.upper(), **kwargs)
-        t.ok = not t.is_error
-        t.json_ = t.json
-        t.text_ = lambda: t.text
-        t.status = t.status_code
-        t.iter_chunked = t.iter_bytes
-        return t
-
-    async def _aio_funct(self, method, *args, **kwargs):
-        # public function forces context manager use
-        r = await self._session._request(method, *args, **kwargs)
-        r.text_ = r.text
-        r.json_ = r.json
-        r.iter_chunked = r.content.iter_chunked
-        r.status_code = r.status
-        r.read = r.content.read
-        return r
-
+    @contextlib.asynccontextmanager
+    async def _httpx_funct_async(self,method,url,sem,log, *args, **kwargs):
+        try:
+            r = await self._session.request(method,url,*args, **kwargs)
+            r.ok = not r.is_error
+            r.json_ = lambda: self.factoryasync(r.json)
+            r.text_ = lambda: self.factoryasync(r.text)
+            r.status = r.status_code
+            r.iter_chunked = r.aiter_bytes
+            r.read = r.aread
+            if r.status==404:
+                pass
+            elif not r.ok:
+                r.raise_for_status()
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            sem.release()
+            raise E
+        yield r
     async def factoryasync(self, input):
         if callable(input):
             return input()
         return input
+    def _httpx_funct(self, method, **kwargs):
+        r = self._session.request(method.upper(), **kwargs)
+        r.ok = not r.is_error
+        r.json_ = r.json
+        r.text_ = lambda: r.text
+        r.status = r.status_code
+        r.iter_chunked = r.iter_bytes
+        return r
+
+    async def _aio_funct(self, method,url,sem,log, *args, **kwargs):
+        # public function forces context manager use
+        async with self._session.request(method,url, *args, **kwargs) as r:
+            try:
+                r.text_ = r.text
+                r.json_ = r.json
+                r.iter_chunked = r.content.iter_chunked
+                r.status_code = r.status
+                r.read = r.content.read
+                if r.status==404:
+                    pass
+                elif not r.ok:
+                    r.raise_for_status()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                sem.release()
+                raise E
+            yield r
+
+
