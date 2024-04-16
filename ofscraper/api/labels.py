@@ -16,13 +16,12 @@ import contextvars
 import logging
 import traceback
 
+import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
-import ofscraper.api.common.logs as common_logs
-
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -134,7 +133,7 @@ async def process_tasks_labels(tasks):
     page_task = overall_progress.add_task(
         f"Label Names Pages Progress: {page_count}", visible=True
     )
-    seen=set()
+    seen = set()
     while tasks:
         new_tasks = []
         try:
@@ -155,8 +154,21 @@ async def process_tasks_labels(tasks):
                         for post in result
                         if post["id"] not in seen and not seen.add(post["id"])
                     ]
-                    log.debug(f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}")
-                    log.trace(f"{common_logs.PROGRESS_RAW.format('Label Names')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}"
+                    )
+                    log.trace(
+                        f"{common_logs.PROGRESS_RAW.format('Label Names')}".format(
+                            posts="\n\n".join(
+                                list(
+                                    map(
+                                        lambda x: f"{common_logs.RAW_INNER} {x}",
+                                        new_posts,
+                                    )
+                                )
+                            )
+                        )
+                    )
                     responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
@@ -173,10 +185,17 @@ async def process_tasks_labels(tasks):
             [ele.cancel() for ele in tasks]
         tasks = new_tasks
     overall_progress.remove_task(page_task)
-    log.debug(f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}")
-    log.trace(f"{common_logs.FINAL_RAW.format('Labels Names')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)))))
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
+    )
+    log.trace(
+        f"{common_logs.FINAL_RAW.format('Labels Names')}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
+            )
+        )
+    )
     log.debug(f"{common_logs.FINAL_COUNT.format('Labels Name')} {len(responseArray)}")
-
 
     return responseArray
 
@@ -264,10 +283,23 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
                         page_task, description=f"Labels Progress: {page_count}"
                     )
                     unduped_posts = label_dedupe(
-                        responseDict[label["id"]]["seen"] , new_posts
+                        responseDict[label["id"]]["seen"], new_posts
                     )
-                    log.debug(f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],unduped_posts))}")
-                    log.trace(f"{common_logs.PROGRESS_RAW.format('Label Content')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", unduped_posts)))))
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],unduped_posts))}"
+                    )
+                    log.trace(
+                        f"{common_logs.PROGRESS_RAW.format('Label Content')}".format(
+                            posts="\n\n".join(
+                                list(
+                                    map(
+                                        lambda x: f"{common_logs.RAW_INNER} {x}",
+                                        unduped_posts,
+                                    )
+                                )
+                            )
+                        )
+                    )
 
                     responseDict[label["id"]]["posts"].extend(unduped_posts)
                 except asyncio.TimeoutError:
@@ -285,14 +317,41 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             log.traceback_(traceback.format_exc())
             [ele.cancel() for ele in tasks]
         tasks = new_tasks
-    [label.pop("seen",None) for label in responseDict.values()]
+    [label.pop("seen", None) for label in responseDict.values()]
     set_check(responseDict.values(), model_id)
-    log.debug(f"{common_logs.FINAL_IDS.format('All Labels Content')} {[item['id'] for value in responseDict.values() for item in value.get('posts', [])]}")
-    log.debug(f"{common_logs.FINAL_IDS.format('Labels Individual Content')}" +"\n".join([f"{responseDict[key]['id']}:{list(map(lambda x:x['id'],responseDict[key]['posts']))}" for key in responseDict.keys()]))
-    log.debug(f"{common_logs.FINAL_COUNT.format('All Labels Content')} {len([item['id'] for value in responseDict.values() for item in value.get('posts', [])])}")
-    log.debug(f"{common_logs.FINAL_COUNT.format('Labels Individual Content')}" +"\n".join([f"{responseDict[key]['id']}:{len(responseDict[key]['posts'])}" for key in responseDict.keys()]))
-    log.trace(f"{common_logs.FINAL_RAW.format('All Labels Content')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseDict.values())))))
-
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('All Labels Content')} {[item['id'] for value in responseDict.values() for item in value.get('posts', [])]}"
+    )
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Labels Individual Content')}"
+        + "\n".join(
+            [
+                f"{responseDict[key]['id']}:{list(map(lambda x:x['id'],responseDict[key]['posts']))}"
+                for key in responseDict.keys()
+            ]
+        )
+    )
+    log.debug(
+        f"{common_logs.FINAL_COUNT.format('All Labels Content')} {len([item['id'] for value in responseDict.values() for item in value.get('posts', [])])}"
+    )
+    log.debug(
+        f"{common_logs.FINAL_COUNT.format('Labels Individual Content')}"
+        + "\n".join(
+            [
+                f"{responseDict[key]['id']}:{len(responseDict[key]['posts'])}"
+                for key in responseDict.keys()
+            ]
+        )
+    )
+    log.trace(
+        f"{common_logs.FINAL_RAW.format('All Labels Content')}".format(
+            posts="\n\n".join(
+                list(
+                    map(lambda x: f"{common_logs.RAW_INNER} {x}", responseDict.values())
+                )
+            )
+        )
+    )
 
     overall_progress.remove_task(page_task)
     return list(responseDict.values())
@@ -364,7 +423,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     return label, posts, new_tasks
 
 
-def label_dedupe(seen,labelArray):
+def label_dedupe(seen, labelArray):
     new_posts = [
         post
         for post in labelArray
@@ -378,7 +437,7 @@ def get_default_label_dict(labels):
     for label in labels:
         output[label["id"]] = label
         output[label["id"]]["seen"] = set()
-        output[label["id"]]["posts"]=[]
+        output[label["id"]]["posts"] = []
     return output
 
 

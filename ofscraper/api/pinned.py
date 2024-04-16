@@ -15,13 +15,12 @@ import traceback
 
 import arrow
 
+import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
-import ofscraper.api.common.logs as common_logs
-
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -82,7 +81,6 @@ async def process_tasks(tasks, model_id):
     )
     seen = set()
 
-
     while tasks:
         new_tasks = []
         try:
@@ -102,9 +100,21 @@ async def process_tasks(tasks, model_id):
                         for post in result
                         if post["id"] not in seen and not seen.add(post["id"])
                     ]
-                    log.debug(f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}")
-                    log.trace(f"{common_logs.PROGRESS_RAW.format('Pinned')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
-
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
+                    )
+                    log.trace(
+                        f"{common_logs.PROGRESS_RAW.format('Pinned')}".format(
+                            posts="\n\n".join(
+                                list(
+                                    map(
+                                        lambda x: f"{common_logs.RAW_INNER} {x}",
+                                        new_posts,
+                                    )
+                                )
+                            )
+                        )
+                    )
 
                     responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
@@ -130,10 +140,17 @@ async def process_tasks(tasks, model_id):
             )
         )
     )
-    log.debug(f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}")
-    log.trace(f"{common_logs.FINAL_RAW.format('Pinned')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)))))
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
+    )
+    log.trace(
+        f"{common_logs.FINAL_RAW.format('Pinned')}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
+            )
+        )
+    )
     log.debug(f"{common_logs.FINAL_COUNT.format('Pinned')} {len(responseArray)}")
-
 
     set_check(responseArray, model_id)
     return responseArray

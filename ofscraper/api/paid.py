@@ -17,12 +17,12 @@ import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
+import ofscraper.api.common.logs as common_logs
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
-import ofscraper.api.common.logs as common_logs
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
@@ -61,7 +61,7 @@ async def process_tasks(tasks, model_id):
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
     responseArray = []
-    seen=set()
+    seen = set()
 
     while tasks:
         new_tasks = []
@@ -82,9 +82,21 @@ async def process_tasks(tasks, model_id):
                         for post in result
                         if post["id"] not in seen and not seen.add(post["id"])
                     ]
-                    log.debug(f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}")
-                    log.trace(f"{common_logs.PROGRESS_RAW.format('Paid')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", new_posts)))))
-
+                    log.debug(
+                        f"{common_logs.PROGRESS_IDS.format('Paid')} {list(map(lambda x:x['id'],new_posts))}"
+                    )
+                    log.trace(
+                        f"{common_logs.PROGRESS_RAW.format('Paid')}".format(
+                            posts="\n\n".join(
+                                list(
+                                    map(
+                                        lambda x: f"{common_logs.RAW_INNER} {x}",
+                                        new_posts,
+                                    )
+                                )
+                            )
+                        )
+                    )
 
                     responseArray.extend(new_posts)
                 except asyncio.TimeoutError:
@@ -103,8 +115,16 @@ async def process_tasks(tasks, model_id):
         tasks = new_tasks
 
     overall_progress.remove_task(page_task)
-    log.debug(f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}")
-    log.trace(f"{common_logs.FINAL_RAW.format('Paid')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)))))
+    log.debug(
+        f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
+    )
+    log.trace(
+        f"{common_logs.FINAL_RAW.format('Paid')}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
+            )
+        )
+    )
     log.debug(f"{common_logs.FINAL_COUNT.format('Paid')} {len(responseArray)}")
     set_check(responseArray, model_id)
     return responseArray
@@ -245,8 +265,10 @@ async def get_all_paid_posts():
                     f" Pages Progress: {page_count}", visible=True
                 )
                 while tasks:
-                    new_tasks=[]
-                    for task in asyncio.as_completed(tasks,timeout=constants.getattr("API_TIMEOUT_PER_TASK")):
+                    new_tasks = []
+                    for task in asyncio.as_completed(
+                        tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
+                    ):
                         try:
                             result, new_tasks_batch = await task
                             page_count = page_count + 1
@@ -254,15 +276,28 @@ async def get_all_paid_posts():
                                 page_task, description=f"Pages Progress: {page_count}"
                             )
                             output.extend(result)
-                            log.debug(f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}")
-                            log.trace(f"{common_logs.PROGRESS_RAW.format('All Paid')}".format( posts="\n\n".join(list(map(lambda x: f"{common_logs.RAW_INNER} {x}", result)))))
+                            log.debug(
+                                f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}"
+                            )
+                            log.trace(
+                                f"{common_logs.PROGRESS_RAW.format('All Paid')}".format(
+                                    posts="\n\n".join(
+                                        list(
+                                            map(
+                                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                                result,
+                                            )
+                                        )
+                                    )
+                                )
+                            )
                             new_tasks.extend(new_tasks_batch)
                             await asyncio.sleep(1)
                         except Exception as E:
                             await asyncio.sleep(1)
                             log.debug(E)
                             continue
-                    tasks=new_tasks
+                    tasks = new_tasks
                 overall_progress.remove_task(page_task)
 
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")

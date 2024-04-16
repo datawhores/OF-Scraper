@@ -2,6 +2,7 @@ import inspect
 import re
 
 import pynumparser
+from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
@@ -14,8 +15,6 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
-from InquirerPy.base import Choice
-
 
 console = Console()
 
@@ -141,7 +140,7 @@ def model_funct(prompt):
 
 def model_select_funct(prompt):
     with stdout.nostdout():
-        #get old
+        # get old
         choices = _get_choices
         selectedSet = set(
             map(
@@ -153,13 +152,15 @@ def model_select_funct(prompt):
             name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
             if name in selectedSet:
                 model.enabled = True
-        toggle=promptConvert.getChecklistSelection( choices= [
-                    Choice(True, "Range Select"),
-                    Choice(False, "Range Deselect"),
-                ])
-      
-        #select new
-        choices=_select_helper(choices,toggle)
+        toggle = promptConvert.getChecklistSelection(
+            choices=[
+                Choice(True, "Range Select"),
+                Choice(False, "Range Deselect"),
+            ]
+        )
+
+        # select new
+        choices = _select_helper(choices, toggle)
         prompt.content_control._raw_choices = choices
         prompt.content_control.choices = prompt.content_control._get_choices(
             prompt.content_control._raw_choices, prompt.content_control._default
@@ -167,7 +168,8 @@ def model_select_funct(prompt):
         prompt.content_control._format_choices()
         return prompt
 
-def _select_helper(choices,toggle=True):
+
+def _select_helper(choices, toggle=True):
     try:
         select = set(
             pynumparser.NumberSequence().parse(
@@ -179,7 +181,7 @@ def _select_helper(choices,toggle=True):
         )
     except Exception as E:
         raise EOFError
-        
+
     for count, model in enumerate(choices):
         if count + 1 in select:
             model.enabled = toggle
@@ -195,7 +197,7 @@ def _get_choices():
             enumerate(models),
         )
     )
-    
+
 
 def user_list(model_str):
     model_list = re.split("(,|\n)", model_str)
