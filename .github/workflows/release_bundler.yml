@@ -129,7 +129,8 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{inputs.version}} --onefile
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{inputs.version}} --onefile"
+      
             echo "list files dir"
             ls dist
 
@@ -521,7 +522,6 @@ jobs:
             name: ofscraper_macos_zip_${{needs.get_date.outputs.date}}
             path: "dist/ofscraper_macos_${{inputs.version}}.zip"
             overwrite: true
-
 
 
 
