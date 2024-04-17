@@ -16,6 +16,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
@@ -30,6 +31,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
@@ -73,6 +75,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -129,6 +133,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -186,6 +192,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls .
       - name: list files2
@@ -261,6 +269,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls .
       - name: list files2
@@ -333,6 +343,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -412,11 +424,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-
       - name: replace version.py
         uses: Wandalen/wretry.action@master
 
