@@ -119,7 +119,7 @@ PRESS ENTER TO RETURN
 def model_funct(prompt):
     userselector.setfilter()
     with stdout.nostdout():
-        choices = _get_choices
+        choices = _get_choices()
         selectedSet = set(
             map(
                 lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
