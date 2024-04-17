@@ -275,8 +275,9 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            name: ofscraper_windows_zip
             path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+            name: ofscraper_windows_zip
+
 
   mac:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
