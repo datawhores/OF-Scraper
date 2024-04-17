@@ -260,7 +260,7 @@ jobs:
         id: create-dir
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_date.outputs.date}}" --paths . --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" --paths . --clean --log DEBUG
         continue-on-error: true
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
