@@ -10,10 +10,13 @@ from ofscraper.const.constants import KEY_OPTIONS
 
 
 def common_params(func):
-
+  
     @click.option_group(
         "Program Options",
-        click.version_option(version=__version__),
+        click.version_option(  __version__,
+        "-v",
+        "--version",
+        package_name="OF-Scraper"),
         click.option(
             "-cg",
             "--config",
