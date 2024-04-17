@@ -81,7 +81,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name: ofscraper_version
+            name: ofscraper_version_${{needs.get_commit.outputs.commit}}
             path: ofscraper
       - name: create one file
         uses: addnab/docker-run-action@v3
