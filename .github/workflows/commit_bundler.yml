@@ -539,7 +539,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_windows
+            name:  ofscraper_windows_${{needs.get_commit.outputs.short}}
       - name: download windows zip
         uses: Wandalen/wretry.action@master
 
