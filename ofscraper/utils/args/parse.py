@@ -1,4 +1,5 @@
 import sys
+import re
 import ofscraper.utils.args.groups.main_args as main
 import ofscraper.utils.args.groups.manual_args as manual
 import ofscraper.utils.args.groups.message_args as message
@@ -32,7 +33,7 @@ class AutoDotDict(dict):
 
 
 def parse_args():
-    sys.argv=list(filter(lambda x:x.find("multiprocessing")==-1 and x.find("fork")==-1 ,sys.argv))
+    sys.argv=list(filter(lambda x: not re.search(x,"(multiprocessing|fork|parent_pid)") ,sys.argv))
     try:
         main.program.add_command(manual.manual, "manual")
         main.program.add_command(message.message_check, "msg_check")
