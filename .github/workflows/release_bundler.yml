@@ -21,7 +21,7 @@ jobs:
   get_date:
     runs-on: ubuntu-20.04
     if: ${{ inputs.files}}
-    name: create version doc
+    name: get_date
     steps:
     - name: Get current date
       id: date
@@ -641,7 +641,7 @@ jobs:
     needs: [get_commit]
     if: ${{ inputs.docker}}
     runs-on: ubuntu-latest
-    name: Docker Release
+    name: DockerHub Release
     permissions:
       contents: read
       packages: write
@@ -725,7 +725,7 @@ jobs:
     needs: [get_commit]
     if: ${{ inputs.docker}}
     runs-on: ubuntu-latest
-    name: Docker Release
+    name: Docker GHCR Release
     permissions:
       contents: read
       packages: write
@@ -788,7 +788,7 @@ jobs:
     needs: [get_commit]
     if: ${{ inputs.docker_old}}
     runs-on: ubuntu-latest
-    name: Docker Release Old
+    name: DockerHub Release Old
     permissions:
       contents: read
       packages: write
@@ -872,7 +872,7 @@ jobs:
     needs: [get_commit]
     if: ${{ inputs.docker_old}}
     runs-on: ubuntu-latest
-    name: Docker Release Old
+    name: GHCR Release Old
     permissions:
       contents: read
       packages: write
