@@ -32,6 +32,7 @@ jobs:
           with: |
             name: ofscraper_version
             path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
+            overwrite: true
   #       - name: list files 1
   #         run: ls /home/runner/work/
   #       - name: list files 2
@@ -97,6 +98,7 @@ jobs:
           with: |
             name: ofscraper_linux
             path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+            overwrite: true
 
       - name: create zip
         uses: addnab/docker-run-action@v3
@@ -130,6 +132,7 @@ jobs:
           with: |
             name: ofscraper_linux_zip
             path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
+            overwrite: true
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -204,6 +207,7 @@ jobs:
           with: |
             name: ofscraper_windows_zip
             path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+            overwrite: true
 
   windows_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -277,6 +281,7 @@ jobs:
           with: |
             path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
             name: ofscraper_windows_zip
+            overwrite: true
 
 
   mac:
@@ -358,6 +363,7 @@ jobs:
           with: |
             name: ofscraper_macos
             path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+            overwrite: true
       - name: create-dir
         id: create-dir
         run: |
@@ -389,6 +395,7 @@ jobs:
           with: |
             name: ofscraper_macos_zip
             path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
+            overwrite: true
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
