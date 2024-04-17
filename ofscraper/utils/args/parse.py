@@ -33,7 +33,7 @@ class AutoDotDict(dict):
 
 
 def parse_args():
-    sys.argv=list(filter(lambda x: not re.search(x,"(multiprocessing|fork|parent_pid)") ,sys.argv))
+    sys.argv=list(filter(lambda x: not re.search(re.escape(x),"(multiprocessing|fork|parent_pid)") ,sys.argv))
     try:
         main.program.add_command(manual.manual, "manual")
         main.program.add_command(message.message_check, "msg_check")

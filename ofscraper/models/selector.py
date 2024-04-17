@@ -188,7 +188,6 @@ def setfilter(forced=False):
         elif choice == "select":
             old_args = read_args.retriveArgs()
             args = prompts.modify_list_prompt(old_args)
-
         write_args.setArgs(args)
 
 
