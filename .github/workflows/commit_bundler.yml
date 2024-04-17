@@ -65,7 +65,7 @@ jobs:
   #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
   linux_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version,get_commit]
+    needs: [create_version, get_commit]
     runs-on: ubuntu-20.04
     name: create linux release file
     steps:
@@ -121,7 +121,7 @@ jobs:
 
   linux_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version,get_commit]
+    needs: [create_version, get_commit]
     runs-on: ubuntu-20.04
     name: create linux release zip
     steps:
@@ -176,15 +176,9 @@ jobs:
             path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip"
             overwrite: true
 
-
-
-
-
-
-
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version,get_commit]
+    needs: [create_version, get_commit]
     runs-on: windows-latest
     name: create windows release zip
     steps:
@@ -259,7 +253,7 @@ jobs:
 
   windows_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version,get_commit]
+    needs: [create_version, get_commit]
     runs-on: windows-latest
     name: create windows release file
     steps:
@@ -329,10 +323,9 @@ jobs:
             name: ofscraper_windows_${{needs.get_commit.outputs.short}}
             overwrite: true
 
-
   mac_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version,get_commit]
+    needs: [create_version, get_commit]
     runs-on: macos-latest
     name: create mac release file
     steps:
@@ -411,7 +404,7 @@ jobs:
 
   mac_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version,get_commit]
+    needs: [create_version, get_commit]
     runs-on: macos-latest
     name: create mac release zip
     steps:
@@ -489,34 +482,21 @@ jobs:
             name: ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
             path: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}.zip"
             overwrite: true
-          
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     name: publish
-    needs: [mac_file,mac_dir, windows_dir, windows_file, linux_file,linux_dir,get_commit]
+    needs:
+      [
+        mac_file,
+        mac_dir,
+        windows_dir,
+        windows_file,
+        linux_file,
+        linux_dir,
+        get_commit,
+      ]
     permissions:
       contents: write
     steps:
