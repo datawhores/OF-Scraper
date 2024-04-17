@@ -427,7 +427,7 @@ async def scrape_messages(
                 else:
                     [
                         required_ids.discard(
-                            ele.get("createdAt") or ele.get("postedAt")
+                            arrow.get(ele.get("createdAt") or ele.get("postedAt")).float_timestamp
                         )
                         for ele in messages
                     ]
