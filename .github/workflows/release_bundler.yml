@@ -56,7 +56,7 @@ jobs:
   #       - name: list files 4
   #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
 
-  linux:
+  linux_file:
     needs: [create_version]
     runs-on: ubuntu-20.04
     name: create linux release
@@ -104,6 +104,26 @@ jobs:
         with:
           name: ofscraper_linux
           path: "dist/ofscraper_linux_${{ inputs.version}}"
+
+  linux_dir:
+    needs: [create_version]
+    runs-on: ubuntu-20.04
+    name: create linux release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{inputs.version}}
+      - name: list files
+        run: ls -d $PWD/*
+      - name: list files2
+        run: ls -d $PWD/ofscraper/*
+      - name: replace version.py
+        uses: actions/download-artifact@v4
+        with:
+          name: ofscraper_version
+          path: ofscraper
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -133,6 +153,7 @@ jobs:
         with:
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ inputs.version}}.zip"
+
   windows_dir:
     needs: [create_version]
     runs-on: windows-latest
@@ -266,7 +287,7 @@ jobs:
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{inputs.version}}.zip"
 
-  mac:
+  mac_file:
     needs: [create_version]
     runs-on: macos-latest
     name: create mac release
@@ -333,6 +354,50 @@ jobs:
         with:
           name: ofscraper_macos
           path: "dist/ofscraper_macos_${{ inputs.version}}"
+
+  mac_dir:
+    needs: [create_version]
+    runs-on: macos-latest
+    name: create mac release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: list files
+        run: ls -d $PWD/*
+      - name: list files2
+        run: ls -d $PWD/ofscraper/*
+
+      - name: replace version.py
+        uses: actions/download-artifact@v4
+        with:
+          name: ofscraper_version
+          path: ofscraper
+      - name: Set up Python 3.11.5
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.5"
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: |
+          source .venv/bin/activate
+          pip install . -vvv
+          deactivate
+      - name: Install pyinstaller
+        run: |
+          source .venv/bin/activate
+          pip install pyinstaller==6.4.0
+          deactivate
+      - name: test ofscraper
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
       - name: create-dir
         id: create-dir
         run: |
@@ -361,10 +426,27 @@ jobs:
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{inputs.version}}.zip"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [linux, windows_dir, windows_file, mac]
+    needs: [linux_dir,linux_file, windows_dir, windows_file, mac_file,mac_dir]
     permissions:
       contents: write
     steps:
