@@ -101,7 +101,7 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" --onefile"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.short}}" --onefile
             echo "list files dir"
             ls dist
 
