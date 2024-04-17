@@ -510,7 +510,7 @@ jobs:
           deactivate
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}"
+          files: "dist/ofscraper_macos_${{inputs.version}}"
           dest: "dist/ofscraper_macos_${{inputs.version}}.zip"
 
       - name: upload one file
