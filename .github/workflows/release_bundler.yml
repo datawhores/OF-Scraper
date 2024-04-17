@@ -785,6 +785,7 @@ jobs:
 
 
   docker_old:
+    needs: [get_commit]
     if: ${{ inputs.docker_old}}
     runs-on: ubuntu-latest
     name: Docker Release Old
@@ -800,6 +801,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{inputs.version}}
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
@@ -866,6 +869,7 @@ jobs:
       #https://github.com/docker/login-action
 
   docker_old_github:
+    needs: [get_commit]
     if: ${{ inputs.docker_old}}
     runs-on: ubuntu-latest
     name: Docker Release Old
@@ -881,6 +885,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{inputs.version}}
+      - run: git checkout ${{needs.get_commit.outputs.long}}          
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
