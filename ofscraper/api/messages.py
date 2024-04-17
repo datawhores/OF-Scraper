@@ -45,7 +45,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     log.trace(
         "oldmessage {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
+                map(lambda x: f"oldmessages: {str(x)}", oldmessages)
             )
         )
     )
@@ -85,7 +85,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     log.trace(
         "oldmessage {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
+                map(lambda x: f"oldmessages: {str(x)}", oldmessages)
             )
         )
     )
@@ -179,7 +179,7 @@ async def process_tasks(tasks, model_id):
     log.trace(
         f"{common_logs.FINAL_RAW.format('Messages')}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
+                map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
             )
         )
     )
