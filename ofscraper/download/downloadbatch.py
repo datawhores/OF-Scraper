@@ -14,12 +14,13 @@ import psutil
 from aioprocessing import AioPipe
 from rich.live import Live
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -37,6 +38,7 @@ from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
     log_download_progress,
+    metadata,
     setDirectoriesDate,
     subProcessVariableInit,
 )
@@ -100,18 +102,15 @@ def process_dicts(username, model_id, filtered_medialist):
 
         task1 = overall_progress.add_task(
             common_globals.desc.format(
-                p_count=common_globals.photo_count,
-                v_count=common_globals.video_count,
-                a_count=common_globals.audio_count,
-                skipped=common_globals.skipped,
+                p_count=0,
+                v_count=0,
+                a_count=0,
+                skipped=0,
                 mediacount=len(filtered_medialist),
-                sumcount=common_globals.video_count
-                + common_globals.audio_count
-                + common_globals.photo_count
-                + common_globals.skipped,
-                forced_skipped=common_globals.forced_skipped,
-                data=common_globals.data,
-                total=common_globals.total_data,
+                forced_skipped=0,
+                sumcount=0,
+                total_bytes_download=0,
+                total_bytes=0,
             ),
             total=len(filtered_medialist),
             visible=True,
@@ -273,8 +272,10 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                         a_count=common_globals.audio_count,
                         skipped=common_globals.skipped,
                         forced_skipped=common_globals.forced_skipped,
-                        data=convert_num_bytes(common_globals.total_bytes_downloaded),
-                        total=convert_num_bytes(common_globals.total_bytes),
+                        total_bytes_download=convert_num_bytes(
+                            common_globals.total_bytes_downloaded
+                        ),
+                        total_bytes=convert_num_bytes(common_globals.total_bytes),
                         mediacount=total,
                         sumcount=common_globals.video_count
                         + common_globals.audio_count
@@ -381,9 +382,14 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(
         f"{pid_log_helper()} process mediasplit from total {len(medialist)}"
     )
-
     aws = []
-    async with sessionbuilder.sessionBuilder() as c:
+    async with sessionManager.sessionManager(
+        retries=constants.getattr("DOWNLOAD_RETRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        log=common_globals.log,
+        sem=common_globals.sem,
+    ) as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
         for coro in asyncio.as_completed(aws):
@@ -393,7 +399,7 @@ async def process_dicts_split(username, model_id, medialist):
                 media_type, num_bytes_downloaded = pack
                 await common.send_msg((media_type, num_bytes_downloaded, 0))
             except Exception as e:
-                common_globals.log.traceback_(f"Download Failed because\n{e}")
+                common_globals.log.info(f"Download Failed because\n{e}")
                 common_globals.log.traceback_(traceback.format_exc())
                 media_type = "skipped"
                 num_bytes_downloaded = 0
@@ -424,9 +430,11 @@ async def download(c, ele, model_id, username):
         )
         common_globals.innerlog.set(templog_)
         try:
-            if ele.url:
+            if read_args.retriveArgs().metadata:
+                return await metadata(c, ele, username, model_id)
+            elif ele.url:
                 return await main_download(c, ele, username, model_id)
-            if ele.mpd:
+            elif ele.mpd:
                 return await alt_download(c, ele, username, model_id)
         except Exception as e:
             common_globals.innerlog.get().traceback_(

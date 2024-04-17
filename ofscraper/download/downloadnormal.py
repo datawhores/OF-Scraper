@@ -18,10 +18,12 @@ import traceback
 from humanfriendly import format_size
 from rich.live import Live
 
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
+import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -35,6 +37,7 @@ from ofscraper.download.common.common import (
     convert_num_bytes,
     get_medialog,
     log_download_progress,
+    metadata,
     setDirectoriesDate,
 )
 from ofscraper.download.main_download import main_download
@@ -70,9 +73,13 @@ async def process_dicts(username, model_id, medialist):
                 console=console.shared_console,
             ):
                 aws = []
-                desc = "Progress: ({p_count} photos, {v_count} videos, {a_count} audios, {forced_skipped} skipped, {skipped} failed || {sumcount}/{mediacount}||{total_bytes_download}/{total_bytes})"
 
-                async with sessionbuilder.sessionBuilder() as c:
+                async with sessionManager.sessionManager(
+                    sem=common_globals.sem,
+                    retries=constants.getattr("DOWNLOAD_RETRIES"),
+                    wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                    wait_max=constants.getattr("OF_MAX_WAIT_API"),
+                ) as c:
                     for ele in medialist:
                         aws.append(
                             asyncio.create_task(
@@ -80,13 +87,13 @@ async def process_dicts(username, model_id, medialist):
                             )
                         )
                     task1 = overall_progress.add_task(
-                        desc.format(
-                            p_count=common_globals.photo_count,
-                            v_count=common_globals.video_count,
-                            a_count=common_globals.audio_count,
-                            skipped=common_globals.skipped,
+                        common_globals.desc.format(
+                            p_count=0,
+                            v_count=0,
+                            a_count=0,
+                            skipped=0,
                             mediacount=len(medialist),
-                            forced_skipped=common_globals.forced_skipped,
+                            forced_skipped=0,
                             sumcount=0,
                             total_bytes_download=0,
                             total_bytes=0,
@@ -100,8 +107,8 @@ async def process_dicts(username, model_id, medialist):
                             common_globals.log.debug(f"unpack {pack} count {len(pack)}")
                             media_type, num_bytes_downloaded = pack
                         except Exception as e:
-                            common_globals.log.traceback_(
-                                f"Download Failed because\n{e}"
+                            common_globals.log.info(
+                                f"{get_medialog(ele)} Download Failed because\n{e}"
                             )
                             common_globals.log.traceback_(traceback.format_exc())
                             media_type = "skipped"
@@ -131,7 +138,7 @@ async def process_dicts(username, model_id, medialist):
                         log_download_progress(media_type)
                         overall_progress.update(
                             task1,
-                            description=desc.format(
+                            description=common_globals.desc.format(
                                 p_count=common_globals.photo_count,
                                 v_count=common_globals.video_count,
                                 a_count=common_globals.audio_count,
@@ -178,7 +185,9 @@ async def process_dicts(username, model_id, medialist):
 async def download(c, ele, model_id, username, job_progress):
     async with common_globals.maxfile_sem:
         try:
-            if ele.url:
+            if read_args.retriveArgs().metadata:
+                return await metadata(c, ele, username, model_id)
+            elif ele.url:
                 return await main_download(
                     c,
                     ele,
@@ -194,6 +203,7 @@ async def download(c, ele, model_id, username, job_progress):
                     model_id,
                     job_progress,
                 )
+
         except Exception as E:
             common_globals.log.debug(f"{get_medialog(ele)} exception {E}")
             common_globals.log.debug(

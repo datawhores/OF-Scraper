@@ -25,10 +25,14 @@ jobs:
       - name: show file
         run: cat ofscraper/__version__.py
       - name: upload file
-        uses: actions/upload-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
+            overwrite: true
   #       - name: list files 1
   #         run: ls /home/runner/work/
   #       - name: list files 2
@@ -55,11 +59,13 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
-
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: create one file
         uses: addnab/docker-run-action@v3
         with:
@@ -83,11 +89,17 @@ jobs:
             pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
             echo "list files dir"
             ls dist
+
       - name: upload one file
-        uses: actions/upload-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_linux
+            path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+            overwrite: true
+
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -113,10 +125,14 @@ jobs:
             ls dist
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
-        uses: actions/upload-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_linux_zip
+            path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
+            overwrite: true
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -136,10 +152,13 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -179,11 +198,16 @@ jobs:
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_windows_zip
+            path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+            overwrite: true
 
   windows_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -203,10 +227,13 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -242,20 +269,20 @@ jobs:
           .venv\Scripts\activate.bat
           pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
-      - name: upload file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_windows
-          path: 'dist\ofscraper_windows_${{ steps.commit.outputs.short}}.exe'
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+            name: ofscraper_windows
+            overwrite: true
+
 
   mac:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -275,10 +302,14 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v3
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_version
-          path: ofscraper
+          action: actions/download-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -322,11 +353,17 @@ jobs:
           source .venv/bin/activate
           poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
           deactivate
-      - name: upload file
-        uses: actions/upload-artifact@v3
+
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos
-          path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          action: actions/upload-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_macos
+            path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+            overwrite: true
       - name: create-dir
         id: create-dir
         run: |
@@ -349,11 +386,16 @@ jobs:
         with:
           files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
           dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
+
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_macos_zip
+            path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
+            overwrite: true
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -363,31 +405,54 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download linux
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_linux
-      - name: Download linux zip
-        uses: actions/download-artifact@v3
-        with:
-          name: ofscraper_linux_zip
+      - name: download linux
+        uses: Wandalen/wretry.action@master
 
-      - name: Download mac
-        uses: actions/download-artifact@v3
         with:
-          name: ofscraper_macos
-      - name: Download mac zip
-        uses: actions/download-artifact@v3
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_linux
+      - name: download linux zip
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos_zip
-      - name: Download windows
-        uses: actions/download-artifact@v3
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_linux_zip
+      - name: download mac
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows
-      - name: Download windows zip
-        uses: actions/download-artifact@v3
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_macos
+      - name: download mac zip
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows_zip
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_macos_zip
+      - name: download windows
+        uses: Wandalen/wretry.action@master
+
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_windows
+      - name: download windows zip
+        uses: Wandalen/wretry.action@master
+
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_windows_zip
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit

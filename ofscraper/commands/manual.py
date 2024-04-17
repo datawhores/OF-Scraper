@@ -1,6 +1,6 @@
 import logging
-import traceback
 import re
+import traceback
 
 import ofscraper.api.highlights as highlights_
 import ofscraper.api.messages as messages_
@@ -9,7 +9,7 @@ import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.media as media_
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.models.selector as selector
@@ -17,7 +17,6 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.system.network as network
-import ofscraper.utils.args.user as user_helper
 from ofscraper.utils.context.run_async import run
 
 
@@ -27,23 +26,37 @@ def manual_download(urls=None):
         network.check_cdm()
         allow_manual_dupes()
         url_dicts = process_urls(urls)
-        all_media=[item for media_list in url_dicts.values() for item in media_list.get("media_list", [])]
-        all_posts=[item for post_list in url_dicts.values() for item in post_list.get("post_list", [])]
+        all_media = [
+            item
+            for media_list in url_dicts.values()
+            for item in media_list.get("media_list", [])
+        ]
+        all_posts = [
+            item
+            for post_list in url_dicts.values()
+            for item in post_list.get("post_list", [])
+        ]
         log.debug(f"Number of values from media dict  {len(all_media)}")
         log.debug(f"Number of values from post dict  {len(all_posts)}")
-        if len(all_media)==0 and len(all_posts)==0:
+        if len(all_media) == 0 and len(all_posts) == 0:
             return
         set_user_data(url_dicts)
-        for _,value in url_dicts.items():
+        for _, value in url_dicts.items():
             model_id = value.get("model_id")
             username = value.get("username")
             model_id = value.get("model_id")
             username = value.get("username")
             log.info(f"Downloading individual media for {username}")
             operations.table_init_create(model_id=model_id, username=username)
-            operations.make_changes_to_content_tables(value.get("post_list",[]),model_id=model_id,username=username)
-            download.download_process(username, model_id, value.get("media_list",[]), posts=None)
-            operations.batch_mediainsert(value.get("media_list"),username=username,model_id=model_id)
+            operations.make_changes_to_content_tables(
+                value.get("post_list", []), model_id=model_id, username=username
+            )
+            download.download_process(
+                username, model_id, value.get("media_list", []), posts=None
+            )
+            operations.batch_mediainsert(
+                value.get("media_list"), username=username, model_id=model_id
+            )
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
@@ -57,81 +70,107 @@ def allow_manual_dupes():
 
 
 def set_user_data(url_dicts):
-    user_helper.set_users_arg([nested_dict.get("username") for nested_dict in url_dicts.values()])
-    selector.all_subs_helper()
+    selector.set_data_all_subs_dict(
+        [nested_dict.get("username") for nested_dict in url_dicts.values()]
+    )
+
 
 def process_urls(urls):
-    out_dict={}
+    out_dict = {}
 
     for url in url_helper(urls):
         response = get_info(url)
         model = response[0]
         postid = response[1]
         type = response[2]
-        if type == "post":  
-            user_data=profile.scrape_profile(model)
+        if type == "post":
+            user_data = profile.scrape_profile(model)
             model_id = user_data.get("id")
-            username= user_data.get("username")
-            out_dict.setdefault(model_id, {})["model_id"]= model_id
-            out_dict.setdefault(model_id, {})["username"]= username
+            username = user_data.get("username")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
 
             value = timeline.get_individual_post(postid)
 
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value))
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
+                get_all_media(postid, model_id, value)
+            )
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                get_post_item(model_id, value)
+            )
         elif type == "msg":
-            user_data=profile.scrape_profile(model)
+            user_data = profile.scrape_profile(model)
             model_id = user_data.get("id")
-            username= user_data.get("username")
-            out_dict.setdefault(model_id, {})["model_id"]= model_id
-            out_dict.setdefault(model_id, {})["username"]= username
-            
-            value = messages_.get_individual_post(model_id, postid)
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value))
-        elif type == "msg2":
-            user_data=profile.scrape_profile(model)
-            username= user_data.get("username")
-            model_id=user_data.get("id")
-            out_dict.setdefault(model_id, {})["model_id"]= model_id
-            out_dict.setdefault(model_id, {})["username"]= username
+            username = user_data.get("username")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
 
             value = messages_.get_individual_post(model_id, postid)
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value))
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
+                get_all_media(postid, model_id, value)
+            )
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                get_post_item(model_id, value)
+            )
+        elif type == "msg2":
+            user_data = profile.scrape_profile(model)
+            username = user_data.get("username")
+            model_id = user_data.get("id")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
+
+            value = messages_.get_individual_post(model_id, postid)
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
+                get_all_media(postid, model_id, value)
+            )
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                get_post_item(model_id, value)
+            )
         elif type == "unknown":
             value = unknown_type_helper(postid) or {}
             model_id = value.get("author", {}).get("id")
             if not model_id:
                 continue
-            username=profile.scrape_profile(model_id).get("username")
-            out_dict.setdefault(model_id, {})["model_id"]= model_id
-            out_dict.setdefault(model_id, {})["username"]= username
+            username = profile.scrape_profile(model_id).get("username")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
 
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value))
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
+                get_all_media(postid, model_id, value)
+            )
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                get_post_item(model_id, value)
+            )
         elif type == "highlights":
             value = highlights_.get_individual_highlights(postid) or {}
             model_id = value.get("userId")
             if not model_id:
                 continue
-            username= profile.scrape_profile(model_id).get("username")
-            out_dict.setdefault(model_id, {})["model_id"]= model_id
-            out_dict.setdefault(model_id, {})["username"]= username
+            username = profile.scrape_profile(model_id).get("username")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
 
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value,responsetype="highlights"))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value,responsetype="highlights"))
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
+                get_all_media(postid, model_id, value, responsetype="highlights")
+            )
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                get_post_item(model_id, value, responsetype="highlights")
+            )
             # special case
         elif type == "stories":
             value = highlights_.get_individual_stories(postid) or {}
             model_id = value.get("userId")
             if not model_id:
                 continue
-            username= profile.scrape_profile(model_id).get("username")
-            out_dict.setdefault(model_id, {})["model_id"]= model_id
-            out_dict.setdefault(model_id, {})["username"]= username
-            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(get_all_media(postid, model_id, value,responsetype="stories"))
-            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(get_post_item(model_id, value,responsetype="stories"))
+            username = profile.scrape_profile(model_id).get("username")
+            out_dict.setdefault(model_id, {})["model_id"] = model_id
+            out_dict.setdefault(model_id, {})["username"] = username
+            out_dict.setdefault(model_id, {}).setdefault("media_list", []).extend(
+                get_all_media(postid, model_id, value, responsetype="stories")
+            )
+            out_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
+                get_post_item(model_id, value, responsetype="stories")
+            )
             # special case
     return out_dict
 
@@ -148,7 +187,7 @@ def get_post_item(model_id, value, responsetype=None):
     return [post]
 
 
-def get_all_media(posts_id, model_id, value,responsetype=None):
+def get_all_media(posts_id, model_id, value, responsetype=None):
     value = value or {}
     media = []
     if model_id == None:
@@ -167,13 +206,20 @@ def get_all_media(posts_id, model_id, value,responsetype=None):
         media.extend(paid_failback(posts_id, model_id, user_name))
     return media
 
+
 @run
 async def paid_failback(post_id, model_id, username):
     logging.getLogger("shared").debug(
         "Using failback search because query return 0 media"
     )
     post_id = str(post_id)
-    async with sessionbuilder.sessionBuilder(backend="httpx") as c:
+    async with sessionManager.sessionManager(
+        backend="httpx",
+        sem=constants.getattr("API_REQ_CHECK_MAX"),
+        retries=constants.getattr("API_CHECK_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
         data = await paid.get_paid_posts(id, username, c=c) or []
         posts = list(
             map(lambda x: posts_.Post(x, model_id, username, responsetype="paid"), data)

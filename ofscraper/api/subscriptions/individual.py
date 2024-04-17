@@ -20,10 +20,9 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
 
 import ofscraper.api.profile as profile
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -31,13 +30,11 @@ log = logging.getLogger("shared")
 
 @run
 async def get_subscription(accounts=None):
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     accounts = accounts or read_args.retriveArgs().usernames
     if not isinstance(accounts, list) and not isinstance(accounts, set):
         accounts = set([accounts])
     with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+        max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
@@ -47,11 +44,19 @@ async def get_subscription(accounts=None):
             task1 = job_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder() as c:
+            async with sessionManager.sessionManager(
+                sem=constants.getattr("SUBSCRIPTION_SEMS"),
+                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            ) as c:
                 out = await get_subscription_helper(c, accounts)
                 job_progress.remove_task(task1)
         outdict = {}
-        for ele in filter(lambda x: x["username"] != "modeldeleted", out):
+        for ele in filter(
+            lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),
+            out,
+        ):
             outdict[ele["id"]] = ele
         log.debug(f"Total subscriptions found {len(outdict.values())}")
         return list(outdict.values())

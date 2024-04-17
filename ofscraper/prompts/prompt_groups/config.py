@@ -77,7 +77,7 @@ def funct(prompt_):
     keydb_api: for keydb cdm
     -----------------------------------
     [Performance Options]
-    download-sems: number of downloads per processor/worker
+    download-sem: number of downloads per processor/worker
     threads: number of processors/workers
     -----------------------------------
     [Advanced Options]
@@ -391,7 +391,7 @@ def performance_config():
     if not cache.get("speed_download") or promptClasses.getChecklistSelection(
         choices=[Choice(True, "Yes"), Choice(False, "No")],
         message="Re-run speedtest",
-        more_instruction="Download Sems max value is based on calculated speed",
+        more_instruction="Download sem max value is based on calculated speed",
         default=False,
     ):
         speed = get_speed(threads)
@@ -402,7 +402,7 @@ def performance_config():
         *[
             {
                 "type": "number",
-                "name": "download-sems",
+                "name": "download-sem",
                 "message": "Number of semaphores per thread: ",
                 "min_allowed": 1,
                 "max_allowed": max_allowed,
@@ -466,7 +466,7 @@ def advanced_config() -> dict:
                 "name": "dynamic-mode-default",
                 "message": "What would you like to use for dynamic rules",
                 "default": data.get_dynamic(),
-                "choices": ["deviint", "digitalcriminals"],
+                "choices": ["deviint", "digitalcriminals", "sneaky"],
             },
             {
                 "type": "list",

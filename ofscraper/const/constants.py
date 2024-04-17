@@ -15,6 +15,7 @@ from ofscraper.const.download import *
 from ofscraper.const.files import *
 from ofscraper.const.general import *
 from ofscraper.const.logger import *
+from ofscraper.const.metadata import *
 from ofscraper.const.other_url import *
 from ofscraper.const.prompts import *
 from ofscraper.const.req import *

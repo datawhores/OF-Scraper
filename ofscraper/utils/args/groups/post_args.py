@@ -6,11 +6,14 @@ import ofscraper.utils.args.groups.common_args as common
 import ofscraper.utils.args.helpers as helpers
 
 
-@click.command("post_check",  short_help="""\b
+@click.command(
+    "post_check",
+    short_help="""\b
                Produces a media table from posts with filterable entries and quick downloads""",
-               help="""The post_check subcommand gathers information on media content from posts
+    help="""The post_check subcommand gathers information on media content from posts
 It presents this data in a table format with filtering options for focused searches 
-Allows unlocked media entries to be directly downloaded through the table""")
+Allows unlocked media entries to be directly downloaded through the table""",
+)
 @click.constraints.require_one(
     click.option(
         "-u",

@@ -6,13 +6,16 @@ import ofscraper.utils.args.groups.common_args as common
 import ofscraper.utils.args.helpers as helpers
 
 
-@click.command("story_check", short_help="""\b
-               Produces a media table from stories and highlights with filterable entries and quick downloads""",help=
-               """
+@click.command(
+    "story_check",
+    short_help="""\b
+               Produces a media table from stories and highlights with filterable entries and quick downloads""",
+    help="""
 The story_check subcommand gathers information on media content from stories and highlights
 It presents this data in a table format with filtering options for focused searches 
 Allows unlocked media entries to be directly downloaded through the table
-""")
+""",
+)
 @click.constraints.require_one(
     click.option(
         "-u",

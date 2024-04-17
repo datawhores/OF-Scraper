@@ -498,7 +498,16 @@ def get_dynamic(config=None):
         if value
         and value.lower()
         in set(
-            ["deviint", "digitalcriminals", "dv", "dev", "dc", "digital", "digitials"]
+            [
+                "deviint",
+                "digitalcriminals",
+                "dv",
+                "dev",
+                "dc",
+                "digital",
+                "digitials",
+                "sneaky",
+            ]
         )
         else "deviint"
     )
@@ -534,16 +543,16 @@ def get_backend(config=None):
 def get_download_semaphores(config=None):
     if config == False:
         return constants.DOWNLOAD_SEM_DEFAULT
-    sems = (
-        config.get("download-sems")
-        or config.get("performance_options", {}).get("download-sems")
+    sem = (
+        config.get("download-sem")
+        or config.get("performance_options", {}).get("download-sem")
         or constants_attr.getattr("DOWNLOAD_SEM_DEFAULT")
     )
     try:
-        sems = int(sems)
+        sem = int(sem)
     except ValueError:
-        sems = int(constants_attr.getattr("DOWNLOAD_SEM_DEFAULT"))
-    return sems
+        sem = int(constants_attr.getattr("DOWNLOAD_SEM_DEFAULT"))
+    return sem
 
 
 @wrapper.config_reader

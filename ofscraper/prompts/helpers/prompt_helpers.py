@@ -1,12 +1,16 @@
 import inspect
 import re
 
+import pynumparser
+from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
+import ofscraper.filters.models.sort as sort
 import ofscraper.models.selector as userselector
 import ofscraper.prompts.helpers.model_helpers as modelHelpers
 import ofscraper.prompts.prompt_strings as prompt_strings
+import ofscraper.prompts.promptConvert as promptConvert
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
@@ -115,13 +119,7 @@ PRESS ENTER TO RETURN
 def model_funct(prompt):
     userselector.setfilter()
     with stdout.nostdout():
-        models = userselector.filterOnly()
-        choices = list(
-            map(
-                lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
-                enumerate(models),
-            )
-        )
+        choices = _get_choices
         selectedSet = set(
             map(
                 lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
@@ -138,6 +136,73 @@ def model_funct(prompt):
         )
         prompt.content_control._format_choices()
         return prompt
+
+
+def model_select_funct(prompt):
+    with stdout.nostdout():
+        try:
+            toggle = promptConvert.getChecklistSelection(
+                choices=[
+                    Choice(True, "Range Select"),
+                    Choice(False, "Range Deselect"),
+                ]
+            )
+
+            # select new
+            choices = _select_helper(prompt, toggle)
+            prompt.content_control._raw_choices = choices
+            prompt.content_control.choices = prompt.content_control._get_choices(
+                prompt.content_control._raw_choices, prompt.content_control._default
+            )
+            prompt.content_control._format_choices()
+            return prompt
+        except Exception as E:
+            raise E
+
+
+def _select_helper(prompt, toggle=True):
+    try:
+        choices = _get_choices()
+        selectedSet = set(
+            map(
+                lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
+                prompt.selected_choices or [],
+            )
+        )
+
+        changes = set(
+            pynumparser.NumberSequence().parse(
+                promptConvert.multiline_input_prompt(
+                    message="Enter Num Sequences: ",
+                    more_instruction="Example Input: '1-2,20-50 => [1,2,20...50] inclusive' ",
+                )
+            )
+        )
+        if toggle:
+            for count, model in enumerate(choices):
+                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                if name in selectedSet or count + 1 in changes:
+                    model.enabled = True
+        elif not toggle:
+            for count, model in enumerate(choices):
+                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                if name in selectedSet and count + 1 not in changes:
+                    model.enabled = True
+
+    except Exception as E:
+        raise E
+    return choices
+
+
+def _get_choices():
+    models = userselector.filterOnly()
+    models = sort.sort_models_helper(models)
+    return list(
+        map(
+            lambda x: modelHelpers.model_selectorHelper(x[0], x[1]),
+            enumerate(models),
+        )
+    )
 
 
 def user_list(model_str):

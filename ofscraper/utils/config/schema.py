@@ -42,7 +42,7 @@ def get_current_config_schema(config: dict = None) -> dict:
             "keydb_api": data.get_keydb_api(config=config),
         },
         "performance_options": {
-            "download-sems": data.get_download_semaphores(config=config),
+            "download-sem": data.get_download_semaphores(config=config),
             "threads": data.get_threads(config=config),
         },
         "advanced_options": {

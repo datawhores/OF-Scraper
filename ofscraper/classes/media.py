@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import string
@@ -8,26 +9,21 @@ import warnings
 import arrow
 from bs4 import MarkupResemblesLocatorWarning
 from mpegdash.parser import MPEGDASHParser
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.classes.base as base
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.quality as quality
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-import ofscraper.utils.logs.helpers as log_helpers
 import ofscraper.utils.dates as dates
+import ofscraper.utils.logs.helpers as log_helpers
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 
 log = logging.getLogger("shared")
+
+semaphore = asyncio.Semaphore(constants.getattr("MPD_MAX_SEMS"))
 
 
 class Media(base.base):
@@ -114,11 +110,7 @@ class Media(base.base):
 
     @property
     def canview(self):
-        return (
-            self._media.get("canView") or True
-            if (self.url or self.mpd) != None
-            else False
-        )
+        return self._media.get("canView") if (self.url or self.mpd) != None else False
 
     @property
     def label(self):
@@ -271,10 +263,10 @@ class Media(base.base):
 
     @property
     async def final_filename(self):
-        filename = self.filename or self.id
+        filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z0-9]+$", f"", filename)
-            filename = f"{filename}_{await self.selected_quality}"
+            filename = f"{filename}_{await self.selected_quality_placeholder}"
         # cleanup
         try:
             filename = self.file_cleanup(filename)
@@ -288,7 +280,7 @@ class Media(base.base):
 
     @property
     def no_quality_final_filename(self):
-        filename = self.filename or self.id
+        filename = self.filename or str(self.id)
         if self.mediatype == "videos":
             filename = re.sub("_[a-z]+", f"", filename)
         # cleanup
@@ -327,22 +319,15 @@ class Media(base.base):
             "Key-Pair-Id": self.keypair,
             "Signature": self.signature,
         }
-        async with sessionbuilder.sessionBuilder() as c:
-            async for _ in AsyncRetrying(
-                retry=retry_if_not_exception_type(KeyboardInterrupt),
-                stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-                wait=wait_random(
-                    min=constants.getattr("OF_MIN"),
-                    max=constants.getattr("OF_MAX"),
-                ),
-                reraise=True,
-            ):
-                with _:
-                    async with c.requests(url=self.mpd, params=params)() as r:
-                        if not r.ok:
-                            r.raise_for_status()
-                        self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
-                        return self._cached_parse_mpd
+        async with sessionManager.sessionManager(
+            retries=constants.getattr("MPD_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            semaphore=semaphore,
+        ) as c:
+            async with c.requests_async(url=self.mpd, params=params) as r:
+                self._cached_parse_mpd = MPEGDASHParser.parse(await r.text_())
+                return self._cached_parse_mpd
 
     @property
     async def mpd_dict(self):
@@ -377,6 +362,12 @@ class Media(base.base):
         if self.protected == False:
             return self.normal_quality_helper()
         return await self.alt_quality_helper()
+
+    @property
+    async def selected_quality_placeholder(self):
+        return await self.selected_quality or constants.getattr(
+            "QUALITY_UNKNOWN_DEFAULT"
+        )
 
     @property
     def protected(self):
@@ -418,6 +409,7 @@ class Media(base.base):
     @property
     def duration_string(self):
         return dates.format_seconds(self.duration) if self.duration else None
+
     def get_text(self):
         if self.responsetype != "Profile":
             text = (

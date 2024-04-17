@@ -20,32 +20,21 @@ from concurrent.futures import ThreadPoolExecutor
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.api.subscriptions.helpers as helpers
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 console = Console()
-sem = None
 
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
-    global sem
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_REQUEST_WORKERS")
+        max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
@@ -55,22 +44,23 @@ async def get_subscriptions(subscribe_count, account="active"):
             task1 = job_progress.add_task(
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
-            async with sessionbuilder.sessionBuilder() as c:
+            async with sessionManager.sessionManager(
+                sem=constants.getattr("SUBSCRIPTION_SEMS"),
+                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+                wait_min=constants.getattr("OF_MIN_WAIT_API"),
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            ) as c:
                 if account == "active":
                     out = await activeHelper(subscribe_count, c)
                 else:
                     out = await expiredHelper(subscribe_count, c)
                 job_progress.remove_task(task1)
-        outdict = {}
-        for ele in out:
-            outdict[ele["id"]] = ele
-        log.debug(f"Total {account} subscriptions found {len(outdict.values())}")
-        return list(outdict.values())
+
+        log.debug(f"Total {account} subscriptions found {len(out)}")
+        return out
 
 
 async def activeHelper(subscribe_count, c):
-    output = []
-
     if any(
         x in helpers.get_black_list_helper()
         for x in [
@@ -106,30 +96,10 @@ async def activeHelper(subscribe_count, c):
         for offset in range(0, subscribe_count + 1, 10)
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
-    while bool(tasks):
-        new_tasks = []
-        try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
-            ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        output.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        tasks = new_tasks
-    return output
+    return await process_task(tasks)
 
 
 async def expiredHelper(subscribe_count, c):
-    output = []
     if any(
         x in helpers.get_black_list_helper()
         for x in [
@@ -166,148 +136,113 @@ async def expiredHelper(subscribe_count, c):
     ]
     tasks.extend([asyncio.create_task(funct(c, subscribe_count + 1, recur=True))])
 
-    while bool(tasks):
+    return await process_task(tasks)
+
+
+async def process_task(tasks):
+    output = []
+    seen = set()
+    while tasks:
         new_tasks = []
         try:
-            async with asyncio.timeout(
-                constants.getattr("API_TIMEOUT_PER_TASKS") * max(len(tasks), 2)
+            for task in asyncio.as_completed(
+                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
             ):
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        output.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-        except TimeoutError as E:
-            log.traceback_(E)
+                try:
+                    result, new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    users = [
+                        user
+                        for user in result
+                        if user["id"] not in seen and not seen.add(user["id"])
+                    ]
+                    output.extend(users)
+                except asyncio.TimeoutError:
+                    log.traceback_("Task timed out")
+                    log.traceback_(traceback.format_exc())
+                    [ele.cancel() for ele in tasks]
+                    break
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+        except asyncio.TimeoutError:
+            log.traceback_("Task timed out")
             log.traceback_(traceback.format_exc())
+            [ele.cancel() for ele in tasks]
         tasks = new_tasks
     return output
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
     attempt.set(0)
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            await sem.acquire()
-            try:
-                attempt.set(attempt.get(0) + 1)
-                log.debug(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} usernames active offset {offset}"
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        log.debug(
+            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} usernames active offset {offset}"
+        )
+        async with c.requests_async(
+            constants.getattr("subscriptionsActiveEP").format(offset)
+        ) as r:
+            subscriptions = (await r.json_())["list"]
+            log.debug(
+                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
+            )
+            if len(subscriptions) == 0:
+                return subscriptions
+            elif recur is False:
+                pass
+            elif (await r.json_())["hasMore"] is True:
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_subscriptions_active(
+                            c,
+                            recur=True,
+                            offset=offset + len(subscriptions),
+                        )
+                    )
                 )
-                async with c.requests(
-                    constants.getattr("subscriptionsActiveEP").format(offset)
-                )() as r:
-                    if r.ok:
-                        subscriptions = (await r.json_())["list"]
-                        log.debug(
-                            f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                        )
-                        if len(subscriptions) == 0:
-                            return subscriptions
-                        elif recur == False:
-                            None
-                        elif (await r.json_())["hasMore"] == True:
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_subscriptions_active(
-                                        c,
-                                        recur=True,
-                                        offset=offset + len(subscriptions),
-                                    )
-                                )
-                            )
-                        return subscriptions, new_tasks
-                    else:
-                        log.debug(
-                            f"[bold]subscriptions response status code:[/bold]{r.status}"
-                        )
-                        log.debug(
-                            f"[bold]subscriptions response:[/bold] {await r.text_()}"
-                        )
-                        log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
-
-            finally:
-                sem.release()
+            return subscriptions, new_tasks
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
     attempt.set(0)
-    sem = semaphoreDelayed(constants.getattr("AlT_SEM"))
+    new_tasks = []
+    try:
+        attempt.set(attempt.get(0) + 1)
+        log.debug(
+            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} usernames offset expired {offset}"
+        )
+        async with c.requests_async(
+            constants.getattr("subscriptionsExpiredEP").format(offset)
+        ) as r:
+            subscriptions = (await r.json_())["list"]
+            log.debug(
+                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
+            )
 
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            new_tasks = []
-            await sem.acquire()
-            try:
-                attempt.set(attempt.get(0) + 1)
-                log.debug(
-                    f"Attempt {attempt.get()}/{constants.getattr('NUM_TRIES')} usernames offset expired {offset}"
+            if len(subscriptions) == 0:
+                return subscriptions
+            elif recur is False:
+                pass
+            elif (await r.json_())["hasMore"] is True:
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_subscriptions_disabled(
+                            c,
+                            recur=True,
+                            offset=offset + len(subscriptions),
+                        )
+                    )
                 )
-                async with c.requests(
-                    constants.getattr("subscriptionsExpiredEP").format(offset)
-                )() as r:
-                    if r.ok:
-                        subscriptions = (await r.json_())["list"]
-                        log.debug(
-                            f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-                        )
 
-                        if len(subscriptions) == 0:
-                            return subscriptions
-                        elif recur == False:
-                            None
-                        elif (await r.json_())["hasMore"] == True:
-                            new_tasks.append(
-                                asyncio.create_task(
-                                    scrape_subscriptions_disabled(
-                                        c,
-                                        recur=True,
-                                        offset=offset + len(subscriptions),
-                                    )
-                                )
-                            )
-
-                        return subscriptions, new_tasks
-                    else:
-                        log.debug(
-                            f"[bold]subscriptions response status code:[/bold]{r.status}"
-                        )
-                        log.debug(
-                            f"[bold]subscriptions response:[/bold] {await r.text_()}"
-                        )
-                        log.debug(f"[bold]subscriptions headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
-
-            finally:
-                sem.release()
+            return subscriptions, new_tasks
+    except Exception as E:
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
+        raise E

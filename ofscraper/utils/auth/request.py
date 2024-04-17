@@ -17,15 +17,7 @@ import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-from tenacity import (
-    Retrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
-
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.constants as constants
 import ofscraper.utils.paths.common as common_paths
@@ -64,53 +56,78 @@ def get_request_auth():
         "dv",
         "dev",
     }:
+
         return get_request_auth_deviint()
+    elif (settings.get_dynamic_rules()) in {
+        "sneaky",
+    }:
+
+        return get_request_auth_sneaky()
     else:
-        return get_request_digitalcriminals()
+        return get_request_auth_digitalcriminals()
 
 
 def get_request_auth_deviint():
-    with sessionbuilder.sessionBuilder(
-        backend="httpx", set_header=False, set_cookies=False, set_sign=False
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
     ) as c:
-        for _ in Retrying(
-            retry=retry_if_not_exception_type(KeyboardInterrupt),
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-            wait=wait_fixed(8),
-        ):
-            with _:
-                with c.requests(constants.getattr("DEVIINT"))() as r:
-                    if r.ok:
-                        content = r.json_()
-                        static_param = content["static_param"]
-                        fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
-                        checksum_indexes = content["checksum_indexes"]
-                        checksum_constant = content["checksum_constant"]
-                        return (static_param, fmt, checksum_indexes, checksum_constant)
-                    else:
-                        r.raise_for_status()
+        with c.requests(
+            constants.getattr("DEVIINT"),
+            headers=False,
+            cookies=False,
+            sign=False,
+        ) as r:
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
-def get_request_digitalcriminals():
-    with sessionbuilder.sessionBuilder(
-        backend="httpx", set_header=False, set_cookies=False, set_sign=False
+def get_request_auth_sneaky():
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
     ) as c:
-        for _ in Retrying(
-            retry=retry_if_not_exception_type(KeyboardInterrupt),
-            stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-            wait=wait_fixed(8),
-        ):
-            with _:
-                with c.requests(constants.getattr("DIGITALCRIMINALS"))() as r:
-                    if r.ok:
-                        content = r.json_()
-                        static_param = content["static_param"]
-                        fmt = content["format"]
-                        checksum_indexes = content["checksum_indexes"]
-                        checksum_constant = content["checksum_constant"]
-                        return (static_param, fmt, checksum_indexes, checksum_constant)
-                    else:
-                        r.raise_for_status()
+        with c.requests(
+            constants.getattr("SNEAKY"),
+            headers=False,
+            cookies=False,
+            sign=False,
+        ) as r:
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
+
+
+def get_request_auth_digitalcriminals():
+    with sessionManager.sessionManager(
+        backend="httpx",
+        retries=constants.getattr("GIT_NUM_TRIES"),
+        wait_min=constants.getattr("GIT_MIN_WAIT"),
+        wait_max=constants.getattr("GIT_MAX_WAIT"),
+    ) as c:
+        with c.requests(
+            constants.getattr("DIGITALCRIMINALS"),
+            headers=False,
+            cookies=False,
+            sign=False,
+        ) as r:
+            content = r.json_()
+            static_param = content["static_param"]
+            fmt = content["format"]
+            checksum_indexes = content["checksum_indexes"]
+            checksum_constant = content["checksum_constant"]
+            return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
 def make_headers():

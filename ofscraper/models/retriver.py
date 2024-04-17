@@ -33,7 +33,9 @@ async def get_models() -> list:
 async def get_via_list(count):
     out = []
     active_subscriptions = await subscriptions.get_subscriptions(count[0])
-    expired_subscriptions = await subscriptions.get_subscriptions(count[1], account="expired")
+    expired_subscriptions = await subscriptions.get_subscriptions(
+        count[1], account="expired"
+    )
     console.get_shared_console().print(
         "[yellow]Warning: Numbering on OF site can be iffy\nExample Including deactived accounts in expired\nSee: https://of-scraper.gitbook.io/of-scraper/faq#number-of-users-doesnt-match-account-number[/yellow]"
     )

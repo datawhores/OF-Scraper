@@ -13,7 +13,6 @@ r"""
 
 import asyncio
 import logging
-import traceback
 
 from rich.progress import (
     BarColumn,
@@ -23,31 +22,21 @@ from rich.progress import (
     TextColumn,
 )
 from rich.style import Style
-from tenacity import (
-    AsyncRetrying,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_random,
-)
 
 import ofscraper.api.archive as archive
 import ofscraper.api.labels as labels_api
 import ofscraper.api.pinned as pinned
 import ofscraper.api.timeline as timeline
-import ofscraper.classes.labels as labels
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionbuilder as sessionbuilder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.system as system
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 from ofscraper.utils.context.run_async import run
 
-sem = semaphoreDelayed(1)
 log = logging.getLogger("shared")
 
 
@@ -57,7 +46,12 @@ async def get_posts(model_id, username):
     final_post_areas = set(areas.get_like_area())
     tasks = []
     with progress_utils.setup_api_split_progress_live():
-        async with sessionbuilder.sessionBuilder() as c:
+        async with sessionManager.sessionManager(
+            sem=constants.getattr("LIKE_MAX_SEMS"),
+            retries=constants.getattr("API_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        ) as c:
             while True:
                 max_count = min(
                     constants.getattr("API_MAX_AREAS"),
@@ -172,19 +166,17 @@ def get_post_ids(posts: list) -> list:
     return list(map(lambda x: x.id, posts))
 
 
-def like(model_id, username, ids: list):
-    _like(model_id, username, ids, True)
+def like(model_id, ids: list):
+    _like(model_id, ids, True)
 
 
-def unlike(model_id, username, ids: list):
-    _like(model_id, username, ids, False)
+def unlike(model_id, ids: list):
+    _like(model_id, ids, False)
 
 
 @run
-async def _like(model_id, username, ids: list, like_action: bool):
+async def _like(model_id, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
-    global sem
-    sem.delay = 3
     with Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
@@ -192,7 +184,13 @@ async def _like(model_id, username, ids: list, like_action: bool):
         MofNCompleteColumn(),
         console=console.get_shared_console(),
     ) as overall_progress:
-        async with sessionbuilder.sessionBuilder() as c:
+        async with sessionManager.sessionManager(
+            delay=3,
+            sem=1,
+            retries=constants.getattr("API_LIKE_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        ) as c:
             tasks = []
             task1 = overall_progress.add_task(f"{title} posts...\n", total=len(ids))
 
@@ -207,44 +205,17 @@ async def _like(model_id, username, ids: list, like_action: bool):
                 )
 
                 if count + 1 % 60 == 0 and count + 1 % 50 == 0:
-                    sem.delay = 15
+                    c.delay = 15
                 elif count + 1 % 60 == 0:
-                    sem.delay = 3
+                    c.delay = 3
                 elif count + 1 % 50 == 0:
-                    sem.delay = 30
+                    c.delay = 30
 
                 overall_progress.update(task1, advance=1, refresh=True)
 
 
 async def _like_request(c, id, model_id):
-    global sem
-    async for _ in AsyncRetrying(
-        retry=retry_if_not_exception_type(KeyboardInterrupt),
-        stop=stop_after_attempt(constants.getattr("NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN"),
-            max=constants.getattr("OF_MAX"),
-        ),
-        reraise=True,
-    ):
-        with _:
-            await sem.acquire()
-            try:
-                async with c.requests(
-                    constants.getattr("favoriteEP").format(id, model_id), "post"
-                )() as r:
-                    if r.ok:
-                        return id
-                    else:
-                        log.debug(
-                            f"[bold]timeline response status code:[/bold]{r.status}"
-                        )
-                        log.debug(f"[bold]timeline response:[/bold] {await r.text_()}")
-                        log.debug(f"[bold]timeline headers:[/bold] {r.headers}")
-                        r.raise_for_status()
-            except Exception as E:
-                log.traceback_(E)
-                log.traceback_(traceback.format_exc())
-                raise E
-            finally:
-                sem.release()
+    async with c.requests_async(
+        constants.getattr("favoriteEP").format(id, model_id), "post"
+    ) as _:
+        pass

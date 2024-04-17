@@ -47,6 +47,7 @@ def model_selector(models_) -> bool:
         altx=prompt_helpers.model_funct,
         altd=prompt_helpers.model_details,
         validate=prompt_validators.emptyListValidator(),
+        additional_keys={"Alt-B": prompt_helpers.model_select_funct},
         prompt="Filter: ",
         message="Which models do you want to scrape\n:",
         info=True,
