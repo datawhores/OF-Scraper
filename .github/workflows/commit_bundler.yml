@@ -95,8 +95,8 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-          name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+            name: ofscraper_linux
+            path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
 
       - name: create zip
         uses: addnab/docker-run-action@v3
@@ -128,8 +128,8 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-          name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
+            name: ofscraper_linux_zip
+            path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -202,8 +202,8 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+            name: ofscraper_windows_zip
+            path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
 
   windows_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -356,8 +356,8 @@ jobs:
           action: actions/upload-artifact@v4
           attempt_limit: 3
           with: |
-          name: ofscraper_macos
-          path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+            name: ofscraper_macos
+            path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
       - name: create-dir
         id: create-dir
         run: |
@@ -387,8 +387,8 @@ jobs:
         with:
           action: actions/upload-artifact@v4
           with: |
-          name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
+            name: ofscraper_macos_zip
+            path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
