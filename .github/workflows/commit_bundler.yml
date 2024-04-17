@@ -330,7 +330,7 @@ jobs:
             overwrite: true
 
 
-  mac:
+  mac_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version,get_commit]
     runs-on: macos-latest
@@ -408,6 +408,55 @@ jobs:
             name: ofscraper_macos_${{needs.get_commit.outputs.short}}
             path: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}"
             overwrite: true
+
+  mac_dir:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version,get_commit]
+    runs-on: macos-latest
+    name: create mac release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: list files
+        run: ls -d $PWD/*
+      - name: list files2
+        run: ls -d $PWD/ofscraper/*
+
+      - name: replace version.py
+        uses: Wandalen/wretry.action@master
+
+        with:
+          action: actions/download-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_version_${{needs.get_commit.outputs.short}}
+            path: ofscraper
+      - name: Set up Python 3.11.5
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.5"
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: |
+          source .venv/bin/activate
+          pip install . -vvv
+          deactivate
+      - name: Install pyinstaller
+        run: |
+          source .venv/bin/activate
+          pip install pyinstaller==6.4.0
+          deactivate
+      - name: test ofscraper
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
       - name: create-dir
         id: create-dir
         run: |
@@ -440,12 +489,34 @@ jobs:
             name: ofscraper_macos_zip_${{needs.get_commit.outputs.short}}
             path: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}.zip"
             overwrite: true
+          
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     name: publish
-    needs: [mac, windows_dir, windows_file, linux,get_commit]
+    needs: [mac_file,mac_dir, windows_dir, windows_file, linux_file,linux_dir,get_commit]
     permissions:
       contents: write
     steps:
