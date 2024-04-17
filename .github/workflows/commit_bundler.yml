@@ -1,7 +1,24 @@
 on:
   push:
+
 jobs:
+  get_commit:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    runs-on: ubuntu-20.04
+    outputs:
+      commit: ${{ steps.commit.outputs.commit}}
+      short: ${{ steps.commit.outputs.short}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
   create_version:
+    needs: [get_commit]
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-20.04
     name: create version doc
@@ -11,6 +28,9 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -18,7 +38,7 @@ jobs:
       - name: install dunamai
         run: pip install dunamai
       - name: print version
-        run: dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))"
+        run: dun amai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))"
       - name: replace_version
         run: |
           sed -i -e s/'[^ ]*hardcoded__.*None'/__hardcoded__="\"$(dunamai from git --format "{base}+{branch}.{commit}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")\""/ ofscraper/__version__.py
@@ -30,7 +50,7 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            name: ofscraper_version
+            name: ofscraper_version_${{needs.get_commit.outputs.commit}}
             path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
             overwrite: true
   #       - name: list files 1
@@ -43,7 +63,7 @@ jobs:
   #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
   linux:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version]
+    needs: [create_version,get_commit]
     runs-on: ubuntu-20.04
     name: create linux release
     steps:
@@ -55,9 +75,6 @@ jobs:
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
         with:
@@ -86,7 +103,7 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}" --onefile
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.commit}}" --onefile
             echo "list files dir"
             ls dist
 
@@ -96,8 +113,8 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            name: ofscraper_linux
-            path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
+            name: ofscraper_linux_${{needs.get_commit.outputs.commit}}
+            path: "dist/ofscraper_linux_${{needs.get_commit.outputs.commit}}"
             overwrite: true
 
       - name: create zip
@@ -120,23 +137,23 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ steps.commit.outputs.short}}"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_commit.outputs.commit}}"
             echo "list one dir"
             ls dist
-            zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
+            zip -r "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip" "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
       - name: upload one file
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            name: ofscraper_linux_zip
-            path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
+            name: "ofscraper_linux_zip_${{needs.get_commit.outputs.commit}}"
+            path: "dist/ofscraper_linux_${{needs.get_commit.outputs.commit}}.zip"
             overwrite: true
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version]
+    needs: [create_version,get_commit]
     runs-on: windows-latest
     name: create windows release dir
     steps:
@@ -157,7 +174,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name: ofscraper_version
+            name: ofscraper_version_${{needs.get_commit.outputs.commit}}
             path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
@@ -187,17 +204,17 @@ jobs:
         id: create-dir
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths . --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_commit.outputs.short}}" --paths . --clean --log DEBUG
         continue-on-error: true
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{steps.commit.outputs.short}}" --paths ofscraper --clean --log DEBUG
+          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{needs.get_commit.outputs.short}}" --paths ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
-          dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+          files: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}"
+          dest: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
 
@@ -205,13 +222,13 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            name: ofscraper_windows_zip
-            path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+            name: ofscraper_windows_zip_${{needs.get_commit.outputs.commit}}
+            path: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.zip"
             overwrite: true
 
   windows_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version]
+    needs: [create_version,get_commit]
     runs-on: windows-latest
     name: create windows release file
     steps:
@@ -223,16 +240,14 @@ jobs:
         run: ls .
       - name: list files2
         run: ls ofscraper
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
+
       - name: replace version.py
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name: ofscraper_version
+            name: ofscraper_version_${{needs.get_commit.outputs.commit}}
             path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
@@ -260,33 +275,33 @@ jobs:
         id: create-one-file
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{needs.get_commit.outputs.commit}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ steps.commit.outputs.short}}" -p ofscraper --clean --log DEBUG
+          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_commit.outputs.commit}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_windows_${{steps.commit.outputs.short}}"
-          dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
+          files: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}"
+          dest: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
-            name: ofscraper_windows
+            path: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.zip"
+            name: ofscraper_windows_${{needs.get_commit.outputs.commit}}
             overwrite: true
 
 
   mac:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-    needs: [create_version]
+    needs: [create_version,get_commit]
     runs-on: macos-latest
     name: create mac release
     steps:
@@ -298,9 +313,7 @@ jobs:
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
+
       - name: replace version.py
         uses: Wandalen/wretry.action@master
 
@@ -308,7 +321,7 @@ jobs:
           action: actions/download-artifact@v4
           attempt_limit: 3
           with: |
-            name: ofscraper_version
+            name: ofscraper_version_${{needs.get_commit.outputs.commit}}
             path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
@@ -341,7 +354,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           export PATH=$PATH:/usr/local/bin
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_commit.outputs.commit}}"
           deactivate
         continue-on-error: true
       - name: create-one-file2
@@ -351,7 +364,7 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_commit.outputs.commit}}"
           deactivate
 
       - name: upload one file
@@ -361,8 +374,8 @@ jobs:
           action: actions/upload-artifact@v4
           attempt_limit: 3
           with: |
-            name: ofscraper_macos
-            path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+            name: ofscraper_macos_${{needs.get_commit.outputs.commit}}
+            path: "dist/ofscraper_macos_${{needs.get_commit.outputs.commit}}"
             overwrite: true
       - name: create-dir
         id: create-dir
@@ -370,7 +383,7 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{needs.get_commit.outputs.commit}}"
           deactivate
         continue-on-error: true
       - name: create-dir2
@@ -380,12 +393,12 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{needs.get_commit.outputs.commit}}"
           deactivate
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
-          dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
+          files: "dist/ofscraper_macos_${{needs.get_commit.outputs.commit}}"
+          dest: "dist/ofscraper_macos_${{needs.get_commit.outputs.commit}}.zip"
 
       - name: upload one file
         uses: Wandalen/wretry.action@master
@@ -393,15 +406,15 @@ jobs:
         with:
           action: actions/upload-artifact@v4
           with: |
-            name: ofscraper_macos_zip
-            path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
+            name: ofscraper_macos_zip_${{needs.get_commit.outputs.commit}}
+            path: "dist/ofscraper_macos_${{needs.get_commit.outputs.short}}.zip"
             overwrite: true
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     name: publish
-    needs: [mac, windows_dir, windows_file, linux]
+    needs: [mac, windows_dir, windows_file, linux,get_commit]
     permissions:
       contents: write
     steps:
@@ -412,7 +425,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_linux
+            name:  ofscraper_linux_${{needs.get_commit.outputs.commit}}
       - name: download linux zip
         uses: Wandalen/wretry.action@master
 
@@ -420,7 +433,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_linux_zip
+            name:  ofscraper_linux_zip_${{needs.get_commit.outputs.commit}}
       - name: download mac
         uses: Wandalen/wretry.action@master
 
@@ -428,7 +441,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_macos
+            name:  ofscraper_macos_${{needs.get_commit.outputs.commit}}
       - name: download mac zip
         uses: Wandalen/wretry.action@master
 
@@ -436,7 +449,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_macos_zip
+            name:  ofscraper_macos_zip_${{needs.get_commit.outputs.commit}}
       - name: download windows
         uses: Wandalen/wretry.action@master
 
@@ -452,10 +465,8 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_windows_zip
-      - name: commit
-        uses: pr-mpt/actions-commit-hash@v2
-        id: commit
+            name:  ofscraper_windows_zip_${{needs.get_commit.outputs.commit}}
+
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y.%m.%d')_$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
@@ -464,10 +475,10 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
-          tag: "${{steps.commit.outputs.short}}"
+          tag: "${{needs.get_commit.outputs.short}}"
           name: ${{env.name}}
           body: ${{env.body}}
           commit: "${{steps.commit.outputs.long}}"
         env:
-          name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }}_${{ steps.commit.outputs.short}}_package"
+          name: "${{steps.date.outputs.date}}_${{ github.head_ref || github.ref_name }}_${{needs.get_commit.outputs.commit}}_package"
           body: "This is a auto generated release created from commit ${{ steps.commit.outputs.hash}}"
