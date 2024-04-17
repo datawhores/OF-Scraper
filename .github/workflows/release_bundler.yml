@@ -95,6 +95,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
@@ -128,7 +129,7 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_date.outputs.date}}" --onefile
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{inputs.version}} --onefile
             echo "list files dir"
             ls dist
 
@@ -139,7 +140,7 @@ jobs:
           action: actions/upload-artifact@v4
           with: |
             name: ofscraper_linux_${{needs.get_date.outputs.date}}
-            path: "dist/ofscraper_linux_${{needs.get_date.outputs.date}}"
+            path: "dist/ofscraper_linux_${{inputs.version}}"
             overwrite: true
 
   linux_dir:
@@ -153,6 +154,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
@@ -187,10 +189,10 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_date.outputs.date}}"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{inputs.version}}"
             echo "list one dir"
             ls dist
-            zip -r "dist/ofscraper_linux_${{needs.get_date.outputs.date}}.zip" "dist/ofscraper_linux_${{needs.get_date.outputs.date}}"
+            zip -r "dist/ofscraper_linux_${{inputs.ref}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload one file
         uses: Wandalen/wretry.action@master
         with:
@@ -198,7 +200,7 @@ jobs:
           action: actions/upload-artifact@v4
           with: |
             name: "ofscraper_linux_zip_${{needs.get_date.outputs.date}}"
-            path: "dist/ofscraper_linux_${{needs.get_date.outputs.date}}.zip"
+            path: "dist/ofscraper_linux_${{inputs.version}}.zip"
             overwrite: true
 
   windows_dir:
@@ -212,6 +214,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls .
@@ -262,11 +265,11 @@ jobs:
         if: steps.create-dir.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{needs.get_date.outputs.date}}" --paths ofscraper --clean --log DEBUG
+          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{inputs.version}}" --paths ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}"
-          dest: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+          files: "dist/ofscraper_windows_${{inputs.version}}"
+          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
 
@@ -275,7 +278,7 @@ jobs:
           action: actions/upload-artifact@v4
           with: |
             name: ofscraper_windows_zip_${{needs.get_date.outputs.date}}
-            path: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+            path: "dist/ofscraper_windows_${{inputs.version}}.zip"
             overwrite: true
 
   windows_file:
@@ -289,6 +292,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls .
@@ -329,26 +333,26 @@ jobs:
         id: create-one-file
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{needs.get_date.outputs.date}}" -p ofscraper --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{inputs.version}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_date.outputs.date}}" -p ofscraper --clean --log DEBUG
+          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}"
-          dest: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+          files: "dist/ofscraper_windows_${{inputs.version}}"
+          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            path: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+            path: "dist/ofscraper_windows_${{inputs.version}}.zip"
             name: ofscraper_windows_${{needs.get_date.outputs.date}}
             overwrite: true
 
@@ -363,6 +367,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
@@ -409,7 +414,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           export PATH=$PATH:/usr/local/bin
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{inputs.version}}"
           deactivate
         continue-on-error: true
       - name: create-one-file2
@@ -419,7 +424,7 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
+          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{inputs.version}}"
           deactivate
 
       - name: upload one file
@@ -430,7 +435,7 @@ jobs:
           attempt_limit: 3
           with: |
             name: ofscraper_macos_${{needs.get_date.outputs.date}}
-            path: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}"
+            path: "dist/ofscraper_macos_${{inputs.version}}"
             overwrite: true
 
   mac_dir:
@@ -444,6 +449,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
@@ -489,7 +495,7 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{inputs.version}}"
           deactivate
         continue-on-error: true
       - name: create-dir2
@@ -499,12 +505,12 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
+          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{inputs.version}}"
           deactivate
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}"
-          dest: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}.zip"
+          dest: "dist/ofscraper_macos_${{inputs.version}}.zip"
 
       - name: upload one file
         uses: Wandalen/wretry.action@master
@@ -513,7 +519,7 @@ jobs:
           action: actions/upload-artifact@v4
           with: |
             name: ofscraper_macos_zip_${{needs.get_date.outputs.date}}
-            path: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}.zip"
+            path: "dist/ofscraper_macos_${{inputs.version}}.zip"
             overwrite: true
 
 
