@@ -548,7 +548,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_linux
+            name:  ofscraper_linux_${{needs.get_date.outputs.date}}
       - name: download linux zip
         uses: Wandalen/wretry.action@master
 
@@ -556,7 +556,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_linux_zip
+            name:  ofscraper_linux_zip_${{needs.get_date.outputs.date}}
       - name: download mac
         uses: Wandalen/wretry.action@master
 
@@ -564,7 +564,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_macos
+            name:  ofscraper_macos_${{needs.get_date.outputs.date}}
       - name: download mac zip
         uses: Wandalen/wretry.action@master
 
@@ -572,7 +572,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_macos_zip
+            name:  ofscraper_macos_zip_${{needs.get_date.outputs.date}}
       - name: download windows
         uses: Wandalen/wretry.action@master
 
@@ -580,7 +580,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_windows
+            name:  ofscraper_windows_${{needs.get_date.outputs.date}}
       - name: download windows zip
         uses: Wandalen/wretry.action@master
 
@@ -588,7 +588,7 @@ jobs:
           attempt_limit: 3
           action: actions/download-artifact@v4
           with: |
-            name:  ofscraper_windows_zip
+            name:  ofscraper_windows_zip_${{needs.get_date.outputs.date}}
 
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper
