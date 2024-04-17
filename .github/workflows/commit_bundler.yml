@@ -28,7 +28,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           with: |
           name: ofscraper_version
           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
@@ -61,7 +61,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name: ofscraper_version
             path: ofscraper
@@ -93,7 +93,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           with: |
           name: ofscraper_linux
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
@@ -126,7 +126,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           with: |
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
@@ -152,7 +152,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name: ofscraper_version
             path: ofscraper
@@ -200,7 +200,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           with: |
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
@@ -226,7 +226,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name: ofscraper_version
             path: ofscraper
@@ -273,7 +273,7 @@ jobs:
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           with: |
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
@@ -299,7 +299,7 @@ jobs:
         uses: Wandalen/wretry.action@master
 
         with:
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           attempt_limit: 3
           with: |
             name: ofscraper_version
@@ -352,7 +352,7 @@ jobs:
         uses: Wandalen/wretry.action@master
 
         with:
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           attempt_limit: 3
           with: |
           name: ofscraper_macos
@@ -384,7 +384,7 @@ jobs:
         uses: Wandalen/wretry.action@master
 
         with:
-          uses: actions/upload-artifact@v4
+          action: actions/upload-artifact@v4
           with: |
           name: ofscraper_macos_zip
           path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
@@ -402,7 +402,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name:  ofscraper_linux
       - name: download linux zip
@@ -410,7 +410,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name:  ofscraper_linux_zip
       - name: download mac
@@ -418,7 +418,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name:  ofscraper_macos
       - name: download mac zip
@@ -426,7 +426,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name:  ofscraper_macos_zip
       - name: download windows
@@ -434,7 +434,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name:  ofscraper_windows
       - name: download windows zip
@@ -442,7 +442,7 @@ jobs:
 
         with:
           attempt_limit: 3
-          uses: actions/download-artifact@v4
+          action: actions/download-artifact@v4
           with: |
             name:  ofscraper_windows_zip
       - name: commit
