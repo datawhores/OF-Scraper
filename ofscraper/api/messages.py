@@ -41,13 +41,12 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         if not read_args.retriveArgs().no_cache
         else []
     )
-    msg_str= ""
-    for post in oldmessages:
-        msg_str += f"oldmessage: {post}\n\n",
 
     log.trace(
-        "oldmessages {posts}".format(
-            posts=msg_str
+        "oldmessage {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
+            )
         )
     )
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
@@ -177,12 +176,11 @@ async def process_tasks(tasks, model_id):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    msg_str= ""
-    for post in responseArray:
-        msg_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(
         f"{common_logs.FINAL_RAW.format('Messages')}".format(
-            posts=msg_str
+            posts="\n\n".join(
+                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
+            )
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Messages')} {len(responseArray)}")
