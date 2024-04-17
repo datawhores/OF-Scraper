@@ -26,6 +26,7 @@ jobs:
         run: cat ofscraper/__version__.py
       - name: upload file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -58,6 +59,7 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
@@ -89,6 +91,7 @@ jobs:
 
       - name: upload one file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -123,6 +126,7 @@ jobs:
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -148,6 +152,7 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
@@ -194,6 +199,7 @@ jobs:
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -219,6 +225,7 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
@@ -270,6 +277,7 @@ jobs:
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -295,6 +303,7 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
@@ -346,6 +355,7 @@ jobs:
 
       - name: upload one file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -376,6 +386,7 @@ jobs:
 
       - name: upload one file
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/upload-artifact@v4
           with: |
@@ -392,36 +403,42 @@ jobs:
     steps:
       - name: download linux
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_linux
       - name: download linux zip
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_linux_zip      
       - name: download mac
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_macos
       - name: download mac zip
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_macos_zip
       - name: download windows
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_windows
       - name: download windows zip
         uses: Wandalen/wretry.action@master
+        attempt: 3
         with:
           uses: actions/download-artifact@v4
           with: |
