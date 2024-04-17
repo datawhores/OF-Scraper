@@ -31,7 +31,6 @@ jobs:
 
 
   get_commit:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-20.04
     outputs:
       long: ${{ steps.commit.outputs.long}}
@@ -83,7 +82,7 @@ jobs:
 
 
   linux_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+
     needs: [create_version, get_date,get_commit]
     runs-on: ubuntu-20.04
     name: create linux release file
@@ -141,7 +140,7 @@ jobs:
             overwrite: true
 
   linux_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+
     needs: [create_version, get_date,get_commit]
     runs-on: ubuntu-20.04
     name: create linux release zip
@@ -200,7 +199,7 @@ jobs:
             overwrite: true
 
   windows_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+
     needs: [create_version, get_date,get_commit]
     runs-on: windows-latest
     name: create windows release zip
@@ -277,7 +276,7 @@ jobs:
             overwrite: true
 
   windows_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+
     needs: [create_version, get_date,get_commit]
     runs-on: windows-latest
     name: create windows release file
@@ -351,7 +350,7 @@ jobs:
             overwrite: true
 
   mac_file:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+
     needs: [create_version, get_date,get_commit]
     runs-on: macos-latest
     name: create mac release file
@@ -432,7 +431,7 @@ jobs:
             overwrite: true
 
   mac_dir:
-    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+
     needs: [create_version, get_date,get_commit]
     runs-on: macos-latest
     name: create mac release zip
