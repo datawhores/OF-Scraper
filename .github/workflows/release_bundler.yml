@@ -42,12 +42,15 @@ jobs:
           sed -i -e s/'[^ ]*hardcoded.*None'/__hardcoded__="\"$(dunamai from git --format "{base}" --pattern "(?P<base>\d+\.\d+\.((\d+\.\w+)|\w+))")\""/ ofscraper/__version__.py
       - name: show file
         run: cat ofscraper/__version__.py
-      - name: upload file
-        uses: actions/upload-artifact@v4
+      - name: upload release file
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
-  #       - name: list files 1
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
+            overwrite: true  #       - name: list files 1
   #         run: ls /home/runner/work/
   #       - name: list files 2
   #         run: ls /home/runner/work/OF-Scraper/
@@ -71,10 +74,13 @@ jobs:
       - name: list files2
         run: ls -d $PWD/ofscraper/*
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
 
       - name: create one file
         uses: addnab/docker-run-action@v3
@@ -99,11 +105,15 @@ jobs:
             pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ inputs.version}}" --onefile
             echo "list files dir"
             ls dist
-      - name: upload one file
-        uses: actions/upload-artifact@v4
+      - name: upload file
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ inputs.version}}"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_linux
+            path: "dist/ofscraper_linux_${{ inputs.version}}"
+            overwrite: true
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -129,10 +139,18 @@ jobs:
             ls dist
             zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload zip
-        uses: actions/upload-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_linux_zip
+            path: "dist/ofscraper_linux_${{ inputs.version}}.zip"
+            overwrite: true
+
+
+
+
   windows_dir:
     needs: [create_version]
     runs-on: windows-latest
@@ -148,10 +166,13 @@ jobs:
         run: ls ofscraper
 
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -191,11 +212,21 @@ jobs:
         with:
           files: "dist/ofscraper_windows_${{inputs.version}}"
           dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v4
+      - name: upload zip
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_windows_zip
+            path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+            overwrite: true
+
+
+
+
+
 
   windows_file:
     needs: [create_version]
@@ -212,10 +243,13 @@ jobs:
         run: ls ofscraper
 
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -251,20 +285,21 @@ jobs:
           .venv\Scripts\activate.bat
           pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ inputs.version}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
-      - name: upload file
-        uses: actions/upload-artifact@v4
-        with:
-          name: ofscraper_windows
-          path: 'dist\ofscraper_windows_${{ inputs.version}}.exe'
       - uses: vimtor/action-zip@v1
         with:
           files: "dist/ofscraper_windows_${{inputs.version}}"
           dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
       - name: upload file
-        uses: actions/upload-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+            name: ofscraper_windows
+            overwrite: true
+
+
 
   mac:
     needs: [create_version]
@@ -281,10 +316,13 @@ jobs:
         run: ls -d $PWD/ofscraper/*
 
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -329,10 +367,14 @@ jobs:
           poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
           deactivate
       - name: upload file
-        uses: actions/upload-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_macos
-          path: "dist/ofscraper_macos_${{ inputs.version}}"
+          action: actions/upload-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_macos
+            path: "dist/ofscraper_macos_${{ inputs.version}}"
+            overwrite: true
       - name: create-dir
         id: create-dir
         run: |
@@ -355,11 +397,18 @@ jobs:
         with:
           files: "dist/ofscraper_macos_${{ inputs.version}}"
           dest: "dist/ofscraper_macos_${{ inputs.version}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v4
+      - name: upload zip
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.version}}.zip"
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_macos_zip
+            path: "dist/ofscraper_macos_${{inputs.version}}.zip"
+            overwrite: true
+
+
+
 
   publish_release:
     runs-on: ubuntu-latest
@@ -368,31 +417,54 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download linux
-        uses: actions/download-artifact@v4
-        with:
-          name: ofscraper_linux
-      - name: Download linux zip
-        uses: actions/download-artifact@v4
-        with:
-          name: ofscraper_linux_zip
+      - name: download linux
+        uses: Wandalen/wretry.action@master
 
-      - name: Download mac
-        uses: actions/download-artifact@v4
         with:
-          name: ofscraper_macos
-      - name: Download mac zip
-        uses: actions/download-artifact@v4
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_linux
+      - name: download linux zip
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos_zip
-      - name: Download windows
-        uses: actions/download-artifact@v4
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_linux_zip
+      - name: download mac
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows
-      - name: Download windows zip
-        uses: actions/download-artifact@v4
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_macos
+      - name: download mac zip
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows_zip
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_macos_zip
+      - name: download windows
+        uses: Wandalen/wretry.action@master
+
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_windows
+      - name: download windows zip
+        uses: Wandalen/wretry.action@master
+
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name:  ofscraper_windows_zip
 
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper
