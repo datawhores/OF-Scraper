@@ -44,6 +44,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{inputs.version}}
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
@@ -57,8 +58,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
           ref: ${{inputs.version}}
-          fetch-tags: ""
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: update line
         run: sed -i -e s/'>=3.7.0,<4'/'>=3.7.0,<3.13'/ pyproject.toml
       - name: Set up Python 3.11.5
@@ -90,6 +92,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -146,6 +150,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -203,6 +209,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls .
       - name: list files2
@@ -278,6 +286,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls .
       - name: list files2
@@ -350,6 +360,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -429,6 +441,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
@@ -565,7 +579,8 @@ jobs:
           omitDraftDuringUpdate: True
           commit: "${{needs.get_commit.outputs.long}}"
 
-  pypi:
+  pypi: 
+    needs: [get_commit]
     if: ${{ inputs.pip}}
     runs-on: ubuntu-latest
     name: create pypi
@@ -574,7 +589,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
           ref: ${{inputs.version}}
+      - run: git checkout ${{needs.get_commit.outputs.long}}  
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
