@@ -343,17 +343,13 @@ jobs:
           .venv\Scripts\activate.bat
           pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
-      - uses: vimtor/action-zip@v1
-        with:
-          files: "dist/ofscraper_windows_${{inputs.version}}"
-          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
         with:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+            path: "dist/ofscraper_windows_${{inputs.version}}"
             name: ofscraper_windows_${{needs.get_date.outputs.date}}
             overwrite: true
 
