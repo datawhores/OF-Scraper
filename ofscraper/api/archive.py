@@ -162,13 +162,13 @@ async def process_tasks(tasks, model_id, after):
 
 
 
-    oldarchive_str = ""
+    archive_str = ""
     for post in responseArray:
-        oldarchive_str += f"oldarchive: {str(post)}\n\n"
+        archive_str += f"archive: {str(post)}\n\n"
 
     log.trace(
         f"{common_logs.FINAL_RAW.format('Archived')}".format(
-            posts=oldarchive_str
+            posts=archive_str
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Archived')} {len(responseArray)}")

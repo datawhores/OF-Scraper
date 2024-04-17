@@ -81,6 +81,18 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
             log.debug(
                 f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
             )
+            story_str= ""
+            for post in stories:
+                oldarchive_str += f"stories {str(post)}\n\n"
+
+            log.trace(
+                "oldarchive {posts}".format(
+                    posts=oldarchive_str
+                )
+            )
+
+
+
             log.trace(
                 "stories: -> stories raw {posts}".format(
                     posts="\n\n".join(
