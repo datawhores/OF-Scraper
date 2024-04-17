@@ -186,7 +186,7 @@ jobs:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version,get_commit]
     runs-on: windows-latest
-    name: create windows release dir
+    name: create windows release zip
     steps:
       - name: Checkout
         uses: actions/checkout@v4
