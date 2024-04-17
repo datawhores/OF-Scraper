@@ -72,3 +72,6 @@ def getNumber(input_):
     if isinstance(input_, str):
         return logging.getLevelName(input_)
     return input_
+
+def log_trace()
+    None
