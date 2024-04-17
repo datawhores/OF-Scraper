@@ -63,7 +63,7 @@ jobs:
   #         run: ls /home/runner/work/OF-Scraper/OF-Scraper
   #       - name: list files 4
   #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
-  linux:
+  linux_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version,get_commit]
     runs-on: ubuntu-20.04
@@ -119,6 +119,29 @@ jobs:
             path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}"
             overwrite: true
 
+  linux_dir:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version,get_commit]
+    runs-on: ubuntu-20.04
+    name: create linux release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: list files
+        run: ls -d $PWD/*
+      - name: list files2
+        run: ls -d $PWD/ofscraper/*
+      - name: replace version.py
+        uses: Wandalen/wretry.action@master
+        with:
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version_${{needs.get_commit.outputs.short}}
+            path: ofscraper
+
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -152,6 +175,12 @@ jobs:
             name: "ofscraper_linux_zip_${{needs.get_commit.outputs.short}}"
             path: "dist/ofscraper_linux_${{needs.get_commit.outputs.short}}.zip"
             overwrite: true
+
+
+
+
+
+
 
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
