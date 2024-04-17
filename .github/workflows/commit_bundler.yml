@@ -26,12 +26,12 @@ jobs:
         run: cat ofscraper/__version__.py
       - name: upload file
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/upload-artifact@v4
           with: |
           name: ofscraper_version
-          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py   
+          path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
   #       - name: list files 1
   #         run: ls /home/runner/work/
   #       - name: list files 2
@@ -59,8 +59,8 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name: ofscraper_version
@@ -91,14 +91,12 @@ jobs:
 
       - name: upload one file
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/upload-artifact@v4
           with: |
           name: ofscraper_linux
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}"
-
-
 
       - name: create zip
         uses: addnab/docker-run-action@v3
@@ -126,13 +124,13 @@ jobs:
             zip -r "dist/ofscraper_linux_${{steps.commit.outputs.short}}.zip" "dist/ofscraper_linux_${{steps.commit.outputs.short}}"
       - name: upload one file
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/upload-artifact@v4
           with: |
           name: ofscraper_linux_zip
           path: "dist/ofscraper_linux_${{ steps.commit.outputs.short}}.zip"
-  
+
   windows_dir:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version]
@@ -152,8 +150,8 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name: ofscraper_version
@@ -199,8 +197,9 @@ jobs:
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/upload-artifact@v4
           with: |
           name: ofscraper_windows_zip
@@ -225,8 +224,8 @@ jobs:
         id: commit
       - name: replace version.py
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name: ofscraper_version
@@ -272,121 +271,123 @@ jobs:
           dest: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
       - name: upload one file
         uses: Wandalen/wretry.action@master
-        attempt: 3
         with:
+          attempt: 3
           uses: actions/upload-artifact@v4
           with: |
           name: ofscraper_windows_zip
           path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
 
-  # mac:
-  #   if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
-  #   needs: [create_version]
-  #   runs-on: macos-latest
-  #   name: create mac release
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: list files
-  #       run: ls -d $PWD/*
-  #     - name: list files2
-  #       run: ls -d $PWD/ofscraper/*
-  #     - name: commit
-  #       uses: pr-mpt/actions-commit-hash@v2
-  #       id: commit
-  #     - name: replace version.py
-  #       uses: Wandalen/wretry.action@master
-  #       attempt: 3
-  #       with:
-  #         uses: actions/download-artifact@v4
-  #         with: |
-  #           name: ofscraper_version
-  #           path: ofscraper
-  #     - name: Set up Python 3.11.5
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.11.5"
-  #     - name: create virtualenv
-  #       run: python3 -m venv .venv
-  #     - name: install poetry
-  #       uses: abatilo/actions-poetry@v2
-  #       with:
-  #         poetry-version: 1.4.1
-  #     - name: Install package
-  #       run: |
-  #         source .venv/bin/activate
-  #         pip install . -vvv
-  #         deactivate
-  #     - name: Install pyinstaller
-  #       run: |
-  #         source .venv/bin/activate
-  #         pip install pyinstaller==6.4.0
-  #         deactivate
-  #     - name: test ofscraper
-  #       run: |
-  #         export PATH=$PATH:/usr/local/bin
-  #         /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
-  #     - name: create-one-file
-  #       id: create-one-file
-  #       run: |
-  #         rm -rf dist
-  #         rm -rf build
-  #         source .venv/bin/activate
-  #         export PATH=$PATH:/usr/local/bin
-  #         pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
-  #         deactivate
-  #       continue-on-error: true
-  #     - name: create-one-file2
-  #       id: create-one-file2
-  #       if: steps.create-one-file.outcome != 'success'
-  #       run: |
-  #         rm -rf dist
-  #         rm -rf build
-  #         source .venv/bin/activate
-  #         poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
-  #         deactivate
+  mac:
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version]
+    runs-on: macos-latest
+    name: create mac release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: list files
+        run: ls -d $PWD/*
+      - name: list files2
+        run: ls -d $PWD/ofscraper/*
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
+      - name: replace version.py
+        uses: Wandalen/wretry.action@master
 
-  #     - name: upload one file
-  #       uses: Wandalen/wretry.action@master
-  #       attempt: 3
-  #       with:
-  #         uses: actions/upload-artifact@v4
-  #         with: |
-  #         name: ofscraper_macos
-  #         path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
-  #     - name: create-dir
-  #       id: create-dir
-  #       run: |
-  #         rm -rf dist
-  #         rm -rf build
-  #         source .venv/bin/activate
-  #         pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
-  #         deactivate
-  #       continue-on-error: true
-  #     - name: create-dir2
-  #       id: create-dir2
-  #       if: steps.create-dir.outcome != 'success'
-  #       run: |
-  #         rm -rf dist
-  #         rm -rf build
-  #         source .venv/bin/activate
-  #         poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
-  #         deactivate
-  #     - uses: vimtor/action-zip@v1
-  #       with:
-  #         files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
-  #         dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
+        with:
+          uses: actions/download-artifact@v4
+          attempt: 3
+          with: |
+            name: ofscraper_version
+            path: ofscraper
+      - name: Set up Python 3.11.5
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.5"
+      - name: create virtualenv
+        run: python3 -m venv .venv
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.4.1
+      - name: Install package
+        run: |
+          source .venv/bin/activate
+          pip install . -vvv
+          deactivate
+      - name: Install pyinstaller
+        run: |
+          source .venv/bin/activate
+          pip install pyinstaller==6.4.0
+          deactivate
+      - name: test ofscraper
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper -h
+      - name: create-one-file
+        id: create-one-file
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          export PATH=$PATH:/usr/local/bin
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          deactivate
+        continue-on-error: true
+      - name: create-one-file2
+        id: create-one-file2
+        if: steps.create-one-file.outcome != 'success'
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          deactivate
 
-  #     - name: upload one file
-  #       uses: Wandalen/wretry.action@master
-  #       attempt: 3
-  #       with:
-  #         uses: actions/upload-artifact@v4
-  #         with: |
-  #         name: ofscraper_macos_zip
-  #         path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
+        with:
+          uses: actions/upload-artifact@v4
+          attempt: 3
+          with: |
+          name: ofscraper_macos
+          path: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+      - name: create-dir
+        id: create-dir
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          deactivate
+        continue-on-error: true
+      - name: create-dir2
+        id: create-dir2
+        if: steps.create-dir.outcome != 'success'
+        run: |
+          rm -rf dist
+          rm -rf build
+          source .venv/bin/activate
+          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ steps.commit.outputs.short}}"
+          deactivate
+      - uses: vimtor/action-zip@v1
+        with:
+          files: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}"
+          dest: "dist/ofscraper_macos_${{ steps.commit.outputs.short}}.zip"
+
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
+        with:
+          uses: actions/upload-artifact@v4
+          with: |
+          name: ofscraper_macos_zip
+          path: "dist/ofscraper_macos_${{steps.commit.outputs.short}}.zip"
 
   publish_release:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -398,43 +399,49 @@ jobs:
     steps:
       - name: download linux
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_linux
       - name: download linux zip
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
-            name:  ofscraper_linux_zip      
+            name:  ofscraper_linux_zip
       - name: download mac
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_macos
       - name: download mac zip
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_macos_zip
       - name: download windows
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_windows
       - name: download windows zip
         uses: Wandalen/wretry.action@master
-        attempt: 3
+
         with:
+          attempt: 3
           uses: actions/download-artifact@v4
           with: |
             name:  ofscraper_windows_zip

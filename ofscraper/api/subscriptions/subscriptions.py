@@ -141,7 +141,7 @@ async def expiredHelper(subscribe_count, c):
 
 async def process_task(tasks):
     output = []
-    seen=set()
+    seen = set()
     while tasks:
         new_tasks = []
         try:
@@ -152,9 +152,9 @@ async def process_task(tasks):
                     result, new_tasks_batch = await task
                     new_tasks.extend(new_tasks_batch)
                     users = [
-                    user
-                    for user in result
-                    if user["id"] not in seen and not seen.add(user["id"])
+                        user
+                        for user in result
+                        if user["id"] not in seen and not seen.add(user["id"])
                     ]
                     output.extend(users)
                 except asyncio.TimeoutError:
