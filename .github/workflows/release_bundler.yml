@@ -349,7 +349,7 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            path: "dist/${{inputs.version}}}"
+            path: "dist/ofscraper_windows_${{inputs.version}}.exe"
             name: ofscraper_windows_${{needs.get_date.outputs.date}}
             overwrite: true
 
