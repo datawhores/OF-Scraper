@@ -193,7 +193,7 @@ jobs:
             pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{inputs.version}}"
             echo "list one dir"
             ls dist
-            zip -r "dist/ofscraper_linux_${{inputs.ref}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
+            zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
       - name: upload one file
         uses: Wandalen/wretry.action@master
         with:
