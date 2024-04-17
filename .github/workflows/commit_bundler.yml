@@ -57,14 +57,6 @@ jobs:
             name: ofscraper_version_${{needs.get_commit.outputs.short}}
             path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
             overwrite: true
-  #       - name: list files 1
-  #         run: ls /home/runner/work/
-  #       - name: list files 2
-  #         run: ls /home/runner/work/OF-Scraper/
-  #       - name: list files 3
-  #         run: ls /home/runner/work/OF-Scraper/OF-Scraper
-  #       - name: list files 4
-  #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
   linux_file:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
     needs: [create_version, get_commit]
