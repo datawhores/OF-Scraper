@@ -11,7 +11,9 @@ r"""
                                                                                       
 """
 
+import functools
 import asyncio
+import time
 import logging
 
 from rich.progress import (
@@ -143,13 +145,13 @@ def get_post_for_like(model_id, username):
 
 
 def filter_for_unfavorited(posts: list) -> list:
-    output = list(filter(lambda x: x.favorited == False, posts))
+    output = list(filter(lambda x: x.favorited == False and x.opened, posts))
     log.debug(f"[bold]Number of unliked post[/bold] {len(output)}")
     return output
 
 
 def filter_for_favorited(posts: list) -> list:
-    output = list(filter(lambda x: x.favorited == True, posts))
+    output = list(filter(lambda x: x.favorited == True and x.opened, posts))
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
@@ -174,8 +176,7 @@ def unlike(model_id, ids: list):
     _like(model_id, ids, False)
 
 
-@run
-async def _like(model_id, ids: list, like_action: bool):
+def _like(model_id, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
     with Progress(
         SpinnerColumn(style=Style(color="blue")),
@@ -184,9 +185,9 @@ async def _like(model_id, ids: list, like_action: bool):
         MofNCompleteColumn(),
         console=console.get_shared_console(),
     ) as overall_progress:
-        async with sessionManager.sessionManager(
-            delay=3,
+        with sessionManager.sessionManager(
             sem=1,
+            backend="httpx",
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
@@ -195,27 +196,28 @@ async def _like(model_id, ids: list, like_action: bool):
             task1 = overall_progress.add_task(f"{title} posts...\n", total=len(ids))
 
             [
-                tasks.append(asyncio.create_task(_like_request(c, id, model_id)))
+                tasks.append(functools.partial(_like_request,c, id, model_id))
                 for id in ids
             ]
-            for count, coro in enumerate(asyncio.as_completed(tasks)):
-                id = await coro
+            sleep_duration = 3
+            for count, func in enumerate(tasks):
+                id = func()
                 log.debug(
                     f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action"
                 )
-
                 if count + 1 % 60 == 0 and count + 1 % 50 == 0:
-                    c.delay = 15
-                elif count + 1 % 60 == 0:
-                    c.delay = 3
-                elif count + 1 % 50 == 0:
-                    c.delay = 30
-
+                    sleep_duration=40
+                elif count % 60 == 0:
+                    sleep_duration = 1  # Divisible by 60 - 1 second sleep
+                elif count % 50 == 0:
+                    sleep_duration = 30  # Divisible by 50 - 30 seconds sleep
                 overall_progress.update(task1, advance=1, refresh=True)
+                time.sleep(sleep_duration)
 
 
-async def _like_request(c, id, model_id):
-    async with c.requests_async(
-        constants.getattr("favoriteEP").format(id, model_id), "post"
+
+def _like_request(c, id, model_id):
+    with c.requests(
+        constants.getattr("favoriteEP").format(id, model_id),method="post"
     ) as _:
-        pass
+        return id
