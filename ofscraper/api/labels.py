@@ -188,11 +188,14 @@ async def process_tasks_labels(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
+
+
+    label_str= ""
+    for post in responseArray:
+        label_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(
         f"{common_logs.FINAL_RAW.format('Labels Names')}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
-            )
+            posts=label_str
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Labels Name')} {len(responseArray)}")
@@ -343,13 +346,13 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             ]
         )
     )
+
+    label_str= ""
+    for post in responseDict:
+        label_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(
         f"{common_logs.FINAL_RAW.format('All Labels Content')}".format(
-            posts="\n\n".join(
-                list(
-                    map(lambda x: f"{common_logs.RAW_INNER} {x}", responseDict.values())
-                )
-            )
+            posts=label_str
         )
     )
 

@@ -130,11 +130,13 @@ async def process_tasks(tasks, model_id, after):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
+
+    timeline_str= ""
+    for post in responseArray:
+        timeline_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(
         f"{common_logs.FINAL_RAW.format('Timeline')}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray))
-            )
+            posts=timeline_str
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Timeline')} {len(responseArray)}")

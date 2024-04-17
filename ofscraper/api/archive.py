@@ -42,7 +42,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 
     oldarchive_str = ""
     for post in oldarchived:
-        oldarchive_str += f"oldarchive: {str(post)}\n\n"
+        oldarchive_str += f"{common_logs.RAW_INNER} {post}\n\n"
 
     log.trace(
         "oldarchive {posts}".format(
@@ -70,18 +70,12 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
 
     oldarchive_str = ""
     for post in oldarchived:
-        oldarchive_str += f"oldarchive: {str(post)}\n\n"
+        oldarchive_str += f"{common_logs.RAW_INNER} {post}\n\n"
 
     log.trace(
         "oldarchive {posts}".format(
             posts=oldarchive_str
-        )
-    )
-    log.trace(
-        "oldarchive {posts}".format(
-            posts=oldarchive_str
-        )
-    )
+        ))
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
@@ -164,7 +158,7 @@ async def process_tasks(tasks, model_id, after):
 
     archive_str = ""
     for post in responseArray:
-        archive_str += f"archive: {str(post)}\n\n"
+        archive_str += f"{common_logs.RAW_INNER} {post}\n\n"
 
     log.trace(
         f"{common_logs.FINAL_RAW.format('Archived')}".format(
