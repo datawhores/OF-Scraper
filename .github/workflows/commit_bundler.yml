@@ -280,7 +280,7 @@ jobs:
           action: actions/upload-artifact@v4
           with: |
             path: "dist/ofscraper_windows_${{steps.commit.outputs.short}}.zip"
-            name: ofscraper_windows_zip
+            name: ofscraper_windows
             overwrite: true
 
 
