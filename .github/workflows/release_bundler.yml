@@ -18,7 +18,18 @@ on:
         required: true
         type: boolean
 jobs:
+  get_date:
+    runs-on: ubuntu-20.04
+    if: ${{ inputs.files}}
+    name: create version doc
+    steps:
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y.%m.%d')_$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
+    outputs:
+      date: ${{ steps.date.outputs.date}}
   create_version:
+    needs: [get_date]
     runs-on: ubuntu-20.04
     if: ${{ inputs.files}}
     name: create version doc
@@ -45,37 +56,33 @@ jobs:
       - name: upload file
         uses: actions/upload-artifact@v3
         with:
-          name: ofscraper_version
+          name: ofscraper_version_${{needs.get_date.outputs.date}}
           path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
-  #       - name: list files 1
-  #         run: ls /home/runner/work/
-  #       - name: list files 2
-  #         run: ls /home/runner/work/OF-Scraper/
-  #       - name: list files 3
-  #         run: ls /home/runner/work/OF-Scraper/OF-Scraper
-  #       - name: list files 4
-  #         run: ls /home/runner/work/OF-Scraper/OF-Scraper/ofscraper
+
+
 
   linux_file:
-    needs: [create_version]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version, get_date]
     runs-on: ubuntu-20.04
-    name: create linux release
+    name: create linux release file
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
-
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version_${{needs.get_date.outputs.date}}
+            path: ofscraper
       - name: create one file
         uses: addnab/docker-run-action@v3
         with:
@@ -96,34 +103,43 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "install run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ inputs.version}}" --onefile
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_date.outputs.date}}" --onefile
             echo "list files dir"
             ls dist
+
       - name: upload one file
-        uses: actions/upload-artifact@v3
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_linux
-          path: "dist/ofscraper_linux_${{ inputs.version}}"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_linux_${{needs.get_date.outputs.date}}
+            path: "dist/ofscraper_linux_${{needs.get_date.outputs.date}}"
+            overwrite: true
 
   linux_dir:
-    needs: [create_version]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version, get_date]
     runs-on: ubuntu-20.04
-    name: create linux release
+    name: create linux release zip
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{inputs.version}}
       - name: list files
         run: ls -d $PWD/*
       - name: list files2
         run: ls -d $PWD/ofscraper/*
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version_${{needs.get_date.outputs.date}}
+            path: ofscraper
+
       - name: create zip
         uses: addnab/docker-run-action@v3
         with:
@@ -144,20 +160,25 @@ jobs:
             echo "test ofscraper"
             ofscraper -h
             echo "run pyinstaller dir"
-            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{ inputs.version}}"
+            pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{needs.get_date.outputs.date}}"
             echo "list one dir"
             ls dist
-            zip -r "dist/ofscraper_linux_${{inputs.version}}.zip" "dist/ofscraper_linux_${{inputs.version}}"
-      - name: upload zip
-        uses: actions/upload-artifact@v3
+            zip -r "dist/ofscraper_linux_${{needs.get_date.outputs.date}}.zip" "dist/ofscraper_linux_${{needs.get_date.outputs.date}}"
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_linux_zip
-          path: "dist/ofscraper_linux_${{ inputs.version}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: "ofscraper_linux_zip_${{needs.get_date.outputs.date}}"
+            path: "dist/ofscraper_linux_${{needs.get_date.outputs.date}}.zip"
+            overwrite: true
 
   windows_dir:
-    needs: [create_version]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version, get_date]
     runs-on: windows-latest
-    name: create windows release dir
+    name: create windows release zip
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -167,12 +188,17 @@ jobs:
         run: ls .
       - name: list files2
         run: ls ofscraper
-
+      - name: commit
+        uses: pr-mpt/actions-commit-hash@v2
+        id: commit
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version_${{needs.get_date.outputs.date}}
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -201,25 +227,31 @@ jobs:
         id: create-dir
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{inputs.version}}" --paths . --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_date.outputs.date}}" --paths . --clean --log DEBUG
         continue-on-error: true
       - name: create-dir2
         if: steps.create-dir.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{inputs.version}}" --paths ofscraper --clean --log DEBUG
+          pyinstaller .venv/Scripts/ofscraper --collect-submodules ofscrape --name "ofscraper_windows_${{needs.get_date.outputs.date}}" --paths ofscraper --clean --log DEBUG
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_windows_${{inputs.version}}"
-          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
+          files: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}"
+          dest: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_windows_zip_${{needs.get_date.outputs.date}}
+            path: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+            overwrite: true
 
   windows_file:
-    needs: [create_version]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version, get_date]
     runs-on: windows-latest
     name: create windows release file
     steps:
@@ -233,10 +265,13 @@ jobs:
         run: ls ofscraper
 
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_version
-          path: ofscraper
+          attempt_limit: 3
+          action: actions/download-artifact@v4
+          with: |
+            name: ofscraper_version_${{needs.get_date.outputs.date}}
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -255,7 +290,7 @@ jobs:
       - name: Install pyinstaller
         run: |
           .venv\Scripts\activate.bat
-           pip install pyinstaller==6.4.0
+            pip install pyinstaller==6.4.0
           .venv\Scripts\deactivate.bat
       - name: test ofscraper
         run: ofscraper -h
@@ -263,34 +298,34 @@ jobs:
         id: create-one-file
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{ inputs.version}}" -p ofscraper --clean --log DEBUG
+          pyinstaller ofscraper\__main__.py --collect-submodules ofscraper --onefile --name "ofscraper_windows_${{needs.get_date.outputs.date}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
         continue-on-error: true
       - name: create-one-file2
         if: steps.create-one-file.outcome != 'success'
         run: |
           .venv\Scripts\activate.bat
-          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{ inputs.version}}" -p ofscraper --clean --log DEBUG
+          pyinstaller .venv/Scripts/ofscraper --onefile --collect-submodules ofscraper --name "ofscraper_windows_${{needs.get_date.outputs.date}}" -p ofscraper --clean --log DEBUG
           .venv\Scripts\deactivate.bat
-      - name: upload file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ofscraper_windows
-          path: 'dist\ofscraper_windows_${{ inputs.version}}.exe'
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_windows_${{inputs.version}}"
-          dest: "dist/ofscraper_windows_${{inputs.version}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
+          files: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}"
+          dest: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
         with:
-          name: ofscraper_windows_zip
-          path: "dist/ofscraper_windows_${{inputs.version}}.zip"
+          attempt_limit: 3
+          action: actions/upload-artifact@v4
+          with: |
+            path: "dist/ofscraper_windows_${{needs.get_date.outputs.date}}.zip"
+            name: ofscraper_windows_${{needs.get_date.outputs.date}}
+            overwrite: true
 
   mac_file:
-    needs: [create_version]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version, get_date]
     runs-on: macos-latest
-    name: create mac release
+    name: create mac release file
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -302,10 +337,14 @@ jobs:
         run: ls -d $PWD/ofscraper/*
 
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_version
-          path: ofscraper
+          action: actions/download-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_version_${{needs.get_date.outputs.date}}
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -337,7 +376,7 @@ jobs:
           rm -rf build
           source .venv/bin/activate
           export PATH=$PATH:/usr/local/bin
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --collect-submodules /Users/runner/work/OF-Scraper/OF-Scraper/.venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
           deactivate
         continue-on-error: true
       - name: create-one-file2
@@ -347,18 +386,25 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{ inputs.version}}"
+          poetry run pyinstaller .venv/bin/ofscraper --onefile --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
           deactivate
-      - name: upload file
-        uses: actions/upload-artifact@v3
+
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos
-          path: "dist/ofscraper_macos_${{ inputs.version}}"
+          action: actions/upload-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_macos_${{needs.get_date.outputs.date}}
+            path: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}"
+            overwrite: true
 
   mac_dir:
-    needs: [create_version]
+    if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
+    needs: [create_version, get_date]
     runs-on: macos-latest
-    name: create mac release
+    name: create mac release zip
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -370,10 +416,14 @@ jobs:
         run: ls -d $PWD/ofscraper/*
 
       - name: replace version.py
-        uses: actions/download-artifact@v4
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_version
-          path: ofscraper
+          action: actions/download-artifact@v4
+          attempt_limit: 3
+          with: |
+            name: ofscraper_version_${{needs.get_date.outputs.date}}
+            path: ofscraper
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
@@ -404,7 +454,7 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{ inputs.version}}"
+          pyinstaller /Users/runner/work/OF-Scraper/OF-Scraper/ofscraper/__main__.py --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
           deactivate
         continue-on-error: true
       - name: create-dir2
@@ -414,17 +464,23 @@ jobs:
           rm -rf dist
           rm -rf build
           source .venv/bin/activate
-          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{ inputs.version}}"
+          poetry run pyinstaller .venv/bin/ofscraper --name "ofscraper_macos_${{needs.get_date.outputs.date}}"
           deactivate
       - uses: vimtor/action-zip@v1
         with:
-          files: "dist/ofscraper_macos_${{ inputs.version}}"
-          dest: "dist/ofscraper_macos_${{ inputs.version}}.zip"
-      - name: upload file
-        uses: actions/upload-artifact@v3
+          files: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}"
+          dest: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}.zip"
+
+      - name: upload one file
+        uses: Wandalen/wretry.action@master
+
         with:
-          name: ofscraper_macos_zip
-          path: "dist/ofscraper_macos_${{inputs.version}}.zip"
+          action: actions/upload-artifact@v4
+          with: |
+            name: ofscraper_macos_zip_${{needs.get_date.outputs.date}}
+            path: "dist/ofscraper_macos_${{needs.get_date.outputs.date}}.zip"
+            overwrite: true
+
 
 
 
@@ -478,9 +534,7 @@ jobs:
 
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
+
 
       - name: upload package
         uses: ncipollo/release-action@v1
