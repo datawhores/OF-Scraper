@@ -52,7 +52,7 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     log.trace(
         "oldtimeline {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"oldtimeline: {str(x)}", oldtimeline))
+                map(lambda x: f"oldtimeline: {str(x)}", oldtimeline)
             )
         )
     )
@@ -100,12 +100,12 @@ async def process_tasks(tasks, model_id, after):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Timeline')}".format(
                             posts="\n\n".join(
-                                list(
+                                
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -156,7 +156,7 @@ async def get_split_array(model_id, username, after):
     log.trace(
         "oldtimeline {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"oldtimeline: {str(x)}", oldtimeline))
+                map(lambda x: f"oldtimeline: {str(x)}", oldtimeline)
             )
         )
     )
@@ -367,12 +367,11 @@ async def scrape_timeline_posts(
                     "{log_id} -> post raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                            list(
                                 map(
                                     lambda x: f"scrapeinfo timeline: {str(x)}",
                                     posts,
                                 )
-                            )
+                            
                         ),
                     )
                 )

@@ -160,12 +160,12 @@ async def process_tasks_labels(tasks):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Label Names')}".format(
                             posts="\n\n".join(
-                                list(
+                                
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -188,14 +188,11 @@ async def process_tasks_labels(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
-
-
-    label_str= ""
-    for post in responseArray:
-        label_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(
         f"{common_logs.FINAL_RAW.format('Labels Names')}".format(
-            posts=label_str
+            posts="\n\n".join(
+                map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
+            )
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Labels Name')} {len(responseArray)}")
@@ -294,12 +291,12 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Label Content')}".format(
                             posts="\n\n".join(
-                                list(
+                                
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         unduped_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -346,13 +343,13 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             ]
         )
     )
-
-    label_str= ""
-    for post in responseDict:
-        label_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(
         f"{common_logs.FINAL_RAW.format('All Labels Content')}".format(
-            posts=label_str
+            posts="\n\n".join(
+                
+                    map(lambda x: f"{common_logs.RAW_INNER} {x}", responseDict.values())
+                
+            )
         )
     )
 
@@ -390,12 +387,12 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                 "{offset} -> {posts}".format(
                     offset=offset,
                     posts="\n\n".join(
-                        list(
+                       
                             map(
                                 lambda x: f"scrapeinfo label {str(x)}",
                                 posts,
                             )
-                        )
+                       
                     ),
                 )
             )

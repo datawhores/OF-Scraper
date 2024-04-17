@@ -84,14 +84,14 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
             log.trace(
                 "stories: -> stories raw {posts}".format(
                     posts="\n\n".join(
-                        list(
+                       
                             map(
                                 lambda x: f"scrapeinfo stories: {str(x)}",
                                 stories,
                             )
                         )
                     )
-                )
+                
             )
     except Exception as E:
         await asyncio.sleep(1)
@@ -139,12 +139,12 @@ async def process_stories_tasks(tasks):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Stories')}".format(
                             posts="\n\n".join(
-                                list(
+                              
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -168,17 +168,11 @@ async def process_stories_tasks(tasks):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    story_str= ""
-    for post in responseArray:
-        story_str += f"{common_logs.RAW_INNER} {post}\n\n",
-
-
-
-
-
     log.trace(
         f"{common_logs.FINAL_RAW.format('Stories')}".format(
-            posts=story_str
+            posts="\n\n".join(
+               map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
+            )
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Stories')} {len(responseArray)}")
@@ -310,7 +304,7 @@ async def process_task_get_highlight_list(tasks):
 
     overall_progress.remove_task(page_task)
     log.trace(
-        f"{common_logs.FINAL_IDS.format('Highlight List')} {list(map(lambda x:x,highlightLists))}"
+        f"{common_logs.FINAL_IDS.format('Highlight List')} {map(lambda x:x,highlightLists)}"
     )
     log.debug(
         f"{common_logs.FINAL_COUNT.format('Highlight List')} {len(highlightLists)}"
@@ -352,12 +346,12 @@ async def process_task_highlights(tasks):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Highlight List Posts')}".format(
                             posts="\n\n".join(
-                                list(
+                                
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -380,14 +374,13 @@ async def process_task_highlights(tasks):
         log.debug(
             f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}"
         )
-
-
-        story_str= ""
-        for post in highlightResponse:
-            story_str += f"{common_logs.RAW_INNER} {post}\n\n",
         log.trace(
             f"{common_logs.FINAL_RAW.format('Highlight List Posts')}".format(
-                posts=story_str
+                posts="\n\n".join(
+                    
+                        map(lambda x: f"{common_logs.RAW_INNER} {x}", highlightResponse)
+                    
+                )
             )
         )
         log.debug(

@@ -40,13 +40,9 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
         else []
     )
 
-    oldarchive_str = ""
-    for post in oldarchived:
-        oldarchive_str += f"{common_logs.RAW_INNER} {post}\n\n"
-
     log.trace(
         "oldarchive {posts}".format(
-            posts=oldarchive_str
+            posts="\n\n".join(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
         )
     )
 
@@ -67,15 +63,11 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
         if not read_args.retriveArgs().no_cache
         else []
     )
-
-    oldarchive_str = ""
-    for post in oldarchived:
-        oldarchive_str += f"{common_logs.RAW_INNER} {post}\n\n"
-
     log.trace(
         "oldarchive {posts}".format(
-            posts=oldarchive_str
-        ))
+            posts="\n\n".join(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
+        )
+    )
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
@@ -121,12 +113,12 @@ async def process_tasks(tasks, model_id, after):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Archived')}".format(
                             posts="\n\n".join(
-                                list(
+                                
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -152,17 +144,11 @@ async def process_tasks(tasks, model_id, after):
     log.debug(
         f"{common_logs.FINAL_IDS.format('Archived')} {list(map(lambda x:x['id'],responseArray))}"
     )
-
-
-
-
-    archive_str = ""
-    for post in responseArray:
-        archive_str += f"{common_logs.RAW_INNER} {post}\n\n"
-
     log.trace(
         f"{common_logs.FINAL_RAW.format('Archived')}".format(
-            posts=archive_str
+            posts="\n\n".join(
+                map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
+            )
         )
     )
     log.debug(f"{common_logs.FINAL_COUNT.format('Archived')} {len(responseArray)}")
@@ -176,7 +162,7 @@ def get_split_array(oldarchived, username, after):
     log.trace(
         "oldarchived {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"oldarchived: {str(x)}", oldarchived))
+                map(lambda x: f"oldarchived: {str(x)}", oldarchived)
             )
         )
     )
@@ -369,12 +355,12 @@ async def scrape_archived_posts(
                     "{log_id} -> archive raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                            list(
+                            
                                 map(
                                     lambda x: f"scrapeinfo archive: {str(x)}",
                                     posts,
                                 )
-                            )
+                            
                         ),
                     )
                 )

@@ -146,12 +146,12 @@ async def process_tasks(tasks, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Messages')}".format(
                             posts="\n\n".join(
-                                list(
+                                
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -397,12 +397,12 @@ async def scrape_messages(
                     "{log_id} -> messages raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                            list(
+                        
                                 map(
                                     lambda x: f" messages scrapeinfo: {str(x)}",
                                     messages,
                                 )
-                            )
+                            
                         ),
                     )
                 )

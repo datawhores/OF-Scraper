@@ -106,12 +106,12 @@ async def process_tasks(tasks, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Pinned')}".format(
                             posts="\n\n".join(
-                                list(
+                               
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -136,7 +136,7 @@ async def process_tasks(tasks, model_id):
     log.trace(
         "pinned raw duped {posts}".format(
             posts="\n\n".join(
-                list(map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray))
+                map(lambda x: f"dupedinfo pinned: {str(x)}", responseArray)
             )
         )
     )
@@ -228,12 +228,12 @@ async def scrape_pinned_posts(
                     "{log_id} -> pinned raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                            list(
+                           
                                 map(
                                     lambda x: f"scrapeinfo pinned: {str(x)}",
                                     posts,
                                 )
-                            )
+                            
                         ),
                     )
                 )

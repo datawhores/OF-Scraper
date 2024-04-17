@@ -258,7 +258,7 @@ async def get_list_users(lists):
     log.trace(
         "users found {users}".format(
             users="\n\n".join(
-                list(map(lambda x: f"user data: {str(x)}", outdict.values()))
+                map(lambda x: f"user data: {str(x)}", outdict.values())
             )
         )
     )
@@ -295,7 +295,7 @@ async def scrape_list_members(c, item, job_progress, offset=0):
                     item=item.get("name"),
                     offset=offset,
                     posts="\n\n".join(
-                        list(map(lambda x: f"scrapeinfo list {str(x)}", users))
+                        map(lambda x: f"scrapeinfo list {str(x)}", users)
                     ),
                 )
             )

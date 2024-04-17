@@ -88,12 +88,12 @@ async def process_tasks(tasks, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Paid')}".format(
                             posts="\n\n".join(
-                                list(
+                               
                                     map(
                                         lambda x: f"{common_logs.RAW_INNER} {x}",
                                         new_posts,
                                     )
-                                )
+                                
                             )
                         )
                     )
@@ -306,7 +306,7 @@ async def get_all_paid_posts():
         log.trace(
             "paid raw duped {posts}".format(
                 posts="\n\n".join(
-                    list(map(lambda x: f"dupedinfo all paid: {str(x)}", output))
+                    map(lambda x: f"dupedinfo all paid: {str(x)}", output)
                 )
             )
         )
