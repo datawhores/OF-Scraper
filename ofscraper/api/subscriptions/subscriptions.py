@@ -55,11 +55,9 @@ async def get_subscriptions(subscribe_count, account="active"):
                 else:
                     out = await expiredHelper(subscribe_count, c)
                 job_progress.remove_task(task1)
-        outdict = {}
-        for ele in out:
-            outdict[ele["id"]] = ele
-        log.debug(f"Total {account} subscriptions found {len(outdict.values())}")
-        return list(outdict.values())
+
+        log.debug(f"Total {account} subscriptions found {len(out)}")
+        return out
 
 
 async def activeHelper(subscribe_count, c):
@@ -143,6 +141,7 @@ async def expiredHelper(subscribe_count, c):
 
 async def process_task(tasks):
     output = []
+    seen=set()
     while tasks:
         new_tasks = []
         try:
@@ -152,7 +151,12 @@ async def process_task(tasks):
                 try:
                     result, new_tasks_batch = await task
                     new_tasks.extend(new_tasks_batch)
-                    output.extend(result)
+                    users = [
+                    user
+                    for user in result
+                    if user["id"] not in seen and not seen.add(user["id"])
+                    ]
+                    output.extend(users)
                 except asyncio.TimeoutError:
                     log.traceback_("Task timed out")
                     log.traceback_(traceback.format_exc())

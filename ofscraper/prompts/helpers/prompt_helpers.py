@@ -140,38 +140,37 @@ def model_funct(prompt):
 
 def model_select_funct(prompt):
     with stdout.nostdout():
-        # get old
-        choices = _get_choices
+        try:
+            toggle = promptConvert.getChecklistSelection(
+                choices=[
+                    Choice(True, "Range Select"),
+                    Choice(False, "Range Deselect"),
+                ]
+            )
+
+            # select new
+            choices = _select_helper(prompt,toggle)
+            prompt.content_control._raw_choices = choices
+            prompt.content_control.choices = prompt.content_control._get_choices(
+                prompt.content_control._raw_choices, prompt.content_control._default
+            )
+            prompt.content_control._format_choices()
+            return prompt
+        except Exception as E:
+            raise E
+
+
+def _select_helper(prompt,toggle=True):
+    try:
+        choices = _get_choices()
         selectedSet = set(
             map(
                 lambda x: re.search("^[0-9]+: ([^ ]+)", x["name"]).group(1),
                 prompt.selected_choices or [],
             )
         )
-        for model in choices:
-            name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
-            if name in selectedSet:
-                model.enabled = True
-        toggle = promptConvert.getChecklistSelection(
-            choices=[
-                Choice(True, "Range Select"),
-                Choice(False, "Range Deselect"),
-            ]
-        )
 
-        # select new
-        choices = _select_helper(choices, toggle)
-        prompt.content_control._raw_choices = choices
-        prompt.content_control.choices = prompt.content_control._get_choices(
-            prompt.content_control._raw_choices, prompt.content_control._default
-        )
-        prompt.content_control._format_choices()
-        return prompt
-
-
-def _select_helper(choices, toggle=True):
-    try:
-        select = set(
+        changes = set(
             pynumparser.NumberSequence().parse(
                 promptConvert.multiline_input_prompt(
                     message="Enter Num Sequences: ",
@@ -179,12 +178,19 @@ def _select_helper(choices, toggle=True):
                 )
             )
         )
-    except Exception as E:
-        raise EOFError
+        if toggle:
+            for count,model in enumerate(choices):
+                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                if name in selectedSet or count + 1 in changes:
+                    model.enabled = True
+        elif not toggle:
+            for count,model in enumerate(choices):
+                name = re.search("^[0-9]+: ([^ ]+)", model.name).group(1)
+                if name in selectedSet and count + 1 not in changes:
+                    model.enabled = True
 
-    for count, model in enumerate(choices):
-        if count + 1 in select:
-            model.enabled = toggle
+    except Exception as E:
+        raise E
     return choices
 
 
