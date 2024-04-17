@@ -317,7 +317,7 @@ jobs:
           attempt_limit: 3
           action: actions/upload-artifact@v4
           with: |
-            path: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}"
+            path: "dist/ofscraper_windows_${{needs.get_commit.outputs.short}}.exe"
             name: ofscraper_windows_${{needs.get_commit.outputs.short}}
             overwrite: true
 
