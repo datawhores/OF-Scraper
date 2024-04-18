@@ -36,18 +36,17 @@ class CustomTenacity(AsyncRetrying):
 
     def _wait_picker(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
-        is_429 = (
+        is_rate_limit = (
             isinstance(exception, aiohttp.ClientResponseError)
-            and getattr(exception, "status_code", None) == 429
+            and getattr(exception, "status_code", None) in {429,504}
         ) or (
             isinstance(exception, httpx.HTTPStatusError)
             and (
                 getattr(exception.response, "status_code", None)
                 or getattr(exception.response, "status", None)
-            )
-            == 429
+            ) in {429,504}
         )
-        if is_429:
+        if is_rate_limit:
             sleep = self.wait_exponential(retry_state)
         else:
             sleep = self.wait_random(retry_state)

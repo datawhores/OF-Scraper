@@ -277,7 +277,7 @@ async def scrape_archived_posts(
 ) -> list:
     global sem
     posts = None
-    attempt.set(0)
+    attempt.set(0)I
     if timestamp and (
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
