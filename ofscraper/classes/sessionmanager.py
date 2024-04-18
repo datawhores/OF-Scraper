@@ -6,6 +6,7 @@ import threading
 import traceback
 
 import aiohttp
+import aiohttp.client_exceptions
 import certifi
 import httpx
 import tenacity
@@ -117,12 +118,6 @@ class sessionManager:
         self._async = True
         if self._backend == "aio":
             self._session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(
-                    total=self._total_timeout,
-                    connect=self._connect_timeout,
-                    sock_connect=self._pool_connect_timeout,
-                    sock_read=self._read_timeout,
-                ),
                 connector=aiohttp.TCPConnector(limit=self._connect_limit),
             )
 
@@ -134,12 +129,6 @@ class sessionManager:
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
-                ),
-                timeout=httpx.Timeout(
-                    self._total_timeout,
-                    connect=self._connect_timeout,
-                    pool=self._pool_connect_timeout,
-                    read=self._read_timeout,
                 ),
             )
 
@@ -158,12 +147,6 @@ class sessionManager:
                     max_keepalive_connections=self._keep_alive,
                     max_connections=self._connect_limit,
                     keepalive_expiry=self._keep_alive_exp,
-                ),
-                timeout=httpx.Timeout(
-                    self._total_timeout,
-                    connect=self._connect_timeout,
-                    pool=self._pool_connect_timeout,
-                    read=self._read_timeout,
                 ),
             )
         elif self._backend == "aio":
@@ -202,6 +185,10 @@ class sessionManager:
         wait_min=None,
         wait_max=None,
         log=None,
+                total_timeout=None,
+        connect_timeout=None,
+        pool_connect_timeout=None,
+        read_timeout=None,
     ):
         headers = self._create_headers(headers, url, sign) if headers is None else None
         cookies = self._create_cookies() if cookies is None else None
@@ -214,7 +201,7 @@ class sessionManager:
         retries = retries or self._retries
         sync_sem = self._sync_sem or sync_sem
         for _ in Retrying(
-            retry=retry_if_not_exception_type(KeyboardInterrupt),
+            retry=retry_if_not_exception_type((KeyboardInterrupt,asyncio.TimeoutError)) ,
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait.wait_random(min=min, max=max),
             before=lambda x: (
@@ -230,6 +217,12 @@ class sessionManager:
                 try:
                     r = self._httpx_funct(
                         method,
+                         timeout=httpx.Timeout(
+                    total_timeout or self._total_timeout,
+                    connect=connect_timeout or self._connect_timeout,
+                    pool=pool_connect_timeout  or self._pool_connect_timeout,
+                    read=read_timeout or self._read_timeout,
+                            ),
                         url=url,
                         follow_redirects=redirects,
                         params=params,
@@ -272,6 +265,10 @@ class sessionManager:
         sign=None,
         log=None,
         sem=None,
+        total_timeout=None,
+        connect_timeout=None,
+        pool_connect_timeout=None,
+        read_timeout=None,
         *args,
         **kwargs,
     ):
@@ -286,6 +283,7 @@ class sessionManager:
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
+            retry=retry_if_not_exception_type((KeyboardInterrupt,asyncio.TimeoutError)) ,
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
             before=lambda x: (
@@ -311,6 +309,12 @@ class sessionManager:
                         r = await self._aio_funct(
                             method,
                             url,
+                            timeout=aiohttp.ClientTimeout(
+                    total=total_timeout or self._total_timeout,
+                    connect=connect_timeout or self._connect_timeout,
+                    sock_connect=pool_connect_timeout or self._pool_connect_timeout,
+                    sock_read=read_timeout or self._read_timeout,
+        ),
                             headers=headers,
                             cookies=cookies,
                             allow_redirects=redirects,
@@ -324,6 +328,12 @@ class sessionManager:
                     else:
                         r = await self._httpx_funct_async(
                             method,
+                            timeout=httpx.Timeout(
+                    total_timeout or self._total_timeout,
+                    connect=connect_timeout or self._connect_timeout,
+                    pool=pool_connect_timeout  or self._pool_connect_timeout,
+                    read=read_timeout or self._read_timeout,
+                            ),
                             follow_redirects=redirects,
                             url=url,
                             cookies=cookies,

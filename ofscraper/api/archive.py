@@ -39,12 +39,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
         if not read_args.retriveArgs().no_cache
         else []
     )
-
-    log.trace(
-        "oldarchive {posts}".format(
-            posts="\n\n".join(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
-        )
-    )
+    trace_log_old(oldarchived)
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
@@ -63,11 +58,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
         if not read_args.retriveArgs().no_cache
         else []
     )
-    log.trace(
-        "oldarchive {posts}".format(
-            posts="\n\n".join(map(lambda x: f"oldarchive: {str(x)}", oldarchived))
-        )
-    )
+    trace_log_old(oldarchived)
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
@@ -89,66 +80,50 @@ async def process_tasks(tasks, model_id, after):
     seen = set()
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Archived Content Pages Progress: {page_count}",
-                    )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Archived Content Pages Progress: {page_count}",
+                )
 
-                    new_posts = [
-                        post
-                        for post in result
-                        if post["id"] not in seen and not seen.add(post["id"])
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Archived')} {list(map(lambda x:x['id'],new_posts))}"
-                    )
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('Archived')}".format(
-                            posts="\n\n".join(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    new_posts,
-                                )
+                new_posts = [
+                    post
+                    for post in result
+                    if post["id"] not in seen and not seen.add(post["id"])
+                ]
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Archived')} {list(map(lambda x:x['id'],new_posts))}"
+                )
+                log.trace(
+                    f"{common_logs.PROGRESS_RAW.format('Archived')}".format(
+                        posts="\n\n".join(
+                            map(
+                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                new_posts,
                             )
                         )
                     )
+                )
 
-                    responseArray.extend(new_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
-        tasks = new_tasks
+                responseArray.extend(new_posts)
+
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
 
     overall_progress.remove_task(page_task)
 
     log.debug(
         f"{common_logs.FINAL_IDS.format('Archived')} {list(map(lambda x:x['id'],responseArray))}"
     )
-    log.trace(
-        f"{common_logs.FINAL_RAW.format('Archived')}".format(
-            posts="\n\n".join(
-                map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
-            )
-        )
-    )
+    trace_log_task(responseArray)
     log.debug(f"{common_logs.FINAL_COUNT.format('Archived')} {len(responseArray)}")
 
     set_check(responseArray, model_id, after)
@@ -157,11 +132,6 @@ async def process_tasks(tasks, model_id, after):
 
 def get_split_array(oldarchived, username, after):
     min_posts = 50
-    log.trace(
-        "oldarchived {posts}".format(
-            posts="\n\n".join(map(lambda x: f"oldarchived: {str(x)}", oldarchived))
-        )
-    )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))
@@ -291,15 +261,15 @@ async def get_after(model_id, username, forced_after=None):
     missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
     missing_items = list(sorted(missing_items, key=lambda x: x.get("posted_at") or 0))
     if len(missing_items) == 0:
-        log.debug("Using last db date because,all downloads in db marked as downloaded")
-        return await operations.get_last_archived_date(
+        log.debug("Using newest db date because,all downloads in db marked as downloaded")
+        return arrow.get(await operations.get_youngest_archived_date(
             model_id=model_id, username=username
-        )
+        )).float_timestamp
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0]["posted_at"] or missing_items[0]["created_at"] or 0).float_timestamp
+        return arrow.get(missing_items[0]["posted_at"] or 0).float_timestamp
 
 
 async def scrape_archived_posts(
@@ -392,6 +362,8 @@ async def scrape_archived_posts(
                                 )
                             )
                         )
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -400,3 +372,37 @@ async def scrape_archived_posts(
     finally:
         job_progress.remove_task(task) if job_progress and task else None
     return posts, new_tasks
+
+def trace_log_task(responseArray):
+    chunk_size=100
+    for i in range(1, len(responseArray) + 1, chunk_size):
+        # Calculate end index considering potential last chunk being smaller
+        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
+        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
+        api_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
+        log.trace(
+            f"{common_logs.FINAL_RAW.format('Archived')}".format(
+                posts=api_str
+            )
+        )
+        # Check if there are more elements remaining after this chunk
+        if i + chunk_size > len(responseArray):
+            break  # Exit the loop if we've processed all elements
+
+
+def trace_log_old(responseArray):
+    chunk_size=100
+    for i in range(1, len(responseArray) + 1, chunk_size):
+        # Calculate end index considering potential last chunk being smaller
+        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
+        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
+        log.trace(
+        "oldarchived {posts}".format(
+            posts="\n\n".join(
+                list(map(lambda x: f"oldarchived: {str(x)}", chunk))
+            )
+        )
+        )
+        # Check if there are more elements remaining after this chunk
+        if i + chunk_size > len(responseArray):
+            break  # Exit the loop if we've processed all elements

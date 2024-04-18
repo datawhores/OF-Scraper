@@ -141,7 +141,7 @@ def get_timeline_postsinfo(model_id=None, username=None, conn=None, **kwargs) ->
         cur.execute(timelinePostInfo, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, created_at=arrow.get(ele.get("created_at")).float_timestamp)
+            dict(ele, created_at=arrow.get(ele.get("created_at") or 0).float_timestamp)
             for ele in data
         ]
 
@@ -259,13 +259,23 @@ async def make_post_table_changes(all_posts, model_id=None, username=None):
         await update_posts_table(curr_posts, model_id=model_id, username=username)
 
 
-async def get_last_archived_date(model_id=None, username=None):
+async def get_oldest_archived_date(model_id=None, username=None):
     data = await media.get_archived_media(model_id=model_id, username=username)
-    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at'] or x['created_at'] or 0))[-1]
-    return last_item['posted_at'] or last_item['created_at'] or 0
+    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at']))[0]
+    return last_item['posted_at']  or 0
 
+async def get_youngest_archived_date(model_id=None, username=None):
+    data = await media.get_archived_media(model_id=model_id, username=username)
+    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at']))[-1]
+    return last_item['posted_at']  or 0
 
-async def get_last_timeline_date(model_id=None, username=None):
+async def get_oldest_timeline_date(model_id=None, username=None):
     data = await media.get_timeline_media(model_id=model_id, username=username)
-    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at'] or x['created_at'] or 0))[-1]
-    return last_item['posted_at'] or last_item['created_at'] or 0
+    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at']))[0]
+    return last_item['posted_at']
+
+
+async def get_youngest_timeline_date(model_id=None, username=None):
+    data = await media.get_timeline_media(model_id=model_id, username=username)
+    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at']))[-1]
+    return last_item['posted_at']

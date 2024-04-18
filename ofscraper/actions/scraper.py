@@ -518,6 +518,7 @@ async def process_task(model_id, username, ele):
         retries=constants.getattr("API_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK")
     ) as c:
         while True:
             max_count = min(

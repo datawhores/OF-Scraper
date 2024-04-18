@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS medias (
 	created_at TIMESTAMP, 
     posted_at TIMESTAMP,
     duration VARCHAR,
+    unlocked BOOL,
 	hash VARCHAR,
     model_id INTEGER,
 	PRIMARY KEY (id), 
@@ -75,7 +76,7 @@ drop table medias;
 """
 mediaUpdateAPI = """Update 'medias'
 SET
-media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?
+media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
 WHERE media_id=(?) and model_id=(?);"""
 mediaUpdateDownload = """Update 'medias'
 SET
@@ -116,8 +117,8 @@ where hash=(?)
 mediaInsertAPI = """INSERT INTO 'medias'(
 media_id,post_id,link,api_type,
 media_type,preview,linked,
-created_at,posted_at,model_id,duration)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?);"""
+created_at,posted_at,model_id,duration,unlocked)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
@@ -145,21 +146,21 @@ getTimelineMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where api_type=('Timeline') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where api_type=('Archived') and model_id=(?)
 """
 getMessagesMedia = """
 SELECT 
 media_id,post_id,link,directory
 filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id
+preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
 FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 """
 
@@ -189,6 +190,24 @@ def add_column_media_hash(model_id=None, username=None, conn=None):
             conn.rollback()
             raise e  # Rollback in case of errors
 
+
+@wrapper.operation_wrapper_async
+def add_column_media_unlocked(model_id=None, username=None, conn=None):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            # Check if column exists (separate statement)
+            cur.execute(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PRAGMA_TABLE_INFO('medias') WHERE name = 'unlocked') THEN 1 ELSE 0 END AS alter_required;"
+            )
+            alter_required = cur.fetchone()[0]  # Fetch the result (0 or 1)
+            # Add column if necessary (conditional execution)
+            if alter_required == 0:
+                cur.execute("ALTER TABLE medias ADD COLUMN unlocked BOOL;")
+                # Commit changes
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            raise e  # Rollback in case of errors
 
 @wrapper.operation_wrapper_async
 def add_column_media_posted_at(conn=None, **kwargs):
@@ -338,6 +357,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.postdate,
                     model_id,
                     media.duration_string,
+                    media.canview
                 ],
                 medias,
             )
@@ -345,6 +365,28 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
         curr.executemany(mediaInsertAPI, insertData)
         conn.commit()
 
+@wrapper.operation_wrapper_async
+def update_media_table_via_api_batch(
+    medias, model_id=None, conn=None, curr=None, **kwargs
+) -> list:
+    insertData = list(map( lambda media:
+        [ media.id,
+        media.postid,
+        media.url or media.mpd,
+        media.responsetype.capitalize(),
+        media.mediatype.capitalize(),
+        media.preview,
+        media.date,
+        media.postdate,
+        model_id,
+        media.duration_string,
+        media.canview,
+        media.id,
+        model_id,]
+       
+    ),medias)
+    curr.executemany(mediaUpdateAPI, insertData)
+    conn.commit()
 
 @wrapper.operation_wrapper_async
 def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
@@ -366,6 +408,7 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
             "hash",
             "model_id",
             "duration",
+            "unlocked"
         ]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertTransition, insertData)
@@ -384,6 +427,7 @@ def get_all_medias_transition(
                 row,
                 model_id=row.get("model_id") or database_model,
                 duration=row.get("duration"),
+                unlocked=row.get("unlocked")
             )
             for row in data
         ]
@@ -402,7 +446,7 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -414,7 +458,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -426,7 +470,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
         cur.execute(getTimelineMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele.get("posted_at") or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -446,6 +490,7 @@ def update_media_table_via_api_helper(
         media.postdate,
         model_id,
         media.duration_string,
+        media.canview,
         media.id,
         model_id,
     ]
@@ -509,6 +554,11 @@ async def batch_mediainsert(media, **kwargs):
         mediaDict[ele.id] = ele
     await write_media_table_via_api_batch(
         list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
+    )
+
+
+    await update_media_table_via_api_batch(
+        list(filter(lambda x:x.id in curr,mediaDict.values()))
     )
 
 

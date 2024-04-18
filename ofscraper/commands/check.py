@@ -254,9 +254,7 @@ async def post_check_helper():
                 post_id = num_match.group(1)
                 log.info(f"Getting individual link for {user_name}")
                 data = timeline.get_individual_post(post_id)
-                user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(
-                    data
-                )
+                user_dict.setdefault(model_id, {}).setdefault("post_list", []).extend(data)
     for val in user_dict.values():
         user_name = val.get("username")
         downloaded = await get_downloaded(user_name, model_id, True)

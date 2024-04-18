@@ -133,6 +133,9 @@ async def add_column_tables(model_id=None, username=None):
     if not "media_duration" in changes:
         await add_column_media_duration(model_id=model_id, username=username)
         await add_flag_schema("media_duration", model_id=model_id, username=username)
+    if not "media_unlocked" in changes:
+        await add_column_media_unlocked(model_id=model_id, username=username)
+        await add_flag_schema("media_unlocked", model_id=model_id, username=username)  
     if not "posts_pinned" in changes:
         await add_column_post_pinned(model_id=model_id, username=username)
         await add_flag_schema("posts_pinned", model_id=model_id, username=username)
