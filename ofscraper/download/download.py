@@ -18,7 +18,7 @@ from ofscraper.utils.context.run_async import run
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
     if read_args.retriveArgs().force_all:
-        log.info(f"forcing all media count {len(medialist)}")
+        log.info(f"forcing all")
     elif read_args.retriveArgs().force_model_unique:
         log.info("Downloading unique medi afor model")
         media_ids = set(
@@ -63,6 +63,7 @@ def download_process(username, model_id, medialist, posts=None):
         medialist = list(filter(lambda x: x.canview, medialist))
         medialist = medialist_filter(medialist, model_id, username)
         medialist = helpers.ele_count_filter(medialist)
+        logging.getLogger().info(f"Final media count for download {len(medialist)}")
         textDownloader(posts, username=username)
         download_picker(username, model_id, medialist)
         remove_downloads_with_hashes(username, model_id)
