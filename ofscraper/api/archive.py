@@ -117,6 +117,7 @@ async def process_tasks(tasks, model_id, after):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 continue
+            tasks=new_tasks
 
     overall_progress.remove_task(page_task)
 
@@ -277,7 +278,7 @@ async def scrape_archived_posts(
 ) -> list:
     global sem
     posts = None
-    attempt.set(0)I
+    attempt.set(0)
     if timestamp and (
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp

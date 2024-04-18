@@ -367,26 +367,27 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
 
 @wrapper.operation_wrapper_async
 def update_media_table_via_api_batch(
-    medias, model_id=None, conn=None, curr=None, **kwargs
+    medias, model_id=None, conn=None, **kwargs
 ) -> list:
-    insertData = list(map( lambda media:
-        [ media.id,
-        media.postid,
-        media.url or media.mpd,
-        media.responsetype.capitalize(),
-        media.mediatype.capitalize(),
-        media.preview,
-        media.date,
-        media.postdate,
-        model_id,
-        media.duration_string,
-        media.canview,
-        media.id,
-        model_id,]
-       
-    ),medias)
-    curr.executemany(mediaUpdateAPI, insertData)
-    conn.commit()
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = list(map( lambda media:
+            [ media.id,
+            media.postid,
+            media.url or media.mpd,
+            media.responsetype.capitalize(),
+            media.mediatype.capitalize(),
+            media.preview,
+            media.date,
+            media.postdate,
+            model_id,
+            media.duration_string,
+            media.canview,
+            media.id,
+            model_id],medias
+        
+        ))
+        curr.executemany(mediaUpdateAPI, insertData)
+        conn.commit()
 
 @wrapper.operation_wrapper_async
 def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
@@ -446,7 +447,7 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele['posted_at'] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -458,7 +459,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele['posted_at'] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -470,7 +471,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
         cur.execute(getTimelineMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0))
             for ele in data
         ]
 
@@ -558,7 +559,7 @@ async def batch_mediainsert(media, **kwargs):
 
 
     await update_media_table_via_api_batch(
-        list(filter(lambda x:x.id in curr,mediaDict.values()))
+        list(filter(lambda x:x.id in curr,mediaDict.values())),**kwargs
     )
 
 
