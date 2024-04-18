@@ -222,5 +222,5 @@ async def make_messages_table_changes(all_messages, model_id=None, username=None
 
 async def get_last_message_date(model_id=None, username=None):
     data = await media.get_messages_media(model_id=model_id, username=username)
-    last_item=sorted(data, key=lambda x: x['posted_at'] or x['created_at'] or 0)[-1]
+    last_item=sorted(data, key=lambda x: arrow.get(x['posted_at'] or x['created_at'] or 0))[-1]
     return last_item['posted_at'] or last_item['created_at'] or 0
