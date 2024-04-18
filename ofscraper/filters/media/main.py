@@ -10,16 +10,15 @@ def filterMedia(media):
     logformater = "{} data: {} id: {} postid: {}"
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all media no filter:",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all media no filter:",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter {count}-> all media no filter count: {len(media)}")
@@ -27,17 +26,15 @@ def filterMedia(media):
     count += 1
     log.trace(
         "\n\n\n".join(
-
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> final media  from retrived post: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> final media  from retrived post: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter {count}->  final media count from retrived post: {len(media)}")
@@ -45,17 +42,15 @@ def filterMedia(media):
     count += 1
     log.trace(
         "\n\n\n".join(
-          
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all media dupe filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all media dupe filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
 
@@ -65,13 +60,12 @@ def filterMedia(media):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        "filter 3-> all media datesort: ", x.media, x.id, x.postid
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    "filter 3-> all media datesort: ", x.media, x.id, x.postid
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter {count}-> all media datesort count: {len(media)}")
@@ -80,16 +74,15 @@ def filterMedia(media):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all media post media type filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all media post media type filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
 
@@ -99,16 +92,15 @@ def filterMedia(media):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all media post date filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all media post date filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter {count}-> all media post date filter: {len(media)}")
@@ -117,16 +109,15 @@ def filterMedia(media):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  all media post timed post filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  all media post timed post filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter {count}->  all media post timed post filter count: {len(media)}")
@@ -135,16 +126,15 @@ def filterMedia(media):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all media post included text filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all media post included text filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(
@@ -155,16 +145,15 @@ def filterMedia(media):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all media post excluded text filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all media post excluded text filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(
@@ -174,16 +163,15 @@ def filterMedia(media):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  all download type filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  all download type filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter {count}->  all media download type filter count: {len(media)}")
@@ -192,16 +180,15 @@ def filterMedia(media):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  mass message filter: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  mass message filter: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
 
@@ -209,16 +196,15 @@ def filterMedia(media):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  all media final sort: ",
-                        x.media,
-                        x.id,
-                        x.postid,
-                    ),
-                    media,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  all media final sort: ",
+                    x.media,
+                    x.id,
+                    x.postid,
+                ),
+                media,
+            )
         )
     )
     log.debug(f"filter{count}-> all media final sort count {len(media)}")
@@ -231,15 +217,14 @@ def filterPost(post):
     logformater = "{} data: {} postid: {}"
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all post no filter:",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all post no filter:",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(f"filter {count}-> all post no filter count: {len(post)}")
@@ -247,15 +232,14 @@ def filterPost(post):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> final post  from retrived post: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> final post  from retrived post: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(f"filter {count}->  final post count from retrived post: {len(post)}")
@@ -263,15 +247,14 @@ def filterPost(post):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all post dupe filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all post dupe filter: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
 
@@ -281,13 +264,12 @@ def filterPost(post):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        "filter 3-> all post datesort: ", x.post, x.id
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    "filter 3-> all post datesort: ", x.post, x.id
+                ),
+                post,
+            )
         )
     )
     log.debug(f"filter {count}-> all post datesort count: {len(post)}")
@@ -295,15 +277,14 @@ def filterPost(post):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all post post date filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all post post date filter: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(f"filter {count}-> all post post date filter: {len(post)}")
@@ -312,15 +293,14 @@ def filterPost(post):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  all post post timed post filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  all post post timed post filter: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(f"filter {count}->  all post post timed post filter count: {len(post)}")
@@ -329,15 +309,14 @@ def filterPost(post):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all post post included text filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all post post included text filter: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(
@@ -348,15 +327,14 @@ def filterPost(post):
 
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}-> all post post excluded text filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> all post post excluded text filter: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(
@@ -367,30 +345,28 @@ def filterPost(post):
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  mass message filter: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  mass message filter: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     post = helpers.final_post_sort(post)
     count += 1
     log.trace(
         "\n\n\n".join(
-                map(
-                    lambda x: logformater.format(
-                        f"filter {count}->  all post final sort: ",
-                        x.post,
-                        x.id,
-                    ),
-                    post,
-                )
-            
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}->  all post final sort: ",
+                    x.post,
+                    x.id,
+                ),
+                post,
+            )
         )
     )
     log.debug(f"filter{count}-> all post final sort count {len(post)}")

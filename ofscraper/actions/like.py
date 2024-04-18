@@ -11,10 +11,10 @@ r"""
                                                                                       
 """
 
-import functools
 import asyncio
-import time
+import functools
 import logging
+import time
 
 from rich.progress import (
     BarColumn,
@@ -196,7 +196,7 @@ def _like(model_id, ids: list, like_action: bool):
             task1 = overall_progress.add_task(f"{title} posts...\n", total=len(ids))
 
             [
-                tasks.append(functools.partial(_like_request,c, id, model_id))
+                tasks.append(functools.partial(_like_request, c, id, model_id))
                 for id in ids
             ]
             sleep_duration = 3
@@ -206,7 +206,7 @@ def _like(model_id, ids: list, like_action: bool):
                     f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action"
                 )
                 if count + 1 % 60 == 0 and count + 1 % 50 == 0:
-                    sleep_duration=40
+                    sleep_duration = 40
                 elif count % 60 == 0:
                     sleep_duration = 1  # Divisible by 60 - 1 second sleep
                 elif count % 50 == 0:
@@ -215,9 +215,8 @@ def _like(model_id, ids: list, like_action: bool):
                 time.sleep(sleep_duration)
 
 
-
 def _like_request(c, id, model_id):
     with c.requests(
-        constants.getattr("favoriteEP").format(id, model_id),method="post"
+        constants.getattr("favoriteEP").format(id, model_id), method="post"
     ) as _:
         return id

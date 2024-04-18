@@ -1,5 +1,6 @@
-import sys
 import re
+import sys
+
 import ofscraper.utils.args.groups.main_args as main
 import ofscraper.utils.args.groups.manual_args as manual
 import ofscraper.utils.args.groups.message_args as message
@@ -33,7 +34,6 @@ class AutoDotDict(dict):
 
 
 def parse_args():
-    sys.argv=list(filter(lambda x: not re.search(re.escape(x),"(multiprocessing|fork|parent_pid)") ,sys.argv))
     try:
         main.program.add_command(manual.manual, "manual")
         main.program.add_command(message.message_check, "msg_check")
@@ -41,9 +41,14 @@ def parse_args():
         main.program.add_command(paid.paid_check, "paid_check")
         main.program.add_command(post.post_check, "post_check")
 
-        result = main.program(standalone_mode=False,prog_name="OF-Scraper")
+        filter_str = r"\b(multiprocessing|pipe_handle|fork|parent_pid)\b"
+        result = main.program(
+            standalone_mode=False,
+            prog_name="OF-Scraper",
+            args=[text for text in sys.argv if not re.search(filter_str, text)][1:],
+        )
         if result == 0:
-            quit()
+            sys.exit()
         args, command = result
         args["command"] = command
         d = AutoDotDict(args)

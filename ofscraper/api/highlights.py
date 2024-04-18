@@ -84,14 +84,12 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
             log.trace(
                 "stories: -> stories raw {posts}".format(
                     posts="\n\n".join(
-                       
-                            map(
-                                lambda x: f"scrapeinfo stories: {str(x)}",
-                                stories,
-                            )
+                        map(
+                            lambda x: f"scrapeinfo stories: {str(x)}",
+                            stories,
                         )
                     )
-                
+                )
             )
     except Exception as E:
         await asyncio.sleep(1)
@@ -139,12 +137,10 @@ async def process_stories_tasks(tasks):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Stories')}".format(
                             posts="\n\n".join(
-                              
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -171,7 +167,7 @@ async def process_stories_tasks(tasks):
     log.trace(
         f"{common_logs.FINAL_RAW.format('Stories')}".format(
             posts="\n\n".join(
-               map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
+                map(lambda x: f"{common_logs.RAW_INNER} {x}", responseArray)
             )
         )
     )
@@ -346,12 +342,10 @@ async def process_task_highlights(tasks):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Highlight List Posts')}".format(
                             posts="\n\n".join(
-                                
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -377,9 +371,7 @@ async def process_task_highlights(tasks):
         log.trace(
             f"{common_logs.FINAL_RAW.format('Highlight List Posts')}".format(
                 posts="\n\n".join(
-                    
-                        map(lambda x: f"{common_logs.RAW_INNER} {x}", highlightResponse)
-                    
+                    map(lambda x: f"{common_logs.RAW_INNER} {x}", highlightResponse)
                 )
             )
         )

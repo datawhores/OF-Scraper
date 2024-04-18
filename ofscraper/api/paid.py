@@ -88,12 +88,10 @@ async def process_tasks(tasks, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Paid')}".format(
                             posts="\n\n".join(
-                               
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -119,15 +117,10 @@ async def process_tasks(tasks, model_id):
         f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
     )
 
-
-    paid_str= ""
+    paid_str = ""
     for post in responseArray:
         paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
-    log.trace(
-        f"{common_logs.FINAL_RAW.format('Paid')}".format(
-            posts=paid_str
-        )
-    )
+    log.trace(f"{common_logs.FINAL_RAW.format('Paid')}".format(posts=paid_str))
     log.debug(f"{common_logs.FINAL_COUNT.format('Paid')} {len(responseArray)}")
     set_check(responseArray, model_id)
     return responseArray
@@ -282,11 +275,9 @@ async def get_all_paid_posts():
                             log.debug(
                                 f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}"
                             )
-                            paid_str= ""
+                            paid_str = ""
                             for post in output:
                                 paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
-
-
 
                             log.trace(
                                 f"{common_logs.PROGRESS_RAW.format('All Paid')}".format(

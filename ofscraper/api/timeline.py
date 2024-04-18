@@ -51,9 +51,7 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
         oldtimeline = []
     log.trace(
         "oldtimeline {posts}".format(
-            posts="\n\n".join(
-                map(lambda x: f"oldtimeline: {str(x)}", oldtimeline)
-            )
+            posts="\n\n".join(map(lambda x: f"oldtimeline: {str(x)}", oldtimeline))
         )
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
@@ -100,12 +98,10 @@ async def process_tasks(tasks, model_id, after):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Timeline')}".format(
                             posts="\n\n".join(
-                                
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -131,14 +127,10 @@ async def process_tasks(tasks, model_id, after):
         f"{common_logs.FINAL_IDS.format('Timeline')} {list(map(lambda x:x['id'],responseArray))}"
     )
 
-    timeline_str= ""
+    timeline_str = ""
     for post in responseArray:
         timeline_str += f"{common_logs.RAW_INNER} {post}\n\n"
-    log.trace(
-        f"{common_logs.FINAL_RAW.format('Timeline')}".format(
-            posts=timeline_str
-        )
-    )
+    log.trace(f"{common_logs.FINAL_RAW.format('Timeline')}".format(posts=timeline_str))
     log.debug(f"{common_logs.FINAL_COUNT.format('Timeline')} {len(responseArray)}")
 
     return responseArray
@@ -155,9 +147,7 @@ async def get_split_array(model_id, username, after):
         oldtimeline = []
     log.trace(
         "oldtimeline {posts}".format(
-            posts="\n\n".join(
-                map(lambda x: f"oldtimeline: {str(x)}", oldtimeline)
-            )
+            posts="\n\n".join(map(lambda x: f"oldtimeline: {str(x)}", oldtimeline))
         )
     )
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
@@ -367,11 +357,10 @@ async def scrape_timeline_posts(
                     "{log_id} -> post raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                                map(
-                                    lambda x: f"scrapeinfo timeline: {str(x)}",
-                                    posts,
-                                )
-                            
+                            map(
+                                lambda x: f"scrapeinfo timeline: {str(x)}",
+                                posts,
+                            )
                         ),
                     )
                 )

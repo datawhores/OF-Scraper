@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          
+
       - name: commit
         uses: pr-mpt/actions-commit-hash@v2
         id: commit

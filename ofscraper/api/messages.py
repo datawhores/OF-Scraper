@@ -44,9 +44,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 
     log.trace(
         "oldmessage {posts}".format(
-            posts="\n\n".join(
-                map(lambda x: f"oldmessages: {str(x)}", oldmessages)
-            )
+            posts="\n\n".join(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
         )
     )
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
@@ -84,9 +82,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     )
     log.trace(
         "oldmessage {posts}".format(
-            posts="\n\n".join(
-                map(lambda x: f"oldmessages: {str(x)}", oldmessages)
-            )
+            posts="\n\n".join(map(lambda x: f"oldmessages: {str(x)}", oldmessages))
         )
     )
 
@@ -146,12 +142,10 @@ async def process_tasks(tasks, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Messages')}".format(
                             posts="\n\n".join(
-                                
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -397,12 +391,10 @@ async def scrape_messages(
                     "{log_id} -> messages raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                        
-                                map(
-                                    lambda x: f" messages scrapeinfo: {str(x)}",
-                                    messages,
-                                )
-                            
+                            map(
+                                lambda x: f" messages scrapeinfo: {str(x)}",
+                                messages,
+                            )
                         ),
                     )
                 )
@@ -427,7 +419,9 @@ async def scrape_messages(
                 else:
                     [
                         required_ids.discard(
-                            arrow.get(ele.get("createdAt") or ele.get("postedAt")).float_timestamp
+                            arrow.get(
+                                ele.get("createdAt") or ele.get("postedAt")
+                            ).float_timestamp
                         )
                         for ele in messages
                     ]

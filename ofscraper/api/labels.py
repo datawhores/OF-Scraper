@@ -160,12 +160,10 @@ async def process_tasks_labels(tasks):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Label Names')}".format(
                             posts="\n\n".join(
-                                
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -291,12 +289,10 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Label Content')}".format(
                             posts="\n\n".join(
-                                
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        unduped_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    unduped_posts,
+                                )
                             )
                         )
                     )
@@ -346,9 +342,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
     log.trace(
         f"{common_logs.FINAL_RAW.format('All Labels Content')}".format(
             posts="\n\n".join(
-                
-                    map(lambda x: f"{common_logs.RAW_INNER} {x}", responseDict.values())
-                
+                map(lambda x: f"{common_logs.RAW_INNER} {x}", responseDict.values())
             )
         )
     )
@@ -387,12 +381,10 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                 "{offset} -> {posts}".format(
                     offset=offset,
                     posts="\n\n".join(
-                       
-                            map(
-                                lambda x: f"scrapeinfo label {str(x)}",
-                                posts,
-                            )
-                       
+                        map(
+                            lambda x: f"scrapeinfo label {str(x)}",
+                            posts,
+                        )
                     ),
                 )
             )

@@ -257,9 +257,7 @@ async def get_list_users(lists):
         outdict[ele["id"]] = ele
     log.trace(
         "users found {users}".format(
-            users="\n\n".join(
-                map(lambda x: f"user data: {str(x)}", outdict.values())
-            )
+            users="\n\n".join(map(lambda x: f"user data: {str(x)}", outdict.values()))
         )
     )
     log.debug(f"[bold]users count without Dupes[/bold] {len(outdict.values())} found")

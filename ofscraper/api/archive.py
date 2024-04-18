@@ -113,12 +113,10 @@ async def process_tasks(tasks, model_id, after):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Archived')}".format(
                             posts="\n\n".join(
-                                
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -161,9 +159,7 @@ def get_split_array(oldarchived, username, after):
     min_posts = 50
     log.trace(
         "oldarchived {posts}".format(
-            posts="\n\n".join(
-                map(lambda x: f"oldarchived: {str(x)}", oldarchived)
-            )
+            posts="\n\n".join(map(lambda x: f"oldarchived: {str(x)}", oldarchived))
         )
     )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
@@ -355,12 +351,10 @@ async def scrape_archived_posts(
                     "{log_id} -> archive raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                            
-                                map(
-                                    lambda x: f"scrapeinfo archive: {str(x)}",
-                                    posts,
-                                )
-                            
+                            map(
+                                lambda x: f"scrapeinfo archive: {str(x)}",
+                                posts,
+                            )
                         ),
                     )
                 )

@@ -106,12 +106,10 @@ async def process_tasks(tasks, model_id):
                     log.trace(
                         f"{common_logs.PROGRESS_RAW.format('Pinned')}".format(
                             posts="\n\n".join(
-                               
-                                    map(
-                                        lambda x: f"{common_logs.RAW_INNER} {x}",
-                                        new_posts,
-                                    )
-                                
+                                map(
+                                    lambda x: f"{common_logs.RAW_INNER} {x}",
+                                    new_posts,
+                                )
                             )
                         )
                     )
@@ -144,14 +142,10 @@ async def process_tasks(tasks, model_id):
         f"{common_logs.FINAL_IDS.format('Pinned')} {list(map(lambda x:x['id'],responseArray))}"
     )
 
-    pinned_str= ""
+    pinned_str = ""
     for post in responseArray:
         pinned_str += f"{common_logs.RAW_INNER} {post}\n\n"
-    log.trace(
-        f"{common_logs.FINAL_RAW.format('Pinned')}".format(
-            posts=pinned_str
-        )
-    )
+    log.trace(f"{common_logs.FINAL_RAW.format('Pinned')}".format(posts=pinned_str))
     log.debug(f"{common_logs.FINAL_COUNT.format('Pinned')} {len(responseArray)}")
 
     set_check(responseArray, model_id)
@@ -228,12 +222,10 @@ async def scrape_pinned_posts(
                     "{log_id} -> pinned raw {posts}".format(
                         log_id=log_id,
                         posts="\n\n".join(
-                           
-                                map(
-                                    lambda x: f"scrapeinfo pinned: {str(x)}",
-                                    posts,
-                                )
-                            
+                            map(
+                                lambda x: f"scrapeinfo pinned: {str(x)}",
+                                posts,
+                            )
                         ),
                     )
                 )

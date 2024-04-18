@@ -23,12 +23,11 @@ jobs:
     if: ${{ inputs.files}}
     name: get_date
     steps:
-    - name: Get current date
-      id: date
-      run: echo "date=$(date +'%Y.%m.%d')_$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y.%m.%d')_$(date +%s| tail -c 7)" >> $GITHUB_OUTPUT
     outputs:
       date: ${{ steps.date.outputs.date}}
-
 
   get_commit:
     runs-on: ubuntu-20.04
@@ -48,7 +47,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v2
         id: commit
   create_version:
-    needs: [get_date,get_commit]
+    needs: [get_date, get_commit]
     runs-on: ubuntu-20.04
     if: ${{ inputs.files}}
     name: create version doc
@@ -82,11 +81,8 @@ jobs:
             name: ofscraper_version_${{needs.get_date.outputs.date}}
             path: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper/__version__.py
 
-
-
   linux_file:
-
-    needs: [create_version, get_date,get_commit]
+    needs: [create_version, get_date, get_commit]
     runs-on: ubuntu-20.04
     name: create linux release file
     steps:
@@ -130,7 +126,7 @@ jobs:
             ofscraper -h
             echo "install run pyinstaller dir"
             pyinstaller ./ofscraper/__main__.py --name "ofscraper_linux_${{inputs.version}}" --onefile
-      
+
             echo "list files dir"
             ls dist
 
@@ -145,8 +141,7 @@ jobs:
             overwrite: true
 
   linux_dir:
-
-    needs: [create_version, get_date,get_commit]
+    needs: [create_version, get_date, get_commit]
     runs-on: ubuntu-20.04
     name: create linux release zip
     steps:
@@ -205,8 +200,7 @@ jobs:
             overwrite: true
 
   windows_dir:
-
-    needs: [create_version, get_date,get_commit]
+    needs: [create_version, get_date, get_commit]
     runs-on: windows-latest
     name: create windows release zip
     steps:
@@ -283,8 +277,7 @@ jobs:
             overwrite: true
 
   windows_file:
-
-    needs: [create_version, get_date,get_commit]
+    needs: [create_version, get_date, get_commit]
     runs-on: windows-latest
     name: create windows release file
     steps:
@@ -354,8 +347,7 @@ jobs:
             overwrite: true
 
   mac_file:
-
-    needs: [create_version, get_date,get_commit]
+    needs: [create_version, get_date, get_commit]
     runs-on: macos-latest
     name: create mac release file
     steps:
@@ -436,8 +428,7 @@ jobs:
             overwrite: true
 
   mac_dir:
-
-    needs: [create_version, get_date,get_commit]
+    needs: [create_version, get_date, get_commit]
     runs-on: macos-latest
     name: create mac release zip
     steps:
@@ -519,27 +510,20 @@ jobs:
             path: "dist/ofscraper_macos_${{inputs.version}}.zip"
             overwrite: true
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   publish_release:
     runs-on: ubuntu-latest
     name: publish
-    needs: [get_commit,get_date,linux_dir,linux_file, windows_dir, windows_file, mac_file,mac_dir]
+    needs:
+      [
+        get_commit,
+        get_date,
+        linux_dir,
+        linux_file,
+        windows_dir,
+        windows_file,
+        mac_file,
+        mac_dir,
+      ]
     permissions:
       contents: write
     steps:
@@ -595,7 +579,6 @@ jobs:
       - name: show files
         run: ls /home/runner/work/OF-Scraper/OF-Scraper
 
-
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
@@ -606,7 +589,7 @@ jobs:
           omitDraftDuringUpdate: True
           commit: "${{needs.get_commit.outputs.long}}"
 
-  pypi: 
+  pypi:
     needs: [get_commit]
     if: ${{ inputs.pip}}
     runs-on: ubuntu-latest
@@ -618,7 +601,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}  
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
@@ -778,13 +761,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-        
-
-
-
-
-
-
 
   docker_old:
     needs: [get_commit]
@@ -888,7 +864,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{inputs.version}}
-      - run: git checkout ${{needs.get_commit.outputs.long}}          
+      - run: git checkout ${{needs.get_commit.outputs.long}}
       - name: get tag
         run: echo release=$(git describe --tags `git rev-list --tags --max-count=1`) >> $GITHUB_ENV
       - name: Setup Docker buildx
@@ -923,4 +899,3 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-    
