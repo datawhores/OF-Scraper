@@ -18,9 +18,9 @@ from ofscraper.utils.context.run_async import run
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
     if read_args.retriveArgs().force_all:
-        log.info(f"forcing all downloads media count {len(medialist)}")
+        log.info(f"forcing all media count {len(medialist)}")
     elif read_args.retriveArgs().force_model_unique:
-        log.info("Downloading unique for model")
+        log.info("Downloading unique medi afor model")
         media_ids = set(
             operations.get_media_ids_downloaded_model(
                 model_id=model_id, username=username
@@ -35,7 +35,7 @@ def medialist_filter(medialist, model_id, username):
         log.debug("Removed previously downloaded avatars/headers")
         log.debug(f"Final Number of media to download {len(medialist)}")
     else:
-        log.info("Downloading unique across all models")
+        log.info("Downloading unique media across all models")
         media_ids = set(
             operations.get_media_ids_downloaded(model_id=model_id, username=username)
         )
