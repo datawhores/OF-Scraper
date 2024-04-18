@@ -496,4 +496,4 @@ async def get_after(model_id, username, forced_after=None):
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} messages in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0].get("posted_at") or 0).float_timestamp
+        return arrow.get(missing_items[0]['posted_at'] or missing_items[0]['created_at']  or 0).float_timestamp
