@@ -42,22 +42,10 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         else []
     )
     trace_log_old(oldmessages)
-
+    
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
-
-    log.debug(f"Messages after = {after}")
-
-    log.debug(f"Messages before = {before}")
-
-    log.info(
-        f"""
-Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
-[yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
-
-        """
-    )
+    log_after_before(after,before,username)
 
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
@@ -81,6 +69,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
+    log_after_before(after,before,username)
 
     log.debug(f"Messages after = {after}")
 
@@ -511,3 +500,15 @@ def trace_log_old(responseArray):
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
+
+def log_after_before(after,before,username):
+    log.debug(f"Messages before = {before}")
+
+    log.info(
+        f"""
+Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
+[yellow]Hint: append ' --after 2000' to command to force scan of all messages + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all messages + download/re-download of all files[/yellow]
+
+        """
+    )
