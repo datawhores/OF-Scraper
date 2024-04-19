@@ -42,7 +42,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
         else []
     )
     trace_log_old(oldmessages)
-    
+
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
     log_after_before(after,before,username)
@@ -151,10 +151,10 @@ async def process_tasks(tasks, model_id):
 
 def get_filterArray(after, before, oldmessages):
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-    oldmessages=list(filter(lambda x: x['posted_at'] or x['created_at']!=None,oldmessages))
+    oldmessages=list(filter(lambda x:x['created_at']!=None,oldmessages))
     oldmessages = sorted(
         oldmessages,
-        key=lambda x: arrow.get(x['posted_at'] or x['created_at'] or 0),
+        key=lambda x: arrow.get(x['created_at'] or 0),
         reverse=True,
     )
     if after > before:

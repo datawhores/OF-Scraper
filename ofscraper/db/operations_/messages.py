@@ -174,7 +174,7 @@ def get_messages_post_info(model_id=None, username=None, conn=None, **kwargs) ->
         conn.commit()
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, created_at=arrow.get(ele.get("created_at")).float_timestamp)
+            dict(ele, created_at=arrow.get(ele.get("created_at") or 0).float_timestamp)
             for ele in data
         ]
 
