@@ -122,29 +122,27 @@ async def process_tasks(tasks):
     trace_log_task(responseArray)
     return responseArray
 
-
-async def get_split_array(model_id, username, after):
-
+async def get_oldtimeline(model_id,username):
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_postsinfo(
             model_id=model_id, username=username
         )
     else:
         oldtimeline = []
-    trace_log_old(oldtimeline)
-    #page must be 50 post, and 60 is a reasonable size for max number of pages
-    min_posts=max(len(oldtimeline)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
-
-    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x is not None, oldtimeline))
     #dedupe oldtimeline
     seen=set()
-    oldtimeline = [
+    oldtimeline= [
         post
         for post in oldtimeline
         if post["post_id"] not in seen and not seen.add(post['post_id'])
     ]
-    postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x['created_at']))
+    log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
+    trace_log_old(oldtimeline)
+
+    
+
+async def get_split_array(model_id, username, after):
     log.info(
         f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
@@ -153,6 +151,12 @@ Setting initial timeline scan date for {username} to {arrow.get(after).format(co
 
             """
     )
+    oldtimeline=await get_oldtimeline(model_id,username)
+    if len(oldtimeline)==0:
+        return []
+    #page must be 50 post, and 60 is a reasonable size for max number of pages
+    min_posts=max(len(oldtimeline)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
+    postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x['created_at']))
     filteredArray = list(filter(lambda x: bool(x['created_at']), postsDataArray))
     filteredArray = list(filter(lambda x: arrow.get( x['created_at']).float_timestamp>= after, filteredArray) )
 
