@@ -130,13 +130,6 @@ async def process_tasks(tasks, model_id, after):
 
 
 def get_split_array(oldarchived, username, after):
-     #page must be 50 post, and 60 is a reasonable size for max number of pages
-    if len(oldarchived)==0:
-        return 0
-    min_posts=max(len(oldarchived)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
-    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x != None, oldarchived))
-    postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))
     log.info(
         f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
@@ -145,6 +138,13 @@ Setting initial archived scan date for {username} to {arrow.get(after).format(co
 
             """
     )
+     #page must be 50 post, and 60 is a reasonable size for max number of pages
+    if len(oldarchived)==0:
+        return 0
+    min_posts=max(len(oldarchived)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
+    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
+    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))
     filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
     splitArrays = [
@@ -310,32 +310,56 @@ async def scrape_archived_posts(
         async with c.requests_async(url) as r:
             posts = (await r.json_())["list"]
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
-            if not posts or len(posts) == 0:
-                log.debug(f" {log_id} -> number of post found 0")
-            elif len(posts) > 0:
-                log.debug(f"{log_id} -> number of archived post found {len(posts)}")
-                log.debug(
-                    f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
+            if not bool(posts):
+                log.debug(f"{log_id} -> no posts found")
+                return [],[]
+            log.debug(f"{log_id} -> number of archived post found {len(posts)}")
+            log.debug(
+                f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
+            )
+            log.debug(
+                f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
+            )
+            log.debug(
+                f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
+            )
+            log.trace(
+                "{log_id} -> archive raw {posts}".format(
+                    log_id=log_id,
+                    posts="\n\n".join(
+                        map(
+                            lambda x: f"scrapeinfo archive: {str(x)}",
+                            posts,
+                        )
+                    ),
                 )
-                log.debug(
-                    f"{log_id} -> last date {posts[-1].get('createdAt') or posts[-1].get('postedAt')}"
-                )
-                log.debug(
-                    f"{log_id} -> found archived post IDs {list(map(lambda x:x.get('id'),posts))}"
-                )
-                log.trace(
-                    "{log_id} -> archive raw {posts}".format(
-                        log_id=log_id,
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f"scrapeinfo archive: {str(x)}",
-                                posts,
-                            )
-                        ),
+            )
+
+            if not required_ids:
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_archived_posts(
+                            c,
+                            model_id,
+                            job_progress=job_progress,
+                            timestamp=posts[-1]["postedAtPrecise"],
+                            offset=False,
+                        )
                     )
                 )
+            elif (max(map(lambda x:float(x['postedAtPrecise']),posts))>=max(required_ids)):
+                    pass
+            elif float(timestamp or 0)>=max(required_ids):
+                pass
+            else:
+                log.debug(f"{log_id} Required before {required_ids}")
+                [
+                    required_ids.discard(float(ele["postedAtPrecise"]))
+                    for ele in posts
+                ]
+                log.debug(f"{log_id} Required after {required_ids}")
 
-                if not required_ids:
+                if len(required_ids) > 0:
                     new_tasks.append(
                         asyncio.create_task(
                             scrape_archived_posts(
@@ -343,31 +367,12 @@ async def scrape_archived_posts(
                                 model_id,
                                 job_progress=job_progress,
                                 timestamp=posts[-1]["postedAtPrecise"],
+                                required_ids=required_ids,
                                 offset=False,
                             )
                         )
                     )
-                else:
-                    [
-                        required_ids.discard(float(ele["postedAtPrecise"]))
-                        for ele in posts
-                    ]
-
-                    if len(required_ids) > 0 and float(timestamp or 0) < max(
-                        required_ids
-                    ):
-                        new_tasks.append(
-                            asyncio.create_task(
-                                scrape_archived_posts(
-                                    c,
-                                    model_id,
-                                    job_progress=job_progress,
-                                    timestamp=posts[-1]["postedAtPrecise"],
-                                    required_ids=required_ids,
-                                    offset=False,
-                                )
-                            )
-                        )
+            return posts, new_tasks
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
