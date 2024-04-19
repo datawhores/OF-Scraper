@@ -44,6 +44,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     after = await get_after(model_id, username, forced_after)
+    after_log(username,after)
     splitArrays = get_split_array(oldarchived, username, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks, model_id, after)
@@ -63,6 +64,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     after = await get_after(model_id, username, forced_after)
+    after_log(username,after)
     with progress_utils.set_up_api_archived():
         splitArrays = get_split_array(oldarchived, username, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
@@ -130,14 +132,6 @@ async def process_tasks(tasks, model_id, after):
 
 
 def get_split_array(oldarchived, username, after):
-    log.info(
-        f"""
-Setting initial archived scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
-[yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
-[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
-
-            """
-    )
      #page must be 50 post, and 60 is a reasonable size for max number of pages
     if len(oldarchived)==0:
         return 0
@@ -418,3 +412,13 @@ def trace_log_old(responseArray):
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
+
+def after_log(username,after):
+    log.info(
+        f"""
+Setting initial archived scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
+[yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
+[yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
+
+            """
+    )   
