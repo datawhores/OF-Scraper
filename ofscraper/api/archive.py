@@ -80,9 +80,7 @@ async def process_tasks(tasks, model_id, after):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -117,7 +115,7 @@ async def process_tasks(tasks, model_id, after):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 continue
-            tasks=new_tasks
+            tasks = new_tasks
 
     overall_progress.remove_task(page_task)
 
@@ -262,10 +260,14 @@ async def get_after(model_id, username, forced_after=None):
     missing_items = list(filter(lambda x: x.get("downloaded") != 1, curr))
     missing_items = list(sorted(missing_items, key=lambda x: x.get("posted_at") or 0))
     if len(missing_items) == 0:
-        log.debug("Using newest db date because,all downloads in db marked as downloaded")
-        return arrow.get(await operations.get_youngest_archived_date(
-            model_id=model_id, username=username
-        )).float_timestamp
+        log.debug(
+            "Using newest db date because,all downloads in db marked as downloaded"
+        )
+        return arrow.get(
+            await operations.get_youngest_archived_date(
+                model_id=model_id, username=username
+            )
+        ).float_timestamp
     else:
         log.debug(
             f"Setting date slightly before earliest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
@@ -374,35 +376,36 @@ async def scrape_archived_posts(
         job_progress.remove_task(task) if job_progress and task else None
     return posts, new_tasks
 
+
 def trace_log_task(responseArray):
-    chunk_size=100
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
-        log.trace(
-            f"{common_logs.FINAL_RAW.format('Archived')}".format(
-                posts=api_str
-            )
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
+        api_str = "\n\n".join(
+            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
         )
+        log.trace(f"{common_logs.FINAL_RAW.format('Archived')}".format(posts=api_str))
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
 
 def trace_log_old(responseArray):
-    chunk_size=100
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
         log.trace(
-        "oldarchived {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"oldarchived: {str(x)}", chunk))
+            "oldarchived {posts}".format(
+                posts="\n\n".join(list(map(lambda x: f"oldarchived: {str(x)}", chunk)))
             )
-        )
         )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):

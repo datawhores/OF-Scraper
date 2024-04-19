@@ -392,7 +392,7 @@ async def scrape_timeline_posts(
     return posts, new_tasks
 
 def trace_log_task(responseArray):
-    chunk_size=100
+    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
         end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
@@ -409,7 +409,7 @@ def trace_log_task(responseArray):
 
 
 def trace_log_old(responseArray):
-    chunk_size=100
+    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
         end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation

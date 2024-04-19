@@ -333,7 +333,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             ]
         )
     )
-    trace_log_task(header='All Labels Content')
+    trace_log_task(list(responseDict.values()),header='All Labels Content')
     overall_progress.remove_task(page_task)
     return list(responseDict.values())
 
@@ -429,7 +429,7 @@ def set_check(unduped, model_id):
     cache.close()
 
 def trace_log_task(responseArray,header=None):
-    chunk_size=100
+    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
         end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
@@ -437,7 +437,7 @@ def trace_log_task(responseArray,header=None):
         api_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
         log.trace(
         f"{common_logs.FINAL_RAW.format(header or 'Labels Names')}".format(
-            posts=api_sr
+            posts=api_str
         )
     )
         # Check if there are more elements remaining after this chunk
