@@ -226,13 +226,13 @@ def add_column_post_pinned(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def get_archived_postinfo(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(archivedPostInfo, [model_id])
         conn.commit()
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, created_at=arrow.get(ele.get("created_at")).float_timestamp)
+            dict(ele, created_at=arrow.get(ele.get("created_at") or 0).float_timestamp)
             for ele in data
         ]
 

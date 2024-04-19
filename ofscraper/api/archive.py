@@ -35,7 +35,7 @@ sem = None
 async def get_archived_posts_progress(model_id, username, forced_after=None, c=None):
 
     oldarchived = (
-        await operations.get_archived_postinfo(model_id=model_id, username=username)
+        await operations.get_archived_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -55,7 +55,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 @run
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
     oldarchived = (
-        await operations.get_archived_postinfo(model_id=model_id, username=username)
+        await operations.get_archived_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
