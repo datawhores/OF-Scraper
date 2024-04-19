@@ -45,7 +45,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     after = await get_after(model_id, username, forced_after)
     after_log(username,after)
-    splitArrays = get_split_array(oldarchived, username, after)
+    splitArrays = get_split_array(oldarchived, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks, model_id, after)
     progress_utils.archived_layout.visible = False
@@ -66,7 +66,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     after = await get_after(model_id, username, forced_after)
     after_log(username,after)
     with progress_utils.set_up_api_archived():
-        splitArrays = get_split_array(oldarchived, username, after)
+        splitArrays = get_split_array(oldarchived, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
         return await process_tasks(tasks, model_id, after)
 
@@ -131,8 +131,7 @@ async def process_tasks(tasks, model_id, after):
     return responseArray
 
 
-def get_split_array(oldarchived, username, after):
-     #page must be 50 post, and 60 is a reasonable size for max number of pages
+def get_split_array(oldarchived, after):
     if len(oldarchived)==0:
         return 0
     min_posts=max(len(oldarchived)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))

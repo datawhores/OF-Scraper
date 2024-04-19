@@ -149,7 +149,6 @@ async def get_split_array(model_id, username, after):
     oldtimeline=await get_oldtimeline(model_id,username)
     if len(oldtimeline)==0:
         return []
-    #page must be 50 post, and 60 is a reasonable size for max number of pages
     min_posts=max(len(oldtimeline)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
     postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x['created_at']))
     filteredArray = list(filter(lambda x: bool(x['created_at']), postsDataArray))
