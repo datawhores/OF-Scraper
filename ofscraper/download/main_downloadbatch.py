@@ -47,6 +47,7 @@ from ofscraper.download.common.common import (
     set_profile_cache_helper,
     set_time,
     size_checker,
+    force_download
 )
 from ofscraper.utils.context.run_async import run
 
@@ -58,17 +59,15 @@ async def main_download(c, ele, username, model_id):
     common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} download url: {get_url_log(ele)}"
     )
+    if common.is_bad_url(ele.url):
+        common_globals.log.debug(f"{get_medialog(ele)} Forcing download because known bad url")
+        await force_download(ele,username,model_id)
+        return ele.mediatype, 0
 
     result = list(await main_download_downloader(c, ele))
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":
-            await operations.download_media_update(
-                ele,
-                filename=None,
-                model_id=model_id,
-                username=username,
-                downloaded=True,
-            )
+            await force_download(ele,username,model_id)
         return ele.mediatype, 0
     return await handle_result(result, ele, username, model_id)
 

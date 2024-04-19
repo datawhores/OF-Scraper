@@ -41,6 +41,7 @@ from ofscraper.download.common.common import (
     set_time,
     size_checker,
     temp_file_logger,
+    force_download
 )
 from ofscraper.utils.context.run_async import run
 
@@ -134,13 +135,7 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
 async def media_item_post_process(audio, video, ele, username, model_id):
     if (audio["total"] + video["total"]) == 0:
         if ele.mediatype != "forced_skipped":
-            await operations.download_media_update(
-                ele,
-                filename=None,
-                model_id=model_id,
-                username=username,
-                downloaded=True,
-            )
+            await force_download(ele,username,model_id)
         return ele.mediatype, 0
     for m in [audio, video]:
         m["total"] = get_item_total(m)
