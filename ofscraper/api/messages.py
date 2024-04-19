@@ -338,39 +338,60 @@ async def scrape_messages(
             )
             messages = (await r.json_())["list"]
             log_id = f"offset messageid:{message_id if message_id else 'init id'}"
-            if not messages:
-                messages = []
-            if len(messages) == 0:
-                log.debug(f"{log_id} -> number of messages found 0")
-            elif len(messages) > 0:
-                log.debug(f"{log_id} -> number of messages found {len(messages)}")
-                log.debug(
-                    f"{log_id} -> first date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
+            if bool(messages):
+                log.debug(f"{log_id} -> no messages found")
+                return [],[]
+            log.debug(f"{log_id} -> number of messages found {len(messages)}")
+            log.debug(
+                f"{log_id} -> first date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
+            )
+            log.debug(
+                f"{log_id} -> last date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
+            )
+            log.debug(
+                f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
+            )
+            log.trace(
+                "{log_id} -> messages raw {posts}".format(
+                    log_id=log_id,
+                    posts="\n\n".join(
+                        map(
+                            lambda x: f" messages scrapeinfo: {str(x)}",
+                            messages,
+                        )
+                    ),
                 )
-                log.debug(
-                    f"{log_id} -> last date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
-                )
-                log.debug(
-                    f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
-                )
-                log.trace(
-                    "{log_id} -> messages raw {posts}".format(
-                        log_id=log_id,
-                        posts="\n\n".join(
-                            map(
-                                lambda x: f" messages scrapeinfo: {str(x)}",
-                                messages,
-                            )
-                        ),
+            )
+
+            elif not required_ids:
+                attempt.set(0)
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_messages(
+                            c,
+                            model_id,
+                            job_progress=job_progress,
+                            message_id=messages[-1]["id"],
+                        )
                     )
                 )
-                timestamp = arrow.get(
-                    messages[-1].get("createdAt") or messages[-1].get("postedAt")
-                ).float_timestamp
 
-                if timestamp < after:
-                    attempt.set(0)
-                elif required_ids is None:
+                                  
+            elif (min(map(lambda x:float(x['postedAtPrecise']),posts))<=min(required_ids)):
+                pass
+            elif float(timestamp or 0)<=min(required_ids):
+                pass
+            else:
+                [
+                    required_ids.discard(
+                        arrow.get(
+                            ele.get("createdAt") or ele.get("postedAt")
+                        ).float_timestamp
+                    )
+                    for ele in messages
+                ]
+
+                if len(required_ids) > 0:
                     attempt.set(0)
                     new_tasks.append(
                         asyncio.create_task(
@@ -379,32 +400,10 @@ async def scrape_messages(
                                 model_id,
                                 job_progress=job_progress,
                                 message_id=messages[-1]["id"],
+                                required_ids=required_ids,
                             )
                         )
                     )
-                else:
-                    [
-                        required_ids.discard(
-                            arrow.get(
-                                ele.get("createdAt") or ele.get("postedAt")
-                            ).float_timestamp
-                        )
-                        for ele in messages
-                    ]
-
-                    if len(required_ids) > 0 and timestamp > min(list(required_ids)):
-                        attempt.set(0)
-                        new_tasks.append(
-                            asyncio.create_task(
-                                scrape_messages(
-                                    c,
-                                    model_id,
-                                    job_progress=job_progress,
-                                    message_id=messages[-1]["id"],
-                                    required_ids=required_ids,
-                                )
-                            )
-                        )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -459,7 +458,7 @@ async def get_after(model_id, username, forced_after=None):
         )
         return arrow.get(
             await operations.get_youngest_message_date(model_id=model_id, username=username)
-        )
+        ).float_timestamp
     else:
         log.debug(
             f"Setting date slightly before oldest missing item\nbecause {len(missing_items)} messages in db are marked as undownloaded"
