@@ -202,26 +202,11 @@ def final_post_sort(media):
     elif item_sort == "filename-desc":
         return sorted(media, key=lambda x: x.filename, reverse=True)
 
-def trace_log_task(responseArray):
-    chunk_size=100
-    for i in range(1, len(responseArray) + 1, chunk_size):
-        # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
-        timeline_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
-        log.trace(
-            f"{common_logs.FINAL_RAW.format('Timeline')}".format(
-                posts=timeline_str
-            )
-        )
-        # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
-            break  # Exit the loop if we've processed all elements
 
 
-def trace_log(count,media,filter_str):
+def trace_log_media(count,media,filter_str):
     chunk_size=100
-    logformater = "{} data: {} id: {} postid: {}"
+    logformater = "{} id: {} postid: {} data: {} "
     for i in range(1, len(media) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
         end_index = min(i + chunk_size - 1, len(media))  # Adjust end_index calculation
@@ -231,44 +216,34 @@ def trace_log(count,media,filter_str):
             map(
                 lambda x: logformater.format(
                     f"filter {count}-> {filter_str} ",
-                    x.media,
                     x.id,
                     x.postid,
+                     x.media,
                 ),
-                media,
-            )
-        )
-    )
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        log.trace(
-        "oldtimeline {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"oldtimeline: {str(x)}", chunk))
-            )
-        )
-        )
+                chunk,
+            )))
         # Check if there are more elements remaining after this chunk
-        if i + chunk_size > len(responseArray):
+        if i + chunk_size > len(media):
+            break  # Exit the loop if we've processed all elements
+
+def trace_log_post(count,media,filter_str):
+    chunk_size=100
+    logformater = "{} id: {} data: {} "
+    for i in range(1, len(media) + 1, chunk_size):
+        # Calculate end index considering potential last chunk being smaller
+        end_index = min(i + chunk_size - 1, len(media))  # Adjust end_index calculation
+        chunk = media[i - 1:end_index]  # Adjust slice to start at i-1
+        log.trace(
+        "\n\n\n".join(
+            map(
+                lambda x: logformater.format(
+                    f"filter {count}-> {filter_str} ",
+                     x.id,
+                    x.post
+                   
+                ),
+                chunk,
+            )))
+        # Check if there are more elements remaining after this chunk
+        if i + chunk_size > len(media):
             break  # Exit the loop if we've processed all elements
