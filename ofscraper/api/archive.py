@@ -130,7 +130,10 @@ async def process_tasks(tasks, model_id, after):
 
 
 def get_split_array(oldarchived, username, after):
-    min_posts = 50
+     #page must be 50 post, and 60 is a reasonable size for max number of pages
+    if len(oldarchived)==0:
+        return 0
+    min_posts=max(len(oldarchived)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))

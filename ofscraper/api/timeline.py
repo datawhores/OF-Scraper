@@ -124,7 +124,6 @@ async def process_tasks(tasks):
 
 
 async def get_split_array(model_id, username, after):
-    min_posts = 50
 
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_postsinfo(
@@ -133,8 +132,18 @@ async def get_split_array(model_id, username, after):
     else:
         oldtimeline = []
     trace_log_old(oldtimeline)
+    #page must be 50 post, and 60 is a reasonable size for max number of pages
+    min_posts=max(len(oldtimeline)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
+
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x is not None, oldtimeline))
+    #dedupe oldtimeline
+    seen=set()
+    oldtimeline = [
+        post
+        for post in oldtimeline
+        if post["post_id"] not in seen and not seen.add(post['post_id'])
+    ]
     postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x['created_at']))
     log.info(
         f"""
@@ -294,7 +303,7 @@ async def scrape_timeline_posts(
     c, model_id, job_progress=None, timestamp=None, required_ids=None, offset=False
 ) -> list:
     posts = None
-    timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
+    timestamp = float(timestamp) - 100 if timestamp and offset else timestamp
 
     url = (
         constants.getattr("timelineNextEP").format(model_id, str(timestamp))
@@ -360,26 +369,31 @@ async def scrape_timeline_posts(
                         )
                     )
                 else:
+                    log.debug(f"{log_id} Required before {required_ids}")
                     [
                         required_ids.discard(float(ele["postedAtPrecise"]))
                         for ele in posts
                     ]
-                    if len(required_ids) > 0 and float((timestamp) or 0) <= max(
-                        required_ids
-                    ):
-                        new_tasks.append(
-                            asyncio.create_task(
-                                scrape_timeline_posts(
-                                    c,
-                                    model_id,
-                                    job_progress=job_progress,
-                                    timestamp=posts[-1]["postedAtPrecise"],
-                                    required_ids=required_ids,
-                                    offset=False,
-                
+                    log.debug(f"{log_id} Required after {required_ids}")
+                    if len(required_ids) > 0:
+                        if (max(map(lambda x:float(x['postedAtPrecise']),posts))>=max(required_ids)):
+                            pass
+                        elif float(timestamp or 0)>=max(required_ids):
+                            pass
+                        else:   
+                            new_tasks.append(
+                                asyncio.create_task(
+                                    scrape_timeline_posts(
+                                        c,
+                                        model_id,
+                                        job_progress=job_progress,
+                                        timestamp=posts[-1]["postedAtPrecise"],
+                                        required_ids=required_ids,
+                                        offset=False,
+                    
+                                    )
                                 )
                             )
-                        )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
