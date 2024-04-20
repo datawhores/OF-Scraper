@@ -11,8 +11,8 @@ r"""
                                                                                       
 """
 
-import contextvars
 import logging
+import asyncio
 import traceback
 
 from rich.console import Console
@@ -22,7 +22,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
 console = Console()
 
 
@@ -35,15 +34,15 @@ def get_black_list_helper():
 
 
 async def sort_list(c) -> list:
-    attempt.set(0)
+    url=constants.getattr("sortSubscription")
     try:
-        attempt.set(attempt.get(0) + 1)
         async with c.requests_async(
-            constants.getattr("sortSubscription"),
             method="post",
             json={"order": "users.name", "direction": "desc", "type": "all"},
         ) as _:
             pass
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
