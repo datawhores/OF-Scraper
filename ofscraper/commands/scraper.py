@@ -28,6 +28,8 @@ import ofscraper.utils.menu as menu
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
+from ofscraper.__version__ import __version__
+
 
 log = logging.getLogger("shared")
 
@@ -69,7 +71,7 @@ def process_prompts():
 def print_start():
     with stdout.lowstdout():
         console.get_shared_console().print(
-            f"[bold green]Version {read_args.retriveArgs().version}[/bold green]"
+            f"[bold green]Version {__version__}[/bold green]"
         )
 
 

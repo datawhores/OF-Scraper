@@ -91,7 +91,7 @@ def register_keys(prompt_, altx_action, altd_action, additional_keys, action):
 
     @prompt_.register_kb("alt-v")
     def _handle_alt_v(event):
-        action[0] = "altd"
+        action[0] = "altv"
         event.app.exit()
 
     @prompt_.register_kb("c-v")
