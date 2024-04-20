@@ -205,7 +205,8 @@ def get_j(oldmessages, after):
 
 
 def get_split_array(filteredArray):
-    min_posts = 50
+    min_posts=max(len(filteredArray)//constants.getattr("REASONABLE_MAX_PAGE_MESSAGES"),constants.getattr("MIN_PAGE_POST_COUNT"))
+
     return [
         filteredArray[i : i + min_posts]
         for i in range(0, len(filteredArray), min_posts)
@@ -338,7 +339,7 @@ async def scrape_messages(
             )
             messages = (await r.json_())["list"]
             log_id = f"offset messageid:{message_id if message_id else 'init id'}"
-            if bool(messages):
+            if not bool(messages):
                 log.debug(f"{log_id} -> no messages found")
                 return [],[]
             log.debug(f"{log_id} -> number of messages found {len(messages)}")
@@ -363,7 +364,7 @@ async def scrape_messages(
                 )
             )
 
-            elif not required_ids:
+            if not required_ids:
                 attempt.set(0)
                 new_tasks.append(
                     asyncio.create_task(
@@ -377,9 +378,7 @@ async def scrape_messages(
                 )
 
                                   
-            elif (min(map(lambda x:float(x['postedAtPrecise']),posts))<=min(required_ids)):
-                pass
-            elif float(timestamp or 0)<=min(required_ids):
+            elif (min(map(lambda x:arrow.get(x.get("createdAt",0) or x.get("postedAt",0)).float_timestamp,messages))<=min(required_ids)):
                 pass
             else:
                 [
@@ -404,6 +403,7 @@ async def scrape_messages(
                             )
                         )
                     )
+        return messages,new_tasks
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -413,7 +413,6 @@ async def scrape_messages(
         raise E
     finally:
         (job_progress.remove_task(task) if job_progress and task != None else None)
-    return messages, new_tasks
 
 
 def get_individual_post(model_id, postid):

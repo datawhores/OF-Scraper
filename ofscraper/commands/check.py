@@ -11,8 +11,7 @@ import arrow
 
 import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
-import ofscraper.api.labels as labels
-import ofscraper.api.messages as messages_
+import ofscraper.api.labels as label
 import ofscraper.api.paid as paid_
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
