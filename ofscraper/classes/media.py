@@ -110,6 +110,9 @@ class Media(base.base):
 
     @property
     def canview(self):
+        #profiles are always viewable
+        if self.responsetype.lower()=="profile":
+            return True
         return self._media.get("canView") if (self.url or self.mpd) != None else False
 
     @property

@@ -18,7 +18,7 @@ from ofscraper.utils.context.run_async import run
 def medialist_filter(medialist, model_id, username):
     log = logging.getLogger("shared")
     if read_args.retriveArgs().force_all:
-        log.info(f"forcing all")
+        log.info("forcing all")
     elif read_args.retriveArgs().force_model_unique:
         log.info("Downloading unique medi afor model")
         media_ids = set(

@@ -348,7 +348,7 @@ async def process_pinned_posts(model_id, username, c):
 
 
 @free.space_checker
-async def process_profile(username, c) -> list:
+async def process_profile(username) -> list:
     try:
         with stdout.lowstdout():
             user_profile = profile.scrape_profile(username)
@@ -532,7 +532,7 @@ async def process_task(model_id, username, ele):
                 break
             for _ in range(max_count - len(tasks)):
                 if "Profile" in final_post_areas:
-                    tasks.append(asyncio.create_task(process_profile(username, c)))
+                    tasks.append(asyncio.create_task(process_profile(username)))
                     final_post_areas.remove("Profile")
                 elif "Pinned" in final_post_areas:
                     tasks.append(
