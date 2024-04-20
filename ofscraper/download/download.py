@@ -1,4 +1,7 @@
 import logging
+import json
+import traceback
+import subprocess
 
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadbatch as batchdownloader
@@ -49,6 +52,7 @@ def medialist_filter(medialist, model_id, username):
 
 
 def download_process(username, model_id, medialist, posts=None):
+    data=None
     if read_args.retriveArgs().metadata:
         medialist = (
             list(filter(lambda x: x.canview, medialist))
@@ -58,15 +62,17 @@ def download_process(username, model_id, medialist, posts=None):
         logging.getLogger().info(f"Final media count for metadata {len(medialist)}")
         medialist = medialist_filter(medialist, model_id, username)
         medialist = helpers.ele_count_filter(medialist)
-        download_picker(username, model_id, medialist)
+        data=download_picker(username, model_id, medialist)
     else:
         medialist = list(filter(lambda x: x.canview, medialist))
         medialist = medialist_filter(medialist, model_id, username)
         medialist = helpers.ele_count_filter(medialist)
         logging.getLogger().info(f"Final media count for download {len(medialist)}")
         textDownloader(posts, username=username)
-        download_picker(username, model_id, medialist)
+        data=download_picker(username, model_id, medialist)
         remove_downloads_with_hashes(username, model_id)
+    download_post_process(username, model_id, medialist, posts)
+    return data
 
 
 def download_picker(username, model_id, medialist):
@@ -92,3 +98,16 @@ def remove_downloads_with_hashes(username, model_id):
     hash.remove_dupes_hash(username, model_id, "audios")
     hash.remove_dupes_hash(username, model_id, "images")
     hash.remove_dupes_hash(username, model_id, "videos")
+
+def download_post_process(username, model_id, medialist,postlist):
+    log = logging.getLogger("shared")
+    if not settings.get_post_download_script():
+        return
+    try:
+        mediadump=json.dumps(list(map(lambda x:x.media,medialist)))
+        postdump=json.dumps(list(map(lambda x:x.post,postlist)))
+        model_id=str(model_id)
+        subprocess.run([settings.get_post_download_script(),username,model_id,mediadump,postdump])
+    except Exception as e:
+        log.traceback_(e)
+        log.traceback_(traceback.format_exc())

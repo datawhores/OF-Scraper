@@ -184,6 +184,19 @@ def get_default_userlist(config=None):
 
 
 @wrapper.config_reader
+def get_post_download_script(config=None):
+    if config == False:
+        return constants.POST_SCRIPT_DEFAULT
+    val = (
+        config.get("post_download_script")
+        if config.get("post_download_script") != None
+        else config.get("advanced_options", {}).get("post_download_script")
+    )
+    return val if val != None else constants_attr.getattr("POST_SCRIPT_DEFAULT")
+
+
+
+@wrapper.config_reader
 def get_default_blacklist(config=None):
     if config == False:
         return constants.DEFAULT_BLACK_LIST

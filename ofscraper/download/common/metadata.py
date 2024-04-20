@@ -9,6 +9,8 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.download.common.log import get_medialog
+import ofscraper.download.common.media as media
+
 
 
 async def force_download(ele, username, model_id):
@@ -27,6 +29,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     )
     placeholderObj = placeholderObj or await placeholderObjHelper(c, ele)
     await placeholderObj.init()
+    media.add_path(placeholderObj,ele)
     effected = None
     if ele.id:
         effected = await operations.download_media_update(
@@ -57,7 +60,7 @@ async def metadata_downloaded_helper(placeholderObj):
 
 async def metadata_helper(c, ele):
     if not ele.url and not ele.mpd:
-        placeholderObj = placeholder.Placeholders(ele, ext=content_type_missing(ele))
+        placeholderObj = placeholder.Placeholders(ele, ext=media.content_type_missing(ele))
         return placeholderObj
     else:
         url = ele.url or ele.mpd
@@ -89,7 +92,7 @@ async def metadata_helper(c, ele):
             )
             content_type = headers.get("content-type").split("/")[
                 -1
-            ] or content_type_missing(ele)
+            ] or media.content_type_missing(ele)
             placeholderObj = await (
                 placeholderObj or placeholder.Placeholders(ele, ext=content_type)
             ).init()
@@ -103,16 +106,9 @@ async def placeholderObjHelper(c, ele):
     if download_data:
         content_type = download_data.get("content-type").split("/")[
             -1
-        ] or content_type_missing(ele)
+        ] or media.content_type_missing(ele)
         return placeholder.Placeholders(ele, content_type)
     # final fallback
     return await metadata_helper(c, ele)
 
 
-def content_type_missing(ele):
-    if ele.mediatype.lower() == "videos":
-        return "mp4"
-    elif ele.mediatype.lower() == "images":
-        return "jpg"
-    elif ele.mediatype.lower() == "audios":
-        return "mp3"

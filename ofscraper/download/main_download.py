@@ -54,6 +54,8 @@ from ofscraper.download.common.common import (
     set_time,
     size_checker,
 )
+import ofscraper.download.common.media as media
+
 
 
 async def main_download(c, ele, username, model_id, job_progress):
@@ -111,6 +113,8 @@ async def handle_result(result, ele, username, model_id):
             hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
+    media.add_path(placeholderObj,ele)
+
     return ele.mediatype, total
 
 

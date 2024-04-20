@@ -162,6 +162,15 @@ def common_params(func):
             [select onw one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="complete",
         ),
+        click.option(
+            "-ds",
+            "--download-script",
+            "download_script",
+            help="""
+            \b
+            post download script data sent is username, model_id, media json and post json
+            """,
+        ),
         help="Advanced control of program behavior",
     )
     @functools.wraps(func)

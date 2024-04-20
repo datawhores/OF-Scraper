@@ -486,6 +486,7 @@ def advanced_config() -> dict:
             {
                 "type": "input",
                 "name": "custom",
+                "multiline": True,
                 "message": "edit custom value:\n",
                 "option_instruction": "This is a helper value for remapping placeholder values",
                 "default": (
@@ -509,13 +510,23 @@ def advanced_config() -> dict:
                 "default": data.get_allow_code_execution(),
                 "option_instruction": "Allows for use of eval to evaluate custom values in placeholders",
             },
+
+                        {
+                "type": "input",
+                "name": "post_download_script",
+                "message": "Script to run after model download",
+                "default": data.get_post_download_script() or "",
+                "option_instruction": "Leave empty to skip post download script",
+            },
+   
             {
                 "type": "filepath",
                 "name": "temp_dir",
-                "message": "Location to store temp file",
+                "message": "Location to store temp files",
                 "default": data.get_TempDir() or "",
                 "option_instruction": "Leave empty to use default location",
             },
+            
             {
                 "type": "list",
                 "name": "appendlog",

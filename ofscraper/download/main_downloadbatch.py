@@ -50,6 +50,8 @@ from ofscraper.download.common.common import (
     size_checker,
 )
 from ofscraper.utils.context.run_async import run
+import ofscraper.download.common.media as media
+
 
 
 async def main_download(c, ele, username, model_id):
@@ -71,7 +73,7 @@ async def main_download(c, ele, username, model_id):
         if ele.mediatype != "forced_skipped":
             await force_download(ele, username, model_id)
         return ele.mediatype, 0
-    return await handle_result(result, ele, username, model_id)
+    await handle_result(result, ele, username, model_id)
 
 
 async def handle_result(result, ele, username, model_id):
@@ -105,6 +107,7 @@ async def handle_result(result, ele, username, model_id):
             hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
+    media.add_path(placeholderObj,ele)
     return ele.mediatype, total
 
 

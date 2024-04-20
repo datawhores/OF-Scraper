@@ -44,6 +44,7 @@ from ofscraper.download.common.common import (
     temp_file_logger,
 )
 from ofscraper.utils.context.run_async import run
+import ofscraper.download.common.media as media
 
 
 async def alt_download(c, ele, username, model_id):
@@ -129,6 +130,7 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
                 sharedPlaceholderObj, mediatype=ele.mediatype
             ),
         )
+    media.add_path(sharedPlaceholderObj,ele)
     return ele.mediatype, video["total"] + audio["total"]
 
 
