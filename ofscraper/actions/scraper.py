@@ -489,23 +489,24 @@ async def process_labels(model_id, username, c):
 
 
 async def process_areas(ele, model_id) -> list:
-    executor = (
-        ProcessPoolExecutor()
-        if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
-        else ThreadPoolExecutor()
-    )
-    try:
-        with executor:
-            asyncio.get_event_loop().set_default_executor(executor)
-            username = ele.name
-            output = []
-            with progress_utils.setup_api_split_progress_live():
-                medias, posts = await process_task(model_id, username, ele)
-                output.extend(medias)
-        return filters.filterMedia(output), filters.filterPost(posts)
-    except Exception as E:
-        print(E)
-        raise E
+    with stdout.lowstdout():
+        executor = (
+            ProcessPoolExecutor()
+            if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
+            else ThreadPoolExecutor()
+        )
+        try:
+            with executor:
+                asyncio.get_event_loop().set_default_executor(executor)
+                username = ele.name
+                output = []
+                with progress_utils.setup_api_split_progress_live():
+                    medias, posts = await process_task(model_id, username, ele)
+                    output.extend(medias)
+            return filters.filterMedia(output), filters.filterPost(posts)
+        except Exception as E:
+            print(E)
+            raise E
 
 
 async def process_task(model_id, username, ele):
