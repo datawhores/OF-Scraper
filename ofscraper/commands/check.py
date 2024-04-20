@@ -11,8 +11,10 @@ import arrow
 
 import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
-import ofscraper.api.labels as label
+import ofscraper.api.labels as labels
+
 import ofscraper.api.paid as paid_
+import ofscraper.api.messages as messages_
 import ofscraper.api.pinned as pinned
 import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
@@ -54,7 +56,6 @@ ROW_NAMES = (
 )
 ROWS = []
 app = None
-prev_names = prev_names = set()
 ALL_MEDIA = {}
 
 
@@ -88,8 +89,8 @@ def process_item():
         username = row[app.row_names.index("UserName")].plain
         post_id = row[app.row_names.index("Post_ID")].plain
         media_id = int(row[app.row_names.index("Media_ID")].plain)
-
         media = ALL_MEDIA.get(f"{media_id}_{post_id}_{username}")
+        data_refill(media_id,post_id,username)
         if not media:
             raise Exception(f"No data for {media_id}_{post_id}_{username}")
 
@@ -127,6 +128,22 @@ def process_item():
 
     if app.row_queue.empty():
         log.info("Download cart is currently empty")
+@run
+async def data_refill(media_id,post_id,target_name):
+    args = read_args.retriveArgs()
+    if args.command == "msg_check":
+        async for  username,model_id,final_post_array in message_check_retriver():
+            if any(x.id == media_id and x.postid == post_id and x.username == target_name for x in await process_post_media(
+                    username, model_id, final_post_array
+                )):
+                    break
+    elif args.command=="paid_check":
+         async for  username,model_id,final_post_array in purchase_check_retriver():
+            if any(x.id == media_id and x.postid == post_id and x.username == target_name for x in await process_post_media(
+                    username, model_id, final_post_array
+                )):
+                    break
+
 
 
 def checker():
@@ -294,12 +311,21 @@ def start_helper():
 
 
 def message_checker():
-    message_checker_helper()
+    message_checker_runner()
     start_helper()
 
 
 @run
-async def message_checker_helper():
+async def message_checker_runner():
+    async for user_name,model_id,final_post_array in message_check_retriver():
+        await process_post_media(
+            user_name, model_id, final_post_array
+        )
+        await operations.make_changes_to_content_tables(
+            final_post_array , model_id=model_id, username=user_name
+        )
+        await row_gather(user_name,model_id, paid=True)
+async def message_check_retriver():
     links = list(url_helper())
     async with sessionManager.sessionManager(
         backend="httpx",
@@ -351,26 +377,27 @@ async def message_checker_helper():
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), paid)
                 )
-                await operations.make_changes_to_content_tables(
-                    paid_posts_array, model_id=model_id, username=user_name
-                )
-
-                await process_post_media(
-                    user_name, model_id, paid_posts_array + message_posts_array
-                )
-
-                downloaded = await get_downloaded(user_name, model_id, True)
-
-                row_gather(downloaded, user_name)
+                final_post_array=paid_posts_array + message_posts_array
+                yield user_name,model_id,final_post_array
 
 
 def purchase_checker():
-    purchase_checker_helper()
+    purchase_checker_runner()
     start_helper()
 
+@run
+async def purchase_checker_runner():
+    async for user_name,model_id,final_post_array in purchase_check_retriver():
+        await process_post_media(
+            user_name, model_id, final_post_array
+        )
+        await operations.make_changes_to_content_tables(
+            final_post_array , model_id=model_id, username=user_name
+        )
+        await row_gather(user_name,model_id, paid=True)
 
 @run
-async def purchase_checker_helper():
+async def purchase_check_retriver():
     user_dict = {}
     auth_requests.make_headers()
     async with sessionManager.sessionManager(
@@ -380,7 +407,7 @@ async def purchase_checker_helper():
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
     ) as c:
-        for name in read_args.retriveArgs().usernames:
+        for name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(name)["username"]
             model_id = name if name.isnumeric() else profile.get_id(user_name)
             user_dict[model_id] = user_dict.get(model_id, [])
@@ -413,12 +440,7 @@ async def purchase_checker_helper():
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
-            await operations.make_changes_to_content_tables(
-                posts_array, model_id=model_id, username=user_name
-            )
-            downloaded = await get_downloaded(user_name, model_id)
-            await process_post_media(user_name, model_id, posts_array)
-            row_gather(downloaded, user_name)
+            yield user_name,model_id,posts_array
 
 
 def stories_checker():
@@ -466,6 +488,9 @@ def url_helper():
 
 @run
 async def process_post_media(username, model_id, posts_array):
+    posts_array = list(
+            map(lambda x: posts_.Post(x, model_id, username) if not isinstance(x,posts_.Post) else x, posts_array)
+    )
     seen = set()
     unduped = [
         post
@@ -518,7 +543,7 @@ async def get_paid_ids(model_id, user_name):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
-            paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+            paid = await paid_.get_paid_posts(model_id, user_name, c=c)          
     media = await process_post_media(user_name, model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
@@ -583,9 +608,11 @@ def checkmarkhelper(ele):
     return "[]" if unlocked_helper(ele) else "Not Unlocked"
 
 
-def row_gather(downloaded, username):
+async def row_gather(username,model_id,paid=False):
     # fix text
     global ROWS
+    downloaded = await get_downloaded(username, model_id, paid=paid)
+
 
     mediadict = {}
     [

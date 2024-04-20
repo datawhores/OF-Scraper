@@ -136,51 +136,41 @@ async def process_tasks_labels(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Label Names Pages Progress: {page_count}",
-                    )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Label Names Pages Progress: {page_count}",
+                )
 
-                    new_posts = [
-                        post
-                        for post in result
-                        if post["id"] not in seen and not seen.add(post["id"])
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}"
-                    )
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('Label Names')}".format(
-                            posts="\n\n".join(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    new_posts,
-                                )
+                new_posts = [
+                    post
+                    for post in result
+                    if post["id"] not in seen and not seen.add(post["id"])
+                ]
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Label Names')} {list(map(lambda x:x['id'],new_posts))}"
+                )
+                log.trace(
+                    f"{common_logs.PROGRESS_RAW.format('Label Names')}".format(
+                        posts="\n\n".join(
+                            map(
+                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                new_posts,
                             )
                         )
                     )
-                    responseArray.extend(new_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
+                )
+                responseArray.extend(new_posts)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
         tasks = new_tasks
     overall_progress.remove_task(page_task)
     log.debug(
@@ -197,8 +187,10 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
     attempt.set(0)
     new_tasks = []
     await asyncio.sleep(1)
+    url=constants.getattr("labelsEP").format(model_id, offset)
     try:
         attempt.set(attempt.get(0) + 1)
+
 
         task = (
             job_progress.add_task(
@@ -209,7 +201,7 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
             else None
         )
         async with c.requests_async(
-            url=constants.getattr("labelsEP").format(model_id, offset)
+            url
         ) as r:
             data = await r.json_()
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -240,7 +232,8 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
                     )
                 )
             return data.get("list"), new_tasks
-
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         await asyncio.sleep(1)
 
@@ -264,48 +257,38 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
 
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    label, new_posts, new_tasks = await task
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task, description=f"Labels Progress: {page_count}"
-                    )
-                    unduped_posts = label_dedupe(
-                        responseDict[label["id"]]["seen"], new_posts
-                    )
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],unduped_posts))}"
-                    )
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('Label Content')}".format(
-                            posts="\n\n".join(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    unduped_posts,
-                                )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                label, new_posts, new_tasks = await task
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task, description=f"Labels Progress: {page_count}"
+                )
+                unduped_posts = label_dedupe(
+                    responseDict[label["id"]]["seen"], new_posts
+                )
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Label Content')} {list(map(lambda x:x['id'],unduped_posts))}"
+                )
+                log.trace(
+                    f"{common_logs.PROGRESS_RAW.format('Label Content')}".format(
+                        posts="\n\n".join(
+                            map(
+                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                unduped_posts,
                             )
                         )
                     )
+                )
 
-                    responseDict[label["id"]]["posts"].extend(unduped_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
+                responseDict[label["id"]]["posts"].extend(unduped_posts)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
             tasks.extend(new_tasks)
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
         tasks = new_tasks
     [label.pop("seen", None) for label in responseDict.values()]
     set_check(responseDict.values(), model_id)
@@ -342,6 +325,9 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     posts = None
     attempt.set(0)
     new_tasks = []
+    url=constants.getattr("labelledPostsEP").format(
+                model_id, offset, label["id"]
+            )
     await asyncio.sleep(1)
     try:
         attempt.set(attempt.get(0) + 1)
@@ -354,9 +340,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
             else None
         )
         async with c.requests_async(
-            url=constants.getattr("labelledPostsEP").format(
-                model_id, offset, label["id"]
-            )
+            url
         ) as r:
             data = await r.json_()
             posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -390,6 +374,8 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                     )
                 )
 
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)

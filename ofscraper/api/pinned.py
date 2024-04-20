@@ -83,51 +83,41 @@ async def process_tasks(tasks, model_id):
 
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Pinned Content Pages Progress: {page_count}",
-                    )
-                    new_posts = [
-                        post
-                        for post in result
-                        if post["id"] not in seen and not seen.add(post["id"])
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
-                    )
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('Pinned')}".format(
-                            posts="\n\n".join(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    new_posts,
-                                )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Pinned Content Pages Progress: {page_count}",
+                )
+                new_posts = [
+                    post
+                    for post in result
+                    if post["id"] not in seen and not seen.add(post["id"])
+                ]
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Pinned')} {list(map(lambda x:x['id'],new_posts))}"
+                )
+                log.trace(
+                    f"{common_logs.PROGRESS_RAW.format('Pinned')}".format(
+                        posts="\n\n".join(
+                            map(
+                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                new_posts,
                             )
                         )
                     )
+                )
 
-                    responseArray.extend(new_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
+                responseArray.extend(new_posts)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
         tasks = new_tasks
     overall_progress.remove_task(page_task)
     log.debug(f"[bold]Pinned Count with Dupes[/bold] {len(responseArray)} found")
@@ -240,6 +230,8 @@ async def scrape_pinned_posts(
                         )
                     )
                 )
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")             
 
     except Exception as E:
         await asyncio.sleep(1)

@@ -64,6 +64,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
     attempt.set(0)
     new_tasks = []
     await asyncio.sleep(1)
+    url=constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -75,7 +76,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
             else None
         )
         async with c.requests_async(
-            url=constants.getattr("highlightsWithAStoryEP").format(user_id)
+            url=url
         ) as r:
             stories = await r.json_()
             log.debug(
@@ -91,6 +92,8 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
                     )
                 )
             )
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")            
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -114,51 +117,42 @@ async def process_stories_tasks(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Stories Content Pages Progress: {page_count}",
-                    )
-                    new_posts = [
-                        post
-                        for post in result
-                        if post["id"] not in seen and not seen.add(post["id"])
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Stories')} {list(map(lambda x:x['id'],new_posts))}"
-                    )
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('Stories')}".format(
-                            posts="\n\n".join(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    new_posts,
-                                )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Stories Content Pages Progress: {page_count}",
+                )
+                new_posts = [
+                    post
+                    for post in result
+                    if post["id"] not in seen and not seen.add(post["id"])
+                ]
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Stories')} {list(map(lambda x:x['id'],new_posts))}"
+                )
+                log.trace(
+                    f"{common_logs.PROGRESS_RAW.format('Stories')}".format(
+                        posts="\n\n".join(
+                            map(
+                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                new_posts,
                             )
                         )
                     )
+                )
 
-                    responseArray.extend(new_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
+                responseArray.extend(new_posts)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
+
         tasks = new_tasks
     overall_progress.remove_task(page_task)
     log.debug(
@@ -261,42 +255,32 @@ async def process_task_get_highlight_list(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Highlights List Pages Progress: {page_count}",
-                    )
-                    new_posts = [
-                        post
-                        for post in result
-                        if post not in seen and not seen.add(post)
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Highlight List')} {list(map(lambda x:x,new_posts))}"
-                    )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Highlights List Pages Progress: {page_count}",
+                )
+                new_posts = [
+                    post
+                    for post in result
+                    if post not in seen and not seen.add(post)
+                ]
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Highlight List')} {list(map(lambda x:x,new_posts))}"
+                )
 
-                    highlightLists.extend(new_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
-        tasks = new_tasks
+                highlightLists.extend(new_posts)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
+
 
     overall_progress.remove_task(page_task)
     log.trace(
@@ -319,51 +303,41 @@ async def process_task_highlights(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    page_count = page_count + 1
-                    overall_progress.update(
-                        page_task,
-                        description=f"Highlights Content via list Pages Progress: {page_count}",
-                    )
-                    new_posts = [
-                        post
-                        for post in result
-                        if post["id"] not in seen and not seen.add(post["id"])
-                    ]
-                    log.debug(
-                        f"{common_logs.PROGRESS_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],new_posts))}"
-                    )
-                    log.trace(
-                        f"{common_logs.PROGRESS_RAW.format('Highlight List Posts')}".format(
-                            posts="\n\n".join(
-                                map(
-                                    lambda x: f"{common_logs.RAW_INNER} {x}",
-                                    new_posts,
-                                )
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                page_count = page_count + 1
+                overall_progress.update(
+                    page_task,
+                    description=f"Highlights Content via list Pages Progress: {page_count}",
+                )
+                new_posts = [
+                    post
+                    for post in result
+                    if post["id"] not in seen and not seen.add(post["id"])
+                ]
+                log.debug(
+                    f"{common_logs.PROGRESS_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],new_posts))}"
+                )
+                log.trace(
+                    f"{common_logs.PROGRESS_RAW.format('Highlight List Posts')}".format(
+                        posts="\n\n".join(
+                            map(
+                                lambda x: f"{common_logs.RAW_INNER} {x}",
+                                new_posts,
                             )
                         )
                     )
+                )
 
-                    highlightResponse.extend(new_posts)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
+                highlightResponse.extend(new_posts)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
         tasks = new_tasks
         log.debug(
             f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}"
@@ -384,6 +358,7 @@ async def process_task_highlights(tasks):
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
     new_tasks = []
     await asyncio.sleep(1)
+    url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -395,13 +370,15 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
             else None
         )
         async with c.requests_async(
-            url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
+            url
         ) as r:
             resp_data = await r.json_()
             log.trace(f"highlights list: -> found highlights list data {resp_data}")
             data = get_highlightList(resp_data)
             log.debug(f"highlights list: -> found list ids {data}")
 
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -417,6 +394,7 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
 async def scrape_highlights(c, id, job_progress=None) -> list:
     new_tasks = []
     await asyncio.sleep(1)
+    url=constants.getattr("storyEP").format(id)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -427,12 +405,15 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
             if job_progress
             else None
         )
-        async with c.requests_async(url=constants.getattr("storyEP").format(id)) as r:
+        async with c.requests_async(url=url) as r:
             resp_data = await r.json_()
             log.trace(f"highlights: -> found highlights data {resp_data}")
             log.debug(
                 f"highlights: -> found ids {list(map(lambda x:x.get('id'),resp_data['stories']))}"
             )
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
+    
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
