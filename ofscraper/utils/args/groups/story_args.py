@@ -21,7 +21,7 @@ Allows unlocked media entries to be directly downloaded through the table
         "-u",
         "--usernames",
         "--username",
-        "usernames",
+        "check_usernames",
         help="Scan stories/highlights via username(s)",
         default=None,
         multiple=True,

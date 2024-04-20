@@ -280,6 +280,7 @@ async def process_task_get_highlight_list(tasks):
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
                 continue
+        tasks = new_tasks
 
 
     overall_progress.remove_task(page_task)

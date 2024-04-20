@@ -202,7 +202,7 @@ async def get_all_paid_posts():
         asyncio.get_event_loop().set_default_executor(executor)
 
         output = []
-        min_posts = 100
+        min_posts = 80
         tasks = []
         page_count = 0
         with progress_utils.setup_all_paid_live():
