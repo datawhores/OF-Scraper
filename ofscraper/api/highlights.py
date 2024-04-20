@@ -12,7 +12,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import traceback
 
@@ -23,7 +22,6 @@ import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
 
 
 #############################################################################
@@ -61,15 +59,13 @@ async def get_stories_post(model_id, c=None):
 
 async def scrape_stories(c, user_id, job_progress=None) -> list:
     stories = None
-    attempt.set(0)
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
-        attempt.set(attempt.get(0) + 1)
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} : user id -> {user_id}",
+                f"user id -> {user_id}",
                 visible=True,
             )
             if job_progress
@@ -350,10 +346,9 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
     await asyncio.sleep(1)
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     try:
-        attempt.set(attempt.get(0) + 1)
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} scraping highlight list  offset-> {offset}",
+                f"scraping highlight list  offset-> {offset}",
                 visible=True,
             )
             if job_progress
@@ -384,10 +379,9 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
     await asyncio.sleep(1)
     url = constants.getattr("storyEP").format(id)
     try:
-        attempt.set(attempt.get(0) + 1)
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} highlights id -> {id}",
+                f"highlights id -> {id}",
                 visible=True,
             )
             if job_progress

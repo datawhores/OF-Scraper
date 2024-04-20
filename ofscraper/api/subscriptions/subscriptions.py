@@ -12,7 +12,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor

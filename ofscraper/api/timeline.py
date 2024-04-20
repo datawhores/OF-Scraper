@@ -26,7 +26,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
+
 
 
 @run

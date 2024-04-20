@@ -12,7 +12,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import traceback
 
@@ -24,7 +23,7 @@ import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
+
 
 
 @run
@@ -187,11 +186,11 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
     await asyncio.sleep(1)
     url = constants.getattr("labelsEP").format(model_id, offset)
     try:
-        attempt.set(attempt.get(0) + 1)
+        
 
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} labels offset -> {offset}",
+                f"labels offset -> {offset}",
                 visible=True,
             )
             if job_progress
@@ -247,7 +246,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
     overall_progress = progress_utils.overall_progress
 
     page_task = overall_progress.add_task(
-        f" Labels Progress: {page_count}", visible=True
+        f"Labels Progress: {page_count}", visible=True
     )
 
     while tasks:
@@ -321,10 +320,10 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
     await asyncio.sleep(1)
     try:
-        attempt.set(attempt.get(0) + 1)
+        
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} : getting posts from label -> {label['name']}",
+                f": getting posts from label -> {label['name']}",
                 visible=True,
             )
             if job_progress

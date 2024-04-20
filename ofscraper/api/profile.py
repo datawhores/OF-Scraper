@@ -12,7 +12,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import traceback
 from typing import Union
@@ -29,7 +28,7 @@ from ..utils import encoding
 
 console = Console()
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
+
 
 
 # can get profile from username or id
@@ -45,16 +44,11 @@ def scrape_profile(username: Union[int, str]) -> dict:
 
 
 def scrape_profile_helper(c, username: Union[int, str]):
-    attempt.set(0)
     data = cache.get(f"username_{username}", default=None)
     log.trace(f"username date: {data}")
     if data and not read_args.retriveArgs().update_profile:
         return data
     try:
-        attempt.set(attempt.get(0) + 1)
-        log.info(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} to get profile {username}"
-        )
         with c.requests(constants.getattr("profileEP").format(username)) as r:
             if r.status == 404:
                 return {"username": constants.getattr("DELETED_MODEL_PLACEHOLDER")}
@@ -74,15 +68,14 @@ def scrape_profile_helper(c, username: Union[int, str]):
 
 
 async def scrape_profile_helper_async(c, username: Union[int, str]):
-    attempt.set(0)
     data = cache.get(f"username_{username}", default=None)
     log.trace(f"username date: {data}")
     if data and not read_args.retriveArgs().update_profile:
         return data
     try:
-        attempt.set(attempt.get(0) + 1)
+        
         log.info(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} to get profile {username}"
+            f"to get profile {username}"
         )
         await asyncio.sleep(1)
         async with c.requests_async(
@@ -176,14 +169,13 @@ def get_id_helper(c, username):
         return username
     if username == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
         raise Exception("could not get ID")
-    attempt.set(0)
     id = cache.get(f"model_id_{username}")
     if id:
         return id
     try:
-        attempt.set(attempt.get(0) + 1)
+        
         log.info(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} to get id {username}"
+            f"to get id {username}"
         )
 
         with c.requests(constants.getattr("profileEP").format(username)) as r:

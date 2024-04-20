@@ -150,7 +150,7 @@ async def scrape_for_list(c, job_progress, offset=0):
     try:
         attempt.set(attempt.get(0) + 1)
         task = job_progress.add_task(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} : getting lists offset -> {offset}",
+            f" : getting lists offset -> {offset}",
             visible=True,
         )
         async with c.requests_async(
@@ -271,7 +271,7 @@ async def scrape_list_members(c, item, job_progress, offset=0):
     try:
         attempt.set(attempt.get(0) + 1)
         task = job_progress.add_task(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} : offset -> {offset} + list name -> {item.get('name')}",
+            f" : offset -> {offset} + list name -> {item.get('name')}",
             visible=True,
         )
 

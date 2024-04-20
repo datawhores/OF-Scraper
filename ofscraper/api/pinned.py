@@ -8,7 +8,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import math
 import traceback
@@ -23,7 +22,7 @@ import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
+
 
 
 @run
@@ -160,7 +159,6 @@ async def scrape_pinned_posts(
     c, model_id, job_progress=None, timestamp=None, count=0
 ) -> list:
     posts = None
-    attempt.set(0)
 
     if timestamp and (
         float(timestamp)
@@ -172,10 +170,10 @@ async def scrape_pinned_posts(
     new_tasks = []
     await asyncio.sleep(1)
     try:
-        attempt.set(attempt.get(0) + 1)
+        
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
+                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
                 visible=True,
             )
             if job_progress

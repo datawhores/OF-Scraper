@@ -29,7 +29,7 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
+
 
 
 @run
@@ -95,7 +95,7 @@ async def process_tasks(tasks, model_id):
     responseArray = []
     overall_progress = progress_utils.overall_progress
     page_task = overall_progress.add_task(
-        f" Message Content Pages Progress: {page_count}", visible=True
+        f"Message Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
     while tasks:
@@ -316,7 +316,6 @@ async def scrape_messages(
     c, model_id, job_progress=None, message_id=None, required_ids=None
 ) -> list:
     messages = None
-    attempt.set(0)
     ep = (
         constants.getattr("messagesNextEP")
         if message_id
@@ -328,11 +327,11 @@ async def scrape_messages(
     await asyncio.sleep(1)
     try:
         async with c.requests_async(url=url) as r:
-            attempt.set(attempt.get(0) + 1)
+            
 
             task = (
                 job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')}: Message ID-> {message_id if message_id else 'initial'}"
+                    f": Message ID-> {message_id if message_id else 'initial'}"
                 )
                 if job_progress
                 else None
@@ -357,7 +356,7 @@ async def scrape_messages(
                     log_id=log_id,
                     posts="\n\n".join(
                         map(
-                            lambda x: f" messages scrapeinfo: {str(x)}",
+                            lambda x: f"messages scrapeinfo: {str(x)}",
                             messages,
                         )
                     ),
@@ -365,7 +364,6 @@ async def scrape_messages(
             )
 
             if not required_ids:
-                attempt.set(0)
                 new_tasks.append(
                     asyncio.create_task(
                         scrape_messages(
@@ -397,7 +395,6 @@ async def scrape_messages(
                 ]
 
                 if len(required_ids) > 0:
-                    attempt.set(0)
                     new_tasks.append(
                         asyncio.create_task(
                             scrape_messages(

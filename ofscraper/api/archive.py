@@ -8,7 +8,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import math
 import traceback
@@ -25,7 +24,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
 
 
 sem = None
@@ -279,7 +277,6 @@ async def scrape_archived_posts(
 ) -> list:
     global sem
     posts = None
-    attempt.set(0)
     if timestamp and (
         float(timestamp)
         > (read_args.retriveArgs().before or arrow.now()).float_timestamp
@@ -294,10 +291,9 @@ async def scrape_archived_posts(
     log.debug(url)
     new_tasks = []
     try:
-        attempt.set(attempt.get(0) + 1)
         task = (
             job_progress.add_task(
-                f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')}: Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
+                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
                 visible=True,
             )
             if job_progress

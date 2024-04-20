@@ -12,7 +12,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -26,7 +25,7 @@ from ofscraper.utils.context.run_async import run
 
 paid_content_list_name = "list"
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
+
 
 
 @run
@@ -136,17 +135,16 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
     """
     media = None
 
-    attempt.set(0)
     await asyncio.sleep(1)
 
     new_tasks = []
     url = constants.getattr("purchased_contentEP").format(offset, username)
     try:
-        attempt.set(attempt.get(0) + 1)
+        
         task = (
             (
                 job_progress.add_task(
-                    f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} scrape paid offset -> {offset} username -> {username}",
+                    f"scrape paid offset -> {offset} username -> {username}",
                     visible=True,
                 )
                 if job_progress
@@ -239,7 +237,7 @@ async def get_all_paid_posts():
                     tasks.append(asyncio.create_task(scrape_all_paid(c, job_progress)))
 
                 page_task = overall_progress.add_task(
-                    f" Pages Progress: {page_count}", visible=True
+                    f"Pages Progress: {page_count}", visible=True
                 )
                 while tasks:
                     new_tasks = []
@@ -297,14 +295,13 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
     """
     media = None
 
-    attempt.set(0)
     await asyncio.sleep(1)
     new_tasks = []
     url = constants.getattr("purchased_contentALL").format(offset)
     try:
-        attempt.set(attempt.get(0) + 1)
+        
         task = job_progress.add_task(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} scrape entire paid page offset={offset}",
+            f"scrape entire paid page offset={offset}",
             visible=True,
         )
 
