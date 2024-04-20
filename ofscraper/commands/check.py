@@ -224,6 +224,7 @@ async def post_check_retriver():
                         timeline_data = await timeline.get_timeline_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
+                        cache.set(f"timeline_check_{model_id}",timeline_data,expire=constants.getattr("DAY_SECONDS"))
                 if "Archived" in areas:
                     oldarchive = cache.get(f"archived_check_{model_id}", default=[])
                     if len(oldarchive) > 0 and not read_args.retriveArgs().force:
@@ -232,12 +233,14 @@ async def post_check_retriver():
                         archived_data = await archived.get_archived_posts(
                             model_id, user_name, forced_after=0, c=c
                         )
+                        cache.set(f"archived_check_{model_id}",archived_data,expire=constants.getattr("DAY_SECONDS"))
                 if "Pinned" in areas:
                     oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
                     if len(oldpinned) > 0 and not read_args.retriveArgs().force:
                         pinned_data = oldpinned
                     else:
                         pinned_data = await pinned.get_pinned_posts(model_id, c=c)
+                        cache.set(f"pinned_check_{model_id}",pinned_data,expire=constants.getattr("DAY_SECONDS"))
                 if "Labels" in areas:
                     oldlabels = cache.get(f"labels_check_{model_id}", default=[])
                     if len(oldlabels) > 0 and not read_args.retriveArgs().force:
@@ -253,8 +256,9 @@ async def post_check_retriver():
                         labels_data = [
                             post for label in labels_resp for post in label["posts"]
                         ]
-                cache.close()
+                        cache.set(f"labels_check_{model_id}",labels_data,expire=constants.getattr("DAY_SECONDS"))
                 all_post_data= list(map(lambda x: posts_.Post(x, model_id, user_name), pinned_data+archived_data+labels_data+timeline_data))
+                cache.close()
                 yield user_name,model_id,all_post_data
         # individual links
         for ele in list(
@@ -280,14 +284,10 @@ async def post_check_retriver():
 
 
 
-def reset_url():
+def reset_data():
     # clean up args once check modes are ready to launch
     args = read_args.retriveArgs()
     argdict = vars(args)
-    if argdict.get("url"):
-        read_args.retriveArgs().url = None
-    if argdict.get("file"):
-        read_args.retriveArgs().file = None
     if argdict.get("username"):
         read_args.retriveArgs().usernames = None
     write_args.setArgs(args)
@@ -300,7 +300,7 @@ def set_count(ROWS):
 
 def start_helper():
     global ROWS
-    reset_url()
+    reset_data()
     set_count(ROWS)
     network.check_cdm()
     thread_starters(ROWS)
@@ -356,6 +356,7 @@ async def message_check_retriver():
                     messages = await messages_.get_messages(
                         model_id, user_name, forced_after=0, c=c
                     )
+                    cache.set(f"message_check_{model_id}", messages,expire=constants.getattr("DAY_SECONDS"))
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
                 )
@@ -370,6 +371,7 @@ async def message_check_retriver():
                     paid = oldpaid
                 else:
                     paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                    cache.set(f"purchased_check_{model_id}", paid,expire=constants.getattr("DAY_SECONDS"))
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), paid)
                 )
@@ -435,6 +437,7 @@ async def purchase_check_retriver():
                 ]
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
+                cache.set(f"archived_check_{model_id}",paid,expire=constants.getattr("DAY_SECONDS"))
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             yield user_name,model_id,posts_array
 
@@ -550,7 +553,8 @@ async def get_paid_ids(model_id, user_name):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
-            paid = await paid_.get_paid_posts(model_id, user_name, c=c)          
+            paid = await paid_.get_paid_posts(model_id, user_name, c=c)   
+            cache.set(f"purchase_check_{model_id}",paid,expire=constants.getattr("DAY_SECONDS"))       
     media = await process_post_media(user_name, model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))
     return list(map(lambda x: x.id, media))
@@ -561,7 +565,7 @@ def thread_starters(ROWS_):
     worker_thread.start()
     process_download_cart.counter = 0
     start_table(ROWS_)
-
+                    
 
 def start_table(ROWS_):
     global app
