@@ -1,4 +1,5 @@
 import logging
+
 import ofscraper.utils.args.read as read_args
 
 senstiveDict = {}
@@ -74,7 +75,7 @@ def getNumber(input_):
         return logging.getLevelName(input_)
     return input_
 
-def is_trace():
-    args=read_args.retriveArgs()
-    return args.discord=="TRACE" or args.logs=="TRACE" or args.output=="TRACE"
 
+def is_trace():
+    args = read_args.retriveArgs()
+    return args.discord == "TRACE" or args.logs == "TRACE" or args.output == "TRACE"

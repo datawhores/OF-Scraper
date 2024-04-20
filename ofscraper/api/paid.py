@@ -65,9 +65,7 @@ async def process_tasks(tasks, model_id):
 
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -142,7 +140,7 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
     await asyncio.sleep(1)
 
     new_tasks = []
-    url=constants.getattr("purchased_contentEP").format(offset, username)
+    url = constants.getattr("purchased_contentEP").format(offset, username)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -158,9 +156,7 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
             else None
         )
 
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
             data = await r.json_()
             log.trace("paid raw {posts}".format(posts=data))
 
@@ -218,10 +214,9 @@ async def get_all_paid_posts():
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
 
                 if len(allpaid) > min_posts:
-                    splitArrays = [i for i in range(0, len(allpaid), min_posts)]                            
+                    splitArrays = [i for i in range(0, len(allpaid), min_posts)]
                     [
-                    tasks.append(
-                        
+                        tasks.append(
                             asyncio.create_task(
                                 scrape_all_paid(
                                     c,
@@ -231,7 +226,7 @@ async def get_all_paid_posts():
                                 )
                             )
                         )
-                        for i in range(0, len(splitArrays)-1)
+                        for i in range(0, len(splitArrays) - 1)
                     ]
                     tasks.append(
                         asyncio.create_task(
@@ -248,9 +243,7 @@ async def get_all_paid_posts():
                 )
                 while tasks:
                     new_tasks = []
-                    for task in asyncio.as_completed(
-                        tasks
-                    ):
+                    for task in asyncio.as_completed(tasks):
                         try:
                             result, new_tasks_batch = await task
                             page_count = page_count + 1
@@ -307,7 +300,7 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
     attempt.set(0)
     await asyncio.sleep(1)
     new_tasks = []
-    url=constants.getattr("purchased_contentALL").format(offset)
+    url = constants.getattr("purchased_contentALL").format(offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = job_progress.add_task(
@@ -315,9 +308,7 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
             visible=True,
         )
 
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
             log_id = f"offset {offset or 0}:"
             data = await r.json_()
             media = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -341,21 +332,21 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
                         scrape_all_paid(c, job_progress, offset=offset + len(media))
                     )
                 )
-            elif len(media) <required:
+            elif len(media) < required:
                 new_tasks.append(
                     asyncio.create_task(
                         scrape_all_paid(
                             c,
                             job_progress,
                             offset=offset + len(media),
-                            required=required-len(media),
+                            required=required - len(media),
                         )
                     )
                 )
             return media, new_tasks
-            
+
     except asyncio.TimeoutError:
-            raise Exception(f"Task timed out {url}")
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -364,7 +355,6 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
 
     finally:
         job_progress.remove_task(task)
-
 
 
 def get_individual_post(username, model_id, postid):

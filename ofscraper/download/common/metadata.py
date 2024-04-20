@@ -10,6 +10,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.download.common.log import get_medialog
 
+
 async def force_download(ele, username, model_id):
     await operations.download_media_update(
         ele,
@@ -18,8 +19,6 @@ async def force_download(ele, username, model_id):
         username=username,
         downloaded=True,
     )
-
-
 
 
 async def metadata(c, ele, username, model_id, placeholderObj=None):

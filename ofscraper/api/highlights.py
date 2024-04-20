@@ -64,7 +64,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
     attempt.set(0)
     new_tasks = []
     await asyncio.sleep(1)
-    url=constants.getattr("highlightsWithAStoryEP").format(user_id)
+    url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -75,9 +75,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
             if job_progress
             else None
         )
-        async with c.requests_async(
-            url=url
-        ) as r:
+        async with c.requests_async(url=url) as r:
             stories = await r.json_()
             log.debug(
                 f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
@@ -93,7 +91,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
                 )
             )
     except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")            
+        raise Exception(f"Task timed out {url}")
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)
@@ -117,9 +115,7 @@ async def process_stories_tasks(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -255,9 +251,7 @@ async def process_task_get_highlight_list(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -267,9 +261,7 @@ async def process_task_get_highlight_list(tasks):
                     description=f"Highlights List Pages Progress: {page_count}",
                 )
                 new_posts = [
-                    post
-                    for post in result
-                    if post not in seen and not seen.add(post)
+                    post for post in result if post not in seen and not seen.add(post)
                 ]
                 log.debug(
                     f"{common_logs.PROGRESS_IDS.format('Highlight List')} {list(map(lambda x:x,new_posts))}"
@@ -281,7 +273,6 @@ async def process_task_get_highlight_list(tasks):
                 log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
-
 
     overall_progress.remove_task(page_task)
     log.trace(
@@ -304,9 +295,7 @@ async def process_task_highlights(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -359,7 +348,7 @@ async def process_task_highlights(tasks):
 async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
     new_tasks = []
     await asyncio.sleep(1)
-    url=constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
+    url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -370,9 +359,7 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
             if job_progress
             else None
         )
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
             resp_data = await r.json_()
             log.trace(f"highlights list: -> found highlights list data {resp_data}")
             data = get_highlightList(resp_data)
@@ -395,7 +382,7 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
 async def scrape_highlights(c, id, job_progress=None) -> list:
     new_tasks = []
     await asyncio.sleep(1)
-    url=constants.getattr("storyEP").format(id)
+    url = constants.getattr("storyEP").format(id)
     try:
         attempt.set(attempt.get(0) + 1)
         task = (
@@ -414,7 +401,7 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
             )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
-    
+
     except Exception as E:
         await asyncio.sleep(1)
         log.traceback_(E)

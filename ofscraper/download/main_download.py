@@ -42,6 +42,7 @@ from ofscraper.download.common.common import (
     addGlobalDir,
     check_forced_skip,
     downloadspace,
+    force_download,
     get_data,
     get_medialog,
     get_resume_size,
@@ -52,7 +53,6 @@ from ofscraper.download.common.common import (
     set_profile_cache_helper,
     set_time,
     size_checker,
-    force_download
 )
 
 
@@ -60,8 +60,10 @@ async def main_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     if common.is_bad_url(ele.url):
-        common_globals.log.debug(f"{get_medialog(ele)} Forcing download because known bad url")
-        await force_download(ele,username,model_id)
+        common_globals.log.debug(
+            f"{get_medialog(ele)} Forcing download because known bad url"
+        )
+        await force_download(ele, username, model_id)
         return ele.mediatype, 0
     result = await main_download_downloader(
         c,
@@ -72,7 +74,7 @@ async def main_download(c, ele, username, model_id, job_progress):
     # special case for zero byte files
     if result[0] == 0:
         if ele.mediatype != "forced_skipped":
-            await force_download(ele,username,model_id)
+            await force_download(ele, username, model_id)
         return ele.mediatype, 0
     return await handle_result(result, ele, username, model_id)
 

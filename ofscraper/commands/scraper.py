@@ -30,7 +30,6 @@ import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
 from ofscraper.__version__ import __version__
 
-
 log = logging.getLogger("shared")
 
 

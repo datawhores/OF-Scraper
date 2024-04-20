@@ -90,9 +90,7 @@ async def set_data_all_subs_dict(usernames):
     args = read_args.retriveArgs()
     oldusernames = args.usernames or set()
     all_usernames = set()
-    all_usernames.update(
-        [usernames] if not isinstance(usernames, list) else usernames
-    )
+    all_usernames.update([usernames] if not isinstance(usernames, list) else usernames)
     all_usernames.update(oldusernames)
 
     seen = set()
@@ -110,8 +108,6 @@ async def set_data_all_subs_dict(usernames):
     await all_subs_helper()
     args.usernames = set(all_usernames)
     write_args.setArgs(args)
-
-
 
 
 @run

@@ -45,6 +45,7 @@ from ofscraper.download.common.common import (
     addGlobalDir,
     check_forced_skip,
     downloadspace,
+    force_download,
     get_item_total,
     get_medialog,
     get_resume_size,
@@ -54,7 +55,6 @@ from ofscraper.download.common.common import (
     set_time,
     size_checker,
     temp_file_logger,
-    force_download
 )
 
 
@@ -142,7 +142,7 @@ async def handle_result(sharedPlaceholderObj, ele, audio, video, username, model
 async def media_item_post_process(audio, video, ele, username, model_id):
     if (audio["total"] + video["total"]) == 0:
         if ele.mediatype != "forced_skipped":
-            await force_download(ele,username,model_id)
+            await force_download(ele, username, model_id)
         return ele.mediatype, 0
     for m in [audio, video]:
         m["total"] = get_item_total(m)

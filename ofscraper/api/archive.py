@@ -44,7 +44,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     after = await get_after(model_id, username, forced_after)
-    after_log(username,after)
+    after_log(username, after)
     splitArrays = get_split_array(oldarchived, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks, model_id, after)
@@ -64,7 +64,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     after = await get_after(model_id, username, forced_after)
-    after_log(username,after)
+    after_log(username, after)
     with progress_utils.set_up_api_archived():
         splitArrays = get_split_array(oldarchived, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
@@ -132,9 +132,12 @@ async def process_tasks(tasks, model_id, after):
 
 
 def get_split_array(oldarchived, after):
-    if len(oldarchived)==0:
+    if len(oldarchived) == 0:
         return 0
-    min_posts=max(len(oldarchived)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
+    min_posts = max(
+        len(oldarchived) // constants.getattr("REASONABLE_MAX_PAGE"),
+        constants.getattr("MIN_PAGE_POST_COUNT"),
+    )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x != None, oldarchived))
     postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))
@@ -305,7 +308,7 @@ async def scrape_archived_posts(
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
-                return [],[]
+                return [], []
             log.debug(f"{log_id} -> number of archived post found {len(posts)}")
             log.debug(
                 f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
@@ -340,16 +343,15 @@ async def scrape_archived_posts(
                         )
                     )
                 )
-            elif (max(map(lambda x:float(x['postedAtPrecise']),posts))>=max(required_ids)):
-                    pass
-            elif float(timestamp or 0)>=max(required_ids):
+            elif max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
+                required_ids
+            ):
+                pass
+            elif float(timestamp or 0) >= max(required_ids):
                 pass
             else:
                 log.debug(f"{log_id} Required before {required_ids}")
-                [
-                    required_ids.discard(float(ele["postedAtPrecise"]))
-                    for ele in posts
-                ]
+                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
                 log.debug(f"{log_id} Required after {required_ids}")
 
                 if len(required_ids) > 0:
@@ -412,7 +414,8 @@ def trace_log_old(responseArray):
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
-def after_log(username,after):
+
+def after_log(username, after):
     log.info(
         f"""
 Setting initial archived scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
@@ -420,4 +423,4 @@ Setting initial archived scan date for {username} to {arrow.get(after).format(co
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
 
             """
-    )   
+    )

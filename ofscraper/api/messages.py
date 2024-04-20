@@ -45,7 +45,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
-    log_after_before(after,before,username)
+    log_after_before(after, before, username)
 
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
@@ -65,11 +65,10 @@ async def get_messages(model_id, username, forced_after=None, c=None):
         else []
     )
     trace_log_old(oldmessages)
-   
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
     after = await get_after(model_id, username, forced_after)
-    log_after_before(after,before,username)
+    log_after_before(after, before, username)
 
     log.debug(f"Messages after = {after}")
 
@@ -101,9 +100,7 @@ async def process_tasks(tasks, model_id):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -151,10 +148,10 @@ async def process_tasks(tasks, model_id):
 
 def get_filterArray(after, before, oldmessages):
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-    oldmessages=list(filter(lambda x:x['created_at']!=None,oldmessages))
+    oldmessages = list(filter(lambda x: x["created_at"] != None, oldmessages))
     oldmessages = sorted(
         oldmessages,
-        key=lambda x: arrow.get(x['created_at'] or 0),
+        key=lambda x: arrow.get(x["created_at"] or 0),
         reverse=True,
     )
     if after > before:
@@ -205,7 +202,10 @@ def get_j(oldmessages, after):
 
 
 def get_split_array(filteredArray):
-    min_posts=max(len(filteredArray)//constants.getattr("REASONABLE_MAX_PAGE_MESSAGES"),constants.getattr("MIN_PAGE_POST_COUNT"))
+    min_posts = max(
+        len(filteredArray) // constants.getattr("REASONABLE_MAX_PAGE_MESSAGES"),
+        constants.getattr("MIN_PAGE_POST_COUNT"),
+    )
 
     return [
         filteredArray[i : i + min_posts]
@@ -341,7 +341,7 @@ async def scrape_messages(
             log_id = f"offset messageid:{message_id if message_id else 'init id'}"
             if not bool(messages):
                 log.debug(f"{log_id} -> no messages found")
-                return [],[]
+                return [], []
             log.debug(f"{log_id} -> number of messages found {len(messages)}")
             log.debug(
                 f"{log_id} -> first date {arrow.get(messages[-1].get('createdAt') or messages[0].get('postedAt')).format(constants.getattr('API_DATE_FORMAT'))}"
@@ -377,8 +377,14 @@ async def scrape_messages(
                     )
                 )
 
-                                  
-            elif (min(map(lambda x:arrow.get(x.get("createdAt",0) or x.get("postedAt",0)).float_timestamp,messages))<=min(required_ids)):
+            elif min(
+                map(
+                    lambda x: arrow.get(
+                        x.get("createdAt", 0) or x.get("postedAt", 0)
+                    ).float_timestamp,
+                    messages,
+                )
+            ) <= min(required_ids):
                 pass
             else:
                 [
@@ -403,7 +409,7 @@ async def scrape_messages(
                             )
                         )
                     )
-        return messages,new_tasks
+        return messages, new_tasks
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -447,7 +453,9 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("unlocked")!=0, curr))
+    missing_items = list(
+        filter(lambda x: x.get("downloaded") != 1 and x.get("unlocked") != 0, curr)
+    )
     missing_items = list(
         sorted(missing_items, key=lambda x: arrow.get(x.get("posted_at") or 0))
     )
@@ -456,50 +464,53 @@ async def get_after(model_id, username, forced_after=None):
             "Using newest db date because,all downloads in db are marked as downloaded"
         )
         return arrow.get(
-            await operations.get_youngest_message_date(model_id=model_id, username=username)
+            await operations.get_youngest_message_date(
+                model_id=model_id, username=username
+            )
         ).float_timestamp
     else:
         log.debug(
             f"Setting date slightly before oldest missing item\nbecause {len(missing_items)} messages in db are marked as undownloaded"
         )
-        return arrow.get(missing_items[0]['posted_at']).float_timestamp
+        return arrow.get(missing_items[0]["posted_at"]).float_timestamp
+
 
 def trace_log_task(responseArray):
-    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
-        log.trace(
-            f"{common_logs.FINAL_RAW.format('Messages')}".format(
-                posts=api_str
-            )
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
+        api_str = "\n\n".join(
+            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
         )
+        log.trace(f"{common_logs.FINAL_RAW.format('Messages')}".format(posts=api_str))
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
 
 def trace_log_old(responseArray):
-    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
         log.trace(
-        "oldmessages {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"oldmessage: {str(x)}", chunk))
+            "oldmessages {posts}".format(
+                posts="\n\n".join(list(map(lambda x: f"oldmessage: {str(x)}", chunk)))
             )
-        )
         )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
 
-def log_after_before(after,before,username):
+def log_after_before(after, before, username):
     log.debug(f"Messages before = {before}")
 
     log.info(

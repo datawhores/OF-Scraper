@@ -83,9 +83,7 @@ async def process_tasks(tasks, model_id):
 
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -231,7 +229,7 @@ async def scrape_pinned_posts(
                     )
                 )
     except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")             
+        raise Exception(f"Task timed out {url}")
 
     except Exception as E:
         await asyncio.sleep(1)

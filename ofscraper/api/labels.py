@@ -136,9 +136,7 @@ async def process_tasks_labels(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -187,10 +185,9 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
     attempt.set(0)
     new_tasks = []
     await asyncio.sleep(1)
-    url=constants.getattr("labelsEP").format(model_id, offset)
+    url = constants.getattr("labelsEP").format(model_id, offset)
     try:
         attempt.set(attempt.get(0) + 1)
-
 
         task = (
             job_progress.add_task(
@@ -200,9 +197,7 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
             if job_progress
             else None
         )
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
             data = await r.json_()
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labels names found {len(labels)}")
@@ -257,9 +252,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
 
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 label, new_posts, new_tasks = await task
                 page_count = page_count + 1
@@ -316,7 +309,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             ]
         )
     )
-    trace_log_task(list(responseDict.values()),header='All Labels Content')
+    trace_log_task(list(responseDict.values()), header="All Labels Content")
     overall_progress.remove_task(page_task)
     return list(responseDict.values())
 
@@ -325,9 +318,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     posts = None
     attempt.set(0)
     new_tasks = []
-    url=constants.getattr("labelledPostsEP").format(
-                model_id, offset, label["id"]
-            )
+    url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
     await asyncio.sleep(1)
     try:
         attempt.set(attempt.get(0) + 1)
@@ -339,9 +330,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
             if job_progress
             else None
         )
-        async with c.requests_async(
-            url
-        ) as r:
+        async with c.requests_async(url) as r:
             data = await r.json_()
             posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
@@ -414,18 +403,23 @@ def set_check(unduped, model_id):
     )
     cache.close()
 
-def trace_log_task(responseArray,header=None):
-    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+
+def trace_log_task(responseArray, header=None):
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
-        log.trace(
-        f"{common_logs.FINAL_RAW.format(header or 'Labels Names')}".format(
-            posts=api_str
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
+        api_str = "\n\n".join(
+            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
         )
-    )
+        log.trace(
+            f"{common_logs.FINAL_RAW.format(header or 'Labels Names')}".format(
+                posts=api_str
+            )
+        )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements

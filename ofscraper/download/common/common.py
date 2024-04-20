@@ -13,9 +13,8 @@ r"""
 
 import asyncio
 import pathlib
-from functools import partial, singledispatch
 import re
-
+from functools import partial, singledispatch
 
 from humanfriendly import format_size
 
@@ -162,11 +161,12 @@ async def total_change_helper(total, new_total):
     elif total and new_total - total != 0:
         await update_total(new_total - total)
 
+
 def is_bad_url(url):
     match = re.search(r"^https://([^/]+)", url)
     if not match:
         return False
-    elif len(match.groups())<1:
+    elif len(match.groups()) < 1:
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True

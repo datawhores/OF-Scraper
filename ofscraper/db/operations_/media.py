@@ -209,6 +209,7 @@ def add_column_media_unlocked(model_id=None, username=None, conn=None):
             conn.rollback()
             raise e  # Rollback in case of errors
 
+
 @wrapper.operation_wrapper_async
 def add_column_media_posted_at(conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
@@ -357,7 +358,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.postdate,
                     model_id,
                     media.duration_string,
-                    media.canview
+                    media.canview,
                 ],
                 medias,
             )
@@ -365,29 +366,35 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
         curr.executemany(mediaInsertAPI, insertData)
         conn.commit()
 
+
 @wrapper.operation_wrapper_async
 def update_media_table_via_api_batch(
     medias, model_id=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as curr:
-        insertData = list(map( lambda media:
-            [ media.id,
-            media.postid,
-            media.url or media.mpd,
-            media.responsetype.capitalize(),
-            media.mediatype.capitalize(),
-            media.preview,
-            media.date,
-            media.postdate,
-            model_id,
-            media.duration_string,
-            media.canview,
-            media.id,
-            model_id],medias
-        
-        ))
+        insertData = list(
+            map(
+                lambda media: [
+                    media.id,
+                    media.postid,
+                    media.url or media.mpd,
+                    media.responsetype.capitalize(),
+                    media.mediatype.capitalize(),
+                    media.preview,
+                    media.date,
+                    media.postdate,
+                    model_id,
+                    media.duration_string,
+                    media.canview,
+                    media.id,
+                    model_id,
+                ],
+                medias,
+            )
+        )
         curr.executemany(mediaUpdateAPI, insertData)
         conn.commit()
+
 
 @wrapper.operation_wrapper_async
 def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
@@ -409,7 +416,7 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
             "hash",
             "model_id",
             "duration",
-            "unlocked"
+            "unlocked",
         ]
         insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         curr.executemany(mediaInsertTransition, insertData)
@@ -428,7 +435,7 @@ def get_all_medias_transition(
                 row,
                 model_id=row.get("model_id") or database_model,
                 duration=row.get("duration"),
-                unlocked=row.get("unlocked")
+                unlocked=row.get("unlocked"),
             )
             for row in data
         ]
@@ -447,7 +454,7 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele['posted_at'] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele["posted_at"] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -459,7 +466,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele['posted_at'] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele["posted_at"] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -471,7 +478,7 @@ def get_timeline_media(model_id=None, username=None, conn=None) -> list:
         cur.execute(getTimelineMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele['posted_at'] or ele['created_at'] or 0))
+            dict(ele, posted_at=arrow.get(ele["posted_at"] or ele["created_at"] or 0))
             for ele in data
         ]
 
@@ -557,9 +564,8 @@ async def batch_mediainsert(media, **kwargs):
         list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
     )
 
-
     await update_media_table_via_api_batch(
-        list(filter(lambda x:x.id in curr,mediaDict.values())),**kwargs
+        list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
     )
 
 

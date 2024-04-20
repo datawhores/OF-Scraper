@@ -16,7 +16,6 @@ import traceback
 import arrow
 
 import ofscraper.api.common.logs as common_logs
-
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
@@ -26,7 +25,6 @@ import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
-
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
@@ -35,7 +33,7 @@ attempt = contextvars.ContextVar("attempt")
 async def get_timeline_posts_progress(model_id, username, forced_after=None, c=None):
 
     after = await get_after(model_id, username, forced_after)
-    after_log(username,after)
+    after_log(username, after)
     splitArrays = await get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks)
@@ -52,11 +50,11 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     else:
         oldtimeline = []
     trace_log_old(oldtimeline)
-   
+
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x != None, oldtimeline))
     after = await get_after(model_id, username, forced_after)
-    after_log(username,after)
+    after_log(username, after)
 
     with progress_utils.set_up_api_timeline():
         splitArrays = await get_split_array(model_id, username, after)
@@ -75,9 +73,7 @@ async def process_tasks(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -123,7 +119,8 @@ async def process_tasks(tasks):
     trace_log_task(responseArray)
     return responseArray
 
-async def get_oldtimeline(model_id,username):
+
+async def get_oldtimeline(model_id, username):
     if not read_args.retriveArgs().no_cache:
         oldtimeline = await operations.get_timeline_posts_info(
             model_id=model_id, username=username
@@ -131,28 +128,34 @@ async def get_oldtimeline(model_id,username):
     else:
         oldtimeline = []
     oldtimeline = list(filter(lambda x: x is not None, oldtimeline))
-    #dedupe oldtimeline
-    seen=set()
-    oldtimeline= [
+    # dedupe oldtimeline
+    seen = set()
+    oldtimeline = [
         post
         for post in oldtimeline
-        if post["post_id"] not in seen and not seen.add(post['post_id'])
+        if post["post_id"] not in seen and not seen.add(post["post_id"])
     ]
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     trace_log_old(oldtimeline)
     return oldtimeline
 
-    
 
 async def get_split_array(model_id, username, after):
 
-    oldtimeline=await get_oldtimeline(model_id,username)
-    if len(oldtimeline)==0:
+    oldtimeline = await get_oldtimeline(model_id, username)
+    if len(oldtimeline) == 0:
         return []
-    min_posts=max(len(oldtimeline)//constants.getattr("REASONABLE_MAX_PAGE"),constants.getattr("MIN_PAGE_POST_COUNT"))
-    postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x['created_at']))
-    filteredArray = list(filter(lambda x: bool(x['created_at']), postsDataArray))
-    filteredArray = list(filter(lambda x: arrow.get( x['created_at']).float_timestamp>= after, filteredArray) )
+    min_posts = max(
+        len(oldtimeline) // constants.getattr("REASONABLE_MAX_PAGE"),
+        constants.getattr("MIN_PAGE_POST_COUNT"),
+    )
+    postsDataArray = sorted(oldtimeline, key=lambda x: arrow.get(x["created_at"]))
+    filteredArray = list(filter(lambda x: bool(x["created_at"]), postsDataArray))
+    filteredArray = list(
+        filter(
+            lambda x: arrow.get(x["created_at"]).float_timestamp >= after, filteredArray
+        )
+    )
 
     splitArrays = [
         filteredArray[i : i + min_posts]
@@ -190,7 +193,6 @@ def get_tasks(splitArrays, c, model_id, after):
                         ),
                         timestamp=splitArrays[i - 1][-1].get("created_at"),
                         offset=False,
-    
                     )
                 )
             )
@@ -205,7 +207,6 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
-                    
                 )
             )
         )
@@ -219,7 +220,6 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
-                    
                 )
             )
         )
@@ -228,10 +228,11 @@ def get_tasks(splitArrays, c, model_id, after):
         tasks.append(
             asyncio.create_task(
                 scrape_timeline_posts(
-                    c, model_id, job_progress=job_progress, timestamp=after, offset=True)                    
+                    c, model_id, job_progress=job_progress, timestamp=after, offset=True
                 )
             )
-        
+        )
+
     return tasks
 
 
@@ -281,15 +282,19 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting oldest date to zero because database is empty")
         return 0
-    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("unlocked")!=0, curr))
     missing_items = list(
-        sorted(missing_items, key=lambda x: arrow.get(x['posted_at']))
+        filter(lambda x: x.get("downloaded") != 1 and x.get("unlocked") != 0, curr)
     )
+    missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x["posted_at"])))
     if len(missing_items) == 0:
-        log.debug("Using using newest db date, because all downloads in db marked as downloaded")
-        return arrow.get(await operations.get_youngest_timeline_date(
-            model_id=model_id, username=username
-        )).float_timestamp
+        log.debug(
+            "Using using newest db date, because all downloads in db marked as downloaded"
+        )
+        return arrow.get(
+            await operations.get_youngest_timeline_date(
+                model_id=model_id, username=username
+            )
+        ).float_timestamp
     else:
         log.debug(
             f"Setting date slightly before oldest missing item\nbecause {len(missing_items)} posts in db are marked as undownloaded"
@@ -326,8 +331,7 @@ async def scrape_timeline_posts(
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
-                return [],[]
-            
+                return [], []
 
             log.debug(f"{log_id} -> number of post found {len(posts)}")
             log.debug(
@@ -353,31 +357,28 @@ async def scrape_timeline_posts(
                 )
             )
 
-            
             if not required_ids:
-                    new_tasks.append(
-                        asyncio.create_task(
-                            scrape_timeline_posts(
-                                c,
-                                model_id,
-                                job_progress=job_progress,
-                                timestamp=posts[-1]["postedAtPrecise"],
-                                offset=False,
-                                
-                            )
+                new_tasks.append(
+                    asyncio.create_task(
+                        scrape_timeline_posts(
+                            c,
+                            model_id,
+                            job_progress=job_progress,
+                            timestamp=posts[-1]["postedAtPrecise"],
+                            offset=False,
                         )
                     )
-                    
-            elif (max(map(lambda x:float(x['postedAtPrecise']),posts))>=max(required_ids)):
-                    pass
-            elif float(timestamp or 0)>=max(required_ids):
+                )
+
+            elif max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
+                required_ids
+            ):
+                pass
+            elif float(timestamp or 0) >= max(required_ids):
                 pass
             else:
                 log.debug(f"{log_id} Required before {required_ids}")
-                [
-                    required_ids.discard(float(ele["postedAtPrecise"]))
-                    for ele in posts
-                ]
+                [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
                 log.debug(f"{log_id} Required after {required_ids}")
                 if len(required_ids) > 0:
                     new_tasks.append(
@@ -389,7 +390,6 @@ async def scrape_timeline_posts(
                                 timestamp=posts[-1]["postedAtPrecise"],
                                 required_ids=required_ids,
                                 offset=False,
-            
                             )
                         )
                     )
@@ -404,41 +404,43 @@ async def scrape_timeline_posts(
     finally:
         job_progress.remove_task(task) if job_progress and task != None else None
 
+
 def trace_log_task(responseArray):
-    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
-        api_str = "\n\n".join(map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk))
-        log.trace(
-            f"{common_logs.FINAL_RAW.format('Timeline')}".format(
-                posts=api_str
-            )
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
+        api_str = "\n\n".join(
+            map(lambda post: f"{common_logs.RAW_INNER} {post}\n\n", chunk)
         )
+        log.trace(f"{common_logs.FINAL_RAW.format('Timeline')}".format(posts=api_str))
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
 
 def trace_log_old(responseArray):
-    chunk_size=constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
-        end_index = min(i + chunk_size - 1, len(responseArray))  # Adjust end_index calculation
-        chunk = responseArray[i - 1:end_index]  # Adjust slice to start at i-1
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
         log.trace(
-        "oldtimelines {posts}".format(
-            posts="\n\n".join(
-                list(map(lambda x: f"oldtimeline: {str(x)}", chunk))
+            "oldtimelines {posts}".format(
+                posts="\n\n".join(list(map(lambda x: f"oldtimeline: {str(x)}", chunk)))
             )
-        )
         )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
 
-def after_log(username,after):
+
+def after_log(username, after):
     log.info(
         f"""
 Setting initial timeline scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}

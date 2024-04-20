@@ -38,13 +38,14 @@ class CustomTenacity(AsyncRetrying):
         exception = retry_state.outcome.exception()
         is_rate_limit = (
             isinstance(exception, aiohttp.ClientResponseError)
-            and getattr(exception, "status_code", None) in {429,504}
+            and getattr(exception, "status_code", None) in {429, 504}
         ) or (
             isinstance(exception, httpx.HTTPStatusError)
             and (
                 getattr(exception.response, "status_code", None)
                 or getattr(exception.response, "status", None)
-            ) in {429,504}
+            )
+            in {429, 504}
         )
         if is_rate_limit:
             sleep = self.wait_exponential(retry_state)
@@ -184,7 +185,7 @@ class sessionManager:
         wait_min=None,
         wait_max=None,
         log=None,
-                total_timeout=None,
+        total_timeout=None,
         connect_timeout=None,
         pool_connect_timeout=None,
         read_timeout=None,
@@ -200,7 +201,9 @@ class sessionManager:
         retries = retries or self._retries
         sync_sem = self._sync_sem or sync_sem
         for _ in Retrying(
-            retry=retry_if_not_exception_type((KeyboardInterrupt,asyncio.TimeoutError)) ,
+            retry=retry_if_not_exception_type(
+                (KeyboardInterrupt, asyncio.TimeoutError)
+            ),
             stop=tenacity.stop.stop_after_attempt(retries),
             wait=tenacity.wait.wait_random(min=min, max=max),
             before=lambda x: (
@@ -216,12 +219,12 @@ class sessionManager:
                 try:
                     r = self._httpx_funct(
                         method,
-                         timeout=httpx.Timeout(
-                    total_timeout or self._total_timeout,
-                    connect=connect_timeout or self._connect_timeout,
-                    pool=pool_connect_timeout  or self._pool_connect_timeout,
-                    read=read_timeout or self._read_timeout,
-                            ),
+                        timeout=httpx.Timeout(
+                            total_timeout or self._total_timeout,
+                            connect=connect_timeout or self._connect_timeout,
+                            pool=pool_connect_timeout or self._pool_connect_timeout,
+                            read=read_timeout or self._read_timeout,
+                        ),
                         url=url,
                         follow_redirects=redirects,
                         params=params,
@@ -282,7 +285,9 @@ class sessionManager:
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
             ),
-            retry=retry_if_not_exception_type((KeyboardInterrupt,asyncio.TimeoutError)) ,
+            retry=retry_if_not_exception_type(
+                (KeyboardInterrupt, asyncio.TimeoutError)
+            ),
             wait_random=tenacity.wait_random(min=wait_min, max=wait_max),
             stop=tenacity.stop.stop_after_attempt(retries),
             before=lambda x: (
@@ -309,11 +314,12 @@ class sessionManager:
                             method,
                             url,
                             timeout=aiohttp.ClientTimeout(
-                    total=total_timeout or self._total_timeout,
-                    connect=connect_timeout or self._connect_timeout,
-                    sock_connect=pool_connect_timeout or self._pool_connect_timeout,
-                    sock_read=read_timeout or self._read_timeout,
-        ),
+                                total=total_timeout or self._total_timeout,
+                                connect=connect_timeout or self._connect_timeout,
+                                sock_connect=pool_connect_timeout
+                                or self._pool_connect_timeout,
+                                sock_read=read_timeout or self._read_timeout,
+                            ),
                             headers=headers,
                             cookies=cookies,
                             allow_redirects=redirects,
@@ -328,10 +334,10 @@ class sessionManager:
                         r = await self._httpx_funct_async(
                             method,
                             timeout=httpx.Timeout(
-                    total_timeout or self._total_timeout,
-                    connect=connect_timeout or self._connect_timeout,
-                    pool=pool_connect_timeout  or self._pool_connect_timeout,
-                    read=read_timeout or self._read_timeout,
+                                total_timeout or self._total_timeout,
+                                connect=connect_timeout or self._connect_timeout,
+                                pool=pool_connect_timeout or self._pool_connect_timeout,
+                                read=read_timeout or self._read_timeout,
                             ),
                             follow_redirects=redirects,
                             url=url,
