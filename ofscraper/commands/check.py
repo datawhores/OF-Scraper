@@ -81,7 +81,6 @@ def process_item():
             log.info("cdm checker was fine\ncdm will not be check again\n\n")
         # should be done once before downloads
         log.info("Getting Models")
-
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     for _ in range(0, 2):
@@ -93,7 +92,6 @@ def process_item():
             media = ALL_MEDIA.get(f"{media_id}_{post_id}_{username}")
             if not media:
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
-
             log.info(f"Added url {media.url or media.mpd}")
             log.info("Sending URLs to OF-Scraper")
             selector.set_data_all_subs_dict(username)
@@ -107,9 +105,7 @@ def process_item():
                     f"Downloading individual media ({media.filename}) to disk for {username}"
                 )
                 operations.table_init_create(model_id=model_id, username=username)
-
                 textDownloader(post, username=username)
-
                 values = downloadnormal.process_dicts(username, model_id, [media])
                 if values == None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
@@ -119,17 +115,13 @@ def process_item():
             log.info("Download Finished")
             app.update_cell(key, "Download_Cart", "[downloaded]")
             app.update_cell(key, "Downloaded", True)
-
         except Exception as E:
             app.update_downloadcart_cell(key, "[failed]")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-
             raise E
-
         if app.row_queue.empty():
             log.info("Download cart is currently empty")
-
 
 @run
 async def data_refill(media_id, post_id, target_name):

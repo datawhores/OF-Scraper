@@ -488,6 +488,7 @@ async def process_labels(model_id, username, c):
             print(E)
 
 
+@run
 async def process_areas(ele, model_id) -> list:
     with stdout.lowstdout():
         executor = (

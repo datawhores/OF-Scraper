@@ -11,7 +11,6 @@ r"""
                                                                                       
 """
 
-import asyncio
 import logging
 import time
 import timeit
@@ -69,7 +68,7 @@ Run Time:  [bold]{str(arrow.get(end)-arrow.get(start)).split(".")[0]}[/bold]
 @exit.exit_wrapper
 def process_post():
     if read_args.retriveArgs().users_first:
-        asyncio.run(process_post_user_first())
+        process_post_user_first()
     else:
         normal_post_process()
 
@@ -87,15 +86,17 @@ def process_post_user_first():
 
         profile_tools.print_current_profile()
         init.print_sign_status()
-        userdata = userselector.getselected_usernames(rescan=False)
-        length = len(userdata)
-        output = []
-        asyncio.create_task()
+        data={}
+        for user in userselector.getselected_usernames(rescan=False):
+            data.update(process_user_first_data_retriver(user))
+        for model_id,val in data.items():
+            download.download_process(
+                    val["username"], model_id, val['media'], posts=val['posts']
+            )
 
-        # log.info(f"Data retrival progressing on model {count+1}/{length}")
 
 
-def process_user_first_helper(ele):
+def process_user_first_data_retriver(ele):
     if constants.getattr("SHOW_AVATAR") and ele.avatar:
         log.warning(f"Avatar : {ele.avatar}")
     if bool(areas.get_download_area()):
@@ -106,8 +107,8 @@ def process_user_first_helper(ele):
         model_id = ele.id
         username = ele.name
         operations.table_init_create(model_id=model_id, username=username)
-        results, posts = OF.process_areas(ele, model_id, job_progress=False)
-        return results
+        media, posts = OF.process_areas(ele, model_id)
+        return {model_id:{"username":username,"posts":posts,"media":media}}
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
             raise e
@@ -161,7 +162,7 @@ def normal_post_process():
             try:
                 model_id = ele.id
                 operations.table_init_create(model_id=model_id, username=ele.name)
-                combined_urls, posts = asyncio.run(OF.process_areas(ele, model_id))
+                combined_urls, posts = OF.process_areas(ele, model_id)
                 download.download_process(
                     ele.name, model_id, combined_urls, posts=posts
                 )
