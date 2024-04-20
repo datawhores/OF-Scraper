@@ -27,7 +27,6 @@ import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-attempt = contextvars.ContextVar("attempt")
 console = Console()
 
 
@@ -144,46 +143,35 @@ async def process_task(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        try:
-            for task in asyncio.as_completed(
-                tasks, timeout=constants.getattr("API_TIMEOUT_PER_TASK")
-            ):
-                try:
-                    result, new_tasks_batch = await task
-                    new_tasks.extend(new_tasks_batch)
-                    users = [
-                        user
-                        for user in result
-                        if user["id"] not in seen and not seen.add(user["id"])
-                    ]
-                    output.extend(users)
-                except asyncio.TimeoutError:
-                    log.traceback_("Task timed out")
-                    log.traceback_(traceback.format_exc())
-                    [ele.cancel() for ele in tasks]
-                    break
-                except Exception as E:
-                    log.traceback_(E)
-                    log.traceback_(traceback.format_exc())
-                    continue
-        except asyncio.TimeoutError:
-            log.traceback_("Task timed out")
-            log.traceback_(traceback.format_exc())
-            [ele.cancel() for ele in tasks]
+        for task in asyncio.as_completed(
+            tasks
+        ):
+            try:
+                result, new_tasks_batch = await task
+                new_tasks.extend(new_tasks_batch)
+                users = [
+                    user
+                    for user in result
+                    if user["id"] not in seen and not seen.add(user["id"])
+                ]
+                output.extend(users)
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+                continue
         tasks = new_tasks
     return output
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    attempt.set(0)
     new_tasks = []
+    url=constants.getattr("subscriptionsActiveEP").format(offset)
     try:
-        attempt.set(attempt.get(0) + 1)
         log.debug(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} usernames active offset {offset}"
+            f"usernames active offset {offset}"
         )
         async with c.requests_async(
-            constants.getattr("subscriptionsActiveEP").format(offset)
+            url=url
         ) as r:
             subscriptions = (await r.json_())["list"]
             log.debug(
@@ -204,6 +192,9 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
                     )
                 )
             return subscriptions, new_tasks
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
+    
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -211,15 +202,14 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
-    attempt.set(0)
     new_tasks = []
+    url= constants.getattr("subscriptionsExpiredEP").format(offset)
     try:
-        attempt.set(attempt.get(0) + 1)
         log.debug(
-            f"Attempt {attempt.get()}/{constants.getattr('API_NUM_TRIES')} usernames offset expired {offset}"
+            f"usernames offset expired {offset}"
         )
         async with c.requests_async(
-            constants.getattr("subscriptionsExpiredEP").format(offset)
+           
         ) as r:
             subscriptions = (await r.json_())["list"]
             log.debug(
@@ -242,6 +232,9 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
                 )
 
             return subscriptions, new_tasks
+    except asyncio.TimeoutError:
+        raise Exception(f"Task timed out {url}")
+      
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
