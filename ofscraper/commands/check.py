@@ -29,6 +29,7 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
+import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.common.common import textDownloader
@@ -164,7 +165,8 @@ def checker():
 
 
 def post_checker():
-    post_check_runner()
+    with stdout.lowstdout():
+        post_check_runner()
     start_helper()
 
 
@@ -328,7 +330,8 @@ def start_helper():
 
 
 def message_checker():
-    message_checker_runner()
+    with stdout.lowstdout():
+        message_checker_runner()
     start_helper()
 
 
@@ -409,7 +412,8 @@ async def message_check_retriver():
 
 
 def purchase_checker():
-    purchase_checker_runner()
+    with stdout.lowstdout():
+        purchase_checker_runner()
     start_helper()
 
 
@@ -476,7 +480,8 @@ async def purchase_check_retriver():
 
 
 def stories_checker():
-    stories_checker_runner()
+    with stdout.lowstdout():
+        stories_checker_runner()
     start_helper()
 
 
