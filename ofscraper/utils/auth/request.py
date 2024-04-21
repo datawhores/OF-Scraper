@@ -19,13 +19,15 @@ from urllib.parse import urlparse
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
+
 import ofscraper.utils.constants as constants
-import ofscraper.utils.paths.common as common_paths
-import ofscraper.utils.profiles.data as profiles_data
 import ofscraper.utils.settings as settings
+import ofscraper.utils.cache as cache
 
 
-def make_request_auth():
+
+
+def read_request_auth(forced=None):
     request_auth = {
         "static_param": "",
         "format": "",
@@ -34,40 +36,35 @@ def make_request_auth():
     }
 
     # *values, = get_request_auth()
-    result = get_request_auth()
-    if result:
-        (*values,) = result
+    result = get_request_auth(forced=forced)
+    if not result:
+        raise json.JSONDecodeError("No content")
+    (*values,) = result
 
-        request_auth.update(zip(request_auth.keys(), values))
-
-        profile = profiles_data.get_active_profile()
-
-        p = common_paths.get_config_home() / profile
-        if not p.is_dir():
-            p.mkdir(parents=True, exist_ok=True)
-
-        with open(p / constants.getattr("requestAuth"), "w") as f:
-            f.write(json.dumps(request_auth, indent=4))
+    request_auth.update(zip(request_auth.keys(), values))
+    return request_auth
 
 
-def get_request_auth():
+def get_request_auth(forced=False):
     if (settings.get_dynamic_rules()) in {
         "deviint",
         "dv",
         "dev",
     }:
 
-        return get_request_auth_deviint()
+        return get_request_auth_deviint(forced=forced)
     elif (settings.get_dynamic_rules()) in {
         "sneaky",
     }:
 
-        return get_request_auth_sneaky()
+        return get_request_auth_sneaky(forced=forced)
     else:
-        return get_request_auth_digitalcriminals()
+        return get_request_auth_digitalcriminals(forced=forced)
 
 
-def get_request_auth_deviint():
+def get_request_auth_deviint(forced=None):
+    if not forced and cache.get("api_onlyfans_sign"):
+        return cache.get("api_onlyfans_sign")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -85,10 +82,13 @@ def get_request_auth_deviint():
             fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
+            cache.set("api_onlyfans_sign",[static_param, fmt, checksum_indexes, checksum_constant],expire=constants.getattr("HOURLY_EXPIRY"))
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
-def get_request_auth_sneaky():
+def get_request_auth_sneaky(forced=None):
+    if not forced and cache.get("api_onlyfans_sign"):
+        return cache.get("api_onlyfans_sign")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -106,10 +106,13 @@ def get_request_auth_sneaky():
             fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
+            cache.set("api_onlyfans_sign",[static_param, fmt, checksum_indexes, checksum_constant],expire=constants.getattr("HOURLY_EXPIRY"))
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
-def get_request_auth_digitalcriminals():
+def get_request_auth_digitalcriminals(forced=None):
+    if not forced and cache.get("api_onlyfans_sign"):
+        return cache.get("api_onlyfans_sign")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -127,6 +130,7 @@ def get_request_auth_digitalcriminals():
             fmt = content["format"]
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
+            cache.set("api_onlyfans_sign",[static_param, fmt, checksum_indexes, checksum_constant],expire=constants.getattr("HOURLY_EXPIRY"))
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
@@ -188,11 +192,3 @@ def create_sign(link, headers):
     headers.update({"sign": final_sign, "time": time2})
     return headers
 
-
-def read_request_auth() -> dict:
-    profile = profiles_data.get_active_profile()
-
-    p = common_paths.get_config_home() / profile / constants.getattr("requestAuth")
-    with open(p, "r") as f:
-        content = json.load(f)
-    return content

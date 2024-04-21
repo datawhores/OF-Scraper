@@ -31,13 +31,17 @@ def moveHelper(temp, path_to_file, ele, log_=None):
 
 
 def addGlobalDir(path):
-    common_globals.dirSet.add(path.resolve()) if pathlib.Path(path).is_dir else common_globals.dirSet.add(path.resolve().parent)
+    paths=[path] if not isinstance(path,list) else path
+    paths=list(map(lambda x:path.resolve(x).parent if not pathlib.Path(x).is_dir else path.resolve(x),paths))
+
+    common_globals.dirSet.update(paths)
 
 
 
 def addLocalDir(path):
-    common_globals.localDirSet.add(path.resolve()) if pathlib.Path(path).is_dir else common_globals.localDirSet.add(path.resolve().parent)
-
+    paths=[path] if not isinstance(path,list) else path
+    paths=list(map(lambda x:path.resolve(x).parent if not pathlib.Path(x).is_dir else path.resolve(x),paths))
+    common_globals.dirSet.update(paths)
 
 def set_time(path, timestamp):
     if platform.system() == "Windows":

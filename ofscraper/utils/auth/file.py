@@ -18,7 +18,6 @@ from rich.console import Console
 
 import ofscraper.utils.auth.context as auth_context
 import ofscraper.utils.auth.make as make
-import ofscraper.utils.auth.request as request_auth
 import ofscraper.utils.auth.schema as auth_schema
 import ofscraper.utils.paths.common as common_paths
 
@@ -34,7 +33,6 @@ def read_auth():
                 auth = write_auth(auth)
             if auth_schema.auth_key_null(auth):
                 auth = make.make_auth(auth)
-            request_auth.make_request_auth()
             return auth
 
 
