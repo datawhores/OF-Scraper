@@ -383,6 +383,8 @@ async def process_dicts_split(username, model_id, medialist):
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         log=common_globals.log,
         sem=common_globals.sem,
+                    new_request_auth=True
+
     ) as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
