@@ -17,7 +17,6 @@ import traceback
 from functools import partial
 
 import aiofiles
-import arrow
 import psutil
 from tenacity import (
     AsyncRetrying,
@@ -76,7 +75,7 @@ async def main_download(c, ele, username, model_id, job_progress):
 
 
 
-async def main_download_downloader(c, ele, job_progress):
+async def main_download_downloader(c, ele, job_progress,  download_retries=None):
     downloadspace(mediatype=ele.mediatype)
     tempholderObj = await placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
