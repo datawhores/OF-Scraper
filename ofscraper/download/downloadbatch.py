@@ -279,7 +279,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
             elif result is None:
                 count = count + 1
             elif isinstance(result, dict) and "dir_update" in result:
-                addGlobalDir(result)
+                addGlobalDir(result['dir_update'])
             elif isinstance(result, dict) and downloadprogress:
                 job_progress_helper(job_progress, result)
            
