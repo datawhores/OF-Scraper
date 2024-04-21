@@ -206,6 +206,8 @@ async def get_all_paid_posts():
                 retries=constants.getattr("API_PAID_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
+                            new_request_auth=True
+
             ) as c:
                 allpaid = cache.get("purchased_all", default=[])
                 log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")

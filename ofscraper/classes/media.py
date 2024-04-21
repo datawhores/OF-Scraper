@@ -326,6 +326,8 @@ class Media(base.base):
             retries=constants.getattr("MPD_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
+                        new_request_auth=True
+
             semaphore=semaphore,
         ) as c:
             async with c.requests_async(url=self.mpd, params=params) as r:

@@ -15,6 +15,7 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+import
 
 
 class CustomTenacity(AsyncRetrying):
@@ -78,6 +79,7 @@ class sessionManager:
         semaphore=None,
         sync_sem=None,
         sync_semaphore=None,
+        new_request_auth=False
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -113,6 +115,7 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
+        auth_requests.read_request_auth(forced=None) if new_request_auth  else None
 
     async def __aenter__(self):
         self._async = True
