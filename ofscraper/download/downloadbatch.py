@@ -230,16 +230,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
             results = [results]
 
         for result in results:
-            if result is None:
-                count = count + 1
-                continue
-            elif isinstance(result, dict) and "dir_update" in result:
-                addGlobalDir(result)
-                continue              
-            elif isinstance(result, dict) and downloadprogress:
-                job_progress_helper(job_progress, result)
-                continue
-            else:
+            if isinstance(result,list) or isinstance(result,tuple):
                 media_type, num_bytes_downloaded, total_size = result
                 with common_globals.count_lock:
                     common_globals.total_bytes_downloaded = (
@@ -284,6 +275,14 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                         + common_globals.skipped
                         + common_globals.forced_skipped,
                     )
+
+            elif result is None:
+                count = count + 1
+            elif isinstance(result, dict) and "dir_update" in result:
+                addGlobalDir(result)
+            elif isinstance(result, dict) and downloadprogress:
+                job_progress_helper(job_progress, result)
+           
 
 
 def get_mediasplits(medialist):
