@@ -75,7 +75,7 @@ async def process_dicts(username, model_id, medialist):
                     retries=constants.getattr("DOWNLOAD_RETRIES"),
                     wait_min=constants.getattr("OF_MIN_WAIT_API"),
                     wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                                new_request_auth=True
+                    new_request_auth=True
 
                 ) as c:
                     for ele in medialist:
@@ -200,6 +200,7 @@ async def download(c, ele, model_id, username, job_progress):
                     username,
                     model_id,
                     job_progress,
+
                 )
 
         except Exception as E:

@@ -169,7 +169,7 @@ def common_params(func):
             help="""
             \b
             runs a script post model download
-            addional args sent include username, model_id, media json ,and post json
+            addional args sent to script username, model_id, media json ,and post json
             """,
         ),
         help="Advanced control of program behavior",
