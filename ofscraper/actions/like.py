@@ -53,6 +53,7 @@ async def get_posts(model_id, username):
             retries=constants.getattr("API_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
+            new_request_auth=True
         ) as c:
             while True:
                 max_count = min(
@@ -187,6 +188,7 @@ def _like(model_id, ids: list, like_action: bool):
     ) as overall_progress:
         with sessionManager.sessionManager(
             sem=1,
+            new_request_auth=True,
             backend="httpx",
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),

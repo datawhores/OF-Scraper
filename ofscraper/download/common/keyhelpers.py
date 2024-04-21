@@ -239,6 +239,8 @@ async def key_helper_manual(c, pssh, licence_url, id):
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
         async with sessionManager.sessionManager(
             backend="httpx", sem=common_globals.sem
+                        new_request_auth=True
+
         ) as c:
             async with c.requests_async(
                 url=licence_url,
