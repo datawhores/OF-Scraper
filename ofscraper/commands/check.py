@@ -32,7 +32,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
-from ofscraper.download.common.common import textDownloader
+from ofscraper.download.common.text import textDownloader
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -122,6 +122,7 @@ def process_item():
             raise E
         if app.row_queue.empty():
             log.info("Download cart is currently empty")
+
 
 @run
 async def data_refill(media_id, post_id, target_name):

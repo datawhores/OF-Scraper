@@ -24,7 +24,6 @@ from ofscraper.utils.context.run_async import run
 log = logging.getLogger("shared")
 
 
-
 @run
 async def get_pinned_posts_progress(model_id, c=None):
     tasks = []
@@ -170,7 +169,7 @@ async def scrape_pinned_posts(
     new_tasks = []
     await asyncio.sleep(1)
     try:
-        
+
         task = (
             job_progress.add_task(
                 f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",

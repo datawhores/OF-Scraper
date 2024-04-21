@@ -30,7 +30,6 @@ console = Console()
 log = logging.getLogger("shared")
 
 
-
 # can get profile from username or id
 def scrape_profile(username: Union[int, str]) -> dict:
     with sessionManager.sessionManager(
@@ -73,10 +72,8 @@ async def scrape_profile_helper_async(c, username: Union[int, str]):
     if data and not read_args.retriveArgs().update_profile:
         return data
     try:
-        
-        log.info(
-            f"to get profile {username}"
-        )
+
+        log.info(f"to get profile {username}")
         await asyncio.sleep(1)
         async with c.requests_async(
             constants.getattr("profileEP").format(username)
@@ -173,10 +170,8 @@ def get_id_helper(c, username):
     if id:
         return id
     try:
-        
-        log.info(
-            f"to get id {username}"
-        )
+
+        log.info(f"to get id {username}")
 
         with c.requests(constants.getattr("profileEP").format(username)) as r:
             id = r.json()["id"]

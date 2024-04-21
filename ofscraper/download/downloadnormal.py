@@ -19,7 +19,6 @@ from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
@@ -32,13 +31,11 @@ import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 from ofscraper.download.alt_download import alt_download
-from ofscraper.download.common.common import (
-    convert_num_bytes,
-    get_medialog,
-    log_download_progress,
-    metadata,
-    setDirectoriesDate,
-)
+from ofscraper.download.common.common import get_medialog
+from ofscraper.download.common.log import final_log, log_download_progress
+from ofscraper.download.common.metadata import metadata
+from ofscraper.download.common.paths import setDirectoriesDate
+from ofscraper.download.common.progress import convert_num_bytes
 from ofscraper.download.main_download import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
@@ -162,7 +159,7 @@ async def process_dicts(username, model_id, medialist):
             logqueue.put("None")
             log_thread.join()
             other_thread.join() if other_thread else None
-            common.final_log(username, log=logging.getLogger("shared"))
+            final_log(username, log=logging.getLogger("shared"))
             return (
                 common_globals.photo_count,
                 common_globals.video_count,

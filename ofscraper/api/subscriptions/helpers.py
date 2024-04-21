@@ -11,8 +11,8 @@ r"""
                                                                                       
 """
 
-import logging
 import asyncio
+import logging
 import traceback
 
 from rich.console import Console
@@ -34,7 +34,7 @@ def get_black_list_helper():
 
 
 async def sort_list(c) -> list:
-    url=constants.getattr("sortSubscription")
+    url = constants.getattr("sortSubscription")
     try:
         async with c.requests_async(
             method="post",

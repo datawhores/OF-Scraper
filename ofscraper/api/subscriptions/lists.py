@@ -107,9 +107,7 @@ async def get_lists():
                 )
                 while tasks:
                     new_tasks = []
-                    for task in asyncio.as_completed(
-                        tasks
-                    ):
+                    for task in asyncio.as_completed(tasks):
                         try:
                             result, new_tasks_batch = await task
                             new_tasks.extend(new_tasks_batch)
@@ -126,9 +124,9 @@ async def get_lists():
                     tasks = new_tasks
     overall_progress.remove_task(page_task)
     log.trace(
-            "list unduped {posts}".format(
-                posts="\n\n".join(map(lambda x: f" list data raw:{x}", output))
-            )
+        "list unduped {posts}".format(
+            posts="\n\n".join(map(lambda x: f" list data raw:{x}", output))
+        )
     )
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
     return output
@@ -137,16 +135,14 @@ async def get_lists():
 async def scrape_for_list(c, job_progress, offset=0):
     attempt.set(0)
     new_tasks = []
-    url=constants.getattr("listEP").format(offset)
+    url = constants.getattr("listEP").format(offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = job_progress.add_task(
             f" : getting lists offset -> {offset}",
             visible=True,
         )
-        async with c.requests_async(
-            url=url
-        ) as r:
+        async with c.requests_async(url=url) as r:
             data = await r.json_()
             out_list = data["list"] or []
             log.debug(
@@ -169,7 +165,7 @@ async def scrape_for_list(c, job_progress, offset=0):
                 )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
-    
+
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -217,9 +213,7 @@ async def get_list_users(lists):
                 )
                 while tasks:
                     new_tasks = []
-                    for task in asyncio.as_completed(
-                        tasks
-                    ):
+                    for task in asyncio.as_completed(tasks):
                         try:
                             result, new_tasks_batch = await task
                             new_tasks.extend(new_tasks_batch)
@@ -252,7 +246,7 @@ async def scrape_list_members(c, item, job_progress, offset=0):
     users = None
     attempt.set(0)
     new_tasks = []
-    url=constants.getattr("listusersEP").format(item.get("id"), offset)
+    url = constants.getattr("listusersEP").format(item.get("id"), offset)
     try:
         attempt.set(attempt.get(0) + 1)
         task = job_progress.add_task(
@@ -260,9 +254,7 @@ async def scrape_list_members(c, item, job_progress, offset=0):
             visible=True,
         )
 
-        async with c.requests_async(
-            url=url
-        ) as r:
+        async with c.requests_async(url=url) as r:
             log_id = f"offset:{offset} list:{item.get('name')} =>"
             data = await r.json_()
             users = data.get("list") or []
@@ -295,7 +287,6 @@ async def scrape_list_members(c, item, job_progress, offset=0):
                 )
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
-    
 
     except Exception as E:
         log.traceback_(E)

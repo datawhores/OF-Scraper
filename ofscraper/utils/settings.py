@@ -145,7 +145,9 @@ def get_after_enabled():
         read_args.retriveArgs().after is not None or not config_data.get_disable_after()
     )
 
+
 def get_post_download_script():
     return (
-        read_args.retriveArgs().download_script or config_data.get_post_download_script()
+        read_args.retriveArgs().download_script
+        or config_data.get_post_download_script()
     )

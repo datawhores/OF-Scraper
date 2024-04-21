@@ -32,15 +32,11 @@ import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
-from ofscraper.download.common.common import (
-    addGlobalDir,
-    convert_num_bytes,
-    get_medialog,
-    log_download_progress,
-    metadata,
-    setDirectoriesDate,
-    subProcessVariableInit,
-)
+from ofscraper.download.common.common import get_medialog, subProcessVariableInit
+from ofscraper.download.common.log import final_log, log_download_progress
+from ofscraper.download.common.metadata import metadata
+from ofscraper.download.common.paths import addGlobalDir, setDirectoriesDate
+from ofscraper.download.common.progress import convert_num_bytes
 from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
@@ -207,7 +203,7 @@ def process_dicts(username, model_id, filtered_medialist):
         except Exception:
             with exit.DelayedKeyboardInterrupt():
                 raise E
-    common.final_log(username)
+    final_log(username)
     return (
         common_globals.photo_count,
         common_globals.video_count,

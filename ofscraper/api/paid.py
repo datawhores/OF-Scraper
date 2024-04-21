@@ -27,7 +27,6 @@ paid_content_list_name = "list"
 log = logging.getLogger("shared")
 
 
-
 @run
 async def get_paid_posts_progress(username, model_id, c=None):
     tasks = []
@@ -140,7 +139,7 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
     new_tasks = []
     url = constants.getattr("purchased_contentEP").format(offset, username)
     try:
-        
+
         task = (
             (
                 job_progress.add_task(
@@ -299,7 +298,7 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
     new_tasks = []
     url = constants.getattr("purchased_contentALL").format(offset)
     try:
-        
+
         task = job_progress.add_task(
             f"scrape entire paid page offset={offset}",
             visible=True,

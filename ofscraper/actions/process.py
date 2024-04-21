@@ -86,14 +86,13 @@ def process_post_user_first():
 
         profile_tools.print_current_profile()
         init.print_sign_status()
-        data={}
+        data = {}
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
-        for model_id,val in data.items():
+        for model_id, val in data.items():
             download.download_process(
-                    val["username"], model_id, val['media'], posts=val['posts']
+                val["username"], model_id, val["media"], posts=val["posts"]
             )
-
 
 
 def process_user_first_data_retriver(ele):
@@ -108,7 +107,7 @@ def process_user_first_data_retriver(ele):
         username = ele.name
         operations.table_init_create(model_id=model_id, username=username)
         media, posts = OF.process_areas(ele, model_id)
-        return {model_id:{"username":username,"posts":posts,"media":media}}
+        return {model_id: {"username": username, "posts": posts, "media": media}}
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
             raise e

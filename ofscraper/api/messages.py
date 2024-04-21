@@ -31,7 +31,6 @@ from ofscraper.utils.context.run_async import run
 log = logging.getLogger("shared")
 
 
-
 @run
 async def get_messages_progress(model_id, username, forced_after=None, c=None):
     global after
@@ -148,7 +147,7 @@ async def process_tasks(tasks, model_id):
 
 def get_filterArray(after, before, oldmessages):
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
-    oldmessages = list(filter(lambda x: x["created_at"] != None, oldmessages))
+    oldmessages = list(filter(lambda x: x["created_at"] is not None, oldmessages))
     oldmessages = sorted(
         oldmessages,
         key=lambda x: arrow.get(x["created_at"] or 0),
@@ -327,7 +326,6 @@ async def scrape_messages(
     await asyncio.sleep(1)
     try:
         async with c.requests_async(url=url) as r:
-            
 
             task = (
                 job_progress.add_task(

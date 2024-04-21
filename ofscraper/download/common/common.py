@@ -28,18 +28,18 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as system
-from ofscraper.download.common.log import *
-from ofscraper.download.common.message import *
-from ofscraper.download.common.metadata import *
-from ofscraper.download.common.paths import *
-from ofscraper.download.common.progress import *
-from ofscraper.download.common.text import *
-from ofscraper.download.common.media import *
-from ofscraper.download.common.alt_common import *
+from ofscraper.download.common.log import get_medialog
+from ofscraper.download.common.media import add_path
+from ofscraper.download.common.message import send_msg, set_send_msg
 
-
-
+# from ofscraper.download.common.metadata import *
+# from ofscraper.download.common.paths import *
+from ofscraper.download.common.progress import update_total
 from ofscraper.utils.context.run_async import run
+
+
+def add_additional_data(placeholderObj, ele):
+    add_path(placeholderObj, ele)
 
 
 def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
@@ -175,5 +175,3 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
-
-

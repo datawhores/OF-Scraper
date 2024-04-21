@@ -121,40 +121,40 @@ def create_backup_transition(model_id, username):
 
 async def add_column_tables(model_id=None, username=None):
     changes = get_schema_changes(model_id=model_id, username=username)
-    if not "media_hash" in changes:
+    if "media_hash" not in changes:
         await add_column_media_hash(model_id=model_id, username=username)
         await add_flag_schema("media_hash", model_id=model_id, username=username)
-    if not "media_model_id" in changes:
+    if "media_model_id" not in changes:
         await add_column_media_ID(model_id=model_id, username=username)
         await add_flag_schema("media_model_id", model_id=model_id, username=username)
-    if not "media_posted_at" in changes:
+    if "media_posted_at" not in changes:
         await add_column_media_posted_at(model_id=model_id, username=username)
         await add_flag_schema("media_posted_at", model_id=model_id, username=username)
-    if not "media_duration" in changes:
+    if "media_duration" not in changes:
         await add_column_media_duration(model_id=model_id, username=username)
         await add_flag_schema("media_duration", model_id=model_id, username=username)
-    if not "media_unlocked" in changes:
+    if "media_unlocked" not in changes:
         await add_column_media_unlocked(model_id=model_id, username=username)
         await add_flag_schema("media_unlocked", model_id=model_id, username=username)
-    if not "posts_pinned" in changes:
+    if "posts_pinned" not in changes:
         await add_column_post_pinned(model_id=model_id, username=username)
         await add_flag_schema("posts_pinned", model_id=model_id, username=username)
-    if not "posts_model_id" in changes:
+    if "posts_model_id" not in changes:
         await add_column_post_ID(model_id=model_id, username=username)
         await add_flag_schema("posts_model_id", model_id=model_id, username=username)
-    if not "products_model_id" in changes:
+    if "products_model_id" not in changes:
         await add_column_products_ID(model_id=model_id, username=username)
         await add_flag_schema("products_model_id", model_id=model_id, username=username)
-    if not "other_model_id" in changes:
+    if "other_model_id" not in changes:
         await add_column_other_ID(model_id=model_id, username=username)
         await add_flag_schema("other_model_id", model_id=model_id, username=username)
-    if not "stories_model_id" in changes:
+    if "stories_model_id" not in changes:
         await add_column_stories_ID(model_id=model_id, username=username)
         await add_flag_schema("stories_model_id", model_id=model_id, username=username)
-    if not "messages_model_id" in changes:
+    if "messages_model_id" not in changes:
         await add_column_messages_ID(model_id=model_id, username=username)
         await add_flag_schema("messages_model_id", model_id=model_id, username=username)
-    if not "labels_model_id" in changes:
+    if "labels_model_id" not in changes:
         await add_column_labels_ID(model_id=model_id, username=username)
         await add_flag_schema("labels_model_id", model_id=model_id, username=username)
 

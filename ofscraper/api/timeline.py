@@ -8,7 +8,6 @@ r"""
 """
 
 import asyncio
-import contextvars
 import logging
 import math
 import traceback
@@ -26,7 +25,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
-
 
 
 @run

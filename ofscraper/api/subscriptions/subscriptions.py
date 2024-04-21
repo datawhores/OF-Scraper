@@ -142,9 +142,7 @@ async def process_task(tasks):
     seen = set()
     while tasks:
         new_tasks = []
-        for task in asyncio.as_completed(
-            tasks
-        ):
+        for task in asyncio.as_completed(tasks):
             try:
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
@@ -164,14 +162,10 @@ async def process_task(tasks):
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
     new_tasks = []
-    url=constants.getattr("subscriptionsActiveEP").format(offset)
+    url = constants.getattr("subscriptionsActiveEP").format(offset)
     try:
-        log.debug(
-            f"usernames active offset {offset}"
-        )
-        async with c.requests_async(
-            url=url
-        ) as r:
+        log.debug(f"usernames active offset {offset}")
+        async with c.requests_async(url=url) as r:
             subscriptions = (await r.json_())["list"]
             log.debug(
                 f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
@@ -193,7 +187,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
             return subscriptions, new_tasks
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
-    
+
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -202,15 +196,10 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
     new_tasks = []
-    url= constants.getattr("subscriptionsExpiredEP").format(offset)
+    url = constants.getattr("subscriptionsExpiredEP").format(offset)
     try:
-        log.debug(
-            f"usernames offset expired {offset}"
-        )
-        async with c.requests_async(
-            url=url
-           
-        ) as r:
+        log.debug(f"usernames offset expired {offset}")
+        async with c.requests_async(url=url) as r:
             subscriptions = (await r.json_())["list"]
             log.debug(
                 f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
@@ -234,7 +223,7 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
             return subscriptions, new_tasks
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
-      
+
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())

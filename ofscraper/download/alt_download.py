@@ -36,17 +36,23 @@ import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+from ofscraper.download.common.alt_common import (
+    handle_result_alt,
+    media_item_keys_alt,
+    media_item_post_process_alt,
+)
 from ofscraper.download.common.common import (
     check_forced_skip,
     downloadspace,
+    get_medialog,
     get_resume_size,
+    size_checker,
+)
+from ofscraper.download.common.log import (
     get_url_log,
     path_to_file_logger,
-    size_checker,
     temp_file_logger,
-    get_medialog
 )
-
 
 
 async def alt_download(c, ele, username, model_id, job_progress):
@@ -62,20 +68,16 @@ async def alt_download(c, ele, username, model_id, job_progress):
     audio = await alt_download_downloader(audio, c, ele, job_progress)
     video = await alt_download_downloader(video, c, ele, job_progress)
 
-    post_result = await common.media_item_post_process_alt(audio, video, ele, username, model_id)
+    post_result = await media_item_post_process_alt(
+        audio, video, ele, username, model_id
+    )
     if post_result:
         return post_result
-    await common.media_item_keys_alt(c, audio, video, ele)
+    await media_item_keys_alt(c, audio, video, ele)
 
-    return await common.handle_result_alt(
+    return await handle_result_alt(
         sharedPlaceholderObj, ele, audio, video, username, model_id
     )
-
-
-
-
-
-
 
 
 async def alt_download_downloader(item, c, ele, job_progress):

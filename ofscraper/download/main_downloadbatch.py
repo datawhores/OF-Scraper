@@ -34,23 +34,18 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.common.common import (
-    addLocalDir,
     check_forced_skip,
     downloadspace,
-    force_download,
     get_data,
     get_medialog,
     get_resume_size,
     get_unknown_content_type,
-    get_url_log,
-    moveHelper,
-    path_to_file_logger,
     set_profile_cache_helper,
-    set_time,
     size_checker,
 )
-from ofscraper.utils.context.run_async import run
-
+from ofscraper.download.common.log import get_url_log, path_to_file_logger
+from ofscraper.download.common.metadata import force_download
+from ofscraper.download.common.paths import addLocalDir, moveHelper, set_time
 
 
 async def main_download(c, ele, username, model_id):
@@ -106,7 +101,7 @@ async def handle_result(result, ele, username, model_id):
             hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
-    common.add_additional_data(placeholderObj,ele)
+    common.add_additional_data(placeholderObj, ele)
     return ele.mediatype, total
 
 

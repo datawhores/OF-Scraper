@@ -86,7 +86,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
                     )
                 )
             )
-    except asyncio.TimeoutError:
+    except asyncio.TimeoutError as _:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
         await asyncio.sleep(1)

@@ -364,7 +364,7 @@ async def scrape_archived_posts(
                         )
                     )
             return posts, new_tasks
-    except asyncio.TimeoutError:
+    except asyncio.TimeoutError as _:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
         log.traceback_(E)

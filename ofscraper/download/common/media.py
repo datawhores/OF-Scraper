@@ -6,5 +6,6 @@ def content_type_missing(ele):
     elif ele.mediatype.lower() == "audios":
         return "mp3"
 
-def add_path(pathObj,ele):
-    ele.media["final_path"]=str(pathObj.trunicated_filepath)
+
+def add_path(pathObj, ele):
+    ele.media["final_path"] = str(pathObj.trunicated_filepath)

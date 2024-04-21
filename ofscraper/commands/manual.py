@@ -16,10 +16,9 @@ import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
+import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.system.network as network
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.context.stdout as stdout
-
 
 
 def manual_download(urls=None):

@@ -1,24 +1,21 @@
 import subprocess
+
 import arrow
+
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.common.common as common
-import ofscraper.download.common.keyhelpers as keyhelpers
-import ofscraper.download.common.globals as common_globals
-import ofscraper.download.common.paths as common_paths
-
-import ofscraper.download.common.log as common_logs
-import ofscraper.utils.settings as settings
 import ofscraper.db.operations as operations
+import ofscraper.download.common.common as common
+import ofscraper.download.common.globals as common_globals
+import ofscraper.download.common.keyhelpers as keyhelpers
+import ofscraper.download.common.log as common_logs
+import ofscraper.download.common.paths as common_paths
 import ofscraper.utils.dates as dates
+import ofscraper.utils.settings as settings
 
 
-
-
-def add_additional_data(placeholderObj,ele):
-    common.add_path(placeholderObj,ele)
-
-
-async def handle_result_alt(sharedPlaceholderObj, ele, audio, video, username, model_id,batch=False):
+async def handle_result_alt(
+    sharedPlaceholderObj, ele, audio, video, username, model_id, batch=False
+):
     tempPlaceholder = await placeholder.tempFilePlaceholder(
         ele, f"temp_{ele.id or await ele.final_filename}.mp4"
     ).init()
@@ -42,8 +39,12 @@ async def handle_result_alt(sharedPlaceholderObj, ele, audio, video, username, m
     )
     if t.stderr.decode().find("Output") == -1:
         common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg failed")
-        common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}")
-        common_globals.log.debug(f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}")
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} ffmpeg {t.stderr.decode()}"
+        )
+        common_globals.log.debug(
+            f"{common_logs.get_medialog(ele)} ffmpeg {t.stdout.decode()}"
+        )
 
     video["path"].unlink(missing_ok=True)
     audio["path"].unlink(missing_ok=True)
@@ -52,7 +53,11 @@ async def handle_result_alt(sharedPlaceholderObj, ele, audio, video, username, m
         f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
     )
     common_paths.moveHelper(temp_path, sharedPlaceholderObj.trunicated_filepath, ele)
-    common_paths.addLocalDir(sharedPlaceholderObj.trunicated_filepath) if batch else common_paths.addGlobalDir(sharedPlaceholderObj.trunicated_filepath)
+    (
+        common_paths.addLocalDir(sharedPlaceholderObj.trunicated_filepath)
+        if batch
+        else common_paths.addGlobalDir(sharedPlaceholderObj.trunicated_filepath)
+    )
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.log.debug(
@@ -73,8 +78,9 @@ async def handle_result_alt(sharedPlaceholderObj, ele, audio, video, username, m
                 sharedPlaceholderObj, mediatype=ele.mediatype
             ),
         )
-    common.add_additional_data(sharedPlaceholderObj,ele)
+    common.add_additional_data(sharedPlaceholderObj, ele)
     return ele.mediatype, video["total"] + audio["total"]
+
 
 async def media_item_post_process_alt(audio, video, ele, username, model_id):
     if (audio["total"] + video["total"]) == 0:

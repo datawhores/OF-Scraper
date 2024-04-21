@@ -25,7 +25,6 @@ from ofscraper.utils.context.run_async import run
 log = logging.getLogger("shared")
 
 
-
 @run
 async def get_labels_progress(model_id, c=None):
     labels_ = await get_labels_data_progress(model_id, c=c)
@@ -181,12 +180,10 @@ async def process_tasks_labels(tasks):
 
 async def scrape_labels(c, model_id, job_progress=None, offset=0):
     labels = None
-    attempt.set(0)
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("labelsEP").format(model_id, offset)
     try:
-        
 
         task = (
             job_progress.add_task(
@@ -315,12 +312,11 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
 
 async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     posts = None
-    attempt.set(0)
     new_tasks = []
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
     await asyncio.sleep(1)
     try:
-        
+
         task = (
             job_progress.add_task(
                 f": getting posts from label -> {label['name']}",
