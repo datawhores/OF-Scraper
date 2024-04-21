@@ -8,6 +8,8 @@ import time
 import traceback
 
 import arrow
+import aiohttp
+import httpx
 
 import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
@@ -74,13 +76,12 @@ def process_download_cart():
 
 def process_item():
     global app
+    set_const_check_mode()
     if process_download_cart.counter == 0:
         if not network.check_cdm():
             log.info("error was raised by cdm checker\ncdm will not be check again\n\n")
         else:
             log.info("cdm checker was fine\ncdm will not be check again\n\n")
-        # should be done once before downloads
-        log.info("Getting Models")
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     for _ in range(0, 2):
@@ -116,24 +117,29 @@ def process_item():
             app.update_cell(key, "Download_Cart", "[downloaded]")
             app.update_cell(key, "Downloaded", True)
         except Exception as E:
-            app.update_downloadcart_cell(key, "[failed]")
+            app.row_queue.put((row,key))
+            data_refill(media_id,post_id,username.model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-            raise E
-        if app.row_queue.empty():
-            log.info("Download cart is currently empty")
+            continue
+        break
+    if app.row_queue.empty():
+        log.info("Download cart is currently empty")
 
 
 @run
-async def data_refill(media_id, post_id, target_name):
+async def data_refill(media_id, post_id, target_name,model_id):
     args = read_args.retriveArgs()
     if args.command == "msg_check":
+        reset_message_set(model_id)
         retriver = message_check_retriver
     elif args.command == "paid_check":
+        reset_paid_set(model_id)
         retriver = purchase_check_retriver
     elif args.command == "story_check":
         retriver = stories_check_retriver
     elif args.command == "post_check":
+        reset_time_line_cache(model_id)
         retriver = post_check_retriver
     else:
         return
@@ -470,7 +476,7 @@ async def purchase_check_retriver():
             else:
                 paid = await paid_.get_paid_posts(model_id, user_name, c=c)
                 cache.set(
-                    f"archived_check_{model_id}",
+                    f"purchased_check_{model_id}",
                     paid,
                     expire=constants.getattr("DAY_SECONDS"),
                 )
@@ -706,3 +712,37 @@ async def row_gather(username, model_id, paid=False):
         )
     ROWS = ROWS or []
     ROWS.extend(out)
+
+def reset_time_line_cache(model_id):
+    cache.set(
+        f"timeline_check_{model_id}",None
+    )
+    cache.set(
+        f"archived_check_{model_id}",None
+    )
+    cache.set(
+        f"labels_check_{model_id}",None
+    )
+    cache.set(
+        f"pinned_check_{model_id}",None
+    )
+    cache.close()
+
+def reset_message_set(model_id):
+    cache.set(
+        f"message_check_{model_id}",None
+    )
+    cache.set(
+        f"purchased_check_{model_id}",None
+    )
+    cache.close()
+
+def reset_paid_set(model_id):
+    cache.set(
+        f"purchased_check_{model_id}",None
+    )
+    cache.close()
+
+def set_const_check_mode():
+    constants.setattr("DOWNLOAD_RETRIES",constants.getattr("DOWNLOAD_RETRIES_CHECK"))
+    constants.setattr("DOWNLOAD_FILE_RETRIES",constants.getattr("DOWNLOAD_FILE_RETRIES_CHECK"))
