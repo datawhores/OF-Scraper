@@ -11,10 +11,12 @@ import ofscraper.download.common.log as common_logs
 import ofscraper.download.common.paths as common_paths
 import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
+import ofscraper.utils.system.system as system
+
 
 
 async def handle_result_alt(
-    sharedPlaceholderObj, ele, audio, video, username, model_id, batch=False
+    sharedPlaceholderObj, ele, audio, video, username, model_id
 ):
     tempPlaceholder = await placeholder.tempFilePlaceholder(
         ele, f"temp_{ele.id or await ele.final_filename}.mp4"
@@ -53,11 +55,8 @@ async def handle_result_alt(
         f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
     )
     common_paths.moveHelper(temp_path, sharedPlaceholderObj.trunicated_filepath, ele)
-    (
-        common_paths.addLocalDir(sharedPlaceholderObj.trunicated_filepath)
-        if batch
-        else common_paths.addGlobalDir(sharedPlaceholderObj.trunicated_filepath)
-    )
+    common_paths.addGlobalDir(sharedPlaceholderObj.filedir) if system.get_parent_process() \
+    else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.log.debug(
