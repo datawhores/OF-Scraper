@@ -20,7 +20,6 @@ import ofscraper.download.common.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit

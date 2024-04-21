@@ -113,7 +113,7 @@ async def handle_result(result, ele, username, model_id):
             hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
         )
     await set_profile_cache_helper(ele)
-    media.add_path(placeholderObj,ele)
+    common.add_additional_data(placeholderObj,ele)
 
     return ele.mediatype, total
 

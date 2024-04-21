@@ -139,7 +139,7 @@ def common_params(func):
             \b
             Skip media downloads and gather metadata only 
             [no change to download status] 
-            [select one one --metadata or --metadata-update or --metadata-complete]""",
+            [select one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="none",  # Enforce "none" as the only valid value
         ),
         click.option(
@@ -149,7 +149,7 @@ def common_params(func):
             help="""
             \b
             Skip media downloads, gather metadata, and update download status based on file presence 
-            [select onw one --metadata or --metadata-update or --metadata-complete]""",
+            [select one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="file",
         ),
         click.option(
@@ -159,7 +159,7 @@ def common_params(func):
             help="""
             \b
             Skip media downloads, gather metadata, and mark all media as downloaded 
-            [select onw one --metadata or --metadata-update or --metadata-complete]""",
+            [select one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="complete",
         ),
         click.option(
@@ -168,7 +168,8 @@ def common_params(func):
             "download_script",
             help="""
             \b
-            post download script data sent is username, model_id, media json and post json
+            runs a script post model download
+            addional args sent include username, model_id, media json ,and post json
             """,
         ),
         help="Advanced control of program behavior",

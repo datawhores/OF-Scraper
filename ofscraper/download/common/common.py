@@ -34,6 +34,11 @@ from ofscraper.download.common.metadata import *
 from ofscraper.download.common.paths import *
 from ofscraper.download.common.progress import *
 from ofscraper.download.common.text import *
+from ofscraper.download.common.media import *
+from ofscraper.download.common.alt_common import *
+
+
+
 from ofscraper.utils.context.run_async import run
 
 
@@ -170,3 +175,5 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
+
+

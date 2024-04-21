@@ -9,7 +9,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.download.common.log import get_medialog
-import ofscraper.download.common.media as media
+import ofscraper.download.common.common as common
 
 
 
@@ -29,7 +29,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     )
     placeholderObj = placeholderObj or await placeholderObjHelper(c, ele)
     await placeholderObj.init()
-    media.add_path(placeholderObj,ele)
+    common.add_additional_data(placeholderObj,ele)
     effected = None
     if ele.id:
         effected = await operations.download_media_update(
