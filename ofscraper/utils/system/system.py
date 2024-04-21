@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-import multiprocessing
+import multiprocess
 import os
 import platform
 import subprocess
@@ -18,10 +18,12 @@ def is_frozen():
         return False
 
 
-def get_parent():
+def get_parent_process():
     return (
-        multiprocessing.parent_process() != None or "pytest" in sys.modules
-    ) == False
+        multiprocess.parent_process() is None
+    )
+def get_parent():
+    return get_parent_process() or "pytest" not in sys.modules
 
 
 def getcpu_count():
@@ -61,13 +63,13 @@ def getOpenFiles(unique=True):
 def set_mulitproc_start_type():
     plat = platform.system()
     if plat == "Darwin":
-        multiprocessing.set_start_method("spawn")
+        multiprocess.set_start_method("spawn")
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         os.environ["no_proxy"] = "*"
     elif plat == "Windows":
-        multiprocessing.set_start_method("spawn")
+        multiprocess.set_start_method("spawn")
     else:
-        multiprocessing.set_start_method("forkserver")
+        multiprocess.set_start_method("forkserver")
 
 
 def set_eventloop():

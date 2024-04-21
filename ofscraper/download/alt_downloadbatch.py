@@ -62,7 +62,7 @@ async def alt_download(c, ele, username, model_id):
         return post_result
     await media_item_keys_alt(c, audio, video, ele)
     return await handle_result_alt(
-        sharedPlaceholderObj, ele, audio, video, username, model_id, batch=True
+        sharedPlaceholderObj, ele, audio, video, username, model_id
     )
 
 
