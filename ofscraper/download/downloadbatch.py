@@ -233,58 +233,57 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
             if result is None:
                 count = count + 1
                 continue
-            if isinstance(result, dict) and not downloadprogress:
-                continue
-            if isinstance(result, set):
+            elif isinstance(result, dict) and "dir_update" in result:
                 addGlobalDir(result)
-                continue
-            if isinstance(result, dict):
+                continue              
+            elif isinstance(result, dict) and downloadprogress:
                 job_progress_helper(job_progress, result)
                 continue
-            media_type, num_bytes_downloaded, total_size = result
-            with common_globals.count_lock:
-                common_globals.total_bytes_downloaded = (
-                    common_globals.total_bytes_downloaded + num_bytes_downloaded
-                )
-                common_globals.total_bytes = common_globals.total_bytes + total_size
-                if media_type == "images":
-                    common_globals.photo_count += 1
+            else:
+                media_type, num_bytes_downloaded, total_size = result
+                with common_globals.count_lock:
+                    common_globals.total_bytes_downloaded = (
+                        common_globals.total_bytes_downloaded + num_bytes_downloaded
+                    )
+                    common_globals.total_bytes = common_globals.total_bytes + total_size
+                    if media_type == "images":
+                        common_globals.photo_count += 1
 
-                elif media_type == "videos":
-                    common_globals.video_count += 1
-                elif media_type == "audios":
-                    common_globals.audio_count += 1
-                elif media_type == "skipped":
-                    common_globals.skipped += 1
-                elif media_type == "forced_skipped":
-                    common_globals.forced_skipped += 1
-                log_download_progress(media_type)
-                overall_progress.update(
-                    task1,
-                    description=common_globals.desc.format(
-                        p_count=common_globals.photo_count,
-                        v_count=common_globals.video_count,
-                        a_count=common_globals.audio_count,
-                        skipped=common_globals.skipped,
-                        forced_skipped=common_globals.forced_skipped,
-                        total_bytes_download=convert_num_bytes(
-                            common_globals.total_bytes_downloaded
+                    elif media_type == "videos":
+                        common_globals.video_count += 1
+                    elif media_type == "audios":
+                        common_globals.audio_count += 1
+                    elif media_type == "skipped":
+                        common_globals.skipped += 1
+                    elif media_type == "forced_skipped":
+                        common_globals.forced_skipped += 1
+                    log_download_progress(media_type)
+                    overall_progress.update(
+                        task1,
+                        description=common_globals.desc.format(
+                            p_count=common_globals.photo_count,
+                            v_count=common_globals.video_count,
+                            a_count=common_globals.audio_count,
+                            skipped=common_globals.skipped,
+                            forced_skipped=common_globals.forced_skipped,
+                            total_bytes_download=convert_num_bytes(
+                                common_globals.total_bytes_downloaded
+                            ),
+                            total_bytes=convert_num_bytes(common_globals.total_bytes),
+                            mediacount=total,
+                            sumcount=common_globals.video_count
+                            + common_globals.audio_count
+                            + common_globals.photo_count
+                            + common_globals.skipped
+                            + common_globals.forced_skipped,
                         ),
-                        total_bytes=convert_num_bytes(common_globals.total_bytes),
-                        mediacount=total,
-                        sumcount=common_globals.video_count
+                        refresh=True,
+                        completed=common_globals.video_count
                         + common_globals.audio_count
                         + common_globals.photo_count
                         + common_globals.skipped
                         + common_globals.forced_skipped,
-                    ),
-                    refresh=True,
-                    completed=common_globals.video_count
-                    + common_globals.audio_count
-                    + common_globals.photo_count
-                    + common_globals.skipped
-                    + common_globals.forced_skipped,
-                )
+                    )
 
 
 def get_mediasplits(medialist):
@@ -410,7 +409,7 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.handlers[1].queue.put("None")
     other_thread.join() if other_thread else None
     common_globals.log.debug("other thread closed")
-    await common.send_msg(common_globals.localDirSet)
+    await common.send_msg({"dir_update":common_globals.localDirSet})
     await common.send_msg(None)
 
 
