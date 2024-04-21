@@ -46,6 +46,7 @@ from ofscraper.download.common.common import (
 from ofscraper.download.common.log import get_url_log, path_to_file_logger
 from ofscraper.download.common.metadata import force_download
 from ofscraper.download.common.paths import addLocalDir, moveHelper, set_time
+from ofscraper.download.common.main_common import  handle_result_main
 
 
 async def main_download(c, ele, username, model_id):
@@ -67,42 +68,8 @@ async def main_download(c, ele, username, model_id):
         if ele.mediatype != "forced_skipped":
             await force_download(ele, username, model_id)
         return ele.mediatype, 0
-    return await handle_result(result, ele, username, model_id)
+    return await handle_result_main(result, ele, username, model_id)
 
-
-async def handle_result(result, ele, username, model_id):
-    total, temp_path, placeholderObj = result
-    path_to_file = placeholderObj.trunicated_filepath
-    await size_checker(temp_path, ele, total, path_to_file)
-    common_globals.innerlog.get().debug(
-        f"{get_medialog(ele)} { await ele.final_filename} size match target: {total} vs actual: {pathlib.Path(temp_path).absolute().stat().st_size}"
-    )
-    common_globals.innerlog.get().debug(
-        f"{get_medialog(ele)} renaming {pathlib.Path(temp_path).absolute()} -> {path_to_file}"
-    )
-    moveHelper(temp_path, path_to_file, ele, common_globals.innerlog.get())
-    addLocalDir(placeholderObj.filedir)
-    if ele.postdate:
-        newDate = dates.convert_local_time(ele.postdate)
-        common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} Attempt to set Date to {arrow.get(newDate).format('YYYY-MM-DD HH:mm')}"
-        )
-        set_time(path_to_file, newDate)
-        common_globals.innerlog.get().debug(
-            f"{get_medialog(ele)} Date set to {arrow.get(path_to_file.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
-        )
-    if ele.id:
-        await operations.download_media_update(
-            ele,
-            filename=path_to_file,
-            model_id=model_id,
-            username=username,
-            downloaded=True,
-            hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
-        )
-    await set_profile_cache_helper(ele)
-    common.add_additional_data(placeholderObj, ele)
-    return ele.mediatype, total
 
 
 async def main_download_downloader(c, ele):
