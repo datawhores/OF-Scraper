@@ -30,15 +30,13 @@ def moveHelper(temp, path_to_file, ele, log_=None):
     # set variables based on parent process
 
 
-def addGlobalDir(input):
-    if isinstance(input, pathlib.Path):
-        common_globals.dirSet.add(input.parent)
-    else:
-        common_globals.dirSet.update(input)
+def addGlobalDir(path):
+    common_globals.dirSet.add(path.resolve()) if pathlib.Path(path).is_dir else common_globals.dirSet.add(path.resolve().parent)
+
 
 
 def addLocalDir(path):
-    common_globals.localDirSet.add(path.resolve().parent)
+    common_globals.localDirSet.add(path.resolve()) if pathlib.Path(path).is_dir else common_globals.localDirSet.add(path.resolve().parent)
 
 
 def set_time(path, timestamp):
