@@ -67,7 +67,7 @@ async def main_download(c, ele, username, model_id):
         if ele.mediatype != "forced_skipped":
             await force_download(ele, username, model_id)
         return ele.mediatype, 0
-    await handle_result(result, ele, username, model_id)
+    return await handle_result(result, ele, username, model_id)
 
 
 async def handle_result(result, ele, username, model_id):
