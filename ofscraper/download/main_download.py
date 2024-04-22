@@ -81,7 +81,7 @@ async def main_download_downloader(c, ele, job_progress,  download_retries=None)
         ele, f"{await ele.final_filename}_{ele.id}.part"
     ).init()
     async for _ in AsyncRetrying(
-        stop=stop_after_attempt(constants.getattr("DOWNLOAD_FILE_RETRIES")),
+        stop=stop_after_attempt(constants.getattr("DOWNLOAD_FILE_NUM_TRIES")),
         wait=wait_random(
             min=constants.getattr("OF_MIN_WAIT_API"),
             max=constants.getattr("OF_MAX_WAIT_API"),
@@ -109,19 +109,19 @@ async def main_download_downloader(c, ele, job_progress,  download_retries=None)
             except OSError as E:
                 await asyncio.sleep(1)
                 common_globals.log.debug(
-                    f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
+                    f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of Open Files -> { len(psutil.Process().open_files())}"
                 )
                 common_globals.log.debug(
-                    f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
+                    f"[attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Open Files  -> {list(map(lambda x:(x.path,x.fd),psutil.Process().open_files()))}"
                 )
                 raise E
             except Exception as E:
                 await asyncio.sleep(1)
                 common_globals.log.traceback_(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] {traceback.format_exc()}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {traceback.format_exc()}"
                 )
                 common_globals.log.traceback_(
-                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] {E}"
+                    f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] {E}"
                 )
                 raise E
 
@@ -173,7 +173,7 @@ async def main_download_sendreq(
 ):
     try:
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] download temp path {tempholderObj.tempfilepath}"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {tempholderObj.tempfilepath}"
         )
         total = total if common_globals.attempt.get() == 1 else None
         return await send_req_inner(
@@ -203,7 +203,7 @@ async def send_req_inner(
             else {"Range": f"bytes={resume_size}-{total}"}
         )
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}] Downloading media with url {ele.url}"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {ele.url}"
         )
         async with c.requests_async(url=ele.url, headers=headers) as r:
             await asyncio.get_event_loop().run_in_executor(

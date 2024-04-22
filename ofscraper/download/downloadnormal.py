@@ -72,7 +72,7 @@ async def process_dicts(username, model_id, medialist):
 
                 async with sessionManager.sessionManager(
                     sem=common_globals.sem,
-                    retries=constants.getattr("DOWNLOAD_RETRIES"),
+                    retries=constants.getattr("DOWNLOAD_NUM_TRIES"),
                     wait_min=constants.getattr("OF_MIN_WAIT_API"),
                     wait_max=constants.getattr("OF_MAX_WAIT_API"),
                     new_request_auth=True

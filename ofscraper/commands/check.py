@@ -734,5 +734,5 @@ def reset_paid_set(model_id):
     cache.close()
 
 def set_const_check_mode():
-    constants.setattr("DOWNLOAD_RETRIES",constants.getattr("DOWNLOAD_RETRIES_CHECK"))
-    constants.setattr("DOWNLOAD_FILE_RETRIES",constants.getattr("DOWNLOAD_FILE_RETRIES_CHECK"))
+    constants.setattr("DOWNLOAD_NUM_TRIES",constants.getattr("DOWNLOAD_RETRIES_NUM_TRIES"))
+    constants.setattr("DOWNLOAD_FILE_NUM_TRIES",constants.getattr("DOWNLOAD_FILE_NUM_TRIES_CHECK"))
