@@ -32,8 +32,8 @@ def check_cdm():
         try:
             with sessionManager.sessionManager(
                 backend="httpx",
-                total_timeout=30,
-                retries=constants.getattr("CDM_NUM_TRIES"),
+                total_timeout=constants.getattr("CDM_TEST_TIMEOUT"),
+                retries=constants.getattr("CDM_TEST_NUM_TRIES"),
                 wait_min=constants.getattr("CDM_MIN_WAIT"),
                 wait_max=constants.getattr("CDM_MAX_WAIT"),
             ) as c:

@@ -377,7 +377,7 @@ async def process_dicts_split(username, model_id, medialist):
     )
     aws = []
     async with sessionManager.sessionManager(
-        retries=constants.getattr("DOWNLOAD_RETRIES"),
+        retries=constants.getattr("DOWNLOAD_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         log=common_globals.log,

@@ -77,7 +77,7 @@ async def metadata_helper(c, ele):
         )
         common_globals.attempt.set(common_globals.attempt.get() + 1)
         common_globals.log.debug(
-            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_RETRIES')}]  Getting data for metadata insert"
+            f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}]  Getting data for metadata insert"
         )
         async with c.requests_async(url=url, headers=None, params=params) as r:
             headers = r.headers
