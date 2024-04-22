@@ -408,8 +408,7 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.cache_thread.shutdown()
     common_globals.log.handlers[0].queue.put("None")
     common_globals.log.handlers[1].queue.put("None")
-    other_thread.join() if other_thread else None
-    common_globals.log.debug("other thread closed")
+s    common_globals.log.debug("other thread closed")
     await common.send_msg({"dir_update":common_globals.localDirSet})
     await common.send_msg(None)
 
