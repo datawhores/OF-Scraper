@@ -111,7 +111,6 @@ class sessionManager:
         self._keep_alive = keep_alive
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
-        self._proxy_auth = proxy_auth
         self._delay = delay or 0
         self._sem = semaphore or asyncio.Semaphore(sem or 100000)
         self._sync_sem = sync_semaphore or threading.Semaphore(
@@ -341,7 +340,6 @@ class sessionManager:
                             cookies=cookies,
                             allow_redirects=redirects,
                             proxy=self._proxy,
-                            proxy_auth=self._proxy_auth,
                             params=params,
                             json=json,
                             data=data,
