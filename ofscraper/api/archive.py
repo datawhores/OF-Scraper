@@ -131,7 +131,7 @@ async def process_tasks(tasks, model_id, after):
 
 def get_split_array(oldarchived, after):
     if len(oldarchived) == 0:
-        return 0
+        return []
     min_posts = max(
         len(oldarchived) // constants.getattr("REASONABLE_MAX_PAGE"),
         constants.getattr("MIN_PAGE_POST_COUNT"),
