@@ -41,6 +41,7 @@ from ofscraper.download.common.common import (
 )
 from ofscraper.download.common.log import get_url_log, path_to_file_logger
 from ofscraper.download.common.metadata import force_download
+from ofscraper.download.common.paths import addLocalDir, moveHelper, set_time
 from ofscraper.download.common.main_common import  handle_result_main
 
 
