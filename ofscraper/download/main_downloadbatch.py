@@ -17,7 +17,6 @@ import traceback
 from functools import partial
 
 import aiofiles
-import arrow
 from tenacity import AsyncRetrying, retry_if_not_exception_message, stop_after_attempt
 
 try:
@@ -25,12 +24,10 @@ try:
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.db.operations as operations
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.common.common import (

@@ -8,9 +8,6 @@ import time
 import traceback
 
 import arrow
-import aiohttp
-import httpx
-
 import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
 import ofscraper.api.labels as labels
@@ -232,7 +229,7 @@ async def post_check_retriver():
                         cache.set(
                             f"timeline_check_{model_id}",
                             timeline_data,
-                            expire=constants.getattr("DAY_SECONDS"),
+                            expire=constants.getattr("THREE_DAY_SECONDS"),
                         )
                 if "Archived" in areas:
                     oldarchive = cache.get(f"archived_check_{model_id}", default=[])
@@ -245,7 +242,7 @@ async def post_check_retriver():
                         cache.set(
                             f"archived_check_{model_id}",
                             archived_data,
-                            expire=constants.getattr("DAY_SECONDS"),
+                            expire=constants.getattr("THREE_DAY_SECONDS"),
                         )
                 if "Pinned" in areas:
                     oldpinned = cache.get(f"pinned_check_{model_id}", default=[])
@@ -256,7 +253,7 @@ async def post_check_retriver():
                         cache.set(
                             f"pinned_check_{model_id}",
                             pinned_data,
-                            expire=constants.getattr("DAY_SECONDS"),
+                            expire=constants.getattr("THREE_DAY_SECONDS"),
                         )
                 if "Labels" in areas:
                     oldlabels = cache.get(f"labels_check_{model_id}", default=[])
@@ -276,7 +273,7 @@ async def post_check_retriver():
                         cache.set(
                             f"labels_check_{model_id}",
                             labels_data,
-                            expire=constants.getattr("DAY_SECONDS"),
+                            expire=constants.getattr("THREE_DAY_SECONDS"),
                         )
                 all_post_data = list(
                     map(
@@ -386,8 +383,9 @@ async def message_check_retriver():
                     cache.set(
                         f"message_check_{model_id}",
                         messages,
-                        expire=constants.getattr("DAY_SECONDS"),
+                        expire=constants.getattr("THREE_DAY_SECONDS"),
                     )
+                    cache.close()
                 message_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), messages)
                 )
@@ -405,8 +403,9 @@ async def message_check_retriver():
                     cache.set(
                         f"purchased_check_{model_id}",
                         paid,
-                        expire=constants.getattr("DAY_SECONDS"),
+                        expire=constants.getattr("THREE_DAY_SECONDS"),
                     )
+                    cache.close()
                 paid_posts_array = list(
                     map(lambda x: posts_.Post(x, model_id, user_name), paid)
                 )
@@ -455,18 +454,8 @@ async def purchase_check_retriver():
 
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                 paid = oldpaid
-            if user_name == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
-                all_paid = await paid_.get_all_paid_posts()
-                paid_user_dict = {}
-                for ele in all_paid:
-                    # Get the user ID from either "fromUser" or "author" key (handle missing keys)
-                    user_id = (
-                        ele.get("fromUser", None) or ele.get("author", None) or {}
-                    ).get("id", None)
-
-                    # If user_id is found, update the paid_user_dict
-                    if user_id:
-                        paid_user_dict.setdefault(str(user_id), []).append(ele)
+            elif user_name == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
+                paid_user_dict  = await paid_.get_all_paid_posts()
                 seen = set()
                 paid = [
                     post
@@ -478,8 +467,9 @@ async def purchase_check_retriver():
                 cache.set(
                     f"purchased_check_{model_id}",
                     paid,
-                    expire=constants.getattr("DAY_SECONDS"),
+                    expire=constants.getattr("THREE_DAY_SECONDS"),
                 )
+                cache.close()
             posts_array = list(map(lambda x: posts_.Post(x, model_id, user_name), paid))
             yield user_name, model_id, posts_array
 
@@ -608,7 +598,7 @@ async def get_paid_ids(model_id, user_name):
             cache.set(
                 f"purchase_check_{model_id}",
                 paid,
-                expire=constants.getattr("DAY_SECONDS"),
+                expire=constants.getattr("THREE_DAY_SECONDS"),
             )
     media = await process_post_media(user_name, model_id, paid)
     media = list(filter(lambda x: x.canview == True, media))

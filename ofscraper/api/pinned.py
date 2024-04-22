@@ -149,7 +149,7 @@ def set_check(unduped, model_id):
         cache.set(
             f"pinned_check_{model_id}",
             all_posts,
-            expire=constants.getattr("DAY_SECONDS"),
+            expire=constants.getattr("THREE_DAY_SECONDS"),
         )
         cache.close()
 
