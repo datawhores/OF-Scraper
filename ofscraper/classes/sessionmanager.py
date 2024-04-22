@@ -23,7 +23,7 @@ class CustomTenacity(AsyncRetrying):
     """
 
     def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args,after=self._after_func, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
             min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
             max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
@@ -36,7 +36,7 @@ class CustomTenacity(AsyncRetrying):
 
     def _wait_picker(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
-        is_rate_limit = (
+        if (
             isinstance(exception, aiohttp.ClientResponseError)
             and getattr(exception, "status_code", None) in {429, 504}
         ) or (
@@ -46,12 +46,25 @@ class CustomTenacity(AsyncRetrying):
                 or getattr(exception.response, "status", None)
             )
             in {429, 504}
-        )
-        if is_rate_limit:
+        ):
             sleep = self.wait_exponential(retry_state)
         else:
             sleep = self.wait_random(retry_state)
         return sleep
+    def _after_func(self, retry_state) -> None:
+        exception = retry_state.outcome.exception()
+        if (
+            isinstance(exception, (aiohttp.ClientResponseError,aiohttp.ClientError))
+            and (getattr(exception, "status_code", None) or getattr(exception, "status", None))==403
+        ) or (
+            isinstance(exception, httpx.HTTPStatusError)
+            and (
+                getattr(exception.response, "status_code", None)
+                or getattr(exception.response, "status", None)
+            )
+            ==403
+        ):
+            auth_requests.read_request_auth(forced=True)
 
 
 class sessionManager:
@@ -192,6 +205,8 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
     ):
+        auth_requests.read_request_auth(forced=True) if sign else None
+
         headers = self._create_headers(headers, url, sign) if headers is None else None
         cookies = self._create_cookies() if cookies is None else None
         json = json or None
