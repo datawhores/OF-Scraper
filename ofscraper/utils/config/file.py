@@ -6,6 +6,8 @@ import re
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.console as console_
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.config.context as config_context
+
 
 console = console_.get_shared_console()
 log = logging.getLogger("shared")
@@ -30,20 +32,19 @@ def make_config_original():
 
 
 def open_config():
-    configText = config_string()
-    config = json_loads(configText)
-    if config.get("config"):
-        return config.get("config")
-    return config
+    with config_context.config_context():
+        configText = config_string()
+        config = json_loads(configText)
+        if config.get("config"):
+            return config.get("config")
+        return config
 
 
 def config_string():
-    p = pathlib.Path(common_paths.get_config_path())
-    if not p.parent.is_dir():
-        p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "r") as f:
-        configText = f.read()
-    return configText
+        p = pathlib.Path(common_paths.get_config_path())
+        with open(p, "r") as f:
+            configText = f.read()
+        return configText
 
 
 def write_config(updated_config):
