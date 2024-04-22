@@ -108,23 +108,9 @@ async def process_tasks(tasks, model_id):
         paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
     log.trace(f"{common_logs.FINAL_RAW.format('Paid')}".format(posts=paid_str))
     log.debug(f"{common_logs.FINAL_COUNT.format('Paid')} {len(responseArray)}")
-    set_check(responseArray, model_id)
+    set_check( model_id,responseArray)
     return responseArray
 
-
-def set_check(unduped, model_id):
-    seen = set()
-    all_posts = [
-        post
-        for post in cache.get(f"purchase_check_{model_id}", default=[]) + unduped
-        if post["id"] not in seen and not seen.add(post["id"])
-    ]
-    cache.set(
-        f"purchased_check_{model_id}",
-        all_posts,
-        expire=constants.getattr("DAY_SECONDS"),
-    )
-    cache.close()
 
 
 @run
@@ -189,6 +175,12 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
 
 @run
 async def get_all_paid_posts():
+    data=await process_and_create_tasks()
+    return create_all_paid_dict(data)
+
+
+
+async def process_and_create_tasks():
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
@@ -290,6 +282,16 @@ async def get_all_paid_posts():
         return output
 
 
+def create_all_paid_dict(paid_content):
+    user_dict = {}
+    for ele in paid_content:
+        user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get(
+            "id"
+        )
+        user_dict.setdefault(user_id, []).append(ele)
+    [set_check(key, val) for key, val in user_dict.items()]
+    return user_dict
+
 async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
@@ -354,6 +356,19 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
     finally:
         job_progress.remove_task(task)
 
+def set_check(model_id,unduped):
+    seen = set()
+    all_posts = [
+        post
+        for post in cache.get(f"purchase_check_{model_id}", default=[]) + unduped
+        if post["id"] not in seen and not seen.add(post["id"])
+    ]
+    cache.set(
+        f"purchased_check_{model_id}",
+        all_posts,
+        expire=constants.getattr("THREE_DAY_SECONDS"),
+    )
+    cache.close()
 
 def get_individual_post(username, model_id, postid):
     data = get_paid_posts_progress(username, model_id)
