@@ -306,7 +306,7 @@ def set_check(unduped, model_id, after):
         cache.set(
             f"message_check_{model_id}",
             list(all_posts),
-            expire=constants.getattr("DAY_SECONDS"),
+            expire=constants.getattr("THREE_DAY_SECONDS"),
         )
         cache.close()
 

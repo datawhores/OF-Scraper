@@ -385,15 +385,8 @@ async def process_profile(username) -> list:
 async def process_all_paid():
     with stdout.lowstdout():
         paid_content = await paid.get_all_paid_posts()
-        user_dict = {}
-
-        for ele in paid_content:
-            user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get(
-                "id"
-            )
-            user_dict.setdefault(user_id, []).append(ele)
         output = {}
-        for model_id, value in user_dict.items():
+        for model_id, value in paid_content.items():
             username = profile.scrape_profile(model_id).get("username")
             if username == constants.getattr(
                 "DELETED_MODEL_PLACEHOLDER"
