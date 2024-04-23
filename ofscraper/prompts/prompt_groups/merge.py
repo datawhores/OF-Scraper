@@ -22,6 +22,7 @@ def backup_prompt() -> bool:
                 "type": "list",
                 "name": name,
                 "message": "Have you backed up your database files?",
+                "option_instruction": "Database files will be modifield during the merge process",
                 "choices": [Choice(True,"Yes"),Choice(False,"No")],
             }
         ]

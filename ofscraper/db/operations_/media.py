@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS medias (
 );"""
 mediaSelectTransition = """
 SELECT  media_id,post_id,link,directory,filename,size,api_type,
-media_type,preview,linked,downloaded,created_at,
+media_type,preview,linked,downloaded,created_at,unlocked,
        CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
