@@ -17,6 +17,8 @@ def merge_runner():
             continue
         elif confirm is None:
             break
-        merge.batch_database_changes(new_db_folder,folder)
+        else:
+            merge.batch_database_changes(new_db_folder,folder)
+            break
     
     
