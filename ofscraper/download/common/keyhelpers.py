@@ -186,7 +186,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             retries=constants.getattr("CDM_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            total_timeout=constants.getattr(""),
+            total_timeout=constants.getattr("CDM_TIMEOUT"),
         ) as r:
             data = await r.json_()
             log.debug(f"keydb json {data}")
