@@ -21,7 +21,7 @@ import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
-from ofscraper.db.operations_.profile import get_single_model
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 from ofscraper.utils.context.run_async import run
 
 console = Console()
@@ -124,8 +124,8 @@ mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
 media_type,preview,linked,
-downloaded,created_at,posted_at,hash,model_id,duration)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 mediaDownloadSelect = """
 SELECT  
 directory,filename,size
@@ -166,14 +166,16 @@ FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
 
 
 @wrapper.operation_wrapper_async
-def create_media_table(model_id=None, username=None, conn=None):
+def create_media_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def add_column_media_hash(model_id=None, username=None, conn=None):
+def add_column_media_hash(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
@@ -192,7 +194,7 @@ def add_column_media_hash(model_id=None, username=None, conn=None):
 
 
 @wrapper.operation_wrapper_async
-def add_column_media_unlocked(model_id=None, username=None, conn=None):
+def add_column_media_unlocked(model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
@@ -231,7 +233,7 @@ def add_column_media_posted_at(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def add_column_media_ID(model_id=None, username=None, conn=None):
+def add_column_media_ID(model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
@@ -252,7 +254,7 @@ def add_column_media_ID(model_id=None, username=None, conn=None):
 
 
 @wrapper.operation_wrapper_async
-def add_column_media_duration(model_id=None, username=None, conn=None):
+def add_column_media_duration(model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         try:
             # Check if column exists (separate statement)
@@ -425,7 +427,7 @@ def write_media_table_transition(inputData, model_id=None, conn=None, **kwargs):
 
 @wrapper.operation_wrapper_async
 def get_all_medias_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaSelectTransition)
@@ -442,7 +444,7 @@ def get_all_medias_transition(
 
 
 @wrapper.operation_wrapper_async
-def drop_media_table(model_id=None, username=None, conn=None) -> list:
+def drop_media_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaDrop)
         conn.commit()
@@ -473,7 +475,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
 
 @run
 @wrapper.operation_wrapper_async
-def get_timeline_media(model_id=None, username=None, conn=None) -> list:
+def get_timeline_media(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(getTimelineMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
@@ -527,7 +529,7 @@ def update_media_table_download_helper(
 
 
 def media_exist_insert_helper(
-    filename=None, downloaded=None, hashdata=None, prevData=None
+    filename=None, downloaded=None, hashdata=None, prevData=None, **kwargs
 ):
     directory = None
     filename_path = None
@@ -569,11 +571,20 @@ async def batch_mediainsert(media, **kwargs):
     )
 
 
-async def modify_unique_constriant_media(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
-    data = await get_all_medias_transition(
-        model_id=model_id, username=username, database_model=database_model
+async def modify_unique_constriant_media(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
     )
-    await drop_media_table(model_id=model_id, username=username)
-    await create_media_table(model_id=model_id, username=username)
-    await write_media_table_transition(data, model_id=model_id, username=username)
+    data = await get_all_medias_transition(
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
+    )
+    await drop_media_table(model_id=model_id, username=username, db_path=db_path)
+    await create_media_table(model_id=model_id, username=username, db_path=db_path)
+    await write_media_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )

@@ -53,7 +53,7 @@ async def get_posts(model_id, username):
             retries=constants.getattr("API_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            new_request_auth=True
+            new_request_auth=True,
         ) as c:
             while True:
                 max_count = min(

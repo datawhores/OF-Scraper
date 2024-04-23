@@ -20,7 +20,7 @@ from rich.console import Console
 import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.db.operations_.profile import get_single_model
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
@@ -65,14 +65,18 @@ SELECT post_id FROM stories
 
 
 @wrapper.operation_wrapper_async
-def create_stories_table(model_id=None, username=None, conn=None):
+def create_stories_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
+def write_stories_table(
+    stories: dict, model_id=None, username=None, conn=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         stories = helpers.converthelper(stories)
         insertData = list(
@@ -95,7 +99,7 @@ def write_stories_table(stories: dict, model_id=None, username=None, conn=None):
 
 @wrapper.operation_wrapper_async
 def write_stories_table_transition(
-    inputData: dict, model_id=None, username=None, conn=None
+    inputData: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
         ordered_keys = [
@@ -113,7 +117,9 @@ def write_stories_table_transition(
 
 
 @wrapper.operation_wrapper_async
-def update_stories_table(stories: dict, model_id=None, username=None, conn=None):
+def update_stories_table(
+    stories: dict, model_id=None, username=None, conn=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         stories = helpers.converthelper(stories)
         updateData = list(
@@ -136,7 +142,7 @@ def update_stories_table(stories: dict, model_id=None, username=None, conn=None)
 
 
 @wrapper.operation_wrapper_async
-def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
+def get_all_stories_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allStoriesCheck)
         return list(map(lambda x: x[0], cur.fetchall()))
@@ -144,7 +150,7 @@ def get_all_stories_ids(model_id=None, username=None, conn=None) -> list:
 
 @wrapper.operation_wrapper_async
 def get_all_stories_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesSelectTransition)
@@ -174,24 +180,34 @@ def add_column_stories_ID(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def drop_stories_table(model_id=None, username=None, conn=None) -> list:
+def drop_stories_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(storiesDrop)
         conn.commit()
 
 
-async def modify_unique_constriant_stories(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
-    data = await get_all_stories_transition(
-        model_id=model_id, username=username, database_model=database_model
+async def modify_unique_constriant_stories(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
     )
-    await drop_stories_table(model_id=model_id, username=username)
-    await create_stories_table(model_id=model_id, username=username)
-    await write_stories_table_transition(data, model_id=model_id, username=username)
+    data = await get_all_stories_transition(
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
+    )
+
+    await drop_stories_table(model_id=model_id, username=username, db_path=db_path)
+    await create_stories_table(model_id=model_id, username=username, db_path=db_path)
+    await write_stories_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )
 
 
 async def make_stories_table_changes(
-    all_stories: dict, model_id=None, username=None, conn=None
+    all_stories: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     all_stories_filtered = filter(
         lambda x: x.responsetype in {"stories", "highlights"}, all_stories

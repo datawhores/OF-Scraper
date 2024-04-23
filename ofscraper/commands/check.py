@@ -8,6 +8,7 @@ import time
 import traceback
 
 import arrow
+
 import ofscraper.api.archive as archived
 import ofscraper.api.highlights as highlights
 import ofscraper.api.labels as labels
@@ -114,8 +115,8 @@ def process_item():
             app.update_cell(key, "Download_Cart", "[downloaded]")
             app.update_cell(key, "Downloaded", True)
         except Exception as E:
-            app.row_queue.put((row,key))
-            data_refill(media_id,post_id,username.model_id)
+            app.row_queue.put((row, key))
+            data_refill(media_id, post_id, username.model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             continue
@@ -125,7 +126,7 @@ def process_item():
 
 
 @run
-async def data_refill(media_id, post_id, target_name,model_id):
+async def data_refill(media_id, post_id, target_name, model_id):
     args = read_args.retriveArgs()
     if args.command == "msg_check":
         reset_message_set(model_id)
@@ -186,8 +187,7 @@ async def post_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         for ele in links:
             name_match = re.search(
@@ -350,8 +350,7 @@ async def message_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         for item in links:
             num_match = re.search(
@@ -439,8 +438,7 @@ async def purchase_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         for name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(name)["username"]
@@ -455,7 +453,7 @@ async def purchase_check_retriver():
             if len(oldpaid) > 0 and not read_args.retriveArgs().force:
                 paid = oldpaid
             elif user_name == constants.getattr("DELETED_MODEL_PLACEHOLDER"):
-                paid_user_dict  = await paid_.get_all_paid_posts()
+                paid_user_dict = await paid_.get_all_paid_posts()
                 seen = set()
                 paid = [
                     post
@@ -499,8 +497,7 @@ async def stories_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         for user_name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(user_name)["username"]
@@ -591,8 +588,7 @@ async def get_paid_ids(model_id, user_name):
             retries=constants.getattr("API_CHECK_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                        new_request_auth=True
-
+            new_request_auth=True,
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             cache.set(
@@ -703,36 +699,30 @@ async def row_gather(username, model_id, paid=False):
     ROWS = ROWS or []
     ROWS.extend(out)
 
+
 def reset_time_line_cache(model_id):
-    cache.set(
-        f"timeline_check_{model_id}",None
-    )
-    cache.set(
-        f"archived_check_{model_id}",None
-    )
-    cache.set(
-        f"labels_check_{model_id}",None
-    )
-    cache.set(
-        f"pinned_check_{model_id}",None
-    )
+    cache.set(f"timeline_check_{model_id}", None)
+    cache.set(f"archived_check_{model_id}", None)
+    cache.set(f"labels_check_{model_id}", None)
+    cache.set(f"pinned_check_{model_id}", None)
     cache.close()
+
 
 def reset_message_set(model_id):
-    cache.set(
-        f"message_check_{model_id}",None
-    )
-    cache.set(
-        f"purchased_check_{model_id}",None
-    )
+    cache.set(f"message_check_{model_id}", None)
+    cache.set(f"purchased_check_{model_id}", None)
     cache.close()
+
 
 def reset_paid_set(model_id):
-    cache.set(
-        f"purchased_check_{model_id}",None
-    )
+    cache.set(f"purchased_check_{model_id}", None)
     cache.close()
 
+
 def set_const_check_mode():
-    constants.setattr("DOWNLOAD_NUM_TRIES",constants.getattr("DOWNLOAD_RETRIES_NUM_TRIES"))
-    constants.setattr("DOWNLOAD_FILE_NUM_TRIES",constants.getattr("DOWNLOAD_FILE_NUM_TRIES_CHECK"))
+    constants.setattr(
+        "DOWNLOAD_NUM_TRIES", constants.getattr("DOWNLOAD_RETRIES_NUM_TRIES")
+    )
+    constants.setattr(
+        "DOWNLOAD_FILE_NUM_TRIES", constants.getattr("DOWNLOAD_FILE_NUM_TRIES_CHECK")
+    )

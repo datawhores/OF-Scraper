@@ -436,8 +436,7 @@ def get_individual_stories(id, c=None):
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         with c.requests_async(constants.getattr("storiesSPECIFIC").format(id)) as r:
             log.trace(f"highlight raw highlight individua; {r.json_()}")

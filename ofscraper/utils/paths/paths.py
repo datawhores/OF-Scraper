@@ -157,3 +157,10 @@ def cleanDB():
 
 def speed_file():
     return pathlib.Path(common_paths.get_profile_path() / "speed.zip")
+
+
+def get_all_db(path):
+    for ele in filter(
+        lambda x: re.search("user_data.db", str(x)), pathlib.Path(path).glob("**/*")
+    ):
+        yield ele

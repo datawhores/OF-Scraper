@@ -76,6 +76,10 @@ profilesDrop = """
 DROP TABLE profiles;
 """
 
+modelsALL = """
+select model_id from models
+"""
+
 
 profileUnique = """
 SELECT DISTINCT user_id FROM profiles
@@ -83,7 +87,7 @@ SELECT DISTINCT user_id FROM profiles
 
 
 @wrapper.operation_wrapper_async
-def get_profile_info(model_id=None, username=None, conn=None) -> list:
+def get_profile_info(model_id=None, username=None, conn=None, **kwargs) -> list:
     database_path = placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
     )
@@ -100,14 +104,16 @@ def get_profile_info(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def create_profile_table(model_id=None, username=None, conn=None):
+def create_profile_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(profilesCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def write_profile_table(model_id=None, username=None, conn=None) -> list:
+def write_profile_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         insertData = [model_id, username, model_id, username]
         cur.execute(profileInsert, insertData)
@@ -115,14 +121,19 @@ def write_profile_table(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def write_profile_table_transition(insertData, conn=None, **kwargs) -> list:
+def write_profile_table_transition(inputData, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
+        ordered_keys = [
+            "user_id",
+            "username",
+        ]
+        insertData = [tuple([data[key] for key in ordered_keys]) for data in inputData]
         cur.executemany(profileInsertTransition, insertData)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def check_profile_table_exists(model_id=None, username=None, conn=None):
+def check_profile_table_exists(model_id=None, username=None, conn=None, **kwargs):
     database_path = placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
     )
@@ -135,16 +146,17 @@ def check_profile_table_exists(model_id=None, username=None, conn=None):
 
 
 @wrapper.operation_wrapper_async
-def get_all_profiles(model_id=None, username=None, conn=None) -> list:
-    database_path = placeholder.databasePlaceholder().databasePathHelper(
+def get_all_profiles(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+) -> list:
+    database_path = db_path or placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
     )
     if not pathlib.Path(database_path).exists():
         return None
     with contextlib.closing(conn.cursor()) as cur:
         try:
-            profiles = cur.execute(profilesALL).fetchall()
-            conn.commit()
+            profiles = [dict(row) for row in (cur.execute(profilesALL).fetchall())]
             return profiles
         except sqlite3.OperationalError as E:
             None
@@ -153,28 +165,32 @@ def get_all_profiles(model_id=None, username=None, conn=None) -> list:
 
 
 @wrapper.operation_wrapper_async
-def drop_profiles_table(model_id=None, username=None, conn=None) -> list:
+def drop_profiles_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(profilesDrop)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def create_models_table(model_id=None, username=None, conn=None):
+def create_models_table(
+    model_id=None, username=None, db_path=None, conn=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(modelsCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def write_models_table(model_id=None, username=None, conn=None) -> list:
+def write_models_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(modelInsert, [model_id, model_id])
         conn.commit()
 
 
 @wrapper.operation_wrapper
-def get_single_model(model_id=None, username=None, conn=None) -> list:
+def get_single_model_via_profile(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         models_ids = [
             dict(row)["user_id"] for row in cur.execute(profileUnique).fetchall()
@@ -182,8 +198,20 @@ def get_single_model(model_id=None, username=None, conn=None) -> list:
         return models_ids[0] if len(models_ids) == 1 else None
 
 
-async def remove_unique_constriant_profile(model_id=None, username=None):
-    data = await get_all_profiles(model_id=model_id, username=username)
-    await drop_profiles_table(model_id=model_id, username=username)
-    await create_profile_table(model_id=model_id, username=username)
-    await write_profile_table_transition(data, model_id=model_id, username=username)
+@wrapper.operation_wrapper_async
+def get_all_models(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        return [dict(row) for row in (cur.execute(modelsALL).fetchall())]
+
+
+async def remove_unique_constriant_profile(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    data = await get_all_profiles(model_id=model_id, username=username, db_path=db_path)
+    await drop_profiles_table(model_id=model_id, username=username, db_path=db_path)
+    await create_profile_table(model_id=model_id, username=username, db_path=db_path)
+    await write_profile_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )

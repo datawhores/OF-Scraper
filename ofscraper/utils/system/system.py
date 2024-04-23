@@ -1,12 +1,12 @@
 import asyncio
 import json
 import logging
-import multiprocess
 import os
 import platform
 import subprocess
 import sys
 
+import multiprocess
 import psutil
 from setproctitle import setproctitle
 
@@ -19,9 +19,9 @@ def is_frozen():
 
 
 def get_parent_process():
-    return (
-        multiprocess.parent_process() is None
-    )
+    return multiprocess.parent_process() is None
+
+
 def get_parent():
     return get_parent_process() or "pytest" not in sys.modules
 

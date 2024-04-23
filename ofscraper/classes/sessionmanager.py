@@ -23,7 +23,7 @@ class CustomTenacity(AsyncRetrying):
     """
 
     def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
-        super().__init__(*args,after=self._after_func, **kwargs)
+        super().__init__(*args, after=self._after_func, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
             min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
             max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
@@ -51,18 +51,23 @@ class CustomTenacity(AsyncRetrying):
         else:
             sleep = self.wait_random(retry_state)
         return sleep
+
     def _after_func(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
         if (
-            isinstance(exception, (aiohttp.ClientResponseError,aiohttp.ClientError))
-            and (getattr(exception, "status_code", None) or getattr(exception, "status", None))==403
+            isinstance(exception, (aiohttp.ClientResponseError, aiohttp.ClientError))
+            and (
+                getattr(exception, "status_code", None)
+                or getattr(exception, "status", None)
+            )
+            == 403
         ) or (
             isinstance(exception, httpx.HTTPStatusError)
             and (
                 getattr(exception.response, "status_code", None)
                 or getattr(exception.response, "status", None)
             )
-            ==403
+            == 403
         ):
             auth_requests.read_request_auth(forced=True)
 
@@ -91,7 +96,7 @@ class sessionManager:
         semaphore=None,
         sync_sem=None,
         sync_semaphore=None,
-        new_request_auth=False
+        new_request_auth=False,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -126,7 +131,7 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        auth_requests.read_request_auth(forced=None) if new_request_auth  else None
+        auth_requests.read_request_auth(forced=None) if new_request_auth else None
 
     async def __aenter__(self):
         self._async = True

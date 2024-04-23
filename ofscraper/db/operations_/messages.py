@@ -22,7 +22,7 @@ import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.db.operations_.profile import get_single_model
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
@@ -70,7 +70,9 @@ SELECT created_at,post_id FROM messages where model_id=(?)
 
 
 @wrapper.operation_wrapper_async
-def create_message_table(model_id=None, username=None, conn=None):
+def create_message_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesCreate)
         conn.commit()
@@ -142,7 +144,7 @@ def write_messages_table_transition(
 
 
 @wrapper.operation_wrapper_async
-def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
+def get_all_messages_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allMessagesCheck)
         return [dict(row)["post_id"] for row in cur.fetchall()]
@@ -150,7 +152,7 @@ def get_all_messages_ids(model_id=None, username=None, conn=None) -> list:
 
 @wrapper.operation_wrapper_async
 def get_all_messages_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesSelectTransition)
@@ -161,7 +163,7 @@ def get_all_messages_transition(
 
 
 @wrapper.operation_wrapper_async
-def drop_messages_table(model_id=None, username=None, conn=None) -> list:
+def drop_messages_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(messagesDrop)
         conn.commit()
@@ -198,17 +200,28 @@ def add_column_messages_ID(conn=None, **kwargs):
             raise e
 
 
-async def modify_unique_constriant_messages(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
-    data = await get_all_messages_transition(
-        model_id=model_id, username=username, database_model=database_model
+async def modify_unique_constriant_messages(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
     )
-    await drop_messages_table(model_id=model_id, username=username)
-    await create_message_table(model_id=model_id, username=username)
-    await write_messages_table_transition(data, model_id=model_id, username=username)
+    data = await get_all_messages_transition(
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
+    )
+    await drop_messages_table(model_id=model_id, username=username, db_path=db_path)
+    await create_message_table(model_id=model_id, username=username, db_path=db_path)
+    await write_messages_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )
 
 
-async def make_messages_table_changes(all_messages, model_id=None, username=None):
+async def make_messages_table_changes(
+    all_messages, model_id=None, username=None, **kwargs
+):
     curr_id = set(await get_all_messages_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_messages))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_messages))
@@ -220,13 +233,13 @@ async def make_messages_table_changes(all_messages, model_id=None, username=None
         await update_messages_table(curr_posts, model_id=model_id, username=username)
 
 
-async def get_oldest_message_date(model_id=None, username=None):
+async def get_oldest_message_date(model_id=None, username=None, **kwargs):
     data = await media.get_messages_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"] or 0))[0]
     return last_item["posted_at"] or 0
 
 
-async def get_youngest_message_date(model_id=None, username=None):
+async def get_youngest_message_date(model_id=None, username=None, **kwargs):
     data = await media.get_messages_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"] or 0))[-1]
     return last_item["posted_at"] or 0

@@ -3,12 +3,12 @@ import os
 import pathlib
 import platform
 import shutil
+from collections.abc import Iterable
 
 import ofscraper.download.common.globals as common_globals
 import ofscraper.utils.dates as dates
 import ofscraper.utils.paths.common as common_paths
 from ofscraper.download.common.log import get_medialog
-from collections.abc import Iterable
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
@@ -32,16 +32,34 @@ def moveHelper(temp, path_to_file, ele, log_=None):
 
 
 def addGlobalDir(path):
-    paths=[path] if not isinstance(path,Iterable) else path
-    paths=list(map(lambda x:path.resolve(x).parent if not pathlib.Path(x).is_dir else path.resolve(x),paths)) 
+    paths = [path] if not isinstance(path, Iterable) else path
+    paths = list(
+        map(
+            lambda x: (
+                path.resolve(x).parent
+                if not pathlib.Path(x).is_dir
+                else path.resolve(x)
+            ),
+            paths,
+        )
+    )
     common_globals.dirSet.update(paths)
-
 
 
 def addLocalDir(path):
-    paths=[path] if not isinstance(path,list) else path
-    paths=list(map(lambda x:path.resolve(x).parent if not pathlib.Path(x).is_dir else path.resolve(x),paths))
+    paths = [path] if not isinstance(path, list) else path
+    paths = list(
+        map(
+            lambda x: (
+                path.resolve(x).parent
+                if not pathlib.Path(x).is_dir
+                else path.resolve(x)
+            ),
+            paths,
+        )
+    )
     common_globals.dirSet.update(paths)
+
 
 def set_time(path, timestamp):
     if platform.system() == "Windows":

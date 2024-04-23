@@ -14,7 +14,6 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 
 
-
 async def handle_result_alt(
     sharedPlaceholderObj, ele, audio, video, username, model_id
 ):
@@ -55,8 +54,11 @@ async def handle_result_alt(
         f"Moving intermediate path {temp_path} to {sharedPlaceholderObj.trunicated_filepath}"
     )
     common_paths.moveHelper(temp_path, sharedPlaceholderObj.trunicated_filepath, ele)
-    common_paths.addGlobalDir(sharedPlaceholderObj.filedir) if system.get_parent_process() \
-    else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
+    (
+        common_paths.addGlobalDir(sharedPlaceholderObj.filedir)
+        if system.get_parent_process()
+        else common_paths.addLocalDir(sharedPlaceholderObj.filedir)
+    )
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.log.debug(

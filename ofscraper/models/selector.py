@@ -105,7 +105,7 @@ async def set_data_all_subs_dict(usernames):
 
     args.usernames = new_names
     write_args.setArgs(args)
-    await all_subs_helper(refetch=len(new_names)>0)
+    await all_subs_helper(refetch=len(new_names) > 0)
     args.usernames = set(all_usernames)
     write_args.setArgs(args)
 

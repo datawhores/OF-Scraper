@@ -1,5 +1,7 @@
 import pathlib
+
 import arrow
+
 import ofscraper.db.operations as operations
 import ofscraper.download.common.common as common
 import ofscraper.download.common.globals as common_globals
@@ -20,8 +22,11 @@ async def handle_result_main(result, ele, username, model_id):
         f"{common_logs.get_medialog(ele)} renaming {pathlib.Path(temp).absolute()} -> {path_to_file}"
     )
     common_paths.moveHelper(temp, path_to_file, ele)
-    common_paths.addGlobalDir(placeholderObj.filedir) if system.get_parent_process() \
-    else common_paths.addLocalDir(placeholderObj.filedir)
+    (
+        common_paths.addGlobalDir(placeholderObj.filedir)
+        if system.get_parent_process()
+        else common_paths.addLocalDir(placeholderObj.filedir)
+    )
     if ele.postdate:
         newDate = dates.convert_local_time(ele.postdate)
         common_globals.log.debug(

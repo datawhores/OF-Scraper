@@ -22,7 +22,7 @@ import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.posts as post_
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.db.operations_.profile import get_single_model
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
@@ -69,7 +69,9 @@ drop table labels;
 
 
 @wrapper.operation_wrapper_async
-def create_labels_table(model_id=None, username=None, conn=None):
+def create_labels_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(labelsCreate)
         conn.commit()
@@ -77,7 +79,7 @@ def create_labels_table(model_id=None, username=None, conn=None):
 
 @wrapper.operation_wrapper_async
 def write_labels_table(
-    label: dict, posts: dict, model_id=None, username=None, conn=None
+    label: dict, posts: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
@@ -98,7 +100,7 @@ def write_labels_table(
 
 @wrapper.operation_wrapper_async
 def update_labels_table(
-    label: dict, posts: dict, model_id=None, username=None, conn=None
+    label: dict, posts: dict, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
@@ -122,7 +124,7 @@ def update_labels_table(
 
 @wrapper.operation_wrapper_async
 def write_labels_table_transition(
-    inputData: list, model_id=None, username=None, conn=None
+    inputData: list, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as curr:
         ordered_keys = ["label_id", "name", "type", "post_id", "model_id"]
@@ -132,7 +134,7 @@ def write_labels_table_transition(
 
 
 @wrapper.operation_wrapper_async
-def get_all_labels_posts(label, model_id=None, username=None, conn=None):
+def get_all_labels_posts(label, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
         curr.execute(labelPostsID, [model_id, label.label_id])
         return [dict(row)["post_id"] for row in curr.fetchall()]
@@ -158,7 +160,7 @@ def add_column_labels_ID(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def drop_labels_table(model_id=None, username=None, conn=None) -> list:
+def drop_labels_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(labelDrop)
         conn.commit()
@@ -166,7 +168,7 @@ def drop_labels_table(model_id=None, username=None, conn=None) -> list:
 
 @wrapper.operation_wrapper_async
 def get_all_labels_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         # Check for column existence (label_id)
@@ -197,17 +199,28 @@ def get_all_labels_transition(
         ]
 
 
-async def modify_unique_constriant_labels(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
-    data = await get_all_labels_transition(
-        model_id=model_id, username=username, database_model=database_model
+async def modify_unique_constriant_labels(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
     )
-    await drop_labels_table(model_id=model_id, username=username)
-    await create_labels_table(model_id=model_id, username=username)
-    await write_labels_table_transition(data, model_id=model_id, username=username)
+    data = await get_all_labels_transition(
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
+    )
+    await drop_labels_table(model_id=model_id, username=username, db_path=db_path)
+    await create_labels_table(model_id=model_id, username=username, db_path=db_path)
+    await write_labels_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )
 
 
-async def make_label_table_changes(labels, model_id=None, username=None, posts=True):
+async def make_label_table_changes(
+    labels, model_id=None, username=None, posts=True, **kwargs
+):
     labels = list(
         map(
             lambda x: (

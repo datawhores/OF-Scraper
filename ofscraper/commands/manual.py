@@ -221,8 +221,7 @@ async def paid_failback(post_id, model_id, username):
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         data = await paid.get_paid_posts(id, username, c=c) or []
         posts = list(

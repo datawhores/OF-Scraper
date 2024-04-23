@@ -22,7 +22,7 @@ import ofscraper.db.operations_.helpers as helpers
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.utils.args.read as read_args
-from ofscraper.db.operations_.profile import get_single_model
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
@@ -72,7 +72,7 @@ SELECT created_at,post_id FROM posts where archived=(1) and model_id=(?)
 
 
 @wrapper.operation_wrapper_async
-def write_post_table(posts: list, model_id=None, username=None, conn=None):
+def write_post_table(posts: list, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         insertData = list(
             map(
@@ -95,7 +95,7 @@ def write_post_table(posts: list, model_id=None, username=None, conn=None):
 
 @wrapper.operation_wrapper_async
 def write_post_table_transition(
-    inputData: list, model_id=None, username=None, conn=None
+    inputData: list, model_id=None, username=None, conn=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
         ordered_keys = (
@@ -114,7 +114,7 @@ def write_post_table_transition(
 
 
 @wrapper.operation_wrapper_async
-def update_posts_table(posts: list, model_id=None, username=None, conn=None):
+def update_posts_table(posts: list, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         updateData = list(
             map(
@@ -147,14 +147,14 @@ def get_timeline_posts_info(model_id=None, username=None, conn=None, **kwargs) -
 
 
 @wrapper.operation_wrapper_async
-def create_post_table(model_id=None, username=None, conn=None):
+def create_post_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
+def get_all_post_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allPOSTCheck)
         return [dict(row)["post_id"] for row in cur.fetchall()]
@@ -162,7 +162,7 @@ def get_all_post_ids(model_id=None, username=None, conn=None) -> list:
 
 @wrapper.operation_wrapper_async
 def get_all_posts_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsSelectTransition)
@@ -178,7 +178,7 @@ def get_all_posts_transition(
 
 
 @wrapper.operation_wrapper_async
-def drop_posts_table(model_id=None, username=None, conn=None) -> list:
+def drop_posts_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(postsDrop)
         conn.commit()
@@ -237,17 +237,26 @@ def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) ->
         ]
 
 
-async def modify_unique_constriant_posts(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
-    data = await get_all_posts_transition(
-        model_id=model_id, username=username, database_model=database_model
+async def modify_unique_constriant_posts(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
     )
-    await drop_posts_table(model_id=model_id, username=username)
-    await create_post_table(model_id=model_id, username=username)
-    await write_post_table_transition(data, model_id=model_id, username=username)
+    data = await get_all_posts_transition(
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
+    )
+    await drop_posts_table(model_id=model_id, username=username, db_path=db_path)
+    await create_post_table(model_id=model_id, username=username, db_path=db_path)
+    await write_post_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )
 
 
-async def make_post_table_changes(all_posts, model_id=None, username=None):
+async def make_post_table_changes(all_posts, model_id=None, username=None, **kwargs):
     curr_id = set(await get_all_post_ids(model_id=model_id, username=username))
     new_posts = list(filter(lambda x: x.id not in curr_id, all_posts))
     curr_posts = list(filter(lambda x: x.id in curr_id, all_posts))
@@ -259,25 +268,25 @@ async def make_post_table_changes(all_posts, model_id=None, username=None):
         await update_posts_table(curr_posts, model_id=model_id, username=username)
 
 
-async def get_oldest_archived_date(model_id=None, username=None):
+async def get_oldest_archived_date(model_id=None, username=None, **kwargs):
     data = await media.get_archived_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[0]
     return last_item["posted_at"] or 0
 
 
-async def get_youngest_archived_date(model_id=None, username=None):
+async def get_youngest_archived_date(model_id=None, username=None, **kwargs):
     data = await media.get_archived_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
     return last_item["posted_at"] or 0
 
 
-async def get_oldest_timeline_date(model_id=None, username=None):
+async def get_oldest_timeline_date(model_id=None, username=None, **kwargs):
     data = await media.get_timeline_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[0]
     return last_item["posted_at"]
 
 
-async def get_youngest_timeline_date(model_id=None, username=None):
+async def get_youngest_timeline_date(model_id=None, username=None, **kwargs):
     data = await media.get_timeline_media(model_id=model_id, username=username)
     last_item = sorted(data, key=lambda x: arrow.get(x["posted_at"]))[-1]
     return last_item["posted_at"]

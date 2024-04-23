@@ -514,8 +514,7 @@ async def process_task(model_id, username, ele):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         while True:
             max_count = min(

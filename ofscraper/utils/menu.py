@@ -10,6 +10,7 @@ import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.run as run
+import ofscraper.utils.merge as merge
 
 log = logging.getLogger("shared")
 count = 0
@@ -68,6 +69,8 @@ def main_menu_action():
                     break
                 else:
                     profile_menu_helper(result_profiles_prompt)
+        elif result_main_prompt == "merge":
+            merge.merge_runner()
         elif result_main_prompt == "quit":
             return True
 

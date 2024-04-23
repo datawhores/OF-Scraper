@@ -1,6 +1,6 @@
 import json
-from contextlib import contextmanager
 import pathlib
+from contextlib import contextmanager
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.file as config_file
@@ -41,4 +41,3 @@ def config_context():
             continue
         yield
         break
-        

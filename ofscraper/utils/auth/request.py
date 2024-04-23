@@ -19,12 +19,9 @@ from urllib.parse import urlparse
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
-
+import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-import ofscraper.utils.cache as cache
-
-
 
 
 def read_request_auth(forced=None):
@@ -82,7 +79,11 @@ def get_request_auth_deviint(forced=None):
             fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
-            cache.set("api_onlyfans_sign",[static_param, fmt, checksum_indexes, checksum_constant],expire=constants.getattr("HOURLY_EXPIRY"))
+            cache.set(
+                "api_onlyfans_sign",
+                [static_param, fmt, checksum_indexes, checksum_constant],
+                expire=constants.getattr("HOURLY_EXPIRY"),
+            )
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
@@ -106,7 +107,11 @@ def get_request_auth_sneaky(forced=None):
             fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
-            cache.set("api_onlyfans_sign",[static_param, fmt, checksum_indexes, checksum_constant],expire=constants.getattr("HOURLY_EXPIRY"))
+            cache.set(
+                "api_onlyfans_sign",
+                [static_param, fmt, checksum_indexes, checksum_constant],
+                expire=constants.getattr("HOURLY_EXPIRY"),
+            )
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
@@ -130,7 +135,11 @@ def get_request_auth_digitalcriminals(forced=None):
             fmt = content["format"]
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
-            cache.set("api_onlyfans_sign",[static_param, fmt, checksum_indexes, checksum_constant],expire=constants.getattr("HOURLY_EXPIRY"))
+            cache.set(
+                "api_onlyfans_sign",
+                [static_param, fmt, checksum_indexes, checksum_constant],
+                expire=constants.getattr("HOURLY_EXPIRY"),
+            )
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
@@ -191,4 +200,3 @@ def create_sign(link, headers):
 
     headers.update({"sign": final_sign, "time": time2})
     return headers
-

@@ -107,7 +107,6 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
-
         ) as r:
             httpcontent = await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -143,8 +142,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             retries=constants.getattr("CDM_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                        total_timeout=constants.getattr("CDM_TIMEOUT"),
-
+            total_timeout=constants.getattr("CDM_TIMEOUT"),
         ) as r:
             httpcontent = await r.text_()
             log.debug(f"ID:{id} key_response: {httpcontent}")
@@ -188,8 +186,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             retries=constants.getattr("CDM_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                        total_timeout=constants.getattr(""),
-
+            total_timeout=constants.getattr(""),
         ) as r:
             data = await r.json_()
             log.debug(f"keydb json {data}")
@@ -244,8 +241,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
         async with sessionManager.sessionManager(
-            backend="httpx", sem=common_globals.sem,new_request_auth=True
-
+            backend="httpx", sem=common_globals.sem, new_request_auth=True
         ) as c:
             async with c.requests_async(
                 url=licence_url,
@@ -255,7 +251,6 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
                 total_timeout=constants.getattr("CDM_TIMEOUT"),
-
             ) as r:
                 cdm.parse_license(session_id, (await r.read_()))
                 keys = cdm.get_keys(session_id)

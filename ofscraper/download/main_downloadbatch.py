@@ -40,8 +40,8 @@ from ofscraper.download.common.common import (
     size_checker,
 )
 from ofscraper.download.common.log import get_url_log, path_to_file_logger
+from ofscraper.download.common.main_common import handle_result_main
 from ofscraper.download.common.metadata import force_download
-from ofscraper.download.common.main_common import  handle_result_main
 
 
 async def main_download(c, ele, username, model_id):
@@ -64,7 +64,6 @@ async def main_download(c, ele, username, model_id):
             await force_download(ele, username, model_id)
         return ele.mediatype, 0
     return await handle_result_main(result, ele, username, model_id)
-
 
 
 async def main_download_downloader(c, ele):

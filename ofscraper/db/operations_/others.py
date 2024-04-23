@@ -18,7 +18,7 @@ import sqlite3
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
-from ofscraper.db.operations_.profile import get_single_model
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
@@ -96,14 +96,18 @@ VALUES (?, ?,?,?,?,?,?,?);"""
 
 
 @wrapper.operation_wrapper_async
-def create_products_table(model_id=None, username=None, conn=None):
+def create_products_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(productCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper_async
-def create_others_table(model_id=None, username=None, conn=None):
+def create_others_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(otherCreate)
         conn.commit()
@@ -150,21 +154,23 @@ def add_column_products_ID(conn=None, **kwargs):
 
 
 @wrapper.operation_wrapper_async
-def create_schema_table(model_id=None, username=None, conn=None):
+def create_schema_table(
+    model_id=None, username=None, conn=None, db_path=None, **kwargs
+):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(schemaCreate)
         conn.commit()
 
 
 @wrapper.operation_wrapper
-def get_schema_changes(model_id=None, username=None, conn=None):
+def get_schema_changes(model_id=None, username=None, conn=None, db_path=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         data = cur.execute(schemaAll).fetchall()
         return set(list(map(lambda x: x[0], data)))
 
 
 @wrapper.operation_wrapper_async
-def add_flag_schema(flag, model_id=None, username=None, conn=None):
+def add_flag_schema(flag, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(schemaInsert, [flag, 1])
         conn.commit()
@@ -172,7 +178,7 @@ def add_flag_schema(flag, model_id=None, username=None, conn=None):
 
 @wrapper.operation_wrapper_async
 def get_all_others_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(othersSelectTransition)
@@ -183,7 +189,7 @@ def get_all_others_transition(
 
 
 @wrapper.operation_wrapper_async
-def drop_others_table(model_id=None, username=None, conn=None):
+def drop_others_table(model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(othersDrop)
         conn.commit()
@@ -202,7 +208,7 @@ def write_others_table_transition(
 
 @wrapper.operation_wrapper_async
 def get_all_products_transition(
-    model_id=None, username=None, conn=None, database_model=None
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
 ):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(productsSelectTransition)
@@ -213,7 +219,7 @@ def get_all_products_transition(
 
 
 @wrapper.operation_wrapper_async
-def drop_products_table(model_id=None, username=None, conn=None):
+def drop_products_table(model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(productsDrop)
         conn.commit()
@@ -230,21 +236,39 @@ def write_products_table_transition(
         conn.commit()
 
 
-async def modify_unique_constriant_others(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
+async def modify_unique_constriant_others(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
+    )
     data = await get_all_others_transition(
-        model_id=model_id, username=username, database_model=database_model
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
     )
-    await drop_others_table(model_id=model_id, username=username)
-    await create_others_table(model_id=model_id, username=username)
-    await write_others_table_transition(data, model_id=model_id, username=username)
+    await drop_others_table(model_id=model_id, username=username, db_path=db_path)
+    await create_others_table(model_id=model_id, username=username, db_path=db_path)
+    await write_others_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )
 
 
-async def modify_unique_constriant_products(model_id=None, username=None):
-    database_model = get_single_model(model_id=model_id, username=username)
+async def modify_unique_constriant_products(
+    model_id=None, username=None, db_path=None, **kwargs
+):
+    database_model = get_single_model_via_profile(
+        model_id=model_id, username=username, db_path=db_path
+    )
     data = await get_all_products_transition(
-        model_id=model_id, username=username, database_model=database_model
+        model_id=model_id,
+        username=username,
+        database_model=database_model,
+        db_path=db_path,
     )
-    await drop_products_table(model_id=model_id, username=username)
-    await create_products_table(model_id=model_id, username=username)
-    await write_products_table_transition(data, model_id=model_id, username=username)
+    await drop_products_table(model_id=model_id, username=username, db_path=db_path)
+    await create_products_table(model_id=model_id, username=username, db_path=db_path)
+    await write_products_table_transition(
+        data, model_id=model_id, username=username, db_path=db_path
+    )

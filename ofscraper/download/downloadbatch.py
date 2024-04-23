@@ -230,7 +230,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
             results = [results]
 
         for result in results:
-            if isinstance(result,list) or isinstance(result,tuple):
+            if isinstance(result, list) or isinstance(result, tuple):
                 media_type, num_bytes_downloaded, total_size = result
                 with common_globals.count_lock:
                     common_globals.total_bytes_downloaded = (
@@ -279,10 +279,9 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
             elif result is None:
                 count = count + 1
             elif isinstance(result, dict) and "dir_update" in result:
-                addGlobalDir(result['dir_update'])
+                addGlobalDir(result["dir_update"])
             elif isinstance(result, dict) and downloadprogress:
                 job_progress_helper(job_progress, result)
-           
 
 
 def get_mediasplits(medialist):
@@ -382,8 +381,7 @@ async def process_dicts_split(username, model_id, medialist):
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         log=common_globals.log,
         sem=common_globals.sem,
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
@@ -409,7 +407,7 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.handlers[0].queue.put("None")
     common_globals.log.handlers[1].queue.put("None")
     common_globals.log.debug("other thread closed")
-    await common.send_msg({"dir_update":common_globals.localDirSet})
+    await common.send_msg({"dir_update": common_globals.localDirSet})
     await common.send_msg(None)
 
 

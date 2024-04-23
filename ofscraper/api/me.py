@@ -28,8 +28,7 @@ def scrape_user():
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_AUTH_MIN_WAIT"),
         wait_max=constants.getattr("OF_AUTH_MAX_WAIT"),
-        new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         return _scraper_user_helper(c)
 
@@ -62,8 +61,7 @@ def parse_subscriber_count():
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True
-
+        new_request_auth=True,
     ) as c:
         try:
             with c.requests(constants.getattr("subscribeCountEP")) as r:

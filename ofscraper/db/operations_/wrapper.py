@@ -13,6 +13,7 @@ r"""
 
 import asyncio
 import logging
+import pathlib
 import sqlite3
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
@@ -42,8 +43,11 @@ def operation_wrapper_async(func: abc.Callable):
             lock = FileLock(common_paths.getDB(), timeout=-1)
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(LOCK_POOL, lock.acquire)
-            database_path = placeholder.databasePlaceholder().databasePathHelper(
-                kwargs.get("model_id"), kwargs.get("username")
+            database_path = pathlib.Path(
+                kwargs.get("db_path", None)
+                or placeholder.databasePlaceholder().databasePathHelper(
+                    kwargs.get("model_id"), kwargs.get("username")
+                )
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(database_path, check_same_thread=False, timeout=10)
@@ -89,8 +93,11 @@ def operation_wrapper(func: abc.Callable):
             raise E
         try:
             lock.acquire(timeout=-1)
-            database_path = placeholder.databasePlaceholder().databasePathHelper(
-                kwargs.get("model_id"), kwargs.get("username")
+            database_path = pathlib.Path(
+                kwargs.get("db_path", None)
+                or placeholder.databasePlaceholder().databasePathHelper(
+                    kwargs.get("model_id"), kwargs.get("username")
+                )
             )
             database_path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(database_path, check_same_thread=True, timeout=10)
