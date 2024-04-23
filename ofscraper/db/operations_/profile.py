@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 	user_id INTEGER NOT NULL, 
 	username VARCHAR NOT NULL,
 	PRIMARY KEY (id)
+    UNIQUE (user_id,username)
 )
 """
 modelsCreate = """
@@ -206,7 +207,7 @@ def get_all_models(
         return [dict(row) for row in (cur.execute(modelsALL).fetchall())]
 
 
-async def remove_unique_constriant_profile(
+async def modify_unique_constriant_profile(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     data = await get_all_profiles(model_id=model_id, username=username, db_path=db_path)

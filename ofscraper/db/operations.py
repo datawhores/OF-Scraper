@@ -217,12 +217,12 @@ async def modify_tables_constraints_and_columns(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     changes = get_schema_changes(model_id=model_id, username=username, db_path=db_path)
-    if not "profile_username_constraint_removed" in changes:
-        await remove_unique_constriant_profile(
+    if not "profile_username_constraint_modified" in changes:
+        await modify_unique_constriant_profile(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
-            "profile_username_constraint_removed",
+            "profile_username_constraint_modified",
             model_id=model_id,
             username=username,
             db_path=db_path,
