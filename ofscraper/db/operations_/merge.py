@@ -81,12 +81,18 @@ class MergeDatabase():
     def __init__(self,new_db_path):
          self._data_init=False
          self._new_db=new_db_path
+         self._media_keys=["media_id", "model_id"]
+         self._label_keys=["post_id", "label_id", "model_id"]
+         self._common_key=["post_id", "model_id"]
+         self._profile_key=["user_id","username"]
+         self._model_key="model_id"
 
     async def __call__(self, old_db_path):
         """
         This method is called when the object is used like a function.
 
         Args:
+
             other (int): The value to add to self.value.
 
         Returns:
@@ -96,15 +102,15 @@ class MergeDatabase():
         return await self.merge_database(old_db_path)
     async def _data_initializer(self):
         if not self._data_init:
-            self._curr_labels =set(list(map(lambda x:tuple(x[key] for key in["post_id", "label_id", "model_id"] )),await get_all_labels_transition(db_path=self._new_db)))
-            self._curr_medias= set(list(map(lambda x:tuple(x[key] for key in ["media_id", "model_id"] )),await get_all_medias_transition(db_path=self._new_db)))
-            self._curr_posts =set(list(map(lambda x:tuple(x[key] for key in ["post_id", "model_id"] )),await get_all_posts_transition(db_path=self._new_db)))
-            self._curr_products =set(list(map(lambda x:tuple(x[key] for key in ["post_id", "model_id"] )),await get_all_products_transition(db_path=self._new_dbh)))
-            self._curr_others =set(list(map(lambda x:tuple(x[key] for key in ["post_id", "model_id"] )),await get_all_others_transition(db_path=self._new_db)))
-            self._curr_stories =set(list(map(lambda x:tuple(x[key] for key in ["post_id", "model_id"] )),await get_all_stories_transition(db_path=self._new_db)))
-            self._curr_messages =set(list(map(lambda x:tuple(x[key] for key in ["post_id", "model_id"] )),await get_all_messages_transition(db_path=self._new_db)))
-            self._curr_profiles =set(list(map(lambda x:tuple(x[key] for key in ["user_id","username"] )),await get_all_profiles(db_path=self._new_db)))
-            self._curr_models =set(list(map(lambda x:tuple(x[key] for key in [ "model_id"] )),await get_all_models(db_path=self._new_db)))
+            self._curr_labels =set(list(map(lambda x:tuple(x[key] for key in self._label_keys ),await get_all_labels_transition(db_path=self._new_db))))
+            self._curr_medias= set(list(map(lambda x:tuple(x[key] for key in self._media_keys ),await get_all_medias_transition(db_path=self._new_db))))
+            self._curr_posts =set(list(map(lambda x:tuple(x[key] for key in self._common_key ),await get_all_posts_transition(db_path=self._new_db))))
+            self._curr_products =set(list(map(lambda x:tuple(x[key] for key in self._common_key ),await get_all_products_transition(db_path=self._new_db))))
+            self._curr_others =set(list(map(lambda x:tuple(x[key] for key in self._common_key ),await get_all_others_transition(db_path=self._new_db))))
+            self._curr_stories =set(list(map(lambda x:tuple(x[key] for key in self._common_key ),await get_all_stories_transition(db_path=self._new_db))))
+            self._curr_messages =set(list(map(lambda x:tuple(x[key] for key in self._common_key ),await get_all_messages_transition(db_path=self._new_db))))
+            self._curr_profiles =set(list(map(lambda x:tuple(x[key] for key in self._profile_key),await get_all_profiles(db_path=self._new_db))))
+            self._curr_models =set(list(map(lambda x:x[self._model_key],await get_all_models(db_path=self._new_db))))
         self._data_init=True
 
     async def merge_database(self, db_path):
@@ -147,7 +153,7 @@ class MergeDatabase():
 
 
     async def merge_media_helper(self,old_db):
-        keys = ["media_id", "model_id"]
+        keys = self._media_keys
         inserts_old_db = await get_all_medias_transition(db_path=old_db)
         await write_media_table_transition(
             list(
@@ -163,7 +169,7 @@ class MergeDatabase():
 
 
     async def merge_label_helper(self,old_db):
-        keys = ["post_id", "label_id", "model_id"]
+        keys = self._label_keys
         inserts_old_db = await get_all_labels_transition(db_path=old_db)
         await write_labels_table_transition(
             list(
@@ -179,7 +185,7 @@ class MergeDatabase():
 
 
     async def merge_posts_helper(self,old_db):
-        keys = ["post_id", "model_id"]
+        keys = self._common_key
 
         inserts_old_db = await get_all_posts_transition(db_path=old_db)
         await write_post_table_transition(
@@ -197,7 +203,7 @@ class MergeDatabase():
 
 
     async def merge_products_helper(self,old_db):
-        keys = ["post_id", "model_id"]
+        keys = self._common_key
         inserts_old_db = await get_all_products_transition(db_path=old_db)
         await write_products_table_transition(
             list(
@@ -213,7 +219,7 @@ class MergeDatabase():
 
 
     async def merge_others_helper(self,old_db):
-        keys = ["post_id", "model_id"]
+        keys = self._common_key
 
 
         inserts_old_db = await get_all_others_transition(db_path=old_db)
@@ -232,7 +238,7 @@ class MergeDatabase():
 
     async def merge_stories_helper(self,old_db):
         global curr_stories
-        keys = ["post_id", "model_id"]
+        keys = self._common_key
         inserts_old_db = await get_all_stories_transition(db_path=old_db)
         await write_stories_table_transition(
             list(
@@ -250,7 +256,7 @@ class MergeDatabase():
 
 
     async def merge_profiles_helper(self,old_db):
-        keys = ["user_id","username"]
+        keys = self._profile_key
         inserts_old_db = await get_all_profiles(db_path=old_db)
         await write_profile_table_transition(
             list(
@@ -266,7 +272,6 @@ class MergeDatabase():
 
 
     async def merge_models_helper(self,old_db):
-        keys = ["model_id"]
         inserts_old_db = get_single_model_via_profile(db_path=old_db)
         (
             await write_models_table(
@@ -276,14 +281,11 @@ class MergeDatabase():
             if inserts_old_db not in self._curr_models
             else None
         )
-        self._curr_models.update(map(
-                    lambda x: tuple(x[key] for key in keys), inserts_old_db
-                ))
+        self._curr_models.add(inserts_old_db)
 
 
     async def merge_messages_helper(self,old_db):
-        global curr_messages
-        keys = ["post_id", "model_id"]
+        keys = self._common_key
         inserts_old_db = await get_all_messages_transition(db_path=old_db)
         await write_messages_table_transition(
             list(
