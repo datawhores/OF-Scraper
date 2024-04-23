@@ -86,11 +86,11 @@ def getselected_usernames(rescan=False, reset=False):
 
 
 @run
-async def set_data_all_subs_dict(usernames):
+async def set_data_all_subs_dict(username):
     args = read_args.retriveArgs()
     oldusernames = args.usernames or set()
     all_usernames = set()
-    all_usernames.update([usernames] if not isinstance(usernames, list) else usernames)
+    all_usernames.update([username] if not isinstance(username, list) else username)
     all_usernames.update(oldusernames)
 
     seen = set()
@@ -105,7 +105,7 @@ async def set_data_all_subs_dict(usernames):
 
     args.usernames = new_names
     write_args.setArgs(args)
-    await all_subs_helper(refetch=len(new_names) > 0)
+    await all_subs_helper() if len(new_names) > 0 else None
     args.usernames = set(all_usernames)
     write_args.setArgs(args)
 

@@ -2,7 +2,7 @@ import re
 
 from humanfriendly import format_size
 
-import ofscraper.download.common.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 

@@ -209,7 +209,7 @@ async def process_and_create_tasks():
                                 scrape_all_paid(
                                     c,
                                     job_progress,
-                                    required=100,
+                                    required=min_posts,
                                     offset=splitArrays[i],
                                 )
                             )
@@ -283,7 +283,7 @@ def create_all_paid_dict(paid_content):
     user_dict = {}
     for ele in paid_content:
         user_id = ele.get("fromUser", {}).get("id") or ele.get("author", {}).get("id")
-        user_dict.setdefault(user_id, []).append(ele)
+        user_dict.setdefault(str(user_id), []).append(ele)
     [set_check(key, val) for key, val in user_dict.items()]
     return user_dict
 

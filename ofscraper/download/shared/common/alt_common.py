@@ -4,11 +4,11 @@ import arrow
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.db.operations as operations
-import ofscraper.download.common.common as common
-import ofscraper.download.common.globals as common_globals
-import ofscraper.download.common.keyhelpers as keyhelpers
-import ofscraper.download.common.log as common_logs
-import ofscraper.download.common.paths as common_paths
+import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.globals as common_globals
+import ofscraper.download.shared.utils.keyhelpers as keyhelpers
+import ofscraper.download.shared.utils.log as common_logs
+import ofscraper.download.shared.utils.paths as common_paths
 import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system

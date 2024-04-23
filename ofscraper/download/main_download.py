@@ -18,24 +18,18 @@ from functools import partial
 
 import aiofiles
 import psutil
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_message,
-    stop_after_attempt,
-    wait_random,
-)
 
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
     pass
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.download.common.common as common
-import ofscraper.download.common.globals as common_globals
+import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.common.common import (
+from ofscraper.download.shared.common.general import (
     check_forced_skip,
     downloadspace,
     get_data,
@@ -44,9 +38,12 @@ from ofscraper.download.common.common import (
     get_unknown_content_type,
     size_checker,
 )
-from ofscraper.download.common.log import get_url_log, path_to_file_logger
-from ofscraper.download.common.main_common import handle_result_main
-from ofscraper.download.common.metadata import force_download
+from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
+from ofscraper.download.shared.common.main_common import handle_result_main
+from ofscraper.download.shared.utils.metadata import force_download
+from ofscraper.download.shared.classes.retries import download_retry
+
+
 
 
 async def main_download(c, ele, username, model_id, job_progress):
@@ -77,17 +74,7 @@ async def main_download_downloader(c, ele, job_progress, download_retries=None):
     tempholderObj = await placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
     ).init()
-    async for _ in AsyncRetrying(
-        stop=stop_after_attempt(constants.getattr("DOWNLOAD_FILE_NUM_TRIES")),
-        wait=wait_random(
-            min=constants.getattr("OF_MIN_WAIT_API"),
-            max=constants.getattr("OF_MAX_WAIT_API"),
-        ),
-        retry=retry_if_not_exception_message(
-            constants.getattr("SPACE_DOWNLOAD_MESSAGE")
-        ),
-        reraise=True,
-    ):
+    async for _ in download_retry():
         with _:
             try:
                 data = await get_data(ele)

@@ -18,7 +18,7 @@ from functools import partial, singledispatch
 
 from humanfriendly import format_size
 
-import ofscraper.download.common.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
@@ -28,14 +28,13 @@ import ofscraper.utils.dates as dates
 import ofscraper.utils.hash as hash
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as system
-from ofscraper.download.common.log import get_medialog
-from ofscraper.download.common.media import add_path
-from ofscraper.download.common.message import send_msg, set_send_msg
-
-# from ofscraper.download.common.metadata import *
-# from ofscraper.download.common.paths import *
-from ofscraper.download.common.progress import update_total
+from ofscraper.download.shared.utils.log import get_medialog
+from ofscraper.download.shared.utils.media import add_path
+from ofscraper.download.shared.utils.message import send_msg, set_send_msg
+from ofscraper.download.shared.utils.progress import update_total
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.args.read as read_args
+
 
 
 def add_additional_data(placeholderObj, ele):
@@ -175,3 +174,4 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
+

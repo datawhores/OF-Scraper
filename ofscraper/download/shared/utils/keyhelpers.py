@@ -11,14 +11,17 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
-import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.download.common.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.common.common import get_medialog
+from ofscraper.download.shared.common.general import get_medialog
+from ofscraper.download.shared.classes.retries import get_cmd_download_req_retries
+from ofscraper.download.shared.classes.session import cdm_session
+
+
 
 log = None
 
@@ -103,7 +106,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
             url=constants.getattr("CDRM"),
             method="post",
             json=json_data,
-            retries=constants.getattr("CDM_NUM_TRIES"),
+            retries=get_cmd_download_req_retries(),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
@@ -139,7 +142,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
             url=constants.getattr("CDRM2"),
             method="post",
             json=json_data,
-            retries=constants.getattr("CDM_NUM_TRIES"),
+            retries=get_cmd_download_req_retries(),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
@@ -183,7 +186,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             method="post",
             json=json_data,
             headers=headers,
-            retries=constants.getattr("CDM_NUM_TRIES"),
+            retries=get_cmd_download_req_retries(),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("CDM_TIMEOUT"),
@@ -240,14 +243,12 @@ async def key_helper_manual(c, pssh, licence_url, id):
 
         keys = None
         challenge = cdm.get_license_challenge(session_id, pssh_obj)
-        async with sessionManager.sessionManager(
-            backend="httpx", sem=common_globals.sem, new_request_auth=True
-        ) as c:
+        async with cdm_session() as c:
             async with c.requests_async(
                 url=licence_url,
                 method="post",
                 data=challenge,
-                retries=constants.getattr("CDM_NUM_TRIES"),
+                retries=get_cmd_download_req_retries() ,
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
                 total_timeout=constants.getattr("CDM_TIMEOUT"),

@@ -34,6 +34,7 @@ class Media(base.base):
         self._post = post
         self._final_url = None
         self._cached_parse_mpd = None
+        self._mpd=None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -181,7 +182,9 @@ class Media(base.base):
 
     @property
     def mpd(self):
-        if self.protected == False:
+        if self._mpd:
+            return self._mpd
+        elif self.protected == False:
             return None
         return (
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
@@ -361,6 +364,12 @@ class Media(base.base):
     def mediatype(self, val):
         self._media["type"] = val
 
+    @url.setter
+    def url(self, val):
+        self._final_url=val
+    @mpd.setter
+    def mpd(self, val):
+        self._mpd=val
     @property
     async def selected_quality(self):
         if self.protected == False:

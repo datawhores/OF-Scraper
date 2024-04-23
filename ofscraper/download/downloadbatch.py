@@ -15,8 +15,8 @@ from aioprocessing import AioPipe
 from rich.live import Live
 
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.download.common.common as common
-import ofscraper.download.common.globals as common_globals
+import ofscraper.download.shared.common.general as common
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
@@ -32,14 +32,16 @@ import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
-from ofscraper.download.common.common import get_medialog, subProcessVariableInit
-from ofscraper.download.common.log import final_log, log_download_progress
-from ofscraper.download.common.metadata import metadata
-from ofscraper.download.common.paths import addGlobalDir, setDirectoriesDate
-from ofscraper.download.common.progress import convert_num_bytes
+from ofscraper.download.shared.common.general import get_medialog, subProcessVariableInit
+from ofscraper.download.shared.utils.log import final_log, log_download_progress
+from ofscraper.download.shared.utils.metadata import metadata
+from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
+from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
+from ofscraper.download.shared.classes.session import download_session
+
 
 platform_name = platform.system()
 
@@ -365,7 +367,7 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(f"{pid_log_helper()} start inner thread for other loggers")
     # set variables based on parent process
     # start consumer for other
-    other_thread = other_logs.start_other_thread(
+    other_logs.start_other_thread(
         input_=common_globals.log.handlers[1].queue, name=str(os.getpid()), count=1
     )
     medialist = list(medialist)
@@ -376,14 +378,7 @@ async def process_dicts_split(username, model_id, medialist):
         f"{pid_log_helper()} process mediasplit from total {len(medialist)}"
     )
     aws = []
-    async with sessionManager.sessionManager(
-        retries=constants.getattr("DOWNLOAD_NUM_TRIES"),
-        wait_min=constants.getattr("OF_MIN_WAIT_API"),
-        wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        log=common_globals.log,
-        sem=common_globals.sem,
-        new_request_auth=True,
-    ) as c:
+    async with download_session() as c:
         for ele in medialist:
             aws.append(asyncio.create_task(download(c, ele, model_id, username)))
         for coro in asyncio.as_completed(aws):

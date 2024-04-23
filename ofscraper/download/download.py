@@ -14,8 +14,7 @@ import ofscraper.utils.hash as hash
 import ofscraper.utils.separate as seperate
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
-from ofscraper.download.common.text import textDownloader
-from ofscraper.utils.context.run_async import run
+from ofscraper.download.shared.utils.text import textDownloader
 
 
 def medialist_filter(medialist, model_id, username):

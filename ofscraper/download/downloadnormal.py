@@ -18,8 +18,7 @@ import traceback
 from humanfriendly import format_size
 from rich.live import Live
 
-import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.download.common.globals as common_globals
+import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
@@ -31,14 +30,16 @@ import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 from ofscraper.download.alt_download import alt_download
-from ofscraper.download.common.common import get_medialog
-from ofscraper.download.common.log import final_log, log_download_progress
-from ofscraper.download.common.metadata import metadata
-from ofscraper.download.common.paths import setDirectoriesDate
-from ofscraper.download.common.progress import convert_num_bytes
+from ofscraper.download.shared.common.general import get_medialog
+from ofscraper.download.shared.utils.log import final_log, log_download_progress
+from ofscraper.download.shared.utils.metadata import metadata
+from ofscraper.download.shared.utils.paths import setDirectoriesDate
+from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.download.main_download import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
+from ofscraper.download.shared.classes.session import download_session
+
 
 
 @run
@@ -71,13 +72,7 @@ async def process_dicts(username, model_id, medialist):
             ):
                 aws = []
 
-                async with sessionManager.sessionManager(
-                    sem=common_globals.sem,
-                    retries=constants.getattr("DOWNLOAD_NUM_TRIES"),
-                    wait_min=constants.getattr("OF_MIN_WAIT_API"),
-                    wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                    new_request_auth=True,
-                ) as c:
+                async with download_session() as c:
                     for ele in medialist:
                         aws.append(
                             asyncio.create_task(
