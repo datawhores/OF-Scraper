@@ -90,13 +90,6 @@ class MergeDatabase():
     async def __call__(self, old_db_path):
         """
         This method is called when the object is used like a function.
-
-        Args:
-
-            other (int): The value to add to self.value.
-
-        Returns:
-            int: The sum of self.value and other.
         """
         await self._data_initializer()
         return await self.merge_database(old_db_path)
@@ -114,43 +107,20 @@ class MergeDatabase():
         self._data_init=True
 
     async def merge_database(self, db_path):
-        for key in [
-            "medias",
-            "labels",
-            "posts",
-            "products",
-            "others",
-            "stories",
-            "profiles",
-            "models",
-            "messages"
-        ]:
-            if key == "medias":
-                await self.merge_media_helper(db_path)
-            elif key == "labels":
-                await self.merge_label_helper( db_path)
-            elif key == "posts":
-                await self.merge_posts_helper( db_path)
-            elif key == "products":
-                await self.merge_products_helper(db_path)
-            elif key == "others":
-                await self.merge_others_helper(db_path)
-            elif key == "stories":
-                await self.merge_stories_helper(db_path)
-            elif key == "profiles":
-                await self.merge_profiles_helper(db_path)
-
-            elif key == "models":
-                await self.merge_models_helper(db_path)
-            elif key=="messages":
-                await self.merge_messages_helper(db_path)
+            await self.merge_media_helper(db_path)
+            await self.merge_label_helper( db_path)
+            await self.merge_posts_helper( db_path)
+            await self.merge_products_helper(db_path)
+            await self.merge_others_helper(db_path)
+            await self.merge_stories_helper(db_path)
+            await self.merge_profiles_helper(db_path)
+            await self.merge_models_helper(db_path)
+            await self.merge_messages_helper(db_path)
 
 
 
        
         
-        
-
 
     async def merge_media_helper(self,old_db):
         keys = self._media_keys
