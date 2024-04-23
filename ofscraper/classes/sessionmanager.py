@@ -50,6 +50,7 @@ class CustomTenacity(AsyncRetrying):
             sleep = self.wait_exponential(retry_state)
         else:
             sleep = self.wait_random(retry_state)
+        logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retrying")
         return sleep
 
     def _after_func(self, retry_state) -> None:
