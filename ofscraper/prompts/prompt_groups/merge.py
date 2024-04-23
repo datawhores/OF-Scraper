@@ -49,7 +49,7 @@ def new_db_prompt():
     answer = promptClasses.batchConverter(
         *[
             {
-                "type": "input",
+                "type": "filepath",
                 "name": "database",
                 "message": "Merge db dir: ",
                 "option_instruction": """

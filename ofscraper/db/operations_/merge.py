@@ -60,7 +60,7 @@ async def batch_database_changes(new_root, old_root):
     await create_tables(db_path=new_db_path)
     for ele in paths.get_all_db(old_root):
         log.debug(f"Merging {ele} with {new_db_path}")
-        if ele == old_root:
+        if ele == new_db_path:
             continue
         try:
             model_id = get_single_model_via_profile(db_path=ele)
