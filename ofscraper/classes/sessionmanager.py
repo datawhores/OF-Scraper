@@ -29,8 +29,8 @@ class CustomTenacity(AsyncRetrying):
             max=constants.getattr("OF_MAX_WAIT_SESSION_DEFAULT"),
         )
         self.wait_exponential = wait_exponential or tenacity.wait_exponential(
-            min=constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAUL"),
-            max=constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAUL"),
+            min=constants.getattr("OF_MIN_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
+            max=constants.getattr("OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"),
         )
         self.wait = self._wait_picker
 
@@ -38,14 +38,14 @@ class CustomTenacity(AsyncRetrying):
         exception = retry_state.outcome.exception()
         if (
             isinstance(exception, aiohttp.ClientResponseError)
-            and getattr(exception, "status_code", None) in {429, 504}
+            and (getattr(exception, "status_code", None) or getattr(exception, "status", None) in {429, 504})
         ) or (
             isinstance(exception, httpx.HTTPStatusError)
             and (
-                getattr(exception.response, "status_code", None)
-                or getattr(exception.response, "status", None)
+               ( getattr(exception.response, "status_code", None)
+                or getattr(exception.response, "status", None)) in {429, 504}
             )
-            in {429, 504}
+            
         ):
             sleep = self.wait_exponential(retry_state)
         else:
