@@ -67,6 +67,7 @@ async def process_dicts(username, model_id, medialist):
                 progress_group,
                 refresh_per_second=constants.getattr("refreshScreen"),
                 console=console.shared_console,
+                transient=True 
             ):
                 aws = []
 

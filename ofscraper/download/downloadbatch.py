@@ -132,6 +132,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 progress_group,
                 refresh_per_second=constants.getattr("refreshScreen"),
                 console=console.get_shared_console(),
+                transient=True 
             ):
                 log.debug(f"Initial Queue Threads: {queue_threads}")
                 log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
