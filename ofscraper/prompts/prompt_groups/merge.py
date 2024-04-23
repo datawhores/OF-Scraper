@@ -1,6 +1,8 @@
+import pathlib
 from InquirerPy.base import Choice
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
+
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -14,7 +16,7 @@ models = None
 
 
 
-def backup_prompt() -> bool:
+def backup_prompt_db() -> bool:
     name = "continue"
     answer = promptClasses.batchConverter(
         *[
@@ -30,7 +32,7 @@ def backup_prompt() -> bool:
     return answer[name]
 
 
-def folder_prompt():
+def folder_prompt_db():
     answer = promptClasses.batchConverter(
         *[
             {
@@ -55,7 +57,7 @@ def new_db_prompt():
                 "message": "Merge db dir: ",
                 "option_instruction": """
                 directory for new merge database
-                It is best if merged database is stored seperately from source database(s)"
+                It is best if merged database is stored seperately from source database(s)
                 """,
                                 "default": str(get_profile_path()),
 
@@ -64,3 +66,19 @@ def new_db_prompt():
         ]
     )
     return answer["database"]
+
+
+def confirm_prompt_db(folder,new_db) -> bool:
+    name = "continue"
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "list",
+                "name": name,
+                "message":"confirm merge: ",
+                "instruction": f"user_data.db files from {folder} will be merged into {str(pathlib.Path(new_db,'user_data.db'))}",
+                "choices": [Choice(True,"Yes"),Choice(False,"No"),Choice(None,"Back to Main Menu")],
+            }
+        ]
+    )
+    return answer[name]   
