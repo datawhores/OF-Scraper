@@ -68,7 +68,7 @@ async def get_via_individual():
     )
     models_objects = list(map(lambda x: models.Model(x), out))
     if len(models_objects) == 0:
-        raise Exception("Provided usernames with did not yield any valid models")
+        raise Exception("Provided usernames did not yield any valid models")
     return models_objects
 
 

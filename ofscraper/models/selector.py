@@ -144,7 +144,7 @@ def parsed_subscriptions_helper(reset=False):
         PARSED_SUBS = filterNSort()
     elif args.usernames:
         usernameset = set(args.usernames)
-        PARSED_SUBS = list(filter(lambda x: x.name in usernameset, ALL_SUBS))
+        PARSED_SUBS = list(filter(lambda x: x.name or x.id in usernameset, ALL_SUBS))
     return PARSED_SUBS
 
 
