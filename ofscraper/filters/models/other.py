@@ -18,7 +18,7 @@ def otherFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"excluded username count: {len(filterusername)}")
+        log.debug(f"'excluded usernames' filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"Excluded usernames")
 
     return filterusername

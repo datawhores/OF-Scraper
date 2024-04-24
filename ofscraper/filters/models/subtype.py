@@ -1,6 +1,8 @@
 import logging
 
 import ofscraper.utils.args.read as read_args
+from ofscraper.filters.models.helpers import trace_log_user
+
 
 
 def subType(filterusername):
@@ -9,15 +11,22 @@ def subType(filterusername):
     if read_args.retriveArgs().renewal:
         filterusername = list(filter(lambda x: x.renewed, filterusername))
         log.debug(f"active renewal filter username count: {len(filterusername)}")
+        trace_log_user(filterusername,"active renewal filter")
+
     elif read_args.retriveArgs().renewal is False:
         filterusername = list(filter(lambda x: not x.renewed, filterusername))
         log.debug(f"disabled renewal filter username counta: {len(filterusername)}")
-    log.debug(f"Sub Status: {read_args.retriveArgs().sub_status}")
+        trace_log_user(filterusername,"disabled renewal filter")
+    
+    log.debug(f"Sub status: {read_args.retriveArgs().sub_status}")
     if read_args.retriveArgs().sub_status:
         filterusername = list(filter(lambda x: x.active, filterusername))
-        log.debug(f"active subscribtion filter username count: {len(filterusername)}")
+        log.debug(f"active subscription filter username count: {len(filterusername)}")
+        trace_log_user(filterusername,"active subscription filter")
 
     elif read_args.retriveArgs().sub_status is False:
         filterusername = list(filter(lambda x: not x.active, filterusername))
-        log.debug(f"expired subscribtion filter username count: {len(filterusername)}")
+        log.debug(f"expired subscription filter username count: {len(filterusername)}")
+        trace_log_user(filterusername,"expired subscription filter")
+
     return filterusername
