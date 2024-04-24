@@ -1,9 +1,11 @@
-import asyncio
 import contextlib
+import time
+import asyncio
 import logging
 import ssl
 import threading
 import traceback
+import arrow
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -16,6 +18,24 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
+class SessionSleep():
+    def __init__(self):
+        self._sleep=0
+        self._last_date=None
+    def toomany_req(self):
+        if arrow.now().float_timestamp-self._last_date.float_timestamp<120:
+            return
+        elif self._sleep==0:
+            self._sleep=4
+        else:
+            self._sleep=self._sleep*2
+        self._last_date=arrow.now()
+        return self._sleep
+    @property
+    def sleep(self):
+        return self._sleep
+
+sleeper=SessionSleep()
 
 class CustomTenacity(AsyncRetrying):
     """
@@ -51,6 +71,7 @@ class CustomTenacity(AsyncRetrying):
         else:
             sleep = self.wait_random(retry_state)
         logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before")
+        sleeper.toomany_req()
         return sleep
 
     def _after_func(self, retry_state) -> None:
@@ -239,6 +260,7 @@ class sessionManager:
             r = None
             with _:
                 sync_sem.acquire()
+                time.sleep(sleeper.sleep)
                 try:
                     r = self._httpx_funct(
                         method,
@@ -323,6 +345,7 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
+                await asyncio.sleep(sleeper.sleep)
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)

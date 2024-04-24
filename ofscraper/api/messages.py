@@ -327,7 +327,6 @@ async def scrape_messages(
     await asyncio.sleep(1)
     try:
         async with c.requests_async(url=url) as r:
-
             task = (
                 job_progress.add_task(
                     f": Message ID-> {message_id if message_id else 'initial'}"
