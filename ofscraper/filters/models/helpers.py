@@ -4,7 +4,7 @@ from ofscraper.utils.logs.helpers import is_trace
 import ofscraper.utils.constants as constants
 log = logging.getLogger("shared")
 
-def trace_log_user(responseArray,filter):
+def trace_log_user(responseArray,title_str):
     if not is_trace():
         return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
@@ -15,9 +15,10 @@ def trace_log_user(responseArray,filter):
         )  # Adjust end_index calculation
         chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
         log.trace(
-            f"{filter} {{data}}".format(
+            f"{title_str.strip().capitalize()} {{data}}".format(
                 data="\n\n".join(list(map(lambda x: f"userdata: {str(x)}", chunk)))
             )
         )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
+            break
