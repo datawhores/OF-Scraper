@@ -172,7 +172,7 @@ async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
                 f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
             )
             if len(subscriptions) == 0:
-                return subscriptions
+                return subscriptions,new_tasks
             elif recur is False:
                 pass
             elif (await r.json_())["hasMore"] is True:
@@ -207,7 +207,7 @@ async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list
             )
 
             if len(subscriptions) == 0:
-                return subscriptions
+                return subscriptions,new_tasks
             elif recur is False:
                 pass
             elif (await r.json_())["hasMore"] is True:
