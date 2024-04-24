@@ -21,6 +21,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.logs.helpers import is_trace
 
 log = logging.getLogger("shared")
 
@@ -400,6 +401,8 @@ def set_check(unduped, model_id):
 
 
 def trace_log_task(responseArray, header=None):
+    if not is_trace():
+        return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
