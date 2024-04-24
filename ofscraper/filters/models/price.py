@@ -100,7 +100,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Promo price min filter count: {len(filterusername)}")
+        log.debug(f"Promo price min filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"promo price min filter")
 
     log.debug(f"Promo price max filter: {read_args.retriveArgs().promo_price_max}")
@@ -112,7 +112,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Promo price max filter count: {len(filterusername)}")
+        log.debug(f"Promo price max filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"promo price max filter")
 
     log.debug(f"Regular price min filter: {read_args.retriveArgs().regular_price_min}")
@@ -124,7 +124,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Regular price min filter count: {len(filterusername)}")
+        log.debug(f"Regular price min filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"regular price min filter")
     log.debug(f"Regular price max filter: {read_args.retriveArgs().regular_price_max}")
     if read_args.retriveArgs().regular_price_max:
@@ -135,7 +135,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Regular price max filter count: {len(filterusername)}")
+        log.debug(f"Regular price max filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"regular price max filter")
 
     log.debug(f"Renewal price min filter: {read_args.retriveArgs().renewal_price_min}")
@@ -147,7 +147,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Renewal price min filter count: {len(filterusername)}")
+        log.debug(f"Renewal price min filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"renewal price min filter")
     log.debug(f"Renewal price max filter: {read_args.retriveArgs().renewal_price_max}")
     if read_args.retriveArgs().renewal_price_max:
@@ -158,7 +158,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Renewal price max filter count: {len(filterusername)}")
+        log.debug(f"Renewal price max filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"renewal price max filter")
 
     log.debug(f"Current price min filter: {read_args.retriveArgs().current_price_min}")
@@ -170,7 +170,7 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"Current price min filter count: {len(filterusername)}")
+        log.debug(f"Current price min filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"current price min filter")
     log.debug(f"Current price max filter: {read_args.retriveArgs().current_price_max}")
     if read_args.retriveArgs().current_price_max:
@@ -181,6 +181,6 @@ def priceMinMaxFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"current price max filter count: {len(filterusername)}")
+        log.debug(f"current price max filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"current price max filter")
     return filterusername
