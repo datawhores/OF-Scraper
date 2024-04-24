@@ -28,6 +28,8 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.logs.helpers import is_trace
+
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
@@ -124,13 +126,34 @@ async def get_lists():
                             continue
                     tasks = new_tasks
     overall_progress.remove_task(page_task)
-    log.trace(
-        "list unduped {posts}".format(
-            posts="\n\n".join(map(lambda x: f" list data raw:{x}", output))
-        )
-    )
+    trace_log_list(output)
+    
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
     return output
+
+def trace_log_list(responseArray):
+    if not is_trace():
+        return
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+    for i in range(1, len(responseArray) + 1, chunk_size):
+        # Calculate end index considering potential last chunk being smaller
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
+        log.trace(
+        "list unduped {posts}".format(
+            posts="\n\n".join(map(lambda x: f" list data raw:{x}", chunk))
+        )
+    )
+        # Check if there are more elements remaining after this chunk
+        if i + chunk_size > len(responseArray):
+            break  # Exit the loop if we've processed all elements
+
+
+
+
+
 
 
 async def scrape_for_list(c, job_progress, offset=0):
@@ -235,14 +258,30 @@ async def get_list_users(lists):
     outdict = {}
     for ele in output:
         outdict[ele["id"]] = ele
-    log.trace(
-        "users found {users}".format(
-            users="\n\n".join(map(lambda x: f"user data: {str(x)}", outdict.values()))
-        )
-    )
+    trace_log_usernames(outdict.values())
     log.debug(f"[bold]users count without Dupes[/bold] {len(outdict.values())} found")
     return outdict.values()
 
+
+def trace_log_usernames(responseArray):
+    if not is_trace():
+        return
+    chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
+    for i in range(1, len(responseArray) + 1, chunk_size):
+        # Calculate end index considering potential last chunk being smaller
+        end_index = min(
+            i + chunk_size - 1, len(responseArray)
+        )  # Adjust end_index calculation
+        chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
+        log.trace(
+        "users found {users}".format(
+            users="\n\n".join(map(lambda x: f"user data: {str(x)}", chunk))
+        )
+    
+    )
+        # Check if there are more elements remaining after this chunk
+        if i + chunk_size > len(responseArray):
+            break  # Exit the loop if we've processed all elements
 
 async def scrape_list_members(c, item, job_progress, offset=0):
     users = None
