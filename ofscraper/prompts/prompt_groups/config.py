@@ -51,7 +51,7 @@ def funct(prompt_):
     save_location: root directory for files
     dir_format: format of directories
     textlength: max length of text placeholder
-    space-replacer: space replacement for filenames
+    space_replacer: space replacement for filenames
     date: date format for placeholders
     text_type_default: toggle for word count type
     trunication_default: toggle for trunicating filenames
@@ -238,7 +238,7 @@ def file_config():
             {
                 "type": "input",
                 "name": "space-replacer",
-                "message": "space-replacer: ",
+                "message": "space_replacer: ",
                 "option_instruction": "Replace any spaces in text with this character\n",
                 "default": data.get_spacereplacer(),
             },

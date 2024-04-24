@@ -451,8 +451,9 @@ def get_spacereplacer(config=None, mediatype=None):
     if config == False:
         return constants.SPACE_REPLACER_DEFAULT
     return (
-        config.get("overwrites", {}).get(f"{mediatype}", {}).get("space-replacer")
-        or config.get("space-replacer")
+        config.get("overwrites", {}).get(f"{mediatype}", {}).get("space_replacer")
+        or config.get("space_replacer")
+        or config.get("file_options", {}).get("space_replacer")
         or config.get("file_options", {}).get("space-replacer")
         or constants_attr.getattr("SPACE_REPLACER_DEFAULT")
     )

@@ -7332,7 +7332,7 @@ CONFIG_KEYS = [
     "mp4decrypt",
     "discord",
     "ffmpeg",
-    "space-replacer",
+    "space_replacer",
     "code-execution",
     "threads",
     "custom",
