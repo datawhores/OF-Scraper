@@ -8,6 +8,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
+
 log = logging.getLogger("shared")
 
 
@@ -205,6 +206,8 @@ def final_post_sort(media):
 
 
 def trace_log_media(count, media, filter_str):
+    if not is_trace():
+        return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     logformater = "{} id: {} postid: {} data: {} "
     for i in range(1, len(media) + 1, chunk_size):
@@ -230,6 +233,8 @@ def trace_log_media(count, media, filter_str):
 
 
 def trace_log_post(count, media, filter_str):
+    if not is_trace():
+        return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     logformater = "{} id: {} data: {} "
     for i in range(1, len(media) + 1, chunk_size):
