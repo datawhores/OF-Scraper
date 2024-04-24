@@ -14,7 +14,6 @@ r"""
 import logging
 import pathlib
 import shutil
-import traceback
 
 import arrow
 from rich.console import Console
