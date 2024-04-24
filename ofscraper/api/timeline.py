@@ -23,6 +23,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.logs.helpers import is_trace
 
 log = logging.getLogger("shared")
 
@@ -405,6 +406,8 @@ async def scrape_timeline_posts(
 
 
 def trace_log_task(responseArray):
+    if not is_trace():
+        return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
@@ -422,6 +425,8 @@ def trace_log_task(responseArray):
 
 
 def trace_log_old(responseArray):
+    if not is_trace():
+        return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")
     for i in range(1, len(responseArray) + 1, chunk_size):
         # Calculate end index considering potential last chunk being smaller
