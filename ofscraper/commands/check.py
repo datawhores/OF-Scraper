@@ -385,7 +385,7 @@ async def message_check_retriver():
                         model_id, user_name, forced_after=0, c=c
                     )
                     cache.set(
-                        f"purchased_check_{model_id}",
+                        f"message_check_{model_id}",
                         messages,
                         expire=constants.getattr("THREE_DAY_SECONDS"),
                     )
