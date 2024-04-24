@@ -154,7 +154,7 @@ async def scrape_for_list(c, job_progress, offset=0):
                 f"offset:{offset} -> hasMore value in json {data.get('hasMore','undefined') }"
             )
             log.trace(
-                "offset:{offset} -> label names raw: {posts}".format(
+                "offset:{offset} -> list names raw: {posts}".format(
                     offset=offset, posts=data
                 )
             )
