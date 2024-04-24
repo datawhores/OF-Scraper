@@ -22,7 +22,7 @@ def dateFilters(filterusername):
                 filterusername,
             )
         )
-        log.debug(f"last seen after filter username count: {len(filterusername)}")
+        log.debug(f"Last seen after filter username count: {len(filterusername)}")
         trace_log_user(filterusername,"last seen after")
     log.debug(f"Last seen before filter: {read_args.retriveArgs().last_seen_before}")
     if read_args.retriveArgs().last_seen_before:
