@@ -168,7 +168,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         headers = (
             None
             if resume_size == 0 or not old_total
-            else {"Range": f"abytes={resume_size}-{total}"}
+            else {"Range": f"bytes={resume_size}-{total}"}
         )
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common_globals.attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {ele.url}"

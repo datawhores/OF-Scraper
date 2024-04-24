@@ -92,7 +92,9 @@ def restore_backup_transition(backup, model_id, username, db_path=None, **kwargs
     shutil.copy2(backup, database)
 
 
-def create_backup_transition(model_id, username, db_path=None, **kwargs):
+
+def get_group_difference(model_id=None, username=None, db_path=None):
+
     changes = get_schema_changes(model_id=model_id, username=username, db_path=db_path)
     groupA = [
         "media_hash",
@@ -105,9 +107,11 @@ def create_backup_transition(model_id, username, db_path=None, **kwargs):
         "messages_model_id",
         "labels_model_id",
         "media_posted_at",
+        "media_unlocked"
     ]
+
     groupB = [
-        "profile_username_constraint_removed",
+        "profile_username_constraint_modified",
         "stories_model_id_constraint_added",
         "media_model_id_constraint_added",
         "labels_model_id_constraint_added",
@@ -116,7 +120,11 @@ def create_backup_transition(model_id, username, db_path=None, **kwargs):
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
     ]
-    if len(set(groupA + groupB).difference(set(changes))) > 0:
+    return set((groupA + groupB)).difference(set(changes))
+
+def create_backup_transition(model_id=None, username=None, db_path=None, **kwargs):
+
+    if len(get_group_difference(model_id=model_id,username=username,db_path=db_path)) > 0:
         log.info("creating a backup before transition")
         backup_name = (
             f"old_schema_{model_id}_db_backup.db"
@@ -132,79 +140,79 @@ def create_backup_transition(model_id, username, db_path=None, **kwargs):
 
 
 async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs):
-    changes = get_schema_changes(model_id=model_id, username=username, db_path=db_path)
-    if "media_hash" not in changes:
+    missing = get_group_difference(model_id=model_id,username=username,db_path=db_path)
+    if "media_hash" in missing:
         await add_column_media_hash(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "media_hash", model_id=model_id, username=username, db_path=db_path
         )
-    if "media_model_id" not in changes:
+    if "media_model_id" in missing:
         await add_column_media_ID(model_id=model_id, username=username, db_path=db_path)
         await add_flag_schema(
             "media_model_id", model_id=model_id, username=username, db_path=db_path
         )
-    if "media_posted_at" not in changes:
+    if "media_posted_at" in missing:
         await add_column_media_posted_at(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "media_posted_at", model_id=model_id, username=username, db_path=db_path
         )
-    if "media_duration" not in changes:
+    if "media_duration" in missing:
         await add_column_media_duration(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "media_duration", model_id=model_id, username=username, db_path=db_path
         )
-    if "media_unlocked" not in changes:
+    if "media_unlocked" in missing:
         await add_column_media_unlocked(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "media_unlocked", model_id=model_id, username=username, db_path=db_path
         )
-    if "posts_pinned" not in changes:
+    if "posts_pinned" in missing:
         await add_column_post_pinned(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "posts_pinned", model_id=model_id, username=username, db_path=db_path
         )
-    if "posts_model_id" not in changes:
+    if "posts_model_id" in missing:
         await add_column_post_ID(model_id=model_id, username=username, db_path=db_path)
         await add_flag_schema(
             "posts_model_id", model_id=model_id, username=username, db_path=db_path
         )
-    if "products_model_id" not in changes:
+    if "products_model_id" in missing:
         await add_column_products_ID(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "products_model_id", model_id=model_id, username=username, db_path=db_path
         )
-    if "other_model_id" not in changes:
+    if "other_model_id" in missing:
         await add_column_other_ID(model_id=model_id, username=username, db_path=db_path)
         await add_flag_schema(
             "other_model_id", model_id=model_id, username=username, db_path=db_path
         )
-    if "stories_model_id" not in changes:
+    if "stories_model_id" in missing:
         await add_column_stories_ID(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "stories_model_id", model_id=model_id, username=username, db_path=db_path
         )
-    if "messages_model_id" not in changes:
+    if "messages_model_id" in missing:
         await add_column_messages_ID(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
             "messages_model_id", model_id=model_id, username=username, db_path=db_path
         )
-    if "labels_model_id" not in changes:
+    if "labels_model_id" in missing:
         await add_column_labels_ID(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -216,8 +224,8 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
 async def modify_tables_constraints_and_columns(
     model_id=None, username=None, db_path=None, **kwargs
 ):
-    changes = get_schema_changes(model_id=model_id, username=username, db_path=db_path)
-    if not "profile_username_constraint_modified" in changes:
+    missing = get_group_difference(model_id=model_id,username=username,db_path=db_path)
+    if  "profile_username_constraint_modified" in missing:
         await modify_unique_constriant_profile(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -227,7 +235,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if not "stories_model_id_constraint_added" in changes:
+    if  "stories_model_id_constraint_added" in missing:
         await modify_unique_constriant_stories(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -237,7 +245,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if not "media_model_id_constraint_added" in changes:
+    if  "media_model_id_constraint_added" in missing:
         await modify_unique_constriant_media(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -247,7 +255,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if not "posts_model_id_constraint_added" in changes:
+    if  "posts_model_id_constraint_added" in missing:
         await modify_unique_constriant_posts(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -257,7 +265,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if not "others_model_id_constraint_added" in changes:
+    if  "others_model_id_constraint_added" in missing:
         await modify_unique_constriant_others(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -267,7 +275,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if not "products_model_id_constraint_added" in changes:
+    if  "products_model_id_constraint_added" in missing:
         await modify_unique_constriant_products(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -277,7 +285,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if not "messages_model_id_constraint_added" in changes:
+    if  "messages_model_id_constraint_added" in missing:
         await modify_unique_constriant_messages(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -288,7 +296,7 @@ async def modify_tables_constraints_and_columns(
             db_path=db_path,
         )
 
-    if not "labels_model_id_constraint_added" in changes:
+    if  "labels_model_id_constraint_added" in missing:
         await modify_unique_constriant_labels(
             model_id=model_id, username=username, db_path=db_path
         )

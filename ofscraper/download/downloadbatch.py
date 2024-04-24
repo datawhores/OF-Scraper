@@ -14,7 +14,6 @@ import psutil
 from aioprocessing import AioPipe
 from rich.live import Live
 
-import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.models.selector as selector

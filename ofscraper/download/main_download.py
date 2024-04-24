@@ -69,7 +69,7 @@ async def main_download(c, ele, username, model_id, job_progress):
     return await handle_result_main(result, ele, username, model_id)
 
 
-async def main_download_downloader(c, ele, job_progress, download_retries=None):
+async def main_download_downloader(c, ele, job_progress):
     downloadspace(mediatype=ele.mediatype)
     tempholderObj = await placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
