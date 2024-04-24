@@ -209,6 +209,7 @@ class sessionManager:
         connect_timeout=None,
         pool_connect_timeout=None,
         read_timeout=None,
+        sync_sem=None
     ):
         auth_requests.read_request_auth(forced=True) if sign else None
 
