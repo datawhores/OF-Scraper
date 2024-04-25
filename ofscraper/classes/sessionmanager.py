@@ -1,4 +1,5 @@
 import asyncio
+import time
 import contextlib
 import logging
 import ssl
@@ -16,7 +17,6 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-from ofscraper.utils.context.run_async import run
 
 
 
@@ -43,28 +43,38 @@ class SessionSleep:
     def __init__(self):
         self._sleep = None
         self._last_date = None
-        self._lock=asyncio.Lock()
-
+        self._alock=asyncio.Lock()
+    async def async_toomany_req(self):
+        async with self._alock:
+            self.toomany_req()
     def toomany_req(self):
-        with self._lock:
-            if self._last_date is None:
+        log=logging.getLogger("shared")
+        if self._last_date is None:
                 self._sleep = constants.getattr("SESSION_SLEEP_INIT")
-            elif self._sleep is None:
-                self._sleep = constants.getattr("SESSION_SLEEP_INIT")
-            elif arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
-                return self._sleep
-            else:
-                self._sleep = self._sleep * 2
-            self._last_date = arrow.now()
-            logging.getLogger("shared").debug(f"setting sleep to {self._sleep} seconds")
+                log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
+
+        elif self._sleep is None:
+            self._sleep = constants.getattr("SESSION_SLEEP_INIT")
+            log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
+        elif arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
+            log.debug(f"too many req => not changing sleep [{self._sleep} seconds] because last call less than 120 seconds")
             return self._sleep
-    @run
-    async def do_sleep(self):
-        await asyncio.sleep(self._sleep) if self._sleep else None
+        else:
+            self._sleep = self._sleep * 2
+            log.debug(f"too many req => setting sleep to [{self._sleep} seconds]")
+        self._last_date = arrow.now()
+        return self._sleep     
+    async def async_do_sleep(self):
+        if self._sleep:
+            logging.getLogger("shared").debug(f"too many req => waiting [{self._sleep} seconds] before next req")
+            await asyncio.sleep(self._sleep)
+    def do_sleep(self):
+        if self._sleep:
+            logging.getLogger("shared").debug(f"too many req => waiting [{self._sleep} seconds] before next req")
+            time.sleep(self._sleep)
     @property
     def sleep(self):
         return self._sleep
-        
 
 
 
@@ -89,11 +99,12 @@ class CustomTenacity(AsyncRetrying):
 
     def _wait_picker(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
-        if is_rate_limited(exception):
-            sleep = self.wait_exponential(retry_state)
-        else:
-            sleep = self.wait_random(retry_state)
-        logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before")
+        # if is_rate_limited(exception):
+        #     sleep = self.wait_exponential(retry_state)
+        # else:
+        #     sleep = self.wait_random(retry_state)
+        sleep = self.wait_random(retry_state)
+        logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retry")
         return sleep
 
     def _after_func(self, retry_state) -> None:
@@ -309,7 +320,8 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    self._sleeper.toomany_req() if(is_rate_limited(E)) else None
+                    if(is_rate_limited(E)):
+                        self._sleeper.toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     raise E
@@ -368,7 +380,7 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
-                await self._sleeper.do_sleep()
+                await self._sleeper.async_do_sleep()
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
@@ -424,11 +436,13 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                     import random
-                    if random.randint(1,10)==4:
+                    if random.SystemRandom().randint(1,5)==4:
                         r.status_code =429
+                        r.status=429
                         r.raise_for_status()
                 except Exception as E:
-                    self._sleeper.toomany_req() if(is_rate_limited(E)) else None
+                    if(is_rate_limited(E)):
+                        await self._sleeper.async_toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     sem.release()
