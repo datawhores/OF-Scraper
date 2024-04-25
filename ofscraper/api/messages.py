@@ -73,10 +73,6 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     after = await get_after(model_id, username, forced_after)
     log_after_before(after, before, username)
 
-    log.debug(f"Messages after = {after}")
-
-    log.debug(f"Messages before = {before}")
-
     log.info(
         f"""
 Setting initial message scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
