@@ -15,7 +15,6 @@ import logging
 import queue
 import threading
 import time
-from contextlib import contextmanager
 from functools import partial
 
 import arrow
@@ -62,8 +61,8 @@ def daemon_run_helper(*functs):
     worker_thread = None
     [jobqueue.put(funct) for funct in functs]
     if read_args.retriveArgs().output == "PROMPT":
-        log.info(f"[bold]silent-mode on[/bold]")
-    log.info(f"[bold]Daemon mode on[/bold]")
+        log.info("[bold]silent-mode on[/bold]")
+    log.info("[bold]Daemon mode on[/bold]")
     userselector.getselected_usernames()
     actions.select_areas()
     try:
@@ -103,7 +102,7 @@ def run_helper(*functs):
     jobqueue = queue.Queue()
     [jobqueue.put(funct) for funct in functs]
     if read_args.retriveArgs().output == "PROMPT":
-        log.info(f"[bold]silent-mode on[/bold]")
+        log.info("[bold]silent-mode on[/bold]")
     try:
         for _ in functs:
             job_func = jobqueue.get()

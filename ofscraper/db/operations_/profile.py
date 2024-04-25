@@ -159,7 +159,7 @@ def get_all_profiles(
         try:
             profiles = [dict(row) for row in (cur.execute(profilesALL).fetchall())]
             return profiles
-        except sqlite3.OperationalError as E:
+        except sqlite3.OperationalError:
             None
         except Exception as E:
             raise E

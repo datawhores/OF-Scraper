@@ -78,7 +78,7 @@ class Media(base.base):
 
     @property
     def url(self):
-        if self.protected == True:
+        if self.protected is True:
             return None
         elif self._final_url:
             None
@@ -114,7 +114,9 @@ class Media(base.base):
         # profiles are always viewable
         if self.responsetype.lower() == "profile":
             return True
-        return self._media.get("canView") if (self.url or self.mpd) != None else False
+        return (
+            self._media.get("canView") if (self.url or self.mpd) is not None else False
+        )
 
     @property
     def label(self):
@@ -184,7 +186,7 @@ class Media(base.base):
     def mpd(self):
         if self._mpd:
             return self._mpd
-        elif self.protected == False:
+        elif self.protected is False:
             return None
         return (
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("dash")
@@ -271,7 +273,7 @@ class Media(base.base):
     async def final_filename(self):
         filename = self.filename or str(self.id)
         if self.mediatype == "videos":
-            filename = re.sub("_[a-z0-9]+$", f"", filename)
+            filename = re.sub("_[a-z0-9]+$", "", filename)
             filename = f"{filename}_{await self.selected_quality_placeholder}"
         # cleanup
         try:
@@ -288,7 +290,7 @@ class Media(base.base):
     def no_quality_final_filename(self):
         filename = self.filename or str(self.id)
         if self.mediatype == "videos":
-            filename = re.sub("_[a-z]+", f"", filename)
+            filename = re.sub("_[a-z]+", "", filename)
         # cleanup
         try:
             filename = self.file_cleanup(filename)
@@ -374,7 +376,7 @@ class Media(base.base):
 
     @property
     async def selected_quality(self):
-        if self.protected == False:
+        if self.protected is False:
             return self.normal_quality_helper()
         return await self.alt_quality_helper()
 
@@ -447,7 +449,7 @@ class Media(base.base):
             ):
                 kId = None
                 for prot in adapt_set.content_protections:
-                    if prot.value == None:
+                    if prot.value is None:
                         kId = prot.pssh[0].pssh
                         break
 
@@ -484,7 +486,7 @@ class Media(base.base):
             ):
                 kId = None
                 for prot in adapt_set.content_protections:
-                    if prot.value == None:
+                    if prot.value is None:
                         kId = prot.pssh[0].pssh
                         log_helpers.updateSenstiveDict(kId, "pssh_code")
                         break
@@ -515,13 +517,11 @@ class Media(base.base):
             return
         allowed = quality.get_allowed_qualities()
         selected = None
-        val = None
 
         for period in mpd.periods:
             for adapt_set in filter(
                 lambda x: x.mime_type == "video/mp4", period.adaptation_sets
             ):
-                kId = None
                 for ele in ["240", "720"]:
                     if ele not in allowed:
                         continue

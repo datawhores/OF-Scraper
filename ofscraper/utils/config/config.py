@@ -13,8 +13,6 @@ r"""
 
 import logging
 
-from humanfriendly import parse_size
-
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.binaries as binaries
 import ofscraper.utils.config.context as config_context

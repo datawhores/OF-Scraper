@@ -40,7 +40,7 @@ def get_config_path():
     defaultPath = pathlib.Path.home() / constants.configPath / constants.configFile
     ofscraperHome = pathlib.Path.home() / constants.configPath
 
-    if configPath == None or configPath == "":
+    if configPath is None or configPath == "":
         return defaultPath
     configPath = pathlib.Path(configPath)
     # check if path exists
@@ -86,7 +86,7 @@ def get_profile_path(name=None):
 
 
 def get_save_location(config=None, mediatype=None):
-    if config == False:
+    if config is False:
         return constants.SAVE_PATH_DEFAULT
     config = config or config_file.open_config()
     return (

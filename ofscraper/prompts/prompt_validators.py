@@ -33,7 +33,7 @@ class MultiValidator(Validator):
                 if isinstance(input, Validator):
                     input.validate(document)
                 else:
-                    if input(document.text) == False:
+                    if input(document.text) is False:
                         raise Exception()
             except ValidationError as E:
                 raise E
@@ -119,7 +119,7 @@ def jsonloader(x):
 def namevalitator():
     def callable(x):
         validchars = re.search("[a-zA-Z0-9_]*", x)
-        return validchars != None and len(x) == len(validchars.group(0))
+        return validchars is not None and len(x) == len(validchars.group(0))
 
     return validatorCallableHelper(
         callable,
@@ -132,7 +132,9 @@ def dirformatvalidator():
     def callable(x):
         try:
             testplaceholders = list(
-                filter(lambda x: x != None, [v[1] for v in string.Formatter().parse(x)])
+                filter(
+                    lambda x: x is not None, [v[1] for v in string.Formatter().parse(x)]
+                )
             )
             validplaceholders = placeholders.all_placeholders()
             if (
@@ -163,7 +165,7 @@ def dirformatvalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 Improper syntax or invalid placeholder
 """
         ).strip(),
@@ -175,7 +177,9 @@ def fileformatvalidator():
     def callable(x):
         try:
             placeholders = list(
-                filter(lambda x: x != None, [v[1] for v in string.Formatter().parse(x)])
+                filter(
+                    lambda x: x is not None, [v[1] for v in string.Formatter().parse(x)]
+                )
             )
             validplaceholders = set(
                 [
@@ -212,7 +216,7 @@ def fileformatvalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 Improper syntax or invalid placeholder
 """
         ).strip(),
@@ -256,7 +260,7 @@ def mp4decryptpathvalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""Path to mp4decrypt is not valid filepath or does not exists"""
+            """Path to mp4decrypt is not valid filepath or does not exists"""
         ).strip(),
         move_cursor_to_end=True,
     )
@@ -269,7 +273,7 @@ def mp4decryptexecutevalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 Path is valid but the given path could not be verified to be mp4decrypt
 """
         ).strip(),
@@ -284,7 +288,7 @@ def ffmpegpathvalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 Path to ffmpeg is not valid filepath or does not exists
 """
         ).strip(),
@@ -299,7 +303,7 @@ def ffmpegexecutevalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 Path is valid but the given path could not be verified to be ffmpeg
 """
         ).strip(),
@@ -310,17 +314,17 @@ Path is valid but the given path could not be verified to be ffmpeg
 def like_area_validator_posts():
     def callable(x):
         args = read_args.retriveArgs()
-        if not "like" in args.action and not "unlike" in args.action:
+        if "like" not in args.action and "unlike" not in args.action:
             return True
         elif len(args.like_area) > 0:
             return True
         elif "All" in args.like_area:
             return True
         elif (
-            not "Timeline" in x + list(args.posts)
-            and not "Pinned" in x + list(args.posts)
-            and not "Archived" in x + list(args.posts)
-            and not "Labels" in x + list(args.posts)
+            "Timeline" not in x + list(args.posts)
+            and "Pinned" not in x + list(args.posts)
+            and "Archived" not in x + list(args.posts)
+            and "Labels" not in x + list(args.posts)
         ):
             return
         return True
@@ -328,7 +332,7 @@ def like_area_validator_posts():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 You must select at least one of the following Timeline,Pinned, Archived
 When like/unlike is action is on
 """
@@ -341,7 +345,9 @@ def metadatavalidator():
     def callable(x):
         try:
             placeholders = list(
-                filter(lambda x: x != None, [v[1] for v in string.Formatter().parse(x)])
+                filter(
+                    lambda x: x is not None, [v[1] for v in string.Formatter().parse(x)]
+                )
             )
             validplaceholders = set(
                 [
@@ -373,7 +379,7 @@ def metadatavalidator():
     return validatorCallableHelper(
         callable,
         inspect.cleandoc(
-            f"""
+            """
 Improper syntax or invalid placeholder
 """
         ).strip(),
@@ -385,7 +391,10 @@ def DiscordValidator():
     def callable(x):
         if len(x) == 0:
             return True
-        return re.search("https://discord.com/api/webhooks/[0-9]*/[0-9a-z]*", x) != None
+        return (
+            re.search("https://discord.com/api/webhooks/[0-9]*/[0-9a-z]*", x)
+            is not None
+        )
 
     return validatorCallableHelper(
         callable,

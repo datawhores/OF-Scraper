@@ -49,7 +49,7 @@ def test_archived_pinned():
     username = "test"
     model_id = TEST_ID
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
-    assert (t.archived) == False
+    assert (t.archived) is False
 
 
 def test_text_pinned():
@@ -107,7 +107,7 @@ def test_paid_pinned():
     username = "test"
     model_id = TEST_ID
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_pinned():
@@ -129,7 +129,7 @@ def test_mediacanview_pinned():
     model_id = TEST_ID
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_pinned():
@@ -137,7 +137,7 @@ def test_mediaclass_pinned():
     model_id = TEST_ID
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -170,7 +170,7 @@ def test_mediaurl_pinned():
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
     mediaDict = PINNED_POSTS_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (re.search("http", media.url)) != None
+    assert (re.search("http", media.url)) is not None
 
 
 def test_mediapost_pinned():
@@ -231,7 +231,7 @@ def test_medialinked_pinned():
     t = Post(PINNED_POSTS_EXAMPLE, model_id, username)
     mediaDict = PINNED_POSTS_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_pinned():

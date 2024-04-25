@@ -49,7 +49,7 @@ def test_archived_messages():
     username = "test"
     model_id = TEST_ID
     t = Post(MESSAGES_DICT, model_id, username)
-    assert (t.archived) == False
+    assert (t.archived) is False
 
 
 def test_text_messages():
@@ -106,7 +106,7 @@ def test_paid_messages():
     username = "test"
     model_id = TEST_ID
     t = Post(MESSAGES_DICT, model_id, username)
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_messages():
@@ -128,7 +128,7 @@ def test_mediacanview_messages():
     model_id = TEST_ID
     t = Post(MESSAGES_DICT, model_id, username)
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_messages():
@@ -136,7 +136,7 @@ def test_mediaclass_messages():
     model_id = TEST_ID
     t = Post(MESSAGES_DICT, model_id, username)
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -169,7 +169,7 @@ def test_mediaurl_messages():
     t = Post(MESSAGES_DICT, model_id, username)
     mediaDict = MESSAGES_DICT["media"][index]
     media = Media(mediaDict, index, t)
-    assert (re.search("http", media.url)) != None
+    assert (re.search("http", media.url)) is not None
 
 
 def test_mediapost_messages():
@@ -219,7 +219,7 @@ def test_mediapreview_messages():
     t = Post(MESSAGES_DICT, model_id, username)
     mediaDict = MESSAGES_DICT["media"][index]
     media = Media(mediaDict, index, t)
-    assert (MESSAGES_DICT.get("preview")) == None or []
+    assert (MESSAGES_DICT.get("preview")) is None or []
     assert (media.preview) == 0
 
 
@@ -230,7 +230,7 @@ def test_medialinked_messages():
     t = Post(MESSAGES_DICT, model_id, username)
     mediaDict = MESSAGES_DICT["media"][index]
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_messages():

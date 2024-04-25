@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from InquirerPy.validator import EmptyInputValidator
 from prompt_toolkit.document import Document
-from prompt_toolkit.validation import ValidationError, Validator
+from prompt_toolkit.validation import ValidationError
 
 from ofscraper.const.test_constants import *
 from ofscraper.prompts.prompt_validators import (
@@ -33,7 +33,7 @@ def test_emptyinput_noerror():
     try:
         EmptyInputValidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_empty_list_error():
@@ -52,7 +52,7 @@ def test_empty_list_noerror():
     try:
         emptyListValidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_jsonvalidator_error():
@@ -71,7 +71,7 @@ def test_json_noerror():
     try:
         jsonValidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_namevalidator_error():
@@ -90,7 +90,7 @@ def test_namevalidator_noerror():
     try:
         namevalitator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_dirformat_invalidplaceholder():
@@ -155,7 +155,7 @@ def test_datevalidformat():
     try:
         dateplaceholdervalidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_datesillyvalidformat():
@@ -164,7 +164,7 @@ def test_datesillyvalidformat():
     try:
         dateplaceholdervalidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_fileformatallvalidkeys():
@@ -174,7 +174,7 @@ def test_fileformatallvalidkeys():
     try:
         fileformatvalidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_fileformatallvalidkeyWthinvalid():
@@ -244,7 +244,7 @@ def test_metaformatallvalidkeys():
     try:
         metadatavalidator().validate(document)
     except ValidationError as exc:
-        assert False, f"'{document._text} {exc}"
+        raise AssertionError(f"'{document._text} {exc}")
 
 
 def test_metaformatallvalidkeyWthinvalid():

@@ -49,14 +49,14 @@ def test_archived_stories():
     username = "test"
     model_id = TEST_ID
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
-    assert (t.archived) == False
+    assert (t.archived) is False
 
 
 def test_text_stories():
     username = "test"
     model_id = TEST_ID
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
-    assert (t.text) == None
+    assert (t.text) is None
 
 
 def test_text_stories2():
@@ -118,7 +118,7 @@ def test_paid_stories():
     username = "test"
     model_id = TEST_ID
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_stories():
@@ -140,7 +140,7 @@ def test_mediacanview_stories():
     model_id = TEST_ID
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_stories():
@@ -149,7 +149,7 @@ def test_mediaclass_stories():
 
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -182,7 +182,7 @@ def test_mediaurl_stories():
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     mediaDict = STORIES_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (re.search("http", media.url)) != None
+    assert (re.search("http", media.url)) is not None
 
 
 def test_mediapost_stories():
@@ -232,7 +232,7 @@ def test_mediapreview_stories():
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     mediaDict = STORIES_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (STORIES_EXAMPLE.get("preview")) == None
+    assert (STORIES_EXAMPLE.get("preview")) is None
     assert (media.preview) == 0
 
 
@@ -243,7 +243,7 @@ def test_medialinked_stories():
     t = Post(STORIES_EXAMPLE, model_id, username, "stories")
     mediaDict = STORIES_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_stories():

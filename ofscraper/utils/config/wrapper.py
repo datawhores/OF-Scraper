@@ -8,8 +8,8 @@ def config_reader(func: abc.Callable):
         config = kwargs.pop("config", None)
         configT = (
             False
-            if config == False
-            else config if config != None else config_file.open_config()
+            if config is False
+            else config if config is not None else config_file.open_config()
         )
         return func(config=configT, **kwargs)
 

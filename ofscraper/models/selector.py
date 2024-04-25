@@ -63,7 +63,7 @@ def getselected_usernames(rescan=False, reset=False):
     # username list will be retrived every time resFet==True
     global ALL_SUBS
     global PARSED_SUBS
-    if reset == True and rescan == True:
+    if reset is True and rescan is True:
         all_subs_helper()
         parsed_subscriptions_helper(reset=True)
     elif reset is True and PARSED_SUBS:
@@ -76,7 +76,7 @@ def getselected_usernames(rescan=False, reset=False):
             parsed_subscriptions_helper()
         elif prompt == "Selection_Strict":
             parsed_subscriptions_helper(reset=True)
-    elif rescan == True:
+    elif rescan is True:
         all_subs_helper()
         parsed_subscriptions_helper()
     else:
@@ -132,7 +132,7 @@ def parsed_subscriptions_helper(reset=False):
     global ALL_SUBS
     global PARSED_SUBS
     args = read_args.retriveArgs()
-    if reset == True:
+    if reset is True:
         args.usernames = None
         write_args.setArgs(args)
     if not bool(args.usernames):

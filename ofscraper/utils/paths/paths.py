@@ -51,10 +51,10 @@ def temp_cleanup():
             ]
         )
         for ele in roots:
-            if ele == None:
+            if ele is None:
                 continue
             for file in filter(
-                lambda x: re.search("\.part$|^temp_", str(x)) != None,
+                lambda x: re.search("\.part$|^temp_", str(x)) is not None,
                 pathlib.Path(ele).glob("**/*"),
             ):
                 file.unlink(missing_ok=True)

@@ -11,13 +11,6 @@ r"""
                                                                                       
 """
 
-import copy
-import json
-import logging
-import os
-import re
-import sys
-
 r"""
                                                              
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
@@ -30,19 +23,12 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-import copy
-import json
-import logging
-import os
-import re
-import sys
 
 from InquirerPy.validator import EmptyInputValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-import ofscraper.utils.config.data as data
 import ofscraper.utils.settings as settings
 
 

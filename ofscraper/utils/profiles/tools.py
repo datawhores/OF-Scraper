@@ -14,7 +14,6 @@ r"""
 import logging
 import re
 
-from rich import print
 from rich.console import Console
 
 import ofscraper.utils.profiles.data as profile_data

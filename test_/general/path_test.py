@@ -280,7 +280,7 @@ def test_mac_truncate_255(mocker):
         with check:
             assert (pathlib.Path(long_path).parent) == truncated.parent
         with check:
-            assert (re.search(f"{suffix}$", str(truncated.name))) != None
+            assert (re.search(f"{suffix}$", str(truncated.name))) is not None
 
 
 def test_user_data_dc_db_str(mocker):

@@ -4,7 +4,6 @@ import re
 import subprocess
 import time
 import traceback
-from contextlib import contextmanager
 
 import ofscraper.utils.console as console_
 
@@ -28,8 +27,8 @@ def mp4decryptexecutecheck(x):
     try:
         t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if (
-            re.search("mp4decrypt", t.stdout.decode()) != None
-            or re.search("mp4decrypt", t.stderr.decode()) != None
+            re.search("mp4decrypt", t.stdout.decode()) is not None
+            or re.search("mp4decrypt", t.stderr.decode()) is not None
         ):
             return True
     except Exception as E:
@@ -55,8 +54,8 @@ def ffmpegexecutecheck(x):
     try:
         t = subprocess.run([x], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if (
-            re.search("ffmpeg", t.stdout.decode()) != None
-            or re.search("ffmpeg", t.stderr.decode()) != None
+            re.search("ffmpeg", t.stdout.decode()) is not None
+            or re.search("ffmpeg", t.stderr.decode()) is not None
         ):
             return True
     except Exception as E:

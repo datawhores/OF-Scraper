@@ -12,7 +12,6 @@ import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.utils.context.run_async import run
 
 
 async def get_text(values):
@@ -30,8 +29,8 @@ async def get_text(values):
             result = await task
             results.append(result)
         return (
-            len(list(filter(lambda x: x == True, results))),
-            len(list(filter(lambda x: x == False, results))),
+            len(list(filter(lambda x: x is True, results))),
+            len(list(filter(lambda x: x is False, results))),
             len(list(filter(lambda x: x == "exists", results))),
         )
 
@@ -41,7 +40,7 @@ async def get_text_process(ele, dupe=None):
     try:
         if "Text" not in settings.get_mediatypes():
             return
-        elif bool(ele.text) == False:
+        elif bool(ele.text) is False:
             return
         # make new text mediatype
         new_ele = copy.deepcopy(ele)

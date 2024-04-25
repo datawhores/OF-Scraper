@@ -42,7 +42,7 @@ class StringField(Horizontal):
             placeholder=f"{self.filter_name.capitalize()} Search",
             id=f"{self.filter_name}_search",
         )
-        yield Checkbox(f"FullString", False, id="fullstring_search")
+        yield Checkbox("FullString", False, id="fullstring_search")
 
     def on_mount(self):
         self.styles.height = "auto"
@@ -60,7 +60,7 @@ class StringField(Horizontal):
         self.query_one(Input).value = ""
 
     def validate(self, val):
-        if self.query_one(Input).value == "" or self.query_one(Input).value == None:
+        if self.query_one(Input).value == "" or self.query_one(Input).value is None:
             return True
         elif self.query_one(Checkbox).value and re.fullmatch(
             self.query_one(Input).value,
@@ -374,8 +374,8 @@ class BoolField(Horizontal):
 
     def empty(self):
         return (
-            self.query(Checkbox)[0].value == False
-            and self.query(Checkbox)[1].value == False
+            self.query(Checkbox)[0].value is False
+            and self.query(Checkbox)[1].value is False
         )
 
     def reset(self):
@@ -383,9 +383,9 @@ class BoolField(Horizontal):
             ele.value = True
 
     def validate(self, val):
-        if val == True and not self.query_one(f"#{self.filter_name}_search").value:
+        if val is True and not self.query_one(f"#{self.filter_name}_search").value:
             return False
-        elif val == False and not self.query_one(f"#{self.filter_name}_search2").value:
+        elif val is False and not self.query_one(f"#{self.filter_name}_search2").value:
             return False
 
         return True
@@ -408,9 +408,9 @@ class MediaField(Horizontal):
 
     def empty(self):
         return (
-            self.query(Checkbox)[0].value == False
-            and self.query(Checkbox)[1].value == False
-            and self.query(Checkbox)[2].value == False
+            self.query(Checkbox)[0].value is False
+            and self.query(Checkbox)[1].value is False
+            and self.query(Checkbox)[2].value is False
         )
 
     def update_table_val(self, val):
@@ -451,8 +451,8 @@ class DateField(Horizontal):
         self.filter_name = name
 
     def compose(self):
-        yield Input(placeholder="Earliest Date", id=f"minDate")
-        yield Input(placeholder="Latest Date", id=f"maxDate")
+        yield Input(placeholder="Earliest Date", id="minDate")
+        yield Input(placeholder="Latest Date", id="maxDate")
 
     def empty(self):
         return self.query(Input)[0].value == "" and self.query(Input)[1].value == ""
@@ -729,7 +729,7 @@ class InputApp(App):
 
     def sort_helper(self, label=None):
         # to allow sorting after submit
-        if label == None:
+        if label is None:
             return
 
         elif label == "Download Cart":
@@ -769,7 +769,7 @@ class InputApp(App):
             elif label == "Downloaded":
                 self._filtered_rows = sorted(
                     self._filtered_rows,
-                    key=lambda x: 1 if x[index] == True else 0,
+                    key=lambda x: 1 if x[index] is True else 0,
                     reverse=self.reverse,
                 )
                 self.make_table()
@@ -777,14 +777,14 @@ class InputApp(App):
             elif label == "Unlocked":
                 self._filtered_rows = sorted(
                     self._filtered_rows,
-                    key=lambda x: 1 if x[index] == True else 0,
+                    key=lambda x: 1 if x[index] is True else 0,
                     reverse=self.reverse,
                 )
                 self.make_table()
             elif label == "Times Detected":
                 self._filtered_rows = sorted(
                     self._filtered_rows,
-                    key=lambda x: 1 if x[index] == True else 0,
+                    key=lambda x: 1 if x[index] is True else 0,
                     reverse=self.reverse,
                 )
                 self.make_table()
@@ -879,7 +879,7 @@ class InputApp(App):
             self.cart_toggle = Text("[added]")
 
     def set_filtered_rows(self, reset=False):
-        if reset == True:
+        if reset is True:
             self._filtered_rows = self.table_data[1:]
             self.reset_cart()
         else:
@@ -891,7 +891,7 @@ class InputApp(App):
                         continue
                     filter_rows = list(
                         filter(
-                            lambda x: targetNode.validate(x[count + 1]) == True,
+                            lambda x: targetNode.validate(x[count + 1]) is True,
                             filter_rows,
                         )
                     )

@@ -14,7 +14,7 @@ class base:
 
     def text_trunicate(self, text):
         text = str(text)
-        if text == None:
+        if text is None:
             return "None"
         if len(text) == 0:
             return text

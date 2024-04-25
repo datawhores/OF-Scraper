@@ -1,9 +1,6 @@
 import pathlib
 import tempfile
 
-import pytest
-
-from ofscraper.classes.media import Media
 from ofscraper.classes.posts import Post
 from ofscraper.const.test_constants import *
 from ofscraper.db.operations import *

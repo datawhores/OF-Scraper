@@ -49,7 +49,7 @@ def test_archived_timeline():
     username = "test"
     model_id = TEST_ID
     t = Post(TIMELINE_EXAMPLE, model_id, username)
-    assert (t.archived) == False
+    assert (t.archived) is False
 
 
 def test_text_timeline():
@@ -107,7 +107,7 @@ def test_paid_timeline():
     username = "test"
     model_id = TEST_ID
     t = Post(TIMELINE_EXAMPLE, model_id, username)
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_timeline():
@@ -129,7 +129,7 @@ def test_mediacanview_timeline():
     model_id = TEST_ID
     t = Post(TIMELINE_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_timeline():
@@ -137,7 +137,7 @@ def test_mediaclass_timeline():
     model_id = TEST_ID
     t = Post(TIMELINE_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -170,7 +170,7 @@ def test_mediaurl_timeline():
     t = Post(TIMELINE_EXAMPLE, model_id, username)
     mediaDict = TIMELINE_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (re.search("http", media.url)) != None
+    assert (re.search("http", media.url)) is not None
 
 
 def test_mediapost_timeline():
@@ -231,7 +231,7 @@ def test_medialinked_timeline():
     t = Post(TIMELINE_EXAMPLE, model_id, username)
     mediaDict = TIMELINE_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_timeline():

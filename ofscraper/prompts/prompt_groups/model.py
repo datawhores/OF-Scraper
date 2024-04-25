@@ -87,7 +87,7 @@ def modify_subtype_prompt(args):
                 "default": (
                     True
                     if read_args.retriveArgs().renewal
-                    else False if read_args.retriveArgs().renewal == False else None
+                    else False if read_args.retriveArgs().renewal is False else None
                 ),
                 "message": "Filter account by whether it has a renewal date",
                 "choices": [
@@ -102,7 +102,7 @@ def modify_subtype_prompt(args):
                 "default": (
                     True
                     if read_args.retriveArgs().sub_status
-                    else False if read_args.retriveArgs().sub_status == False else None
+                    else False if read_args.retriveArgs().sub_status is False else None
                 ),
                 "message": "Filter accounts based on access to content via a subscription",
                 "choices": [
@@ -189,9 +189,9 @@ def modify_active_prompt(args):
 def modify_promo_prompt(args):
     answer = {}
     if (
-        args.current_price != None
-        or args.promo_price != None
-        or args.regular_price != None
+        args.current_price is not None
+        or args.promo_price is not None
+        or args.regular_price is not None
     ):
         console.print(
             inspect.cleandoc(
@@ -208,8 +208,8 @@ def modify_promo_prompt(args):
                 "name": "free-trial",
                 "default": (
                     True
-                    if read_args.retriveArgs().free_trial == True
-                    else False if read_args.retriveArgs().free_trial == False else None
+                    if read_args.retriveArgs().free_trial is True
+                    else False if read_args.retriveArgs().free_trial is False else None
                 ),
                 "message": "Filter Accounts By whether the account is a free trial",
                 "choices": [
@@ -236,7 +236,7 @@ def modify_promo_prompt(args):
                     "default": (
                         True
                         if read_args.retriveArgs().promo
-                        else False if read_args.retriveArgs().promo == False else None
+                        else False if read_args.retriveArgs().promo is False else None
                     ),
                     "choices": [
                         Choice({"all_promo": True, "promo": True}, "Any Promo"),
@@ -279,7 +279,7 @@ def modify_promo_prompt(args):
                         if vars(read_args.retriveArgs())[promo_type]
                         else (
                             False
-                            if vars(read_args.retriveArgs())[promo_type] == False
+                            if vars(read_args.retriveArgs())[promo_type] is False
                             else None
                         )
                     ),
@@ -311,7 +311,7 @@ def modify_prices_prompt(args):
             """
             )
         )
-    elif args.free_trial == False:
+    elif args.free_trial is False:
         console.print(
             inspect.cleandoc(
                 """
@@ -370,7 +370,7 @@ def modify_sort_prompt(args):
                 "type": "list",
                 "name": "type",
                 "message": "Sort Accounts by..",
-                "default": args.desc == False,
+                "default": args.desc is False,
                 "choices": [
                     Choice("name", "By Name"),
                     Choice("subscribed", "Subscribed Date"),
@@ -398,7 +398,7 @@ def modify_sort_prompt(args):
     )
 
     args.sort = answer["type"]
-    args.desc = answer["order"] == False
+    args.desc = answer["order"] is False
     return args
 
 

@@ -14,7 +14,6 @@ r"""
 import hashlib
 import json
 import time
-from contextlib import contextmanager
 from urllib.parse import urlparse
 
 import ofscraper.classes.sessionmanager as sessionManager

@@ -1,7 +1,5 @@
 import logging
 
-from humanfriendly import parse_size
-
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.config.context as config_context

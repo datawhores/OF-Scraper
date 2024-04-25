@@ -19,7 +19,6 @@ from rich.console import Console
 
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 console = Console()

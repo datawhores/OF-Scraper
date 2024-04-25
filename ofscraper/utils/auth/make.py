@@ -1,8 +1,5 @@
 import json
-import logging
 import re
-from contextlib import contextmanager
-from urllib.parse import urlparse
 
 from rich.console import Console
 

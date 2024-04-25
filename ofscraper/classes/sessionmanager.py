@@ -26,10 +26,12 @@ class SessionSleep:
 
     def toomany_req(self):
 
-        if arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
-            return self._sleep
+        if self._last_date is None:
+            self._sleep = constants.getattr("SESSION_SLEEP_INIT")
         elif self._sleep is None:
             self._sleep = constants.getattr("SESSION_SLEEP_INIT")
+        elif arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
+            return self._sleep
         else:
             self._sleep = self._sleep * 2
         self._last_date = arrow.now()

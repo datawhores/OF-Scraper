@@ -25,9 +25,9 @@ def addtraceback():
 
     logging.addLevelName(level, "TRACEBACK_")
     logging.TRACEBACK_ = level
-    setattr(logging, "TRACEBACK_", level)
-    setattr(logging.getLoggerClass(), "traceback_", logForLevel(level))
-    setattr(logging, "traceback_", logToRoot(level))
+    logging.TRACEBACK_ = level
+    logging.getLoggerClass().traceback_ = logForLevel(level)
+    logging.traceback_ = logToRoot(level)
 
 
 def addtrace():
@@ -35,9 +35,9 @@ def addtrace():
 
     logging.addLevelName(level, "TRACE")
     logging.TRACE = level
-    setattr(logging, "TRACE", level)
-    setattr(logging.getLoggerClass(), "trace", logForLevel(level))
-    setattr(logging, "trace", logToRoot(level))
+    logging.TRACE = level
+    logging.getLoggerClass().trace = logForLevel(level)
+    logging.trace = logToRoot(level)
 
 
 def updateSenstiveDict(word, replacement):

@@ -4,7 +4,6 @@ import tempfile
 from pytest_check import check
 
 import ofscraper.config.config as config_
-import ofscraper.config.data as data
 import ofscraper.utils.paths.paths as paths_
 from ofscraper.config.config import *
 from ofscraper.config.data import *

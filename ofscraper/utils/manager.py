@@ -1,5 +1,3 @@
-import asyncio
-
 import multiprocess
 
 manager = None
@@ -26,7 +24,7 @@ def shutdown():
     global manager
     if manager:
         manager.shutdown()
-        manager == None
+        manager is None
 
 
 def update_dict(new_dict):

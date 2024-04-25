@@ -68,7 +68,7 @@ def process_download_cart():
             continue
         try:
             process_item()
-        except Exception as E:
+        except Exception:
             # handle getting new downloads
             None
 
@@ -112,7 +112,7 @@ def process_item():
                 operations.table_init_create(model_id=model_id, username=username)
                 textDownloader(post, username=username)
                 values = downloadnormal.process_dicts(username, model_id, [media])
-                if values == None or values[-1] == 1:
+                if values is None or values[-1] == 1:
                     raise Exception("Download is marked as skipped")
             else:
                 raise Exception("Issue getting download")
@@ -607,7 +607,7 @@ async def get_paid_ids(model_id, user_name):
                 expire=constants.getattr("THREE_DAY_SECONDS"),
             )
     media = await process_post_media(user_name, model_id, paid)
-    media = list(filter(lambda x: x.canview == True, media))
+    media = list(filter(lambda x: x.canview is True, media))
     return list(map(lambda x: x.id, media))
 
 
@@ -691,8 +691,8 @@ async def row_gather(username, model_id, paid=False):
                 checkmarkhelper(ele),
                 username,
                 ele.id in downloaded
-                or cache.get(ele.postid) != None
-                or cache.get(ele.filename) != None,
+                or cache.get(ele.postid) is not None
+                or cache.get(ele.filename) is not None,
                 unlocked_helper(ele),
                 times_helper(ele, mediadict, downloaded),
                 ele.numeric_duration,

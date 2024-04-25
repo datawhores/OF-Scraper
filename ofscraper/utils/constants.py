@@ -8,7 +8,7 @@ custom=None
 def getattr(val):
     global custom
     #can not be overwritten cause of infinite loop
-    if custom ==None:
+    if custom is None:
         try:
             custom=custom_.get_custom()
         except Exception as E:

@@ -1,5 +1,4 @@
 import logging
-from contextlib import contextmanager
 
 import ofscraper.actions.process as process_actions
 import ofscraper.models.selector as userselector
@@ -28,7 +27,7 @@ def get_count():
 
 def main_menu_action():
     global count
-    log.debug(f"[bold blue] Running Prompt Menu Mode[/bold blue]")
+    log.debug("[bold blue] Running Prompt Menu Mode[/bold blue]")
     while True:
         result_main_prompt = prompts.main_prompt()
         if result_main_prompt == "action":

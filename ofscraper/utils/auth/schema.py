@@ -20,7 +20,7 @@ def auth_key_missing(auth):
         "auth_id",
         "sess",
     ]:
-        if auth.get(key) == None:
+        if auth.get(key) is None:
             return True
     return False
 
@@ -29,6 +29,6 @@ def auth_key_null(auth):
     if "auth" in auth:
         auth = auth["auth"]
     for key in ["x-bc", "user_agent", "auth_id", "sess"]:
-        if auth.get(key) == None or auth.get(key) == "":
+        if auth.get(key) is None or auth.get(key) == "":
             return True
     return False

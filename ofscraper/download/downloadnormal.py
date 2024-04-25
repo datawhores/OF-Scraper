@@ -15,7 +15,6 @@ import asyncio
 import logging
 import traceback
 
-from humanfriendly import format_size
 from rich.live import Live
 
 import ofscraper.download.shared.globals as common_globals

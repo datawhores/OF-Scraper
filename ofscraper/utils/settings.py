@@ -17,31 +17,31 @@ def get_key_mode():
 
 def get_userlist(as_list=False):
     out = read_args.retriveArgs().user_list or config_data.get_default_userlist()
-    if isinstance(out, str) and as_list == True:
+    if isinstance(out, str) and as_list is True:
         out = out.split(",")
         return set(map(lambda x: x.lower().strip(), out))
-    elif as_list == True:
+    elif as_list is True:
         out = set(map(lambda x: x.lower().strip(), out))
         return out
-    elif isinstance(out, list) and as_list == False:
+    elif isinstance(out, list) and as_list is False:
         out = set(map(lambda x: x.lower().strip(), out))
         return out.join(",")
-    elif as_list == False:
+    elif as_list is False:
         return out
 
 
 def get_blacklist(as_list=False):
     out = read_args.retriveArgs().black_list or config_data.get_default_blacklist()
-    if isinstance(out, str) and as_list == True:
+    if isinstance(out, str) and as_list is True:
         out = out.split(",")
         return set(map(lambda x: x.lower().strip(), out))
-    elif as_list == True:
+    elif as_list is True:
         out = set(map(lambda x: x.lower().strip(), out))
         return out
-    elif isinstance(out, list) and as_list == False:
+    elif isinstance(out, list) and as_list is False:
         out = set(map(lambda x: x.lower().strip(), out))
         return out.join(",")
-    elif as_list == False:
+    elif as_list is False:
         out = set(map(lambda x: x.lower().strip(), out))
         return out
 
@@ -50,7 +50,7 @@ def get_trunication(mediatype=None):
     return (
         read_args.retriveArgs().original
         or not config_data.get_truncation(mediatype=mediatype)
-    ) == False
+    ) is False
 
 
 def get_cache_disabled():
@@ -105,7 +105,7 @@ def get_auto_resume(mediatype=None):
         or not config_data.get_part_file_clean(mediatype=mediatype)
         or False
     )
-    return remove_file == False
+    return remove_file is False
 
 
 def get_discord():

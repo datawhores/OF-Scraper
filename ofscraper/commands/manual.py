@@ -182,7 +182,7 @@ def unknown_type_helper(postid):
 
 
 def get_post_item(model_id, value, responsetype=None):
-    if value == None:
+    if value is None:
         return []
     user_name = profile.scrape_profile(model_id)["username"]
     post = posts_.Post(value, model_id, user_name, responsetype=responsetype)
@@ -192,7 +192,7 @@ def get_post_item(model_id, value, responsetype=None):
 def get_all_media(posts_id, model_id, value, responsetype=None):
     value = value or {}
     media = []
-    if model_id == None:
+    if model_id is None:
         return {}
     user_name = profile.scrape_profile(model_id)["username"]
     post_item = posts_.Post(value, model_id, user_name, responsetype=responsetype)

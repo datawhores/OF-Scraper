@@ -412,7 +412,7 @@ async def scrape_messages(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-        (job_progress.remove_task(task) if job_progress and task != None else None)
+        (job_progress.remove_task(task) if job_progress and task is not None else None)
 
 
 def get_individual_post(model_id, postid):
@@ -431,7 +431,7 @@ def get_individual_post(model_id, postid):
 
 
 async def get_after(model_id, username, forced_after=None):
-    if forced_after != None:
+    if forced_after is not None:
         return forced_after
     elif not settings.get_after_enabled():
         return 0

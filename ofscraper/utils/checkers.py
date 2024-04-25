@@ -1,5 +1,4 @@
 import logging
-from contextlib import contextmanager
 
 import ofscraper.api.init as init
 import ofscraper.utils.auth.file as auth_file

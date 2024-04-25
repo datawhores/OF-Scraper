@@ -101,7 +101,7 @@ def parse_profile(profile: dict) -> tuple:
     media.append(profile.get("avatar"))
     media.append(profile.get("header"))
     media.append(profile.get("profile"))
-    media = list(filter(lambda x: x != None, media))
+    media = list(filter(lambda x: x is not None, media))
 
     output = []
     for ele in media:

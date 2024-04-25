@@ -15,7 +15,6 @@ import logging
 import os
 import platform
 import traceback
-from contextlib import contextmanager
 
 import ofscraper.actions.process as process_actions
 import ofscraper.prompts.prompts as prompts
@@ -34,7 +33,7 @@ log = logging.getLogger("shared")
 
 
 def process_selected_areas():
-    log.debug(f"[bold blue] Running Action Mode [/bold blue]")
+    log.debug("[bold blue] Running Action Mode [/bold blue]")
     functs = process_actions.add_selected_areas()
     run.run_helper(*functs)
     while True:

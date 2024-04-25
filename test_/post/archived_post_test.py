@@ -49,7 +49,7 @@ def test_archived_archived():
     username = "test"
     model_id = TEST_ID
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
-    assert (t.archived) == True
+    assert (t.archived) is True
 
 
 def test_text_archived():
@@ -107,7 +107,7 @@ def test_paid_archived():
     username = "test"
     model_id = TEST_ID
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_archived():
@@ -129,7 +129,7 @@ def test_mediacanview_archived():
     model_id = TEST_ID
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_archived():
@@ -137,7 +137,7 @@ def test_mediaclass_archived():
     model_id = TEST_ID
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -170,7 +170,7 @@ def test_mediaurl_archived():
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
     mediaDict = ARCHIVED_POST_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (re.search("http", media.url)) != None
+    assert (re.search("http", media.url)) is not None
 
 
 def test_mediapost_archived():
@@ -231,7 +231,7 @@ def test_medialinked_archived():
     t = Post(ARCHIVED_POST_EXAMPLE, model_id, username)
     mediaDict = ARCHIVED_POST_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_archived():

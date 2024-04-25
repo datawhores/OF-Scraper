@@ -4,7 +4,7 @@ import ofscraper.utils.config.file as config_file
 
 
 def get_custom(config=None):
-    if config == False:
+    if config is False:
         return None
     config = config or config_file.open_config()
     value = (

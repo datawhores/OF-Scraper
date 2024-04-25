@@ -49,7 +49,7 @@ def test_archived_paid():
     username = "test"
     model_id = TEST_ID
     t = Post(PAID_EXAMPLE, model_id, username)
-    assert (t.archived) == False
+    assert (t.archived) is False
 
 
 def test_text_paid():
@@ -105,7 +105,7 @@ def test_paid_paid():
     username = "test"
     model_id = TEST_ID
     t = Post(PAID_EXAMPLE, model_id, username)
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_paid():
@@ -127,7 +127,7 @@ def test_mediacanview_paid():
     model_id = TEST_ID
     t = Post(PAID_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_paid():
@@ -135,7 +135,7 @@ def test_mediaclass_paid():
     model_id = TEST_ID
     t = Post(PAID_EXAMPLE, model_id, username)
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -168,7 +168,7 @@ def test_mediaurl_paid():
     t = Post(PAID_EXAMPLE, model_id, username)
     mediaDict = PAID_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (re.search("http", media.url)) != None
+    assert (re.search("http", media.url)) is not None
 
 
 def test_mediapost_paid():
@@ -218,7 +218,7 @@ def test_mediapreview_paid():
     t = Post(PAID_EXAMPLE, model_id, username)
     mediaDict = PAID_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (PAID_EXAMPLE.get("preview")) == None
+    assert (PAID_EXAMPLE.get("preview")) is None
     assert (media.preview) == 0
 
 
@@ -229,7 +229,7 @@ def test_medialinked_paid():
     t = Post(PAID_EXAMPLE, model_id, username)
     mediaDict = PAID_EXAMPLE["media"][index]
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_paid():

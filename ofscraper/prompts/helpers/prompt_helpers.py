@@ -231,9 +231,9 @@ def get_current_filters(prompt_):
             f"""
 ========================================================================================================================================
 
-subscription => [bold blue]{'active' if read_args.retriveArgs().sub_status else 'expired' if read_args.retriveArgs().sub_status==False else 'expired and active'}[/bold blue]
+subscription => [bold blue]{'active' if read_args.retriveArgs().sub_status else 'expired' if read_args.retriveArgs().sub_status is False else 'expired and active'}[/bold blue]
 ---------------------------------------------------------------------------------------
-renew => [bold blue]{'renew on' if read_args.retriveArgs().renewal else 'renew off' if read_args.retriveArgs().renewal==False else 'renew on/off'}[/bold blue]
+renew => [bold blue]{'renew on' if read_args.retriveArgs().renewal else 'renew off' if read_args.retriveArgs().renewal is False else 'renew on/off'}[/bold blue]
 ==========================================================================================================================================
 
 user-list in use=> [bold blue]{settings.get_userlist() or 'no userlist'}[/bold blue]
@@ -241,9 +241,9 @@ user-list in use=> [bold blue]{settings.get_userlist() or 'no userlist'}[/bold b
 black-list in use=> [bold blue]{settings.get_blacklist() or 'no blacklist'}[/bold blue]
 ==========================================================================================================================================
 
-promo status => [bold blue]{'promo on' if read_args.retriveArgs().promo else 'promo off' if read_args.retriveArgs().promo==False else 'promo off/on'}[/bold blue]
+promo status => [bold blue]{'promo on' if read_args.retriveArgs().promo else 'promo off' if read_args.retriveArgs().promo is False else 'promo off/on'}[/bold blue]
 ---------------------------------------------------------------------------------------
-all promo status => [bold blue]{'all promo on' if read_args.retriveArgs().all_promo else 'all promo off' if read_args.retriveArgs().all_promo==False else 'all promo off/on'}[/bold blue]
+all promo status => [bold blue]{'all promo on' if read_args.retriveArgs().all_promo else 'all promo off' if read_args.retriveArgs().all_promo is False else 'all promo off/on'}[/bold blue]
 ==========================================================================================================================================
 
 last-seen => [bold blue]{read_args.retriveArgs().last_seen}[/bold blue]

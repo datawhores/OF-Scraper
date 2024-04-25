@@ -49,7 +49,7 @@ def test_archived_highlights():
     username = "test"
     model_id = TEST_ID
     t = Post(HIGHLIGHT_EXAMPLE, model_id, username, "highlights")
-    assert (t.archived) == False
+    assert (t.archived) is False
 
 
 def test_text_highlights():
@@ -107,7 +107,7 @@ def test_paid_highlights():
     username = "test"
     model_id = TEST_ID
     t = Post(HIGHLIGHT_EXAMPLE["stories"][0], model_id, username, "highlights")
-    assert (t.paid) == True
+    assert (t.paid) is True
 
 
 def test_fromuser_highlights():
@@ -129,7 +129,7 @@ def test_mediacanview_highlights():
     model_id = TEST_ID
     t = Post(HIGHLIGHT_EXAMPLE, model_id, username, "highlights")
     for ele in t.media:
-        assert (ele.canview) == True
+        assert (ele.canview) is True
 
 
 def test_mediaclass_highlights():
@@ -137,7 +137,7 @@ def test_mediaclass_highlights():
     model_id = TEST_ID
     t = Post(HIGHLIGHT_EXAMPLE, model_id, username, "highlights")
     for ele in t.media:
-        assert (isinstance(ele, Media)) == True
+        assert (isinstance(ele, Media)) is True
 
 
 # Media Test
@@ -167,7 +167,7 @@ def test_mediaurl_highlights():
     username = "test"
     model_id = TEST_ID
     t = Post(HIGHLIGHT_EXAMPLE["stories"][0], model_id, username, "highlights")
-    assert (re.search("http", t.media[0].url)) != None
+    assert (re.search("http", t.media[0].url)) is not None
 
 
 def test_mediapost_highlights():
@@ -217,7 +217,7 @@ def test_mediapreview_highlights():
     t = Post(HIGHLIGHT_EXAMPLE, model_id, username, "highlights")
     mediaDict = {"url": HIGHLIGHT_EXAMPLE["cover"]}
     media = Media(mediaDict, index, t)
-    assert (HIGHLIGHT_EXAMPLE.get("preview")) == None
+    assert (HIGHLIGHT_EXAMPLE.get("preview")) is None
     assert (media.preview) == 0
 
 
@@ -228,7 +228,7 @@ def test_medialinked_highlights():
     t = Post(HIGHLIGHT_EXAMPLE, model_id, username, "highlights")
     mediaDict = {"url": HIGHLIGHT_EXAMPLE["cover"]}
     media = Media(mediaDict, index, t)
-    assert (media.linked) == None
+    assert (media.linked) is None
 
 
 def test_mediamedia_highlights():

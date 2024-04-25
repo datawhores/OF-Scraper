@@ -20,7 +20,7 @@ def separate_by_id(data: list, media_ids: list) -> list:
 
 
 def seperate_avatars(data):
-    return list(filter(lambda x: seperate_avatar_helper(x) == False, data))
+    return list(filter(lambda x: seperate_avatar_helper(x) is False, data))
 
 
 def seperate_avatar_helper(ele):

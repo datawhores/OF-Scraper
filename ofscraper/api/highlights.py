@@ -369,7 +369,7 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task != None else None)
+        (job_progress.remove_task(task) if job_progress and task is not None else None)
 
     return data, new_tasks
 
@@ -403,7 +403,7 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task != None else None)
+        (job_progress.remove_task(task) if job_progress and task is not None else None)
 
     return resp_data["stories"], new_tasks
 
@@ -415,7 +415,7 @@ def get_highlightList(data):
                 list(
                     filter(
                         lambda x: isinstance(x.get("id"), int)
-                        and data.get("hasMore") != None,
+                        and data.get("hasMore") is not None,
                         ele,
                     )
                 )

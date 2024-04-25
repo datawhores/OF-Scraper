@@ -15,7 +15,7 @@ import ofscraper.utils.system.system as system
 def main():
     try:
         main_helper()
-    except KeyboardInterrupt as E:
+    except KeyboardInterrupt:
         console.get_shared_console().print("handling force closing of script")
         try:
             with exit_context.DelayedKeyboardInterrupt():

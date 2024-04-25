@@ -18,7 +18,7 @@ fileHashes = {}
 def get_hash(file_data, mediatype=None):
     global fileHashes
     hash = None
-    if config_data.get_hash(mediatype=mediatype) == None:
+    if config_data.get_hash(mediatype=mediatype) is None:
         return
     if isinstance(file_data, placeholder.Placeholders):
         file_data = file_data.trunicated_filepath

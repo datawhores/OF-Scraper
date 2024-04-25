@@ -161,7 +161,7 @@ class Post(base.base):
             media = map(
                 lambda x: Media.Media(x[1], x[0], self), enumerate(self.post_media)
             )
-            return list(filter(lambda x: x.canview == True, media))
+            return list(filter(lambda x: x.canview is True, media))
 
     # media object array for all media
     @property
@@ -174,7 +174,7 @@ class Post(base.base):
     def expires(self):
         return (
             self._post.get("expiredAt", {}) or self._post.get("expiresAt", None)
-        ) != None
+        ) is not None
 
     @property
     def mass(self):
@@ -198,7 +198,7 @@ class Post(base.base):
 
             if response == "":
                 return self.responsetype.capitalize()
-            elif response == None:
+            elif response is None:
                 return self.responsetype.capitalize()
             elif response != "":
                 return response.capitalize()

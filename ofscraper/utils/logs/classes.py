@@ -138,8 +138,8 @@ class DiscordHandler(logging.Handler):
                         },
                     ) as _:
                         pass
-                except Exception as E:
-                    None
+                except Exception:
+                    pass
 
     def emit(self, record):
         if isinstance(record, str):
@@ -163,13 +163,13 @@ class DiscordHandler(logging.Handler):
                         if not r.status == 204:
                             raise Exception
                 except Exception:
-                    None
+                    pass
 
         log_entry = self.format(record)
         url = data.get_discord()
         log_entry = re.sub("\[bold\]|\[/bold\]", "**", log_entry)
         log_entry = f"{log_entry}\n\n"
-        if url == None or url == "":
+        if url is None or url == "":
             return
 
         inner(self.sess)
@@ -182,7 +182,7 @@ class TextHandler(logging.Handler):
 
     def emit(self, record):
         # only emit after widget is set
-        if self._widget == None:
+        if self._widget is None:
             return
         log_entry = self.format(record)
         log_entry = f"{log_entry}"

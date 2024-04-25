@@ -4,7 +4,7 @@ from ofscraper.const.test_constants import *
 
 def test_unlike_filter():
     unliked_only = filter_for_unfavorited(POST_ARRAY)
-    test_array = list(filter(lambda x: x.get("isFavorite") == True, unliked_only))
+    test_array = list(filter(lambda x: x.get("isFavorite") is True, unliked_only))
     assert (len(test_array)) == 0
 
 
@@ -35,7 +35,7 @@ def test_unlike_post_id():
 
 def test_like_filter():
     liked_only = filter_for_favorited(POST_ARRAY)
-    test_array = list(filter(lambda x: x.get("isFavorite") == False, liked_only))
+    test_array = list(filter(lambda x: x.get("isFavorite") is False, liked_only))
     assert (len(test_array)) == 0
 
 

@@ -4,8 +4,6 @@ import re
 
 import arrow
 
-from ofscraper.__version__ import __version__
-
 
 def check_strhelper(x):
     temp = None
@@ -173,7 +171,7 @@ def label_helper(x):
 def arrow_helper(x):
     try:
         t = arrow.get(x)
-    except arrow.parser.ParserError as E:
+    except arrow.parser.ParserError:
         try:
             x = re.sub("\\byear\\b", "years", x)
             x = re.sub("\\bday\\b", "days", x)

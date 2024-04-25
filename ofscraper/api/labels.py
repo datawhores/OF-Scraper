@@ -234,7 +234,7 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task != None else None)
+        (job_progress.remove_task(task) if job_progress and task is not None else None)
 
 
 async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
@@ -368,7 +368,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task != None else None)
+        (job_progress.remove_task(task) if job_progress and task is not None else None)
 
     return label, posts, new_tasks
 

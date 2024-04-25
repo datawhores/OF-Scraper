@@ -74,11 +74,8 @@ async def process_messages(model_id, username, c):
 
             return list(filter(lambda x: isinstance(x, media.Media), output)), messages_
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -113,11 +110,8 @@ async def process_paid_post(model_id, username, c):
                 paid_content,
             )
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -153,11 +147,8 @@ async def process_stories(model_id, username, c):
 
             return list(filter(lambda x: isinstance(x, media.Media), output)), stories
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -196,11 +187,8 @@ async def process_highlights(model_id, username, c):
                 highlights_,
             )
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -249,11 +237,8 @@ async def process_timeline_posts(model_id, username, c):
                 timeline_only_posts,
             )
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -299,11 +284,8 @@ async def process_archived_posts(model_id, username, c):
                 archived_posts,
             )
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -340,11 +322,8 @@ async def process_pinned_posts(model_id, username, c):
                 pinned_posts,
             )
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -373,11 +352,8 @@ async def process_profile(username) -> list:
                 )
             return output, posts
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @free.space_checker
@@ -474,11 +450,8 @@ async def process_labels(model_id, username, c):
                 post for ele in labelled_posts_labels for post in ele.posts
             ]
     except Exception as E:
-        try:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-        except:
-            print(E)
+        log.traceback_(E)
+        log.traceback_(traceback.format_exc())
 
 
 @run
@@ -499,8 +472,8 @@ async def process_areas(ele, model_id) -> list:
                     output.extend(medias)
             return filters.filterMedia(output), filters.filterPost(posts)
         except Exception as E:
-            print(E)
-            raise E
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
 
 
 async def process_task(model_id, username, ele):
@@ -532,7 +505,7 @@ async def process_task(model_id, username, ele):
                     tasks.append(
                         asyncio.create_task(process_pinned_posts(model_id, username, c))
                     )
-                    setattr(progress_utils.pinned_layout, "visible", True)
+                    progress_utils.pinned_layout.visible = True
                     final_post_areas.remove("Pinned")
                 elif "Timeline" in final_post_areas:
                     tasks.append(
@@ -540,7 +513,7 @@ async def process_task(model_id, username, ele):
                             process_timeline_posts(model_id, username, c)
                         )
                     )
-                    setattr(progress_utils.timeline_layout, "visible", True)
+                    progress_utils.timeline_layout.visible = True
                     final_post_areas.remove("Timeline")
                 elif "Archived" in final_post_areas:
                     tasks.append(
@@ -548,37 +521,37 @@ async def process_task(model_id, username, ele):
                             process_archived_posts(model_id, username, c)
                         )
                     )
-                    setattr(progress_utils.archived_layout, "visible", True)
+                    progress_utils.archived_layout.visible = True
                     final_post_areas.remove("Archived")
                 elif "Purchased" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_paid_post(model_id, username, c))
                     )
-                    setattr(progress_utils.paid_layout, "visible", True)
+                    progress_utils.paid_layout.visible = True
                     final_post_areas.remove("Purchased")
                 elif "Messages" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_messages(model_id, username, c))
                     )
                     final_post_areas.remove("Messages")
-                    setattr(progress_utils.messages_layout, "visible", True)
+                    progress_utils.messages_layout.visible = True
                 elif "Highlights" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_highlights(model_id, username, c))
                     )
-                    setattr(progress_utils.highlights_layout, "visible", True)
+                    progress_utils.highlights_layout.visible = True
                     final_post_areas.remove("Highlights")
                 elif "Stories" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_stories(model_id, username, c))
                     )
-                    setattr(progress_utils.stories_layout, "visible", True)
+                    progress_utils.stories_layout.visible = True
                     final_post_areas.remove("Stories")
                 elif "Labels" in final_post_areas and ele.active:
                     tasks.append(
                         asyncio.create_task(process_labels(model_id, username, c))
                     )
-                    setattr(progress_utils.labelled_layout, "visible", True)
+                    progress_utils.labelled_layout.visible = True
                     final_post_areas.remove("Labels")
             if not bool(tasks):
                 break

@@ -129,7 +129,7 @@ class databasePlaceholder(basePlaceholder):
             f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         if data.get_allow_code_execution():
-            if isinstance(customval, dict) == False:
+            if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
                 except:
@@ -277,7 +277,7 @@ class Placeholders(basePlaceholder):
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         if data.get_allow_code_execution():
-            if isinstance(customval, dict) == False:
+            if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
                 except:
@@ -320,7 +320,7 @@ class Placeholders(basePlaceholder):
         if ele.responsetype == "profile":
             out = f"{await ele.final_filename}.{ext}"
         elif data.get_allow_code_execution():
-            if isinstance(customval, dict) == False:
+            if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
                 except:
@@ -477,7 +477,7 @@ class Textholders(basePlaceholder):
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
         if data.get_allow_code_execution():
-            if isinstance(customval, dict) == False:
+            if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
                 except:
@@ -522,7 +522,7 @@ class Textholders(basePlaceholder):
             text = re.sub(" ", data.get_spacereplacer(mediatype="Text"), text)
             out = f"{text}.{ext}"
         elif data.get_allow_code_execution():
-            if isinstance(customval, dict) == False:
+            if isinstance(customval, dict) is False:
                 try:
                     custom = eval(customval)
                 except:

@@ -39,7 +39,7 @@ console = Console()
 
 def funct(prompt_):
     console.print(
-        f"""
+        """
     For more Details => https://of-scraper.gitbook.io/of-scraper/config-options
     
     [General Options]

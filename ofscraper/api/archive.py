@@ -41,7 +41,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     trace_log_old(oldarchived)
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    oldarchived = list(filter(lambda x: x is not None, oldarchived))
     after = await get_after(model_id, username, forced_after)
     after_log(username, after)
     splitArrays = get_split_array(oldarchived, after)
@@ -61,7 +61,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     trace_log_old(oldarchived)
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    oldarchived = list(filter(lambda x: x is not None, oldarchived))
     after = await get_after(model_id, username, forced_after)
     after_log(username, after)
     with progress_utils.set_up_api_archived():
@@ -138,7 +138,7 @@ def get_split_array(oldarchived, after):
         constants.getattr("MIN_PAGE_POST_COUNT"),
     )
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x != None, oldarchived))
+    oldarchived = list(filter(lambda x: x is not None, oldarchived))
     postsDataArray = sorted(oldarchived, key=lambda x: x.get("created_at"))
     filteredArray = list(filter(lambda x: x.get("created_at") >= after, postsDataArray))
 
@@ -237,7 +237,7 @@ def set_check(unduped, model_id, after):
 
 
 async def get_after(model_id, username, forced_after=None):
-    if forced_after != None:
+    if forced_after is not None:
         return forced_after
     elif not settings.get_after_enabled():
         return 0
@@ -294,7 +294,7 @@ async def scrape_archived_posts(
     try:
         task = (
             job_progress.add_task(
-                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
+                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
                 visible=True,
             )
             if job_progress

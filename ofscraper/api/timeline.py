@@ -51,7 +51,7 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     trace_log_old(oldtimeline)
 
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
-    oldtimeline = list(filter(lambda x: x != None, oldtimeline))
+    oldtimeline = list(filter(lambda x: x is not None, oldtimeline))
     after = await get_after(model_id, username, forced_after)
     after_log(username, after)
 
@@ -319,7 +319,7 @@ async def scrape_timeline_posts(
     try:
         task = (
             job_progress.add_task(
-                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}",
+                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
                 visible=True,
             )
             if job_progress
@@ -328,7 +328,7 @@ async def scrape_timeline_posts(
 
         async with c.requests_async(url=url) as r:
             posts = (await r.json_())["list"]
-            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp!=None  else 'initial'}"
+            log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
@@ -402,7 +402,7 @@ async def scrape_timeline_posts(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-        job_progress.remove_task(task) if job_progress and task != None else None
+        job_progress.remove_task(task) if job_progress and task is not None else None
 
 
 def trace_log_task(responseArray):

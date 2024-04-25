@@ -203,7 +203,7 @@ def xbc_prompt(xbc):
                 "type": "input",
                 "name": name,
                 "message": "Enter x-bc request header",
-                "instruction": f"\nGo to browser network tools to view\nFor more instructions visit https://github.com/datawhores/ofscraper\n\n",
+                "instruction": "\nGo to browser network tools to view\nFor more instructions visit https://github.com/datawhores/ofscraper\n\n",
                 "validate": EmptyInputValidator(),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
                 "default": xbc or "",

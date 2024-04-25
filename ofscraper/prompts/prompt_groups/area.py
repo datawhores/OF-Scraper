@@ -101,7 +101,7 @@ def download_areas_prompt() -> list:
                 "type": "checkbox",
                 "qmark": "[?]",
                 "name": name,
-                "message": f"Which area(s) would you to perform download actions on",
+                "message": "Which area(s) would you to perform download actions on",
                 "validate": prompt_validators.emptyListValidator(),
                 "choices": [
                     Choice("Profile"),

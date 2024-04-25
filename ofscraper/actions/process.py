@@ -47,7 +47,7 @@ def scrape_context_manager():
     # Before yield as the enter method
     start = timeit.default_timer()
     log.warning(
-        f"""
+        """
 ==============================                            
 [bold] starting script [/bold]
 ==============================
