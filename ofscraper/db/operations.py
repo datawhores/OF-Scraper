@@ -22,13 +22,13 @@ import ofscraper.classes.labels as labels
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-from ofscraper.db.operations_.labels import *
-from ofscraper.db.operations_.media import *
-from ofscraper.db.operations_.messages import *
-from ofscraper.db.operations_.others import *
-from ofscraper.db.operations_.posts import *
-from ofscraper.db.operations_.profile import *
-from ofscraper.db.operations_.stories import *
+from ofscraper.db.operations_.labels import add_column_labels_ID,create_labels_table,make_label_table_changes,modify_unique_constriant_labels
+from ofscraper.db.operations_.media import add_column_media_hash,add_column_media_ID,add_column_media_unlocked,create_media_table,add_column_media_posted_at,add_column_media_duration,modify_unique_constriant_media
+from ofscraper.db.operations_.messages import add_column_messages_ID,create_message_table,make_messages_table_changes,modify_unique_constriant_messages
+from ofscraper.db.operations_.others import add_column_other_ID,add_flag_schema,add_column_products_ID,create_products_table,create_others_table,create_schema_table,get_schema_changes,modify_unique_constriant_others,modify_unique_constriant_products
+from ofscraper.db.operations_.posts import add_column_post_ID,add_column_post_pinned,create_post_table,make_post_table_changes,modify_unique_constriant_posts
+from ofscraper.db.operations_.profile import create_models_table,create_profile_table,modify_unique_constriant_profile,write_profile_table,write_models_table
+from ofscraper.db.operations_.stories import add_column_stories_ID,create_stories_table,make_stories_table_changes,modify_unique_constriant_stories
 from ofscraper.utils.context.run_async import run
 
 console = Console()
