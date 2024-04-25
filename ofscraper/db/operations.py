@@ -127,7 +127,7 @@ def create_backup_transition(model_id=None, username=None, db_path=None, **kwarg
     if len(get_group_difference(model_id=model_id,username=username,db_path=db_path)) > 0:
         log.info("creating a backup before transition")
         backup_name = (
-            f"old_schema_{model_id}_db_backup.db"
+            f"old_schema_{model_id}_{arrow.now().float_timestamp}_db_backup.db"
             if model_id
             else "old_schema_db_backup.db"
         )
