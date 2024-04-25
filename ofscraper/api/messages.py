@@ -334,7 +334,7 @@ async def scrape_messages(
                 else None
             )
             messages = (await r.json_())["list"]
-            log_id = f"offset messageid:{message_id if message_id else 'init id'}"
+            log_id = f"offset messageid:{message_id if message_id else 'init messageid'}"
             if not bool(messages):
                 log.debug(f"{log_id} -> no messages found")
                 return [], []
