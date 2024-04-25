@@ -56,7 +56,7 @@ class SessionSleep:
         elif self._sleep is None:
             self._sleep = constants.getattr("SESSION_SLEEP_INIT")
             log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
-        elif arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
+        elif arrow.now().float_timestamp - self._last_date.float_timestamp < 30:
             log.debug(f"too many req => not changing sleep [{self._sleep} seconds] because last call less than 120 seconds")
             return self._sleep
         else:
