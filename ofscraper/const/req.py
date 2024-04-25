@@ -69,10 +69,9 @@ API_MAX_AREAS = 2
 API_TIMEOUT_PER_TASK = 500
 API_REQUEST_THREADONLY = ["Windows", "Linux", "Darwin"]
 
-SESSION_SLEEP_INIT=4
+SESSION_SLEEP_INIT=16
 # page must be 50 post, and 50 is a reasonable size for max number of pages
 REASONABLE_MAX_PAGE = 50
 MIN_PAGE_POST_COUNT = 50
 # messages
 REASONABLE_MAX_PAGE_MESSAGES = 80
-
