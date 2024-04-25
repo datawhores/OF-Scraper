@@ -262,7 +262,7 @@ class sessionManager:
             r = None
             with _:
                 sync_sem.acquire()
-                time.sleep(sleeper.sleep)
+                time.sleep(sleeper.sleep) if sleeper.sleep else None
                 try:
                     r = self._httpx_funct(
                         method,
@@ -347,7 +347,7 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
-                await asyncio.sleep(sleeper.sleep)
+                await asyncio.sleep(sleeper.sleep) if sleeper.sleep else None
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
