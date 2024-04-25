@@ -107,6 +107,7 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "labels_model_id",
         "media_posted_at",
         "media_unlocked"
+        "media_duration"
     ]
 
     groupB = [
