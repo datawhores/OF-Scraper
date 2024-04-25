@@ -1,7 +1,7 @@
 import logging
-import traceback
 import os
 import platform
+import traceback
 
 import ofscraper.runner.run as run
 import ofscraper.utils.args.read as read_args
@@ -57,7 +57,6 @@ def systemSet():
     system.set_eventloop()
     if platform.system() == "Windows":
         os.system("color")
-
 
 
 def readConfig():

@@ -1,9 +1,10 @@
 name: package builder release
+permissions: read-all
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "version"
+        description: version
         required: true
       files:
         required: true
@@ -64,7 +65,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install dunamai
         run: pip install dunamai
       - name: replace_version
@@ -229,7 +230,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -304,7 +305,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -375,7 +376,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
@@ -456,7 +457,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
@@ -582,7 +583,7 @@ jobs:
       - name: upload package
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+          artifacts: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*
           tag: "${{inputs.version}}"
           allowUpdates: True
           omitBodyDuringUpdate: True
@@ -605,7 +606,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: 🐍 Install dependencies
         run: |
           pip install poetry-dynamic-versioning
@@ -652,7 +653,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@main #v2.6.0
         with:
-          cosign-release: "v1.13.1"
+          cosign-release: v1.13.1
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
 
@@ -682,7 +683,7 @@ jobs:
         uses: sigstore/cosign-installer@v3.0.5
 
       - name: Write signing key to disk
-        run: 'echo "$KEY" > cosign.key'
+        run: echo "$KEY" > cosign.key
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -736,7 +737,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@main #v2.6.0
         with:
-          cosign-release: "v1.13.1"
+          cosign-release: v1.13.1
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
 
@@ -792,7 +793,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@main #v2.6.0
         with:
-          cosign-release: "v1.13.1"
+          cosign-release: v1.13.1
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
 
@@ -821,7 +822,7 @@ jobs:
         uses: sigstore/cosign-installer@v3.0.5
 
       - name: Write signing key to disk
-        run: 'echo "$KEY" > cosign.key'
+        run: echo "$KEY" > cosign.key
         shell: bash
         env:
           KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
@@ -876,7 +877,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@main #v2.6.0
         with:
-          cosign-release: "v1.13.1"
+          cosign-release: v1.13.1
       #Login against a Docker registry except on PR
       #https://github.com/docker/login-action
 

@@ -1,3 +1,5 @@
+# Changes
+
 Note:
 
 This doc was made around the beginning of the project

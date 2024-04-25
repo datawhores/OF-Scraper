@@ -1,6 +1,6 @@
 on:
   push:
-
+permissions: read-all
 jobs:
   get_commit:
     if: github.event_name == 'push' && !contains(github.ref, 'refs/tags/')
@@ -38,7 +38,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install dunamai
         run: pip install dunamai
       - name: print version
@@ -204,7 +204,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -279,7 +279,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:
@@ -350,7 +350,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
@@ -430,7 +430,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: create virtualenv
         run: python3 -m venv .venv
       - name: install poetry
@@ -557,7 +557,7 @@ jobs:
       - name: create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "/home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*"
+          artifacts: /home/runner/work/OF-Scraper/OF-Scraper/ofscraper_*
           tag: "${{needs.get_commit.outputs.short}}"
           name: ${{env.name}}
           body: ${{env.body}}

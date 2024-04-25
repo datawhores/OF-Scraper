@@ -14,10 +14,12 @@ You may submit tickets privately on discord
 In other cases a log and config may be helpful
 -->
 
-**Describe the bug**
+## Describe the bug
+
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+## To Reproduce
+
 Steps to reproduce the behavior:
 Hint: enter the command and args would be a good idea
 
@@ -28,18 +30,21 @@ Example
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
+## Expected behavior
+
 A clear and concise description of what you expected to happen.
 
-**Screenshots/Logs**
+## Screenshots/Logs
+
 Logs are required for any reports of any issue, unless the issue is related to setup of script
 Logs must be at least debug level
 
 Hint: Please make sure that the log formatting is readable, use a paste site
 like
-https://privatebin.io/
+[Private Bin](https://privatebin.io/)
 
-**Config**
+## Config
+
 Please provide details about your correct config
 This is required for all reports
 
@@ -48,7 +53,7 @@ Feel free to anonymize information
 - for example home directory
 - keydb api key
 
-**System Info**
+## System Info
 
 - OS: [e.g. iOS]
 - Browser [e.g. chrome, safari]
@@ -56,5 +61,6 @@ Feel free to anonymize information
 - binary or python
 - python version if installed via pip or pypi
 
-**Additional context**
+## Additional context
+
 Add any other context about the problem here.

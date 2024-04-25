@@ -1,11 +1,11 @@
 name: codecov
 on:
   push:
-    branches: "main"
+    branches: main
     # Publish semver tags as releases.
-    tags: ["v*.*.*"]
+    tags: [v*.*.*]
   pull_request:
-    branches: "main"
+    branches: main
 
 jobs:
   run:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python 3.11.5
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11.5"
+          python-version: 3.11.5
       - name: install poetry
         uses: abatilo/actions-poetry@v2
         with:

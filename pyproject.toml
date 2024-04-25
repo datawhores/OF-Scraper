@@ -27,7 +27,7 @@ diskcache = "^5.6.3"
 dunamai = "^1.19.2"
 poetry-dynamic-versioning = "^1.2.0"
 textual = "0.52.1"
-aiohttp = { extras = ["speedups"], version = "^3.8.5" }
+aiohttp = "3.9.4"
 faust-cchardet = "^2.1.19"
 certifi = "^2024.2.2"
 pycryptodome = "^3.20.0"
@@ -48,6 +48,7 @@ multiprocess = "^0.70.16"
 dill = "^0.3.8"
 cloup = "^3.0.5"
 pynumparser = "^1.4.1"
+idna = "3.7"
 
 
 [tool.poetry.group.dev.dependencies]

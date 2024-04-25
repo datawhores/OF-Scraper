@@ -1,8 +1,11 @@
-# Releases
+# ReadMe
+
+## Releases
 
 [Releases Page](https://pypi.org/project/ofscraper/#history)
 
-```
+```Text
+
 Docker and binary releases also availible
 ```
 
@@ -22,7 +25,7 @@ Docker and binary releases also availible
 </a>
 </div>
 
-# Table-of-contents
+## Table-of-contents
 
 - [Description](#description)
 - [Documentation](#documentation)
@@ -31,7 +34,7 @@ Docker and binary releases also availible
 - [Discord](#discord)
 - [Support](#support)
 
-# Description
+## Description
 
 command-line tool that lets you download media from OnlyFans and perform bulk actions including liking or unliking posts.
 
@@ -41,7 +44,7 @@ At its inception, this project emerged as a fork of the original onlyfans-scrape
 
 This script has been thoughtfully crafted to facilitate seamless transitions from DIGITALCRIMINALS' script, ensuring robust compatibility and smooth feature migration. Furthermore, it boasts an extensive array of filtering features, empowering users with precise control over the specific content types they aim to scrape
 
-# Documentation
+## Documentation
 
 For detailed instructions on:
 
@@ -61,20 +64,20 @@ For detailed instructions on:
     </li>
 </ol>
 
-# Issues
+## Issues
 
 Open a issue in this repo, or you can mention your issue in the [Discord](#discord)
 
-## Private Reports
+### Private Reports
 
 A ticket can be created in the ticket channel
 only you and admins have access to ticket discussions
 
-# Feature Requests
+## Feature Requests
 
 [ClearFlask Feedback](https://ofscraper.clearflask.com/feedback) or [Discord](#discord)
 
-# Migrating from DC script
+## Migrating from DC script
 
 To maintain compatibility with your current folders, make sure to modify the metadata option within the config file. Additionally, configure the save_path, dir_path, and filename settings to generate outputs that align with your existing setup.
 
@@ -88,11 +91,11 @@ For comprehensive guidance on making these adjustments, you can refer to the pro
 
 Ask in the discord or open an issue if you need help with what to change to accomplish this
 
-# Discord
+## Discord
 
 [Discord](https://discord.gg/wN7uxEVHRK)
 
-# Support
+## Support
 
 buymeacoffee.com/datawhores
 
