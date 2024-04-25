@@ -36,7 +36,7 @@ def config_context():
                     elif config_prompt == "reset":
                         config_file.make_config_original()
                     break
-                except Exception as E:
+                except Exception:
                     continue
             continue
         yield

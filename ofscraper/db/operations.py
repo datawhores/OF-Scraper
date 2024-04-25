@@ -26,7 +26,7 @@ from ofscraper.db.operations_.labels import (
     add_column_labels_ID,
     create_labels_table,
     make_label_table_changes,
-    modify_unique_constriant_labels
+    modify_unique_constriant_labels,
 )
 from ofscraper.db.operations_.media import (
     add_column_media_duration,
@@ -35,13 +35,13 @@ from ofscraper.db.operations_.media import (
     add_column_media_posted_at,
     add_column_media_unlocked,
     create_media_table,
-    modify_unique_constriant_media
+    modify_unique_constriant_media,
 )
 from ofscraper.db.operations_.messages import (
     add_column_messages_ID,
     create_message_table,
     make_messages_table_changes,
-    modify_unique_constriant_messages
+    modify_unique_constriant_messages,
 )
 from ofscraper.db.operations_.others import (
     add_column_other_ID,
@@ -66,13 +66,13 @@ from ofscraper.db.operations_.profile import (
     create_profile_table,
     modify_unique_constriant_profile,
     write_models_table,
-    write_profile_table
+    write_profile_table,
 )
 from ofscraper.db.operations_.stories import (
     add_column_stories_ID,
     create_stories_table,
     make_stories_table_changes,
-    modify_unique_constriant_stories
+    modify_unique_constriant_stories,
 )
 from ofscraper.utils.context.run_async import run
 

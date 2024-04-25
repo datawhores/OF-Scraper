@@ -17,7 +17,7 @@ class download_session(sessionManager.sessionManager):
         retries = retries or get_download_req_retries()
         wait_min = wait_min or constants.getattr("OF_MIN_WAIT_API")
         wait_max = wait_max or constants.getattr("OF_MAX_WAIT_API")
-        new_request_auth = new_request_auth if new_request_auth != None else True
+        new_request_auth = new_request_auth if new_request_auth is not None else True
         super().__init__(
             sem=sem,
             retries=retries,
@@ -31,5 +31,5 @@ class cdm_session(sessionManager.sessionManager):
     def __init__(self, backend=None, sem=None, new_request_auth=None) -> None:
         backend = backend or "httpx"
         sem = sem or common_globals.sem
-        new_request_auth = new_request_auth if new_request_auth != None else True
+        new_request_auth = new_request_auth if new_request_auth is not None else True
         super().__init__(sem=sem, new_request_auth=new_request_auth, backend=backend)

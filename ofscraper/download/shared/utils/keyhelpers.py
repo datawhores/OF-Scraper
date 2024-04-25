@@ -87,7 +87,7 @@ async def un_encrypt(item, c, ele, input_=None):
 async def key_helper_cdrm(c, pssh, licence_url, id):
     log.debug(f"ID:{id} using cdrm auto key helper")
     try:
-        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         headers = auth_requests.make_headers()
         headers["cookie"] = auth_requests.get_cookies()
@@ -123,7 +123,7 @@ async def key_helper_cdrm(c, pssh, licence_url, id):
 async def key_helper_cdrm2(c, pssh, licence_url, id):
     log.debug(f"ID:{id} using cdrm2 auto key helper")
     try:
-        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         headers = auth_requests.make_headers()
         headers["cookie"] = auth_requests.get_cookies()
@@ -159,7 +159,7 @@ async def key_helper_cdrm2(c, pssh, licence_url, id):
 async def key_helper_keydb(c, pssh, licence_url, id):
     log.debug(f"ID:{id} using keydb auto key helper")
     try:
-        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
         headers = auth_requests.make_headers()
         headers["cookie"] = auth_requests.get_cookies()
@@ -216,7 +216,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
 async def key_helper_manual(c, pssh, licence_url, id):
     log.debug(f"ID:{id}  manual key helper")
     try:
-        log.debug(f"ID:{id} pssh: {pssh!=None}")
+        log.debug(f"ID:{id} pssh: {pssh is not None}")
         log.debug(f"ID:{id} licence: {licence_url}")
 
         # prepare pssh

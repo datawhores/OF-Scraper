@@ -146,13 +146,13 @@ def get_post_for_like(model_id, username):
 
 
 def filter_for_unfavorited(posts: list) -> list:
-    output = list(filter(lambda x: x.favorited == False and x.opened, posts))
+    output = list(filter(lambda x: x.favorited is False and x.opened, posts))
     log.debug(f"[bold]Number of unliked post[/bold] {len(output)}")
     return output
 
 
 def filter_for_favorited(posts: list) -> list:
-    output = list(filter(lambda x: x.favorited == True and x.opened, posts))
+    output = list(filter(lambda x: x.favorited is True and x.opened, posts))
     log.debug(f"[bold]Number of liked post[/bold] {len(output)}")
     return output
 
@@ -205,7 +205,7 @@ def _like(model_id, ids: list, like_action: bool):
             for count, func in enumerate(tasks):
                 id = func()
                 log.debug(
-                    f"ID: {id} Performed {'like' if like_action==True else 'unlike'} action"
+                    f"ID: {id} Performed {'like' if like_action is True else 'unlike'} action"
                 )
                 if count + 1 % 60 == 0 and count + 1 % 50 == 0:
                     sleep_duration = 40

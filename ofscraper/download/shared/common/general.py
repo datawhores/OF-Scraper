@@ -14,13 +14,12 @@ r"""
 import asyncio
 import pathlib
 import re
-from functools import partial, singledispatch
+from functools import partial
 
 from humanfriendly import format_size
 
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.models.selector as selector
-import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
@@ -33,7 +32,6 @@ from ofscraper.download.shared.utils.log import get_medialog
 from ofscraper.download.shared.utils.media import add_path
 from ofscraper.download.shared.utils.message import send_msg, set_send_msg
 from ofscraper.download.shared.utils.progress import update_total
-from ofscraper.utils.context.run_async import run
 
 
 def add_additional_data(placeholderObj, ele):
