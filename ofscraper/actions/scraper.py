@@ -39,6 +39,10 @@ import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
+from ofscraper.db.operations_.media import batch_mediainsert
+from ofscraper.db.operations_.profile import check_profile_table_exists,get_profile_info
+
+
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -98,7 +102,7 @@ async def process_paid_post(model_id, username, c):
             [output.extend(post.all_media) for post in paid_content]
             log.debug(f"[bold]Paid media count without locked[/bold] {len(output)}")
 
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 output,
                 model_id=model_id,
                 username=username,
@@ -138,7 +142,7 @@ async def process_stories(model_id, username, c):
             )
             output = []
             [output.extend(stories.all_media) for stories in stories]
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 output,
                 model_id=model_id,
                 username=username,
@@ -175,7 +179,7 @@ async def process_highlights(model_id, username, c):
             )
             output = []
             [output.extend(stories.all_media) for stories in highlights_]
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 output,
                 model_id=model_id,
                 username=username,
@@ -222,7 +226,7 @@ async def process_timeline_posts(model_id, username, c):
             [output.extend(post.all_media) for post in timeline_only_posts]
             log.debug(f"[bold]Timeline media count without locked[/bold] {len(output)}")
 
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 output,
                 model_id=model_id,
                 username=username,
@@ -269,7 +273,7 @@ async def process_archived_posts(model_id, username, c):
             [output.extend(post.all_media) for post in archived_posts]
             log.debug(f"[bold]Archived media count without locked[/bold] {len(output)}")
 
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 output,
                 model_id=model_id,
                 username=username,
@@ -310,7 +314,7 @@ async def process_pinned_posts(model_id, username, c):
             [output.extend(post.all_media) for post in pinned_posts]
             log.debug(f"[bold]Pinned media count without locked[/bold] {len(output)}")
 
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 output,
                 model_id=model_id,
                 username=username,
@@ -366,11 +370,11 @@ async def process_all_paid():
             username = profile.scrape_profile(model_id).get("username")
             if username == constants.getattr(
                 "DELETED_MODEL_PLACEHOLDER"
-            ) and await operations.check_profile_table_exists(
+            ) and await check_profile_table_exists(
                 model_id=model_id, username=username
             ):
                 username = (
-                    await operations.get_profile_info(
+                    await get_profile_info(
                         model_id=model_id, username=username
                     )
                     or username
@@ -398,7 +402,7 @@ async def process_all_paid():
                 model_id=model_id,
                 username=username,
             )
-            await operations.batch_mediainsert(
+            await batch_mediainsert(
                 new_medias,
                 model_id=model_id,
                 username=username,

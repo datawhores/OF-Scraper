@@ -2,12 +2,12 @@ import pathlib
 
 import arrow
 
-import ofscraper.db.operations as operations
 import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.download.shared.utils.log as common_logs
 import ofscraper.download.shared.utils.paths as common_paths
 import ofscraper.utils.dates as dates
+from ofscraper.db.operations_.media import download_media_update
 import ofscraper.utils.system.system as system
 
 
@@ -38,7 +38,7 @@ async def handle_result_main(result, ele, username, model_id):
         )
 
     if ele.id:
-        await operations.download_media_update(
+        await download_media_update(
             ele,
             filename=path_to_file,
             model_id=model_id,

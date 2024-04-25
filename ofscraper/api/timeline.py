@@ -24,6 +24,9 @@ import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.db.operations_.posts import get_timeline_posts_info,get_youngest_timeline_date
+from ofscraper.db.operations_.media import get_timeline_media
+
 
 log = logging.getLogger("shared")
 
@@ -43,7 +46,7 @@ async def get_timeline_posts_progress(model_id, username, forced_after=None, c=N
 @run
 async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = await operations.get_timeline_posts_info(
+        oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
         )
     else:
@@ -121,7 +124,7 @@ async def process_tasks(tasks):
 
 async def get_oldtimeline(model_id, username):
     if not read_args.retriveArgs().no_cache:
-        oldtimeline = await operations.get_timeline_posts_info(
+        oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
         )
     else:
@@ -278,7 +281,7 @@ async def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all timeline posts required to make sure content is not missing"
         )
         return 0
-    curr = await operations.get_timeline_media(model_id=model_id, username=username)
+    curr = await get_timeline_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting oldest date to zero because database is empty")
         return 0
@@ -291,7 +294,7 @@ async def get_after(model_id, username, forced_after=None):
             "Using using newest db date, because all downloads in db marked as downloaded"
         )
         return arrow.get(
-            await operations.get_youngest_timeline_date(
+            await get_youngest_timeline_date(
                 model_id=model_id, username=username
             )
         ).float_timestamp

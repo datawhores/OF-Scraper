@@ -18,6 +18,7 @@ import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.system.network as network
+from ofscraper.db.operations_.media import batch_mediainsert
 from ofscraper.utils.context.run_async import run
 
 
@@ -56,7 +57,7 @@ def manual_download(urls=None):
                 download.download_process(
                     username, model_id, value.get("media_list", []), posts=None
                 )
-                operations.batch_mediainsert(
+                batch_mediainsert(
                     value.get("media_list"), username=username, model_id=model_id
                 )
         except Exception as e:

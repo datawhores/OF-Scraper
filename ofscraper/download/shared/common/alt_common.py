@@ -12,6 +12,8 @@ import ofscraper.download.shared.utils.paths as common_paths
 import ofscraper.utils.dates as dates
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
+from ofscraper.db.operations_.media import download_media_update
+
 
 
 async def handle_result_alt(
@@ -69,7 +71,7 @@ async def handle_result_alt(
             f"{common_logs.get_medialog(ele)} Date set to {arrow.get(sharedPlaceholderObj.trunicated_filepath.stat().st_mtime).format('YYYY-MM-DD HH:mm')}"
         )
     if ele.id:
-        await operations.download_media_update(
+        await download_media_update(
             ele,
             filename=sharedPlaceholderObj.trunicated_filepath,
             model_id=model_id,

@@ -3,7 +3,6 @@ import contextlib
 import logging
 import ssl
 import threading
-import time
 import traceback
 
 import aiohttp
@@ -17,33 +16,57 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+from ofscraper.utils.context.run_async import run
+
+
+
+def is_rate_limited(exception):
+    return (
+        isinstance(exception, aiohttp.ClientResponseError)
+        and (
+            getattr(exception, "status_code", None)
+            or getattr(exception, "status", None) in {429, 504}
+        )
+    ) or (
+        isinstance(exception, httpx.HTTPStatusError)
+        and (
+            (
+                getattr(exception.response, "status_code", None)
+                or getattr(exception.response, "status", None)
+            )
+            in {429, 504}
+        )
+    )
 
 
 class SessionSleep:
     def __init__(self):
         self._sleep = None
         self._last_date = None
+        self._lock=asyncio.Lock()
 
     def toomany_req(self):
-
-        if self._last_date is None:
-            self._sleep = constants.getattr("SESSION_SLEEP_INIT")
-        elif self._sleep is None:
-            self._sleep = constants.getattr("SESSION_SLEEP_INIT")
-        elif arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
+        with self._lock:
+            if self._last_date is None:
+                self._sleep = constants.getattr("SESSION_SLEEP_INIT")
+            elif self._sleep is None:
+                self._sleep = constants.getattr("SESSION_SLEEP_INIT")
+            elif arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
+                return self._sleep
+            else:
+                self._sleep = self._sleep * 2
+            self._last_date = arrow.now()
+            logging.getLogger("shared").debug(f"setting sleep to {self._sleep} seconds")
             return self._sleep
-        else:
-            self._sleep = self._sleep * 2
-        self._last_date = arrow.now()
-        logging.getLogger("shared").debug(f"setting sleep to {self._sleep} seconds")
-        return self._sleep
-
+    @run
+    async def do_sleep(self):
+        await asyncio.sleep(self._sleep) if self._sleep else None
     @property
     def sleep(self):
         return self._sleep
+        
 
 
-sleeper = SessionSleep()
 
 
 class CustomTenacity(AsyncRetrying):
@@ -51,7 +74,8 @@ class CustomTenacity(AsyncRetrying):
     A custom context manager using tenacity for asynchronous retries with wait strategies and stopping without exceptions.
     """
 
-    def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
+    def __init__(self,
+     wait_random=None, wait_exponential=None, *args, **kwargs):
         super().__init__(*args, after=self._after_func, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
             min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
@@ -65,27 +89,11 @@ class CustomTenacity(AsyncRetrying):
 
     def _wait_picker(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
-        if (
-            isinstance(exception, aiohttp.ClientResponseError)
-            and (
-                getattr(exception, "status_code", None)
-                or getattr(exception, "status", None) in {429, 504}
-            )
-        ) or (
-            isinstance(exception, httpx.HTTPStatusError)
-            and (
-                (
-                    getattr(exception.response, "status_code", None)
-                    or getattr(exception.response, "status", None)
-                )
-                in {429, 504}
-            )
-        ):
+        if is_rate_limited(exception):
             sleep = self.wait_exponential(retry_state)
         else:
             sleep = self.wait_random(retry_state)
         logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before")
-        sleeper.toomany_req()
         return sleep
 
     def _after_func(self, retry_state) -> None:
@@ -168,7 +176,7 @@ class sessionManager:
         )
         self._log = log or logging.getLogger("shared")
         auth_requests.read_request_auth(forced=None) if new_request_auth else None
-
+        self._sleeper=SessionSleep()
     async def __aenter__(self):
         self._async = True
         if self._backend == "aio":
@@ -274,7 +282,7 @@ class sessionManager:
             r = None
             with _:
                 sync_sem.acquire()
-                time.sleep(sleeper.sleep) if sleeper.sleep else None
+                self._sleeper.do_sleep()
                 try:
                     r = self._httpx_funct(
                         method,
@@ -301,6 +309,7 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
+                    self._sleeper.toomany_req() if(is_rate_limited(E)) else None
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     raise E
@@ -359,7 +368,7 @@ class sessionManager:
             with _:
                 r = None
                 await sem.acquire()
-                await asyncio.sleep(sleeper.sleep) if sleeper.sleep else None
+                await self._sleeper.do_sleep()
                 try:
                     headers = (
                         self._create_headers(headers, url, sign)
@@ -414,7 +423,12 @@ class sessionManager:
                         log.debug(f"[bold]response text [/bold]: {await r.text_()}")
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
+                    import random
+                    if random.randint(1,10)==4:
+                        r.status_code =429
+                        r.raise_for_status()
                 except Exception as E:
+                    self._sleeper.toomany_req() if(is_rate_limited(E)) else None
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
                     sem.release()

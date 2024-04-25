@@ -33,6 +33,8 @@ import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.shared.utils.text import textDownloader
+from ofscraper.db.operations_.media import batch_mediainsert,get_media_ids_downloaded
+
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -554,7 +556,7 @@ async def process_post_media(username, model_id, posts_array):
     ]
     temp = []
     [temp.extend(ele.all_media) for ele in unduped]
-    await operations.batch_mediainsert(
+    await batch_mediainsert(
         temp,
         model_id=model_id,
         username=username,
@@ -575,7 +577,7 @@ async def get_downloaded(user_name, model_id, paid=False):
     paid = await get_paid_ids(model_id, user_name) if paid else []
     [
         downloaded.update({ele: downloaded.get(ele, 0) + 1})
-        for ele in operations.get_media_ids_downloaded(
+        for ele in get_media_ids_downloaded(
             model_id=model_id, username=user_name
         )
         + paid

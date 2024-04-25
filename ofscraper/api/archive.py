@@ -23,6 +23,9 @@ import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.db.operations_.posts import get_archived_post_info,get_youngest_archived_date
+from ofscraper.db.operations_.media import get_archived_media
+
 
 log = logging.getLogger("shared")
 
@@ -34,7 +37,7 @@ sem = None
 async def get_archived_posts_progress(model_id, username, forced_after=None, c=None):
 
     oldarchived = (
-        await operations.get_archived_post_info(model_id=model_id, username=username)
+        await get_archived_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -54,7 +57,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 @run
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
     oldarchived = (
-        await operations.get_archived_post_info(model_id=model_id, username=username)
+        await get_archived_post_info(model_id=model_id, username=username)
         if not read_args.retriveArgs().no_cache
         else []
     )
@@ -251,7 +254,7 @@ async def get_after(model_id, username, forced_after=None):
             "Used --after previously. Scraping all archived posts required to make sure content is not missing"
         )
         return 0
-    curr = await operations.get_archived_media(model_id=model_id, username=username)
+    curr = await get_archived_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
@@ -262,7 +265,7 @@ async def get_after(model_id, username, forced_after=None):
             "Using newest db date because,all downloads in db marked as downloaded"
         )
         return arrow.get(
-            await operations.get_youngest_archived_date(
+            await get_youngest_archived_date(
                 model_id=model_id, username=username
             )
         ).float_timestamp

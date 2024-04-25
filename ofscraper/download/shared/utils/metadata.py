@@ -11,10 +11,11 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.download.shared.utils.log import get_medialog
+from ofscraper.db.operations_.media import download_media_update
 
 
 async def force_download(ele, username, model_id):
-    await operations.download_media_update(
+    await download_media_update(
         ele,
         filename=None,
         model_id=model_id,
@@ -32,7 +33,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common.add_additional_data(placeholderObj, ele)
     effected = None
     if ele.id:
-        effected = await operations.download_media_update(
+        effected = await download_media_update(
             ele,
             filename=placeholderObj.trunicated_filepath,
             model_id=model_id,
