@@ -30,16 +30,15 @@ import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.manager as manager_
 from ofscraper.download.alt_download import alt_download
+from ofscraper.download.main_download import main_download
+from ofscraper.download.shared.classes.session import download_session
 from ofscraper.download.shared.common.general import get_medialog
 from ofscraper.download.shared.utils.log import final_log, log_download_progress
 from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
-from ofscraper.download.main_download import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
-from ofscraper.download.shared.classes.session import download_session
-
 
 
 @run
@@ -68,7 +67,7 @@ async def process_dicts(username, model_id, medialist):
                 progress_group,
                 refresh_per_second=constants.getattr("refreshScreen"),
                 console=console.shared_console,
-                transient=True 
+                transient=True,
             ):
                 aws = []
 

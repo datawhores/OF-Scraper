@@ -57,7 +57,8 @@ ROW_NAMES = (
 ROWS = []
 app = None
 ALL_MEDIA = {}
-MEDIA_KEY=["id","postid","username"]
+MEDIA_KEY = ["id", "postid", "username"]
+
 
 def process_download_cart():
     while True:
@@ -86,12 +87,14 @@ def process_item():
     except Exception as E:
         log.error(f"Error getting item from queue: {E}")
         return
-    for count,_ in enumerate(range(0, 2)):
+    for count, _ in enumerate(range(0, 2)):
         try:
             username = row[app.row_names.index("UserName")].plain
             post_id = row[app.row_names.index("Post_ID")].plain
             media_id = int(row[app.row_names.index("Media_ID")].plain)
-            media = ALL_MEDIA.get("_".join(map(lambda x:str(x),[media_id,post_id,username])))
+            media = ALL_MEDIA.get(
+                "_".join(map(lambda x: str(x), [media_id, post_id, username]))
+            )
             if not media:
                 raise Exception(f"No data for {media_id}_{post_id}_{username}")
             log.info(f"Added url {media.url or media.mpd}")
@@ -102,7 +105,7 @@ def process_item():
                 textDownloader(post, username=username)
             elif len(settings.get_mediatypes()) > 1:
                 model_id = media.post.model_id
-                username =  media.post.username
+                username = media.post.username
                 log.info(
                     f"Downloading individual media ({media.filename}) to disk for {username}"
                 )
@@ -119,11 +122,11 @@ def process_item():
             app.update_cell(key, "Downloaded", True)
             break
         except Exception as E:
-            if count==1:
+            if count == 1:
                 app.update_cell(key, "Download_Cart", "[failed]")
                 raise E
             log.info("Download Failed Refreshing data")
-            data_refill(media_id, post_id, username,model_id)
+            data_refill(media_id, post_id, username, model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     if app.row_queue.empty():
@@ -397,7 +400,7 @@ async def message_check_retriver():
                     message_posts_array, model_id=model_id, username=user_name
                 )
 
-                oldpaid = cache.get(f"purchased_check_{model_id}", default=[])  or []
+                oldpaid = cache.get(f"purchased_check_{model_id}", default=[]) or []
                 paid = None
                 # paid content
                 if len(oldpaid) > 0 and not read_args.retriveArgs().force:
@@ -557,7 +560,9 @@ async def process_post_media(username, model_id, posts_array):
         username=username,
         downloaded=False,
     )
-    new_media = {"_".join([str(getattr(ele,key)) for key in MEDIA_KEY]): ele for ele in temp}
+    new_media = {
+        "_".join([str(getattr(ele, key)) for key in MEDIA_KEY]): ele for ele in temp
+    }
     ALL_MEDIA.update(new_media)
     return list(new_media.values())
 
@@ -722,4 +727,3 @@ def reset_message_set(model_id):
 def reset_paid_set(model_id):
     cache.set(f"purchased_check_{model_id}", [])
     cache.close()
-

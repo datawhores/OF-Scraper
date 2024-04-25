@@ -19,6 +19,7 @@ from functools import partial
 
 import aiofiles
 import psutil
+
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
@@ -29,6 +30,7 @@ import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.alt_common import (
     handle_result_alt,
     media_item_keys_alt,
@@ -47,10 +49,6 @@ from ofscraper.download.shared.utils.log import (
     temp_file_logger,
 )
 
-from ofscraper.download.shared.classes.retries import (
-    download_retry
-)
-
 
 async def alt_download(c, ele, username, model_id, job_progress):
     common_globals.log.debug(
@@ -60,7 +58,9 @@ async def alt_download(c, ele, username, model_id, job_progress):
         with _:
             try:
                 sharedPlaceholderObj = await placeholder.Placeholders(ele, "mp4").init()
-                common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
+                common_globals.log.debug(
+                    f"{get_medialog(ele)} download url:  {get_url_log(ele)}"
+                )
             except Exception as e:
                 raise e
 

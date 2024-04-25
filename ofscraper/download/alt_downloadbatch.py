@@ -6,7 +6,6 @@ from functools import partial
 
 import aiofiles
 
-
 try:
     from win32_setctime import setctime  # pylint: disable=import-error
 except ModuleNotFoundError:
@@ -17,6 +16,7 @@ import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.system.system as system
+from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.alt_common import (
     handle_result_alt,
     media_item_keys_alt,
@@ -33,10 +33,6 @@ from ofscraper.download.shared.utils.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
-)
-
-from ofscraper.download.shared.classes.retries import (
-    download_retry
 )
 
 

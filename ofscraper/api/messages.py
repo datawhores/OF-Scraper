@@ -28,7 +28,6 @@ import ofscraper.utils.settings as settings
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 
-
 log = logging.getLogger("shared")
 
 

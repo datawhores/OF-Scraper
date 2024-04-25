@@ -34,7 +34,7 @@ class Media(base.base):
         self._post = post
         self._final_url = None
         self._cached_parse_mpd = None
-        self._mpd=None
+        self._mpd = None
 
     def __eq__(self, other):
         return self.postid == other.postid
@@ -366,10 +366,12 @@ class Media(base.base):
 
     @url.setter
     def url(self, val):
-        self._final_url=val
+        self._final_url = val
+
     @mpd.setter
     def mpd(self, val):
-        self._mpd=val
+        self._mpd = val
+
     @property
     async def selected_quality(self):
         if self.protected == False:

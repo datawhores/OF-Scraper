@@ -31,16 +31,18 @@ import ofscraper.utils.manager as manager_
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.download.alt_downloadbatch import alt_download
-from ofscraper.download.shared.common.general import get_medialog, subProcessVariableInit
+from ofscraper.download.main_downloadbatch import main_download
+from ofscraper.download.shared.classes.session import download_session
+from ofscraper.download.shared.common.general import (
+    get_medialog,
+    subProcessVariableInit,
+)
 from ofscraper.download.shared.utils.log import final_log, log_download_progress
 from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
-from ofscraper.download.main_downloadbatch import main_download
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.progress import setupDownloadProgressBar
-from ofscraper.download.shared.classes.session import download_session
-
 
 platform_name = platform.system()
 
@@ -133,7 +135,7 @@ def process_dicts(username, model_id, filtered_medialist):
                 progress_group,
                 refresh_per_second=constants.getattr("refreshScreen"),
                 console=console.get_shared_console(),
-                transient=True 
+                transient=True,
             ):
                 log.debug(f"Initial Queue Threads: {queue_threads}")
                 log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")

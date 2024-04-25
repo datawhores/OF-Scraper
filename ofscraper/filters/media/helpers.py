@@ -9,7 +9,6 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 from ofscraper.utils.logs.helpers import is_trace
 
-
 log = logging.getLogger("shared")
 
 

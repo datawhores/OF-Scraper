@@ -22,13 +22,58 @@ import ofscraper.classes.labels as labels
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-from ofscraper.db.operations_.labels import add_column_labels_ID,create_labels_table,make_label_table_changes,modify_unique_constriant_labels
-from ofscraper.db.operations_.media import add_column_media_hash,add_column_media_ID,add_column_media_unlocked,create_media_table,add_column_media_posted_at,add_column_media_duration,modify_unique_constriant_media
-from ofscraper.db.operations_.messages import add_column_messages_ID,create_message_table,make_messages_table_changes,modify_unique_constriant_messages
-from ofscraper.db.operations_.others import add_column_other_ID,add_flag_schema,add_column_products_ID,create_products_table,create_others_table,create_schema_table,get_schema_changes,modify_unique_constriant_others,modify_unique_constriant_products
-from ofscraper.db.operations_.posts import add_column_post_ID,add_column_post_pinned,create_post_table,make_post_table_changes,modify_unique_constriant_posts
-from ofscraper.db.operations_.profile import create_models_table,create_profile_table,modify_unique_constriant_profile,write_profile_table,write_models_table
-from ofscraper.db.operations_.stories import add_column_stories_ID,create_stories_table,make_stories_table_changes,modify_unique_constriant_stories
+from ofscraper.db.operations_.labels import (
+    add_column_labels_ID,
+    create_labels_table,
+    make_label_table_changes,
+    modify_unique_constriant_labels
+)
+from ofscraper.db.operations_.media import (
+    add_column_media_duration,
+    add_column_media_hash,
+    add_column_media_ID,
+    add_column_media_posted_at,
+    add_column_media_unlocked,
+    create_media_table,
+    modify_unique_constriant_media
+)
+from ofscraper.db.operations_.messages import (
+    add_column_messages_ID,
+    create_message_table,
+    make_messages_table_changes,
+    modify_unique_constriant_messages
+)
+from ofscraper.db.operations_.others import (
+    add_column_other_ID,
+    add_column_products_ID,
+    add_flag_schema,
+    create_others_table,
+    create_products_table,
+    create_schema_table,
+    get_schema_changes,
+    modify_unique_constriant_others,
+    modify_unique_constriant_products,
+)
+from ofscraper.db.operations_.posts import (
+    add_column_post_ID,
+    add_column_post_pinned,
+    create_post_table,
+    make_post_table_changes,
+    modify_unique_constriant_posts,
+)
+from ofscraper.db.operations_.profile import (
+    create_models_table,
+    create_profile_table,
+    modify_unique_constriant_profile,
+    write_models_table,
+    write_profile_table
+)
+from ofscraper.db.operations_.stories import (
+    add_column_stories_ID,
+    create_stories_table,
+    make_stories_table_changes,
+    modify_unique_constriant_stories
+)
 from ofscraper.utils.context.run_async import run
 
 console = Console()
@@ -91,7 +136,6 @@ def restore_backup_transition(backup, model_id, username, db_path=None, **kwargs
     shutil.copy2(backup, database)
 
 
-
 def get_group_difference(model_id=None, username=None, db_path=None):
 
     changes = get_schema_changes(model_id=model_id, username=username, db_path=db_path)
@@ -107,7 +151,7 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "labels_model_id",
         "media_posted_at",
         "media_unlocked",
-        "media_duration"
+        "media_duration",
     ]
 
     groupB = [
@@ -122,9 +166,13 @@ def get_group_difference(model_id=None, username=None, db_path=None):
     ]
     return set((groupA + groupB)).difference(set(changes))
 
+
 def create_backup_transition(model_id=None, username=None, db_path=None, **kwargs):
 
-    if len(get_group_difference(model_id=model_id,username=username,db_path=db_path)) > 0:
+    if (
+        len(get_group_difference(model_id=model_id, username=username, db_path=db_path))
+        > 0
+    ):
         log.info("creating a backup before transition")
         backup_name = (
             f"old_schema_{model_id}_{arrow.now().float_timestamp}_db_backup.db"
@@ -140,7 +188,9 @@ def create_backup_transition(model_id=None, username=None, db_path=None, **kwarg
 
 
 async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs):
-    missing = get_group_difference(model_id=model_id,username=username,db_path=db_path)
+    missing = get_group_difference(
+        model_id=model_id, username=username, db_path=db_path
+    )
     if "media_hash" in missing:
         await add_column_media_hash(
             model_id=model_id, username=username, db_path=db_path
@@ -224,8 +274,10 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
 async def modify_tables_constraints_and_columns(
     model_id=None, username=None, db_path=None, **kwargs
 ):
-    missing = get_group_difference(model_id=model_id,username=username,db_path=db_path)
-    if  "profile_username_constraint_modified" in missing:
+    missing = get_group_difference(
+        model_id=model_id, username=username, db_path=db_path
+    )
+    if "profile_username_constraint_modified" in missing:
         await modify_unique_constriant_profile(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -235,7 +287,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if  "stories_model_id_constraint_added" in missing:
+    if "stories_model_id_constraint_added" in missing:
         await modify_unique_constriant_stories(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -245,7 +297,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if  "media_model_id_constraint_added" in missing:
+    if "media_model_id_constraint_added" in missing:
         await modify_unique_constriant_media(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -255,7 +307,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if  "posts_model_id_constraint_added" in missing:
+    if "posts_model_id_constraint_added" in missing:
         await modify_unique_constriant_posts(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -265,7 +317,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if  "others_model_id_constraint_added" in missing:
+    if "others_model_id_constraint_added" in missing:
         await modify_unique_constriant_others(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -275,7 +327,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if  "products_model_id_constraint_added" in missing:
+    if "products_model_id_constraint_added" in missing:
         await modify_unique_constriant_products(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -285,7 +337,7 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    if  "messages_model_id_constraint_added" in missing:
+    if "messages_model_id_constraint_added" in missing:
         await modify_unique_constriant_messages(
             model_id=model_id, username=username, db_path=db_path
         )
@@ -296,7 +348,7 @@ async def modify_tables_constraints_and_columns(
             db_path=db_path,
         )
 
-    if  "labels_model_id_constraint_added" in missing:
+    if "labels_model_id_constraint_added" in missing:
         await modify_unique_constriant_labels(
             model_id=model_id, username=username, db_path=db_path
         )

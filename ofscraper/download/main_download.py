@@ -29,6 +29,7 @@ import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
+from ofscraper.download.shared.classes.retries import download_retry
 from ofscraper.download.shared.common.general import (
     check_forced_skip,
     downloadspace,
@@ -38,12 +39,9 @@ from ofscraper.download.shared.common.general import (
     get_unknown_content_type,
     size_checker,
 )
-from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.common.main_common import handle_result_main
+from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.utils.metadata import force_download
-from ofscraper.download.shared.classes.retries import download_retry
-
-
 
 
 async def main_download(c, ele, username, model_id, job_progress):

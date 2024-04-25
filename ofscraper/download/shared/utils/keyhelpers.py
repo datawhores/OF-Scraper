@@ -17,11 +17,9 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
-from ofscraper.download.shared.common.general import get_medialog
 from ofscraper.download.shared.classes.retries import get_cmd_download_req_retries
 from ofscraper.download.shared.classes.session import cdm_session
-
-
+from ofscraper.download.shared.common.general import get_medialog
 
 log = None
 
@@ -248,7 +246,7 @@ async def key_helper_manual(c, pssh, licence_url, id):
                 url=licence_url,
                 method="post",
                 data=challenge,
-                retries=get_cmd_download_req_retries() ,
+                retries=get_cmd_download_req_retries(),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
                 total_timeout=constants.getattr("CDM_TIMEOUT"),

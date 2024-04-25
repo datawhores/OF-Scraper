@@ -1,10 +1,12 @@
-
 import logging
-from ofscraper.utils.logs.helpers import is_trace
+
 import ofscraper.utils.constants as constants
+from ofscraper.utils.logs.helpers import is_trace
+
 log = logging.getLogger("shared")
 
-def trace_log_user(responseArray,title_str):
+
+def trace_log_user(responseArray, title_str):
     if not is_trace():
         return
     chunk_size = constants.getattr("LARGE_TRACE_CHUNK_SIZE")

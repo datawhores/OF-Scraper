@@ -4,7 +4,6 @@ import ofscraper.utils.args.read as read_args
 from ofscraper.filters.models.helpers import trace_log_user
 
 
-
 def promoFilterHelper(filterusername):
     log = logging.getLogger("shared")
 
@@ -14,15 +13,14 @@ def promoFilterHelper(filterusername):
             filter(lambda x: x.lowest_promo_claim is not None, filterusername)
         )
         log.debug(f"Promo flag yes username count: {len(filterusername)}")
-        trace_log_user(filterusername,"promo flag yes")
-
+        trace_log_user(filterusername, "promo flag yes")
 
     elif read_args.retriveArgs().promo is False:
         filterusername = list(
             filter(lambda x: x.lowest_promo_claim is None, filterusername)
         )
         log.debug(f"Promo flag no username count: {len(filterusername)}")
-        trace_log_user(filterusername,"promo flag no")
+        trace_log_user(filterusername, "promo flag no")
 
     log.debug(f"All promo flag: {read_args.retriveArgs().all_promo}")
     if read_args.retriveArgs().all_promo:
@@ -30,25 +28,25 @@ def promoFilterHelper(filterusername):
             filter(lambda x: x.lowest_promo_all is not None, filterusername)
         )
         log.debug(f"All promo flag yes username count: {len(filterusername)}")
-        trace_log_user(filterusername,"all promo flag yes")
+        trace_log_user(filterusername, "all promo flag yes")
 
     elif read_args.retriveArgs().all_promo is False:
         filterusername = list(
             filter(lambda x: x.lowest_promo_all is None, filterusername)
         )
         log.debug(f"All promo flag no username count: {len(filterusername)}")
-        trace_log_user(filterusername,"all promo flag no")
+        trace_log_user(filterusername, "all promo flag no")
 
     log.debug(f"Last seen flag: {read_args.retriveArgs().last_seen}")
     if read_args.retriveArgs().last_seen:
         filterusername = list(filter(lambda x: x.last_seen is not None, filterusername))
         log.debug(f"Last seen flag yes username count: {len(filterusername)}")
-        trace_log_user(filterusername,"last seen flag yes")
+        trace_log_user(filterusername, "last seen flag yes")
 
     elif read_args.retriveArgs().last_seen is False:
         filterusername = list(filter(lambda x: x.last_seen is None, filterusername))
         log.debug(f"Last seen flag no username count: {len(filterusername)}")
-        trace_log_user(filterusername,"last seen flag no")
+        trace_log_user(filterusername, "last seen flag no")
     log.debug(f"Free trial flag: {read_args.retriveArgs().free_trial}")
 
     if read_args.retriveArgs().free_trial:
@@ -62,8 +60,7 @@ def promoFilterHelper(filterusername):
             )
         )
         log.debug(f"Free trial flag yes username count: {len(filterusername)}")
-        trace_log_user(filterusername,"free trial flag yes")
-
+        trace_log_user(filterusername, "free trial flag yes")
 
     elif read_args.retriveArgs().free_trial is False:
         filterusername = list(
@@ -74,6 +71,6 @@ def promoFilterHelper(filterusername):
             )
         )
         log.debug(f"Free trial flag no username count: {len(filterusername)}")
-        trace_log_user(filterusername,"free trial flag no")
-    
+        trace_log_user(filterusername, "free trial flag no")
+
     return filterusername

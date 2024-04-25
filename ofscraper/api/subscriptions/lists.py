@@ -30,7 +30,6 @@ import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
 
-
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")
 
@@ -127,9 +126,10 @@ async def get_lists():
                     tasks = new_tasks
     overall_progress.remove_task(page_task)
     trace_log_list(output)
-    
+
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
     return output
+
 
 def trace_log_list(responseArray):
     if not is_trace():
@@ -142,18 +142,13 @@ def trace_log_list(responseArray):
         )  # Adjust end_index calculation
         chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
         log.trace(
-        "list unduped {posts}".format(
-            posts="\n\n".join(map(lambda x: f" list data raw:{x}", chunk))
+            "list unduped {posts}".format(
+                posts="\n\n".join(map(lambda x: f" list data raw:{x}", chunk))
+            )
         )
-    )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
-
-
-
-
-
 
 
 async def scrape_for_list(c, job_progress, offset=0):
@@ -274,14 +269,14 @@ def trace_log_usernames(responseArray):
         )  # Adjust end_index calculation
         chunk = responseArray[i - 1 : end_index]  # Adjust slice to start at i-1
         log.trace(
-        "users found {users}".format(
-            users="\n\n".join(map(lambda x: f"user data: {str(x)}", chunk))
+            "users found {users}".format(
+                users="\n\n".join(map(lambda x: f"user data: {str(x)}", chunk))
+            )
         )
-    
-    )
         # Check if there are more elements remaining after this chunk
         if i + chunk_size > len(responseArray):
             break  # Exit the loop if we've processed all elements
+
 
 async def scrape_list_members(c, item, job_progress, offset=0):
     users = None

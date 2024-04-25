@@ -33,7 +33,10 @@ def setup_all_paid_live():
     progress_group = Group(overall_progress, Panel(Group(all_paid_progress)))
 
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -67,7 +70,7 @@ def setup_api_split_progress_live():
     )
 
     progress_group = Group(overall_progress, layout)
-    return Live(progress_group, console=console_.get_shared_console(),transient=True )
+    return Live(progress_group, console=console_.get_shared_console(), transient=True)
 
 
 def setup_layout():
@@ -189,7 +192,10 @@ def set_up_api_timeline():
     timeline_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(timeline_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console() ,transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -203,7 +209,10 @@ def set_up_api_pinned():
     pinned_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(pinned_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -217,7 +226,10 @@ def set_up_api_paid():
     paid_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(paid_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -231,7 +243,10 @@ def set_up_api_messages():
     messages_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(messages_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -245,7 +260,10 @@ def set_up_api_archived():
     archived_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(archived_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -259,7 +277,10 @@ def set_up_api_stories():
     stories_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(stories_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -273,7 +294,10 @@ def set_up_api_highlights_lists():
     highlights_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -287,7 +311,10 @@ def set_up_api_highlights():
     highlights_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -301,7 +328,10 @@ def set_up_api_labels():
     labelled_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )
 
 
@@ -315,5 +345,8 @@ def set_up_api_posts_labels():
     labelled_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
     return Live(
-        progress_group, refresh_per_second=5, console=console_.get_shared_console(),transient=True 
+        progress_group,
+        refresh_per_second=5,
+        console=console_.get_shared_console(),
+        transient=True,
     )

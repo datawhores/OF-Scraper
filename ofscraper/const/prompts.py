@@ -3,7 +3,7 @@ mainPromptChoices = {
     "Edit auth.json file": "auth",
     "Edit config.json file": "config",
     "Edit Profile": "profile",
-    "Merge Databases":"merge",
+    "Merge Databases": "merge",
     "Quit": "quit",
 }
 

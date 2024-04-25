@@ -10,7 +10,6 @@ import ofscraper.utils.args.read as read_args
 from ofscraper.filters.models.helpers import trace_log_user
 
 
-
 def dateFilters(filterusername):
     log = logging.getLogger("shared")
 
@@ -23,7 +22,7 @@ def dateFilters(filterusername):
             )
         )
         log.debug(f"Last seen after filter username count: {len(filterusername)}")
-        trace_log_user(filterusername,"last seen after")
+        trace_log_user(filterusername, "last seen after")
     log.debug(f"Last seen before filter: {read_args.retriveArgs().last_seen_before}")
     if read_args.retriveArgs().last_seen_before:
         filterusername = list(
@@ -33,8 +32,7 @@ def dateFilters(filterusername):
             )
         )
         log.debug(f"last seen before filter username count: {len(filterusername)}")
-        trace_log_user(filterusername,"last seen before")
-
+        trace_log_user(filterusername, "last seen before")
 
     log.debug(f"Subscribed after filter: {read_args.retriveArgs().subscribed_after}")
     if read_args.retriveArgs().subscribed_after:
@@ -46,7 +44,7 @@ def dateFilters(filterusername):
             )
         )
         log.debug(f"subscribed after filter username count: {len(filterusername)}")
-        trace_log_user(filterusername,"subscribed after")
+        trace_log_user(filterusername, "subscribed after")
 
     log.debug(f"Subscribed before filter: {read_args.retriveArgs().subscribed_before}")
     if read_args.retriveArgs().subscribed_before:
@@ -58,7 +56,7 @@ def dateFilters(filterusername):
             )
         )
         log.debug(f"subscribed before filter username count: {len(filterusername)}")
-        trace_log_user(filterusername,"Subscribed before")
+        trace_log_user(filterusername, "Subscribed before")
 
     log.debug(f"Expired After Filter: {read_args.retriveArgs().expired_after}")
     if read_args.retriveArgs().expired_after:
@@ -69,7 +67,7 @@ def dateFilters(filterusername):
             )
         )
         log.debug(f"expired after filter username count: {len(filterusername)}")
-        trace_log_user(filterusername,"expired after")
+        trace_log_user(filterusername, "expired after")
 
     log.debug(f"Expired Before Filter: {read_args.retriveArgs().expired_before}")
     if read_args.retriveArgs().expired_before:
@@ -81,5 +79,5 @@ def dateFilters(filterusername):
             )
         )
         log.debug(f"expired before filter username count: {len(filterusername)}")
-        trace_log_user(filterusername,"expired before")
+        trace_log_user(filterusername, "expired before")
     return filterusername

@@ -1,14 +1,14 @@
-import contextlib
-import time
 import asyncio
+import contextlib
 import logging
 import ssl
 import threading
+import time
 import traceback
-import arrow
 
 import aiohttp
 import aiohttp.client_exceptions
+import arrow
 import certifi
 import httpx
 import tenacity
@@ -18,26 +18,31 @@ import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
 
-class SessionSleep():
+
+class SessionSleep:
     def __init__(self):
-        self._sleep=None
-        self._last_date=None
+        self._sleep = None
+        self._last_date = None
+
     def toomany_req(self):
 
-        if arrow.now().float_timestamp-self._last_date.float_timestamp<120:
+        if arrow.now().float_timestamp - self._last_date.float_timestamp < 120:
             return self._sleep
         elif self._sleep is None:
-            self._sleep=constants.getattr("SESSION_SLEEP_INIT")
+            self._sleep = constants.getattr("SESSION_SLEEP_INIT")
         else:
-            self._sleep=self._sleep*2
-        self._last_date=arrow.now()
+            self._sleep = self._sleep * 2
+        self._last_date = arrow.now()
         logging.getLogger("shared").debug(f"setting sleep to {self._sleep} seconds")
         return self._sleep
+
     @property
     def sleep(self):
         return self._sleep
 
-sleeper=SessionSleep()
+
+sleeper = SessionSleep()
+
 
 class CustomTenacity(AsyncRetrying):
     """
@@ -60,14 +65,19 @@ class CustomTenacity(AsyncRetrying):
         exception = retry_state.outcome.exception()
         if (
             isinstance(exception, aiohttp.ClientResponseError)
-            and (getattr(exception, "status_code", None) or getattr(exception, "status", None) in {429, 504})
+            and (
+                getattr(exception, "status_code", None)
+                or getattr(exception, "status", None) in {429, 504}
+            )
         ) or (
             isinstance(exception, httpx.HTTPStatusError)
             and (
-               ( getattr(exception.response, "status_code", None)
-                or getattr(exception.response, "status", None)) in {429, 504}
+                (
+                    getattr(exception.response, "status_code", None)
+                    or getattr(exception.response, "status", None)
+                )
+                in {429, 504}
             )
-            
         ):
             sleep = self.wait_exponential(retry_state)
         else:
@@ -232,7 +242,7 @@ class sessionManager:
         connect_timeout=None,
         pool_connect_timeout=None,
         read_timeout=None,
-        sync_sem=None
+        sync_sem=None,
     ):
         auth_requests.read_request_auth(forced=True) if sign else None
 

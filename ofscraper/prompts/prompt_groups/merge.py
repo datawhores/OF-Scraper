@@ -1,19 +1,16 @@
 import pathlib
+
 from InquirerPy.base import Choice
+from InquirerPy.validator import PathValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 from rich.console import Console
 
-
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
-from InquirerPy.validator import  PathValidator
 from ofscraper.utils.paths.common import get_profile_path
-
 
 console = Console()
 models = None
-
-
 
 
 def backup_prompt_db() -> bool:
@@ -25,7 +22,7 @@ def backup_prompt_db() -> bool:
                 "name": name,
                 "message": "Have you backed up your database files?",
                 "option_instruction": "Database files will be modified during the merge process",
-                "choices": [Choice(True,"Yes"),Choice(False,"No")],
+                "choices": [Choice(True, "Yes"), Choice(False, "No")],
             }
         ]
     )
@@ -42,11 +39,12 @@ def folder_prompt_db():
                 "option_instruction": "The database path given will be searched recursively, so pick the closest path possible",
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
                 "validate": PathValidator(is_dir=True),
-                "default": str(get_profile_path())
+                "default": str(get_profile_path()),
             },
         ]
     )
     return answer["database"]
+
 
 def new_db_prompt():
     answer = promptClasses.batchConverter(
@@ -59,8 +57,7 @@ def new_db_prompt():
                 directory for new merge database
                 It is best if merged database is stored seperately from source database(s)
                 """,
-                                "default": str(get_profile_path()),
-
+                "default": str(get_profile_path()),
                 "filter": lambda x: prompt_validators.cleanTextInput(x),
             },
         ]
@@ -68,17 +65,21 @@ def new_db_prompt():
     return answer["database"]
 
 
-def confirm_prompt_db(folder,new_db) -> bool:
+def confirm_prompt_db(folder, new_db) -> bool:
     name = "continue"
     answer = promptClasses.batchConverter(
         *[
             {
                 "type": "list",
                 "name": name,
-                "message":"confirm merge: ",
+                "message": "confirm merge: ",
                 "instruction": f"user_data.db files from {folder} will be merged into {str(pathlib.Path(new_db,'user_data.db'))}",
-                "choices": [Choice(True,"Yes"),Choice(False,"No"),Choice(None,"Back to Main Menu")],
+                "choices": [
+                    Choice(True, "Yes"),
+                    Choice(False, "No"),
+                    Choice(None, "Back to Main Menu"),
+                ],
             }
         ]
     )
-    return answer[name]   
+    return answer[name]

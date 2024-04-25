@@ -7,10 +7,10 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.config.menu as config_menu
+import ofscraper.utils.merge as merge
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.run as run
-import ofscraper.utils.merge as merge
 
 log = logging.getLogger("shared")
 count = 0

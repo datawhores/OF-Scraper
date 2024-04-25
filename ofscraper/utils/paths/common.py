@@ -1,7 +1,6 @@
 import os
 import pathlib
 
-
 import ofscraper.const.constants as constants
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
