@@ -514,7 +514,7 @@ def trace_log_old(responseArray):
 
 
 def log_after_before(after, before, username):
-    log.debug(f"Messages before = {before}")
+    log.info(f"Messages before = {arrow.get(before).format(constants.getattr('API_DATE_FORMAT'))}")
 
     log.info(
         f"""
