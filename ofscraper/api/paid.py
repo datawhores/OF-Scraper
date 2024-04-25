@@ -257,7 +257,6 @@ async def process_and_create_tasks():
                             await asyncio.sleep(1)
                             log.traceback_(E)
                             log.traceback_(traceback.format_exc())
-                            u
                     tasks = new_tasks
                 overall_progress.remove_task(page_task)
 

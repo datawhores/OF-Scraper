@@ -12,8 +12,6 @@ r"""
 """
 
 import logging
-import os
-import platform
 import traceback
 
 import ofscraper.actions.process as process_actions
@@ -105,8 +103,6 @@ def main():
 
 
 def scrapper():
-    if platform.system() == "Windows":
-        os.system("color")
     global selectedusers
     selectedusers = None
     args = read_args.retriveArgs()

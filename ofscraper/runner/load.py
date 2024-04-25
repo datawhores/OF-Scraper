@@ -1,5 +1,7 @@
 import logging
 import traceback
+import os
+import platform
 
 import ofscraper.runner.run as run
 import ofscraper.utils.args.read as read_args
@@ -53,6 +55,9 @@ def systemSet():
     system.setName()
     system.set_mulitproc_start_type()
     system.set_eventloop()
+    if platform.system() == "Windows":
+        os.system("color")
+
 
 
 def readConfig():
