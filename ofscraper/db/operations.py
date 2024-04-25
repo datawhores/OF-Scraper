@@ -134,6 +134,8 @@ def restore_backup_transition(backup, model_id, username, db_path=None, **kwargs
         model_id, username
     )
     shutil.copy2(backup, database)
+    log.debug(f"restored {database} from {backup}")
+
 
 
 def get_group_difference(model_id=None, username=None, db_path=None):
