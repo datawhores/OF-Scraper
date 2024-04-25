@@ -5,7 +5,6 @@ import traceback
 import ofscraper.utils.paths.paths as paths
 from ofscraper.db.operations import (
     create_tables,
-    get_single_model_via_profile,
     modify_tables,
 )
 from ofscraper.db.operations_.labels import (
@@ -35,6 +34,7 @@ from ofscraper.db.operations_.profile import (
     get_all_profiles,
     write_models_table,
     write_profile_table_transition,
+    get_single_model_via_profile
 )
 from ofscraper.db.operations_.stories import (
     get_all_stories_transition,
