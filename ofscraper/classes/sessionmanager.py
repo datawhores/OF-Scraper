@@ -20,16 +20,18 @@ import ofscraper.utils.constants as constants
 
 class SessionSleep():
     def __init__(self):
-        self._sleep=0
+        self._sleep=None
         self._last_date=None
     def toomany_req(self):
+
         if arrow.now().float_timestamp-self._last_date.float_timestamp<120:
             return
-        elif self._sleep==0:
-            self._sleep=4
+        elif self._sleep is None:
+            self._sleep=constants.getattr("SESSION_SLEEP_INIT")
         else:
             self._sleep=self._sleep*2
         self._last_date=arrow.now()
+        logging.getLogger("shared").debug(f"setting sleep to {self._sleep} seconds")
         return self._sleep
     @property
     def sleep(self):
