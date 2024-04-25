@@ -225,7 +225,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     job_progress=job_progress,
                     message_id=(
                         splitArrays[0][0].get("post_id")
-                        if len(filteredArray) == len(oldmessages)
+                        if len(filteredArray) != len(oldmessages)
                         else None
                     ),
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
@@ -273,7 +273,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     required_ids=None,
                     message_id=(
                         splitArrays[0][0].get("post_id")
-                        if len(filteredArray) == len(oldmessages)
+                        if len(filteredArray) != len(oldmessages)
                         else None
                     ),
                 )
