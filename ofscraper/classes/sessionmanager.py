@@ -435,11 +435,6 @@ class sessionManager:
                         log.debug(f"[bold]response text [/bold]: {await r.text_()}")
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
-                    import random
-                    if random.SystemRandom().randint(1,5)==4:
-                        r.status_code =429
-                        r.status=429
-                        r.raise_for_status()
                 except Exception as E:
                     if(is_rate_limited(E)):
                         await self._sleeper.async_toomany_req()
