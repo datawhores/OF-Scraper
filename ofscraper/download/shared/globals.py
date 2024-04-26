@@ -8,7 +8,6 @@ import aioprocessing
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-from ofscraper.classes.semaphoreDelayed import semaphoreDelayed
 
 attempt = None
 attempt2 = None
