@@ -203,7 +203,7 @@ def common_other_params(func):
             "-tt",
             "--text-type",
             help="sent length based on word or letter",
-            is_flag=True,
+            type=click.Choice(["word", "letter"], case_sensitive=False),
         ),
         click.option(
             "-q",
