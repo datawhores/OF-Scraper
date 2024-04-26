@@ -253,7 +253,7 @@ def file_config():
             {
                 "type": "list",
                 "name": "text_type_default",
-                "message": "date: ",
+                "message": "text type: ",
                 "option_instruction": "How should textlength be interpreted",
                 "default": data.get_textType(),
                 "choices": [Choice("letter", "Letter"), Choice("word", "Word")],
