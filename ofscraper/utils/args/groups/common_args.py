@@ -193,19 +193,6 @@ def common_other_params(func):
     click.option_group(
         "Downloading options",
         click.option(
-            "-g",
-            "--original",
-            help="Don't truncate long paths",
-            is_flag=True,
-        ),
-
-        click.option(
-            "-tt",
-            "--text-type",
-            help="sent length based on word or letter",
-            type=click.Choice(["word", "letter"], case_sensitive=False),
-        ),
-        click.option(
             "-q",
             "--quality",
             type=click.Choice(["240", "720", "source"], case_sensitive=False),
@@ -224,6 +211,39 @@ def common_other_params(func):
         ),
         help="Options for controlling download behavior",
     )
+
+     click.option_group(
+        "Filename Modification options",
+        click.option(
+            "-g",
+            "--original",
+            help="Don't truncate long paths",
+            is_flag=True,
+        ),
+
+        click.option(
+            "-tt",
+            "--text-type",
+            help="set length based on word or letter",
+            type=click.Choice(["word", "letter"], case_sensitive=False),
+        ),
+
+        click.option(
+            "-sr",
+            "--space-replacer",
+            help="character to replace spaces with",
+        ),
+          click.option(
+            "-tl",
+            "--textlength",
+            help="max length of text",
+        ),
+help="""
+\b
+Options for controllng the behavior of the final filename
+after placeholders are replaced
+""""
+     )
 
     @functools.wraps(func)
     @click.pass_context
