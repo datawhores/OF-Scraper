@@ -3,7 +3,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-import ofscraper.utils.config.data as data
+import ofscraper.utils.settings as settings
 
 html_parser = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
 
@@ -18,10 +18,10 @@ class base:
             return "None"
         if len(text) == 0:
             return text
-        length = int(data.get_textlength(mediatype="Text"))
+        length = int(settings.get_textlength(mediatype=self.mediatype))
         if length == 0:
             return text
-        elif data.get_textType(mediatype="Text") == "letter":
+        elif settings.get_text_type() == "letter":
             return f"{''.join(list(text)[:length])}"
         else:
             # split and reduce
@@ -37,7 +37,7 @@ class base:
         text = re.sub('[\n<>:"/\|?*:;]+', "", text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text)
-        text = re.sub(" ", data.get_spacereplacer(mediatype=mediatype), text)
+        text = re.sub(" ", settings.get_space_replacer(mediatype=mediatype), text)
         return text
 
     def db_cleanup(self, string):
