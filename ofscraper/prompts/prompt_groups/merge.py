@@ -21,7 +21,7 @@ def backup_prompt_db() -> bool:
                 "type": "list",
                 "name": name,
                 "message": "Have you backed up your database files?",
-                "option_instruction": "Database files will be modified during the merge process",
+                "option_instruction": "Database files will be recursely searched and modified during the merge process",
                 "choices": [Choice(True, "Yes"), Choice(False, "No")],
             }
         ]
