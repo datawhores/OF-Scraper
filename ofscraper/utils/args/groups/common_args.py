@@ -237,6 +237,7 @@ def common_other_params(func):
             "-tl",
             "--textlength",
             help="max length of text",
+            type=click.INT
         ),
 help="""
 \b
