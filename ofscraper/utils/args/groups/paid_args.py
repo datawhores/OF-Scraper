@@ -49,8 +49,8 @@ Allows unlocked media entries to be directly downloaded through the table
     is_flag=True,
     default=False,
 )
-@common.common_params
 @common.common_other_params
+@common.common_params
 @click.pass_context
 def paid_check(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name

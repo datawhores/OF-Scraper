@@ -58,8 +58,8 @@ Allows unlocked media entries to be directly downloaded through the table""",
     ),
     multiple=True,
 )
-@common.common_params
 @common.common_other_params
+@common.common_params
 @click.pass_context
 def post_check(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name

@@ -189,8 +189,8 @@ def common_params(func):
     return wrapper
 
 
-def (func):
-    click.option_group(
+def common_other_params(func):
+    @click.option_group(
         "Downloading options",
         click.option(
             "-q",
@@ -212,7 +212,7 @@ def (func):
         help="Options for controlling download behavior",
     )
 
-    click.option_group(
+    @click.option_group(
         "Filename Modification options",
         click.option(
             "-g",
@@ -233,15 +233,14 @@ def (func):
             "--space-replacer",
             help="character to replace spaces with",
         ),
-          click.option(
+        click.option(
             "-tl",
             "--textlength",
             help="max length of text",
         ),
 help="""
 \b
-Options for controllng the behavior of the final filename
-after placeholders are replaced
+Options for controlling the output of the final filename after placeholders are replaced
 """
      )
 

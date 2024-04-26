@@ -42,8 +42,8 @@ import ofscraper.utils.args.helpers as helpers
     is_flag=True,
     default=False,
 )
-@common.common_params
 @common.common_other_params
+@common.common_params
 @click.pass_context
 def manual(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name
