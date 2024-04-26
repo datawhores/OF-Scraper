@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 log = logging.getLogger("shared")
 
-semaphore = asyncio.Semaphore(constants.getattr("MPD_MAX_SEMS"))
+semaphore = asyncio.BoundedSemaphore(constants.getattr("MPD_MAX_SEMS"))
 
 
 class Media(base.base):

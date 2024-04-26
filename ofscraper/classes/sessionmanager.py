@@ -172,7 +172,7 @@ class sessionManager:
         self._keep_alive_exp = keep_alive_exp
         self._proxy = proxy
         self._delay = delay or 0
-        self._sem = semaphore or asyncio.Semaphore(sem or 100000)
+        self._sem = semaphore or asyncio.BoundedSemaphore(sem or 100000)
         self._sync_sem = sync_semaphore or threading.Semaphore(
             sync_sem or constants.getattr("SESSION_MANAGER_SYNC_SEM_DEFAULT")
         )
