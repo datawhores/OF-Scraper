@@ -189,7 +189,7 @@ def common_params(func):
     return wrapper
 
 
-def common_other_params(func):
+def (func):
     click.option_group(
         "Downloading options",
         click.option(
@@ -212,7 +212,7 @@ def common_other_params(func):
         help="Options for controlling download behavior",
     )
 
-     click.option_group(
+    click.option_group(
         "Filename Modification options",
         click.option(
             "-g",
@@ -242,7 +242,7 @@ help="""
 \b
 Options for controllng the behavior of the final filename
 after placeholders are replaced
-""""
+"""
      )
 
     @functools.wraps(func)

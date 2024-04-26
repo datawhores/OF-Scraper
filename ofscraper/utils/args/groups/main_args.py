@@ -630,6 +630,7 @@ import ofscraper.utils.args.helpers as helpers
     help="Choose how usernames are searched, and define the order in which users are processed for actions",
 )
 @common.common_params
+@common.common_other_params
 @click.pass_context
 def program(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name
