@@ -39,12 +39,11 @@ sleeper=None
 @run
 async def get_messages_progress(model_id, username, forced_after=None, c=None):
     global after
-
-    oldmessages = (
-        await get_messages_post_info(model_id=model_id, username=username)
-        if not read_args.retriveArgs().no_cache
-        else []
-    )
+    oldmessages=None
+    if not settings.get_api_cache_disabled():
+        oldmessages=await get_messages_post_info(model_id=model_id, username=username)
+    else:
+        oldmessages = []
     trace_log_old(oldmessages)
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp
@@ -65,11 +64,11 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 async def get_messages(model_id, username, forced_after=None, c=None):
     global after
 
-    oldmessages = (
-        await get_messages_post_info(model_id=model_id, username=username)
-        if not read_args.retriveArgs().no_cache
-        else []
-    )
+    oldmessages=None
+    if not settings.get_api_cache_disabled():
+        oldmessages=await get_messages_post_info(model_id=model_id, username=username)
+    else:
+        oldmessages = []
     trace_log_old(oldmessages)
 
     before = (read_args.retriveArgs().before or arrow.now()).float_timestamp

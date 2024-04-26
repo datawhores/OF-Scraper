@@ -15,7 +15,6 @@ import traceback
 import arrow
 
 import ofscraper.api.common.logs as common_logs
-import ofscraper.db.operations as operations
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -36,11 +35,11 @@ sem = None
 @run
 async def get_archived_posts_progress(model_id, username, forced_after=None, c=None):
 
-    oldarchived = (
-        await get_archived_post_info(model_id=model_id, username=username)
-        if not read_args.retriveArgs().no_cache
-        else []
-    )
+    oldarchived = None
+    if not settings.get_api_cache_disabled():
+        oldarchived=await get_archived_post_info(model_id=model_id, username=username)
+    else:
+        oldarchived = []
     trace_log_old(oldarchived)
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
@@ -56,11 +55,10 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 
 @run
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
-    oldarchived = (
-        await get_archived_post_info(model_id=model_id, username=username)
-        if not read_args.retriveArgs().no_cache
-        else []
-    )
+    if not settings.get_api_cache_disabled():
+        oldarchived=await get_archived_post_info(model_id=model_id, username=username)
+    else:
+        oldarchived = []
     trace_log_old(oldarchived)
 
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")

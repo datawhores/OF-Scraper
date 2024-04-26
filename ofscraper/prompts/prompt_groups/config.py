@@ -473,7 +473,7 @@ def advanced_config() -> dict:
                 "name": "cache-mode",
                 "message": "sqlite should be fine unless your using a network drive\nSee https://grantjenks.com/docs/diskcache/tutorial.html#caveats ",
                 "default": data.cache_mode_helper(),
-                "choices": ["sqlite", "json", "disabled"],
+                "choices": ["sqlite", "json", "disabled","api_disabled"],
             },
             {
                 "type": "list",

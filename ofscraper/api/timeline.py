@@ -44,7 +44,7 @@ async def get_timeline_posts_progress(model_id, username, forced_after=None, c=N
 
 @run
 async def get_timeline_posts(model_id, username, forced_after=None, c=None):
-    if not read_args.retriveArgs().no_cache:
+    if not settings.get_api_cache_disabled():
         oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
         )
@@ -122,7 +122,7 @@ async def process_tasks(tasks):
 
 
 async def get_oldtimeline(model_id, username):
-    if not read_args.retriveArgs().no_cache:
+    if not settings.get_api_cache_disabled():
         oldtimeline = await get_timeline_posts_info(
             model_id=model_id, username=username
         )

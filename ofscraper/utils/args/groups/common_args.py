@@ -77,7 +77,14 @@ def common_params(func):
         click.option(
             "-nc",
             "--no-cache",
-            help="Disable cache",
+            help="Disable cache and forces consecutive api scan",
+            default=False,
+            is_flag=True,
+        ),
+        click.option(
+            "-nca",
+            "--no-api-cache",
+            help="Forces consecutive api scan",
             default=False,
             is_flag=True,
         ),
@@ -189,6 +196,13 @@ def common_other_params(func):
             "-g",
             "--original",
             help="Don't truncate long paths",
+            is_flag=True,
+        ),
+
+        click.option(
+            "-tt",
+            "--text-type",
+            help="sent length based on word or letter",
             is_flag=True,
         ),
         click.option(

@@ -58,6 +58,11 @@ def get_cache_disabled():
         read_args.retriveArgs().no_cache or config_data.get_cache_mode() == "disabled"
     )
 
+def get_api_cache_disabled():
+     return (
+        read_args.retriveArgs().no_cache or read_args.retriveArgs().no_api_cache or config_data.get_cache_mode() == "api_disabled"
+    )
+
 
 def get_dynamic_rules():
     return read_args.retriveArgs().dynamic_rules or config_data.get_dynamic()
