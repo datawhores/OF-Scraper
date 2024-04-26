@@ -40,7 +40,7 @@ def is_rate_limited(exception):
 
 
 class SessionSleep:
-    def __init__(self,sleep=NotImplemented):
+    def __init__(self,sleep=None):
         self._sleep = sleep
         self._last_date = arrow.now()
         self._alock=asyncio.Lock()
