@@ -527,5 +527,5 @@ Setting initial message scan date for {username} to {arrow.get(after).format(con
 def get_sleeper():
     global sleeper
     if not sleeper:
-        sleeper=sessionManager.SessionSleepSem(sleep=8)
+        sleeper=sessionManager.SessionSleep(sleep=8)
     return sleeper
