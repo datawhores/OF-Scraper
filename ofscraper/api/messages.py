@@ -54,7 +54,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     filteredArray = get_filterArray(after, before, oldmessages)
     splitArrays = get_split_array(filteredArray)
     # Set charged sleeper
-    get_sleeper(reset=True)
+    get_sleeper()
     tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
     data = await process_tasks(tasks, model_id)
     progress_utils.messages_layout.visible = False
@@ -524,10 +524,8 @@ Setting initial message scan date for {username} to {arrow.get(after).format(con
         """
     )
 
-def get_sleeper(reset=False):
+def get_sleeper():
     global sleeper
     if not sleeper:
-        sleeper=sessionManager.SessionSleep()
-    if reset:
-        sleeper.sleep=constants.getattr("MESSAGE_SLEEP_DEFAULT")
+        sleeper=sessionManager.SessionSleepSem(sleep=8)
     return sleeper
