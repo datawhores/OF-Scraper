@@ -73,11 +73,11 @@ async def batch_database_changes(new_root, old_root):
             await db_merger(ele)
 
         except Exception as E:
-            failures.append([{"path":ele,"reason":E}])
+            failures.append([{"path":str(ele),"reason":E}])
             log.error(f"Issue getting required info for {ele}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-    log.debug(failures)
+    log.info("\n".join(list(failures.keys())))
 
 class MergeDatabase:
     def __init__(self, new_db_path):

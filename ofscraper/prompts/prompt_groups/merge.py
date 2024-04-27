@@ -52,7 +52,7 @@ def new_db_prompt():
             {
                 "type": "filepath",
                 "name": "database",
-                "message": "Merge db dir: ",
+                "message": "Merge db folder: ",
                 "option_instruction": """
                 directory for new merge database
                 It is best if merged database is stored seperately from source database(s)
@@ -79,6 +79,7 @@ def confirm_prompt_db(folder, new_db) -> bool:
                     Choice(False, "No"),
                     Choice(None, "Back to Main Menu"),
                 ],
+                "default":False
             }
         ]
     )
