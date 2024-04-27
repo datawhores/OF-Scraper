@@ -191,28 +191,6 @@ def common_params(func):
 
 def common_other_params(func):
     @click.option_group(
-        "Downloading options",
-        click.option(
-            "-q",
-            "--quality",
-            type=click.Choice(["240", "720", "source"], case_sensitive=False),
-        ),
-        click.option(
-            "-lb",
-            "--label",
-            help="Filter by label (use helpers.label_helper to process)",
-            default=[],
-            required=False,
-            type=helpers.label_helper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-            multiple=True,
-        ),
-        help="Options for controlling download behavior",
-    )
-
-    @click.option_group(
         "Filename Modification options",
         click.option(
             "-g",

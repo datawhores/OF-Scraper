@@ -84,3 +84,20 @@ def confirm_prompt_db(folder, new_db) -> bool:
         ]
     )
     return answer[name]
+
+
+def model_id_prompt():
+    answer = promptClasses.batchConverter(
+        *[
+            {
+                "type": "inpit",
+                "name": "database",
+                "message": "Username/UD: ",
+                "option_instruction": """
+                Preferably the model ID
+                """,
+            },
+        ]
+    )
+    return answer["database"]
+

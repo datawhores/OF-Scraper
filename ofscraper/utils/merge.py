@@ -18,6 +18,19 @@ def merge_runner():
             continue
         elif confirm is None:
             break
-        else:
-            merge.batch_database_changes(new_db_folder, folder)
-            break
+    merge_loop(new_db_folder,folder)
+             
+def merge_loop(new_db_folder,folder):
+    db_merger = merge.MergeDatabase(new_db_folder)
+    while True:
+        failures=merge.batch_database_changes(new_db_folder, folder)
+        if len(failures)==0:
+            return
+        for failure in failures:
+            print("[red]Please read the following selections carfully[/red]")
+            model_id=prompts.model_id_prompt()
+            if model_id.isnumeric():
+                d
+                
+     
+

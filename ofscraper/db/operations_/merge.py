@@ -46,7 +46,7 @@ log = logging.getLogger("shared")
 
 
 @run
-async def batch_database_changes(new_root, old_root):
+async def batch_database_changes(new_root, old_root,user_dbs=None):
 
     if not pathlib.Path(old_root).is_dir():
         raise FileNotFoundError("Path is not dir")
@@ -58,10 +58,10 @@ async def batch_database_changes(new_root, old_root):
 
     await create_tables(db_path=new_db_path)
     failures=[]
-    for ele in paths.get_all_db(old_root):
+    for ele in user_dbs or paths.get_all_db(old_root):
         if ele == new_db_path:
             continue
-        log.info(f"Merging {ele} with {new_db_path}")
+        log.info(f"Merging {new_root} with {ele}")
         try:
             model_id = get_single_model_via_profile(db_path=ele)
             if not model_id:
@@ -78,6 +78,16 @@ async def batch_database_changes(new_root, old_root):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
     log.info("\n\n\n".join(list(map(lambda x:str([(key,value) for key,value in x.items()]),failures))))
+    return failures
+
+@run
+async def merge_single_table(db_merger,ele,model_id):
+    await create_tables(db_path=ele)
+    await modify_tables(model_id=model_id, db_path=ele)
+    db_merger(ele)
+
+
+
 
 class MergeDatabase:
     def __init__(self, new_db_path):
