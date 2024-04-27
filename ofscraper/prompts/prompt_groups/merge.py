@@ -72,7 +72,7 @@ def confirm_prompt_db(folder, new_db) -> bool:
             {
                 "type": "list",
                 "name": name,
-                "message": "confirm merge: ",
+                "message": "Confirm merge: ",
                 "instruction": f"user_data.db files from {folder} will be merged into {str(pathlib.Path(new_db,'user_data.db'))}",
                 "choices": [
                     Choice(True, "Yes"),
