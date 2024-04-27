@@ -27,6 +27,7 @@ log = logging.getLogger("shared")
 # user_id==modes.id cause of legacy
 profilesCreate = """
 CREATE TABLE IF NOT EXISTS profiles (
+    
 	id INTEGER NOT NULL, 
 	user_id INTEGER NOT NULL, 
 	username VARCHAR NOT NULL,

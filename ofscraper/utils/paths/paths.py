@@ -161,6 +161,6 @@ def speed_file():
 
 def get_all_db(path):
     for ele in filter(
-        lambda x: re.search("user_data.db", str(x)), pathlib.Path(path).glob("**/*")
+        lambda x: re.search("user_data.db", str(x)) and not re.search("(backup.db|_copy)",str(x)), pathlib.Path(path).glob("**/*")
     ):
         yield ele

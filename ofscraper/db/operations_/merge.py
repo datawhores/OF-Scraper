@@ -57,6 +57,7 @@ async def batch_database_changes(new_root, old_root):
     db_merger = MergeDatabase(new_db_path)
 
     await create_tables(db_path=new_db_path)
+    failures=[]
     for ele in paths.get_all_db(old_root):
         if ele == new_db_path:
             continue
@@ -64,18 +65,19 @@ async def batch_database_changes(new_root, old_root):
         try:
             model_id = get_single_model_via_profile(db_path=ele)
             if not model_id:
-                raise Exception("No model ID")
+                raise Exception("No model exactly one model_id in profile table")
             elif not str(model_id).isnumeric():
-                raise Exception("Model ID is not numeric")
+                raise Exception("Found model_id was not numeric")
             await create_tables(db_path=ele)
             await modify_tables(model_id=model_id, db_path=ele)
             await db_merger(ele)
 
         except Exception as E:
+            failures.append([{"path":ele,"reason":E}])
             log.error(f"Issue getting required info for {ele}")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-
+    log.debug(failures)
 
 class MergeDatabase:
     def __init__(self, new_db_path):
