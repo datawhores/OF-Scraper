@@ -8,6 +8,7 @@ import ofscraper.utils.args.helpers as helpers
 from ofscraper.__version__ import __version__
 from ofscraper.const.constants import KEY_OPTIONS
 
+from humanfriendly import parse_size
 
 def common_params(func):
 
@@ -190,6 +191,41 @@ def common_params(func):
 
 
 def common_other_params(func):
+    @click.option_group(
+        "Media Filters",
+        click.option(
+            "-q",
+            "--quality",
+            type=click.Choice(["240", "720", "source"], case_sensitive=False),
+        ),
+    click.option(
+        "-mt",
+        "--mediatype",
+        help="Filter by media type (Videos, Audios, Images)",
+        default=[],
+        required=False,
+        type=helpers.mediatype_helper,
+        callback=lambda ctx, param, value: (
+            list(set(itertools.chain.from_iterable(value))) if value else []
+        ),
+        multiple=True,
+    ),
+    click.option(
+        "-sx",
+        "--size-max",
+        help="Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)",
+        required=False,
+        type=parse_size,
+    ),
+    click.option(
+        "-sm",
+        "--size-min",
+        help="Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)",
+        required=False,
+        type=parse_size,
+    ),
+    help="Options for controlling which media is downloaded")
+
     @click.option_group(
         "Filename Modification options",
         click.option(
