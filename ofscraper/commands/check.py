@@ -34,6 +34,8 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.shared.utils.text import textDownloader
 from ofscraper.db.operations_.media import batch_mediainsert,get_media_ids_downloaded
+import ofscraper.filters.media.main as filters
+
 
 from ofscraper.utils.context.run_async import run
 
@@ -624,15 +626,10 @@ def start_table(ROWS_):
     global app
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    app = table.InputApp()
-    app.mutex = threading.Lock()
-    app.row_queue = queue.Queue()
     ROWS = get_first_row()
     ROWS.extend(ROWS_)
-
-    app.table_data = ROWS
-    app.row_names = ROW_NAMES
-    app._filtered_rows = app.table_data[1:]
+    app = table.InputApp(table_data=ROWS,mutex=threading.Lock(),row_queue = queue.Queue(),mediatype=init_media_type_helper()
+)
     app.run()
 
 
@@ -673,7 +670,7 @@ def checkmarkhelper(ele):
 
 
 async def row_gather(username, model_id, paid=False):
-    # fix text
+    # fix tex
     global ROWS
     downloaded = await get_downloaded(username, model_id, paid=paid)
 
@@ -683,34 +680,43 @@ async def row_gather(username, model_id, paid=False):
         for ele in list(filter(lambda x: x.canview, ALL_MEDIA.values()))
     ]
     out = []
+
     media_sorted = sorted(
         ALL_MEDIA.values(), key=lambda x: arrow.get(x.date), reverse=True
     )
-    for _, ele in enumerate(media_sorted):
+    for count, ele in enumerate(media_sorted):
         out.append(
-            [
-                None,
-                checkmarkhelper(ele),
-                username,
-                ele.id in downloaded
+                {
+                "index":count,
+                "number":None,
+                "download_cart":checkmarkhelper(ele),
+                "username":username,
+                "downloaded":ele.id in downloaded
                 or cache.get(ele.postid) is not None
                 or cache.get(ele.filename) is not None,
-                unlocked_helper(ele),
-                times_helper(ele, mediadict, downloaded),
-                ele.numeric_duration,
-                ele.mediatype,
-                datehelper(ele.formatted_postdate),
-                len(ele._post.post_media),
-                ele.responsetype,
-                "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),
-                ele.postid,
-                ele.id,
-                texthelper(ele.text),
-            ]
+                "unlocked":unlocked_helper(ele),
+                "times_detected":times_helper(ele, mediadict, downloaded),
+                "post_media_count": len(ele._post.post_media),
+                "mediatype":ele.mediatype,
+                "post_date":datehelper(ele.formatted_postdate),
+                "media":len(ele._post.post_media),
+                "length":ele.numeric_duration,
+                "responsetype":ele.responsetype,
+                "price": "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),
+                "post_id":ele.postid,
+                "media_id":ele.id,
+                "text":ele.text
+            }
         )
     ROWS = ROWS or []
     ROWS.extend(out)
 
+def init_media_type_helper():
+    args=read_args.retriveArgs()
+    mediatype=args.mediatype
+    args.mediatype=None
+    write_args.setArgs(args)
+    return mediatype
 
 def reset_time_line_cache(model_id):
     cache.set(f"timeline_check_{model_id}", [])

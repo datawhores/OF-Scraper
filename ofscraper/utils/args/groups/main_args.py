@@ -149,22 +149,6 @@ import ofscraper.utils.args.helpers as helpers
             is_flag=True,
         ),
     ),
-    click.constraints.mutually_exclusive(
-        click.option(
-            "-to",
-            "--protected-only",
-            help="Only download content that requires decryption",
-            default=False,
-            is_flag=True,
-        ),
-        click.option(
-            "-no",
-            "--normal-only",
-            help="Only download content that does not require decryption",
-            default=False,
-            is_flag=True,
-        ),
-    ),
     click.option(
         "-lb",
         "--label",

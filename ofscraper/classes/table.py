@@ -20,6 +20,23 @@ import ofscraper.utils.logs.logger as logger
 
 log = logging.getLogger("shared")
 
+ROW_NAMES = (
+    "Number",
+    "Download_Cart",
+    "UserName",
+    "Downloaded",
+    "Unlocked",
+    "Times_Detected",
+    "Length",
+    "Mediatype",
+    "Post_Date",
+    "Post_Media_Count",
+    "Responsetype",
+    "Price",
+    "Post_ID",
+    "Media_ID",
+    "Text",
+)
 
 # console=console_.get_shared_console()
 class OutConsole(RichLog):
@@ -400,9 +417,9 @@ class MediaField(Horizontal):
         [setattr(ele, "styles.width", "30%") for ele in self.query(Checkbox)]
 
     def compose(self):
-        yield Checkbox("audios", True, id=f"{self.filter_name}_search")
-        yield Checkbox("videos", True, id=f"{self.filter_name}_search2")
-        yield Checkbox("Images", True, id=f"{self.filter_name}_search3")
+        yield Checkbox("audios", True, id=f"{self.filter_name}_audios")
+        yield Checkbox("videos", True, id=f"{self.filter_name}_videos")
+        yield Checkbox("Images", True, id=f"{self.filter_name}_images")
         self.styles.height = "auto"
         self.styles.width = "1fr"
 
@@ -415,31 +432,31 @@ class MediaField(Horizontal):
 
     def update_table_val(self, val):
         if val == "audios":
-            self.query_one(f"#{self.filter_name}_search").value = True
-            self.query_one(f"#{self.filter_name}_search2").value = False
-            self.query_one(f"#{self.filter_name}_search3").value = False
+            self.query_one(f"#{self.filter_name}_audios").value = True
+            self.query_one(f"#{self.filter_name}_videos").value = False
+            self.query_one(f"#{self.filter_name}_images").value = False
         elif val == "videos":
-            self.query_one(f"#{self.filter_name}_search2").value = True
-            self.query_one(f"#{self.filter_name}_search3").value = False
-            self.query_one(f"#{self.filter_name}_search").value = False
+            self.query_one(f"#{self.filter_name}_videos").value = True
+            self.query_one(f"#{self.filter_name}_music").value = False
+            self.query_one(f"#{self.filter_name}_images").value = False
         elif val == "images":
-            self.query_one(f"#{self.filter_name}_search3").value = True
-            self.query_one(f"#{self.filter_name}_search").value = False
-            self.query_one(f"#{self.filter_name}_search2").value = False
+            self.query_one(f"#{self.filter_name}_images").value = True
+            self.query_one(f"#{self.filter_name}_audios").value = False
+            self.query_one(f"#{self.filter_name}_videos").value = False
 
     def reset(self):
         for ele in self.query(Checkbox):
             ele.value = True
 
     def validate(self, val):
-        if val == "audios" and not self.query_one(f"#{self.filter_name}_search").value:
+        if val == "audios" and not self.query_one(f"#{self.filter_name}_audios").value:
             return False
         elif (
-            val == "videos" and not self.query_one(f"#{self.filter_name}_search2").value
+            val == "videos" and not self.query_one(f"#{self.filter_name}_videos").value
         ):
             return False
         elif (
-            val == "images" and not self.query_one(f"#{self.filter_name}_search3").value
+            val == "images" and not self.query_one(f"#{self.filter_name}_images").value
         ):
             return False
         return True
@@ -505,8 +522,32 @@ class DateField(Horizontal):
             return ""
         return match.group(0)
 
+class TableRow():
+    def __init__(self,table_row):
+        self._table_row = table_row
+        self._row_names=ROW_NAMES
+    def get_styled(self,count=1):
+        styled_row = [(Text(str(count + 1)))]
+        styled_row.extend(
+                    [Text(str(self.get_val(key) if not key.lower()=="number" else count), style="italic #03AC13") for key in self._row_names])
+        return styled_row
+    def get_val(self,name):
+        return self._table_row[name.lower()]
+
+
 
 class InputApp(App):
+    def __init__(self, *args, **kwargs) -> None:
+        self.table_data_original=kwargs.pop("table_data",None)
+        self.table_headers=self.table_data_original[0]
+        self.table_data=[TableRow(ele) for ele in self.table_data_original[1:]]
+        self.row_names=ROW_NAMES
+        self.mutex=kwargs.pop("mutex",None)
+        self.row_queue=kwargs.pop("row_queue",None)
+        self._filtered_rows = self.table_data
+        self._init_mediatype=kwargs.pop("mediatype",None)
+        super().__init__(*args, **kwargs)
+
     # Events
     def on_data_table_header_selected(self, event):
         self._current_added = self.get_current_added_rows()
@@ -612,6 +653,8 @@ class InputApp(App):
     def on_mount(self) -> None:
         self.set_reverse(init=True)
         self.set_cart_toggle(init=True)
+        self._set_and_sort_media_type()
+        self.set_filtered_rows()
         self.make_table()
         self.query_one("#reset").styles.align = ("center", "middle")
         self.query_one(VerticalScroll).styles.height = "25vh"
@@ -621,7 +664,12 @@ class InputApp(App):
         for ele in self.query(Horizontal)[:-1]:
             ele.styles.height = "10vh"
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
+    def _set_and_sort_media_type(self):
+        mediatype=self._init_mediatype if bool(self._init_mediatype) else ["audios","videos","images"]
 
+        self.query_one("#Mediatype_audios").value=(mediatype==None or "Audios" in mediatype)
+        self.query_one("#Mediatype_videos").value=(mediatype==None or "Videos" in mediatype)
+        self.query_one("#Mediatype_images").value=(mediatype==None or "Images" in mediatype)
     # Cart
     def change_download_cart(self, coord):
         table = self.query_one(DataTable)
@@ -676,7 +724,7 @@ class InputApp(App):
             [
                 str(x[0])
                 for x in list(
-                    filter(lambda x: x[index] == "[added]", self.table_data[1:])
+                    filter(lambda x: x[index] == "[added]", self.table_data)
                 )
             ],
             "[]",
@@ -685,7 +733,7 @@ class InputApp(App):
     def reset_filtered_cart(self):
         index = self.row_names.index("Download_Cart")
         self.update_downloadcart_cell(
-            list(filter(lambda x: x[index] != "Not Unlocked", self._filtered_rows)),
+            list(filter(lambda x: x.get_val("unlocked") != "Not Unlocked", self._filtered_rows)),
             "[]",
         )
 
@@ -880,18 +928,18 @@ class InputApp(App):
 
     def set_filtered_rows(self, reset=False):
         if reset is True:
-            self._filtered_rows = self.table_data[1:]
+            self._filtered_rows = self.table_data
             self.reset_cart()
         else:
-            filter_rows = self.table_data[1:]
-            for count, name in enumerate(self.row_names[1:]):
+            filter_rows = self.table_data
+            for count, name in enumerate(self.row_names):
                 try:
                     targetNode = self.query_one(f"#{name}")
                     if targetNode.empty():
                         continue
                     filter_rows = list(
                         filter(
-                            lambda x: targetNode.validate(x[count + 1]) is True,
+                            lambda x: targetNode.validate(x.get_row_val(name)) is True,
                             filter_rows,
                         )
                     )
@@ -922,15 +970,13 @@ class InputApp(App):
             table.zebra_stripes = True
             [
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
-                for ele in self.table_data[0]
+                for ele in self.table_headers
             ]
             for count, row in enumerate(self._filtered_rows):
-                # Adding styled and justified `Text` objects instead of plain strings.
-                styled_row = [(Text(str(count + 1)))]
-                styled_row.extend(
-                    Text(str(cell), style="italic #03AC13") for cell in row[1:]
-                )
-                table.add_row(*styled_row, key=str(row[0]))
+                table_row=row.get_styled(count=count)
+                # Addin styled and justified `Text` objects instead of plain strings.
+                table.add_row(*table_row,key=row.get_val("index"))
+                # table.add_row(*styled_row, key=str(row[0]))
 
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")
