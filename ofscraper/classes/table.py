@@ -153,7 +153,8 @@ class FilterInput(Input):
                 return self.value
         # The value to test is either empty, or valid. Let's accept it.
         return value
-
+    def update_table_val(self, val):
+        self.value = self.validate_value( val)
 
     def on_input_changed(self):
         app.status[self.key]=self.value
@@ -425,14 +426,27 @@ class MediaField(Horizontal):
 
 
 
-class DateField(Horizontal):
+class DateField(Container):
+    DEFAULT_CSS="""
+    #minDate{
+        width:50%;
+    }
+
+    #maxDate{
+        width:50%;
+
+    }
+
+    """
     def __init__(self, name: str) -> None:
+        name=name.lower()
         super().__init__(id=name, classes="container")
         self.filter_name = name
 
     def compose(self):
-        yield Input(placeholder="Earliest Date", id="minDate")
-        yield Input(placeholder="Latest Date", id="maxDate")
+        with Horizontal():
+            yield Input(placeholder="Earliest Date", id="minDate")
+            yield Input(placeholder="Latest Date", id="maxDate")
 
     def empty(self):
         return self.query(Input)[0].value == "" and self.query(Input)[1].value == ""
@@ -451,29 +465,11 @@ class DateField(Horizontal):
         for ele in self.query(Input):
             ele.value = ""
 
-    def validate(self, val):
-        if self.validateAfter(val) and self.validateBefore(val):
-            return True
-        return False
 
-    def validateAfter(self, val):
-        if self.query_one("#minDate").value == "":
-            return True
-        compare = arrow.get(self.convertString(val))
-        early = arrow.get(self.convertString(self.query_one("#minDate").value))
+    def on_input_changed(self,input):
+        key=input.input.id.lower()
+        app.status[key]=input.input.value
 
-        if compare < early:
-            return False
-        return True
-
-    def validateBefore(self, val):
-        if self.query_one("#maxDate").value == "":
-            return True
-        compare = arrow.get(self.convertString(val))
-        late = arrow.get(self.convertString(self.query_one("#maxDate").value))
-        if compare > late:
-            return False
-        return True
 
     def convertString(self, val):
         match = re.search("[0-9-/\.]+", val)
@@ -529,6 +525,9 @@ class Status():
         self._status.setdefault("times_detected",None)
         self._status.setdefault("post_media_count",None)
         self._status.setdefault("username",None)
+        self._status.setdefault("mindate",None)
+        self._status.setdefault("maxdate",None)
+
 
 
 
@@ -542,11 +541,24 @@ class Status():
             return self._times_detected_helper(key,test)
         elif key in {"username"}:
             return self._generic_helper(key,test)
+        elif key=="post_date":
+           return self._date_helper(test)
+
         return True
     def _generic_helper(self,key,test):
         if self._status[key]==None:
             return True
         return test.lower() ==self._status[key]
+    def _date_helper(self,test):
+        if not bool(self._status["mindate"]) and not bool(self._status["maxdate"]):
+            return True
+        elif bool(self._status["mindate"]) and bool(self._status["maxdate"]):
+            return arrow.get(test).floor('day').is_between(arrow.get(self._status["mindate"]),arrow.get(self._status["maxdate"]),bounds="[]")
+        elif bool(self._status["mindate"]):
+            return arrow.get(test)>=arrow.get(self._status["mindate"])
+        elif bool(self._status["maxdate"]):
+            return arrow.get(test)<=arrow.get(self._status["maxdate"])
+        return True
     def _mediatype_helper(self,test):
         return test.lower() in self._status["mediatypes"]
     def _bool_helper(self,key,test):
@@ -621,6 +633,8 @@ height:15vh;
     NumField {
     column-span:3;
     }
+
+   
     #Times_Detected{
     column-span:1;
     }
