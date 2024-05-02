@@ -508,9 +508,9 @@ class TableRow():
         self._table_row = table_row
         self._row_names=constants.getattr("ROW_NAMES")
         self._styled=None
-    def get_styled(self,count=1):
+    def get_styled(self):
         if not self._styled:
-            styled_row=[Text(str(self.get_val(key) if not key.lower()=="number" else count+1), style="italic #03AC13",overflow="fold") for key in self._row_names]
+            styled_row=[Text(str(self.get_val(key)), style="italic #03AC13",overflow="fold") for key in self._row_names]
             styled_row=[self.split_join_max_len(ele,30) for ele in styled_row]
             self._styled=styled_row
         return  self._styled
@@ -531,6 +531,7 @@ class TableRow():
 
     def get_val(self,name):
         name=name.lower()
+        name=name if name!='number' else 'index'
         return self._table_row[name]
 
     def set_val(self,key,val):
@@ -667,6 +668,7 @@ height:15vh;
         self.table_data_original=kwargs.pop("table_data",None)
         self.table_data=[TableRow(ele) for ele in self.table_data_original[1:]]
         self._sorted_hash={}
+        self._sortkey=None
         self.row_names=constants.getattr("ROW_NAMES")
         self.mutex=kwargs.pop("mutex",None)
         self.row_queue=kwargs.pop("row_queue",None)
@@ -872,7 +874,8 @@ height:15vh;
         with self.mutex:
             if label is None:
                 return
-            elif label == "Download Cart":
+            key=re.sub(" ", "_", label).lower()
+            if key == "download_cart":
                 index = self.row_names.index(re.sub(" ", "_", label))
                 filtered_status = ["[downloading]", "Not Unlocked", "[downloaded]"]
                 table = self.query_one(DataTable)
@@ -891,38 +894,37 @@ height:15vh;
                 return
 
 
-            key=re.sub(" ", "_", label).lower()
-            self.set_reverse(label=label)
+            self.set_reverse(key=key)
             if self._get_sorted_hash(key):
                 self._sorted_rows=self._get_sorted_hash(key)
-            elif label == "Number":
+            elif key == "number":
                 self._sorted_rows = sorted(
                     self.table_data, key=lambda x: x.get_val(key), reverse=self.reverse
                 )
-            elif label == "UserName":
+            elif key == "username":
                 self._sorted_rows = sorted(
-                    self.table_data, key=lambda x: x.get_val(key), reverse=self.reverse
+                    self.table_data, key=lambda x: (x.get_val(key),x.get_val("number")), reverse=self.reverse
                 )
-            elif label == "Downloaded":
+            elif key == "downloaded":
                 self._sorted_rows = sorted(
                     self.table_data,
                     key=lambda x: 1 if x.get_val(key) is True else 0,
                     reverse=self.reverse,
                 )
 
-            elif label == "Unlocked":
+            elif key == "unlocked":
                 self._sorted_rows = sorted(
                     self.table_data,
                     key=lambda x: 1 if x.get_val(key) is True else 0,
                     reverse=self.reverse,
                 )
-            elif label == "Times Detected":
+            elif key == "times_detected":
                 self._sorted_rows = sorted(
                     self._filtered_rows,
                     key=lambda x: x.get_val(key) or 0,
                     reverse=self.reverse,
                 )
-            elif label == "Length":
+            elif key == "length":
                 helperNode = self.query_one("#Length")
                 self._sorted_rows = sorted(
                     self._filtered_rows,
@@ -931,11 +933,11 @@ height:15vh;
                     ),
                     reverse=self.reverse,
                 )
-            elif label == "Mediatype":
+            elif key == "mediatype":
                 self._sorted_rows = sorted(
                     self.table_data, key=lambda x: x.get_val(key), reverse=self.reverse
                 )
-            elif label == "Post Date":
+            elif key == "post_date":
                 helperNode = self.query_one("#Post_Date")
                 self._sorted_rows = sorted(
                     self.table_data,
@@ -944,35 +946,35 @@ height:15vh;
                     ),
                     reverse=self.reverse,
                 )
-            elif label == "Post Media Count":
+            elif key == "post_media_count":
                 self._sorted_rows = sorted(
                     self.table_data, key=lambda x: x.get_val(key), reverse=self.reverse
                 )
 
-            elif label == "Responsetype":
+            elif key == "responsetype":
                 self._sorted_rows = sorted(
                     self.table_data, key=lambda x: x.get_val(key), reverse=self.reverse
                 )
-            elif label == "Price":
+            elif key == "price":
                 self._sorted_rows = sorted(
                     self.table_data,
                     key=lambda x: int(float(x.get_val(key))) if x.get_val(key) != "Free" else 0,
                     reverse=self.reverse,
                 )
 
-            elif label == "Post ID":
+            elif key == "post_id":
                 self._sorted_rows = sorted(
                     self.table_data,
                     key=lambda x: x.get_val(key) if x.get_val(key) else 0,
                     reverse=self.reverse,
                 )
-            elif label == "Media ID":
+            elif key == "media_id":
                 self._sorted_rows = sorted(
                     self.table_data,
                     key=lambda x: x.get_val(key) if x.get_val(key) else 0,
                     reverse=self.reverse,
                 )
-            elif label == "Text":
+            elif key == "text":
                 self._sorted_rows = sorted(
                     self._filtered_rows, key=lambda x: x.get_val(key), reverse=self.reverse
                 )
@@ -984,21 +986,18 @@ height:15vh;
     def _set_sorted_hash(self,key,val):
         self._sorted_hash[f'{key}_{self.reverse}']=val
 
-    def set_reverse(self, label=None, init=False):
+    def set_reverse(self, key=None, init=False):
         if init:
             self.reverse = None
-            self.label = None
-        if not self.label:
-            self.label = label
-            self.reverse = False
-        elif label != self.label:
-            self.label = label
+            self._sortkey = 'number'
+        elif key != self._sortkey:
+            self._sortkey = key
             self.reverse = False
 
-        elif self.label == label and not self.reverse:
+        elif self._sortkey == key and not self.reverse:
             self.reverse = True
 
-        elif self.label == label and self.reverse:
+        elif self._sortkey == key and self.reverse:
             self.reverse = False
 
     def set_cart_toggle(self, init=False):
@@ -1059,8 +1058,8 @@ height:15vh;
                 table.add_column(re.sub("_", " ", ele), key=str(ele))
                 for ele in self.row_names
             ]
-            for count, row in enumerate(self._filtered_rows):
-                table_row=row.get_styled(count=count)
+            for row in self._filtered_rows:
+                table_row=row.get_styled()
                 table.add_row(*table_row,key=str(row.get_val("index")),height=None)
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")

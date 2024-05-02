@@ -666,7 +666,7 @@ async def row_gather(username, model_id, paid=False):
     for count, ele in enumerate(media_sorted):
         out.append(
                 {
-                "index":count+1,
+                "index":count,
                 "number":None,
                 "download_cart":checkmarkhelper(ele),
                 "username":username,
@@ -684,7 +684,7 @@ async def row_gather(username, model_id, paid=False):
                 "price": "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),
                 "post_id":ele.postid,
                 "media_id":ele.id,
-                "text":ele.post.db_text
+                "text":ele.post.db_sanitized_text
             }
         )
     ROWS = ROWS or []
