@@ -921,14 +921,14 @@ height:15vh;
                 )
             elif key == "times_detected":
                 self._sorted_rows = sorted(
-                    self._filtered_rows,
+                    self.table_data,
                     key=lambda x: x.get_val(key) or 0,
                     reverse=self.reverse,
                 )
             elif key == "length":
                 helperNode = self.query_one("#Length")
                 self._sorted_rows = sorted(
-                    self._filtered_rows,
+                    self.table_data,
                     key=lambda x: (
                         helperNode.convertString(x.get_val(key)) if x.get_val(key) != "N/A" else 0
                     ),
@@ -977,7 +977,7 @@ height:15vh;
                 )
             elif key == "text":
                 self._sorted_rows = sorted(
-                    self._filtered_rows, key=lambda x: x.get_val(key), reverse=self.reverse
+                    self.table_data, key=lambda x: x.get_val(key), reverse=self.reverse
                 )
             self._set_sorted_hash(key,self._sorted_rows)
         await asyncio.get_event_loop().run_in_executor(None,self.set_filtered_rows)
