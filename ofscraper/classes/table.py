@@ -830,7 +830,6 @@ height:15vh;
         )
 
     def reset_filtered_cart(self):
-        index = self.row_names.index("Download_Cart")
         self.update_downloadcart_cells(
             list(filter(lambda x: x.get_val("unlocked") != "Not Unlocked", self._filtered_rows)),
             "[]",
@@ -1010,27 +1009,28 @@ height:15vh;
             self.cart_toggle = Text("[added]")
 
     def set_filtered_rows(self, reset=False):
-        with self.mutex:
             if reset is True:
-                self._filtered_rows = self.table_data
+                with self.mutex:
+                    self._filtered_rows = self.table_data
                 self.reset_cart()
             else:
-                filter_rows=self._sorted_rows
-                for count, name in enumerate(self.row_names):
-                    name=name.lower()
-                    try:
-                        targetNode = self.query_one(f"#{name}")
-                        if targetNode.empty():
-                            continue
-                        filter_rows = list(
-                            filter(
-                                lambda x:self._status.validate(name,x.get_val(name)),
-                                filter_rows,
+                with self.mutex:
+                    filter_rows=self._sorted_rows
+                    for count, name in enumerate(self.row_names):
+                        name=name.lower()
+                        try:
+                            targetNode = self.query_one(f"#{name}")
+                            if targetNode.empty():
+                                continue
+                            filter_rows = list(
+                                filter(
+                                    lambda x:self._status.validate(name,x.get_val(name)),
+                                    filter_rows,
+                                )
                             )
-                        )
-                    except Exception as e:
-                        pass  
-                self._filtered_rows = filter_rows
+                        except Exception as e:
+                            pass  
+                    self._filtered_rows = filter_rows
 
     def update_input(self, row_name, value):
         row_name=row_name.lower()
