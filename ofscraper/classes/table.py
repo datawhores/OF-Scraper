@@ -830,6 +830,7 @@ height:15vh;
         )
 
     def reset_filtered_cart(self):
+        index = self.row_names.index("Download_Cart")
         self.update_downloadcart_cells(
             list(filter(lambda x: x.get_val("unlocked") != "Not Unlocked", self._filtered_rows)),
             "[]",
@@ -1016,12 +1017,9 @@ height:15vh;
             else:
                 with self.mutex:
                     filter_rows=self._sorted_rows
-                    for count, name in enumerate(self.row_names):
+                    for name in self.row_names:
                         name=name.lower()
                         try:
-                            targetNode = self.query_one(f"#{name}")
-                            if targetNode.empty():
-                                continue
                             filter_rows = list(
                                 filter(
                                     lambda x:self._status.validate(name,x.get_val(name)),
