@@ -41,23 +41,7 @@ from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
-ROW_NAMES = (
-    "Number",
-    "Download_Cart",
-    "UserName",
-    "Downloaded",
-    "Unlocked",
-    "Times_Detected",
-    "Length",
-    "Mediatype",
-    "Post_Date",
-    "Post_Media_Count",
-    "Responsetype",
-    "Price",
-    "Post_ID",
-    "Media_ID",
-    "Text",
-)
+
 ROWS = []
 app = None
 ALL_MEDIA = {}
@@ -626,15 +610,10 @@ def start_table(ROWS_):
     global app
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    ROWS = get_first_row()
-    ROWS.extend(ROWS_)
-    app = table.InputApp(table_data=ROWS,mutex=threading.Lock(),row_queue = queue.Queue(),mediatype=init_media_type_helper()
-)
-    app.run()
+    ROWS=ROWS_
+    app = table.app(table_data=ROWS,mutex=threading.Lock(),row_queue = queue.Queue(),mediatype=init_media_type_helper())
 
 
-def get_first_row():
-    return [ROW_NAMES]
 
 
 def texthelper(text):
@@ -687,7 +666,7 @@ async def row_gather(username, model_id, paid=False):
     for count, ele in enumerate(media_sorted):
         out.append(
                 {
-                "index":count,
+                "index":count+1,
                 "number":None,
                 "download_cart":checkmarkhelper(ele),
                 "username":username,
@@ -705,7 +684,7 @@ async def row_gather(username, model_id, paid=False):
                 "price": "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),
                 "post_id":ele.postid,
                 "media_id":ele.id,
-                "text":ele.text
+                "text":ele.post.db_text
             }
         )
     ROWS = ROWS or []

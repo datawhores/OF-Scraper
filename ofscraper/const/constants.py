@@ -22,3 +22,5 @@ from ofscraper.const.req import *
 from ofscraper.const.test_constants import *
 from ofscraper.const.time import *
 from ofscraper.const.url import *
+from ofscraper.const.table import *
+
