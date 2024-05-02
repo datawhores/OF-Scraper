@@ -118,39 +118,11 @@ class NumField(Horizontal):
     def reset(self):
         self.query_one(IntegerInput).value = ""
  
-    # class IntegerInput(Input):
-    #     def __init__(
-    #         self,
-    #         *args,
-    #         **kwargs,
-    #         # ---snip---
-    #     ) -> None:
-    #         super().__init__(
-    #             # ---snip---
-    #             *args,
-    #             **kwargs,
-    #         )
-
-    #     def insert_text_at_cursor(self, text: str) -> None:
-    #         try:
-    #             int(text)
-    #         except ValueError:
-    #             pass
-    #         else:
-    #             app.status[self.key]=self.value
-    #             super().insert_text_at_cursor(text)
-    #     def on_input_submitted(self):
-    #         app.status[self.key]=self.value
-    #     @property
-    #     def key(self):
-    #         return self.id.replace("_input","")
-
-class IntegerInput( Input ):
-    """A numeric filter input widget."""
-    CAST = int
-    def __init__( self, *args: Any, **kwargs: Any ) -> None:
+class FilterInput(Input):
+    def __init__( self, *args: Any,placeholder=None, **kwargs: Any ) -> None:
         """Initialise the input."""
-        super().__init__( *args, **kwargs )
+        placeholder=placeholder or kwargs.get("id") or "placeholder"
+        super().__init__( *args, placeholder=placeholder,**kwargs )
         # TODO: Workaround for https://github.com/Textualize/textual/issues/1216
         self.value = self.validate_value( self.value )
 
@@ -190,7 +162,12 @@ class IntegerInput( Input ):
     @property
     def key(self):
         return self.id.replace("_input","")
+class IntegerInput( FilterInput ):
+    CAST = int
 
+
+class StrInput( FilterInput ):
+    CAST = str
 
 class PriceField(Horizontal):
     def __init__(self, name: str) -> None:
@@ -551,8 +528,7 @@ class Status():
         self._status.setdefault("not_downloaded",True)
         self._status.setdefault("times_detected",None)
         self._status.setdefault("post_media_count",None)
-
-
+        self._status.setdefault("username",None)
 
 
 
@@ -564,7 +540,13 @@ class Status():
             return self._bool_helper(key,test)
         elif key in {"times_detected","post_media_count"}:
             return self._times_detected_helper(key,test)
+        elif key in {"username"}:
+            return self._generic_helper(key,test)
         return True
+    def _generic_helper(self,key,test):
+        if self._status[key]==None:
+            return True
+        return test.lower() ==self._status[key]
     def _mediatype_helper(self,test):
         return test.lower() in self._status["mediatypes"]
     def _bool_helper(self,key,test):
@@ -605,9 +587,9 @@ class InputApp(App):
 
 
     #options{
-        height:125vh;
+        height:150vh;
         layout: grid;
-        grid-size: 4 11;
+        grid-size: 4 14;
         margin-top:2;
     }
 
@@ -732,6 +714,7 @@ height:15vh;
                 self.update_input(row_name, event.value.plain)
             else:
                 self.change_download_cart(event.coordinate)
+  
 
     # Main
     def compose(self) -> ComposeResult:
@@ -770,6 +753,8 @@ height:15vh;
                             yield BoolField("Unlocked")
                             for ele in ["Mediatype"]:
                                 yield MediaField(ele)
+                            for ele in ["username"]:
+                                yield StrInput(id=ele)
                     yield DataTable(fixed_rows=1, id="data_table")
                     yield Container()
             with Vertical(id="console_page"):
