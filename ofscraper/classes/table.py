@@ -401,6 +401,7 @@ class BoolField(Widget):
 
 class MediaField(Horizontal):
     def __init__(self, name: str) -> None:
+        name=name.lower()
         super().__init__(id=name, classes="container")
         self.filter_name = name
 
@@ -410,7 +411,7 @@ class MediaField(Horizontal):
         yield Checkbox("images", True, id=f"{self.filter_name}_images")
 
     def on_checkbox_changed(self,checkbox):
-        key=re.sub("Mediatype_","",checkbox.checkbox.id,re.IGNORECASE)
+        key=re.sub("mediatype_","",checkbox.checkbox.id,re.IGNORECASE)
         toggle=checkbox.checkbox.value
         if not toggle:
             app.status["mediatypes"]=set(list(filter(lambda x:x!=key,app.status["mediatypes"])))
