@@ -37,9 +37,8 @@ from ofscraper.classes.table.row_names import row_names,row_names_all
 from ofscraper.classes.table.status import status
 
 log = logging.getLogger("shared")
-
-app=None
 global app
+app=None
 
 
 class TableRow():
