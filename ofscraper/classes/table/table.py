@@ -91,6 +91,7 @@ class TableRow():
 
     def set_val(self,key,val):
         self._table_row[key.lower()]=val
+        self._other_styled=None
     
 
 
@@ -225,7 +226,7 @@ SelectField,DateField,TimeField {
     def on_data_table_cell_selected(self, event):
         table = self.query_one(DataTable)
         cursor_coordinate = table.cursor_coordinate
-        if list(row_names())[cursor_coordinate.column]=="Download_Cart":
+        if list(row_names_all())[cursor_coordinate.column]=="download_cart":
             self.change_download_cart(event.coordinate)
 
 
@@ -233,7 +234,6 @@ SelectField,DateField,TimeField {
         if event.button.id == "reset":
             self.reset_all_inputs()
             self.set_reverse(init=True)
-            self.reset_filtered_cart()
             self.update_table(reset=True)
 
 
@@ -340,6 +340,7 @@ SelectField,DateField,TimeField {
     def change_download_cart(self, coord):
         table = self.query_one(DataTable)
         Download_Cart = table.get_cell_at(coord)
+        
         if Download_Cart.plain == "Not Unlocked":
             return
         elif Download_Cart.plain == "[]":
@@ -355,7 +356,7 @@ SelectField,DateField,TimeField {
     def add_to_row_queue(self):
         table = self.query_one(DataTable)
         row_keys = [str(ele.get_val("index")) for ele in self._filtered_rows]
-        index = list(row_names()).index("Download_Cart")
+        index = list(row_names_all()).index("download_cart")
         filter_row_keys = list(
             filter(lambda x: table.get_row(x)[index].plain == "[added]", row_keys)
         )
@@ -367,22 +368,6 @@ SelectField,DateField,TimeField {
         ]
 
 
-    def reset_cart(self):
-        self.update_downloadcart_cells(
-            [
-                str(x[0])
-                for x in list(
-                    filter(lambda x: x.get_val("download_cart") == "[added]", self.table_data)
-                )
-            ],
-            "[]",
-        )
-
-    def reset_filtered_cart(self):
-        self.update_downloadcart_cells(
-            list(filter(lambda x: x.get_val("unlocked") != "Not Unlocked", self._filtered_rows)),
-            "[]",
-        )
 
     def update_cell_at_coords(self, coords, value):
         with self.mutex:
@@ -390,16 +375,11 @@ SelectField,DateField,TimeField {
                 try:
                     table = self.query_one(DataTable)
                     table.update_cell_at(coord, Text(value))
-                    row_key=table.coordinate_to_cell_key(coord).row_key.value
-                    key=list(row_names())[coord.column]
-                    self.table_data[int(row_key)].set_val(key,value)
+                    key=list(row_names_all())[coord.column]
+                    self.table_data[coord.column-1].set_val(key,value)
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
-
-    def update_downloadcart_cells(self, keys, value):
-        self.update_cell(keys, "Download_Cart", value)
-
     def update_cell(self, keys, name, value, perst=True):
         if not isinstance(keys, list):
             keys = [keys]
@@ -556,7 +536,6 @@ SelectField,DateField,TimeField {
             if reset is True:
                 with self.mutex:
                     self._filtered_rows = self.table_data
-                self.reset_cart()
             else:
                 with self.mutex:
                     filter_rows=self._sorted_rows
