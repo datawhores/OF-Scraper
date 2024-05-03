@@ -19,7 +19,7 @@ import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.classes.table as table
+import ofscraper.classes.table.table as table
 import ofscraper.db.operations as operations
 import ofscraper.download.downloadnormal as downloadnormal
 import ofscraper.models.selector as selector
@@ -34,10 +34,9 @@ import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
 from ofscraper.download.shared.utils.text import textDownloader
 from ofscraper.db.operations_.media import batch_mediainsert,get_media_ids_downloaded
-import ofscraper.filters.media.main as filters
-
-
 from ofscraper.utils.context.run_async import run
+from ofscraper.classes.table.row_names import row_names_all
+
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -77,9 +76,9 @@ def process_item():
         return
     for count, _ in enumerate(range(0, 2)):
         try:
-            username = row[app.row_names.index("UserName")].plain
-            post_id = row[app.row_names.index("Post_ID")].plain
-            media_id = int(row[app.row_names.index("Media_ID")].plain)
+            username = row[list(row_names_all()).index("UserName")].plain
+            post_id = row[list(row_names_all()).index("Post_ID")].plain
+            media_id = int(row[list(row_names_all()).index("Media_ID")].plain)
             media = ALL_MEDIA.get(
                 "_".join(map(lambda x: str(x), [media_id, post_id, username]))
             )
