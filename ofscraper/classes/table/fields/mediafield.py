@@ -15,6 +15,6 @@ class MediaField(SelectField):
         self.filter_name = name
 
     def compose(self):
-        yield SelectionList(*[("Audios","audios",True),("Images","images",True),("Videos","video",True)])
+        yield SelectionList(*[("Audios","audios",True),("Images","images",True),("Videos","videos",True)])
 
 
