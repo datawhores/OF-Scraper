@@ -19,7 +19,6 @@ from textual.widgets import (
 
 
 import ofscraper.utils.logs.logger as logger
-import ofscraper.classes.table.app as app
 from ofscraper.classes.table.fields.numfield import NumField
 from ofscraper.classes.table.fields.textsearch import TextSearch
 from ofscraper.classes.table.fields.pricefield import PriceField
@@ -39,8 +38,8 @@ from ofscraper.classes.table.status import status
 
 log = logging.getLogger("shared")
 
-
-
+app=None
+global app
 
 
 class TableRow():
@@ -194,7 +193,6 @@ SelectField,DateField,TimeField {
 
     def __init__(self, *args, **kwargs) -> None:
         self._status=status
-        app.app=self
         super().__init__(*args, **kwargs)
     
     @property
