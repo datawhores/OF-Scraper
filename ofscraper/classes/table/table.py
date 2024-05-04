@@ -348,7 +348,6 @@ SelectField,DateField,TimeField {
         elif download_cart.plain == "[]":
             self.update_cell_at_coords(coord, "[added]")
 
-
         elif download_cart.plain == "[added]":
             self.update_cell_at_coords(coord, "[]")
 
@@ -372,14 +371,15 @@ SelectField,DateField,TimeField {
     def update_downloadcart_cells(self, keys, value):
         self.update_cell(keys, "download_cart", value)
 
-    def update_cell_at_coords(self, coords, value):
+    def update_cell_at_coords(self, coords, value,persist=True):
         with self.mutex:
             for coord in coords if isinstance(coords,list) else [coords]:
                 try:
                     table = self.query_one(DataTable)
                     table.update_cell_at(coord, Text(value))
                     key=list(row_names_all())[coord.column]
-                    self.table_data[coord.column-1].set_val(key,value)
+                    if persist:
+                        self.table_data[coord.row].set_val(key,value)
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
