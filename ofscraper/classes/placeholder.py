@@ -45,8 +45,7 @@ class basePlaceholder:
         self._ele = None
 
     def create_variables_base(self):
-        my_profile = profile_data.get_my_info()
-        my_id, my_username = me.parse_user(my_profile)
+        my_id, my_username = me.parse_user()
         self._variables = {
             "config_path": common_paths.get_config_home(),
             "profile": profile_data.get_active_profile(),

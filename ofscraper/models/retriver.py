@@ -82,8 +82,7 @@ def get_selected_model(parsed_subscriptions: list) -> tuple:
 
 # check if auth is valid
 def get_sub_count():
-    my_profile = me.scrape_user()
-    name, username = me_util.parse_user(my_profile)
+    name, username = me_util.parse_user()
     subscribe_count = me.parse_subscriber_count()
     me_util.print_user(name, username)
     return subscribe_count

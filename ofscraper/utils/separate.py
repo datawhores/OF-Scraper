@@ -12,6 +12,9 @@ r"""
 """
 
 import ofscraper.utils.cache as cache
+import ofscraper.utils.constants as constants
+import ofscraper.utils.me as me_util
+
 
 
 def separate_by_id(data: list, media_ids: list) -> list:
@@ -31,7 +34,8 @@ def seperate_avatar_helper(ele):
         return value
     return False
 
+def seperate_by_self(data):
+    my_id=me_util.get_id()
+    if constants.getattr("FILTER_SELF_MEDIA"):
+        return list(filter(lambda x: x.post.fromuser!= my_id, data))
 
-# def separate_database_results_by_id(results: list, media_ids: list) -> list:
-#     filtered_results = [r for r in results if r[0] not in media_ids]
-#     return filtered_results
