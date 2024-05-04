@@ -98,19 +98,6 @@ import ofscraper.utils.args.helpers as helpers
         default=0,
         type=int,
     ),
-
-    click.option(
-            "-lb",
-            "--label",
-            help="Filter for which label(s) to include",
-            default=[],
-            required=False,
-            type=helpers.label_helper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-            multiple=True,
-        ),
     click.option(
         "-it",
         "--item-sort",
