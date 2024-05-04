@@ -373,14 +373,14 @@ import ofscraper.utils.args.helpers as helpers
         is_flag=True,
     ),
     click.option(
-        "-ao",
-        "--all-promo-only/--all-promo-skip",
-        "all_promo",
+     "all_promo",
         help="""
             \b
             Flag for enabling/disabling  accounts with any promo price
-            [select one ppall-promo-only or --all-promo-skip]""",
-        default=None,
+            [select one all-promo-only or --all-promo-skip]""",
+        default=None,        "-ao",
+        "--all-promo-only/--all-promo-skip",
+   
         required=False,
         is_flag=True,
     ),
