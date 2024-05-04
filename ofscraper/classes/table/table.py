@@ -407,14 +407,13 @@ SelectField,DateField,TimeField {
                 return
             key=re.sub(" ", "_", label).lower()
             if key == "download_cart":
-                index = list(row_names()).index(re.sub(" ", "_", label))
-                filtered_status = ["[downloading]", "Not Unlocked", "[downloaded]"]
+                index = list(row_names_all()).index(key)
+                filtered_status = {"[downloading]", "Not Unlocked", "[downloaded]"}
                 table = self.query_one(DataTable)
                 self.set_cart_toggle()
-                keys = [str(ele[0]) for ele in self._filtered_rows]
                 filter_keys = list(
                     filter(
-                        lambda x: table.get_row(x)[index].plain not in filtered_status, keys
+                        lambda x: table.get_row(x)[index].plain not in filtered_status, map(lambda x: x.value,table.rows.keys())
                     )
                 )
                 log.debug(f"set cart toggle to {self.cart_toggle.plain}")
