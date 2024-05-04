@@ -16,6 +16,9 @@ It presents this data in a table format with filtering options for focused searc
 Allows unlocked media entries to be directly downloaded through the table
 """,
 )
+
+@common.common_params
+@common.common_other_params
 @click.constraints.require_one(
     click.option(
         "-u",
@@ -49,8 +52,7 @@ Allows unlocked media entries to be directly downloaded through the table
     is_flag=True,
     default=False,
 )
-@common.common_other_params
-@common.common_params
+@common.common_advanced_params
 @click.pass_context
 def story_check(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name

@@ -72,6 +72,8 @@ async def get_subscription_helper(c, accounts):
     for task in asyncio.as_completed(tasks):
         try:
             result = await task
+            log.debug(f"subscription data found for {result['username']} ")
+            log.trace(result)
             output.append(result)
         except Exception as E:
             log.traceback_(E)

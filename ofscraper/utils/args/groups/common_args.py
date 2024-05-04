@@ -73,6 +73,89 @@ def common_params(func):
         ),
         help="Settings for logging",
     )
+
+    @click.option_group(
+        "Download Options",
+        click.option(
+            "-ar",
+            "--no-auto-resume",
+            help="Cleanup temp .part files (removes resume ability)",
+            default=False,
+            is_flag=True,
+        ),
+        click.option(
+            "-db",
+            "--downloadbars",
+            help="Show individual download progress bars",
+            default=False,
+            is_flag=True,
+        ),
+        click.option(
+            "-sd",
+            "--downloadsem",
+            help="Number of concurrent downloads per thread",
+            default=None,
+            type=int,
+        ),
+        click.option(
+            "-dp",
+            "--downloadthreads",
+            help="Number of threads to use (minimum 1)",
+            default=None,
+            type=int,
+        ),
+
+    help="Options for downloads and download performance"
+    )
+
+    @click.option_group(
+        "Metadata Options",
+               click.option(
+            "-md",
+            "--metadata",
+            "metadata",
+            help="""
+            \b
+            Skip media downloads and gather metadata only 
+            [no change to download status] 
+            [select one --metadata or --metadata-update or --metadata-complete]""",
+            flag_value="none",  # Enforce "none" as the only valid value
+        ),
+        click.option(
+            "-mu",
+            "--metadata-update",
+            "metadata",
+            help="""
+            \b
+            Skip media downloads, gather metadata, and update download status based on file presence 
+            [select one --metadata or --metadata-update or --metadata-complete]""",
+            flag_value="file",
+        ),
+        click.option(
+            "-mc",
+            "--metadata-complete",
+            "metadata",
+            help="""
+            \b
+            Skip media downloads, gather metadata, and mark all media as downloaded 
+            [select one --metadata or --metadata-update or --metadata-complete]""",
+            flag_value="complete",
+        ),
+
+
+    help="Options generating metadata"
+    )
+
+    @functools.wraps(func)
+    @click.pass_context
+    def wrapper(ctx, *args, **kwargs):
+        return func(ctx, *args, **kwargs)
+
+    return wrapper
+
+
+
+def common_advanced_params(func):
     @click.option_group(
         "Advanced Program Options",
         click.option(
@@ -105,70 +188,11 @@ def common_params(func):
             callback=lambda ctx, param, value: value.lower() if value else None,
         ),
         click.option(
-            "-ar",
-            "--no-auto-resume",
-            help="Cleanup temp .part files (removes resume ability)",
-            default=False,
-            is_flag=True,
-        ),
-        click.option(
-            "-db",
-            "--downloadbars",
-            help="Show individual download progress bars",
-            default=False,
-            is_flag=True,
-        ),
-        click.option(
-            "-sd",
-            "--downloadsem",
-            help="Number of concurrent downloads per thread",
-            default=None,
-            type=int,
-        ),
-        click.option(
-            "-dp",
-            "--downloadthreads",
-            help="Number of threads to use (minimum 1)",
-            default=None,
-            type=int,
-        ),
-        click.option(
             "-up",
             "--update-profile",
-            help="Get up-to-date profile info instead of cache",
+            help="Get up-to-date profile info instead of using cache",
             default=False,
             is_flag=True,
-        ),
-        click.option(
-            "-md",
-            "--metadata",
-            "metadata",
-            help="""
-            \b
-            Skip media downloads and gather metadata only 
-            [no change to download status] 
-            [select one --metadata or --metadata-update or --metadata-complete]""",
-            flag_value="none",  # Enforce "none" as the only valid value
-        ),
-        click.option(
-            "-mu",
-            "--metadata-update",
-            "metadata",
-            help="""
-            \b
-            Skip media downloads, gather metadata, and update download status based on file presence 
-            [select one --metadata or --metadata-update or --metadata-complete]""",
-            flag_value="file",
-        ),
-        click.option(
-            "-mc",
-            "--metadata-complete",
-            "metadata",
-            help="""
-            \b
-            Skip media downloads, gather metadata, and mark all media as downloaded 
-            [select one --metadata or --metadata-update or --metadata-complete]""",
-            flag_value="complete",
         ),
         click.option(
             "-ds",
@@ -188,7 +212,6 @@ def common_params(func):
         return func(ctx, *args, **kwargs)
 
     return wrapper
-
 
 def common_other_params(func):
     @click.option_group(
@@ -240,6 +263,7 @@ def common_other_params(func):
             "--text-type",
             help="set length based on word or letter",
             type=click.Choice(["word", "letter"], case_sensitive=False),
+            default="word"
         ),
 
         click.option(

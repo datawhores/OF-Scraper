@@ -11,6 +11,8 @@ import ofscraper.utils.args.helpers as helpers
     help="Manually download media by providing a list of urls or IDs",
     short_help="Manually download media by providing a list of urls or IDs",
 )
+@common.common_params
+@common.common_other_params
 @click.constraints.require_one(
     click.option(
         "-u",
@@ -42,8 +44,7 @@ import ofscraper.utils.args.helpers as helpers
     is_flag=True,
     default=False,
 )
-@common.common_other_params
-@common.common_params
+@common.common_advanced_params
 @click.pass_context
 def manual(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name

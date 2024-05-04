@@ -15,6 +15,8 @@ import ofscraper.utils.args.helpers as helpers
     context_settings=dict(help_option_names=["-h", "--help"]),
     invoke_without_command=True,
 )
+@common.common_params
+@common.common_other_params
 @click.option_group(
     "Content Options",
     click.option(
@@ -373,14 +375,14 @@ import ofscraper.utils.args.helpers as helpers
         is_flag=True,
     ),
     click.option(
-     "all_promo",
+        "-ao",
+        "--all-promo-only/--all-promo-skip",
+        "all_promo",
         help="""
             \b
             Flag for enabling/disabling  accounts with any promo price
             [select one all-promo-only or --all-promo-skip]""",
-        default=None,        "-ao",
-        "--all-promo-only/--all-promo-skip",
-   
+        default=None,
         required=False,
         is_flag=True,
     ),
@@ -595,8 +597,7 @@ import ofscraper.utils.args.helpers as helpers
     ),
     help="Choose how usernames are searched, and define the order in which users are processed for actions",
 )
-@common.common_other_params
-@common.common_params
+@common.common_advanced_params
 @click.pass_context
 def program(ctx, *args, **kwargs):
     return ctx.params, ctx.info_name
