@@ -2,6 +2,8 @@ import logging
 import re
 from typing import Any
 import asyncio
+import queue
+
 
 import arrow
 from rich.text import Text
@@ -39,6 +41,7 @@ from ofscraper.classes.table.status import status
 log = logging.getLogger("shared")
 global app
 app=None
+row_queue=queue.Queue()
 
 
 class TableRow():
@@ -208,7 +211,6 @@ SelectField,DateField,TimeField {
         self._sorted_hash={}
         self._sortkey=None
         self.mutex=kwargs.pop("mutex",None)
-        self.row_queue=kwargs.pop("row_queue",None)
         self._sorted_rows=self.table_data
         self._filtered_rows = self.table_data
         self._init_mediatype=kwargs.pop("mediatype",None)
@@ -264,7 +266,7 @@ SelectField,DateField,TimeField {
                 cell_key=cell_key,
             )
             row_name = list(row_names_all())[event.coordinate[1]]
-            if row_name != "Download_Cart":
+            if row_name != "download_cart":
                 self.update_input(row_name, event.value.plain)
             else:
                 self.change_download_cart(event.coordinate)
@@ -327,7 +329,7 @@ SelectField,DateField,TimeField {
     def on_mount(self) -> None:
         self.query_one(Sidebar).toggle_class("-hidden")
         self.set_reverse(init=True)
-        # self.set_cart_toggle(init=True)
+        self.set_cart_toggle(init=True)
         self.update_table(reset=True)
         logger.add_widget(self.query_one("#console_page").query_one(OutConsole))
     def _set_and_sort_media_type(self):
@@ -339,35 +341,36 @@ SelectField,DateField,TimeField {
     # Cart
     def change_download_cart(self, coord):
         table = self.query_one(DataTable)
-        Download_Cart = table.get_cell_at(coord)
+        download_cart = table.get_cell_at(coord)
         
-        if Download_Cart.plain == "Not Unlocked":
+        if download_cart.plain == "Not Unlocked":
             return
-        elif Download_Cart.plain == "[]":
+        elif download_cart.plain == "[]":
             self.update_cell_at_coords(coord, "[added]")
 
 
-        elif Download_Cart.plain == "[added]":
+        elif download_cart.plain == "[added]":
             self.update_cell_at_coords(coord, "[]")
 
-        elif Download_Cart.plain == "[downloaded]" or "[failed]":
+        elif download_cart.plain == "[downloaded]" or "[failed]":
             self.update_cell_at_coords(coord, "[]")
 
     def add_to_row_queue(self):
         table = self.query_one(DataTable)
         row_keys = [str(ele.get_val("index")) for ele in self._filtered_rows]
-        index = list(row_names_all()).index("download_cart")
+        cart_index = list(row_names_all()).index("download_cart")
         filter_row_keys = list(
-            filter(lambda x: table.get_row(x)[index].plain == "[added]", row_keys)
+            filter(lambda x: table.get_row(x)[cart_index].plain == "[added]", row_keys)
         )
         self.update_downloadcart_cells(filter_row_keys, "[downloading]")
         log.info(f"Number of Downloads sent to queue {len(filter_row_keys)}")
         [
-            self.row_queue.put(ele)
+            row_queue.put(ele)
             for ele in map(lambda x: (table.get_row(x), x), filter_row_keys)
         ]
 
-
+    def update_downloadcart_cells(self, keys, value):
+        self.update_cell(keys, "download_cart", value)
 
     def update_cell_at_coords(self, coords, value):
         with self.mutex:
@@ -380,13 +383,13 @@ SelectField,DateField,TimeField {
                 except Exception as E:
                     log.debug("Row was probably removed")
                     log.debug(E)
-    def update_cell(self, keys, name, value, perst=True):
+    def update_cell(self, keys, name, value,persist=True):
         if not isinstance(keys, list):
             keys = [keys]
         with self.mutex:
             for key in keys:
                 try:
-                    if perst:
+                    if persist:
                         self.table_data[int(key)].set_val(name,value)
                     table = self.query_one(DataTable)
                     table.update_cell(key, name, Text(str(value)))
@@ -416,7 +419,7 @@ SelectField,DateField,TimeField {
                 )
                 log.debug(f"set cart toggle to {self.cart_toggle.plain}")
                 [
-                    table.update_cell(key, "Download_Cart", self.cart_toggle)
+                    table.update_cell(key, "download_cart", self.cart_toggle)
                     for key in filter_keys
                 ]
                 return
@@ -579,7 +582,7 @@ SelectField,DateField,TimeField {
             ]
             for count,row in enumerate(self._filtered_rows):
                 table_row=row.get_styled(count)
-                table.add_row(*table_row,key=f'table_row_{str(row.get_val("index"))}',height=None)
+                table.add_row(*table_row,key=str(row.get_val("index")),height=None)
             if len(table.rows) == 0:
                 table.add_row("All Items Filtered")
 app=InputApp()

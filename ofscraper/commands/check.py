@@ -42,15 +42,13 @@ log = logging.getLogger("shared")
 console = console_.get_shared_console()
 
 ROWS = []
-app = None
 ALL_MEDIA = {}
 MEDIA_KEY = ["id", "postid", "username"]
 
 
 def process_download_cart():
     while True:
-        global app
-        if not app or app.row_queue.empty():
+        if  table.row_queue.empty():
             time.sleep(10)
             continue
         try:
@@ -70,15 +68,15 @@ def process_item():
     process_download_cart.counter = process_download_cart.counter + 1
     log.info("Getting items from cart")
     try:
-        row, key = app.row_queue.get()
+        row, key = table.row_queue.get()
     except Exception as E:
         log.error(f"Error getting item from queue: {E}")
         return
     for count, _ in enumerate(range(0, 2)):
         try:
-            username = row[list(row_names_all()).index("UserName")].plain
-            post_id = row[list(row_names_all()).index("Post_ID")].plain
-            media_id = int(row[list(row_names_all()).index("Media_ID")].plain)
+            username = row[list(row_names_all()).index("username")].plain
+            post_id = int(row[list(row_names_all()).index("post_id")].plain)
+            media_id = int(row[list(row_names_all()).index("media_id")].plain)
             media = ALL_MEDIA.get(
                 "_".join(map(lambda x: str(x), [media_id, post_id, username]))
             )
@@ -105,18 +103,17 @@ def process_item():
                 raise Exception("Issue getting download")
 
             log.info("Download Finished")
-            app.update_cell(key, "Download_Cart", "[downloaded]")
-            app.update_cell(key, "Downloaded", True)
+            table.app.update_cell(key, "download_cart", "[downloaded]")
             break
         except Exception as E:
             if count == 1:
-                app.update_cell(key, "Download_Cart", "[failed]")
+                table.app.update_cell(key, "download_cart", "[failed]")
                 raise E
             log.info("Download Failed Refreshing data")
             data_refill(media_id, post_id, username, model_id)
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-    if app.row_queue.empty():
+    if table.row_queue.empty():
         log.info("Download cart is currently empty")
 
 
@@ -610,7 +607,7 @@ def start_table(ROWS_):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     ROWS=ROWS_
-    app = table.app(table_data=ROWS,mutex=threading.Lock(),row_queue = queue.Queue(),mediatype=init_media_type_helper())
+    app = table.app(table_data=ROWS,mutex=threading.Lock(),mediatype=init_media_type_helper())
 
 
 
