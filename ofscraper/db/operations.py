@@ -13,7 +13,6 @@ r"""
 
 import logging
 import pathlib
-import shutil
 
 import arrow
 from rich.console import Console
@@ -75,6 +74,7 @@ from ofscraper.db.operations_.stories import (
     modify_unique_constriant_stories,
 )
 from ofscraper.utils.context.run_async import run
+from ofscraper.utils.paths.manage import copy_path
 
 console = Console()
 log = logging.getLogger("shared")
@@ -133,7 +133,7 @@ def restore_backup_transition(backup, model_id, username, db_path=None, **kwargs
     database = db_path or placeholder.databasePlaceholder().databasePathHelper(
         model_id, username
     )
-    shutil.copy2(backup, database)
+    copy_path(backup, database)
     log.debug(f"restored {database} from {backup}")
 
 
@@ -388,13 +388,13 @@ def create_backup(model_id, username, backup=None, db_path=None, **kwargs):
     if backup:
         database_copy = database_path.parent / "backup" / f"{backup}"
         database_copy.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(database_path, database_copy)
+        copy_path(database_path, database_copy)
     elif now - last > constants.getattr("DBINTERVAL") and database_path.exists():
         database_copy = placeholder.databasePlaceholder().databasePathCopyHelper(
             model_id, username
         )
         database_copy.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(database_path, database_copy)
+        copy_path(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
     elif (
         not pathlib.Path(database_path.parent / "backup").exists()
@@ -404,7 +404,7 @@ def create_backup(model_id, username, backup=None, db_path=None, **kwargs):
             model_id, username
         )
         database_copy.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(database_path, database_copy)
+        copy_path(database_path, database_copy)
         cache.set(f"{username}_{model_id}_db_backup", now)
     cache.close()
     return database_copy
