@@ -16,6 +16,8 @@ async def get_models() -> list:
     """
     with stdout.lowstdout():
         count = get_sub_count()
+        print(read_args.retriveArgs())
+        quit()
         if not bool(read_args.retriveArgs().usernames):
             return await get_via_list(count)
         elif "ALL" in read_args.retriveArgs().usernames:
