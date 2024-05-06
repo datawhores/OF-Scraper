@@ -73,6 +73,7 @@ def truncate(path):
 
 
 def _windows_truncateHelper(path):
+    encode="utf16"
     path = pathlib.Path(os.path.normpath(path))
     if len(str(path).encode("utf16")) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
         return path
@@ -87,19 +88,19 @@ def _windows_truncateHelper(path):
     else:
         ext = ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("WINDOWS_MAX_PATH_BYTES") - len(ext.encode("utf16"))-len(str(dir).encode("utf16"))
+    max_bytes = constants.getattr("WINDOWS_MAX_PATH_BYTES") - len(ext.encode(encode))-len(str(dir).encode(encode))
     if max_bytes<=0:
         raise (f"dir to larger then max bytes {path}")
     low,high=0,len(file)
     while low < high:
         mid = (low + high) // 2
-        if len(file[:mid].encode("utf16")) <= max_bytes:
+        if len(file[:mid].encode(encode)) <= max_bytes:
             low = mid + 1
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
     final_path=pathlib.Path(dir, newFile)
-    log.debug(f"path: {path} filepath bytesize: {len(path.encode('utf16'))}")
+    log.debug(f"path: {path} filepath bytesize: {len(path.encode(encode))}")
     return final_path
 
 
