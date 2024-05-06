@@ -24,7 +24,7 @@ async def get_models() -> list:
             return await get_via_individual()
         elif read_args.retriveArgs().list:
             return get_via_list(count)
-        elif (sum(count) // 10) > len(read_args.retriveArgs().usernames):
+        elif (sum(count) // 10) >= len(read_args.retriveArgs().usernames):
             return await get_via_individual()
         else:
             return await get_via_list(count)
