@@ -123,6 +123,7 @@ def _mac_truncateHelper(path):
 
 
 def _linux_truncateHelper(path):
+    encode="utf8"
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
@@ -130,16 +131,16 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES_NAME_BYTES") - len(ext.encode("utf8"))
+    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES_NAME_BYTES") - len(ext.encode(encode))
     low,high=0,len(file)
     while low < high:
         mid = (low + high) // 2
-        if len(file[:mid].encode("utf8")) <= max_bytes:
+        if len(file[:mid].encode(encode)) <= max_bytes:
             low = mid + 1
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
-    log.debug(f"path: {path} filename bytesize: {len(newFile.encode('utf8'))}")
+    log.debug(f"path: {path} filename bytesize: {len(newFile.encode(encode))}")
     return pathlib.Path(dir, newFile)
 
 
