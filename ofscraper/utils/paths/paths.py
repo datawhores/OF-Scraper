@@ -131,7 +131,7 @@ def _linux_truncateHelper(path):
     )
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES_NAME_BYTES") - len(ext.encode(encode))
+    max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - len(ext.encode(encode))
     low,high=0,len(file)
     while low < high:
         mid = (low + high) // 2
