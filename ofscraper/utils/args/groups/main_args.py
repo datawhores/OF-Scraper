@@ -218,6 +218,7 @@ import ofscraper.utils.args.helpers as helpers
         "-u",
         "--usernames",
         "--username",
+        # "username",
         help="Select which username to process (name,name2). Set to ALL for all users",
         default=None,
         type=helpers.username_helper,  # Assuming you'll still use this helper function

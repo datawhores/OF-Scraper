@@ -22,7 +22,6 @@ def resetUserFilters():
     args.desc = False
     return args
 
-
 def set_users_arg(input_):
     args = read_args.retriveArgs()
     args.usernames = input_
