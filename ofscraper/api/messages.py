@@ -350,7 +350,6 @@ async def scrape_messages(
             log.debug(
                 f"{log_id} -> found message ids {list(map(lambda x:x.get('id'),messages))}"
             )
-            trace_log_task(messages)
             log.trace(
                 "{log_id} -> messages raw {posts}".format(
                     log_id=log_id,
