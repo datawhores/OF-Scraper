@@ -251,14 +251,14 @@ def common_other_params(func):
     click.option(
         "-lx",
         "-length-max",
-        help="max duration in seconds does not effect non-media files",
+        help="max duration in seconds does not effect non-video files",
         required=False,
         type=parse_size,
     ),
     click.option(
         "-lm",
         "--length-min",
-        help="min duration in seconds does not effect non-media files",
+        help="min duration in seconds does not effect non-video files",
         required=False,
         type=parse_size,
     ),
