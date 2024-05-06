@@ -74,7 +74,7 @@ def truncate(path):
 
 def _windows_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
-    if len(str(path)) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
+    if len(str(path).encode("utf16")) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
         return path
     path = pathlib.Path(path)
     dir = path.parent
