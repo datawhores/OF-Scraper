@@ -398,9 +398,9 @@ async def process_dicts_split(username, model_id, medialist):
     common_globals.log.debug(f"{pid_log_helper()} download process thread closing")
     # send message directly
     await asyncio.get_event_loop().run_in_executor(
-        common_globals.cache_thread, cache.close
+        common_globals.thread, cache.close
     )
-    common_globals.cache_thread.shutdown()
+    common_globals.thread.shutdown()
     common_globals.log.handlers[0].queue.put("None")
     common_globals.log.handlers[1].queue.put("None")
     common_globals.log.debug("other thread closed")

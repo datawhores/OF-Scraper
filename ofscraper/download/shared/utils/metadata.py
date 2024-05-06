@@ -83,7 +83,7 @@ async def metadata_helper(c, ele):
         async with c.requests_async(url=url, headers=None, params=params) as r:
             headers = r.headers
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.cache_thread,
+                common_globals.thread,
                 partial(
                     cache.set,
                     f"{ele.id}_headers",
@@ -104,7 +104,7 @@ async def metadata_helper(c, ele):
 
 async def placeholderObjHelper(c, ele):
     download_data = await asyncio.get_event_loop().run_in_executor(
-        common_globals.cache_thread, partial(cache.get, f"{ele.id}_headers")
+        common_globals.thread, partial(cache.get, f"{ele.id}_headers")
     )
     if download_data:
         content_type = download_data.get("content-type").split("/")[

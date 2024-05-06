@@ -62,6 +62,10 @@ def filterMedia(media):
     count += 1
     helpers.trace_log_media(count, media, "mass message filter:")
 
+    media = helpers.media_length_filter(media)
+    count += 1
+    helpers.trace_log_media(count, media, "media length filter:")
+
     media = helpers.final_post_sort(media)
     count += 1
     helpers.trace_log_media(count, media, "all media final sort:")

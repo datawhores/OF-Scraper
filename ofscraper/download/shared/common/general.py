@@ -56,14 +56,14 @@ async def size_checker(path, ele, total, name=None):
         s = f"{get_medialog(ele)} {name} size mixmatch target: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
         pathlib.Path(path).unlink(missing_ok=True)
         await asyncio.get_event_loop().run_in_executor(
-            common_globals.cache_thread, partial(cache.set, f"{ele.id}_headers", None)
+            common_globals.thread, partial(cache.set, f"{ele.id}_headers", None)
         )
         raise Exception(s)
     elif (total - pathlib.Path(path).absolute().stat().st_size) < 0:
         s = f"{get_medialog(ele)} {path} size mixmatch target item too large: {total} vs current file: {pathlib.Path(path).absolute().stat().st_size}"
         pathlib.Path(path).unlink(missing_ok=True)
         await asyncio.get_event_loop().run_in_executor(
-            common_globals.cache_thread, partial(cache.set, f"{ele.id}_headers", None)
+            common_globals.thread, partial(cache.set, f"{ele.id}_headers", None)
         )
         raise Exception(s)
 
@@ -91,7 +91,7 @@ async def check_forced_skip(ele, *args):
 async def set_profile_cache_helper(ele):
     if ele.postid and ele.responsetype == "profile":
         await asyncio.get_event_loop().run_in_executor(
-            common_globals.cache_thread, partial(cache.set, ele.postid, True)
+            common_globals.thread, partial(cache.set, ele.postid, True)
         )
 
 
@@ -131,7 +131,7 @@ def get_resume_size(tempholderObj, mediatype=None):
 
 async def get_data(ele):
     data = await asyncio.get_event_loop().run_in_executor(
-        common_globals.cache_thread,
+        common_globals.thread,
         partial(cache.get, f"{ele.id}_headers"),
     )
     return data

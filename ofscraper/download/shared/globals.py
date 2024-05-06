@@ -46,11 +46,9 @@ def main_globals():
 
     # global
     global thread
-    thread = ThreadPoolExecutor(max_workers=config_data.get_download_semaphores() * 2)
+    thread = ThreadPoolExecutor(max_workers=config_data.get_download_semaphores()*2)
     global sem
     sem = config_data.get_download_semaphores()
-    global cache_thread
-    cache_thread = ThreadPoolExecutor()
     global dirSet
     dirSet = set()
     global lock
@@ -86,4 +84,4 @@ def process_split_globals(pipeCopy, logCopy):
     pipe = pipeCopy
     log = logCopy
     pipe_lock = threading.Lock()
-    lock_pool = ThreadPoolExecutor()
+    lock_pool = ThreadPoolExecutor(max_workers=1)

@@ -168,9 +168,9 @@ async def process_dicts(username, model_id, medialist):
                 raise E
         finally:
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.cache_thread, cache.close
+                common_globals.thread, cache.close
             )
-            common_globals.cache_thread.shutdown()
+            common_globals.thread.shutdown()
 
 
 async def download(c, ele, model_id, username, job_progress):

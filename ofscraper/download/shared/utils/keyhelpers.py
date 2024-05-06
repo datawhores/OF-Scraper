@@ -35,7 +35,7 @@ async def un_encrypt(item, c, ele, input_=None):
     keymode = settings.get_key_mode()
     past_key = (
         await asyncio.get_event_loop().run_in_executor(
-            common_globals.cache_thread, partial(cache.get, ele.license)
+            common_globals.thread, partial(cache.get, ele.license)
         )
         if constants.getattr("USE_CACHE_KEY")
         else None
@@ -54,7 +54,7 @@ async def un_encrypt(item, c, ele, input_=None):
     if not key:
         raise Exception(f"{get_medialog(ele)} Could not get key")
     await asyncio.get_event_loop().run_in_executor(
-        common_globals.cache_thread,
+        common_globals.thread,
         partial(cache.set, ele.license, key, expire=constants.getattr("KEY_EXPIRY")),
     )
     log.debug(f"{get_medialog(ele)} got key")
@@ -198,7 +198,7 @@ async def key_helper_keydb(c, pssh, licence_url, id):
             elif isinstance(data["keys"][0], object):
                 out = data["keys"][0]["key"]
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.cache_thread,
+                common_globals.thread,
                 partial(
                     cache.set,
                     licence_url,

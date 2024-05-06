@@ -84,7 +84,7 @@ async def alt_download_downloader(
                     else None
                 )
                 data = await asyncio.get_event_loop().run_in_executor(
-                    common_globals.cache_thread,
+                    common_globals.thread,
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
@@ -188,7 +188,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
 
         async with c.requests_async(url=url, headers=headers, params=params) as l:
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.cache_thread,
+                common_globals.thread,
                 partial(
                     cache.set,
                     f"{item['name']}_headers",

@@ -189,7 +189,7 @@ async def send_req_inner(
         )
         async with c.requests_async(url=ele.url, headers=headers) as r:
             await asyncio.get_event_loop().run_in_executor(
-                common_globals.cache_thread,
+                common_globals.thread,
                 partial(
                     cache.set,
                     f"{ele.id}_headers",

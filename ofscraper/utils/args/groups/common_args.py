@@ -247,6 +247,21 @@ def common_other_params(func):
         required=False,
         type=parse_size,
     ),
+
+    click.option(
+        "-lx",
+        "-length-max",
+        help="max duration in seconds does not effect non-media files",
+        required=False,
+        type=parse_size,
+    ),
+    click.option(
+        "-lm",
+        "--length-min",
+        help="min duration in seconds does not effect non-media files",
+        required=False,
+        type=parse_size,
+    ),
     help="Options for controlling which media is downloaded")
 
     @click.option_group(

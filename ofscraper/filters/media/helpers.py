@@ -179,6 +179,17 @@ def mass_msg_filter(media):
         return list((filter(lambda x: x.mass is False, media)))
 
 
+def media_length_filter(media):
+    filteredMedia=media
+    max_length=read_args.retriveArgs().length_max
+    min_length=read_args.retriveArgs().length_min
+    if max_length:
+        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=min_length,filteredMedia))
+    if min_length:
+        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration>=min_length,filteredMedia))
+    return filteredMedia
+
+
 def url_filter(media):
     return list((filter(lambda x: x.url or x.mpd, media)))
 
