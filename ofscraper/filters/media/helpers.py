@@ -184,7 +184,7 @@ def media_length_filter(media):
     max_length=read_args.retriveArgs().length_max
     min_length=read_args.retriveArgs().length_min
     if max_length:
-        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=min_length,filteredMedia))
+        filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration<=max_length,filteredMedia))
     if min_length:
         filteredMedia=list(filter(lambda x:x.mediatype!="videos" or x.duration>=min_length,filteredMedia))
     return filteredMedia
