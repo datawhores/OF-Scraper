@@ -90,7 +90,7 @@ def _windows_truncateHelper(path):
     max_bytes = constants.getattr("WINDOWS_MAX_PATH_BYTES") - len(ext.encode("utf16"))-len(str(dir).encode("utf16"))
     if max_bytes<=0:
         raise (f"dir to larger then max bytes {path}")
-    low=0,high-len(file)
+    low,high=0,len(file)
     while low < high:
         mid = (low + high) // 2
         if len(file[:mid].encode("utf16")) <= max_bytes:
@@ -130,7 +130,7 @@ def _linux_truncateHelper(path):
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
     max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES_NAME_BYTES") - len(ext.encode("utf8"))
-    low=0,high-len(file)
+    low,high=0,len(file)
     while low < high:
         mid = (low + high) // 2
         if len(file[:mid].encode("utf8")) <= max_bytes:
