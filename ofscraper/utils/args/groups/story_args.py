@@ -16,7 +16,6 @@ It presents this data in a table format with filtering options for focused searc
 Allows unlocked media entries to be directly downloaded through the table
 """,
 )
-
 @common.common_params
 @common.common_other_params
 @click.constraints.require_one(

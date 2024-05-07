@@ -73,7 +73,7 @@ def truncate(path):
 
 
 def _windows_truncateHelper(path):
-    encode="utf16"
+    encode = "utf16"
     path = pathlib.Path(os.path.normpath(path))
     if len(str(path).encode("utf16")) <= constants.getattr("WINDOWS_MAX_PATH_BYTES"):
         return path
@@ -88,10 +88,14 @@ def _windows_truncateHelper(path):
     else:
         ext = ""
     file = re.sub(ext, "", path.name)
-    max_bytes = constants.getattr("WINDOWS_MAX_PATH_BYTES") - len(ext.encode(encode))-len(str(dir).encode(encode))
-    if max_bytes<=0:
+    max_bytes = (
+        constants.getattr("WINDOWS_MAX_PATH_BYTES")
+        - len(ext.encode(encode))
+        - len(str(dir).encode(encode))
+    )
+    if max_bytes <= 0:
         raise (f"dir to larger then max bytes {path}")
-    low,high=0,len(file)
+    low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
         if len(file[:mid].encode(encode)) <= max_bytes:
@@ -99,7 +103,7 @@ def _windows_truncateHelper(path):
         else:
             high = mid
     newFile = f"{file[:high]}{ext}"
-    final_path=pathlib.Path(dir, newFile)
+    final_path = pathlib.Path(dir, newFile)
     log.debug(f"path: {path} filepath bytesize: {len(path.encode(encode))}")
     return final_path
 
@@ -123,7 +127,7 @@ def _mac_truncateHelper(path):
 
 
 def _linux_truncateHelper(path):
-    encode="utf8"
+    encode = "utf8"
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
     match = re.search("_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
@@ -132,7 +136,7 @@ def _linux_truncateHelper(path):
     ext = match.group(0) if match else ""
     file = re.sub(ext, "", path.name)
     max_bytes = constants.getattr("LINUX_MAX_FILE_NAME_BYTES") - len(ext.encode(encode))
-    low,high=0,len(file)
+    low, high = 0, len(file)
     while low < high:
         mid = (low + high) // 2
         if len(file[:mid].encode(encode)) <= max_bytes:
@@ -143,11 +147,6 @@ def _linux_truncateHelper(path):
     log.debug(f"path: {path} filename bytesize: {len(newFile.encode(encode))}")
     return pathlib.Path(dir, newFile)
 
-
-
-
-    
-    
 
 def cleanDB():
     try:

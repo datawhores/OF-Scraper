@@ -7,8 +7,8 @@ import ofscraper.download.shared.globals as common_globals
 import ofscraper.download.shared.utils.log as common_logs
 import ofscraper.download.shared.utils.paths as common_paths
 import ofscraper.utils.dates as dates
-from ofscraper.db.operations_.media import download_media_update
 import ofscraper.utils.system.system as system
+from ofscraper.db.operations_.media import download_media_update
 
 
 async def handle_result_main(result, ele, username, model_id):

@@ -1,5 +1,6 @@
-from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 from textual.containers import Horizontal
+
+from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 
 
 class PriceField(Horizontal):
@@ -8,19 +9,14 @@ class PriceField(Horizontal):
         self.filter_name = name
 
     def compose(self):
-        yield IntegerInput(
-            placeholder="Min Price", id=f"{self.filter_name}_search"
-        )
-        yield IntegerInput(
-            placeholder="Max Price", id=f"{self.filter_name}_search2"
-        )
+        yield IntegerInput(placeholder="Min Price", id=f"{self.filter_name}_search")
+        yield IntegerInput(placeholder="Max Price", id=f"{self.filter_name}_search2")
 
     def empty(self):
         return (
             self.query(IntegerInput)[0].value == ""
             and self.query(IntegerInput)[1].value == ""
         )
-
 
     def update_table_val(self, val):
         if val.lower() == "free":
@@ -43,5 +39,3 @@ class PriceField(Horizontal):
         elif maxval and float(val) > float(maxval):
             return False
         return True
-
-

@@ -1,9 +1,9 @@
 import asyncio
-import time
 import contextlib
 import logging
 import ssl
 import threading
+import time
 import traceback
 
 import aiohttp
@@ -17,7 +17,6 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
-
 
 
 def is_rate_limited(exception):
@@ -40,44 +39,53 @@ def is_rate_limited(exception):
 
 
 class SessionSleep:
-    def __init__(self,sleep=None):
+    def __init__(self, sleep=None):
         self._sleep = sleep
         self._last_date = arrow.now()
-        self._alock=asyncio.Lock()
+        self._alock = asyncio.Lock()
+
     async def async_toomany_req(self):
         async with self._alock:
             self.toomany_req()
+
     def toomany_req(self):
-        log=logging.getLogger("shared")
-        dif_min=constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
+        log = logging.getLogger("shared")
+        dif_min = constants.getattr("SESSION_SLEEP_INCREASE_TIME_DIFF")
         if self._sleep is None:
             self._sleep = constants.getattr("SESSION_SLEEP_INIT")
             log.debug(f"too many req => setting sleep to init [{self._sleep} seconds]")
         elif arrow.now().float_timestamp - self._last_date.float_timestamp < dif_min:
-            log.debug(f"too many req => not changing sleep [{self._sleep} seconds] because last call less than {dif_min} seconds")
+            log.debug(
+                f"too many req => not changing sleep [{self._sleep} seconds] because last call less than {dif_min} seconds"
+            )
             return self._sleep
         else:
             self._sleep = self._sleep * 2
             log.debug(f"too many req => setting sleep to [{self._sleep} seconds]")
         self._last_date = arrow.now()
-        return self._sleep     
+        return self._sleep
+
     async def async_do_sleep(self):
         if self._sleep:
-            logging.getLogger("shared").debug(f"too many req => waiting [{self._sleep} seconds] before next req")
+            logging.getLogger("shared").debug(
+                f"too many req => waiting [{self._sleep} seconds] before next req"
+            )
             await asyncio.sleep(self._sleep)
+
     def do_sleep(self):
         if self._sleep:
-            logging.getLogger("shared").debug(f"too many req => waiting [{self._sleep} seconds] before next req")
+            logging.getLogger("shared").debug(
+                f"too many req => waiting [{self._sleep} seconds] before next req"
+            )
             time.sleep(self._sleep)
+
     @property
     def sleep(self):
         return self._sleep
+
     @sleep.setter
-    def sleep(self,val):
-        self._sleep=val
-
-
-
+    def sleep(self, val):
+        self._sleep = val
 
 
 class CustomTenacity(AsyncRetrying):
@@ -85,8 +93,7 @@ class CustomTenacity(AsyncRetrying):
     A custom context manager using tenacity for asynchronous retries with wait strategies and stopping without exceptions.
     """
 
-    def __init__(self,
-     wait_random=None, wait_exponential=None, *args, **kwargs):
+    def __init__(self, wait_random=None, wait_exponential=None, *args, **kwargs):
         super().__init__(*args, after=self._after_func, **kwargs)
         self.wait_random = wait_random or tenacity.wait.wait_random(
             min=constants.getattr("OF_MIN_WAIT_SESSION_DEFAULT"),
@@ -188,7 +195,8 @@ class sessionManager:
         )
         self._log = log or logging.getLogger("shared")
         auth_requests.read_request_auth(forced=None) if new_request_auth else None
-        self._sleeper=SessionSleep()
+        self._sleeper = SessionSleep()
+
     async def __aenter__(self):
         self._async = True
         if self._backend == "aio":
@@ -265,7 +273,7 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sync_sem=None,
-        sleeper=None
+        sleeper=None,
     ):
         auth_requests.read_request_auth(forced=True) if sign else None
 
@@ -279,7 +287,7 @@ class sessionManager:
         max = wait_max or self._wait_max
         retries = retries or self._retries
         sync_sem = self._sync_sem or sync_sem
-        sleeper=sleeper or self._sleeper
+        sleeper = sleeper or self._sleeper
         for _ in Retrying(
             retry=retry_if_not_exception_type(
                 (KeyboardInterrupt, asyncio.TimeoutError)
@@ -323,7 +331,7 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if(is_rate_limited(E)):
+                    if is_rate_limited(E):
                         sleeper.toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
@@ -365,7 +373,7 @@ class sessionManager:
         log = log or self._log
         retries = retries or self._retries
         sem = sem or self._sem
-        sleeper=sleeper or self._sleeper
+        sleeper = sleeper or self._sleeper
         async for _ in CustomTenacity(
             wait_exponential=tenacity.wait.wait_exponential(
                 multiplier=2, min=wait_min_exponential, max=wait_max_exponential
@@ -441,7 +449,7 @@ class sessionManager:
                         log.debug(f"[bold]headers[/bold]: {r.headers}")
                         r.raise_for_status()
                 except Exception as E:
-                    if(is_rate_limited(E)):
+                    if is_rate_limited(E):
                         await sleeper.async_toomany_req()
                     log.traceback_(E)
                     log.traceback_(traceback.format_exc())
@@ -453,9 +461,10 @@ class sessionManager:
     @property
     def sleep(self):
         return self._sleeper._sleep
+
     @sleep.setter
-    def sleep(self,val):
-        self._sleeper._sleep=val
+    def sleep(self, val):
+        self._sleeper._sleep = val
 
     async def _httpx_funct_async(self, *args, **kwargs):
         t = await self._session.request(*args, **kwargs)

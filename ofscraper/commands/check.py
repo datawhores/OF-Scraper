@@ -32,11 +32,10 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
-from ofscraper.download.shared.utils.text import textDownloader
-from ofscraper.db.operations_.media import batch_mediainsert,get_media_ids_downloaded
-from ofscraper.utils.context.run_async import run
 from ofscraper.classes.table.row_names import row_names_all
-
+from ofscraper.db.operations_.media import batch_mediainsert, get_media_ids_downloaded
+from ofscraper.download.shared.utils.text import textDownloader
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -48,7 +47,7 @@ MEDIA_KEY = ["id", "postid", "username"]
 
 def process_download_cart():
     while True:
-        if  table.row_queue.empty():
+        if table.row_queue.empty():
             time.sleep(10)
             continue
         try:
@@ -559,9 +558,7 @@ async def get_downloaded(user_name, model_id, paid=False):
     paid = await get_paid_ids(model_id, user_name) if paid else []
     [
         downloaded.update({ele: downloaded.get(ele, 0) + 1})
-        for ele in get_media_ids_downloaded(
-            model_id=model_id, username=user_name
-        )
+        for ele in get_media_ids_downloaded(model_id=model_id, username=user_name)
         + paid
     ]
 
@@ -606,10 +603,10 @@ def start_table(ROWS_):
     global app
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    ROWS=ROWS_
-    app = table.app(table_data=ROWS,mutex=threading.Lock(),mediatype=init_media_type_helper())
-
-
+    ROWS = ROWS_
+    app = table.app(
+        table_data=ROWS, mutex=threading.Lock(), mediatype=init_media_type_helper()
+    )
 
 
 def texthelper(text):
@@ -661,37 +658,41 @@ async def row_gather(username, model_id, paid=False):
     )
     for count, ele in enumerate(media_sorted):
         out.append(
-                {
-                "index":count,
-                "number":None,
-                "download_cart":checkmarkhelper(ele),
-                "username":username,
-                "downloaded":ele.id in downloaded
+            {
+                "index": count,
+                "number": None,
+                "download_cart": checkmarkhelper(ele),
+                "username": username,
+                "downloaded": ele.id in downloaded
                 or cache.get(ele.postid) is not None
                 or cache.get(ele.filename) is not None,
-                "unlocked":unlocked_helper(ele),
-                "times_detected":times_helper(ele, mediadict, downloaded),
+                "unlocked": unlocked_helper(ele),
+                "times_detected": times_helper(ele, mediadict, downloaded),
                 "post_media_count": len(ele._post.post_media),
-                "mediatype":ele.mediatype,
-                "post_date":datehelper(ele.formatted_postdate),
-                "media":len(ele._post.post_media),
-                "length":ele.numeric_duration,
-                "responsetype":ele.responsetype,
-                "price": "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price),
-                "post_id":ele.postid,
-                "media_id":ele.id,
-                "text":ele.post.db_sanitized_text
+                "mediatype": ele.mediatype,
+                "post_date": datehelper(ele.formatted_postdate),
+                "media": len(ele._post.post_media),
+                "length": ele.numeric_duration,
+                "responsetype": ele.responsetype,
+                "price": (
+                    "Free" if ele._post.price == 0 else "{:.2f}".format(ele._post.price)
+                ),
+                "post_id": ele.postid,
+                "media_id": ele.id,
+                "text": ele.post.db_sanitized_text,
             }
         )
     ROWS = ROWS or []
     ROWS.extend(out)
 
+
 def init_media_type_helper():
-    args=read_args.retriveArgs()
-    mediatype=args.mediatype
-    args.mediatype=None
+    args = read_args.retriveArgs()
+    mediatype = args.mediatype
+    args.mediatype = None
     write_args.setArgs(args)
     return mediatype
+
 
 def reset_time_line_cache(model_id):
     cache.set(f"timeline_check_{model_id}", [])

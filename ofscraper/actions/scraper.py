@@ -40,9 +40,10 @@ import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import batch_mediainsert
-from ofscraper.db.operations_.profile import check_profile_table_exists,get_profile_info
-
-
+from ofscraper.db.operations_.profile import (
+    check_profile_table_exists,
+    get_profile_info,
+)
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
@@ -374,9 +375,7 @@ async def process_all_paid():
                 model_id=model_id, username=username
             ):
                 username = (
-                    await get_profile_info(
-                        model_id=model_id, username=username
-                    )
+                    await get_profile_info(model_id=model_id, username=username)
                     or username
                 )
             log.info(f"Processing {username}_{model_id}")

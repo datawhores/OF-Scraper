@@ -24,24 +24,24 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
+from ofscraper.db.operations_.media import get_messages_media
+from ofscraper.db.operations_.messages import (
+    get_messages_post_info,
+    get_youngest_message_date,
+)
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.db.operations_.messages import get_messages_post_info,get_youngest_message_date
-from ofscraper.db.operations_.media import get_messages_media
-
-
 
 log = logging.getLogger("shared")
-sleeper=None
-
+sleeper = None
 
 
 @run
 async def get_messages_progress(model_id, username, forced_after=None, c=None):
     global after
-    oldmessages=None
+    oldmessages = None
     if not settings.get_api_cache_disabled():
-        oldmessages=await get_messages_post_info(model_id=model_id, username=username)
+        oldmessages = await get_messages_post_info(model_id=model_id, username=username)
     else:
         oldmessages = []
     trace_log_old(oldmessages)
@@ -55,16 +55,16 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     # Set charged sleeper
     get_sleeper()
     tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-    data = await process_tasks(tasks, model_id,after)
+    data = await process_tasks(tasks, model_id, after)
     progress_utils.messages_layout.visible = False
     return data
 
 
 @run
 async def get_messages(model_id, username, forced_after=None, c=None):
-    oldmessages=None
+    oldmessages = None
     if not settings.get_api_cache_disabled():
-        oldmessages=await get_messages_post_info(model_id=model_id, username=username)
+        oldmessages = await get_messages_post_info(model_id=model_id, username=username)
     else:
         oldmessages = []
     trace_log_old(oldmessages)
@@ -77,10 +77,10 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     splitArrays = get_split_array(filteredArray)
     with progress_utils.set_up_api_messages():
         tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-        return await process_tasks(tasks, model_id,after)
+        return await process_tasks(tasks, model_id, after)
 
 
-async def process_tasks(tasks, model_id,after):
+async def process_tasks(tasks, model_id, after):
     page_count = 0
     responseArray = []
     overall_progress = progress_utils.overall_progress
@@ -314,8 +314,8 @@ async def scrape_messages(
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'} {url}")
     new_tasks = []
-    tasks=None
-    
+    tasks = None
+
     await asyncio.sleep(1)
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
@@ -327,7 +327,9 @@ async def scrape_messages(
                 else None
             )
             messages = (await r.json_())["list"]
-            log_id = f"offset messageid:{message_id if message_id else 'init messageid'}"
+            log_id = (
+                f"offset messageid:{message_id if message_id else 'init messageid'}"
+            )
             if not bool(messages):
                 log.debug(f"{log_id} -> no messages found")
                 return [], []
@@ -452,9 +454,7 @@ async def get_after(model_id, username, forced_after=None):
             "Using newest db date because,all downloads in db are marked as downloaded"
         )
         return arrow.get(
-            await get_youngest_message_date(
-                model_id=model_id, username=username
-            )
+            await get_youngest_message_date(model_id=model_id, username=username)
         ).float_timestamp
     else:
         log.debug(
@@ -514,8 +514,9 @@ Setting Message range for {username} from {arrow.get(after).format(constants.get
         """
     )
 
+
 def get_sleeper():
     global sleeper
     if not sleeper:
-        sleeper=sessionManager.SessionSleep(sleep=8)
+        sleeper = sessionManager.SessionSleep(sleep=8)
     return sleeper

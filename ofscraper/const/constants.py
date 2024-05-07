@@ -19,8 +19,7 @@ from ofscraper.const.metadata import *
 from ofscraper.const.other_url import *
 from ofscraper.const.prompts import *
 from ofscraper.const.req import *
+from ofscraper.const.table import *
 from ofscraper.const.test_constants import *
 from ofscraper.const.time import *
 from ofscraper.const.url import *
-from ofscraper.const.table import *
-

@@ -137,7 +137,6 @@ def restore_backup_transition(backup, model_id, username, db_path=None, **kwargs
     log.debug(f"restored {database} from {backup}")
 
 
-
 def get_group_difference(model_id=None, username=None, db_path=None):
 
     changes = get_schema_changes(model_id=model_id, username=username, db_path=db_path)

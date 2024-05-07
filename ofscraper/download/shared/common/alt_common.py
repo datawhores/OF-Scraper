@@ -15,7 +15,6 @@ import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import download_media_update
 
 
-
 async def handle_result_alt(
     sharedPlaceholderObj, ele, audio, video, username, model_id
 ):

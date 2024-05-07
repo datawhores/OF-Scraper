@@ -1,7 +1,9 @@
 import logging
+
 import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.manager as manager
-log=logging.getLogger("shared")
+
+log = logging.getLogger("shared")
 
 
 def setArgsV(changed):

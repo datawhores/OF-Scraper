@@ -10,8 +10,8 @@ import ofscraper.download.shared.utils.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-from ofscraper.download.shared.utils.log import get_medialog
 from ofscraper.db.operations_.media import download_media_update
+from ofscraper.download.shared.utils.log import get_medialog
 
 
 async def force_download(ele, username, model_id):

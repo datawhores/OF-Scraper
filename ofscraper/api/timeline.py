@@ -21,11 +21,13 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
+from ofscraper.db.operations_.media import get_timeline_media
+from ofscraper.db.operations_.posts import (
+    get_timeline_posts_info,
+    get_youngest_timeline_date,
+)
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-from ofscraper.db.operations_.posts import get_timeline_posts_info,get_youngest_timeline_date
-from ofscraper.db.operations_.media import get_timeline_media
-
 
 log = logging.getLogger("shared")
 
@@ -293,9 +295,7 @@ async def get_after(model_id, username, forced_after=None):
             "Using using newest db date, because all downloads in db marked as downloaded"
         )
         return arrow.get(
-            await get_youngest_timeline_date(
-                model_id=model_id, username=username
-            )
+            await get_youngest_timeline_date(model_id=model_id, username=username)
         ).float_timestamp
     else:
         log.debug(
@@ -317,10 +317,10 @@ async def scrape_timeline_posts(
     )
     log.debug(url)
     new_tasks = []
-    tasks=None
+    tasks = None
 
     await asyncio.sleep(1)
-  
+
     try:
         task = (
             job_progress.add_task(

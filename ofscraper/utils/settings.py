@@ -54,30 +54,34 @@ def get_trunication(mediatype=None):
 
 
 def get_text_type(mediatype=None):
-    return (
-        read_args.retriveArgs().text_type or config_data.get_textType(mediatype=mediatype)
+    return read_args.retriveArgs().text_type or config_data.get_textType(
+        mediatype=mediatype
     )
 
 
 def get_space_replacer(mediatype=None):
-    return (
-        read_args.retriveArgs().space_replacer or config_data.get_spacereplacer(mediatype=mediatype)
+    return read_args.retriveArgs().space_replacer or config_data.get_spacereplacer(
+        mediatype=mediatype
     )
 
 
 def get_textlength(mediatype=None):
-    return (
-        read_args.retriveArgs().text_length or config_data.get_textlength(mediatype=mediatype)
+    return read_args.retriveArgs().text_length or config_data.get_textlength(
+        mediatype=mediatype
     )
+
 
 def get_cache_disabled():
     return (
         read_args.retriveArgs().no_cache or config_data.get_cache_mode() == "disabled"
     )
 
+
 def get_api_cache_disabled():
-     return (
-        read_args.retriveArgs().no_cache or read_args.retriveArgs().no_api_cache or config_data.get_cache_mode() == "api_disabled"
+    return (
+        read_args.retriveArgs().no_cache
+        or read_args.retriveArgs().no_api_cache
+        or config_data.get_cache_mode() == "api_disabled"
     )
 
 

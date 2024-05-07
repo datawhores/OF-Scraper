@@ -3,12 +3,12 @@ import itertools
 import re
 
 import cloup as click
+from humanfriendly import parse_size
 
 import ofscraper.utils.args.helpers as helpers
 from ofscraper.__version__ import __version__
 from ofscraper.const.constants import KEY_OPTIONS
 
-from humanfriendly import parse_size
 
 def common_params(func):
 
@@ -73,7 +73,6 @@ def common_params(func):
         ),
         help="Settings for logging",
     )
-
     @click.option_group(
         "Download Options",
         click.option(
@@ -104,13 +103,11 @@ def common_params(func):
             default=None,
             type=int,
         ),
-
-    help="Options for downloads and download performance"
+        help="Options for downloads and download performance",
     )
-
     @click.option_group(
         "Metadata Options",
-               click.option(
+        click.option(
             "-md",
             "--metadata",
             "metadata",
@@ -141,18 +138,14 @@ def common_params(func):
             [select one --metadata or --metadata-update or --metadata-complete]""",
             flag_value="complete",
         ),
-
-
-    help="Options generating metadata"
+        help="Options generating metadata",
     )
-
     @functools.wraps(func)
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
 
     return wrapper
-
 
 
 def common_advanced_params(func):
@@ -213,6 +206,7 @@ def common_advanced_params(func):
 
     return wrapper
 
+
 def common_other_params(func):
     @click.option_group(
         "Media Filters",
@@ -221,34 +215,34 @@ def common_other_params(func):
             "--quality",
             type=click.Choice(["240", "720", "source"], case_sensitive=False),
         ),
-    click.option(
-        "-mt",
-        "--mediatype",
-        help="Filter by media type (Videos, Audios, Images)",
-        default=[],
-        required=False,
-        type=helpers.mediatype_helper,
-        callback=lambda ctx, param, value: (
-            list(set(itertools.chain.from_iterable(value))) if value else []
+        click.option(
+            "-mt",
+            "--mediatype",
+            help="Filter by media type (Videos, Audios, Images)",
+            default=[],
+            required=False,
+            type=helpers.mediatype_helper,
+            callback=lambda ctx, param, value: (
+                list(set(itertools.chain.from_iterable(value))) if value else []
+            ),
+            multiple=True,
         ),
-        multiple=True,
-    ),
-    click.option(
-        "-sx",
-        "--size-max",
-        help="Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)",
-        required=False,
-        type=parse_size,
-    ),
-    click.option(
-        "-sm",
-        "--size-min",
-        help="Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)",
-        required=False,
-        type=parse_size,
-    ),
-    help="Options for controlling which media is downloaded")
-
+        click.option(
+            "-sx",
+            "--size-max",
+            help="Filter out files larger than the given size (bytes or human-readable, e.g., 10mb)",
+            required=False,
+            type=parse_size,
+        ),
+        click.option(
+            "-sm",
+            "--size-min",
+            help="Filter out files smaller than the given size (bytes or human-readable, e.g., 10mb)",
+            required=False,
+            type=parse_size,
+        ),
+        help="Options for controlling which media is downloaded",
+    )
     @click.option_group(
         "Filename Modification options",
         click.option(
@@ -257,32 +251,24 @@ def common_other_params(func):
             help="Don't truncate long paths",
             is_flag=True,
         ),
-
         click.option(
             "-tt",
             "--text-type",
             help="set length based on word or letter",
             type=click.Choice(["word", "letter"], case_sensitive=False),
-            default="word"
+            default="word",
         ),
-
         click.option(
             "-sr",
             "--space-replacer",
             help="character to replace spaces with",
         ),
-        click.option(
-            "-tl",
-            "--textlength",
-            help="max length of text",
-            type=click.INT
-        ),
-help="""
+        click.option("-tl", "--textlength", help="max length of text", type=click.INT),
+        help="""
 \b
 Options for controlling the output of the final filename after placeholders are replaced
-"""
-     )
-
+""",
+    )
     @functools.wraps(func)
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
