@@ -55,7 +55,7 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     # Set charged sleeper
     get_sleeper()
     tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-    data = await process_tasks(tasks, model_id)
+    data = await process_tasks(tasks, model_id,after)
     progress_utils.messages_layout.visible = False
     return data
 
