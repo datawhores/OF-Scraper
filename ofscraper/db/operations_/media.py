@@ -458,7 +458,7 @@ def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getMessagesMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele["posted_at"] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele["posted_at"] or ele['created_at'] or 0).float_timestamp)
             for ele in data
         ]
 
@@ -470,7 +470,7 @@ def get_archived_media(conn=None, model_id=None, **kwargs) -> list:
         cur.execute(getArchivedMedia, [model_id])
         data = [dict(row) for row in cur.fetchall()]
         return [
-            dict(ele, posted_at=arrow.get(ele["posted_at"] or 0).float_timestamp)
+            dict(ele, posted_at=arrow.get(ele["posted_at"] or ele['created_at'] or 0).float_timestamp)
             for ele in data
         ]
 
