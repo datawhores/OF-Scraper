@@ -19,11 +19,6 @@ Docker and binary releases also availible
 
 ## Dev
 
-<div style="display: inline-block">
-<a href="https://pypi.org/project/ofscraper/3.9.0.dev5/">
-<img src="https://img.shields.io/badge/Pre--Release-v3.90.dev-dark_green.svg" alt="drawing" style="height:75px"/>
-</a>
-</div>
 
 ## Table-of-contents
 
