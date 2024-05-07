@@ -147,7 +147,7 @@ SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where LOWER(api_type) in ('timeline') and model_id=(?)
+FROM medias where LOWER(api_type) in ('timeline','posts','post') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
