@@ -147,21 +147,23 @@ SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where api_type=('Timeline') and model_id=(?)
+FROM medias where LOWER(api_type) in ('timeline') and model_id=(?)
 """
 getArchivedMedia = """
 SELECT
 media_id,post_id,link,directory
 filename,size,api_type,media_type
 preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where api_type=('Archived') and model_id=(?)
+FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 """
 getMessagesMedia = """
 SELECT 
-media_id,post_id,link,directory
-filename,size,api_type,media_type
-preview,linked,downloaded,created_at,posted_at,hash,model_id,unlocked
-FROM medias where api_type=('Message') or api_type=('Messages') and model_id=(?)
+  media_id, post_id, link, directory,
+  filename, size, api_type, media_type,
+  preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked
+FROM medias
+WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
+AND model_id = 402648;  -- Prepared statement placeholder
 """
 
 
