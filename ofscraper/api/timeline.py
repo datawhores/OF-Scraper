@@ -316,8 +316,11 @@ async def scrape_timeline_posts(
         else constants.getattr("timelineEP").format(model_id)
     )
     log.debug(url)
-    await asyncio.sleep(1)
     new_tasks = []
+    tasks=None
+
+    await asyncio.sleep(1)
+  
     try:
         task = (
             job_progress.add_task(

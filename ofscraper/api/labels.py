@@ -184,6 +184,8 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("labelsEP").format(model_id, offset)
+    task=None
+    
     try:
 
         task = (
@@ -315,6 +317,8 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     posts = None
     new_tasks = []
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
+    tasks=None
+    
     await asyncio.sleep(1)
     try:
 

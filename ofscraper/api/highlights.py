@@ -60,6 +60,8 @@ async def get_stories_post(model_id, c=None):
 async def scrape_stories(c, user_id, job_progress=None) -> list:
     stories = None
     new_tasks = []
+    task=None
+
     await asyncio.sleep(1)
     url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
@@ -345,6 +347,8 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
+    task=None
+
     try:
         task = (
             job_progress.add_task(
@@ -378,6 +382,8 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("storyEP").format(id)
+    task=None
+    
     try:
         task = (
             job_progress.add_task(
