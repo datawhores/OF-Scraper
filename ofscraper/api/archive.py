@@ -1,7 +1,5 @@
 r"""
                                                              
-r"""
-                                                             
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
@@ -11,8 +9,6 @@ r"""
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
-"""
-                 \/     \/           \/            \/         
 """
 
 import asyncio
@@ -28,13 +24,11 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.db.operations_.media import get_archived_media
-from ofscraper.db.operations_.posts import (
-    get_archived_post_info,
-    get_youngest_archived_date,
-)
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
+from ofscraper.db.operations_.posts import get_archived_post_info,get_youngest_archived_date
+from ofscraper.db.operations_.media import get_archived_media
+
 
 log = logging.getLogger("shared")
 
@@ -47,7 +41,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 
     oldarchived = None
     if not settings.get_api_cache_disabled():
-        oldarchived = await get_archived_post_info(model_id=model_id, username=username)
+        oldarchived=await get_archived_post_info(model_id=model_id, username=username)
     else:
         oldarchived = []
     trace_log_old(oldarchived)
@@ -66,7 +60,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
 @run
 async def get_archived_posts(model_id, username, forced_after=None, c=None):
     if not settings.get_api_cache_disabled():
-        oldarchived = await get_archived_post_info(model_id=model_id, username=username)
+        oldarchived=await get_archived_post_info(model_id=model_id, username=username)
     else:
         oldarchived = []
     trace_log_old(oldarchived)
@@ -273,7 +267,9 @@ async def get_after(model_id, username, forced_after=None):
             "Using newest db date because,all downloads in db marked as downloaded"
         )
         return arrow.get(
-            await get_youngest_archived_date(model_id=model_id, username=username)
+            await get_youngest_archived_date(
+                model_id=model_id, username=username
+            )
         ).float_timestamp
     else:
         log.debug(
