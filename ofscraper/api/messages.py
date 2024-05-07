@@ -62,8 +62,6 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
 
 @run
 async def get_messages(model_id, username, forced_after=None, c=None):
-    global after
-
     oldmessages=None
     if not settings.get_api_cache_disabled():
         oldmessages=await get_messages_post_info(model_id=model_id, username=username)
@@ -79,10 +77,10 @@ async def get_messages(model_id, username, forced_after=None, c=None):
     splitArrays = get_split_array(filteredArray)
     with progress_utils.set_up_api_messages():
         tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-        return await process_tasks(tasks, model_id)
+        return await process_tasks(tasks, model_id,after)
 
 
-async def process_tasks(tasks, model_id):
+async def process_tasks(tasks, model_id,after):
     page_count = 0
     responseArray = []
     overall_progress = progress_utils.overall_progress
