@@ -40,6 +40,20 @@ Uses API to modify db files without the need for downloading
         """,
         type=click.Choice(METADATA_OPTIONS)
     ))
+
+    @click.option_group( 
+        "filter_stray",
+        click.option(
+        "-ms",
+        "--mark-stray-downloaded",
+        help="""
+        \b
+        Sets unmatched media items as downloaded
+        This is done per api type excluding labels, 
+        and is limited to --after and --before range
+        """,
+        type=click.Choice(METADATA_OPTIONS)
+    ))
     @program_options
     @logging_options
     @click.option_group(
