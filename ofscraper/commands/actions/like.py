@@ -76,8 +76,8 @@ def process_like():
                 unfavorited_posts = filters.post_filter_for_like(
                     unfavorited_posts, like=True
                 )
-                post_ids = get_post_ids(unfavorited_posts)
-                like(model_id, post_ids)
+                post_ids = like.get_post_ids(unfavorited_posts)
+                like.like(model_id, post_ids)
 
 
 @exit.exit_wrapper
@@ -126,6 +126,7 @@ async def get_posts(model_id, username):
                     system.getcpu_count(),
                     len(final_post_areas),
                 )
+                forced_after=read_args.retriveArgs().after or 0
                 if not bool(tasks) and not bool(final_post_areas):
                     break
                 for _ in range(max_count - len(tasks)):
@@ -143,7 +144,8 @@ async def get_posts(model_id, username):
                                 timeline.get_timeline_posts_progress(
                                     model_id=model_id,
                                     username=username,
-                                    c=c
+                                    c=c,
+                                    forced_after=forced_after
                                 )
                             )
                         )
@@ -155,7 +157,8 @@ async def get_posts(model_id, username):
                                 archive.get_archived_posts_progress(
                                     model_id=model_id,
                                     username=username,
-                                    c=c
+                                    c=c,
+                                    forced_after=forced_after
                                 )
                             )
                         )
@@ -166,7 +169,7 @@ async def get_posts(model_id, username):
                         tasks.append(
                             asyncio.create_task(
                                 labels_api.get_labels_posts_progress(
-                                    model_id=model_id, c=c
+                                    model_id=model_id, c=c,
                                 )
                             )
                         )

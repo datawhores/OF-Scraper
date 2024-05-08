@@ -161,7 +161,6 @@ after_option = click.option(
     "--after",
     help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=helpers.arrow_helper,
-    callback=lambda ctx, param, value: value or arrow.get(0),
 )
 
 mass_msg_option = click.option(
