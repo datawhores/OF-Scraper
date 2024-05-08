@@ -114,7 +114,7 @@ def metadata_user_first():
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
         count=0
-        length=(list(len(data.keys())))
+        length=(len(data.keys()))
         for model_id, val in data.items():
             username = val["username"]
             media=val['media']
