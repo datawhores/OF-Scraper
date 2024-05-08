@@ -70,7 +70,7 @@ def process_like():
                 )
                 model_id = ele.id
                 operations.table_init_create(model_id=model_id, username=ele.name)
-                unfavorited_posts = like.get_post_for_like(
+                unfavorited_posts = get_post_for_like(
                     model_id=model_id, username=ele.name
                 )
                 unfavorited_posts = filters.post_filter_for_like(
@@ -99,7 +99,7 @@ def process_unlike():
                 )
                 model_id = profile.get_id(ele.name)
                 operations.table_init_create(model_id=model_id, username=ele.name)
-                favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
+                favorited_posts = get_posts_for_unlike(model_id, ele.name)
                 favorited_posts = filters.post_filter_for_like(
                     favorited_posts, like=False
                 )
@@ -143,8 +143,7 @@ async def get_posts(model_id, username):
                                 timeline.get_timeline_posts_progress(
                                     model_id=model_id,
                                     username=username,
-                                    c=c,
-                                    forced_after=read_args.retriveArgs().after or 0,
+                                    c=c
                                 )
                             )
                         )
@@ -156,8 +155,7 @@ async def get_posts(model_id, username):
                                 archive.get_archived_posts_progress(
                                     model_id=model_id,
                                     username=username,
-                                    c=c,
-                                    forced_after=read_args.retriveArgs().after or 0,
+                                    c=c
                                 )
                             )
                         )
