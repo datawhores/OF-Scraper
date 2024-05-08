@@ -66,7 +66,7 @@ def metadata_stray_media(username,model_id, media):
             all_media,
         )
     )
-
+    log.info(f"Found {len(filtered_media)} stray items to mark as downloaded")
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
 
@@ -113,10 +113,18 @@ def metadata_user_first():
         data = {}
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
+        count=0
+        length=(list(len(data.keys())))
         for model_id, val in data.items():
+            username = val["username"]
+            media=val['media']
+            avatar=val['avatar']
             try:
-                username = val["username"]
-                media=val['media']
+                log.warning(
+                f"Download action progressing on model {count+1}/{length} models "
+                )
+                if constants.getattr("SHOW_AVATAR") and avatar:
+                    log.warning(f"Avatar : {avatar}")
                 filterMedia = filters.filterMedia(media)
                 download.download_process(
                     username, model_id, filterMedia
@@ -127,6 +135,9 @@ def metadata_user_first():
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
+            
+            finally:
+                count=count+1
 
 def process_user_first_data_retriver(ele):
     model_id = ele.id

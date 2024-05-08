@@ -52,7 +52,7 @@ def process_post_user_first():
         data = {}
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
-        length=len(list(dict.keys()))
+        length=len(list(data.keys()))
         count=0
         for model_id, val in data.items():
             username=val["username"]
@@ -74,6 +74,8 @@ def process_post_user_first():
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
+            finally:
+                count=count+1
 
 
 

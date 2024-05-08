@@ -456,7 +456,6 @@ async def process_labels(model_id, username, c):
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
-
 @run
 async def process_areas_helper(ele, model_id) -> list:
     with stdout.lowstdout():
@@ -481,7 +480,7 @@ async def process_areas_helper(ele, model_id) -> list:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
 
-
+@run
 async def process_areas(model_id, username):
     media, posts = await process_areas_helper(model_id, username)
     return filters.filterMedia(media), filters.filterPost(posts)
