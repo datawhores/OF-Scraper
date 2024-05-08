@@ -39,10 +39,10 @@ import ofscraper.api.init as init
 
 log = logging.getLogger("shared")
 
-
-def force_add_download():
+def force_add_arguments():
     args = read_args.retriveArgs()
     args.action = "download"
+    args.force_all=True
     write_args.setArgs(args)
 
 
@@ -174,6 +174,6 @@ def metadata():
 
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
-    force_add_download()
+    force_add_arguments()
     actions.select_areas()
     metadata()
