@@ -46,38 +46,52 @@ def process_post():
 @exit.exit_wrapper
 def process_post_user_first():
     with scrape_context_manager():
-        if not placeholder.check_uniquename():
-            log.warning(
-                "[red]Warning: Your generated filenames may not be unique\n \
-            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
-            "
-            )
-            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
-
+        unique_name_warning()
         profile_tools.print_current_profile()
         init.print_sign_status()
         data = {}
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
+        length=len(list(dict.keys()))
+        count=0
         for model_id, val in data.items():
-            download.download_process(
-                val["username"], model_id, val["media"], posts=val["posts"]
-            )
+            username=val["username"]
+            media=val['media']
+            avatar=val['avatar']
+            posts=val['posts']
+            try:
+                log.warning(
+                f"Download action progressing on model {count+1}/{length} models "
+                )
+                if constants.getattr("SHOW_AVATAR") and avatar:
+                    log.warning(f"Avatar : {avatar}")
+                    download.download_process(
+                        username, model_id, media,
+                        posts=posts
+                    )
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise e
+                log.traceback_(f"failed with exception: {e}")
+                log.traceback_(traceback.format_exc())
+
+
 
 
 def process_user_first_data_retriver(ele):
-    if constants.getattr("SHOW_AVATAR") and ele.avatar:
-        log.warning(f"Avatar : {ele.avatar}")
+    model_id = ele.id
+    username = ele.name
+    avatar=ele.avatar
+    if constants.getattr("SHOW_AVATAR") and avatar:
+        log.warning(f"Avatar : {avatar}")
     if bool(areas.get_download_area()):
         log.info(
             f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
         )
     try:
-        model_id = ele.id
-        username = ele.name
         operations.table_init_create(model_id=model_id, username=username)
         media, posts = OF.process_areas(ele, model_id)
-        return {model_id: {"username": username, "posts": posts, "media": media}}
+        return {model_id: {"username": username, "posts": posts, "media": media,"avatar":avatar}}
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
             raise e
@@ -108,13 +122,7 @@ def scrape_paid_all(user_dict=None):
 @exit.exit_wrapper
 def normal_post_process():
     with scrape_context_manager():
-        if not placeholder.check_uniquename():
-            log.warning(
-                "[red]Warning: Your generated filenames may not be unique\n \
-            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]     \
-            "
-            )
-            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
+        unique_name_warning()
         profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
@@ -141,3 +149,12 @@ def normal_post_process():
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
+
+def unique_name_warning():
+    if not placeholder.check_uniquename():
+            log.warning(
+                "[red]Warning: Your generated filenames may not be unique\n \
+            https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
+            "
+            )
+            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)

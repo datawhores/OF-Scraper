@@ -1,10 +1,7 @@
 import cloup as click
 
 from ofscraper.const.constants import METADATA_OPTIONS
-from ofscraper.utils.args.arguments.advanced_processing import (
-    individual_search_option,
-    search_entire_list_option,
-)
+from ofscraper.utils.args.arguments.advanced_processing import  advanced_processing_options
 from ofscraper.utils.args.arguments.advanced_program import (
     download_script_option,
     dynamic_rules_option,
@@ -106,13 +103,7 @@ Uses API to modify db files without the need for downloading
     @userlist_options
     @advanced_userfilters_options
     @user_sorting_options
-    @click.option_group(
-        "Advanced Search Options",
-        individual_search_option,
-        search_entire_list_option,
-        help="""
-    Choose how usernames are searched""",
-    )
+    @advanced_processing_options
     @click.option_group(
         "Advanced Program Options",
         no_cache_option,

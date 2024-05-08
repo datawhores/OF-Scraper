@@ -3,6 +3,8 @@ import cloup as click
 users_first_option = click.option(
     "-uf",
     "--users-first",
+    "--user-first",
+    "users_first",
     help="Process all users first rather than one at a time (affects --action)",
     default=False,
     is_flag=True,  # Shorthand for action="store_true"
