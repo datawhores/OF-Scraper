@@ -76,8 +76,8 @@ def process_like():
                 unfavorited_posts = filters.post_filter_for_like(
                     unfavorited_posts, like=True
                 )
-                post_ids = like.get_post_ids(unfavorited_posts)
-                like.like(model_id, post_ids)
+                post_ids = get_post_ids(unfavorited_posts)
+                like(model_id, post_ids)
 
 
 @exit.exit_wrapper
@@ -103,8 +103,8 @@ def process_unlike():
                 favorited_posts = filters.post_filter_for_like(
                     favorited_posts, like=False
                 )
-                post_ids = like.get_post_ids(favorited_posts)
-                like.unlike(model_id, post_ids)
+                post_ids = get_post_ids(favorited_posts)
+                unlike(model_id, post_ids)
 
 
 @run
