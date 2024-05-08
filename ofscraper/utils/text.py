@@ -19,7 +19,7 @@ async def get_text(values):
         max_workers=constants.getattr("MAX_TEXT_WORKER")
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
-        dupe = read_args.retriveArgs().dupe
+        dupe = read_args.retriveArgs().force_all or read_args.retriveArgs().force_model_unique
         async with asyncio.TaskGroup() as tg:
             tasks = [
                 tg.create_task(get_text_process(value, dupe=dupe)) for value in values
