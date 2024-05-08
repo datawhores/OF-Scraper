@@ -38,9 +38,76 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.system.system as system
 from ofscraper.utils.context.run_async import run
+from ofscraper.commands.actions.scrape_context import scrape_context_manager
+import ofscraper.utils.context.stdout as stdout
+import ofscraper.utils.profiles.tools as profile_tools
+import ofscraper.api.init as init
+import ofscraper.models.selector as userselector
+import ofscraper.db.operations as operations
+import ofscraper.filters.media.main as filters
+import ofscraper.api.profile as profile
+import ofscraper.utils.context.exit as exit
+
+
+
 
 log = logging.getLogger("shared")
 
+
+@exit.exit_wrapper
+def process_like():
+    with scrape_context_manager():
+        profile_tools.print_current_profile()
+        init.print_sign_status()
+        userdata = userselector.getselected_usernames(rescan=False)
+        active = list(filter(lambda x: x.active, userdata))
+        length = len(active)
+        log.debug(f"Number of Active Accounts selected {length}")
+        with stdout.lowstdout():
+            for count, ele in enumerate(active):
+                log.info(f"Like action progressing on model {count+1}/{length}")
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
+                log.warning(
+                    f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                )
+                model_id = ele.id
+                operations.table_init_create(model_id=model_id, username=ele.name)
+                unfavorited_posts = like.get_post_for_like(
+                    model_id=model_id, username=ele.name
+                )
+                unfavorited_posts = filters.post_filter_for_like(
+                    unfavorited_posts, like=True
+                )
+                post_ids = like.get_post_ids(unfavorited_posts)
+                like.like(model_id, post_ids)
+
+
+@exit.exit_wrapper
+def process_unlike():
+    with scrape_context_manager():
+        profile_tools.print_current_profile()
+        init.print_sign_status()
+        userdata = userselector.getselected_usernames(rescan=False)
+        active = list(filter(lambda x: x.active, userdata))
+        length = len(active)
+        log.debug(f"Number of Active Accounts selected {length}")
+        with stdout.lowstdout():
+            for count, ele in enumerate(active):
+                log.info(f"Unlike action progressing on model {count+1}/{length}")
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
+                log.warning(
+                    f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                )
+                model_id = profile.get_id(ele.name)
+                operations.table_init_create(model_id=model_id, username=ele.name)
+                favorited_posts = like.get_posts_for_unlike(model_id, ele.name)
+                favorited_posts = filters.post_filter_for_like(
+                    favorited_posts, like=False
+                )
+                post_ids = like.get_post_ids(favorited_posts)
+                like.unlike(model_id, post_ids)
 
 @run
 async def get_posts(model_id, username):
@@ -222,3 +289,4 @@ def _like_request(c, id, model_id):
         constants.getattr("favoriteEP").format(id, model_id), method="post"
     ) as _:
         return id
+

@@ -285,7 +285,7 @@ async def scrape_archived_posts(
     posts = None
     if timestamp and (
         float(timestamp)
-        > (read_args.retriveArgs().before or arrow.now()).float_timestamp
+        > (read_args.retriveArgs().before).float_timestamp
     ):
         return []
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp

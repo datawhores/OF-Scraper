@@ -54,7 +54,7 @@ def medialist_filter(medialist, model_id, username):
 
 def download_process(username, model_id, medialist, posts=None):
     data = None
-    if read_args.retriveArgs().metadata:
+    if read_args.retriveArgs().command=="metadata":
         medialist = (
             list(filter(lambda x: x.canview, medialist))
             if constants.getattr("REMOVE_UNVIEWABLE_METADATA")

@@ -8,13 +8,12 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+                                                                                      f
 """
 
 import logging
 import traceback
 
-import ofscraper.actions.process as process_actions
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
@@ -25,6 +24,10 @@ import ofscraper.utils.menu as menu
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
+from ofscraper.commands.add_select.add_selected import add_selected_areas
+
+
+
 from ofscraper.__version__ import __version__
 
 log = logging.getLogger("shared")
@@ -32,7 +35,7 @@ log = logging.getLogger("shared")
 
 def process_selected_areas():
     log.debug("[bold blue] Running Action Mode [/bold blue]")
-    functs = process_actions.add_selected_areas()
+    functs = add_selected_areas()
     run.run_helper(*functs)
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
@@ -45,13 +48,13 @@ def process_selected_areas():
             break
         else:
             menu.get_count() > 0 and menu.reset_menu_helper()
-            functs = process_actions.add_selected_areas()
+            functs = add_selected_areas()
             run.run_helper(*functs)
             menu.update_count()
 
 
 def daemon_process():
-    functs = process_actions.add_selected_areas()
+    functs = add_selected_areas()
     run.daemon_run_helper(*functs)
 
 
@@ -114,3 +117,5 @@ def scrapper():
         process_selected_areas()
     elif len(args.action) == 0:
         process_prompts()
+
+

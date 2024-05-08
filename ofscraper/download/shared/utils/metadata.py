@@ -3,7 +3,6 @@ import pathlib
 from functools import partial
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.db.operations as operations
 import ofscraper.download.shared.common.general as common
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.download.shared.utils.media as media
@@ -49,9 +48,8 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
 
 
 async def metadata_downloaded_helper(placeholderObj):
-    if read_args.retriveArgs().metadata == "none":
+    if read_args.retriveArgs().metadata == "check":
         return None
-
     elif read_args.retriveArgs().metadata == "complete":
         return 1
     elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
@@ -60,6 +58,7 @@ async def metadata_downloaded_helper(placeholderObj):
 
 
 async def metadata_helper(c, ele):
+    placeholderObj = None
     if not ele.url and not ele.mpd:
         placeholderObj = placeholder.Placeholders(
             ele, ext=media.content_type_missing(ele)

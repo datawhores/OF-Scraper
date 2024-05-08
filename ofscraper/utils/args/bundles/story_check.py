@@ -56,6 +56,5 @@ def story_check_args(func):
     @advanced_args
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
-        ctx.params.pop("key_mode")
         return func(ctx, *args, **kwargs)
     return wrapper

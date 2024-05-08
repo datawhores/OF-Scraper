@@ -126,6 +126,14 @@ filename,size,api_type,
 media_type,preview,linked,
 downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+
+mediaDownloadForce=\
+"""
+Update 'medias'
+SET
+downloaded=True
+WHERE media_id=(?) and model_id=(?);
+"""
 mediaDownloadSelect = """
 SELECT  
 directory,filename,size
@@ -538,6 +546,24 @@ def update_media_table_download_helper(
     insertData.extend([media.id, model_id])
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
+@wrapper.operation_wrapper
+def batch_set_media_downloaded( medias,
+    model_id=None,
+    conn=None,
+    **kwargs):
+    with contextlib.closing(conn.cursor()) as curr:
+        insertData = list(
+            map(
+                lambda media: [
+                    media["model_id"],
+                    model_id,
+                ],
+                medias
+            )
+        )
+        curr.executemany(mediaDownloadForce, insertData)
+        conn.commit()
+
 
 
 def media_exist_insert_helper(

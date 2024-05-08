@@ -1,4 +1,5 @@
 import itertools
+import arrow
 import cloup as click
 import ofscraper.utils.args.helpers as helpers
 
@@ -8,6 +9,7 @@ posts_option = click.option(
     "-o",
     "--posts",
     "--post",
+    "posts",
     help="""
     Select areas for batch actions (comma or space separated).
     Options: HighLights, Archived, Messages, Timeline, Pinned, Stories, Purchased, Profile, Labels, All
@@ -148,13 +150,16 @@ before_option = click.option(
     "--before",
     help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=helpers.arrow_helper,
-)
+    callback=lambda ctx, param, value: value or arrow.get(arrow.now().float_timestamp+10000)
+    )
+
 
 after_option = click.option(
     "-af",
     "--after",
     help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=helpers.arrow_helper,
+    callback=lambda ctx, param, value: value or arrow.get(0)
 )
 
 mass_msg_option = click.option(

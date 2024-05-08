@@ -34,11 +34,12 @@ Uses API to modify db files without the need for downloading
         help="""
         \b
         How should metadata be handled
-        update: update download status based on file presence, and update metadata fields via api
         check: only update metadata fields via api
+        update: update download status based on file presence, and update metadata fields via api
         complete: update download to true, and update metadata fields
         """,
-        type=click.Choice(METADATA_OPTIONS)
+        type=click.Choice(METADATA_OPTIONS),
+        required=True
     ))
 
     @click.option_group( 
@@ -46,13 +47,17 @@ Uses API to modify db files without the need for downloading
         click.option(
         "-ms",
         "--mark-stray-downloaded",
+        "--mark-stray",
+        "mark_stray",
         help="""
         \b
         Sets unmatched media items as downloaded
         This is done per api type excluding labels, 
         and is limited to --after and --before range
         """,
-        type=click.Choice(METADATA_OPTIONS)
+        flag_value=True,
+        is_flag=True
+
     ))
     @program_options
     @logging_options
@@ -100,6 +105,5 @@ Uses API to modify db files without the need for downloading
     )
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
-        ctx.params.pop("key_mode")
         return func(ctx, *args, **kwargs)
     return wrapper
