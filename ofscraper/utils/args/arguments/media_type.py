@@ -44,7 +44,7 @@ min_size_option = click.option(
 
 # Create the option group
 media_type_options = click.option_group(
-    "Media Filters",
+    "Media Filters Options",
     quality_option,
     media_type_option,
     max_size_option,

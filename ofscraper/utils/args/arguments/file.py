@@ -29,7 +29,7 @@ text_length_option = click.option(
 
 # Create the option group with help text
 file_options = click.option_group(
-    "Filename Modification options",
+    "Filename Modification Options",
     original_filename_option,
     text_type_option,
     space_replacer_option,
