@@ -473,14 +473,18 @@ async def process_areas_helper(ele, model_id) -> list:
                 with progress_utils.setup_api_split_progress_live():
                     medias, posts = await process_task(model_id, username, ele)
                     output.extend(medias)
-            return medias, posts,
+            return (
+                medias,
+                posts,
+            )
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-async def process_areas(model_id, username):
-    media,posts=await process_areas_helper(model_id,username)
-    return filters.filterMedia(media), filters.filterPost(posts)
 
+
+async def process_areas(model_id, username):
+    media, posts = await process_areas_helper(model_id, username)
+    return filters.filterMedia(media), filters.filterPost(posts)
 
 
 async def process_task(model_id, username, ele):

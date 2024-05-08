@@ -1,4 +1,5 @@
 import cloup as click
+
 original_filename_option = click.option(
     "-g",
     "--original",
@@ -11,7 +12,7 @@ text_type_option = click.option(
     "--text-type",
     help="set length based on word or letter",
     type=click.Choice(["word", "letter"], case_sensitive=False),
-    default="word"
+    default="word",
 )
 
 space_replacer_option = click.option(
@@ -21,10 +22,7 @@ space_replacer_option = click.option(
 )
 
 text_length_option = click.option(
-    "-tl",
-    "--textlength",
-    help="max length of text",
-    type=click.INT
+    "-tl", "--textlength", help="max length of text", type=click.INT
 )
 
 # Create the option group with help text
@@ -37,5 +35,5 @@ file_options = click.option_group(
     help="""
 \b
 Options for controlling the output of the final filename after placeholders are replaced
-"""
+""",
 )

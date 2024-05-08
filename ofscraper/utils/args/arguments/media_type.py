@@ -1,5 +1,6 @@
 # Define individual options
 import itertools
+
 import cloup as click
 
 # import click

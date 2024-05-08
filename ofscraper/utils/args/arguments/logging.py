@@ -1,4 +1,5 @@
 import cloup as click
+
 log_level_option = click.option(
     "-l",
     "--log",

@@ -284,8 +284,7 @@ async def scrape_archived_posts(
     global sem
     posts = None
     if timestamp and (
-        float(timestamp)
-        > (read_args.retriveArgs().before).float_timestamp
+        float(timestamp) > (read_args.retriveArgs().before).float_timestamp
     ):
         return []
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp

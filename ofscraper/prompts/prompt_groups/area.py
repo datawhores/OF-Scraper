@@ -27,13 +27,13 @@ def areas_prompt() -> list:
     message = None
     print(args.command)
     if "like" in args.action and len(args.like_area) == 0:
-        message="Which area(s) would you do you want to download and like"
-    elif "unlike" in args.action and len(args.like_area)==0:
-        message="Which area(s) would you do you want to download and unlike"
-    elif "download" in args.action and args.command=="OF-Scraper":
-        message="Which area(s) would you do you want to download"
-    elif "download" in args.action and args.command=="metadata":
-        message="Which area(s) would you do you want to update metadata for"
+        message = "Which area(s) would you do you want to download and like"
+    elif "unlike" in args.action and len(args.like_area) == 0:
+        message = "Which area(s) would you do you want to download and unlike"
+    elif "download" in args.action and args.command == "OF-Scraper":
+        message = "Which area(s) would you do you want to download"
+    elif "download" in args.action and args.command == "metadata":
+        message = "Which area(s) would you do you want to update metadata for"
     more_instruction = (
         """Hint: Since you have Like or Unlike set
     You must select one or more of Timeline,Pinned,Archived, or Label

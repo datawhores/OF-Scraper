@@ -1,7 +1,10 @@
 import cloup as click
-from ofscraper.utils.args.bundles.main import main_program_args
-from ofscraper.utils.args.bundles.common import common_args
+
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
+from ofscraper.utils.args.bundles.common import common_args
+from ofscraper.utils.args.bundles.main import main_program_args
+
+
 @click.group(
     help="OF-Scraper Options",
     context_settings=dict(help_option_names=["-h", "--help"]),

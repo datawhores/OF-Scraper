@@ -1,8 +1,9 @@
 import itertools
+
 import arrow
 import cloup as click
-import ofscraper.utils.args.helpers as helpers
 
+import ofscraper.utils.args.helpers as helpers
 
 # Define individual options
 posts_option = click.option(
@@ -134,24 +135,25 @@ force_model_unique_option = click.option(
 )
 
 label_option = click.option(
-            "-lb",
-            "--label",
-            help="Filter by label (use helpers.label_helper to process)",
-            default=[],
-            required=False,
-            type=helpers.label_helper,
-            callback=lambda ctx, param, value: (
-                list(set(itertools.chain.from_iterable(value))) if value else []
-            ),
-            multiple=True,
-        )
+    "-lb",
+    "--label",
+    help="Filter by label (use helpers.label_helper to process)",
+    default=[],
+    required=False,
+    type=helpers.label_helper,
+    callback=lambda ctx, param, value: (
+        list(set(itertools.chain.from_iterable(value))) if value else []
+    ),
+    multiple=True,
+)
 before_option = click.option(
     "-be",
     "--before",
     help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=helpers.arrow_helper,
-    callback=lambda ctx, param, value: value or arrow.get(arrow.now().float_timestamp+10000)
-    )
+    callback=lambda ctx, param, value: value
+    or arrow.get(arrow.now().float_timestamp + 10000),
+)
 
 
 after_option = click.option(
@@ -159,7 +161,7 @@ after_option = click.option(
     "--after",
     help="Process posts at or after the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=helpers.arrow_helper,
-    callback=lambda ctx, param, value: value or arrow.get(0)
+    callback=lambda ctx, param, value: value or arrow.get(0),
 )
 
 mass_msg_option = click.option(

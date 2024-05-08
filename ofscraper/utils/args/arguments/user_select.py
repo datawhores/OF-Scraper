@@ -1,8 +1,9 @@
-import re
 import itertools
-import cloup as click
-import ofscraper.utils.args.helpers as helpers
+import re
 
+import cloup as click
+
+import ofscraper.utils.args.helpers as helpers
 
 usernames_option = click.option(
     "-u",

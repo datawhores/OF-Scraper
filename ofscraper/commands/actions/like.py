@@ -26,30 +26,27 @@ from rich.progress import (
 from rich.style import Style
 
 import ofscraper.api.archive as archive
+import ofscraper.api.init as init
 import ofscraper.api.labels as labels_api
 import ofscraper.api.pinned as pinned
+import ofscraper.api.profile as profile
 import ofscraper.api.timeline as timeline
 import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.db.operations as operations
+import ofscraper.filters.media.main as filters
+import ofscraper.models.selector as userselector
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
-import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.system.system as system
-from ofscraper.utils.context.run_async import run
-from ofscraper.commands.actions.scrape_context import scrape_context_manager
+import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.api.init as init
-import ofscraper.models.selector as userselector
-import ofscraper.db.operations as operations
-import ofscraper.filters.media.main as filters
-import ofscraper.api.profile as profile
-import ofscraper.utils.context.exit as exit
-
-
-
+import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.system.system as system
+from ofscraper.commands.actions.scrape_context import scrape_context_manager
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 
@@ -108,6 +105,7 @@ def process_unlike():
                 )
                 post_ids = like.get_post_ids(favorited_posts)
                 like.unlike(model_id, post_ids)
+
 
 @run
 async def get_posts(model_id, username):
@@ -289,4 +287,3 @@ def _like_request(c, id, model_id):
         constants.getattr("favoriteEP").format(id, model_id), method="post"
     ) as _:
         return id
-

@@ -164,8 +164,7 @@ async def scrape_pinned_posts(
     posts = None
 
     if timestamp and (
-        float(timestamp)
-        > (read_args.retriveArgs().before ).float_timestamp
+        float(timestamp) > (read_args.retriveArgs().before).float_timestamp
     ):
         return []
     url = constants.getattr("timelinePinnedEP").format(model_id, count)

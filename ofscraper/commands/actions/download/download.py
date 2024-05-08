@@ -16,24 +16,23 @@ import time
 import traceback
 from contextlib import contextmanager
 
-import ofscraper.commands.actions.download.post as OF
 import ofscraper.api.init as init
 import ofscraper.api.profile as profile
 import ofscraper.classes.models as models
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.commands.actions.download.post as OF
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
 import ofscraper.models.selector as selector
 import ofscraper.utils.args.areas as areas
+import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.actions.scrape_context import scrape_context_manager
-import ofscraper.utils.args.read as read_args
 
 log = logging.getLogger("shared")
-
 
 
 @exit.exit_wrapper
@@ -42,6 +41,7 @@ def process_post():
         process_post_user_first()
     else:
         normal_post_process()
+
 
 @exit.exit_wrapper
 def process_post_user_first():
@@ -130,7 +130,7 @@ def normal_post_process():
             )
             try:
                 model_id = ele.id
-                username=ele.name
+                username = ele.name
                 operations.table_init_create(model_id=model_id, username=username)
                 combined_urls, posts = OF.process_areas(ele, model_id)
                 download.download_process(

@@ -127,16 +127,15 @@ media_type,preview,linked,
 downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
-mediaDownloadForce=\
-"""
+mediaDownloadForce = """
 Update 'medias'
 SET
-downloaded=True
+downloaded=1
 WHERE media_id=(?) and model_id=(?);
 """
 mediaDownloadSelect = """
 SELECT  
-directory,filename,size
+directory,filename,size,
 downloaded,hash
 FROM medias where media_id=(?)
 """
@@ -538,27 +537,49 @@ def update_media_table_download_helper(
     curr=None,
     **kwargs,
 ) -> list:
-    prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetchall()
-    prevData = prevData[0] if isinstance(prevData, list) and bool(prevData) else None
-    insertData = media_exist_insert_helper(
-        filename=filename, hashdata=hashdata, prevData=prevData, downloaded=downloaded
-    )
+    directory,filename,size,hashdata=get_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename)
+    insertData = [
+        directory,
+        filename,
+        size,
+        downloaded,
+        hashdata,
+    ]
     insertData.extend([media.id, model_id])
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
+
+def get_prev_data_helper(curr,media_id,filename=None,hashdata=None):
+
+    prevData = curr.execute(mediaDownloadSelect, (media_id,)).fetchall()
+    prevData = dict(prevData[0]) if isinstance(prevData, list) and bool(prevData) else None
+    if prevData:
+        prev_filename=prevData['filename']
+        prev_hashdata=prevData['hash']
+        prev_directory=prevData['directory']
+        prev_size=prevData['size']
+        existing_filename=check_file_existance_helper(filename,prev_filename,pathlib.Path(prevData['directory'] or "",prev_filename or ""),pathlib.Path(prevData['directory'] or "",filename or ""))
+        filename=existing_filename or prev_filename
+        directory=(str(pathlib.Path(existing_filename).parent) if existing_filename else None) or prev_directory
+        size=(pathlib.Path(existing_filename).stat().st_size if existing_filename else None) or prev_size
+        hash=hashdata or prev_hashdata
+        return str(directory),str(filename),size,hash
+    return [None,None,None,None]
+
+def check_file_existance_helper(*names):
+    for name in names:
+        if name and pathlib.Path(name).is_file():
+            return name
 @wrapper.operation_wrapper
-def batch_set_media_downloaded( medias,
-    model_id=None,
-    conn=None,
-    **kwargs):
+def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
         insertData = list(
             map(
                 lambda media: [
-                    media["model_id"],
+                    media["media_id"],
                     model_id,
                 ],
-                medias
+                medias,
             )
         )
         curr.executemany(mediaDownloadForce, insertData)
@@ -566,32 +587,6 @@ def batch_set_media_downloaded( medias,
 
 
 
-def media_exist_insert_helper(
-    filename=None, downloaded=None, hashdata=None, prevData=None, **kwargs
-):
-    directory = None
-    filename_path = None
-    size = None
-    if filename and pathlib.Path(filename).exists():
-        directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename).name)
-        size = math.ceil(pathlib.Path(filename).stat().st_size)
-    elif filename:
-        directory = str(pathlib.Path(filename).parent)
-        filename_path = str(pathlib.Path(filename).name)
-    elif prevData:
-        directory = prevData[0]
-        filename_path = prevData[1]
-        size = prevData[2]
-        hashdata = prevData[3] or hashdata
-    insertData = [
-        directory,
-        filename_path,
-        size,
-        downloaded,
-        hashdata,
-    ]
-    return insertData
 
 
 @run

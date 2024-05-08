@@ -1,5 +1,7 @@
 import cloup as click
+
 from ofscraper.utils.args.bundles.story_check import story_check_args
+
 
 @story_check_args
 @click.pass_context

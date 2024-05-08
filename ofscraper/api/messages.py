@@ -69,7 +69,7 @@ async def get_messages(model_id, username, forced_after=None, c=None):
         oldmessages = []
     trace_log_old(oldmessages)
 
-    before = (read_args.retriveArgs().before ).float_timestamp
+    before = (read_args.retriveArgs().before).float_timestamp
     after = await get_after(model_id, username, forced_after)
     log_after_before(after, before, username)
 

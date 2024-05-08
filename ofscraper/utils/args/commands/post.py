@@ -1,5 +1,7 @@
 import cloup as click
+
 from ofscraper.utils.args.bundles.post_check import post_check_args
+
 
 @post_check_args
 @click.pass_context

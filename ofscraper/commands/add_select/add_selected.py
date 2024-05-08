@@ -1,7 +1,8 @@
 import ofscraper.utils.actions as actions
-from ofscraper.commands.actions.download.download import process_post,scrape_paid_all
-from ofscraper.commands.actions.like import process_like,process_unlike
 import ofscraper.utils.args.read as read_args
+from ofscraper.commands.actions.download.download import process_post, scrape_paid_all
+from ofscraper.commands.actions.like import process_like, process_unlike
+
 
 def add_selected_areas():
     functs = []

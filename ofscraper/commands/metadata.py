@@ -13,113 +13,109 @@
 
 import logging
 import traceback
+
 import arrow
 
+import ofscraper.db.operations as operations
+import ofscraper.download.download as download
+import ofscraper.filters.media.main as filters
+import ofscraper.models.selector as userselector
 import ofscraper.prompts.prompts as prompts
+import ofscraper.utils.actions as actions
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
-
 import ofscraper.utils.config.data as data
+import ofscraper.utils.constants as constants
 import ofscraper.utils.menu as menu
 import ofscraper.utils.run as run
 from ofscraper.__version__ import __version__
-from ofscraper.commands.scraper import process_prompts
-import ofscraper.utils.actions as actions
-from ofscraper.commands.add_select.add_selected import add_selected_areas
 from ofscraper.commands.actions.download.post import process_areas_helper
-import ofscraper.filters.media.main as filters
-import ofscraper.download.download as download
-import ofscraper.utils.constants as constants
-import ofscraper.models.selector as userselector
-import ofscraper.db.operations as operations
-from ofscraper.db.operations_.media import get_timeline_media,get_archived_media,get_messages_media,batch_set_media_downloaded
-
-
-
-
+from ofscraper.commands.add_select.add_selected import add_selected_areas
+from ofscraper.commands.scraper import process_prompts
+from ofscraper.db.operations_.media import (
+    batch_set_media_downloaded,
+    get_archived_media,
+    get_messages_media,
+    get_timeline_media,
+)
 
 log = logging.getLogger("shared")
+
+
 def force_add_download():
-    args=read_args.retriveArgs()
-    args.action="download"
+    args = read_args.retriveArgs()
+    args.action = "download"
     write_args.setArgs(args)
 
 
-
-def metadata_stray_media(ele,media):
-    all_media=[]
-    username=ele.name
-    model_id=ele.id
-    curr_media_set=set(map(lambda x:str(x.id),media))
-    args=read_args.retriveArgs()
+def metadata_stray_media(ele, media):
+    all_media = []
+    username = ele.name
+    model_id = ele.id
+    curr_media_set = set(map(lambda x: str(x.id), media))
+    args = read_args.retriveArgs()
     if "Timeline" in args.download_area:
         all_media.extend(get_timeline_media(model_id=model_id, username=username))
     if "Messages" in args.download_area:
-          all_media.extend(get_messages_media(model_id=model_id, username=username))
+        all_media.extend(get_messages_media(model_id=model_id, username=username))
     if "Archived" in args.download_area:
         all_media.extend(get_archived_media(model_id=model_id, username=username))
     if not bool(all_media):
         return
-    filtered_media=list(filter(lambda x:
-                               str(x["media_id"]) not in curr_media_set and
-                               arrow.get(x.get("posted_at") or 0).is_between(args.after,args.before)
-                               and x.get("downloaded")!=1   
-                               ,all_media))
+    filtered_media = list(
+        filter(
+            lambda x: str(x["media_id"]) not in curr_media_set
+            and arrow.get(x.get("posted_at") or 0).is_between(args.after, args.before)
+            and x.get("downloaded") != 1,
+            all_media,
+        )
+    )
 
-    batch_set_media_downloaded(filtered_media,model_id=model_id,username=username)
+    batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
+
 
 def metadata_action_normal():
     userdata = userselector.getselected_usernames(rescan=False)
     length = len(userdata)
-    metadata_action=read_args.retriveArgs().metadata
-    mark_stray=read_args.retriveArgs().mark_stray
+    metadata_action = read_args.retriveArgs().metadata
+    mark_stray = read_args.retriveArgs().mark_stray
     for count, ele in enumerate(userdata):
-            log.warning(
-                f"Metadata action progressing on model {count+1}/{length} models "
-            )
-            if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                    log.warning(f"Avatar : {ele.avatar}")
-                
-            log.warning(
-                f"""
+        log.warning(f"Metadata action progressing on model {count+1}/{length} models ")
+        if constants.getattr("SHOW_AVATAR") and ele.avatar:
+            log.warning(f"Avatar : {ele.avatar}")
+
+        log.warning(
+            f"""
                 Perform Meta {metadata_action} with 
                 Mark Stray: {mark_stray}
                 for [bold]{ele.name}[/bold]\n[bold]
                 Subscription Active:[/bold] {ele.active}"""
-            )
-            try:
-                model_id=ele.id
-                username=ele.name
-    
-                media, _=process_areas_helper(ele, model_id)
-                operations.table_init_create(model_id=model_id, username=username)
-                filterMedia=filters.filterMedia(media)
-                download.download_process(
-                            username, model_id, filterMedia
-                        )
-                metadata_stray_media(ele,media)
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+        )
+        try:
+            model_id = ele.id
+            username = ele.name
+
+            media, _ = process_areas_helper(ele, model_id)
+            operations.table_init_create(model_id=model_id, username=username)
+            filterMedia = filters.filterMedia(media)
+            download.download_process(username, model_id, filterMedia)
+            metadata_stray_media(ele, media)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
 
 
 def metadata_action():
     if not read_args.retriveArgs().userfirst:
-          metadata_action_normal()
+        metadata_action_normal()
     else:
-          metadata_action_normal()
-          
+        metadata_action_normal()
+
 
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_add_download()
     actions.select_areas()
     metadata_action()
-   
-
-
-
-
-

@@ -3,8 +3,10 @@ import itertools
 import cloup as click
 
 import ofscraper.utils.args.helpers as helpers
-from ofscraper.utils.args.bundles.common import common_args
 from ofscraper.utils.args.bundles.advanced_common import advanced_args
+from ofscraper.utils.args.bundles.common import common_args
+
+
 def manual_args(func):
     @click.command(
         "manual",
@@ -47,4 +49,5 @@ def manual_args(func):
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         return func(ctx, *args, **kwargs)
+
     return wrapper

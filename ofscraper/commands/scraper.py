@@ -24,11 +24,8 @@ import ofscraper.utils.menu as menu
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
-from ofscraper.commands.add_select.add_selected import add_selected_areas
-
-
-
 from ofscraper.__version__ import __version__
+from ofscraper.commands.add_select.add_selected import add_selected_areas
 
 log = logging.getLogger("shared")
 
@@ -117,5 +114,3 @@ def scrapper():
         process_selected_areas()
     elif len(args.action) == 0:
         process_prompts()
-
-

@@ -4,11 +4,10 @@ import sys
 import ofscraper.utils.args.commands.main as main
 import ofscraper.utils.args.commands.manual as manual
 import ofscraper.utils.args.commands.message as message
+import ofscraper.utils.args.commands.metadata as metadata
 import ofscraper.utils.args.commands.paid as paid
 import ofscraper.utils.args.commands.post as post
 import ofscraper.utils.args.commands.story as story
-import ofscraper.utils.args.commands.metadata as metadata
-
 import ofscraper.utils.args.write as write_args
 
 

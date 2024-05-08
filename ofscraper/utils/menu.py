@@ -10,6 +10,7 @@ import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.run as run
 from ofscraper.commands.add_select.add_selected import add_selected_areas
+
 log = logging.getLogger("shared")
 count = 0
 

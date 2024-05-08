@@ -1,8 +1,6 @@
-
-
 import cloup as click
-from ofscraper.const.constants import KEY_OPTIONS
 
+from ofscraper.const.constants import KEY_OPTIONS
 
 no_cache_option = click.option(
     "-nc",
@@ -10,7 +8,7 @@ no_cache_option = click.option(
     help="Disable cache and forces consecutive api scan",
     default=False,
     is_flag=True,
-)# Define individual options
+)  # Define individual options
 
 
 no_api_cache_option = click.option(

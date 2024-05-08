@@ -1,5 +1,7 @@
 import cloup as click
+
 from ofscraper.utils.args.bundles.paid_check import paid_check_args
+
 
 @paid_check_args
 @click.pass_context

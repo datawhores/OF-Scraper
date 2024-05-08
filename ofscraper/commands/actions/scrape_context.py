@@ -10,12 +10,14 @@ r"""
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
                                                                                       
 """
-import timeit
+
 import logging
+import timeit
 from contextlib import contextmanager
 
 import arrow
-log=logging.getLogger("shared")
+
+log = logging.getLogger("shared")
 
 
 @contextmanager

@@ -1,11 +1,13 @@
-
 import re
-import cloup as click
 
-from ofscraper.__version__ import __version__
+import cloup as click
 from humanfriendly import parse_size
 
-version_option = click.version_option(__version__, "-v", "--version", package_name="OF-Scraper")
+from ofscraper.__version__ import __version__
+
+version_option = click.version_option(
+    __version__, "-v", "--version", package_name="OF-Scraper"
+)
 
 config_location_option = click.option(
     "-cg",

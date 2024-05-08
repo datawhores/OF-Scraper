@@ -1,4 +1,5 @@
 import cloup as click
+
 no_auto_resume_option = click.option(
     "-ar",
     "--no-auto-resume",

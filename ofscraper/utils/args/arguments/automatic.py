@@ -1,7 +1,8 @@
 import itertools
-import cloup as click
-import ofscraper.utils.args.helpers as helpers
 
+import cloup as click
+
+import ofscraper.utils.args.helpers as helpers
 
 daemon_option = click.option(
     "-d",

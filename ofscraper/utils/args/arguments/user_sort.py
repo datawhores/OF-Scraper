@@ -1,4 +1,5 @@
 import cloup as click
+
 sort_by_option = click.option(
     "-st",
     "--sort",
