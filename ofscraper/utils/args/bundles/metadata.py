@@ -36,8 +36,7 @@ from ofscraper.utils.args.arguments.user_sort import user_sorting_options
 def metadata_args(func):
     @click.command(
         "metadata",
-        short_help="""\b
-               Modify metadata or db files""",
+        short_help=" Modify metadata or db files",
         help="""
 Uses API to modify db files without the need for downloading
 """,
