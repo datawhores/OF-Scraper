@@ -96,7 +96,7 @@ max_count_option = click.option(
 item_sort_option = click.option(
     "-it",
     "--item-sort",
-    help="Change item/post order before action (default: date asc or random)",
+    help="Changes media processing order before action (default: date asc or random)",
     default=None,
     required=False,
     type=click.Choice(

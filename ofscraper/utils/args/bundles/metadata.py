@@ -26,7 +26,6 @@ from ofscraper.utils.args.arguments.content import (
     timed_only_option,
      force_all_option,
     force_model_unique_option,
-    scrape_paid_option
 )
 from ofscraper.utils.args.arguments.file import file_options
 from ofscraper.utils.args.arguments.logging import logging_options
@@ -52,13 +51,20 @@ Uses API to modify db files without the need for downloading
             "--metadata",
             "metadata",
             help="""
-        \b
-        How should metadata be handled
-        check: only update metadata fields via api
-        update: update download status based on file presence, and update metadata fields via api
-        complete: update download to true, and update metadata fields
+        \b\n
+METADATA MODES\n
+check:\n
+Updates metadata fields for the specified area via an API\n
+This option does not check for new filenames\n
+update: This mode performs two actions:\n
+1. Updates download status and filenames based on the presence of actual files\n
+2. Updates metadata fields for the specified area via an API\n
+complete: \n
+Marks the download as complete and updates metadata fields via an API\n
+It also uses a new filename if one is available
         """,
             type=click.Choice(METADATA_OPTIONS),
+            metavar="METADATA MODE"
         ),
     )
     @click.option_group(
@@ -89,7 +95,13 @@ Uses API to modify db files without the need for downloading
         posts_option,
         filter_option,
         neg_filter_option,
-        scrape_paid_option,
+        click.option(
+        "-sp",
+        "--scrape-paid",
+        help="Similar to --metadata, but only for --scrape paid",
+        metavar="METADATA MODE"
+
+        ),
         max_count_option,
         label_option,
         before_option,

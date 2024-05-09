@@ -32,15 +32,15 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common.add_additional_data(placeholderObj, ele)
     effected = None
     if ele.id:
-        prevData=prev_download_media_data(ele)
+        prevData=prev_download_media_data(ele) or {}
         effected = await download_media_update(
             ele,
-            filename=placeholderObj.trunicated_filename,
-            directory=placeholderObj.filedir,
+            filename=metadata_file_helper(placeholderObjHelper,prevData),
+            directory=pathlib.Path(metadata_file_helper(placeholderObj,prevData)).parent,
             model_id=model_id,
             username=username,
-            downloaded=await metadata_downloaded_helper(placeholderObj,prevData),
-            hashdata=prevData['hash'],
+            downloaded=metadata_downloaded_helper(placeholderObj,prevData),
+            hashdata=prevData.get("hash"),
             changed=True,
         )
 
@@ -50,15 +50,31 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     )
 
 
-async def metadata_downloaded_helper(placeholderObj,prevData):
+def metadata_downloaded_helper(placeholderObj,prevData):
     if read_args.retriveArgs().metadata == "check":
         return prevData['downloaded'] if prevData else None
     elif read_args.retriveArgs().metadata == "complete":
         return 1
+    #for update
     elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
+        return 1
+    elif pathlib.Path(prevData.get("filename") or "").is_file():
+        return 1
+    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
         return 1
     return 0
 
+def metadata_file_helper(placeholderObj,prevData):
+    if read_args.retriveArgs().metadata != "update":
+        return placeholderObj.trunicated_filename
+    #for update
+    elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
+        return placeholderObj.trunicated_filenam
+    elif pathlib.Path(prevData.get("filename") or "").is_file():
+        return prevData.get("filename")
+    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
+        return  pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "")
+    return placeholderObj.trunicated_filename
 
 async def metadata_helper(c, ele):
     placeholderObj = None
