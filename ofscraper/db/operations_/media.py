@@ -130,7 +130,7 @@ downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
 mediaDownloadForce = """
 Update 'medias'
 SET
-unlocked=1
+unlocked=0
 WHERE media_id=(?) and model_id=(?);
 """
 mediaDownloadSelect = """
