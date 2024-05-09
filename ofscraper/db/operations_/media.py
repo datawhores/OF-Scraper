@@ -551,10 +551,10 @@ def update_media_table_download_helper(
     conn.commit()
 
 @run
-@wrapper.operation_wrapper
-def prev_download_media_data(media_id,model_id=None, username=None, conn=None, **kwargs):
+@wrapper.operation_wrapper_async
+def prev_download_media_data(media,model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
-        prevData = curr.execute(mediaDownloadSelect, (media_id,)).fetch()
+        prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetch()
         prevData = dict(prevData)
         return prevData
 @wrapper.operation_wrapper
