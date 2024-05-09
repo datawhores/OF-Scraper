@@ -93,10 +93,10 @@ def metadata_normal():
 
             log.warning(
                 f"""
-                    Perform Meta {metadata_action} with 
-                    Mark Stray: {mark_stray}
-                    for [bold]{ele.name}[/bold]\n[bold]
-                    Subscription Active:[/bold] {ele.active}"""
+Perform Meta {metadata_action} with
+Mark Stray: {mark_stray}
+for [bold]{ele.name}[/bold]\n[bold]
+Subscription Active:[/bold] {ele.active}"""
             )
             try:
                 model_id = ele.id
@@ -179,10 +179,11 @@ def process_user_first_data_retriver(ele):
         log.warning(f"Avatar : {avatar}")
     log.warning(
         f"""
-            Perform Meta {metadata_action} with 
-            Mark Stray: {mark_stray}
-            for [bold]{ele.name}[/bold]\n[bold]
-            Subscription Active:[/bold] {ele.active}"""
+Perform Meta {metadata_action} with 
+Mark Stray: {mark_stray}
+for [bold]{ele.name}[/bold]\n[bold]
+Subscription Active:[/bold] {ele.active}
+"""
     )
     try:
         model_id = ele.id

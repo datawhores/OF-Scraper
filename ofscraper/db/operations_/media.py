@@ -137,7 +137,7 @@ mediaDownloadSelect = """
 SELECT  
 directory,filename,size,
 downloaded,hash
-FROM medias where media_id=(?)
+FROM medias where media_id=(?) and model_id=(?)
 """
 allIDCheck = """
 SELECT media_id FROM medias
@@ -538,7 +538,12 @@ def update_media_table_download_helper(
     curr=None,
     **kwargs,
 ) -> list:
-    directory,filename,size,hashdata,downloaded=match_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename,downloaded=downloaded)
+    prevData=prev_download_media_data()
+    directory=prevData.get("directory")
+    size=prevData.get("size")
+    downloaded=downloaded or prevData.get("downloaded")
+    filename=filename or prevData.get("filename")
+    hashdata=hashdata or prevData.get("hash")
     insertData = [
         directory,
         filename,
@@ -554,7 +559,7 @@ def update_media_table_download_helper(
 @wrapper.operation_wrapper_async
 def prev_download_media_data(media,model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
-        prevData = curr.execute(mediaDownloadSelect, (media.id,)).fetch()
+        prevData = curr.execute(mediaDownloadSelect, (media.id,model_id)).fetchone()
         prevData = dict(prevData)
         return prevData
 @wrapper.operation_wrapper
