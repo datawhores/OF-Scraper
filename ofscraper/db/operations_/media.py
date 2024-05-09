@@ -560,7 +560,7 @@ def get_prev_data_helper(curr,media_id,filename=None,hashdata=None):
         prev_directory=prevData['directory']
         prev_size=prevData['size']
         existing_filename=check_file_existance_helper(filename,prev_filename,pathlib.Path(prevData['directory'] or "",prev_filename or ""),pathlib.Path(prevData['directory'] or "",filename or ""))
-        filename=existing_filename or prev_filename
+        filename=pathlib.Path(existing_filename).name or prev_filename
         directory=(str(pathlib.Path(existing_filename).parent) if existing_filename else None) or prev_directory
         size=(pathlib.Path(existing_filename).stat().st_size if existing_filename else None) or prev_size
         hash=hashdata or prev_hashdata
