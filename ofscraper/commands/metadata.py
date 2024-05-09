@@ -25,7 +25,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 from ofscraper.__version__ import __version__
-from ofscraper.commands.actions.download.post import process_areas_helper
+from ofscraper.commands.actions.download.post import process_areas_helper,process_all_paid
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
     get_archived_media,
@@ -35,6 +35,8 @@ from ofscraper.db.operations_.media import (
 from ofscraper.commands.actions.scrape_context import scrape_context_manager
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.api.init as init
+import ofscraper.api.profile as profile
+import ofscraper.classes.models as models
 
 
 log = logging.getLogger("shared")
@@ -137,6 +139,25 @@ def metadata_user_first():
             
             finally:
                 count=count+1
+def metadata_paid_all(user_dict=None):
+    user_dict = process_all_paid()
+    oldUsers = userselector.get_ALL_SUBS_DICT()
+    length = len(list(user_dict.keys()))
+    for count, value in enumerate(user_dict.values()):
+        model_id = value["model_id"]
+        username = value["username"]
+        posts = value["posts"]
+        medias = value["medias"]
+        log.warning(
+            f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
+        )
+        userselector.set_ALL_SUBS_DICTVManger(
+            {username: models.Model(profile.scrape_profile(model_id))}
+        )
+        download.download_process(username, model_id, medias, posts=posts)
+    # restore og users
+    userselector.set_ALL_SUBS_DICT(oldUsers)
+
 
 def process_user_first_data_retriver(ele):
     model_id = ele.id
@@ -175,4 +196,8 @@ def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_add_arguments()
     actions.select_areas()
-    metadata()
+    if read_args.retriveArgs().scrape_paid:
+        metadata_paid_all()
+    if read_args.retriveArgs().metadata:
+        metadata()
+

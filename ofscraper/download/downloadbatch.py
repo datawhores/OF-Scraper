@@ -58,7 +58,7 @@ def process_dicts(username, model_id, filtered_medialist):
         mediasplits = get_mediasplits(filtered_medialist)
         num_proc = len(mediasplits)
         split_val = min(4, num_proc)
-        log.debug(f"Number of process {num_proc}")
+        log.debug(f"Number of processors: {num_proc}")
         connect_tuples = [AioPipe() for _ in range(num_proc)]
         shared = list(more_itertools.chunked([i for i in range(num_proc)], split_val))
         # shared with other process + main

@@ -24,7 +24,6 @@ import ofscraper.commands.actions.download.post as OF
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
-import ofscraper.models.selector as selector
 import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
@@ -103,7 +102,7 @@ def process_user_first_data_retriver(ele):
 
 def scrape_paid_all(user_dict=None):
     user_dict = OF.process_all_paid()
-    oldUsers = selector.get_ALL_SUBS_DICT()
+    oldUsers = userselector.get_ALL_SUBS_DICT()
     length = len(list(user_dict.keys()))
     for count, value in enumerate(user_dict.values()):
         model_id = value["model_id"]
@@ -113,12 +112,12 @@ def scrape_paid_all(user_dict=None):
         log.warning(
             f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
         )
-        selector.set_ALL_SUBS_DICTVManger(
+        userselector.set_ALL_SUBS_DICTVManger(
             {username: models.Model(profile.scrape_profile(model_id))}
         )
         download.download_process(username, model_id, medias, posts=posts)
     # restore og users
-    selector.set_ALL_SUBS_DICT(oldUsers)
+    userselector.set_ALL_SUBS_DICT(oldUsers)
 
 
 @exit.exit_wrapper

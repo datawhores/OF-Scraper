@@ -58,7 +58,6 @@ Uses API to modify db files without the need for downloading
         complete: update download to true, and update metadata fields
         """,
             type=click.Choice(METADATA_OPTIONS),
-            required=True,
         ),
     )
     @click.option_group(
@@ -120,6 +119,8 @@ Uses API to modify db files without the need for downloading
     )
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
+        if not ctx.params["metadata"] and not ctx.params["scrape_paid"]:
+            raise
         return func(ctx, *args, **kwargs)
 
     return wrapper
