@@ -294,7 +294,9 @@ async def scrape_archived_posts(
         else constants.getattr("archivedEP").format(model_id)
     )
     log.debug(url)
+    
     new_tasks = []
+    posts=[]
     try:
         task = (
             job_progress.add_task(
@@ -369,7 +371,6 @@ async def scrape_archived_posts(
                             )
                         )
                     )
-            return posts, new_tasks
     except asyncio.TimeoutError as _:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -378,6 +379,8 @@ async def scrape_archived_posts(
         raise E
     finally:
         job_progress.remove_task(task) if job_progress and task else None
+    return posts, new_tasks
+
 
 
 def trace_log_task(responseArray):

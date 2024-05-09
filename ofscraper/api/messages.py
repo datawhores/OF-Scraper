@@ -314,7 +314,7 @@ async def scrape_messages(
     url = ep.format(model_id, message_id)
     log.debug(f"{message_id if message_id else 'init'} {url}")
     new_tasks = []
-    tasks = None
+    task = None
 
     await asyncio.sleep(1)
     try:
@@ -398,7 +398,6 @@ async def scrape_messages(
                             )
                         )
                     )
-        return messages, new_tasks
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -408,6 +407,8 @@ async def scrape_messages(
         raise E
     finally:
         (job_progress.remove_task(task) if job_progress and task is not None else None)
+    return messages, new_tasks
+
 
 
 def get_individual_post(model_id, postid):
