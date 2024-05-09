@@ -68,7 +68,7 @@ def metadata_stray_media(username,model_id, media):
             all_media,
         )
     )
-    log.info(f"Found {len(filtered_media)} stray items to mark as downloaded")
+    log.info(f"Found {len(filtered_media)} stray items to mark as locked")
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
 

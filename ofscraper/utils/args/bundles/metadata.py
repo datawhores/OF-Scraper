@@ -65,12 +65,12 @@ Uses API to modify db files without the need for downloading
         "filter_stray",
         click.option(
             "-ms",
-            "--mark-stray-downloaded",
+            "--mark-stray-locked",
             "--mark-stray",
             "mark_stray",
             help="""
         \b
-        Sets unmatched media items as downloaded
+        Sets unmatched media items as locked
         This is done per api type excluding labels, 
         and is limited to --after and --before range
         """,
