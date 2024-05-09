@@ -537,8 +537,8 @@ def update_media_table_download_helper(
     curr=None,
     **kwargs,
 ) -> list:
-    directory,filename,size,hashdata=get_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename)
-    downloaded=downloaded or filename
+    directory,filename,size,hashdata,downloaded_=get_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename)
+    downloaded=downloaded or downloaded_
     insertData = [
         directory,
         filename,
@@ -559,13 +559,16 @@ def get_prev_data_helper(curr,media_id,filename=None,hashdata=None):
         prev_hashdata=prevData['hash']
         prev_directory=prevData['directory']
         prev_size=prevData['size']
+        downloaded=prevData['downloaded']
         existing_filename=check_file_existance_helper(filename,prev_filename,pathlib.Path(prevData['directory'] or "",prev_filename or ""),pathlib.Path(prevData['directory'] or "",filename or ""))
         filename=pathlib.Path(existing_filename).name or prev_filename
         directory=(str(pathlib.Path(existing_filename).parent) if existing_filename else None) or prev_directory
         size=(pathlib.Path(existing_filename).stat().st_size if existing_filename else None) or prev_size
         hash=hashdata or prev_hashdata
-        return str(directory),str(filename),size,hash
+        return str(directory),str(filename),size,hash,downloaded
     return [None,None,None,None]
+
+    directory,filename,size,
 
 def check_file_existance_helper(*names):
     for name in names:
