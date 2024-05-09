@@ -42,7 +42,6 @@ log = logging.getLogger("shared")
 def force_add_arguments():
     args = read_args.retriveArgs()
     args.action = "download"
-    args.force_all=True
     write_args.setArgs(args)
 
 
