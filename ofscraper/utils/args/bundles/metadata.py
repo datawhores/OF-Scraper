@@ -23,6 +23,9 @@ from ofscraper.utils.args.arguments.content import (
     neg_filter_option,
     posts_option,
     timed_only_option,
+     force_all_option,
+    force_model_unique_option,
+    scrape_paid_option
 )
 from ofscraper.utils.args.arguments.file import file_options
 from ofscraper.utils.args.arguments.logging import logging_options
@@ -86,12 +89,15 @@ Uses API to modify db files without the need for downloading
         posts_option,
         filter_option,
         neg_filter_option,
+        scrape_paid_option,
         max_count_option,
         label_option,
         before_option,
         after_option,
         mass_msg_option,
         timed_only_option,
+        force_all_option,
+        force_model_unique_option,
         help="""
     \b
      Define what posts to target
