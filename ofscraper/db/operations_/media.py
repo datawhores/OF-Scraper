@@ -538,6 +538,7 @@ def update_media_table_download_helper(
     **kwargs,
 ) -> list:
     directory,filename,size,hashdata=get_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename)
+    downloaded=downloaded or filename
     insertData = [
         directory,
         filename,
