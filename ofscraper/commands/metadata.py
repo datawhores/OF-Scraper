@@ -186,6 +186,7 @@ def process_user_first_data_retriver(ele):
         log.traceback_(f"failed with exception: {e}")
         log.traceback_(traceback.format_exc())
 def metadata():
+    actions.select_areas()
     if not read_args.retriveArgs().users_first:
         metadata_normal()
     else:
@@ -195,7 +196,6 @@ def metadata():
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_add_arguments()
-    actions.select_areas()
     if read_args.retriveArgs().scrape_paid:
         metadata_paid_all()
     if read_args.retriveArgs().metadata:
