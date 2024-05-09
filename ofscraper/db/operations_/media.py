@@ -331,14 +331,17 @@ def download_media_update(
     model_id=None,
     username=None,
     conn=None,
+    filepath=None,
     filename=None,
+    directory=None,
     downloaded=None,
     hashdata=None,
     changed=False,
-    directory=None,
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
+        filename=filename or (filepath.name if filepath!=None else None)
+        directory=directory or (filepath.parent if filepath!=None else None)
         update_media_table_via_api_helper(
             media, curr=curr, model_id=model_id, conn=conn
         )
@@ -346,6 +349,7 @@ def download_media_update(
             media,
             model_id,
             filename=filename,
+            directory=directory,
             username=username,
             hashdata=hashdata,
             conn=conn,
@@ -535,18 +539,14 @@ def update_media_table_download_helper(
     model_id,
     username=None,
     filename=None,
+    directory=None,
     hashdata=None,
     conn=None,
     downloaded=None,
     curr=None,
     **kwargs,
 ) -> list:
-    prevData=prev_download_media_data(media,model_id=model_id,username=username)
-    directory=prevData.get("directory")
-    size=prevData.get("size")
-    downloaded=downloaded or prevData.get("downloaded")
-    filename=filename or prevData.get("filename")
-    hashdata=hashdata or prevData.get("hash")
+    size=pathlib.Path(directory,filename).stat().size if directory and filename and pathlib.Path(directory,filename).exists() else None
     insertData = [
         directory,
         filename,
@@ -565,6 +565,7 @@ def prev_download_media_data(media,model_id=None, username=None, conn=None, **kw
         prevData = curr.execute(mediaDownloadSelect, (media.id,model_id)).fetchone()
         prevData = dict(prevData)
         return prevData
+
 @wrapper.operation_wrapper
 def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:

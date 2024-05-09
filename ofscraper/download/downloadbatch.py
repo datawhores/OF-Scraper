@@ -58,7 +58,7 @@ def process_dicts(username, model_id, filtered_medialist):
         mediasplits = get_mediasplits(filtered_medialist)
         num_proc = len(mediasplits)
         split_val = min(4, num_proc)
-        log.debug(f"Number of processors: {num_proc}")
+        log.debug(f"Number of download threads: {num_proc}")
         connect_tuples = [AioPipe() for _ in range(num_proc)]
         shared = list(more_itertools.chunked([i for i in range(num_proc)], split_val))
         # shared with other process + main
@@ -167,8 +167,8 @@ def process_dicts(username, model_id, filtered_medialist):
                     for thread in log_threads:
                         thread.join(timeout=0.1)
                     time.sleep(0.5)
-                log.debug(f"Initial Processes: {processes}")
-                log.debug(f"Initial Number of Processes: {len(processes)}")
+                log.debug(f"Initial download threads: {processes}")
+                log.debug(f"Initial Number of download threads: {len(processes)}")
                 while True:
                     new_proceess = list(filter(lambda x: x and x.is_alive(), processes))
                     if len(new_proceess) != len(processes):

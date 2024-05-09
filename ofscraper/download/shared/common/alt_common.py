@@ -72,7 +72,7 @@ async def handle_result_alt(
     if ele.id:
         await download_media_update(
             ele,
-            filename=sharedPlaceholderObj.trunicated_filepath,
+            filepath=sharedPlaceholderObj.trunicated_filepath,
             model_id=model_id,
             username=username,
             downloaded=True,

@@ -40,7 +40,7 @@ async def handle_result_main(result, ele, username, model_id):
     if ele.id:
         await download_media_update(
             ele,
-            filename=path_to_file,
+            filepath=path_to_file,
             model_id=model_id,
             username=username,
             downloaded=True,
