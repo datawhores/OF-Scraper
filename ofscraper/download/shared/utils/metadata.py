@@ -32,7 +32,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common.add_additional_data(placeholderObj, ele)
     effected = None
     if ele.id:
-        prevData=prev_download_media_data(ele) or {}
+        prevData=await prev_download_media_data(ele) or {}
         effected = await download_media_update(
             ele,
             filename=metadata_file_helper(placeholderObjHelper,prevData),

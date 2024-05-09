@@ -286,7 +286,7 @@ async def scrape_archived_posts(
     if timestamp and (
         float(timestamp) > (read_args.retriveArgs().before).float_timestamp
     ):
-        return []
+        return [],[]
     timestamp = float(timestamp) - 1000 if timestamp and offset else timestamp
     url = (
         constants.getattr("archivedNextEP").format(model_id, str(timestamp))
@@ -310,6 +310,7 @@ async def scrape_archived_posts(
             if not bool(posts):
                 log.debug(f"{log_id} -> no posts found")
                 return [], []
+            
             log.debug(f"{log_id} -> number of archived post found {len(posts)}")
             log.debug(
                 f"{log_id} -> first date {posts[0].get('createdAt') or posts[0].get('postedAt')}"
@@ -375,10 +376,8 @@ async def scrape_archived_posts(
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
         raise E
-
     finally:
         job_progress.remove_task(task) if job_progress and task else None
-    return posts, new_tasks
 
 
 def trace_log_task(responseArray):
