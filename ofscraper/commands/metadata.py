@@ -13,6 +13,7 @@
 
 import logging
 import traceback
+import copy
 
 import arrow
 
@@ -41,11 +42,15 @@ import ofscraper.classes.models as models
 
 log = logging.getLogger("shared")
 
-def force_add_arguments():
+def force_change_download():
     args = read_args.retriveArgs()
     args.action = "download"
     write_args.setArgs(args)
 
+def force_change_metadata():
+    args = read_args.retriveArgs()
+    args.metadata = args.scrape_paid
+    write_args.setArgs(args)
 
 def metadata_stray_media(username,model_id, media):
     all_media = []
@@ -141,6 +146,8 @@ def metadata_user_first():
             finally:
                 count=count+1
 def metadata_paid_all(user_dict=None):
+    old_args=copy.deepcopy(read_args.retriveArgs())
+    force_change_metadata()
     user_dict = process_all_paid()
     oldUsers = userselector.get_ALL_SUBS_DICT()
     length = len(list(user_dict.keys()))
@@ -156,8 +163,10 @@ def metadata_paid_all(user_dict=None):
             {username: models.Model(profile.scrape_profile(model_id))}
         )
         download.download_process(username, model_id, medias, posts=posts)
-    # restore og users
+    # restore settings
     userselector.set_ALL_SUBS_DICT(oldUsers)
+    write_args.setArgs(old_args)
+
 
 
 def process_user_first_data_retriver(ele):
@@ -196,9 +205,9 @@ def metadata():
 
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
-    force_add_arguments()
-    if read_args.retriveArgs().scrape_paid:
-        metadata_paid_all()
+    force_change_download()
     if read_args.retriveArgs().metadata:
         metadata()
+    if read_args.retriveArgs().scrape_paid:
+        metadata_paid_all()
 
