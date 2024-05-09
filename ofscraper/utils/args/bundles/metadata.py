@@ -1,4 +1,5 @@
 import cloup as click
+from click.exceptions import UsageError
 
 from ofscraper.const.constants import METADATA_OPTIONS
 from ofscraper.utils.args.arguments.advanced_processing import  advanced_processing_options
@@ -120,7 +121,7 @@ Uses API to modify db files without the need for downloading
     @click.pass_context
     def wrapper(ctx, *args, **kwargs):
         if not ctx.params["metadata"] and not ctx.params["scrape_paid"]:
-            raise
+            raise UsageError("'--scrape-paid' and/or --metadata is required")
         return func(ctx, *args, **kwargs)
 
     return wrapper

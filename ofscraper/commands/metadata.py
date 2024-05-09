@@ -62,7 +62,7 @@ def metadata_stray_media(username,model_id, media):
     filtered_media = list(
         filter(
             lambda x: str(x["media_id"]) not in curr_media_set
-            and arrow.get(x.get("posted_at") or 0).is_between(args.after, args.before)
+            and arrow.get(x.get("posted_at") or 0).is_between(arrow.get(args.after or 0), args.before)
             and x.get("downloaded") != 1,
             all_media,
         )
