@@ -538,7 +538,7 @@ def update_media_table_download_helper(
     curr=None,
     **kwargs,
 ) -> list:
-    prevData=prev_download_media_data()
+    prevData=prev_download_media_data(media,model_id=model_id,username=username)
     directory=prevData.get("directory")
     size=prevData.get("size")
     downloaded=downloaded or prevData.get("downloaded")

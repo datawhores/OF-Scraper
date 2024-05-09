@@ -35,7 +35,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
         prevData=await prev_download_media_data(ele,model_id=model_id,username=username) or {}
         effected = await download_media_update(
             ele,
-            filename=metadata_file_helper(placeholderObjHelper,prevData),
+            filename=metadata_file_helper(placeholderObj,prevData),
             directory=pathlib.Path(metadata_file_helper(placeholderObj,prevData)).parent,
             model_id=model_id,
             username=username,
