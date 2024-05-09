@@ -329,6 +329,7 @@ def get_dupe_media_files(
 def download_media_update(
     media,
     model_id=None,
+    username=None,
     conn=None,
     filename=None,
     downloaded=None,
@@ -345,6 +346,7 @@ def download_media_update(
             media,
             model_id,
             filename=filename,
+            username=username,
             hashdata=hashdata,
             conn=conn,
             curr=curr,
@@ -531,6 +533,7 @@ def update_media_table_via_api_helper(
 def update_media_table_download_helper(
     media,
     model_id,
+    username=None,
     filename=None,
     hashdata=None,
     conn=None,
