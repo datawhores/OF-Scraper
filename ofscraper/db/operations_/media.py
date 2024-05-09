@@ -563,7 +563,7 @@ def update_media_table_download_helper(
 def prev_download_media_data(media,model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
         prevData = curr.execute(mediaDownloadSelect, (media.id,model_id)).fetchone()
-        prevData = dict(prevData)
+        prevData = dict(prevData) if prevData else None
         return prevData
 
 @wrapper.operation_wrapper
