@@ -9,7 +9,7 @@ import ofscraper.download.shared.utils.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-from ofscraper.db.operations_.media import download_media_update
+from ofscraper.db.operations_.media import download_media_update,prev_download_media_data
 from ofscraper.download.shared.utils.log import get_medialog
 
 
@@ -32,12 +32,15 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common.add_additional_data(placeholderObj, ele)
     effected = None
     if ele.id:
+        prevData=prev_download_media_data(ele)
         effected = await download_media_update(
             ele,
-            filename=placeholderObj.trunicated_filepath,
+            filename=placeholderObj.trunicated_filename,
+            directory=placeholderObj.filedir,
             model_id=model_id,
             username=username,
-            downloaded=await metadata_downloaded_helper(placeholderObj),
+            downloaded=await metadata_downloaded_helper(placeholderObj,prevData),
+            hashdata=prevData['hash'],
             changed=True,
         )
 
@@ -47,9 +50,9 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     )
 
 
-async def metadata_downloaded_helper(placeholderObj):
+async def metadata_downloaded_helper(placeholderObj,prevData):
     if read_args.retriveArgs().metadata == "check":
-        return None
+        return prevData['downloaded'] if prevData else None
     elif read_args.retriveArgs().metadata == "complete":
         return 1
     elif pathlib.Path(placeholderObj.trunicated_filepath).exists():

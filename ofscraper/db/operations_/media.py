@@ -334,6 +334,7 @@ def download_media_update(
     downloaded=None,
     hashdata=None,
     changed=False,
+    directory=None,
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
@@ -537,8 +538,7 @@ def update_media_table_download_helper(
     curr=None,
     **kwargs,
 ) -> list:
-    directory,filename,size,hashdata,downloaded_=get_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename)
-    downloaded=downloaded or downloaded_
+    directory,filename,size,hashdata,downloaded=match_prev_data_helper(curr,media.id,hashdata=hashdata,filename=filename,downloaded=downloaded)
     insertData = [
         directory,
         filename,
@@ -550,30 +550,13 @@ def update_media_table_download_helper(
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
 
-def get_prev_data_helper(curr,media_id,filename=None,hashdata=None):
-
-    prevData = curr.execute(mediaDownloadSelect, (media_id,)).fetchall()
-    prevData = dict(prevData[0]) if isinstance(prevData, list) and bool(prevData) else None
-    if prevData:
-        prev_filename=prevData['filename']
-        prev_hashdata=prevData['hash']
-        prev_directory=prevData['directory']
-        prev_size=prevData['size']
-        downloaded=prevData['downloaded']
-        existing_filename=check_file_existance_helper(filename,prev_filename,pathlib.Path(prevData['directory'] or "",prev_filename or ""),pathlib.Path(prevData['directory'] or "",filename or ""))
-        filename=pathlib.Path(existing_filename).name or prev_filename
-        directory=(str(pathlib.Path(existing_filename).parent) if existing_filename else None) or prev_directory
-        size=(pathlib.Path(existing_filename).stat().st_size if existing_filename else None) or prev_size
-        hash=hashdata or prev_hashdata
-        return str(directory),str(filename),size,hash,downloaded
-    return [None,None,None,None]
-
-    directory,filename,size,
-
-def check_file_existance_helper(*names):
-    for name in names:
-        if name and pathlib.Path(name).is_file():
-            return name
+@run
+@wrapper.operation_wrapper_async
+def prev_download_media_data(media_id,model_id=None, username=None, conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as curr:
+        prevData = curr.execute(mediaDownloadSelect, (media_id,)).fetch()
+        prevData = dict(prevData)
+        return prevData
 @wrapper.operation_wrapper
 def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
