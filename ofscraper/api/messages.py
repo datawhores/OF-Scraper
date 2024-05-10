@@ -206,7 +206,7 @@ def get_split_array(filteredArray):
 def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
     tasks = []
     job_progress = progress_utils.messages_progress
-    # special case pass zero to required_ids set 
+    # special case pass after to stop work
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
