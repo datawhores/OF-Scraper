@@ -175,6 +175,7 @@ def get_tasks(splitArrays, c, model_id, after):
     tasks = []
     job_progress = progress_utils.timeline_progress
     # special case pass before to stop work
+    before=arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
 
     if len(splitArrays) > 2:
         tasks.append(
@@ -215,7 +216,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
-                    required_ids=set([read_args.retriveArgs().before])
+                    required_ids=set([before])
                 )
             )
         )
@@ -229,7 +230,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
-                    required_ids=set([read_args.retriveArgs().before])
+                    required_ids=set([before])
 
                 )
             )
@@ -240,8 +241,7 @@ def get_tasks(splitArrays, c, model_id, after):
             asyncio.create_task(
                 scrape_timeline_posts(
                     c, model_id, job_progress=job_progress, timestamp=after, offset=True,
-                                        required_ids=set([read_args.retriveArgs().before])
-
+                                        required_ids=set([before])
                 )
             )
         )

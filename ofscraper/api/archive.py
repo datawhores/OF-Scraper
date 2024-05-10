@@ -159,6 +159,7 @@ def get_split_array(oldarchived, after):
 def get_tasks(splitArrays, c, model_id, after):
     tasks = []
     job_progress = progress_utils.archived_progress
+    before=arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
@@ -198,7 +199,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
-                    required_ids=set([read_args.retriveArgs().before])
+                    required_ids=set([before])
 
                 )
             )
@@ -213,7 +214,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
-                    required_ids=set([read_args.retriveArgs().before])
+                    required_ids=set([before])
 
                 )
             )
@@ -224,7 +225,7 @@ def get_tasks(splitArrays, c, model_id, after):
             asyncio.create_task(
                 scrape_archived_posts(
                     c, model_id, job_progress=job_progress, timestamp=after, offset=True,
-                    required_ids=set([read_args.retriveArgs().before])
+                    required_ids=set([before])
                 )
             )
         )
