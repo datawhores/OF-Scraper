@@ -537,7 +537,6 @@ def update_media_table_via_api_helper(
 def update_media_table_download_helper(
     media,
     model_id,
-    username=None,
     filename=None,
     directory=None,
     hashdata=None,
@@ -547,6 +546,9 @@ def update_media_table_download_helper(
     **kwargs,
 ) -> list:
     size=pathlib.Path(directory,filename).stat().st_size if directory and filename and pathlib.Path(directory,filename).exists() else None
+
+    filename=str(filename) if filename else None
+    directory=str(directory) if directory else None
     insertData = [
         directory,
         filename,
