@@ -419,7 +419,7 @@ def trace_log_old(responseArray):
 def after_log(username, after):
     log.info(
         f"""
-Setting initial archived scan date for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}
+Settingarchived scan interval for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} => {arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
 
