@@ -25,7 +25,7 @@ def medialist_filter(medialist, model_id, username):
     if read_args.retriveArgs().force_all:
         log.info("forcing all")
     elif read_args.retriveArgs().force_model_unique:
-        log.info("Downloading unique medi afor model")
+        log.info("Downloading unique media for model")
         media_ids = set(
             get_media_ids_downloaded_model(
                 model_id=model_id, username=username

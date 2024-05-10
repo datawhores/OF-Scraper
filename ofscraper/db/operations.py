@@ -34,7 +34,7 @@ from ofscraper.db.operations_.media import (
     add_column_media_posted_at,
     add_column_media_unlocked,
     create_media_table,
-    modify_unique_constriant_media,
+    modify_unique_constraint_media,
 )
 from ofscraper.db.operations_.messages import (
     add_column_messages_ID,
@@ -165,6 +165,7 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "others_model_id_constraint_added",
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
+        "media_post_id_constraint_added",
     ]
     return set((groupA + groupB)).difference(set(changes))
 
@@ -300,7 +301,7 @@ async def modify_tables_constraints_and_columns(
             db_path=db_path,
         )
     if "media_model_id_constraint_added" in missing:
-        await modify_unique_constriant_media(
+        await modify_unique_constraint_media(
             model_id=model_id, username=username, db_path=db_path
         )
         await add_flag_schema(
@@ -360,7 +361,16 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-
+    if "media_post_id_constraint_added" in missing:
+        await modify_unique_constraint_media(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "media_post_id_constraint_added",
+            model_id=model_id,
+            username=username,
+            db_path=db_path,
+        )
 
 def check_backup(model_id, username, new_path, db_path=None, **kwargs):
     if not new_path.absolute().exists():
