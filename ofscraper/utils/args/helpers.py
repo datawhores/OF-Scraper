@@ -155,7 +155,7 @@ def username_helper(x):
         temp = x
     elif isinstance(x, str):
         temp = re.split(",| ", x)
-
+    temp=list(filter(lambda x:len(x)>0,temp))
     return list(map(lambda x: x.lower() if not x == "ALL" else x, temp))
 
 
