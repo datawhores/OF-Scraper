@@ -40,7 +40,7 @@ log = logging.getLogger("shared")
 async def get_timeline_posts_progress(model_id, username, forced_after=None, c=None):
 
     after = await get_after(model_id, username, forced_after)
-    after_log(username, after)
+    time_log(username, after)
     splitArrays = await get_split_array(model_id, username, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks)
@@ -61,7 +61,7 @@ async def get_timeline_posts(model_id, username, forced_after=None, c=None):
     log.debug(f"[bold]Timeline Cache[/bold] {len(oldtimeline)} found")
     oldtimeline = list(filter(lambda x: x is not None, oldtimeline))
     after = await get_after(model_id, username, forced_after)
-    after_log(username, after)
+    time_log(username, after)
 
     with progress_utils.set_up_api_timeline():
         splitArrays = await get_split_array(model_id, username, after)
@@ -446,10 +446,10 @@ def trace_log_old(responseArray):
             break  # Exit the loop if we've processed all elements
 
 
-def after_log(username, after):
+def time_log(username, after):
     log.info(
         f"""
-Setting timeline scan interval {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} =>{arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
+Setting timeline scan range for{username} rom {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} to{arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all timeline posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all timeline posts + download/re-download of all files[/yellow]
 

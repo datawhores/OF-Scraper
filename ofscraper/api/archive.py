@@ -51,7 +51,7 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x is not None, oldarchived))
     after = await get_after(model_id, username, forced_after)
-    after_log(username, after)
+    time_log(username, after)
     splitArrays = get_split_array(oldarchived, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks, model_id, after)
@@ -70,7 +70,7 @@ async def get_archived_posts(model_id, username, forced_after=None, c=None):
     log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
     oldarchived = list(filter(lambda x: x is not None, oldarchived))
     after = await get_after(model_id, username, forced_after)
-    after_log(username, after)
+    time_log(username, after)
     with progress_utils.set_up_api_archived():
         splitArrays = get_split_array(oldarchived, after)
         tasks = get_tasks(splitArrays, c, model_id, after)
@@ -416,10 +416,10 @@ def trace_log_old(responseArray):
             break  # Exit the loop if we've processed all elements
 
 
-def after_log(username, after):
+def time_log(username, after):
     log.info(
         f"""
-Settingarchived scan interval for {username} to {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))} => {arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
+Setting archived scan range for {username} from {arrow.get(after).format(constants.getattr('API_DATE_FORMAT'))}  to {arrow.get(read_args.retriveArgs().before or arrow.now()).format((constants.getattr('API_DATE_FORMAT')))}
 [yellow]Hint: append ' --after 2000' to command to force scan of all archived posts + download of new files only[/yellow]
 [yellow]Hint: append ' --after 2000 --force-all' to command to force scan of all archived posts + download/re-download of all files[/yellow]
 
