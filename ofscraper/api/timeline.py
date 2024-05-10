@@ -327,7 +327,7 @@ async def scrape_timeline_posts(
     )
     log.debug(url)
     new_tasks = []
-    tasks = None
+    task = None
 
     await asyncio.sleep(1)
 
