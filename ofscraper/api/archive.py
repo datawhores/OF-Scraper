@@ -198,6 +198,8 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
+                    required_ids=set([read_args.retriveArgs().before])
+
                 )
             )
         )
@@ -211,6 +213,8 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
+                    required_ids=set([read_args.retriveArgs().before])
+
                 )
             )
         )
@@ -219,7 +223,8 @@ def get_tasks(splitArrays, c, model_id, after):
         tasks.append(
             asyncio.create_task(
                 scrape_archived_posts(
-                    c, model_id, job_progress=job_progress, timestamp=after, offset=True
+                    c, model_id, job_progress=job_progress, timestamp=after, offset=True,
+                    required_ids=set([read_args.retriveArgs().before])
                 )
             )
         )
@@ -335,19 +340,7 @@ async def scrape_archived_posts(
                 )
             )
 
-            if not required_ids:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_archived_posts(
-                            c,
-                            model_id,
-                            job_progress=job_progress,
-                            timestamp=posts[-1]["postedAtPrecise"],
-                            offset=False,
-                        )
-                    )
-                )
-            elif max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
+            if max(map(lambda x: float(x["postedAtPrecise"]), posts)) >= max(
                 required_ids
             ):
                 pass
