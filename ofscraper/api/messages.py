@@ -155,7 +155,7 @@ def get_filterArray(after, before, oldmessages):
 def get_i(oldmessages, before):
     """
     iterate through posts until a date less then or equal
-    to before , set index to -1 this point
+    to before , set index to -1 thtemp))nt
     """
     if before >= oldmessages[1].get("created_at"):
         return 0
@@ -206,7 +206,7 @@ def get_split_array(filteredArray):
 def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
     tasks = []
     job_progress = progress_utils.messages_progress
-
+    # special case pass zero to required_ids set 
     if len(splitArrays) > 2:
         tasks.append(
             asyncio.create_task(
@@ -237,7 +237,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     )
                 )
             )
-            for i in range(1, len(splitArrays) - 1)
+            for i in range(1, len(splitArrays))
         ]
         # keeping grabbing until nothing left
         tasks.append(
@@ -246,10 +246,8 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    message_id=splitArrays[-2][-1].get("post_id"),
-                    required_ids=set(
-                        [ele.get("created_at") for ele in splitArrays[-1]]
-                    ),
+                    message_id=splitArrays[-1][-1].get("post_id"),
+                    required_ids=set([after]),
                 )
             )
         )
@@ -261,7 +259,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    required_ids=None,
+                    required_ids=set([after]),
                     message_id=(
                         splitArrays[0][0].get("post_id")
                         if len(filteredArray) != len(oldmessages)
@@ -279,7 +277,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     model_id,
                     job_progress=job_progress,
                     message_id=None,
-                    required_ids=None,
+                    required_ids=set([after]),
                 )
             )
         )
@@ -355,19 +353,8 @@ async def scrape_messages(
                 )
             )
 
-            if not required_ids:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_messages(
-                            c,
-                            model_id,
-                            job_progress=job_progress,
-                            message_id=messages[-1]["id"],
-                        )
-                    )
-                )
-
-            elif min(
+            #check if first value(newest) is less then then the required time
+            if max(
                 map(
                     lambda x: arrow.get(
                         x.get("createdAt", 0) or x.get("postedAt", 0)
