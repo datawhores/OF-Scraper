@@ -294,8 +294,8 @@ def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) 
         cur.execute(allDLIDCheck)
         return set([dict(row)["media_id"] for row in cur.fetchall()])
 
-
-@wrapper.operation_wrapper
+@run
+@wrapper.operation_wrapper_async
 def get_media_ids_downloaded_model(
     model_id=None, username=None, conn=None, **kwargs
 ) -> list:
