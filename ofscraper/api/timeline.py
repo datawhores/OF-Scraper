@@ -25,7 +25,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.db.operations_.media import get_timeline_media
+from ofscraper.db.operations_.media import get_timeline_media,get_media_ids_downloaded_model
 from ofscraper.db.operations_.posts import (
     get_timeline_posts_info,
     get_youngest_timeline_date,
@@ -296,9 +296,10 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting oldest date to zero because database is empty")
         return 0
-    missing_items = list(
-        filter(lambda x: x.get("downloaded") != 1 and x.get("unlocked") != 0, curr)
-    )
+    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
+
+    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("post_id") not in curr_downloaded and x.get("unlocked") != 0, curr))
+    
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x["posted_at"])))
     if len(missing_items) == 0:
         log.debug(

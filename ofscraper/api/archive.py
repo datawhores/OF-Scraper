@@ -24,7 +24,7 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.db.operations_.media import get_all_medias
+from ofscraper.db.operations_.media import get_media_ids_downloaded_model,get_archived_media
 from ofscraper.db.operations_.posts import (
     get_archived_post_info,
     get_youngest_archived_date,
@@ -265,13 +265,12 @@ async def get_after(model_id, username, forced_after=None):
         )
         return 0
 
-    curr=await get_all_medias(model_id=model_id, username=username)
+    curr=await get_archived_media(model_id=model_id, username=username)
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    all_media = await get_all_medias(model_id=model_id, username=username)
-    curr_downloaded = set(item["post_id"] for item in all_media if item["downloaded"] == 1)
-    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("post_id") not in curr_downloaded, curr))
+    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
+    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("post_id") not in curr_downloaded and x.get("unlocked") != 0, curr))
     missing_items = list(sorted(missing_items, key=lambda x: x.get("posted_at") or 0))
     if len(missing_items) == 0:
         log.debug(

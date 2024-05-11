@@ -292,7 +292,7 @@ def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
 def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLIDCheck)
-        return [dict(row)["media_id"] for row in cur.fetchall()]
+        return set([dict(row)["media_id"] for row in cur.fetchall()])
 
 
 @wrapper.operation_wrapper
@@ -301,7 +301,7 @@ def get_media_ids_downloaded_model(
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLModelIDCheck, [model_id])
-        return [dict(row)["media_id"] for row in cur.fetchall()]
+        return set([dict(row)["media_id"] for row in cur.fetchall()])
 
 
 @wrapper.operation_wrapper
@@ -464,19 +464,6 @@ def drop_media_table(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(mediaDrop)
         conn.commit()
-
-
-
-@wrapper.operation_wrapper_async
-def get_all_medias(
-    model_id=None, username=None, conn=None, database_model=None, **kwargs
-) -> list:
-    with contextlib.closing(conn.cursor()) as cur:
-        cur.execute(mediaSelectTransition)
-        data = [dict(row) for row in cur.fetchall()]
-        return data
-
-
 
 
 @run
