@@ -42,7 +42,9 @@ def read_request_auth(forced=None):
 
 
 def get_request_auth(forced=False):
-    if (settings.get_dynamic_rules()) in {
+    if not forced and cache.get("api_onlyfans_sign"):
+        return cache.get("api_onlyfans_sign")
+    elif (settings.get_dynamic_rules()) in {
         "deviint",
         "dv",
         "dev",
@@ -59,8 +61,6 @@ def get_request_auth(forced=False):
 
 
 def get_request_auth_deviint(forced=None):
-    if not forced and cache.get("api_onlyfans_sign"):
-        return cache.get("api_onlyfans_sign")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -87,8 +87,6 @@ def get_request_auth_deviint(forced=None):
 
 
 def get_request_auth_sneaky(forced=None):
-    if not forced and cache.get("api_onlyfans_sign"):
-        return cache.get("api_onlyfans_sign")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -115,8 +113,6 @@ def get_request_auth_sneaky(forced=None):
 
 
 def get_request_auth_digitalcriminals(forced=None):
-    if not forced and cache.get("api_onlyfans_sign"):
-        return cache.get("api_onlyfans_sign")
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),

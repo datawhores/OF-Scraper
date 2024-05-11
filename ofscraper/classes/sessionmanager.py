@@ -106,11 +106,6 @@ class CustomTenacity(AsyncRetrying):
         self.wait = self._wait_picker
 
     def _wait_picker(self, retry_state) -> None:
-        exception = retry_state.outcome.exception()
-        # if is_rate_limited(exception):
-        #     sleep = self.wait_exponential(retry_state)
-        # else:
-        #     sleep = self.wait_random(retry_state)
         sleep = self.wait_random(retry_state)
         logging.getLogger("shared").debug(f"sleeping for {sleep} seconds before retry")
         return sleep
