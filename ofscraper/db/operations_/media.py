@@ -465,6 +465,20 @@ def drop_media_table(model_id=None, username=None, conn=None, **kwargs) -> list:
         cur.execute(mediaDrop)
         conn.commit()
 
+
+
+@wrapper.operation_wrapper_async
+def get_all_medias(
+    model_id=None, username=None, conn=None, database_model=None, **kwargs
+) -> list:
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.execute(mediaSelectTransition)
+        data = [dict(row) for row in cur.fetchall()]
+        return data
+
+
+
+
 @run
 @wrapper.operation_wrapper_async
 def get_messages_media(conn=None, model_id=None, **kwargs) -> list:
