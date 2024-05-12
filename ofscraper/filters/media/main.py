@@ -16,8 +16,7 @@ def filterMedia(media,username=None, model_id=None):
 
     media = helpers.sort_by_date(media)
     count += 1
-    helpers.trace_log_media(count, media, "final media  from retrived post:")
-    log.debug(f"filter {count}->  final media count from retrived post: {len(media)}")
+    helpers.trace_log_media(count, media, "sorted by date initial")
 
 
     media = helpers.post_datesorter(media)
@@ -87,7 +86,7 @@ def filterMedia(media,username=None, model_id=None):
             count+=1
             helpers.trace_log_media(count, media, "unviewable media filter:")
             log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
-    return helpers.previous_download_filter(media,username,model_id)
+    return helpers.previous_download_filter(media,username=username,model_id=model_id)
 
 
 
@@ -128,7 +127,7 @@ def filterPost(post):
     log.debug(
         f"filter {count}->  mass msg filter count {len(post)}"
     )
-    
+
     count += 1
     post = helpers.final_post_sort(post)
     helpers.trace_log_post(count, post, "all post final sort:")

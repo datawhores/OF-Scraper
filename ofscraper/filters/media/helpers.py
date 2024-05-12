@@ -210,7 +210,7 @@ def final_post_sort(media):
         return sorted(media, key=lambda x: x.filename)
     elif item_sort == "filename-desc":
         return sorted(media, key=lambda x: x.filename, reverse=True)
-def previous_download_filter(medialist,username,model_id):
+def previous_download_filter(medialist,username=None,model_id=None):
     log = logging.getLogger("shared")
     log.info("reading database to retrive previous download")
     medialist = seperate.seperate_by_self(medialist)
