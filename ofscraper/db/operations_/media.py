@@ -289,7 +289,7 @@ def get_media_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
 
 
 @wrapper.operation_wrapper
-def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) -> list:
+def get_media_ids_downloaded(conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLIDCheck)
         return set([dict(row)["media_id"] for row in cur.fetchall()])
@@ -297,7 +297,7 @@ def get_media_ids_downloaded(model_id=None, username=None, conn=None, **kwargs) 
 @run
 @wrapper.operation_wrapper_async
 def get_media_ids_downloaded_model(
-    model_id=None, username=None, conn=None, **kwargs
+    model_id=None, conn=None, **kwargs
 ) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLModelIDCheck, [model_id])
