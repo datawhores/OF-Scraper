@@ -482,7 +482,7 @@ async def process_areas_helper(ele, model_id) -> list:
 
 @run
 async def process_areas(ele,model_id, username):
-    media, posts = await process_areas_helper(ele, username)
+    media, posts = await process_areas_helper(ele, model_id)
     return filters.filterMedia(media,model_id=model_id,username=username), filters.filterPost(posts)
 
 
