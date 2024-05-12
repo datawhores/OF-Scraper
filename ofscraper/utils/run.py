@@ -28,7 +28,7 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
-import ofscraper.utils.args.before as before_arg
+import ofscraper.utils.args.date as before_arg
 
 
 log = logging.getLogger("shared")

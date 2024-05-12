@@ -376,6 +376,14 @@ class Placeholders(basePlaceholder):
     def trunicated_filedir(self):
         return pathlib.Path(paths.truncate(self._filepath)).parent
 
+    @property
+    def size(self):
+        if not self.trunicated_filepath:
+            return
+        elif not self.trunicated_filepath.exists():
+            return
+        else:
+            return self.trunicated_filepath.stat().st_size
 
 class Textholders(basePlaceholder):
     def __init__(self, ele, ext) -> None:

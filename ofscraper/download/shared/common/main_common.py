@@ -45,6 +45,7 @@ async def handle_result_main(result, ele, username, model_id):
             username=username,
             downloaded=True,
             hashdata=await common.get_hash(path_to_file, mediatype=ele.mediatype),
+            size=placeholderObj.size
         )
     await common.set_profile_cache_helper(ele)
     common.add_additional_data(placeholderObj, ele)

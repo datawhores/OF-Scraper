@@ -11,6 +11,8 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 from ofscraper.db.operations_.media import download_media_update,prev_download_media_data
 from ofscraper.download.shared.utils.log import get_medialog
+import ofscraper.utils.hash as hash
+
 
 
 async def force_download(ele, username, model_id):
@@ -40,7 +42,8 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             model_id=model_id,
             username=username,
             downloaded=metadata_downloaded_helper(placeholderObj,prevData),
-            hashdata=prevData.get("hash"),
+            hashdata=metadata_hash_helper(placeholderObj,prevData,ele),
+            size=metadata_size_helper(placeholderObj,prevData),
             changed=True,
         )
 
@@ -86,6 +89,22 @@ def metadata_dir_helper(placeholderObj,prevData):
     elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
         return  pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").parent
     return str(placeholderObj.trunicated_filedir)
+
+
+def metadata_hash_helper(placeholderObj,prevData,ele):
+    if not read_args.retriveArgs().get_hash:
+        return prevData.get("hash")
+    elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
+        return hash.get_hash(pathlib.Path(placeholderObj.trunicated_filepath), mediatype=ele.mediatype)
+    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
+        return hash.get_hash(pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or ""))
+def metadata_size_helper(placeholderObj,prevData):
+    if placeholderObj.size:
+        return placeholderObj.size
+    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
+        return pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").stat().st_size
+    else:
+        return prevData.get("size")
 async def metadata_helper(c, ele):
     placeholderObj = None
     if not ele.url and not ele.mpd:

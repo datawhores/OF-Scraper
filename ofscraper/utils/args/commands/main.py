@@ -16,10 +16,4 @@ from ofscraper.utils.args.bundles.main import main_program_args
 @advanced_args
 @click.pass_context
 def program(ctx, *args, **kwargs):
-    #fix dates
-    params=ctx.params
-    if params["after"]:
-        params["after"]=arrow.get(params["after"])
-    params["before_original"]=params["before"]
-    params["before"]=arrow.get(params["before"] or arrow.now()).shift(days=4)
     return ctx.params, ctx.info_name

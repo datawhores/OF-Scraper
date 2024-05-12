@@ -5,7 +5,6 @@ import pathlib
 import xxhash
 
 import ofscraper.classes.placeholder as placeholder
-import ofscraper.db.operations as operations
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.constants as constants
 from ofscraper.db.operations_.media import get_dupe_media_files, get_dupe_media_hashes

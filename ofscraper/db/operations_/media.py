@@ -337,6 +337,7 @@ def download_media_update(
     downloaded=None,
     hashdata=None,
     changed=False,
+    size=None,
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
@@ -355,6 +356,7 @@ def download_media_update(
             conn=conn,
             curr=curr,
             downloaded=downloaded,
+            size=size,
         )
         return curr.rowcount if changed else None
 
@@ -544,10 +546,9 @@ def update_media_table_download_helper(
     conn=None,
     downloaded=None,
     curr=None,
+    size=None,
     **kwargs,
 ) -> list:
-    size=pathlib.Path(directory,filename).stat().st_size if directory and filename and pathlib.Path(directory,filename).exists() else None
-
     filename=str(filename) if filename else None
     directory=str(directory) if directory else None
     insertData = [
