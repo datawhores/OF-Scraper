@@ -35,7 +35,7 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     effected = None
     if ele.id:
         prevData=await prev_download_media_data(ele,model_id=model_id,username=username) or {}
-        effected = await download_media_update(
+        await download_media_update(
             ele,
             filename=metadata_file_helper(placeholderObj,prevData),
             directory=metadata_dir_helper(placeholderObj,prevData),
@@ -44,9 +44,8 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
             downloaded=metadata_downloaded_helper(placeholderObj,prevData),
             hashdata=metadata_hash_helper(placeholderObj,prevData,ele),
             size=metadata_size_helper(placeholderObj,prevData),
-            changed=True,
         )
-
+        effected=prevData!=await prev_download_media_data(ele,model_id=model_id,username=username)
     return (
         (ele.mediatype if effected else "forced_skipped"),
         0,

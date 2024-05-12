@@ -336,7 +336,6 @@ def download_media_update(
     directory=None,
     downloaded=None,
     hashdata=None,
-    changed=False,
     size=None,
     **kwargs,
 ):
@@ -358,7 +357,6 @@ def download_media_update(
             downloaded=downloaded,
             size=size,
         )
-        return curr.rowcount if changed else None
 
 
 @wrapper.operation_wrapper_async
