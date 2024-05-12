@@ -139,6 +139,7 @@ async def process_tasks(tasks, model_id, after):
 def get_filterArray(after, before, oldmessages):
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
     oldmessages = list(filter(lambda x: x["created_at"] is not None, oldmessages))
+    oldmessages.append({"created_at":before,"post_id":None})
     oldmessages = sorted(
         oldmessages,
         key=lambda x: arrow.get(x["created_at"] or 0),
@@ -216,8 +217,6 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     job_progress=job_progress,
                     message_id=(
                         splitArrays[0][0].get("post_id")
-                        if len(filteredArray) != len(oldmessages)
-                        else None
                     ),
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 )
