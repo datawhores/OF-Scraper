@@ -104,7 +104,10 @@ def filterPost(post):
     count += 1
     post = helpers.dupefilter(post)
     helpers.trace_log_post(count, post, "post dupe filter:")
-    log.debug(f"filter {count}-> post dupe filter count: ''''''''''''.    post = helpers.post_timed_filter(post)
+    log.debug(f"filter {count}-> post dupe filter count: {len(post)}")   
+
+    count+=1
+    post = helpers.post_timed_filter(post)
     log.debug(f"filter {count}-> timed posts filter count: {len(post)}")
     helpers.trace_log_post(count, post, "timed posts filter:")
 
