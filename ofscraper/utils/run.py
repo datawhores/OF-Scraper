@@ -28,6 +28,8 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
+import ofscraper.utils.args.before as before_arg
+
 
 log = logging.getLogger("shared")
 
@@ -49,6 +51,7 @@ def schedule_helper(*functs):
     jobqueue.put(other_logger.updateOtherLoggerStream)
     jobqueue.put(logs.printStartValues)
     jobqueue.put(partial(userselector.getselected_usernames, rescan=True))
+    jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)
     return schedule.CancelJob

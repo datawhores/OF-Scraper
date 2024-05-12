@@ -254,9 +254,7 @@ async def get_after(model_id, username, forced_after=None):
         return forced_after
     elif not settings.get_after_enabled():
         return 0
-    elif read_args.retriveArgs().after == 0:
-        return 0
-    elif read_args.retriveArgs().after:
+    elif read_args.retriveArgs().after!=None:
         return read_args.retriveArgs().after.float_timestamp
 
     elif cache.get(f"{model_id}_full_archived_scrape"):

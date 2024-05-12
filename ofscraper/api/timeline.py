@@ -281,10 +281,8 @@ def get_individual_post(id):
 async def get_after(model_id, username, forced_after=None):
     if forced_after is not None:
         return forced_after
-    elif read_args.retriveArgs().after:
+    elif read_args.retriveArgs().after!=None:
         return read_args.retriveArgs().after.float_timestamp
-    elif read_args.retriveArgs().after == 0:
-        return 0
     elif not settings.get_after_enabled():
         return 0
     elif cache.get(f"{model_id}_full_timeline_scrape"):

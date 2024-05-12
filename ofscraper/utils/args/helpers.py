@@ -181,4 +181,6 @@ def arrow_helper(x):
             t = arw.dehumanize(x)
         except ValueError as E:
             raise E
-    return t if t > arrow.get("2006.6.30") else 0
+    if not t:
+        return None
+    return t if t > arrow.get("2006.6.30") else arrow.get(0)

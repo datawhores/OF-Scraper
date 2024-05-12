@@ -150,11 +150,8 @@ before_option = click.option(
     "-be",
     "--before",
     help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
-    type=helpers.arrow_helper,
-    callback=lambda ctx, param, value: arrow.get(value
-    or arrow.get(arrow.now())).shift(days=4),
+    type=helpers.arrow_helper
 )
-
 
 after_option = click.option(
     "-af",
