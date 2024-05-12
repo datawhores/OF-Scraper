@@ -481,8 +481,8 @@ async def process_areas_helper(ele, model_id) -> list:
             log.traceback_(traceback.format_exc())
 
 @run
-async def process_areas(model_id, username):
-    media, posts = await process_areas_helper(model_id, username)
+async def process_areas(ele,model_id, username):
+    media, posts = await process_areas_helper(ele, username)
     return filters.filterMedia(media,model_id=model_id,username=username), filters.filterPost(posts)
 
 

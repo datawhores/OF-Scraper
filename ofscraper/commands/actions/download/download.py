@@ -91,7 +91,7 @@ def process_user_first_data_retriver(ele):
         )
     try:
         operations.table_init_create(model_id=model_id, username=username)
-        media, posts = OF.process_areas(model_id,username)
+        media, posts = OF.process_areas(ele, model_id,username)
         return {model_id: {"username": username, "posts": posts, "media": media,"avatar":avatar}}
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
@@ -141,7 +141,7 @@ def normal_post_process():
                 model_id = ele.id
                 username = ele.name
                 operations.table_init_create(model_id=model_id, username=username)
-                combined_urls, posts = OF.process_areas(model_id,username)
+                combined_urls, posts = OF.process_areas(ele, model_id,username)
                 download.download_process(
                     username, model_id, combined_urls, posts=posts
                 )
