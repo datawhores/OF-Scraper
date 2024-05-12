@@ -212,7 +212,7 @@ def final_post_sort(media):
         return sorted(media, key=lambda x: x.filename, reverse=True)
 def previous_download_filter(medialist,username=None,model_id=None):
     log = logging.getLogger("shared")
-    log.info("reading database to retrive previous download")
+    log.info("reading database to retrive previous downloads")
     medialist = seperate.seperate_by_self(medialist)
     if read_args.retriveArgs().force_all:
         log.info("forcing all media to be downloaded")
