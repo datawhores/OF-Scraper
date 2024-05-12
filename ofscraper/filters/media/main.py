@@ -11,53 +11,54 @@ log = logging.getLogger("shared")
 
 def filterMedia(media,username=None, model_id=None):
     count = 1
+
     helpers.trace_log_media(count, media, "initial media no filter:")
     log.debug(f"filter {count}-> initial media no filter count: {len(media)}")
+
     media = helpers.sort_by_date(media)
     count += 1
     helpers.trace_log_media(count, media, "final media  from retrived post:")
     log.debug(f"filter {count}->  final media count from retrived post: {len(media)}")
 
 
-    log.debug(f"filter {count}-> all media dupe filter count: {len(media)}")
     media = helpers.post_datesorter(media)
     count += 1
     helpers.trace_log_media(count, media, "media datesort:")
-
     log.debug(f"filter {count}-> media datesort count: {len(media)}")
+
     media = helpers.posts_type_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "media post media type filter:")
-
     log.debug(f"filter {count}-> media post media type filter count: {len(media)}")
+
     media = helpers.posts_date_filter_media(media)
     count += 1
     helpers.trace_log_media(count, media, "media post date filter:")
-
     log.debug(f"filter {count}-> media post date filter: {len(media)}")
-    media = helpers.post_timed_filter(media)
+
+    media = helpers.temp_post_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "media post timed post filter:")
-
     log.debug(f"filter {count}->  media post timed post filter count: {len(media)}")
-    media = helpers.post_user_filter(media)
+    
+    media = helpers.post_text_filter(media)
     count += 1
-    helpers.trace_log_media(count, media, "media post included text filter:")
-
+    helpers.trace_log_media(count, media, "media text filter:")
     log.debug(
-        f"filter {count}->  media post included text filter count: {len(media)}"
+        f"filter {count}->  media text filter count: {len(media)}"
     )
+
     media = helpers.anti_post_user_filter(media)
     count += 1
-    helpers.trace_log_media(count, media, "media post excluded text filter:")
+    helpers.trace_log_media(count, media, "media excluded text filter:")
 
     log.debug(
-        f"filter {count}->  media post excluded text filter count: {len(media)}"
+        f"filter {count}->  media excluded text filter count: {len(media)}"
     )
+
     media = helpers.download_type_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "download type filter:")
-
     log.debug(f"filter {count}->  media download type filter count: {len(media)}")
 
     media = helpers.mass_msg_filter(media)
@@ -107,7 +108,7 @@ def filterPost(post):
     log.debug(f"filter {count}-> post dupe filter count: {len(post)}")   
 
     count+=1
-    post = helpers.post_timed_filter(post)
+    post = helpers.temp_post_filter(post)
     log.debug(f"filter {count}-> timed posts filter count: {len(post)}")
     helpers.trace_log_post(count, post, "timed posts filter:")
 
@@ -137,7 +138,7 @@ def filterPost(post):
 
 
 def post_filter_for_like(media, like=False):
-    media = helpers.post_timed_filter(media)
+    media = helpers.temp_post_filter(media)
     post_type = "likable" if like else "unlikable"
     log.debug(
         f"[bold]Number of {post_type} posts left after date filter[/bold] {len(media)}"
