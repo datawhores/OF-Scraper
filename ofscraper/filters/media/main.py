@@ -86,8 +86,6 @@ def filterMedia(media,username=None, model_id=None):
             count+=1
             helpers.trace_log_media(count, media, "unviewable media filter:")
             log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
-    print(username,model_id)
-    quit()
     return helpers.previous_download_filter(media,username=username,model_id=model_id)
 
 
