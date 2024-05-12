@@ -394,7 +394,7 @@ async def process_all_paid():
                 if post.id not in seen and not seen.add(post.id)
             ]
             new_medias = [item for post in new_posts for item in post.all_media]
-            new_medias = filters.filterMedia(new_medias)
+            new_medias = filters.filterMedia(new_medias,model_id=model_id,username=username)
             new_posts = filters.filterPost(new_posts)
             await operations.make_post_table_changes(
                 new_posts,
@@ -483,7 +483,7 @@ async def process_areas_helper(ele, model_id) -> list:
 @run
 async def process_areas(model_id, username):
     media, posts = await process_areas_helper(model_id, username)
-    return filters.filterMedia(media), filters.filterPost(posts)
+    return filters.filterMedia(media,model_id=model_id,username=username), filters.filterPost(posts)
 
 
 async def process_task(model_id, username, ele):

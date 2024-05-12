@@ -129,7 +129,7 @@ force_model_unique_option = click.option(
     "--dupe-model-unique",
     "--dupe-model",
     "--force_model_unique",
-    help="Only download files not present for the current model in the database",
+    help="Only download files with media ids not present for the current model in the database",
     default=False,
     is_flag=True,
 )

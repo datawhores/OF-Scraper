@@ -104,7 +104,7 @@ Subscription Active:[/bold] {ele.active}"""
 
                 media, _ = process_areas_helper(ele, model_id)
                 operations.table_init_create(model_id=model_id, username=username)
-                filterMedia = filters.filterMedia(media)
+                filterMedia = filters.filterMedia(media,username=username,model_id=model_id)
                 download.download_process(username, model_id, filterMedia)
                 metadata_stray_media(username,model_id, media)
             except Exception as e:
@@ -132,7 +132,7 @@ def metadata_user_first():
                 )
                 if constants.getattr("SHOW_AVATAR") and avatar:
                     log.warning(f"Avatar : {avatar}")
-                filterMedia = filters.filterMedia(media)
+                filterMedia = filters.filterMedia(media,username=username,model_id=model_id)
                 download.download_process(
                     username, model_id, filterMedia
                 )
