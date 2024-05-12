@@ -348,9 +348,9 @@ async def scrape_archived_posts(
             elif float(timestamp or 0) >= max(required_ids):
                 pass
             else:
-                log.debug(f"{log_id} Required before {required_ids}")
+                log.debug(f"{log_id} Required before change:  {required_ids}")
                 [required_ids.discard(float(ele["postedAtPrecise"])) for ele in posts]
-                log.debug(f"{log_id} Required after {required_ids}")
+                log.debug(f"{log_id} Required after change: {required_ids}")
 
                 if len(required_ids) > 0:
                     new_tasks.append(
