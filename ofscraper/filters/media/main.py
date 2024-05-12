@@ -3,7 +3,6 @@ import logging
 import ofscraper.filters.media.helpers as helpers
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.settings as settings
 
 
 log = logging.getLogger("shared")
@@ -48,7 +47,7 @@ def filterMedia(media,username=None, model_id=None):
         f"filter {count}->  media text filter count: {len(media)}"
     )
 
-    media = helpers.anti_post_user_filter(media)
+    media = helpers.post_neg_text_filter(media)
     count += 1
     helpers.trace_log_media(count, media, "media excluded text filter:")
 
@@ -79,13 +78,13 @@ def filterMedia(media,username=None, model_id=None):
         helpers.trace_log_media(count, media, "media dupe media_id filter:")
         log.debug(f"filter {count}->  media dupe media_id filter count: {len(media)}")
         media=helpers.unviewable_media_filter(media)
-        count=+1
+        count+=1
         helpers.trace_log_media(count, media, "unviewable media filter:")
         log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
     elif read_args.retriveArgs().command=="metadata":
          if constants.getattr("REMOVE_UNVIEWABLE_METADATA"):
             media=helpers.unviewable_media_filter(media)
-            count=+1
+            count+=1
             helpers.trace_log_media(count, media, "unviewable media filter:")
             log.debug(f"filter {count}->  media unviewable filter count: {len(media)}")
     return helpers.previous_download_filter(media,username,model_id)
@@ -124,14 +123,14 @@ def filterPost(post):
     )
     helpers.trace_log_post(count, post, "post excluded text filter:")
 
-    count=count + 1
+    count += 1
     post = helpers.mass_msg_filter(post)
     log.debug(
         f"filter {count}->  mass msg filter count {len(post)}"
     )
-
-    post = helpers.final_post_sort(post)
+    
     count += 1
+    post = helpers.final_post_sort(post)
     helpers.trace_log_post(count, post, "all post final sort:")
 
     return post
