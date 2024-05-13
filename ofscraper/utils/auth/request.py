@@ -15,6 +15,7 @@ import hashlib
 import json
 import time
 from urllib.parse import urlparse
+import logging
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
@@ -44,7 +45,8 @@ def read_request_auth(forced=None):
 def get_request_auth(forced=False):
     if not forced and cache.get("api_onlyfans_sign"):
         return cache.get("api_onlyfans_sign")
-    elif (settings.get_dynamic_rules()) in {
+    logging.getLogger("shared").debug("getting new signature")
+    if (settings.get_dynamic_rules()) in {
         "deviint",
         "dv",
         "dev",
