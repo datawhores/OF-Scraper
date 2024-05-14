@@ -41,8 +41,13 @@ def is_rate_limited(exception):
 class SessionSleep:
     def __init__(self, sleep=None):
         self._sleep = sleep
+        self._init_sleep=sleep
         self._last_date = arrow.now()
         self._alock = asyncio.Lock()
+
+    def reset_sleep(self):
+        self._sleep=self._init_sleep
+        self._last_date = arrow.now()
 
     async def async_toomany_req(self):
         async with self._alock:
@@ -243,6 +248,9 @@ class sessionManager:
 
     def _create_cookies(self):
         return auth_requests.add_cookies()
+    
+    def reset_sleep(self):
+        self._sleeper.toomany_req()
 
     @contextlib.contextmanager
     def requests(
@@ -465,6 +473,7 @@ class sessionManager:
         t.text_ = lambda: self.factoryasync(t.text)
         t.status = t.status_code
         t.iter_chunked = t.aiter_bytes
+        t.iter_chunks = t.aiter_bytes
         t.read_ = t.aread
         return t
 
@@ -475,6 +484,8 @@ class sessionManager:
         t.text_ = lambda: t.text
         t.status = t.status_code
         t.iter_chunked = t.iter_bytes
+        t.iter_chunks = t.iter_bytes
+
         t.read_ = t.read
         return t
 
@@ -484,6 +495,8 @@ class sessionManager:
         r.text_ = r.text
         r.json_ = r.json
         r.iter_chunked = r.content.iter_chunked
+        r.iter_chunks = r.content.iter_chunks
+
         r.status_code = r.status
         r.read_ = r.content.read
         return r

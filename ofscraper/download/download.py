@@ -16,9 +16,9 @@ from ofscraper.download.shared.utils.text import textDownloader
 
 
 
-def download_process(username, model_id, medialist, posts=None):
+async def download_process(username, model_id, medialist, posts=None):
     if not read_args.retriveArgs().command=="metadata":
-        textDownloader(posts, username=username)
+        await textDownloader(posts, username=username)
     data= download_picker(username, model_id, medialist)
     download_post_process(username, model_id, medialist, posts)
     return data

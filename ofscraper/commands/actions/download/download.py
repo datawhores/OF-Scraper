@@ -30,6 +30,10 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.commands.actions.scrape_context import scrape_context_manager
+import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.utils.progress as progress_utils
+from ofscraper.utils.context.run_async import run
+
 
 log = logging.getLogger("shared")
 
@@ -127,29 +131,42 @@ def normal_post_process():
         profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
-        length = len(userdata)
-        for count, ele in enumerate(userdata):
-            log.warning(
-                f"Download action progressing on model {count+1}/{length} models "
-            )
-            if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                log.warning(f"Avatar : {ele.avatar}")
-            log.warning(
-                f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-            )
-            try:
-                model_id = ele.id
-                username = ele.name
-                operations.table_init_create(model_id=model_id, username=username)
-                combined_urls, posts = OF.process_areas(ele, model_id,username)
-                download.download_process(
-                    username, model_id, combined_urls, posts=posts
+        normal_post_process_download(userdata)
+@run
+async def normal_post_process_download(userdata):
+    length = len(userdata)
+    with progress_utils.setup_api_split_progress_live() as progress:
+        async with sessionManager.sessionManager(
+        sem=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
+        new_request_auth=True,
+        ) as c:
+            c.reset_sleep()
+            for count, ele in enumerate(userdata):
+                log.warning(
+                    f"Download action progressing on model {count+1}/{length} models "
                 )
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
+                log.warning(
+                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                )
+                try:
+                    model_id = ele.id
+                    username = ele.name
+                    await operations.table_init_create(model_id=model_id, username=username)
+                    combined_urls, posts = await OF.process_areas(ele, model_id,username,c=c,progress=progress)
+                    await download.download_process(
+                        username, model_id, combined_urls, posts=posts
+                    )
+                except Exception as e:
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
 
 def unique_name_warning():
     if not placeholder.check_uniquename():

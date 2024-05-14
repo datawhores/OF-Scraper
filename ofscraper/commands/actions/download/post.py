@@ -422,6 +422,7 @@ async def process_all_paid():
 
 
 @free.space_checker
+
 async def process_labels(model_id, username, c):
     try:
         with stdout.lowstdout():
@@ -457,7 +458,7 @@ async def process_labels(model_id, username, c):
         log.traceback_(traceback.format_exc())
 
 @run
-async def process_areas_helper(ele, model_id) -> list:
+async def process_areas_helper(ele, model_id,c=None,progress=None) -> list:
     with stdout.lowstdout():
         executor = (
             ProcessPoolExecutor()
@@ -469,7 +470,7 @@ async def process_areas_helper(ele, model_id) -> list:
                 asyncio.get_event_loop().set_default_executor(executor)
                 username = ele.name
                 output = []
-                with progress_utils.setup_api_split_progress_live():
+                with progress or progress_utils.setup_api_split_progress_live():
                     medias, posts = await process_task(model_id, username, ele)
                     output.extend(medias)
             return (
@@ -481,17 +482,17 @@ async def process_areas_helper(ele, model_id) -> list:
             log.traceback_(traceback.format_exc())
 
 @run
-async def process_areas(ele,model_id, username):
-    media, posts = await process_areas_helper(ele, model_id)
+async def process_areas(ele,model_id, username,c=None,progress=None):
+    media, posts = await process_areas_helper(ele, model_id,c=c,progress=progress)
     return filters.filterMedia(media,model_id=model_id,username=username), filters.filterPost(posts)
 
 
-async def process_task(model_id, username, ele):
+async def process_task(model_id, username, ele,c=None):
     mediaObjs = []
     postObjs = []
     final_post_areas = set(areas.get_download_area())
     tasks = []
-    async with sessionManager.sessionManager(
+    async with c or sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),

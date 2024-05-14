@@ -235,7 +235,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
 
-        async for chunk in l.iter_chunked(constants.getattr("maxChunkSizeB")):
+        async for chunk,_ in l.iter_chunks():
             count = count + 1
             common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
