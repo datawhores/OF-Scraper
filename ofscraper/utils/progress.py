@@ -1,3 +1,4 @@
+import contextlib
 from rich.console import Group
 from rich.layout import Layout
 from rich.live import Live
@@ -20,6 +21,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.console as console_
 from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
+import ofscraper.utils.constants as constants
 
 
 def setup_all_paid_live():
@@ -39,6 +41,7 @@ def setup_all_paid_live():
         transient=True,
     )
 
+@contextlib.contextmanager
 
 def setup_api_split_progress_live():
     global timeline_layout
@@ -53,6 +56,8 @@ def setup_api_split_progress_live():
     setup_layout()
 
     layout = Layout(name="parent")
+    layout.visible=constants.getattr("DOWNLOAD_LIVE_DISPLAY")
+
     layout.split_column(Layout(name="upper", ratio=1), Layout(name="lower", ratio=1))
     layout["upper"].split_row(
         timeline_layout,
@@ -70,7 +75,8 @@ def setup_api_split_progress_live():
     )
 
     progress_group = Group(overall_progress, layout)
-    return Live(progress_group, console=console_.get_shared_console(), transient=True)
+    with Live(progress_group, console=console_.get_shared_console(), transient=True) as live:
+        yield live
 
 
 def setup_layout():
@@ -122,6 +128,24 @@ def setup_layout():
     stories_layout.visible = False
     highlights_layout.visible = False
 
+def reset_all_api_areas():
+    global timeline_layout
+    global pinned_layout
+    global archived_layout
+    global labelled_layout
+    global messages_layout
+    global paid_layout
+    global stories_layout
+    global highlights_layout
+    
+    timeline_layout.visible = False
+    pinned_layout.visible = False
+    archived_layout.visible = False
+    labelled_layout.visible = False
+    messages_layout.visible = False
+    paid_layout.visible = False
+    stories_layout.visible = False
+    highlights_layout.visible = False
 
 def set_up_progress():
     global timeline_progress

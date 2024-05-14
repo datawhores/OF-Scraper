@@ -581,4 +581,5 @@ async def process_task(model_id, username, ele,c=None):
                     await asyncio.sleep(1)
                     log.debug(E)
                     continue
+        progress_utils.reset_all_api_areas()
     return mediaObjs, postObjs
