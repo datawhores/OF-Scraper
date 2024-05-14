@@ -268,9 +268,6 @@ class sessionManager:
         sleeper=None,
     ):
         auth_requests.read_request_auth(forced=True) if sign else None
-
-        headers = self._create_headers(headers, url, sign) if headers is None else None
-        cookies = self._create_cookies() if cookies is None else None
         json = json or None
         params = params or None
         r = None
@@ -297,6 +294,9 @@ class sessionManager:
             with _:
                 sync_sem.acquire()
                 sleeper.do_sleep()
+                #remake each time
+                headers = self._create_headers(headers, url, sign) if headers is None else None
+                cookies = self._create_cookies() if cookies is None else None
                 try:
                     r = self._httpx_funct(
                         method,
