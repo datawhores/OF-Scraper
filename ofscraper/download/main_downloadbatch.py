@@ -38,6 +38,7 @@ from ofscraper.download.shared.common.general import (
     get_resume_size,
     get_unknown_content_type,
     size_checker,
+    get_ideal_chunk_size
 )
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
@@ -82,9 +83,9 @@ async def main_download_downloader(c, ele):
                 )
                 data = await get_data(ele)
                 if data:
-                    return await main_data_handler(data, c, ele, tempholderObj)
+                    return await resume_data_handler(data, c, ele, tempholderObj)
                 else:
-                    return await alt_data_handler(c, ele, tempholderObj)
+                    return await fresh_data_handler(c, ele, tempholderObj)
 
             except OSError as E:
                 common_globals.innerlog.get().debug(
@@ -107,7 +108,7 @@ async def main_download_downloader(c, ele):
                 raise E
 
 
-async def alt_data_handler(c, ele, tempholderObj):
+async def fresh_data_handler(c, ele, tempholderObj):
     result = None
     try:
         result = await main_download_sendreq(
@@ -118,7 +119,7 @@ async def alt_data_handler(c, ele, tempholderObj):
     return result
 
 
-async def main_data_handler(data, c, ele, tempholderObj):
+async def resume_data_handler(data, c, ele, tempholderObj):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
@@ -231,7 +232,9 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
 
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
-        async for chunk,_ in r.iter_chunks():
+        chunk_size=get_ideal_chunk_size(total)
+
+        async for chunk in r.iter_chunked(chunk_size):
             count = count + 1
             if downloadprogress:
                 count = count + 1

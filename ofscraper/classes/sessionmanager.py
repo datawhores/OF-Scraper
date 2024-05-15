@@ -129,7 +129,7 @@ class CustomTenacity(AsyncRetrying):
                     or getattr(exception.response, "status", None) == 403
                 )
             )):
-                auth_requests.read_request_auth(forced=True)
+                auth_requests.read_request_auth(refresh=True)
 
 
 class sessionManager:
@@ -156,7 +156,7 @@ class sessionManager:
         semaphore=None,
         sync_sem=None,
         sync_semaphore=None,
-        new_request_auth=False,
+        refresh=True,
     ):
         connect_timeout = connect_timeout or constants.getattr("CONNECT_TIMEOUT")
         total_timeout = total_timeout or constants.getattr("TOTAL_TIMEOUT")
@@ -191,7 +191,7 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        auth_requests.read_request_auth(forced=None) if new_request_auth else None
+        auth_requests.read_request_auth(refresh=refresh)
         self._sleeper = SessionSleep()
 
     async def __aenter__(self):
@@ -236,14 +236,14 @@ class sessionManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)
 
-    def _create_headers(self, headers, url, sign):
+    def _create_headers(self, headers, url, sign,forced,refresh):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url) if sign is None else headers
+        headers = self._create_sign(headers, url,forced,refresh) if sign is None else headers
         return headers
 
-    def _create_sign(self, headers, url):
-        auth_requests.create_sign(url, headers)
+    def _create_sign(self, headers, url,forced,refresh):
+        auth_requests.create_sign(url, headers,forced=forced,refresh=refresh)
         return headers
 
     def _create_cookies(self):
@@ -274,8 +274,9 @@ class sessionManager:
         read_timeout=None,
         sync_sem=None,
         sleeper=None,
+        forced=False,
+        refresh=False
     ):
-        auth_requests.read_request_auth(forced=True) if sign else None
         json = json or None
         params = params or None
         r = None
@@ -303,7 +304,7 @@ class sessionManager:
                 sync_sem.acquire()
                 sleeper.do_sleep()
                 #remake each time
-                headers = self._create_headers(headers, url, sign) if headers is None else None
+                headers = self._create_headers(headers, url, sign,forced,refresh) if headers is None else None
                 cookies = self._create_cookies() if cookies is None else None
                 try:
                     r = self._httpx_funct(
@@ -363,6 +364,8 @@ class sessionManager:
         pool_connect_timeout=None,
         read_timeout=None,
         sleeper=None,
+        forced=False,
+        refresh=False,
         *args,
         **kwargs,
     ):
@@ -396,7 +399,7 @@ class sessionManager:
                 await sleeper.async_do_sleep()
                 try:
                     headers = (
-                        self._create_headers(headers, url, sign)
+                        self._create_headers(headers, url, sign,forced,refresh)
                         if headers is None
                         else headers
                     )

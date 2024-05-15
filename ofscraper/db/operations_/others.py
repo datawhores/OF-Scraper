@@ -236,7 +236,7 @@ def write_products_table_transition(
         conn.commit()
 
 
-async def modify_unique_constriant_others(
+async def rebuild_others_table(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     database_model = get_single_model_via_profile(
@@ -255,7 +255,7 @@ async def modify_unique_constriant_others(
     )
 
 
-async def modify_unique_constriant_products(
+async def rebuild_products_table(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     database_model = get_single_model_via_profile(

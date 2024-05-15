@@ -42,6 +42,7 @@ from ofscraper.download.shared.common.general import (
     get_medialog,
     get_resume_size,
     size_checker,
+    get_ideal_chunk_size
 )
 from ofscraper.download.shared.utils.log import (
     get_url_log,
@@ -104,12 +105,12 @@ async def alt_download_downloader(item, c, ele, job_progress):
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    return await main_data_handler(
+                    return await resume_data_handler(
                         data, item, c, ele, placeholderObj, job_progress
                     )
 
                 else:
-                    return await alt_data_handler(
+                    return await fresh_data_handler(
                         item, c, ele, placeholderObj, job_progress
                     )
             except OSError as E:
@@ -132,7 +133,7 @@ async def alt_download_downloader(item, c, ele, job_progress):
                 raise E
 
 
-async def main_data_handler(data, item, c, ele, placeholderObj, job_progress):
+async def resume_data_handler(data, item, c, ele, placeholderObj, job_progress):
     item["total"] = int(data.get("content-length"))
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     if await check_forced_skip(ele, item["total"]):
@@ -145,7 +146,7 @@ async def main_data_handler(data, item, c, ele, placeholderObj, job_progress):
         return await alt_download_sendreq(item, c, ele, placeholderObj, job_progress)
 
 
-async def alt_data_handler(item, c, ele, placeholderObj, job_progress):
+async def fresh_data_handler(item, c, ele, placeholderObj, job_progress):
     result = None
     try:
         result = await alt_download_sendreq(item, c, ele, placeholderObj, job_progress)
@@ -195,7 +196,7 @@ async def send_req_inner(c, ele, item, placeholderObj, job_progress):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {url}"
         )
-        async with c.requests_async(url=url, headers=headers, params=params) as l:
+        async with c.requests_async(url=url, headers=headers, params=params,forced=True) as l:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
@@ -237,12 +238,12 @@ async def download_fileobject_writer(total, l, ele, job_progress, placeholderObj
         visible=True if downloadprogress else False,
     )
     count = 0
-    loop = asyncio.get_event_loop()
 
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
+    chunk_size=get_ideal_chunk_size(total)
     try:
-        async for chunk,_ in l.iter_chunks():
+        async for chunk in l.iter_chunked(chunk_size):
             if downloadprogress:
                 count = count + 1
             common_globals.log.trace(
@@ -250,7 +251,7 @@ async def download_fileobject_writer(total, l, ele, job_progress, placeholderObj
             )
             await fileobject.write(chunk)
             if (count + 1) % constants.getattr("CHUNK_ITER") == 0:
-                await loop.run_in_executor(
+                await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
                     partial(
                         job_progress.update,

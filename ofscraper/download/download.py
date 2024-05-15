@@ -19,12 +19,12 @@ from ofscraper.download.shared.utils.text import textDownloader
 async def download_process(username, model_id, medialist, posts=None):
     if not read_args.retriveArgs().command=="metadata":
         await textDownloader(posts, username=username)
-    data= download_picker(username, model_id, medialist)
+    data=await download_picker(username, model_id, medialist)
     download_post_process(username, model_id, medialist, posts)
     return data
 
 
-def download_picker(username, model_id, medialist):
+async def download_picker(username, model_id, medialist):
     if len(medialist) == 0:
         logging.getLogger("shared").error(
             f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
@@ -40,7 +40,7 @@ def download_picker(username, model_id, medialist):
     ):
         return batchdownloader.process_dicts(username, model_id, medialist)
     else:
-        return normaldownloader.process_dicts(username, model_id, medialist)
+        return await normaldownloader.process_dicts(username, model_id, medialist)
 
 
 def remove_downloads_with_hashes(username, model_id):
@@ -69,3 +69,9 @@ def download_post_process(username, model_id, medialist, postlist):
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
+
+
+def empty_log(username):
+    logging.getLogger("shared").error(
+            f"[bold]{username}[/bold] ({0} photos, {0} videos, {0} audios,  {0} skipped, {0} failed)"
+    )

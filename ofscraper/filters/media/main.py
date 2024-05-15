@@ -131,7 +131,6 @@ def filterPost(post):
     count += 1
     post = helpers.final_post_sort(post)
     helpers.trace_log_post(count, post, "all post final sort:")
-
     return post
 
 

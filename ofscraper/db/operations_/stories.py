@@ -186,7 +186,7 @@ def drop_stories_table(model_id=None, username=None, conn=None, **kwargs) -> lis
         conn.commit()
 
 
-async def modify_unique_constriant_stories(
+async def rebuild_stories_table(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     database_model = get_single_model_via_profile(

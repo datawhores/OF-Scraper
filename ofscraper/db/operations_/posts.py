@@ -237,7 +237,7 @@ def get_archived_post_info(model_id=None, username=None, conn=None, **kwargs) ->
         ]
 
 
-async def modify_unique_constriant_posts(
+async def rebuild_posts_table(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     database_model = get_single_model_via_profile(

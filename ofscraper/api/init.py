@@ -26,9 +26,9 @@ log = logging.getLogger("shared")
 def print_sign_status():
     status = getstatus()
     if status == "UP":
-        console.get_shared_console().print("Status - \033[32mUP\033[0m")
+        console.get_shared_console().print("Status - [bold green]UP[/bold green]")
     else:
-        console.get_shared_console().print("Status - \033[31mDOWN\033[0m")
+        console.get_shared_console().print("Status - [bold red]DOWN[/bold red]")
 
 
 def getstatus():

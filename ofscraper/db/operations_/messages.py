@@ -200,7 +200,7 @@ def add_column_messages_ID(conn=None, **kwargs):
             raise e
 
 
-async def modify_unique_constriant_messages(
+async def rebuild_messages_table(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     database_model = get_single_model_via_profile(

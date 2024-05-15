@@ -13,8 +13,7 @@ r"""
 
 import contextlib
 import logging
-import math
-import pathlib
+import asyncio
 import sqlite3
 
 import arrow
@@ -38,9 +37,9 @@ CREATE TABLE IF NOT EXISTS medias (
 	size INTEGER, 
 	api_type VARCHAR, 
 	media_type VARCHAR, 
-	preview INTEGER, 
-	linked VARCHAR, 
-	downloaded INTEGER, 
+	preview INTEGER,
+	linked BOOL,
+	downloaded BOOL,
 	created_at TIMESTAMP, 
     posted_at TIMESTAMP,
     duration VARCHAR,
@@ -53,14 +52,14 @@ CREATE TABLE IF NOT EXISTS medias (
 mediaSelectTransition = """
 SELECT  media_id,post_id,link,directory,filename,size,api_type,
 media_type,preview,linked,downloaded,created_at,unlocked,
-       CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'model_id')
             THEN model_id
             ELSE NULL
-       END AS model_id,
-      CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
+END AS model_id,
+CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'posted_at')
             THEN posted_at
             ELSE NULL
-       END AS posted_at,
+END AS posted_at,
         CASE WHEN EXISTS (SELECT 1 FROM pragma_table_info('medias') WHERE name = 'hash')
             THEN hash
             ELSE NULL
@@ -76,7 +75,7 @@ drop table medias;
 """
 mediaUpdateAPI = """Update 'medias'
 SET
-media_id=?,post_id=?,linked=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
+media_id=?,post_id=?,link=?,api_type=?,media_type=?,preview=?,created_at=?,posted_at=?,model_id=?,duration=?,unlocked=?
 WHERE media_id=(?) and model_id=(?);"""
 mediaUpdateDownload = """Update 'medias'
 SET
@@ -123,7 +122,7 @@ created_at,posted_at,model_id,duration,unlocked)
 mediaInsertTransition = """INSERT INTO 'medias'(
 media_id,post_id,link,directory,
 filename,size,api_type,
-media_type,preview,linked,
+media_type,preview,link,
 downloaded,created_at,posted_at,hash,model_id,duration,unlocked)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
@@ -165,14 +164,14 @@ FROM medias where LOWER(api_type) in ('archived') and model_id=(?)
 """
 getMessagesMedia = """
 SELECT 
-  media_id, post_id, link, directory,
-  filename, size, api_type, media_type,
-  preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked
+media_id, post_id, link, directory,
+filename, size, api_type, media_type,
+preview, linked, downloaded, created_at, posted_at, hash, model_id, unlocked
 FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
 AND model_id = ?;  -- Prepared statement placeholder
 """
-
+batch_media_lock=lock=asyncio.Lock()
 
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
@@ -376,7 +375,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.postdate,
                     model_id,
                     media.duration_string,
-                    media.canview,
+                    media.canview
                 ],
                 medias,
             )
@@ -589,20 +588,21 @@ def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
 
 @run
 async def batch_mediainsert(media, **kwargs):
-    curr = set(await get_media_ids(**kwargs) or [])
-    mediaDict = {}
-    for ele in media:
-        mediaDict[ele.id] = ele
-    await write_media_table_via_api_batch(
-        list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
-    )
+    async with batch_media_lock:
+        curr = set(await get_media_ids(**kwargs) or [])
+        mediaDict = {}
+        for ele in media:
+            mediaDict[ele.id] = ele
+        await write_media_table_via_api_batch(
+            list(filter(lambda x: x.id not in curr, mediaDict.values())), **kwargs
+        )
 
-    await update_media_table_via_api_batch(
-        list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
-    )
+        await update_media_table_via_api_batch(
+            list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
+        )
 
 
-async def modify_unique_constriant_media(
+async def rebuild_media_table(
     model_id=None, username=None, db_path=None, **kwargs
 ):
     database_model = get_single_model_via_profile(

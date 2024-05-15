@@ -24,7 +24,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
 
-def read_request_auth(forced=None):
+def read_request_auth(forced=False,refresh=False):
     request_auth = {
         "static_param": "",
         "format": "",
@@ -33,7 +33,7 @@ def read_request_auth(forced=None):
     }
 
     # *values, = get_request_auth()
-    result = get_request_auth(forced=forced)
+    result = get_request_auth(forced=forced,refresh=refresh)
     if not result:
         raise json.JSONDecodeError("No content")
     (*values,) = result
@@ -42,8 +42,8 @@ def read_request_auth(forced=None):
     return request_auth
 
 
-def get_request_auth(forced=False):
-    if not forced and cache.get("api_onlyfans_sign"):
+def get_request_auth(forced=False,refresh=False):
+    if not refresh and not forced and cache.get("api_onlyfans_sign"):
         return cache.get("api_onlyfans_sign")
     logging.getLogger("shared").debug("getting new signature")
     if (settings.get_dynamic_rules()) in {
@@ -52,22 +52,30 @@ def get_request_auth(forced=False):
         "dev",
     }:
 
-        return get_request_auth_deviint(forced=forced)
+        auth=get_request_auth_deviint()
     elif (settings.get_dynamic_rules()) in {
         "sneaky",
     }:
 
-        return get_request_auth_sneaky(forced=forced)
+        auth= get_request_auth_sneaky()
     else:
-        return get_request_auth_digitalcriminals(forced=forced)
+        auth= get_request_auth_digitalcriminals()
+    if refresh:
+        cache.set(
+                "api_onlyfans_sign",
+                auth,
+                expire=constants.getattr("HOURLY_EXPIRY"),
+            )
+    return auth
 
 
-def get_request_auth_deviint(forced=None):
+def get_request_auth_deviint():
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
+        refresh=False,
     ) as c:
         with c.requests(
             constants.getattr("DEVIINT"),
@@ -80,20 +88,16 @@ def get_request_auth_deviint(forced=None):
             fmt = f"{content['start']}:{{}}:{{:x}}:{content['end']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
-            cache.set(
-                "api_onlyfans_sign",
-                [static_param, fmt, checksum_indexes, checksum_constant],
-                expire=constants.getattr("HOURLY_EXPIRY"),
-            )
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
-def get_request_auth_sneaky(forced=None):
+def get_request_auth_sneaky():
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
+         refresh=False,
     ) as c:
         with c.requests(
             constants.getattr("SNEAKY"),
@@ -106,11 +110,6 @@ def get_request_auth_sneaky(forced=None):
             fmt = f"{content['prefix']}:{{}}:{{:x}}:{content['suffix']}"
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
-            cache.set(
-                "api_onlyfans_sign",
-                [static_param, fmt, checksum_indexes, checksum_constant],
-                expire=constants.getattr("HOURLY_EXPIRY"),
-            )
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
@@ -120,6 +119,7 @@ def get_request_auth_digitalcriminals(forced=None):
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
+         refresh=False,
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),
@@ -167,11 +167,11 @@ def get_cookies():
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
-def create_sign(link, headers):
+def create_sign(link, headers,forced,refresh):
     """
     credit: DC and hippothon
     """
-    content = read_request_auth()
+    content = read_request_auth(forced=forced,refresh=refresh)
 
     time2 = str(round(time.time() * 1000))
 

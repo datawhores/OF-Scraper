@@ -38,6 +38,7 @@ from ofscraper.download.shared.common.general import (
     get_resume_size,
     get_unknown_content_type,
     size_checker,
+    get_ideal_chunk_size
 )
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
@@ -83,11 +84,11 @@ async def main_download_downloader(c, ele, job_progress):
                     else None
                 )
                 if data:
-                    return await main_data_handler(
+                    return await resume_data_handler(
                         data, c, tempholderObj, ele, job_progress
                     )
                 else:
-                    return await alt_data_handler(c, tempholderObj, ele, job_progress)
+                    return await fresh_data_handler(c, tempholderObj, ele, job_progress)
             except OSError as E:
                 await asyncio.sleep(1)
                 common_globals.log.debug(
@@ -108,7 +109,7 @@ async def main_download_downloader(c, ele, job_progress):
                 raise E
 
 
-async def alt_data_handler(c, tempholderObj, ele, job_progress):
+async def fresh_data_handler(c, tempholderObj, ele, job_progress):
     result = None
     try:
         result = await main_download_sendreq(
@@ -119,7 +120,7 @@ async def alt_data_handler(c, tempholderObj, ele, job_progress):
     return result
 
 
-async def main_data_handler(data, c, tempholderObj, ele, job_progress):
+async def resume_data_handler(data, c, tempholderObj, ele, job_progress):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
@@ -239,8 +240,9 @@ async def download_fileobject_writer(
         loop = asyncio.get_event_loop()
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
+        chunk_size=get_ideal_chunk_size(total)
 
-        async for chunk,_ in r.iter_chunks():
+        async for chunk in r.iter_chunked(chunk_size):
             if downloadprogress:
                 count = count + 1
             await fileobject.write(chunk)

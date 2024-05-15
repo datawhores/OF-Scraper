@@ -15,6 +15,8 @@ import asyncio
 import pathlib
 import re
 from functools import partial
+import psutil
+
 
 from humanfriendly import format_size
 
@@ -171,3 +173,25 @@ def is_bad_url(url):
         return False
     elif match.group(1) in constants.getattr("BAD_URL_HOST"):
         return True
+
+
+def get_ideal_chunk_size(file_size):
+    """
+    Suggests a chunk size based on file size and a calculated available memory buffer.
+
+    Args:
+        file_size (int): Size of the file being downloaded in bytes.
+
+    Returns:
+        int: Suggested chunk size in bytes.
+    """
+
+    # Estimate available memory (considering a buffer for system operations)
+    available_memory = psutil.virtual_memory().available - 1024 * 1024 * 512  # Reserve 512MB buffer
+
+    # Target a chunk size that utilizes a reasonable portion of available memory
+    max_chunk_size = min(available_memory // 512, constants.getattr("MAX_CHUNK_SIZE"))  # Max 10MB
+    # Adjust chunk size based on file size (consider smaller sizes for larger files, with minimum)
+    ideal_chunk_size = min(max_chunk_size, file_size // 512)
+    ideal_chunk_size = max(ideal_chunk_size-(ideal_chunk_size % 4096),constants.getattr("MIN_CHUNK_SIZE")) # Minimum 4KB chunk
+    return ideal_chunk_size

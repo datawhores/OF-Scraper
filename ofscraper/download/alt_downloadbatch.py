@@ -28,6 +28,7 @@ from ofscraper.download.shared.common.general import (
     get_medialog,
     get_resume_size,
     size_checker,
+    get_ideal_chunk_size
 )
 from ofscraper.download.shared.utils.log import (
     get_url_log,
@@ -88,9 +89,9 @@ async def alt_download_downloader(
                     partial(cache.get, f"{item['name']}_headers"),
                 )
                 if data:
-                    return await main_data_handler(data, item, c, ele, placeholderObj)
+                    return await resume_data_handler(data, item, c, ele, placeholderObj)
                 else:
-                    return await alt_data_handler(item, c, ele, placeholderObj)
+                    return await fresh_data_handler(item, c, ele, placeholderObj)
             except OSError as E:
                 common_globals.log.debug(
                     f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Number of open Files across all processes-> {len(system.getOpenFiles(unique=False))}"
@@ -112,7 +113,7 @@ async def alt_download_downloader(
                 raise E
 
 
-async def main_data_handler(data, item, c, ele, placeholderObj):
+async def resume_data_handler(data, item, c, ele, placeholderObj):
     item["total"] = int(data.get("content-length"))
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     if await check_forced_skip(ele, item["total"]) == 0:
@@ -124,7 +125,7 @@ async def main_data_handler(data, item, c, ele, placeholderObj):
         return await alt_download_sendreq(item, c, ele, placeholderObj)
 
 
-async def alt_data_handler(item, c, ele, placeholderObj):
+async def fresh_data_handler(item, c, ele, placeholderObj):
     result = None
     try:
         result = await alt_download_sendreq(item, c, ele, placeholderObj)
@@ -186,7 +187,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
             f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {url}"
         )
 
-        async with c.requests_async(url=url, headers=headers, params=params) as l:
+        async with c.requests_async(url=url, headers=headers, params=params,forced=True) as l:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
@@ -234,8 +235,9 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
+        chunk_size=get_ideal_chunk_size(total)
 
-        async for chunk,_ in l.iter_chunks():
+        async for chunk in l.iter_chunked(chunk_size):
             count = count + 1
             common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"

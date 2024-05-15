@@ -43,6 +43,25 @@ min_size_option = click.option(
     type=parse_size,
 )
 
+protected_only = click.option(
+    "-to",
+    "--protected-only",
+    help="Restricts downloads to content that requires decryption.",
+    required=False,
+    is_flag=True
+)
+
+normal_only = click.option(
+    "-no",
+    "--normal-only",
+    help="Restricts downloads to content that does not require decryption.",
+    required=False,
+    is_flag=True
+)
+
+
+
+
 # Create the option group
 media_type_options = click.option_group(
     "Media Filters Options",
@@ -50,5 +69,9 @@ media_type_options = click.option_group(
     media_type_option,
     max_size_option,
     min_size_option,
+    click.constraints.mutually_exclusive(
+        protected_only,
+        normal_only,
+    ),
     help="Options for controlling which media is downloaded",
 )

@@ -23,7 +23,6 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
 import ofscraper.utils.logs.stdout as stdout_logs
