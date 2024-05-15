@@ -24,7 +24,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.settings as settings
 
 
-def read_request_auth(forced=False,refresh=False):
+def read_request_auth(refresh=True):
     request_auth = {
         "static_param": "",
         "format": "",
@@ -33,7 +33,7 @@ def read_request_auth(forced=False,refresh=False):
     }
 
     # *values, = get_request_auth()
-    result = get_request_auth(forced=forced,refresh=refresh)
+    result = get_request_auth(refresh=refresh)
     if not result:
         raise json.JSONDecodeError("No content")
     (*values,) = result
@@ -64,7 +64,7 @@ def get_request_auth(forced=False,refresh=False):
         cache.set(
                 "api_onlyfans_sign",
                 auth,
-                expire=constants.getattr("HOURLY_EXPIRY"),
+                expire=constants.getattr("HOURLY_EXPIRY")//4,
             )
     return auth
 
@@ -97,7 +97,7 @@ def get_request_auth_sneaky():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-         refresh=False,
+        refresh=False,
     ) as c:
         with c.requests(
             constants.getattr("SNEAKY"),
@@ -113,7 +113,7 @@ def get_request_auth_sneaky():
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
-def get_request_auth_digitalcriminals(forced=None):
+def get_request_auth_digitalcriminals():
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("GIT_NUM_TRIES"),
@@ -132,11 +132,6 @@ def get_request_auth_digitalcriminals(forced=None):
             fmt = content["format"]
             checksum_indexes = content["checksum_indexes"]
             checksum_constant = content["checksum_constant"]
-            cache.set(
-                "api_onlyfans_sign",
-                [static_param, fmt, checksum_indexes, checksum_constant],
-                expire=constants.getattr("HOURLY_EXPIRY"),
-            )
             return (static_param, fmt, checksum_indexes, checksum_constant)
 
 
@@ -167,11 +162,11 @@ def get_cookies():
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
-def create_sign(link, headers,forced,refresh):
+def create_sign(link, headers,forced):
     """
     credit: DC and hippothon
     """
-    content = read_request_auth(forced=forced,refresh=refresh)
+    content = read_request_auth(forced=forced)
 
     time2 = str(round(time.time() * 1000))
 
