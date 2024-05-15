@@ -42,9 +42,10 @@ def read_request_auth(refresh=True):
     return request_auth
 
 
-def get_request_auth(forced=False,refresh=False):
-    if not refresh and not forced and cache.get("api_onlyfans_sign"):
-        return cache.get("api_onlyfans_sign")
+def get_request_auth(refresh=False):
+    curr_auth=cache.get("api_onlyfans_sign")
+    if not refresh and curr_auth:
+        return curr_auth
     logging.getLogger("shared").debug("getting new signature")
     if (settings.get_dynamic_rules()) in {
         "deviint",
@@ -60,12 +61,11 @@ def get_request_auth(forced=False,refresh=False):
         auth= get_request_auth_sneaky()
     else:
         auth= get_request_auth_digitalcriminals()
-    if refresh:
-        cache.set(
-                "api_onlyfans_sign",
-                auth,
-                expire=constants.getattr("HOURLY_EXPIRY")//4,
-            )
+    cache.set(
+            "api_onlyfans_sign",
+            auth,
+            expire=constants.getattr("HOURLY_EXPIRY")//4,
+        )
     return auth
 
 
@@ -162,11 +162,11 @@ def get_cookies():
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
-def create_sign(link, headers,forced):
+def create_sign(link, headers,refresh=False):
     """
     credit: DC and hippothon
     """
-    content = read_request_auth(forced=forced)
+    content = read_request_auth(refresh=refresh)
 
     time2 = str(round(time.time() * 1000))
 

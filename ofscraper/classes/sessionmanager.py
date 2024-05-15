@@ -242,8 +242,8 @@ class sessionManager:
         headers = self._create_sign(headers, url,forced) if sign is None else headers
         return headers
 
-    def _create_sign(self, headers, url,forced):
-        auth_requests.create_sign(url, headers,forced=forced)
+    def _create_sign(self, headers, url,refresh):
+        auth_requests.create_sign(url, headers,refresh=refresh)
         return headers
 
     def _create_cookies(self):
