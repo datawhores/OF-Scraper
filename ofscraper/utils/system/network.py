@@ -35,6 +35,7 @@ def check_cdm():
             retries=constants.getattr("CDM_TEST_NUM_TRIES"),
             wait_min=constants.getattr("CDM_MIN_WAIT"),
             wait_max=constants.getattr("CDM_MAX_WAIT"),
+            refresh=False
         ) as c:
             with c.requests(url=url) as r:
                 if r.ok:

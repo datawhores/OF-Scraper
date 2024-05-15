@@ -117,6 +117,7 @@ class DiscordHandler(logging.Handler):
             retries=constants.getattr("DISCORD_NUM_TRIES"),
             wait_min=constants.getattr("DISCORD_MIN_WAIT"),
             wait_max=constants.getattr("DISCORD_MAX_WAIT"),
+            refresh=False
         )
         self._thread = None
         self._baseurl = data.get_discord()
