@@ -49,8 +49,7 @@ def main_helper():
 
 
 def print_name():
-    with stdout.lowstdout():
-        console.get_shared_console().print(
+    console.get_shared_console().print(
             """ 
  _______  _______         _______  _______  _______  _______  _______  _______  _______ 
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )

@@ -60,24 +60,23 @@ def process_like():
         active = list(filter(lambda x: x.active, userdata))
         length = len(active)
         log.debug(f"Number of Active Accounts selected {length}")
-        with stdout.lowstdout():
-            for count, ele in enumerate(active):
-                log.info(f"Like action progressing on model {count+1}/{length}")
-                if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                    log.warning(f"Avatar : {ele.avatar}")
-                log.warning(
-                    f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                )
-                model_id = ele.id
-                operations.table_init_create(model_id=model_id, username=ele.name)
-                unfavorited_posts = get_post_for_like(
-                    model_id=model_id, username=ele.name
-                )
-                unfavorited_posts = filters.post_filter_for_like(
-                    unfavorited_posts, like=True
-                )
-                post_ids = get_post_ids(unfavorited_posts)
-                like(model_id, post_ids)
+        for count, ele in enumerate(active):
+            log.info(f"Like action progressing on model {count+1}/{length}")
+            if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                log.warning(f"Avatar : {ele.avatar}")
+            log.warning(
+                f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+            )
+            model_id = ele.id
+            operations.table_init_create(model_id=model_id, username=ele.name)
+            unfavorited_posts = get_post_for_like(
+                model_id=model_id, username=ele.name
+            )
+            unfavorited_posts = filters.post_filter_for_like(
+                unfavorited_posts, like=True
+            )
+            post_ids = get_post_ids(unfavorited_posts)
+            like(model_id, post_ids)
 
 
 @exit.exit_wrapper
@@ -89,22 +88,21 @@ def process_unlike():
         active = list(filter(lambda x: x.active, userdata))
         length = len(active)
         log.debug(f"Number of Active Accounts selected {length}")
-        with stdout.lowstdout():
-            for count, ele in enumerate(active):
-                log.info(f"Unlike action progressing on model {count+1}/{length}")
-                if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                    log.warning(f"Avatar : {ele.avatar}")
-                log.warning(
-                    f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                )
-                model_id = profile.get_id(ele.name)
-                operations.table_init_create(model_id=model_id, username=ele.name)
-                favorited_posts = get_posts_for_unlike(model_id, ele.name)
-                favorited_posts = filters.post_filter_for_like(
-                    favorited_posts, like=False
-                )
-                post_ids = get_post_ids(favorited_posts)
-                unlike(model_id, post_ids)
+        for count, ele in enumerate(active):
+            log.info(f"Unlike action progressing on model {count+1}/{length}")
+            if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                log.warning(f"Avatar : {ele.avatar}")
+            log.warning(
+                f"Getting {','.join(areas.get_like_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+            )
+            model_id = profile.get_id(ele.name)
+            operations.table_init_create(model_id=model_id, username=ele.name)
+            favorited_posts = get_posts_for_unlike(model_id, ele.name)
+            favorited_posts = filters.post_filter_for_like(
+                favorited_posts, like=False
+            )
+            post_ids = get_post_ids(favorited_posts)
+            unlike(model_id, post_ids)
 
 
 @run

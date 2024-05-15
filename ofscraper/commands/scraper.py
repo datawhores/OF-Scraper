@@ -65,10 +65,9 @@ def process_prompts():
 
 
 def print_start():
-    with stdout.lowstdout():
-        console.get_shared_console().print(
-            f"[bold green]Version {__version__}[/bold green]"
-        )
+    console.get_shared_console().print(
+        f"[bold green]Version {__version__}[/bold green]"
+    )
 
 
 def main():

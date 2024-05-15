@@ -14,20 +14,19 @@ async def get_models() -> list:
     """
     Get user's subscriptions in form of a list.
     """
-    with stdout.lowstdout():
-        count = get_sub_count()
-        if not bool(read_args.retriveArgs().usernames):
-            return await get_via_list(count)
-        elif "ALL" in read_args.retriveArgs().usernames:
-            return await get_via_list(count)
-        elif read_args.retriveArgs().individual:
-            return await get_via_individual()
-        elif read_args.retriveArgs().list:
-            return get_via_list(count)
-        elif (sum(count) // 10) >= len(read_args.retriveArgs().usernames):
-            return await get_via_individual()
-        else:
-            return await get_via_list(count)
+    count = get_sub_count()
+    if not bool(read_args.retriveArgs().usernames):
+        return await get_via_list(count)
+    elif "ALL" in read_args.retriveArgs().usernames:
+        return await get_via_list(count)
+    elif read_args.retriveArgs().individual:
+        return await get_via_individual()
+    elif read_args.retriveArgs().list:
+        return get_via_list(count)
+    elif (sum(count) // 10) >= len(read_args.retriveArgs().usernames):
+        return await get_via_individual()
+    else:
+        return await get_via_list(count)
 
 
 async def get_via_list(count):

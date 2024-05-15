@@ -153,8 +153,7 @@ def checker():
 
 
 def post_checker():
-    with stdout.lowstdout():
-        post_check_runner()
+    post_check_runner()
     start_helper()
 
 
@@ -319,8 +318,7 @@ def start_helper():
 
 
 def message_checker():
-    with stdout.lowstdout():
-        message_checker_runner()
+    message_checker_runner()
     start_helper()
 
 
@@ -404,8 +402,7 @@ async def message_check_retriver():
 
 
 def purchase_checker():
-    with stdout.lowstdout():
-        purchase_checker_runner()
+    purchase_checker_runner()
     start_helper()
 
 
@@ -464,8 +461,7 @@ async def purchase_check_retriver():
 
 
 def stories_checker():
-    with stdout.lowstdout():
-        stories_checker_runner()
+    stories_checker_runner()
     start_helper()
 
 

@@ -1,4 +1,3 @@
-import contextlib
 from rich.console import Group
 from rich.layout import Layout
 from rich.live import Live
@@ -31,6 +30,7 @@ def setup_all_paid_live():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
+        console=console_.get_temp_console(quiet=False)
     )
     progress_group = Group(overall_progress, Panel(Group(all_paid_progress)))
 
@@ -41,7 +41,6 @@ def setup_all_paid_live():
         transient=True,
     )
 
-@contextlib.contextmanager
 
 def setup_api_split_progress_live():
     global timeline_layout
@@ -56,7 +55,7 @@ def setup_api_split_progress_live():
     setup_layout()
 
     layout = Layout(name="parent")
-    layout.visible=constants.getattr("DOWNLOAD_LIVE_DISPLAY")
+    layout.visible=constants.getattr("API_DISPLAY")
 
     layout.split_column(Layout(name="upper", ratio=1), Layout(name="lower", ratio=1))
     layout["upper"].split_row(
@@ -75,8 +74,7 @@ def setup_api_split_progress_live():
     )
 
     progress_group = Group(overall_progress, layout)
-    with Live(progress_group, console=console_.get_shared_console(), transient=True) as live:
-        yield live
+    return Live(progress_group, console=console_.get_shared_console())
 
 
 def setup_layout():
@@ -157,18 +155,28 @@ def set_up_progress():
     global labelled_progress
     global highlights_progress
     global stories_progress
-    timeline_progress = Progress("{task.description}")
-    pinned_progress = Progress("{task.description}")
+    timeline_progress = Progress("{task.description}",        console=console_.get_temp_console()
+)
+    pinned_progress = Progress("{task.description}",        console=console_.get_temp_console()
+    
+)
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
+        console=console_.get_temp_console()
     )
-    archived_progress = Progress("{task.description}")
-    messages_progress = Progress("{task.description}")
-    paid_progress = Progress("{task.description}")
-    labelled_progress = Progress("{task.description}")
-    highlights_progress = Progress("{task.description}")
-    stories_progress = Progress("{task.description}")
+    archived_progress = Progress("{task.description}",        console=console_.get_temp_console()
+)
+    messages_progress = Progress("{task.description}",        console=console_.get_temp_console()
+)
+    paid_progress = Progress("{task.description}",       console=console_.get_temp_console()
+)
+    labelled_progress = Progress("{task.description}",        console=console_.get_temp_console()
+)
+    highlights_progress = Progress("{task.description}",        console=console_.get_temp_console()
+)
+    stories_progress = Progress("{task.description}",        console=console_.get_temp_console()
+)
 
 
 def setupDownloadProgressBar(multi=False):
@@ -183,6 +191,7 @@ def setupDownloadProgressBar(multi=False):
             TimeRemainingColumn(),
             TransferSpeedColumn(),
             DownloadColumn(),
+            console=console_.get_temp_console()
         )
     else:
         job_progress = MultiProgress(
@@ -192,12 +201,14 @@ def setupDownloadProgressBar(multi=False):
             TimeRemainingColumn(),
             TransferSpeedColumn(),
             DownloadColumn(),
+            console=console_.get_temp_console()
         )
     overall_progress = Progress(
         TextColumn("{task.description}"),
         BarColumn(),
         TaskProgressColumn(),
         TimeElapsedColumn(),
+        console=console_.get_temp_console()
     )
     progress_group = Group(overall_progress, Panel(Group(job_progress, fit=True)))
     progress_group.renderables[1].height = (
@@ -229,6 +240,7 @@ def set_up_api_pinned():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting pinned posts...\n{task.description}"),
+    console=console_.get_temp_console()
     )
     pinned_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(pinned_progress)))
@@ -246,6 +258,7 @@ def set_up_api_paid():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting paid posts...\n{task.description}"),
+        console=console_.get_temp_console()
     )
     paid_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(paid_progress)))
@@ -263,6 +276,7 @@ def set_up_api_messages():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting messages...\n{task.description}"),
+        console=console_.get_temp_console()
     )
     messages_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(messages_progress)))
@@ -280,6 +294,7 @@ def set_up_api_archived():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting archived...\n{task.description}"),
+        console=console_.get_temp_console()
     )
     archived_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(archived_progress)))
@@ -297,6 +312,7 @@ def set_up_api_stories():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting stories...\n{task.description}"),
+        console=console_.get_temp_console()
     )
     stories_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(stories_progress)))
@@ -348,6 +364,7 @@ def set_up_api_labels():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting Labels\n{task.description}"),
+        console=console_.get_temp_console()
     )
     labelled_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
@@ -365,6 +382,7 @@ def set_up_api_posts_labels():
     overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting Posts via labels\n{task.description}"),
+    console=console_.get_temp_console()
     )
     labelled_progress = Progress("{task.description}")
     progress_group = Group(overall_progress, Panel(Group(labelled_progress)))

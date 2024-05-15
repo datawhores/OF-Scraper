@@ -24,46 +24,45 @@ from ofscraper.utils.context.run_async import run
 
 def manual_download(urls=None):
     log = logging.getLogger("shared")
-    with stdout.lowstdout():
-        try:
-            network.check_cdm()
-            allow_manual_dupes()
-            url_dicts = process_urls(urls)
-            all_media = [
-                item
-                for media_list in url_dicts.values()
-                for item in media_list.get("media_list", [])
-            ]
-            all_posts = [
-                item
-                for post_list in url_dicts.values()
-                for item in post_list.get("post_list", [])
-            ]
-            log.debug(f"Number of values from media dict  {len(all_media)}")
-            log.debug(f"Number of values from post dict  {len(all_posts)}")
-            if len(all_media) == 0 and len(all_posts) == 0:
-                return
-            set_user_data(url_dicts)
-            for _, value in url_dicts.items():
-                model_id = value.get("model_id")
-                username = value.get("username")
-                model_id = value.get("model_id")
-                username = value.get("username")
-                log.info(f"Downloading individual media for {username}")
-                operations.table_init_create(model_id=model_id, username=username)
-                operations.make_changes_to_content_tables(
-                    value.get("post_list", []), model_id=model_id, username=username
-                )
-                download.download_process(
-                    username, model_id, value.get("media_list", []), posts=None
-                )
-                batch_mediainsert(
-                    value.get("media_list"), username=username, model_id=model_id
-                )
-        except Exception as e:
-            log.traceback_(e)
-            log.traceback_(traceback.format_exc())
-            raise e
+    try:
+        network.check_cdm()
+        allow_manual_dupes()
+        url_dicts = process_urls(urls)
+        all_media = [
+            item
+            for media_list in url_dicts.values()
+            for item in media_list.get("media_list", [])
+        ]
+        all_posts = [
+            item
+            for post_list in url_dicts.values()
+            for item in post_list.get("post_list", [])
+        ]
+        log.debug(f"Number of values from media dict  {len(all_media)}")
+        log.debug(f"Number of values from post dict  {len(all_posts)}")
+        if len(all_media) == 0 and len(all_posts) == 0:
+            return
+        set_user_data(url_dicts)
+        for _, value in url_dicts.items():
+            model_id = value.get("model_id")
+            username = value.get("username")
+            model_id = value.get("model_id")
+            username = value.get("username")
+            log.info(f"Downloading individual media for {username}")
+            operations.table_init_create(model_id=model_id, username=username)
+            operations.make_changes_to_content_tables(
+                value.get("post_list", []), model_id=model_id, username=username
+            )
+            download.download_process(
+                username, model_id, value.get("media_list", []), posts=None
+            )
+            batch_mediainsert(
+                value.get("media_list"), username=username, model_id=model_id
+            )
+    except Exception as e:
+        log.traceback_(e)
+        log.traceback_(traceback.format_exc())
+        raise e
 
 
 def allow_manual_dupes():

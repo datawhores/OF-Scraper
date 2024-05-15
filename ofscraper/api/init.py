@@ -13,25 +13,22 @@ r"""
 
 import logging
 import traceback
+import ofscraper.utils.console as console
 
-from rich.console import Console
 
-import ofscraper.utils.context.stdout as stdout
 
 from . import me
 
 log = logging.getLogger("shared")
 
-console = Console()
 
 
 def print_sign_status():
-    with stdout.lowstdout():
-        status = getstatus()
-        if status == "UP":
-            print("Status - \033[32mUP\033[0m")
-        else:
-            print("Status - \033[31mDOWN\033[0m")
+    status = getstatus()
+    if status == "UP":
+        console.get_shared_console().print("Status - \033[32mUP\033[0m")
+    else:
+        console.get_shared_console().print("Status - \033[31mDOWN\033[0m")
 
 
 def getstatus():

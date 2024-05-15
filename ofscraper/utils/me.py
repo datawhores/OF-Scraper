@@ -1,9 +1,8 @@
-from rich.console import Console
 
 import ofscraper.api.me as me
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.profiles.data as profile_data
+import ofscraper.utils.console as console
 
 
 def parse_user():
@@ -19,5 +18,4 @@ def get_id():
 
 
 def print_user(name, username):
-    with stdout.lowstdout():
-        Console().print(f"Welcome, {name} | {username}")
+    console.get_shared_console().print(f"Welcome, {name} | {username}")
