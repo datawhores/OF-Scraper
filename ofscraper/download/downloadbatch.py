@@ -42,7 +42,7 @@ from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.progress import setupDownloadProgressBar
+import ofscraper.utils.live as progress_utils
 
 platform_name = platform.system()
 
@@ -94,48 +94,39 @@ def process_dicts(username, model_id, filtered_medialist):
             for i in range(num_proc)
         ]
         [process.start() for process in processes]
-        progress_group, overall_progress, job_progress = setupDownloadProgressBar(
+        with progress_utils.setupDownloadProgressBar(
             multi=True
-        )
-
-        task1 = overall_progress.add_task(
-            common_globals.desc.format(
-                p_count=0,
-                v_count=0,
-                a_count=0,
-                skipped=0,
-                mediacount=len(filtered_medialist),
-                forced_skipped=0,
-                sumcount=0,
-                total_bytes_download=0,
-                total_bytes=0,
-            ),
-            total=len(filtered_medialist),
-            visible=True,
-        )
-
-        # for reading completed downloads
-        queue_threads = [
-            threading.Thread(
-                target=queue_process,
-                args=(
-                    connect_tuples[i][0],
-                    overall_progress,
-                    job_progress,
-                    task1,
-                    len(filtered_medialist),
-                ),
-                daemon=True,
-            )
-            for i in range(num_proc)
-        ]
-        [thread.start() for thread in queue_threads]
-        with Live(
-            progress_group,
-            refresh_per_second=constants.getattr("refreshScreen"),
-            console=console.get_shared_console(),
-            transient=True,
         ):
+            task1 = progress_utils.download_overall_progress.add_task(
+                common_globals.desc.format(
+                    p_count=0,
+                    v_count=0,
+                    a_count=0,
+                    skipped=0,
+                    mediacount=len(filtered_medialist),
+                    forced_skipped=0,
+                    sumcount=0,
+                    total_bytes_download=0,
+                    total_bytes=0,
+                ),
+                total=len(filtered_medialist),
+                visible=True,
+            )
+
+            # for reading completed downloads
+            queue_threads = [
+                threading.Thread(
+                    target=queue_process,
+                    args=(
+                        connect_tuples[i][0],
+                        task1,
+                        len(filtered_medialist),
+                    ),
+                    daemon=True,
+                )
+                for i in range(num_proc)
+            ]
+            [thread.start() for thread in queue_threads]
             log.debug(f"Initial Queue Threads: {queue_threads}")
             log.debug(f"Number of initial Queue Threads: {len(queue_threads)}")
             while True:
@@ -179,8 +170,8 @@ def process_dicts(username, model_id, filtered_medialist):
                     if process.is_alive():
                         process.terminate()
                 time.sleep(0.5)
-        overall_progress.remove_task(task1)
-        progress_group.renderables[1].height = 0
+            progress_utils.download_overall_progress.remove_task(task1)
+            progress_utils.download_progress_group.renderables[1].height = 0
         setDirectoriesDate()
     except KeyboardInterrupt as E:
         try:
@@ -214,7 +205,7 @@ def process_dicts(username, model_id, filtered_medialist):
     )
 
 
-def queue_process(pipe_, overall_progress, job_progress, task1, total):
+def queue_process(pipe_, task1, total):
     count = 0
     downloadprogress = settings.get_download_bars()
     # shared globals
@@ -222,8 +213,8 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
     while True:
         if (
             count == 1
-            or overall_progress.tasks[task1].total
-            == overall_progress.tasks[task1].completed
+            or progress_utils.download_overall_progress.tasks[task1].total
+            == progress_utils.download_overall_progress.tasks[task1].completed
         ):
             break
         results = pipe_.recv()
@@ -250,7 +241,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
                     elif media_type == "forced_skipped":
                         common_globals.forced_skipped += 1
                     log_download_progress(media_type)
-                    overall_progress.update(
+                    progress_utils.download_overall_progress.update(
                         task1,
                         description=common_globals.desc.format(
                             p_count=common_globals.photo_count,
@@ -282,7 +273,7 @@ def queue_process(pipe_, overall_progress, job_progress, task1, total):
             elif isinstance(result, dict) and "dir_update" in result:
                 addGlobalDir(result["dir_update"])
             elif isinstance(result, dict) and downloadprogress:
-                job_progress_helper(job_progress, result)
+                job_progress_helper( result)
 
 
 def get_mediasplits(medialist):
@@ -330,11 +321,11 @@ def process_dict_starter(
                 raise E
 
 
-def job_progress_helper(job_progress, result):
+def job_progress_helper(result):
     funct = {
-        "add_task": job_progress.add_task,
-        "update": job_progress.update,
-        "remove_task": job_progress.remove_task,
+        "add_task": progress_utils.download_job_progress.add_task,
+        "update": progress_utils.download_job_progress.update,
+        "remove_task": progress_utils.download_job_progress.remove_task,
     }.get(result.pop("type"))
     if funct:
         try:

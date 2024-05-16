@@ -145,10 +145,12 @@ def get_log():
 
 
 def get_log_level():
-    if read_args.retriveArgs().log:
-        return read_args.retriveArgs().log
-    return constants.getattr("DEFAULT_LOG_LEVEL")
+    return read_args.retriveArgs().log or constants.getattr("DEFAULT_LOG_LEVEL")
+def get_discord_level():
+    return read_args.retriveArgs().discord
 
+def get_output_level():
+    return read_args.retriveArgs().output
 
 def get_mp4decrypt():
     return (

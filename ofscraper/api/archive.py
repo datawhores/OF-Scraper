@@ -22,7 +22,7 @@ import ofscraper.api.common.logs as common_logs
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.live as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
     get_archived_media,

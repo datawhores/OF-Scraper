@@ -17,13 +17,11 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
-
 import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.live as progress_utils
 
 log = logging.getLogger("shared")
 console = Console()
@@ -34,12 +32,10 @@ async def get_subscriptions(subscribe_count, account="active"):
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
+        with progress_utils.setup_subscription_progress():
+            asyncio.get_event_loop().set_default_executor(executor)
 
-        with Progress(
-            SpinnerColumn(style=Style(color="blue")), TextColumn("{task.description}")
-        ) as job_progress:
-            task1 = job_progress.add_task(
+            task1 = progress_utils.userlist_job_progress.add_task(
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
             async with sessionManager.sessionManager(
@@ -52,10 +48,10 @@ async def get_subscriptions(subscribe_count, account="active"):
                     out = await activeHelper(subscribe_count, c)
                 else:
                     out = await expiredHelper(subscribe_count, c)
-                job_progress.remove_task(task1)
+                progress_utils.userlist_job_progress.remove_task(task1)
 
-        log.debug(f"Total {account} subscriptions found {len(out)}")
-        return out
+            log.debug(f"Total {account} subscriptions found {len(out)}")
+            return out
 
 
 async def activeHelper(subscribe_count, c):

@@ -16,14 +16,13 @@ import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
-
 import ofscraper.api.profile as profile
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.live as progress_utils
+
 
 log = logging.getLogger("shared")
 
@@ -38,10 +37,8 @@ async def get_subscription(accounts=None):
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
-        with Progress(
-            SpinnerColumn(style=Style(color="blue")), TextColumn("{task.description}")
-        ) as job_progress:
-            task1 = job_progress.add_task(
+        with progress_utils.setup_subscription_progress():
+            task1 = progress_utils.userlist_job_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )
             async with sessionManager.sessionManager(
@@ -51,7 +48,7 @@ async def get_subscription(accounts=None):
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 out = await get_subscription_helper(c, accounts)
-                job_progress.remove_task(task1)
+                progress_utils.userlist_job_progress.remove_task(task1)
         outdict = {}
         for ele in filter(
             lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),

@@ -36,7 +36,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.stdout as stdout
-import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.live as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
 from ofscraper.db.operations_.media import batch_mediainsert
@@ -442,7 +442,7 @@ async def process_labels(model_id, username, c):
 
 
 @run
-async def process_areas_helper(ele, model_id, c=None, progress=None) -> list:
+async def process_areas_helper(ele, model_id, c=None) -> list:
     executor = (
         ProcessPoolExecutor()
         if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
@@ -453,9 +453,8 @@ async def process_areas_helper(ele, model_id, c=None, progress=None) -> list:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             output = []
-            with progress or progress_utils.setup_api_split_progress_live():
-                medias, posts = await process_task(model_id, username, ele)
-                output.extend(medias)
+            medias, posts = await process_task(model_id, username, ele)
+            output.extend(medias)
         return (
             medias,
             posts,
@@ -466,8 +465,8 @@ async def process_areas_helper(ele, model_id, c=None, progress=None) -> list:
 
 
 @run
-async def process_areas(ele, model_id, username, c=None, progress=None):
-    media, posts = await process_areas_helper(ele, model_id, c=c, progress=progress)
+async def process_areas(ele, model_id, username, c=None):
+    media, posts = await process_areas_helper(ele, model_id, c=c,)
     try:
         return filters.filterMedia(
             media, model_id=model_id, username=username

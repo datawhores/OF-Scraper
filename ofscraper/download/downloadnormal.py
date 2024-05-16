@@ -36,46 +36,42 @@ from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
-from ofscraper.utils.progress import setupDownloadProgressBar
+import ofscraper.utils.live as progress_utils
 
 
 @run
 async def process_dicts(username, model_id, medialist):
-    progress_group, overall_progress, job_progress = setupDownloadProgressBar()
+    
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-    common_globals.reset_globals()
-
-    try:
-        manager = manager_.get_manager()
-        logqueue = manager.Queue()
-        otherqueue = manager.Queue()
-        download_log = logger.get_shared_logger(
-            name="ofscraper_download", main_=logqueue, other_=otherqueue
-        )
-        common_globals.log = download_log
-        # start stdout/main queues consumers
-        log_thread = stdout_logs.start_stdout_logthread(
-            input_=logqueue, name="ofscraper_normal_stdout"
-        )
-        other_thread = other_logs.start_other_thread(
-            input_=otherqueue, name="ofscraper_normal_other"
-        )
-        with Live(
-            progress_group,
-            refresh_per_second=constants.getattr("refreshScreen"),
-            console=console.shared_console,
-            transient=True,
+     with progress_utils.setupDownloadProgressBar(
+            multi=False
         ):
+        common_globals.reset_globals()
+        try:
+            manager = manager_.get_manager()
+            logqueue = manager.Queue()
+            otherqueue = manager.Queue()
+            download_log = logger.get_shared_logger(
+                name="ofscraper_download", main_=logqueue, other_=otherqueue
+            )
+            common_globals.log = download_log
+            # start stdout/main queues consumers
+            log_thread = stdout_logs.start_stdout_logthread(
+                input_=logqueue, name="ofscraper_normal_stdout"
+            )
+            other_thread = other_logs.start_other_thread(
+                input_=otherqueue, name="ofscraper_normal_other"
+            )
             aws = []
 
             async with download_session() as c:
                 for ele in medialist:
                     aws.append(
                         asyncio.create_task(
-                            download(c, ele, model_id, username, job_progress)
+                            download(c, ele, model_id, username, progress_utils.download_job_progress)
                         )
                     )
-                task1 = overall_progress.add_task(
+                task1 = progress_utils.download_overall_progress.add_task(
                     common_globals.desc.format(
                         p_count=0,
                         v_count=0,
@@ -125,7 +121,7 @@ async def process_dicts(username, model_id, medialist):
                         + common_globals.forced_skipped
                     )
                     log_download_progress(media_type)
-                    overall_progress.update(
+                    progress_utils.download_overall_progress.update(
                         task1,
                         description=common_globals.desc.format(
                             p_count=common_globals.photo_count,
@@ -143,30 +139,30 @@ async def process_dicts(username, model_id, medialist):
                         refresh=True,
                         advance=1,
                     )
-        overall_progress.remove_task(task1)
-        setDirectoriesDate()
-        # close thread
-        otherqueue.put("None")
-        logqueue.put("None")
-        log_thread.join()
-        other_thread.join() if other_thread else None
-        final_log(username, log=logging.getLogger("shared"))
-        return (
-            common_globals.photo_count,
-            common_globals.video_count,
-            common_globals.audio_count,
-            common_globals.forced_skipped,
-            common_globals.skipped,
-        )
+            progress_utils.download_overall_progress.remove_task(task1)
+            setDirectoriesDate()
+            # close thread
+            otherqueue.put("None")
+            logqueue.put("None")
+            log_thread.join()
+            other_thread.join() if other_thread else None
+            final_log(username, log=logging.getLogger("shared"))
+            return (
+                common_globals.photo_count,
+                common_globals.video_count,
+                common_globals.audio_count,
+                common_globals.forced_skipped,
+                common_globals.skipped,
+            )
 
-    except Exception as E:
-        with exit.DelayedKeyboardInterrupt():
-            raise E
-    finally:
-        await asyncio.get_event_loop().run_in_executor(
-            common_globals.cache_thread, cache.close
-        )
-        common_globals.cache_thread.shutdown()
+        except Exception as E:
+            with exit.DelayedKeyboardInterrupt():
+                raise E
+        finally:
+            await asyncio.get_event_loop().run_in_executor(
+                common_globals.cache_thread, cache.close
+            )
+            common_globals.cache_thread.shutdown()
 
 
 async def download(c, ele, model_id, username, job_progress):

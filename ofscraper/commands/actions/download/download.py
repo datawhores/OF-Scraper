@@ -12,7 +12,6 @@ r"""_____  _______         _______  _______  _______  _______  _______  _______ 
 import logging
 import time
 import traceback
-from contextlib import contextmanager
 
 import ofscraper.api.init as init
 import ofscraper.api.profile as profile
@@ -28,7 +27,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.live as progress_utils
 from ofscraper.commands.actions.scrape_context import scrape_context_manager
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.console as console
@@ -48,6 +47,8 @@ def process_post():
 def process_post_user_first():
     with scrape_context_manager():
         unique_name_warning()
+        log.debug(f"[bold blue]Running User First Mode[/bold blue]")
+
         profile_tools.print_current_profile()
         init.print_sign_status()
         data = {}
@@ -58,8 +59,17 @@ def process_post_user_first():
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
-        for user in userselector.getselected_usernames(rescan=False):
-            data.update(process_user_first_data_retriver(user,session=session))
+        userdata=userselector.getselected_usernames(rescan=False)
+        length=len(userdata)
+        live=progress_utils.set_up_progress()
+        task=progress_utils.username_progress.add_task("Data Retrival",total=6)
+        for count,user in enumerate(userdata):
+            progress_utils.username_progress.update(task,description=f"Data Retrival on {user.name}",advance=1)
+            logging.getLogger("shared_other").warning(f"\[{user.name}] Data Retrival Progress: {count+1}/{length} models")
+            data.update(process_user_first_data_retriver(user,session=session,live=live))
+            if count==5:
+                break
+            progress_utils.username_progress.remove(task)
         length = len(list(data.keys()))
         count = 0
         for model_id, val in data.items():
@@ -68,8 +78,8 @@ def process_post_user_first():
             avatar = val["avatar"]
             posts = val["posts"]
             try:
-                log.warning(
-                    f"Download action progressing on model {count+1}/{length} models "
+                logging.getLogger("shared_other").warning(
+                    f"\[{username}] Downloading Progress: {count+1}/{length} models"
                 )
                 if constants.getattr("SHOW_AVATAR") and avatar:
                     log.warning(f"Avatar : {avatar}")
@@ -83,18 +93,18 @@ def process_post_user_first():
                 count = count + 1
 
 
-def process_user_first_data_retriver(ele,session=None):
+def process_user_first_data_retriver(ele,session=None,live=None):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
     if constants.getattr("SHOW_AVATAR") and avatar:
-        log.warning(f"Avatar : {avatar}")
+        logging.getLogger("shared_other").warning(f"Avatar : {avatar}")
     if bool(areas.get_download_area()):
-        log.info(
+        logging.getLogger("shared_other").info(
             f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
         )
     operations.table_init_create(model_id=model_id, username=username)
-    media, posts = post_media_process(ele,session=session)
+    media, posts = post_media_process(ele,session=session,live=live)
     return {
             model_id: {
                 "username": username,
@@ -116,7 +126,7 @@ def scrape_paid_all(user_dict=None):
         posts = value["posts"]
         medias = value["medias"]
         log.warning(
-            f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
+            f"\[{model_id}_{username}] Downloading Progress :{count+1}/{length} models "
         )
         userselector.set_ALL_SUBS_DICTVManger(
             {username: models.Model(profile.scrape_profile(model_id))}
@@ -129,6 +139,7 @@ def scrape_paid_all(user_dict=None):
 @exit.exit_wrapper
 def normal_post_process():
     with scrape_context_manager():
+        progress_utils.live.start()
         unique_name_warning()
         profile_tools.print_current_profile()
         init.print_sign_status()
@@ -142,32 +153,50 @@ def normal_post_process():
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
         )
-        live=None
-        for count, ele in enumerate(userdata):
-            username = ele.name
-            model_id = ele.id
-            try:
-                log.warning(
-                    f"Download action progressing on model {count+1}/{length} models "
-                )
-                if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                    log.warning(f"Avatar : {ele.avatar}")
-                log.warning(
-                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                )
-                all_media, posts = post_media_process(
-                    ele, session=session, live=live
-                )
-                download.download_process(username, model_id, all_media, posts=posts)
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+        with progress_utils.setup_api_split_progress_live(stop=True):
+            task = progress_utils.username_progress.add_task(
+                        "Data Retrival+Downloading", total=length
+            )
+            for count,ele in enumerate(userdata):
+                progress_str=f"Progress {count+1}/{length}"
+                data_str=f"Data Retrival on {ele.name}"
+                avatar_str=f"Avatar : {ele.avatar}"
+                area_str=f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                download_str= f"Downloading on {ele.name}"
+
+
+                progress_utils.switch_api_progress()
+                logging.getLogger("shared_other").warning(progress_str)
+                logging.getLogger("shared_other").warning(data_str)
+                progress_utils.username_progress.update(task,description=data_str)
+
+                username = ele.name
+                model_id = ele.id
+                try:
+                    if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                        logging.getLogger("shared_other").warning(avatar_str)
+                    logging.getLogger("shared_other").warning(
+                        area_str
+                    )
+                    progress_utils.username_progress.update(task,description=area_str)
+
+                    all_media, posts = post_media_process(
+                        ele, session=session
+                    )
+                    progress_utils.username_progress.update(task,description=download_str)
+                    logging.getLogger("shared_other").warning(download_str)
+                    download.download_process(username, model_id, all_media, posts=posts)
+                    progress_utils.username_progress.update(task,advance=1)
+
+                except Exception as e:
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
 
 
 @run
-async def post_media_process(ele, session=None, live=None):
+async def post_media_process(ele, session=None):
     session = session or sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
@@ -175,20 +204,18 @@ async def post_media_process(ele, session=None, live=None):
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
-    live = live or progress_utils.setup_api_split_progress_live()
     session.reset_sleep()
 
     username = ele.name
     model_id = ele.id
     data=None
-    with live as progress:
-        console.get_shared_console().clear()
-        console.get_shared_console().clear_live()
-        await operations.table_init_create(model_id=model_id, username=username)
-        async with session as c:
-            data=await OF.process_areas(
-                ele, model_id, username, c=c, progress=progress
-            )
+    console.get_shared_console().clear()
+    console.get_shared_console().clear_live()
+    await operations.table_init_create(model_id=model_id, username=username)
+    async with session as c:
+        data=await OF.process_areas(
+            ele, model_id, username, c=c
+        )
     return data
 
 

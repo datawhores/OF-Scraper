@@ -43,7 +43,7 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.progress as progress_utils
+import ofscraper.utils.live as progress_utils
 import ofscraper.utils.system.system as system
 from ofscraper.commands.actions.scrape_context import scrape_context_manager
 from ofscraper.utils.context.run_async import run
