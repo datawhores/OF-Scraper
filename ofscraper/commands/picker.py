@@ -1,7 +1,7 @@
 import ofscraper.commands.check as check
 import ofscraper.commands.manual as manual
 import ofscraper.commands.metadata as metadata
-import ofscraper.commands.scraper as scraper
+import ofscraper.commands.scraper.scraper as actions
 import ofscraper.utils.args.read as read_args
 
 
@@ -14,4 +14,4 @@ def pick():
     elif args.command == "manual":
         manual.manual_download()
     else:
-        scraper.main()
+        actions.main()

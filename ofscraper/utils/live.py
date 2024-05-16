@@ -139,6 +139,21 @@ def setup_subscription_progress(stop=False):
         live.update(userlist_group,refresh=True)
         yield
 
+
+@contextlib.contextmanager
+def setup_like_progress(stop=False):
+    global live
+    global like_overall_progress
+    with live_progress_context(stop=stop):
+        like_overall_progress=Progress(
+        SpinnerColumn(style=Style(color="blue")),
+        TextColumn("{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        )
+        live.update(like_overall_progress,refresh=True)
+        yield
+
 #switchers
 def switch_api_progress():
     global api_progress_group

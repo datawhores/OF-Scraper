@@ -13,27 +13,24 @@ r"""
 
 import logging
 import traceback
-
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.config.data as data
 import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.menu as menu
 import ofscraper.utils.paths.paths as paths
-import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
 from ofscraper.__version__ import __version__
-from ofscraper.commands.add_select.add_selected import add_selected_areas
+from ofscraper.commands.scraper.runner import runner
+
 
 log = logging.getLogger("shared")
 
 
 def process_selected_areas():
     log.debug("[bold blue] Running Action Mode [/bold blue]")
-    functs = add_selected_areas()
-    run.run_helper(*functs)
+    runner()
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
@@ -45,14 +42,17 @@ def process_selected_areas():
             break
         else:
             menu.get_count() > 0 and menu.reset_menu_helper()
-            functs = add_selected_areas()
-            run.run_helper(*functs)
+            runner()
             menu.update_count()
 
 
+
+
+
 def daemon_process():
-    functs = add_selected_areas()
-    run.daemon_run_helper(*functs)
+    # functs = add_selected_areas()
+    # run.daemon_run_helper(*functs)
+    pass
 
 
 @exit.exit_wrapper

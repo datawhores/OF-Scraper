@@ -31,11 +31,10 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-import ofscraper.utils.args.areas as areas
+from ofscraper.utils.args.areas import get_download_area,get_like_area
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.live as progress_utils
 import ofscraper.utils.system.free as free
 import ofscraper.utils.system.system as system
@@ -46,8 +45,35 @@ from ofscraper.db.operations_.profile import (
 )
 from ofscraper.utils.context.run_async import run
 
+import ofscraper.utils.console as console
+
 log = logging.getLogger("shared")
 
+
+
+
+@run
+async def post_media_process(ele, session=None):
+    session = session or sessionManager.sessionManager(
+        sem=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
+    )
+    session.reset_sleep()
+
+    username = ele.name
+    model_id = ele.id
+    data=None
+    console.get_shared_console().clear()
+    console.get_shared_console().clear_live()
+    await operations.table_init_create(model_id=model_id, username=username)
+    async with session as c:
+        data=await process_areas(
+            ele, model_id, username, c=c
+        )
+    return data
 
 @free.space_checker
 async def process_messages(model_id, username, c):
@@ -76,7 +102,7 @@ async def process_messages(model_id, username, c):
             and read_args.retriveArgs().after != 0,
         )
 
-        return all_output, messages_
+        return all_output, messages_,"Messages"
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -112,6 +138,7 @@ async def process_paid_post(model_id, username, c):
         return (
             all_output,
             paid_content,
+            "Purchased"
         )
     except Exception as E:
         log.traceback_(E)
@@ -145,7 +172,7 @@ async def process_stories(model_id, username, c):
             downloaded=False,
         )
 
-        return all_output, stories
+        return all_output, stories,"Stories"
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -181,6 +208,7 @@ async def process_highlights(model_id, username, c):
         return (
             all_output,
             highlights_,
+            "Highlights"
         )
     except Exception as E:
         log.traceback_(E)
@@ -224,6 +252,7 @@ async def process_timeline_posts(model_id, username, c):
         return (
             all_output,
             timeline_only_posts,
+            "Timeline"
         )
     except Exception as E:
         log.traceback_(E)
@@ -267,6 +296,7 @@ async def process_archived_posts(model_id, username, c):
         return (
             all_output,
             archived_posts,
+            "get_like_area()"
         )
     except Exception as E:
         log.traceback_(E)
@@ -300,6 +330,7 @@ async def process_pinned_posts(model_id, username, c):
         return (
             all_output,
             pinned_posts,
+            "Pinned"
         )
     except Exception as E:
         log.traceback_(E)
@@ -329,7 +360,7 @@ async def process_profile(username) -> list:
                     post,
                 )
             )
-        return output, posts
+        return output, posts,"Profile"
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -435,7 +466,7 @@ async def process_labels(model_id, username, c):
 
         return [item for sublist in all_output for item in sublist], [
             post for ele in labelled_posts_labels for post in ele.posts
-        ]
+        ],"Labels"
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
@@ -453,11 +484,12 @@ async def process_areas_helper(ele, model_id, c=None) -> list:
             asyncio.get_event_loop().set_default_executor(executor)
             username = ele.name
             output = []
-            medias, posts = await process_task(model_id, username, ele)
+            medias, posts,like_post = await process_task(model_id, username,ele)
             output.extend(medias)
         return (
             medias,
             posts,
+            like_post
         )
     except Exception as E:
         log.traceback_(E)
@@ -466,22 +498,25 @@ async def process_areas_helper(ele, model_id, c=None) -> list:
 
 @run
 async def process_areas(ele, model_id, username, c=None):
-    media, posts = await process_areas_helper(ele, model_id, c=c,)
+    media, posts,like_post = await process_areas_helper(ele, model_id, c=c,)
     try:
         return filters.filterMedia(
             media, model_id=model_id, username=username
-        ), filters.filterPost(posts)
+        ), filters.filterPost(posts),filters.post_filter_for_like(like_post)
     except Exception as E:
-        print("daaaaaaaaaaaaa")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
 
-async def process_task(model_id, username, ele, c=None):
+async def process_task(model_id, username,ele, c=None):
     mediaObjs = []
     postObjs = []
-    final_post_areas = set(areas.get_download_area())
+    likeObjs=[]
     tasks = []
+    final_post_areas = set(get_download_area()+get_like_area())
+    like_area=get_like_area()
+    download_area=get_download_area()
+
     async with c or sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
@@ -562,12 +597,15 @@ async def process_task(model_id, username, ele, c=None):
             tasks = list(pending)
             for results in done:
                 try:
-                    medias, posts = await results
-                    mediaObjs.extend(medias or [])
-                    postObjs.extend(posts or [])
+                    medias, posts,area = await results
+                    if area in like_area:
+                        likeObjs.extend(posts or [])
+                    if area in download_area:
+                        mediaObjs.extend(medias or [])
+                        postObjs.extend(posts or [])
                     await asyncio.sleep(1)
                 except Exception as E:
                     await asyncio.sleep(1)
                     log.debug(E)
                     continue
-    return mediaObjs, postObjs
+    return mediaObjs, postObjs,likeObjs

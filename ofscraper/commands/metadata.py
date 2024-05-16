@@ -30,11 +30,11 @@ import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.__version__ import __version__
-from ofscraper.commands.actions.download.post import (
+from ofscraper.commands.scraper.post import (
     process_all_paid,
     process_areas_helper,
 )
-from ofscraper.commands.actions.scrape_context import scrape_context_manager
+from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
     get_archived_media,
