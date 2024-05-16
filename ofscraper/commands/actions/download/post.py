@@ -62,7 +62,7 @@ async def process_messages(model_id, username, c):
         all_output = [item for message in messages_ for item in message.all_media]
         unlocked = [item for message in messages_ for item in message.media]
         log.debug(f"[bold]Messages media count with locked[/bold] {len(all_output)}")
-        log.debug(f"[bold]Messages media count with locked[/bold] {len(unlocked)}")
+        log.debug(f"[bold]Messages media count without locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -136,7 +136,7 @@ async def process_stories(model_id, username, c):
         all_output = [item for post in stories for item in post.all_media]
         unlocked = [item for post in stories for item in post.all_media]
         log.debug(f"[bold]Stories media count with locked[/bold] {len(all_output)}")
-        log.debug(f"[bold]Stories media count with locked[/bold] {len(unlocked)}")
+        log.debug(f"[bold]Stories media count without locked[/bold] {len(unlocked)}")
 
         await batch_mediainsert(
             all_output,
@@ -170,7 +170,7 @@ async def process_highlights(model_id, username, c):
         unlocked = [item for post in highlights_ for item in post.all_media]
 
         log.debug(f"[bold]Highlights media count with locked[/bold] {len(all_output)}")
-        log.debug(f"[bold]Highlights media count with locked[/bold] {len(unlocked)}")
+        log.debug(f"[bold]Highlights media count without locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -210,7 +210,7 @@ async def process_timeline_posts(model_id, username, c):
         all_output = [item for post in timeline_only_posts for item in post.all_media]
         unlocked = [item for post in timeline_only_posts for item in post.all_media]
         log.debug(f"[bold]Timeline media count with locked[/bold] {len(all_output)}")
-        log.debug(f"[bold]Timeline media count with locked[/bold] {len(unlocked)}")
+        log.debug(f"[bold]Timeline media count without locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -252,7 +252,7 @@ async def process_archived_posts(model_id, username, c):
         all_output = [item for post in archived_posts for item in post.all_media]
         unlocked = [item for post in archived_posts for item in post.all_media]
         log.debug(f"[bold]Archived media count with locked[/bold] {len(all_output)}")
-        log.debug(f"[bold]Archived media count with locked[/bold] {len(unlocked)}")
+        log.debug(f"[bold]Archived media count without locked[/bold] {len(unlocked)}")
 
         await batch_mediainsert(
             all_output,
