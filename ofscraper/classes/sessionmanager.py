@@ -258,7 +258,7 @@ class sessionManager:
         return auth_requests.add_cookies()
 
     def reset_sleep(self):
-        self._sleeper.toomany_req()
+        self._sleeper.reset_sleep()
 
     @contextlib.contextmanager
     def requests(
