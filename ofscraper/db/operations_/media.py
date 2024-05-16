@@ -11,17 +11,22 @@ r"""
                                                                                       
 """
 
-import asyncio
 import contextlib
 import logging
 import sqlite3
+import asyncio
+from functools import partial
+
 
 import arrow
 from rich.console import Console
+from filelock import FileLock
+
 
 import ofscraper.db.operations_.wrapper as wrapper
 from ofscraper.db.operations_.profile import get_single_model_via_profile
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.paths.common as common_paths
 
 console = Console()
 log = logging.getLogger("shared")
@@ -171,7 +176,6 @@ FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
 AND model_id = ?;  -- Prepared statement placeholder
 """
-batch_media_lock = lock = asyncio.Lock()
 
 
 @wrapper.operation_wrapper_async
@@ -587,7 +591,11 @@ def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
 
 @run
 async def batch_mediainsert(media, **kwargs):
-    async with batch_media_lock:
+    lock=None
+    try:
+        lock= FileLock(common_paths.getMediaDB(), timeout=-1)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None,lock.acquire)
         curr = set(await get_media_ids(**kwargs) or [])
         mediaDict = {}
         for ele in media:
@@ -599,6 +607,17 @@ async def batch_mediainsert(media, **kwargs):
         await update_media_table_via_api_batch(
             list(filter(lambda x: x.id in curr, mediaDict.values())), **kwargs
         )
+    except KeyboardInterrupt as E:
+        with exit.DelayedKeyboardInterrupt():
+            if lock:
+                lock.release(True)
+            raise E
+    except Exception as E:
+        raise E
+    finally:
+        if lock:
+            await loop.run_in_executor(None,partial(lock.release, force=True))
+
 
 
 async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwargs):

@@ -51,8 +51,15 @@ def process_post_user_first():
         profile_tools.print_current_profile()
         init.print_sign_status()
         data = {}
+        session=sessionManager.sessionManager(
+        sem=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
+    )
         for user in userselector.getselected_usernames(rescan=False):
-            data.update(process_user_first_data_retriver(user))
+            data.update(process_user_first_data_retriver(user,session=session))
         length = len(list(data.keys()))
         count = 0
         for model_id, val in data.items():
@@ -76,7 +83,7 @@ def process_post_user_first():
                 count = count + 1
 
 
-def process_user_first_data_retriver(ele):
+def process_user_first_data_retriver(ele,session=None):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
@@ -86,22 +93,17 @@ def process_user_first_data_retriver(ele):
         log.info(
             f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
         )
-    try:
-        operations.table_init_create(model_id=model_id, username=username)
-        media, posts = OF.process_areas(ele, model_id, username)
-        return {
+    operations.table_init_create(model_id=model_id, username=username)
+    media, posts = post_media_process(ele,session=session)
+    return {
             model_id: {
                 "username": username,
                 "posts": posts,
                 "media": media,
                 "avatar": avatar,
             }
-        }
-    except Exception as e:
-        if isinstance(e, KeyboardInterrupt):
-            raise e
-        log.traceback_(f"failed with exception: {e}")
-        log.traceback_(traceback.format_exc())
+    }
+
 
 
 def scrape_paid_all(user_dict=None):
@@ -153,7 +155,7 @@ def normal_post_process():
                 log.warning(
                     f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
                 )
-                all_media, posts = normal_post_process_media(
+                all_media, posts = post_media_process(
                     ele, session=session, live=live
                 )
                 download.download_process(username, model_id, all_media, posts=posts)
@@ -165,7 +167,7 @@ def normal_post_process():
 
 
 @run
-async def normal_post_process_media(ele, session=None, live=None):
+async def post_media_process(ele, session=None, live=None):
     session = session or sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
