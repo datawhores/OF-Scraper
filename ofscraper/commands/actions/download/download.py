@@ -146,7 +146,7 @@ def normal_post_process():
             model_id = ele.id
             try:
                 log.warning(
-                    f"Download action progressing on model {count}/{length} models "
+                    f"Download action progressing on model {count+1}/{length} models "
                 )
                 if constants.getattr("SHOW_AVATAR") and ele.avatar:
                     log.warning(f"Avatar : {ele.avatar}")
@@ -156,7 +156,6 @@ def normal_post_process():
                 all_media, posts = normal_post_process_media(
                     ele, session=session, live=live
                 )
-                continue
                 download.download_process(username, model_id, all_media, posts=posts)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
