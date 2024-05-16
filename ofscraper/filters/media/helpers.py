@@ -62,7 +62,9 @@ def timeline_array_filter(posts):
 
 def ele_count_filter(media):
     count = settings.get_max_post_count() or None
-    return media[:count]
+    if count:
+        return media[:count]
+    return media
 
 
 def posts_type_filter(media):

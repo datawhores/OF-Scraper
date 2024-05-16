@@ -74,7 +74,7 @@ def setup_api_split_progress_live():
     )
 
     progress_group = Group(overall_progress, layout)
-    return Live(progress_group, console=console_.get_shared_console())
+    return Live(progress_group, console=console_.get_shared_console(),transient=True)
 
 
 def setup_layout():

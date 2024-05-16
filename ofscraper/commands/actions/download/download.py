@@ -29,9 +29,9 @@ import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.utils.progress as progress_utils
-import ofscraper.utils.settings as settings
 from ofscraper.commands.actions.scrape_context import scrape_context_manager
 from ofscraper.utils.context.run_async import run
+import ofscraper.utils.console as console
 
 log = logging.getLogger("shared")
 
@@ -140,7 +140,7 @@ def normal_post_process():
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
         )
-        live = progress_utils.setup_api_split_progress_live()
+        live=None
         for count, ele in enumerate(userdata):
             username = ele.name
             model_id = ele.id
@@ -179,12 +179,16 @@ async def normal_post_process_media(ele, session=None, live=None):
 
     username = ele.name
     model_id = ele.id
+    data=None
     with live as progress:
+        console.get_shared_console().clear()
+        console.get_shared_console().clear_live()
         await operations.table_init_create(model_id=model_id, username=username)
         async with session as c:
-            return await OF.process_areas(
+            data=await OF.process_areas(
                 ele, model_id, username, c=c, progress=progress
             )
+    return data
 
 
 def unique_name_warning():
