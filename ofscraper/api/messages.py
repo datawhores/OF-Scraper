@@ -513,7 +513,7 @@ Setting Message scan range for {username} from {arrow.get(after).format(constant
 def get_sleeper(reset=False):
     global sleeper
     if not sleeper:
-        sleeper = sessionManager.SessionSleep(sleep=8)
+        sleeper = sessionManager.SessionSleep(sleep=None)
     if reset:
         sleeper.reset_sleep()
     return sleeper
