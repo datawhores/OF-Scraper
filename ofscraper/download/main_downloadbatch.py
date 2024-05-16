@@ -34,11 +34,11 @@ from ofscraper.download.shared.common.general import (
     check_forced_skip,
     downloadspace,
     get_data,
+    get_ideal_chunk_size,
     get_medialog,
     get_resume_size,
     get_unknown_content_type,
     size_checker,
-    get_ideal_chunk_size
 )
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
@@ -232,7 +232,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
 
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
-        chunk_size=get_ideal_chunk_size(total)
+        chunk_size = get_ideal_chunk_size(total)
 
         async for chunk in r.iter_chunked(chunk_size):
             count = count + 1

@@ -22,7 +22,7 @@ import ofscraper.utils.console as console_
 
 console = console_.get_shared_console()
 log = logging.getLogger("shared")
-config=None
+config = None
 
 
 def read_config(update=True):

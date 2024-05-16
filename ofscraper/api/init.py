@@ -13,14 +13,12 @@ r"""
 
 import logging
 import traceback
+
 import ofscraper.utils.console as console
-
-
 
 from . import me
 
 log = logging.getLogger("shared")
-
 
 
 def print_sign_status():

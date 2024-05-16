@@ -13,9 +13,9 @@ r"""
 
 import hashlib
 import json
+import logging
 import time
 from urllib.parse import urlparse
-import logging
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.auth.file as auth_file
@@ -43,7 +43,7 @@ def read_request_auth(refresh=True):
 
 
 def get_request_auth(refresh=False):
-    curr_auth=cache.get("api_onlyfans_sign")
+    curr_auth = cache.get("api_onlyfans_sign")
     if not refresh and curr_auth:
         return curr_auth
     logging.getLogger("shared").debug("getting new signature")
@@ -53,19 +53,19 @@ def get_request_auth(refresh=False):
         "dev",
     }:
 
-        auth=get_request_auth_deviint()
+        auth = get_request_auth_deviint()
     elif (settings.get_dynamic_rules()) in {
         "sneaky",
     }:
 
-        auth= get_request_auth_sneaky()
+        auth = get_request_auth_sneaky()
     else:
-        auth= get_request_auth_digitalcriminals()
+        auth = get_request_auth_digitalcriminals()
     cache.set(
-            "api_onlyfans_sign",
-            auth,
-            expire=constants.getattr("HOURLY_EXPIRY")//4,
-        )
+        "api_onlyfans_sign",
+        auth,
+        expire=constants.getattr("HOURLY_EXPIRY") // 4,
+    )
     return auth
 
 
@@ -119,7 +119,7 @@ def get_request_auth_digitalcriminals():
         retries=constants.getattr("GIT_NUM_TRIES"),
         wait_min=constants.getattr("GIT_MIN_WAIT"),
         wait_max=constants.getattr("GIT_MAX_WAIT"),
-         refresh=False,
+        refresh=False,
     ) as c:
         with c.requests(
             constants.getattr("DIGITALCRIMINALS"),
@@ -162,7 +162,7 @@ def get_cookies():
     return f"auth_id={auth['auth_id']};sess={auth['sess']};"
 
 
-def create_sign(link, headers,refresh=False):
+def create_sign(link, headers, refresh=False):
     """
     credit: DC and hippothon
     """

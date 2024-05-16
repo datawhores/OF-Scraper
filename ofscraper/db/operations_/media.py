@@ -11,9 +11,9 @@ r"""
                                                                                       
 """
 
+import asyncio
 import contextlib
 import logging
-import asyncio
 import sqlite3
 
 import arrow
@@ -171,7 +171,8 @@ FROM medias
 WHERE LOWER(api_type) IN ('message', 'messages') -- Use IN for multiple values
 AND model_id = ?;  -- Prepared statement placeholder
 """
-batch_media_lock=lock=asyncio.Lock()
+batch_media_lock = lock = asyncio.Lock()
+
 
 @wrapper.operation_wrapper_async
 def create_media_table(model_id=None, username=None, conn=None, db_path=None, **kwargs):
@@ -293,11 +294,10 @@ def get_media_ids_downloaded(conn=None, **kwargs) -> list:
         cur.execute(allDLIDCheck)
         return set([dict(row)["media_id"] for row in cur.fetchall()])
 
+
 @run
 @wrapper.operation_wrapper_async
-def get_media_ids_downloaded_model(
-    model_id=None, conn=None, **kwargs
-) -> list:
+def get_media_ids_downloaded_model(model_id=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(allDLModelIDCheck, [model_id])
         return set([dict(row)["media_id"] for row in cur.fetchall()])
@@ -339,8 +339,8 @@ def download_media_update(
     **kwargs,
 ):
     with contextlib.closing(conn.cursor()) as curr:
-        filename=filename or (filepath.name if filepath!=None else None)
-        directory=directory or (filepath.parent if filepath!=None else None)
+        filename = filename or (filepath.name if filepath != None else None)
+        directory = directory or (filepath.parent if filepath != None else None)
         update_media_table_via_api_helper(
             media, curr=curr, model_id=model_id, conn=conn
         )
@@ -375,7 +375,7 @@ def write_media_table_via_api_batch(medias, model_id=None, conn=None, **kwargs) 
                     media.postdate,
                     model_id,
                     media.duration_string,
-                    media.canview
+                    media.canview,
                 ],
                 medias,
             )
@@ -546,8 +546,8 @@ def update_media_table_download_helper(
     size=None,
     **kwargs,
 ) -> list:
-    filename=str(filename) if filename else None
-    directory=str(directory) if directory else None
+    filename = str(filename) if filename else None
+    directory = str(directory) if directory else None
     insertData = [
         directory,
         filename,
@@ -559,13 +559,15 @@ def update_media_table_download_helper(
     curr.execute(mediaUpdateDownload, insertData)
     conn.commit()
 
+
 @run
 @wrapper.operation_wrapper_async
-def prev_download_media_data(media,model_id=None, username=None, conn=None, **kwargs):
+def prev_download_media_data(media, model_id=None, username=None, conn=None, **kwargs):
     with contextlib.closing(conn.cursor()) as curr:
-        prevData = curr.execute(mediaDownloadSelect, (media.id,model_id)).fetchone()
+        prevData = curr.execute(mediaDownloadSelect, (media.id, model_id)).fetchone()
         prevData = dict(prevData) if prevData else None
         return prevData
+
 
 @wrapper.operation_wrapper
 def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
@@ -581,9 +583,6 @@ def batch_set_media_downloaded(medias, model_id=None, conn=None, **kwargs):
         )
         curr.executemany(mediaDownloadForce, insertData)
         conn.commit()
-
-
-
 
 
 @run
@@ -602,9 +601,7 @@ async def batch_mediainsert(media, **kwargs):
         )
 
 
-async def rebuild_media_table(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_media_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )

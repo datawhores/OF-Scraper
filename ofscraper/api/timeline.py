@@ -25,7 +25,10 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.db.operations_.media import get_timeline_media,get_media_ids_downloaded_model
+from ofscraper.db.operations_.media import (
+    get_media_ids_downloaded_model,
+    get_timeline_media,
+)
 from ofscraper.db.operations_.posts import (
     get_timeline_posts_info,
     get_youngest_timeline_date,
@@ -175,7 +178,7 @@ def get_tasks(splitArrays, c, model_id, after):
     tasks = []
     job_progress = progress_utils.timeline_progress
     # special case pass before to stop work
-    before=arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
+    before = arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
 
     if len(splitArrays) > 2:
         tasks.append(
@@ -216,7 +219,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
-                    required_ids=set([before])
+                    required_ids=set([before]),
                 )
             )
         )
@@ -230,8 +233,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     job_progress=job_progress,
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
-                    required_ids=set([before])
-
+                    required_ids=set([before]),
                 )
             )
         )
@@ -240,8 +242,12 @@ def get_tasks(splitArrays, c, model_id, after):
         tasks.append(
             asyncio.create_task(
                 scrape_timeline_posts(
-                    c, model_id, job_progress=job_progress, timestamp=after, offset=True,
-                                        required_ids=set([before])
+                    c,
+                    model_id,
+                    job_progress=job_progress,
+                    timestamp=after,
+                    offset=True,
+                    required_ids=set([before]),
                 )
             )
         )
@@ -271,7 +277,6 @@ def get_individual_post(id):
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         with c.requests(constants.getattr("INDIVIDUAL_TIMELINE").format(id)) as r:
             log.trace(f"post raw individual {r.json()}")
@@ -281,7 +286,7 @@ def get_individual_post(id):
 async def get_after(model_id, username, forced_after=None):
     if forced_after is not None:
         return forced_after
-    elif read_args.retriveArgs().after!=None:
+    elif read_args.retriveArgs().after != None:
         return read_args.retriveArgs().after.float_timestamp
     elif not settings.get_after_enabled():
         return 0
@@ -294,10 +299,19 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting oldest date to zero because database is empty")
         return 0
-    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
+    curr_downloaded = await get_media_ids_downloaded_model(
+        model_id=model_id, username=username
+    )
 
-    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("post_id") not in curr_downloaded and x.get("unlocked") != 0, curr))
-    
+    missing_items = list(
+        filter(
+            lambda x: x.get("downloaded") != 1
+            and x.get("post_id") not in curr_downloaded
+            and x.get("unlocked") != 0,
+            curr,
+        )
+    )
+
     missing_items = list(sorted(missing_items, key=lambda x: arrow.get(x["posted_at"])))
     if len(missing_items) == 0:
         log.debug(

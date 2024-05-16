@@ -100,8 +100,7 @@ async def get_lists():
                 sem=constants.getattr("SUBSCRIPTION_SEMS"),
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
-                wait_max=constants.getattr("OF_MAX_WAIT_API")
-                
+                wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 tasks.append(asyncio.create_task(scrape_for_list(c, job_progress)))
                 page_task = overall_progress.add_task(
@@ -220,7 +219,6 @@ async def get_list_users(lists):
                 retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
                 wait_min=constants.getattr("OF_MIN_WAIT_API"),
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
-                
             ) as c:
                 [
                     tasks.append(

@@ -2,7 +2,9 @@ import cloup as click
 from click.exceptions import UsageError
 
 from ofscraper.const.constants import METADATA_OPTIONS
-from ofscraper.utils.args.arguments.advanced_processing import  advanced_processing_options
+from ofscraper.utils.args.arguments.advanced_processing import (
+    advanced_processing_options,
+)
 from ofscraper.utils.args.arguments.advanced_program import (
     download_script_option,
     dynamic_rules_option,
@@ -18,14 +20,14 @@ from ofscraper.utils.args.arguments.content import (
     before_option,
     content_options,
     filter_option,
+    force_all_option,
+    force_model_unique_option,
     label_option,
     mass_msg_option,
     max_count_option,
     neg_filter_option,
     posts_option,
     timed_only_option,
-     force_all_option,
-    force_model_unique_option,
 )
 from ofscraper.utils.args.arguments.file import file_options
 from ofscraper.utils.args.arguments.logging import logging_options
@@ -64,7 +66,7 @@ Marks the download as complete and updates metadata fields via an API\n
 It also uses a new filename if one is available
         """,
             type=click.Choice(METADATA_OPTIONS),
-            metavar="METADATA MODE"
+            metavar="METADATA MODE",
         ),
     )
     @click.option_group(
@@ -96,11 +98,10 @@ It also uses a new filename if one is available
         filter_option,
         neg_filter_option,
         click.option(
-        "-sp",
-        "--scrape-paid",
-        help="Similar to --metadata, but only for --scrape paid",
-        metavar="METADATA MODE"
-
+            "-sp",
+            "--scrape-paid",
+            help="Similar to --metadata, but only for --scrape paid",
+            metavar="METADATA MODE",
         ),
         max_count_option,
         label_option,

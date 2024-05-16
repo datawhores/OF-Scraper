@@ -236,9 +236,7 @@ def write_products_table_transition(
         conn.commit()
 
 
-async def rebuild_others_table(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_others_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )
@@ -255,9 +253,7 @@ async def rebuild_others_table(
     )
 
 
-async def rebuild_products_table(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_products_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )

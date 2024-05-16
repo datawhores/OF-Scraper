@@ -11,12 +11,15 @@
                                                                                       
 """
 
+import copy
 import logging
 import traceback
-import copy
 
 import arrow
 
+import ofscraper.api.init as init
+import ofscraper.api.profile as profile
+import ofscraper.classes.models as models
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
@@ -25,34 +28,36 @@ import ofscraper.utils.actions as actions
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
+import ofscraper.utils.profiles.tools as profile_tools
 from ofscraper.__version__ import __version__
-from ofscraper.commands.actions.download.post import process_areas_helper,process_all_paid
+from ofscraper.commands.actions.download.post import (
+    process_all_paid,
+    process_areas_helper,
+)
+from ofscraper.commands.actions.scrape_context import scrape_context_manager
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
     get_archived_media,
     get_messages_media,
     get_timeline_media,
 )
-from ofscraper.commands.actions.scrape_context import scrape_context_manager
-import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.api.init as init
-import ofscraper.api.profile as profile
-import ofscraper.classes.models as models
-
 
 log = logging.getLogger("shared")
+
 
 def force_change_download():
     args = read_args.retriveArgs()
     args.action = "download"
     write_args.setArgs(args)
 
+
 def force_change_metadata():
     args = read_args.retriveArgs()
     args.metadata = args.scrape_paid
     write_args.setArgs(args)
 
-def metadata_stray_media(username,model_id, media):
+
+def metadata_stray_media(username, model_id, media):
     all_media = []
     curr_media_set = set(map(lambda x: str(x.id), media))
     args = read_args.retriveArgs()
@@ -67,9 +72,11 @@ def metadata_stray_media(username,model_id, media):
     filtered_media = list(
         filter(
             lambda x: str(x["media_id"]) not in curr_media_set
-            and arrow.get(x.get("posted_at") or 0).is_between(arrow.get(args.after or 0), args.before)
+            and arrow.get(x.get("posted_at") or 0).is_between(
+                arrow.get(args.after or 0), args.before
+            )
             and x.get("downloaded") != 1
-            and x.get("unlocked")!=0,
+            and x.get("unlocked") != 0,
             all_media,
         )
     )
@@ -87,7 +94,9 @@ def metadata_normal():
         length = len(userdata)
 
         for count, ele in enumerate(userdata):
-            log.warning(f"Metadata action progressing on model {count+1}/{length} models ")
+            log.warning(
+                f"Metadata action progressing on model {count+1}/{length} models "
+            )
             if constants.getattr("SHOW_AVATAR") and ele.avatar:
                 log.warning(f"Avatar : {ele.avatar}")
 
@@ -104,14 +113,17 @@ Subscription Active:[/bold] {ele.active}"""
 
                 media, _ = process_areas_helper(ele, model_id)
                 operations.table_init_create(model_id=model_id, username=username)
-                filterMedia = filters.filterMedia(media,username=username,model_id=model_id)
+                filterMedia = filters.filterMedia(
+                    media, username=username, model_id=model_id
+                )
                 download.download_process(username, model_id, filterMedia)
-                metadata_stray_media(username,model_id, media)
+                metadata_stray_media(username, model_id, media)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
+
 
 def metadata_user_first():
     with scrape_context_manager():
@@ -120,33 +132,35 @@ def metadata_user_first():
         data = {}
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
-        count=0
-        length=(len(data.keys()))
+        count = 0
+        length = len(data.keys())
         for model_id, val in data.items():
             username = val["username"]
-            media=val['media']
-            avatar=val['avatar']
+            media = val["media"]
+            avatar = val["avatar"]
             try:
                 log.warning(
-                f"Download action progressing on model {count+1}/{length} models "
+                    f"Download action progressing on model {count+1}/{length} models "
                 )
                 if constants.getattr("SHOW_AVATAR") and avatar:
                     log.warning(f"Avatar : {avatar}")
-                filterMedia = filters.filterMedia(media,username=username,model_id=model_id)
-                download.download_process(
-                    username, model_id, filterMedia
+                filterMedia = filters.filterMedia(
+                    media, username=username, model_id=model_id
                 )
-                metadata_stray_media(username,model_id, media)
+                download.download_process(username, model_id, filterMedia)
+                metadata_stray_media(username, model_id, media)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
-            
+
             finally:
-                count=count+1
+                count = count + 1
+
+
 def metadata_paid_all(user_dict=None):
-    old_args=copy.deepcopy(read_args.retriveArgs())
+    old_args = copy.deepcopy(read_args.retriveArgs())
     force_change_metadata()
     user_dict = process_all_paid()
     oldUsers = userselector.get_ALL_SUBS_DICT()
@@ -168,11 +182,10 @@ def metadata_paid_all(user_dict=None):
     write_args.setArgs(old_args)
 
 
-
 def process_user_first_data_retriver(ele):
     model_id = ele.id
     username = ele.name
-    avatar=ele.avatar
+    avatar = ele.avatar
     metadata_action = read_args.retriveArgs().metadata
     mark_stray = read_args.retriveArgs().mark_stray
     if constants.getattr("SHOW_AVATAR") and avatar:
@@ -190,12 +203,14 @@ Subscription Active:[/bold] {ele.active}
         username = ele.name
         operations.table_init_create(model_id=model_id, username=username)
         media, _ = process_areas_helper(ele, model_id)
-        return {model_id: {"username": username, "media": media,"avatar":avatar}}
+        return {model_id: {"username": username, "media": media, "avatar": avatar}}
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
             raise e
         log.traceback_(f"failed with exception: {e}")
         log.traceback_(traceback.format_exc())
+
+
 def metadata():
     actions.select_areas()
     if not read_args.retriveArgs().users_first:
@@ -211,4 +226,3 @@ def process_selected_areas():
         metadata()
     if read_args.retriveArgs().scrape_paid:
         metadata_paid_all()
-

@@ -1,1 +1,1 @@
-API_DISPLAY=True
+API_DISPLAY = True

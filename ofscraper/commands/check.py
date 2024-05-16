@@ -177,7 +177,6 @@ async def post_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         for ele in links:
             name_match = re.search(
@@ -339,7 +338,6 @@ async def message_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         for item in links:
             num_match = re.search(
@@ -426,7 +424,6 @@ async def purchase_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         for name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(name)["username"]
@@ -484,7 +481,6 @@ async def stories_check_retriver():
         retries=constants.getattr("API_CHECK_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         for user_name in read_args.retriveArgs().check_usernames:
             user_name = profile.scrape_profile(user_name)["username"]
@@ -575,7 +571,6 @@ async def get_paid_ids(model_id, user_name):
             retries=constants.getattr("API_CHECK_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            
         ) as c:
             paid = await paid_.get_paid_posts(model_id, user_name, c=c)
             cache.set(

@@ -359,9 +359,11 @@ class Placeholders(basePlaceholder):
     @property
     def filename(self):
         return pathlib.Path(self._filepath).name
+
     @property
     def filedir(self):
         return pathlib.Path(self._filepath).parent
+
     @property
     def trunicated_filename(self):
         return pathlib.Path(self.trunicated_filepath).name
@@ -384,6 +386,7 @@ class Placeholders(basePlaceholder):
             return
         else:
             return self.trunicated_filepath.stat().st_size
+
 
 class Textholders(basePlaceholder):
     def __init__(self, ele, ext) -> None:

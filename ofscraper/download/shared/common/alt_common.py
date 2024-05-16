@@ -79,8 +79,7 @@ async def handle_result_alt(
             hashdata=await common.get_hash(
                 sharedPlaceholderObj, mediatype=ele.mediatype
             ),
-            size=sharedPlaceholderObj.size
-            ,
+            size=sharedPlaceholderObj.size,
         )
     common.add_additional_data(sharedPlaceholderObj, ele)
     return ele.mediatype, video["total"] + audio["total"]

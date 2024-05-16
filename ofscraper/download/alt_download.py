@@ -39,10 +39,10 @@ from ofscraper.download.shared.common.alt_common import (
 from ofscraper.download.shared.common.general import (
     check_forced_skip,
     downloadspace,
+    get_ideal_chunk_size,
     get_medialog,
     get_resume_size,
     size_checker,
-    get_ideal_chunk_size
 )
 from ofscraper.download.shared.utils.log import (
     get_url_log,
@@ -196,7 +196,9 @@ async def send_req_inner(c, ele, item, placeholderObj, job_progress):
         common_globals.log.debug(
             f"{get_medialog(ele)} [attempt {common.alt_attempt_get(item).get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] Downloading media with url {url}"
         )
-        async with c.requests_async(url=url, headers=headers, params=params,forced=True) as l:
+        async with c.requests_async(
+            url=url, headers=headers, params=params, forced=True
+        ) as l:
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
@@ -241,7 +243,7 @@ async def download_fileobject_writer(total, l, ele, job_progress, placeholderObj
 
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-    chunk_size=get_ideal_chunk_size(total)
+    chunk_size = get_ideal_chunk_size(total)
     try:
         async for chunk in l.iter_chunked(chunk_size):
             if downloadprogress:

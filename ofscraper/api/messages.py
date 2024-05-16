@@ -24,7 +24,10 @@ import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
 import ofscraper.utils.progress as progress_utils
 import ofscraper.utils.settings as settings
-from ofscraper.db.operations_.media import get_messages_media,get_media_ids_downloaded_model
+from ofscraper.db.operations_.media import (
+    get_media_ids_downloaded_model,
+    get_messages_media,
+)
 from ofscraper.db.operations_.messages import (
     get_messages_post_info,
     get_youngest_message_date,
@@ -139,7 +142,7 @@ async def process_tasks(tasks, model_id, after):
 def get_filterArray(after, before, oldmessages):
     log.debug(f"[bold]Messages Cache[/bold] {len(oldmessages)} found")
     oldmessages = list(filter(lambda x: x["created_at"] is not None, oldmessages))
-    oldmessages.append({"created_at":before,"post_id":None})
+    oldmessages.append({"created_at": before, "post_id": None})
     oldmessages = sorted(
         oldmessages,
         key=lambda x: arrow.get(x["created_at"] or 0),
@@ -215,9 +218,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     c,
                     model_id,
                     job_progress=job_progress,
-                    message_id=(
-                        splitArrays[0][0].get("post_id")
-                    ),
+                    message_id=(splitArrays[0][0].get("post_id")),
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 )
             )
@@ -352,7 +353,7 @@ async def scrape_messages(
                 )
             )
 
-            #check if first value(newest) is less then then the required time
+            # check if first value(newest) is less then then the required time
             if max(
                 map(
                     lambda x: arrow.get(
@@ -396,14 +397,12 @@ async def scrape_messages(
     return messages, new_tasks
 
 
-
 def get_individual_post(model_id, postid):
     with sessionManager.sessionManager(
         backend="httpx",
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         with c.requests(
             url=constants.getattr("messageSPECIFIC").format(model_id, postid)
@@ -417,7 +416,7 @@ async def get_after(model_id, username, forced_after=None):
         return forced_after
     elif not settings.get_after_enabled():
         return 0
-    elif read_args.retriveArgs().after!=None:
+    elif read_args.retriveArgs().after != None:
         return read_args.retriveArgs().after.float_timestamp
     elif cache.get(f"{model_id}_scrape_messages"):
         log.debug(
@@ -428,8 +427,17 @@ async def get_after(model_id, username, forced_after=None):
     if len(curr) == 0:
         log.debug("Setting date to zero because database is empty")
         return 0
-    curr_downloaded = await get_media_ids_downloaded_model(model_id=model_id, username=username)
-    missing_items = list(filter(lambda x: x.get("downloaded") != 1 and x.get("post_id") not in curr_downloaded and x.get("unlocked") != 0, curr))
+    curr_downloaded = await get_media_ids_downloaded_model(
+        model_id=model_id, username=username
+    )
+    missing_items = list(
+        filter(
+            lambda x: x.get("downloaded") != 1
+            and x.get("post_id") not in curr_downloaded
+            and x.get("unlocked") != 0,
+            curr,
+        )
+    )
     missing_items = list(
         filter(lambda x: x.get("downloaded") != 1 and x.get("unlocked") != 0, curr)
     )

@@ -41,12 +41,12 @@ def is_rate_limited(exception):
 class SessionSleep:
     def __init__(self, sleep=None):
         self._sleep = sleep
-        self._init_sleep=sleep
+        self._init_sleep = sleep
         self._last_date = arrow.now()
         self._alock = asyncio.Lock()
 
     def reset_sleep(self):
-        self._sleep=self._init_sleep
+        self._sleep = self._init_sleep
         self._last_date = arrow.now()
 
     async def async_toomany_req(self):
@@ -118,18 +118,20 @@ class CustomTenacity(AsyncRetrying):
     def _after_func(self, retry_state) -> None:
         exception = retry_state.outcome.exception()
         if (
-                isinstance(exception, (aiohttp.ClientResponseError, aiohttp.ClientError))
-                and
-                    (getattr(exception, "status_code", None) == 403
-                    or getattr(exception, "status", None) == 403)
+            isinstance(exception, (aiohttp.ClientResponseError, aiohttp.ClientError))
+            and (
+                getattr(exception, "status_code", None) == 403
+                or getattr(exception, "status", None) == 403
+            )
             or (
                 isinstance(exception, httpx.HTTPStatusError)
                 and (
-                    getattr(exception.response, "status_code", None)  == 403
+                    getattr(exception.response, "status_code", None) == 403
                     or getattr(exception.response, "status", None) == 403
                 )
-            )):
-                auth_requests.read_request_auth()
+            )
+        ):
+            auth_requests.read_request_auth()
 
 
 class sessionManager:
@@ -191,7 +193,7 @@ class sessionManager:
             "OF_MAX_WAIT_EXPONENTIAL_SESSION_DEFAULT"
         )
         self._log = log or logging.getLogger("shared")
-        auth_requests.read_request_auth()  if refresh else None
+        auth_requests.read_request_auth() if refresh else None
         self._sleeper = SessionSleep()
 
     async def __aenter__(self):
@@ -236,19 +238,25 @@ class sessionManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)
 
-    def _create_headers(self, headers, url, sign,forced,):
+    def _create_headers(
+        self,
+        headers,
+        url,
+        sign,
+        forced,
+    ):
         headers = headers or {}
         headers.update(auth_requests.make_headers())
-        headers = self._create_sign(headers, url,forced) if sign is None else headers
+        headers = self._create_sign(headers, url, forced) if sign is None else headers
         return headers
 
-    def _create_sign(self, headers, url,refresh):
-        auth_requests.create_sign(url, headers,refresh=refresh)
+    def _create_sign(self, headers, url, refresh):
+        auth_requests.create_sign(url, headers, refresh=refresh)
         return headers
 
     def _create_cookies(self):
         return auth_requests.add_cookies()
-    
+
     def reset_sleep(self):
         self._sleeper.toomany_req()
 
@@ -302,8 +310,12 @@ class sessionManager:
             with _:
                 sync_sem.acquire()
                 sleeper.do_sleep()
-                #remake each time
-                headers = self._create_headers(headers, url, sign,forced) if headers is None else None
+                # remake each time
+                headers = (
+                    self._create_headers(headers, url, sign, forced)
+                    if headers is None
+                    else None
+                )
                 cookies = self._create_cookies() if cookies is None else None
                 try:
                     r = self._httpx_funct(
@@ -397,7 +409,7 @@ class sessionManager:
                 await sleeper.async_do_sleep()
                 try:
                     headers = (
-                        self._create_headers(headers, url, sign,forced)
+                        self._create_headers(headers, url, sign, forced)
                         if headers is None
                         else headers
                     )

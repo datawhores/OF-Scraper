@@ -1,9 +1,9 @@
 import itertools
+
 import cloup as click
 
-import ofscraper.utils.args.helpers as helpers
 import ofscraper.utils.args.date as date_helper
-
+import ofscraper.utils.args.helpers as helpers
 
 # Define individual options
 posts_option = click.option(
@@ -151,7 +151,7 @@ before_option = click.option(
     "--before",
     help="Process posts at or before the given date (MM/DD/YYYY) for likes, unlikes, and downloads",
     type=helpers.arrow_helper,
-    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value)
+    callback=lambda ctx, param, value: date_helper.before_callback(ctx, param, value),
 )
 
 after_option = click.option(

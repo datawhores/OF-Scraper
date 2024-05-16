@@ -9,10 +9,12 @@ import ofscraper.download.shared.utils.media as media
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-from ofscraper.db.operations_.media import download_media_update,prev_download_media_data
-from ofscraper.download.shared.utils.log import get_medialog
 import ofscraper.utils.hash as hash
-
+from ofscraper.db.operations_.media import (
+    download_media_update,
+    prev_download_media_data,
+)
+from ofscraper.download.shared.utils.log import get_medialog
 
 
 async def force_download(ele, username, model_id):
@@ -34,76 +36,114 @@ async def metadata(c, ele, username, model_id, placeholderObj=None):
     common.add_additional_data(placeholderObj, ele)
     effected = None
     if ele.id:
-        prevData=await prev_download_media_data(ele,model_id=model_id,username=username) or {}
+        prevData = (
+            await prev_download_media_data(ele, model_id=model_id, username=username)
+            or {}
+        )
         await download_media_update(
             ele,
-            filename=metadata_file_helper(placeholderObj,prevData),
-            directory=metadata_dir_helper(placeholderObj,prevData),
+            filename=metadata_file_helper(placeholderObj, prevData),
+            directory=metadata_dir_helper(placeholderObj, prevData),
             model_id=model_id,
             username=username,
-            downloaded=metadata_downloaded_helper(placeholderObj,prevData),
-            hashdata=metadata_hash_helper(placeholderObj,prevData,ele),
-            size=metadata_size_helper(placeholderObj,prevData),
+            downloaded=metadata_downloaded_helper(placeholderObj, prevData),
+            hashdata=metadata_hash_helper(placeholderObj, prevData, ele),
+            size=metadata_size_helper(placeholderObj, prevData),
         )
-        effected=prevData!=await prev_download_media_data(ele,model_id=model_id,username=username)
+        effected = prevData != await prev_download_media_data(
+            ele, model_id=model_id, username=username
+        )
     return (
         (ele.mediatype if effected else "forced_skipped"),
         0,
     )
 
 
-def metadata_downloaded_helper(placeholderObj,prevData):
+def metadata_downloaded_helper(placeholderObj, prevData):
     if read_args.retriveArgs().metadata == "check":
-        return prevData['downloaded'] if prevData else None
+        return prevData["downloaded"] if prevData else None
     elif read_args.retriveArgs().metadata == "complete":
         return 1
-    #for update
+    # for update
     elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
         return 1
     elif pathlib.Path(prevData.get("filename") or "").is_file():
         return 1
-    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
         return 1
     return 0
 
-def metadata_file_helper(placeholderObj,prevData):
+
+def metadata_file_helper(placeholderObj, prevData):
     if read_args.retriveArgs().metadata != "update":
         return str(placeholderObj.trunicated_filename)
-    #for update
+    # for update
     elif pathlib.Path(placeholderObj.trunicated_filepath).exists():
         return str(placeholderObj.trunicated_filename)
     elif pathlib.Path(prevData.get("filename") or "").is_file():
         return prevData.get("filename")
-    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
-        return  pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "")
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return pathlib.Path(
+            prevData.get("directory") or "", prevData.get("filename") or ""
+        )
     return str(placeholderObj.trunicated_filename)
-def metadata_dir_helper(placeholderObj,prevData):
+
+
+def metadata_dir_helper(placeholderObj, prevData):
     if read_args.retriveArgs().metadata != "update":
         return str(placeholderObj.trunicated_filedir)
-    #for update
+    # for update
     elif pathlib.Path(placeholderObj.trunicated_filedir).exists():
         return str(placeholderObj.trunicated_filedir)
     elif pathlib.Path(prevData.get("directory") or "").is_dir():
         return prevData.get("directory")
-    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
-        return  pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").parent
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return pathlib.Path(
+            prevData.get("directory") or "", prevData.get("filename") or ""
+        ).parent
     return str(placeholderObj.trunicated_filedir)
 
 
-def metadata_hash_helper(placeholderObj,prevData,ele):
+def metadata_hash_helper(placeholderObj, prevData, ele):
     if not read_args.retriveArgs().get_hash:
         return prevData.get("hash")
     elif pathlib.Path(placeholderObj.trunicated_filepath).is_file():
-        return hash.get_hash(pathlib.Path(placeholderObj.trunicated_filepath), mediatype=ele.mediatype)
-    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
-        return hash.get_hash(pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or ""))
-def metadata_size_helper(placeholderObj,prevData):
+        return hash.get_hash(
+            pathlib.Path(placeholderObj.trunicated_filepath), mediatype=ele.mediatype
+        )
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return hash.get_hash(
+            pathlib.Path(
+                prevData.get("directory") or "", prevData.get("filename") or ""
+            )
+        )
+
+
+def metadata_size_helper(placeholderObj, prevData):
     if placeholderObj.size:
         return placeholderObj.size
-    elif pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").is_file():
-        return pathlib.Path(prevData.get("directory") or "",prevData.get("filename") or "").stat().st_size
+    elif pathlib.Path(
+        prevData.get("directory") or "", prevData.get("filename") or ""
+    ).is_file():
+        return (
+            pathlib.Path(
+                prevData.get("directory") or "", prevData.get("filename") or ""
+            )
+            .stat()
+            .st_size
+        )
     else:
         return prevData.get("size")
+
+
 async def metadata_helper(c, ele):
     placeholderObj = None
     if not ele.url and not ele.mpd:

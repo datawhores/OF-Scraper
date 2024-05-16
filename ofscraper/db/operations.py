@@ -164,7 +164,7 @@ def get_group_difference(model_id=None, username=None, db_path=None):
         "others_model_id_constraint_added",
         "products_model_id_constraint_added",
         "messages_model_id_constraint_added",
-        "media_bool_changes"
+        "media_bool_changes",
     ]
     return set((groupA + groupB)).difference(set(changes))
 
@@ -212,7 +212,6 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         await add_flag_schema(
             "media_posted_at", model_id=model_id, username=username, db_path=db_path
         )
-
 
     if "media_duration" in missing:
         await add_column_media_duration(
@@ -301,11 +300,9 @@ async def modify_tables_constraints_and_columns(
             username=username,
             db_path=db_path,
         )
-    #only do one
-    if "media_model_id_constraint_added" in missing or "media_bool_changes" in missing :
-        await rebuild_media_table(
-            model_id=model_id, username=username, db_path=db_path
-        )
+    # only do one
+    if "media_model_id_constraint_added" in missing or "media_bool_changes" in missing:
+        await rebuild_media_table(model_id=model_id, username=username, db_path=db_path)
         await add_flag_schema(
             "media_model_id_constraint_added",
             model_id=model_id,
@@ -319,9 +316,7 @@ async def modify_tables_constraints_and_columns(
             db_path=db_path,
         )
     if "posts_model_id_constraint_added" in missing:
-        await rebuild_posts_table(
-            model_id=model_id, username=username, db_path=db_path
-        )
+        await rebuild_posts_table(model_id=model_id, username=username, db_path=db_path)
         await add_flag_schema(
             "posts_model_id_constraint_added",
             model_id=model_id,

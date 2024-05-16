@@ -53,22 +53,16 @@ log = logging.getLogger("shared")
 async def process_messages(model_id, username, c):
     try:
         messages_ = await messages.get_messages_progress(model_id, username, c=c)
-        messages_ = list(
-            map(lambda x: posts_.Post(x, model_id, username), messages_)
-        )
+        messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
         await operations.make_messages_table_changes(
             messages_,
             model_id=model_id,
             username=username,
         )
-        all_output= [item for message in messages_ for item in message.all_media]
-        unlocked= [item for message in messages_ for item in message.media]
-        log.debug(
-            f"[bold]Messages media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Messages media count with locked[/bold] {len(unlocked)}"
-        )
+        all_output = [item for message in messages_ for item in message.all_media]
+        unlocked = [item for message in messages_ for item in message.media]
+        log.debug(f"[bold]Messages media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Messages media count with locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -103,14 +97,10 @@ async def process_paid_post(model_id, username, c):
             model_id=model_id,
             username=username,
         )
-        all_output= [item for post in paid_content for item in post.all_media]
-        unlocked= [item for post in paid_content  for item in post.all_media]
-        log.debug(
-            f"[bold]Paid media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Paid media count without locked[/bold] {len(unlocked)}"
-        )
+        all_output = [item for post in paid_content for item in post.all_media]
+        unlocked = [item for post in paid_content for item in post.all_media]
+        log.debug(f"[bold]Paid media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Paid media count without locked[/bold] {len(unlocked)}")
 
         await batch_mediainsert(
             all_output,
@@ -134,9 +124,7 @@ async def process_stories(model_id, username, c):
         stories = await highlights.get_stories_post_progress(model_id, c=c)
         stories = list(
             map(
-                lambda x: posts_.Post(
-                    x, model_id, username, responsetype="stories"
-                ),
+                lambda x: posts_.Post(x, model_id, username, responsetype="stories"),
                 stories,
             )
         )
@@ -145,14 +133,10 @@ async def process_stories(model_id, username, c):
             model_id=model_id,
             username=username,
         )
-        all_output= [item for post in stories for item in post.all_media]
-        unlocked= [item for post in stories  for item in post.all_media]
-        log.debug(
-            f"[bold]Stories media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Stories media count with locked[/bold] {len(unlocked)}"
-        )
+        all_output = [item for post in stories for item in post.all_media]
+        unlocked = [item for post in stories for item in post.all_media]
+        log.debug(f"[bold]Stories media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Stories media count with locked[/bold] {len(unlocked)}")
 
         await batch_mediainsert(
             all_output,
@@ -173,9 +157,7 @@ async def process_highlights(model_id, username, c):
         highlights_ = await highlights.get_highlight_post_progress(model_id, c=c)
         highlights_ = list(
             map(
-                lambda x: posts_.Post(
-                    x, model_id, username, responsetype="highlights"
-                ),
+                lambda x: posts_.Post(x, model_id, username, responsetype="highlights"),
                 highlights_,
             )
         )
@@ -184,15 +166,11 @@ async def process_highlights(model_id, username, c):
             model_id=model_id,
             username=username,
         )
-        all_output= [item for post in highlights_ for item in post.all_media]
-        unlocked= [item for post in highlights_   for item in post.all_media]
+        all_output = [item for post in highlights_ for item in post.all_media]
+        unlocked = [item for post in highlights_ for item in post.all_media]
 
-        log.debug(
-            f"[bold]Highlights media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Highlights media count with locked[/bold] {len(unlocked)}"
-        )
+        log.debug(f"[bold]Highlights media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Highlights media count with locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -222,23 +200,17 @@ async def process_timeline_posts(model_id, username, c):
                 timeline_posts,
             )
         )
-        timeline_only_posts = list(
-            filter(lambda x: x.regular_timeline, timeline_posts)
-        )
+        timeline_only_posts = list(filter(lambda x: x.regular_timeline, timeline_posts))
 
         await operations.make_post_table_changes(
             timeline_only_posts,
             model_id=model_id,
             username=username,
         )
-        all_output= [item for post in timeline_only_posts for item in post.all_media]
-        unlocked= [item for post in timeline_only_posts  for item in post.all_media]
-        log.debug(
-            f"[bold]Timeline media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Timeline media count with locked[/bold] {len(unlocked)}"
-        )
+        all_output = [item for post in timeline_only_posts for item in post.all_media]
+        unlocked = [item for post in timeline_only_posts for item in post.all_media]
+        log.debug(f"[bold]Timeline media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Timeline media count with locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -277,14 +249,10 @@ async def process_archived_posts(model_id, username, c):
             username=username,
         )
 
-        all_output= [item for post in archived_posts for item in post.all_media]
-        unlocked= [item for post in archived_posts  for item in post.all_media]
-        log.debug(
-            f"[bold]Archived media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Archived media count with locked[/bold] {len(unlocked)}"
-        )
+        all_output = [item for post in archived_posts for item in post.all_media]
+        unlocked = [item for post in archived_posts for item in post.all_media]
+        log.debug(f"[bold]Archived media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Archived media count with locked[/bold] {len(unlocked)}")
 
         await batch_mediainsert(
             all_output,
@@ -318,14 +286,10 @@ async def process_pinned_posts(model_id, username, c):
             username=username,
         )
 
-        all_output= [item for post in pinned_posts for item in post.all_media]
-        unlocked= [item for post in pinned_posts  for item in post.all_media]
-        log.debug(
-            f"[bold]Pinned media count with locked[/bold] {len(all_output)}"
-        )
-        log.debug(
-        f"[bold]Pinned media count with locked[/bold] {len(unlocked)}"
-        )
+        all_output = [item for post in pinned_posts for item in post.all_media]
+        unlocked = [item for post in pinned_posts for item in post.all_media]
+        log.debug(f"[bold]Pinned media count with locked[/bold] {len(all_output)}")
+        log.debug(f"[bold]Pinned media count without locked[/bold] {len(unlocked)}")
         await batch_mediainsert(
             all_output,
             model_id=model_id,
@@ -380,12 +344,9 @@ async def process_all_paid():
         username = profile.scrape_profile(model_id).get("username")
         if username == constants.getattr(
             "DELETED_MODEL_PLACEHOLDER"
-        ) and await check_profile_table_exists(
-            model_id=model_id, username=username
-        ):
+        ) and await check_profile_table_exists(model_id=model_id, username=username):
             username = (
-                await get_profile_info(model_id=model_id, username=username)
-                or username
+                await get_profile_info(model_id=model_id, username=username) or username
             )
         log.info(f"Processing {username}_{model_id}")
         await operations.table_init_create(model_id=model_id, username=username)
@@ -398,12 +359,12 @@ async def process_all_paid():
         )
         seen = set()
         new_posts = [
-            post
-            for post in all_posts
-            if post.id not in seen and not seen.add(post.id)
+            post for post in all_posts if post.id not in seen and not seen.add(post.id)
         ]
         new_medias = [item for post in new_posts for item in post.all_media]
-        new_medias = filters.filterMedia(new_medias,model_id=model_id,username=username)
+        new_medias = filters.filterMedia(
+            new_medias, model_id=model_id, username=username
+        )
         new_posts = filters.filterPost(new_posts)
         await operations.make_post_table_changes(
             new_posts,
@@ -431,7 +392,6 @@ async def process_all_paid():
 
 
 @free.space_checker
-
 async def process_labels(model_id, username, c):
     try:
         labelled_posts_ = await labels_api.get_labels_progress(model_id, c=c)
@@ -480,8 +440,9 @@ async def process_labels(model_id, username, c):
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
+
 @run
-async def process_areas_helper(ele, model_id,c=None,progress=None) -> list:
+async def process_areas_helper(ele, model_id, c=None, progress=None) -> list:
     executor = (
         ProcessPoolExecutor()
         if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
@@ -494,7 +455,6 @@ async def process_areas_helper(ele, model_id,c=None,progress=None) -> list:
             output = []
             with progress or progress_utils.setup_api_split_progress_live():
                 medias, posts = await process_task(model_id, username, ele)
-                print("dad")
                 output.extend(medias)
         return (
             medias,
@@ -504,18 +464,21 @@ async def process_areas_helper(ele, model_id,c=None,progress=None) -> list:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
+
 @run
-async def process_areas(ele,model_id, username,c=None,progress=None):
-    media, posts = await process_areas_helper(ele, model_id,c=c,progress=progress)
+async def process_areas(ele, model_id, username, c=None, progress=None):
+    media, posts = await process_areas_helper(ele, model_id, c=c, progress=progress)
     try:
-        return filters.filterMedia(media,model_id=model_id,username=username), filters.filterPost(posts)
+        return filters.filterMedia(
+            media, model_id=model_id, username=username
+        ), filters.filterPost(posts)
     except Exception as E:
         print("daaaaaaaaaaaaa")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
 
-async def process_task(model_id, username, ele,c=None):
+async def process_task(model_id, username, ele, c=None):
     mediaObjs = []
     postObjs = []
     final_post_areas = set(areas.get_download_area())
@@ -526,7 +489,6 @@ async def process_task(model_id, username, ele,c=None):
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
-        
     ) as c:
         while True:
             max_count = min(
@@ -609,5 +571,4 @@ async def process_task(model_id, username, ele,c=None):
                     await asyncio.sleep(1)
                     log.debug(E)
                     continue
-        progress_utils.reset_all_api_areas()
     return mediaObjs, postObjs

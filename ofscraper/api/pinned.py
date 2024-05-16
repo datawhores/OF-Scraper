@@ -166,12 +166,12 @@ async def scrape_pinned_posts(
     if timestamp and (
         float(timestamp) > (read_args.retriveArgs().before).float_timestamp
     ):
-        return [],[]
+        return [], []
     url = constants.getattr("timelinePinnedEP").format(model_id, count)
     log.debug(url)
-    
+
     new_tasks = []
-    posts=[]
+    posts = []
     await asyncio.sleep(1)
     try:
 

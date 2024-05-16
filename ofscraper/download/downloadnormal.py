@@ -65,7 +65,6 @@ async def process_dicts(username, model_id, medialist):
             refresh_per_second=constants.getattr("refreshScreen"),
             console=console.shared_console,
             transient=True,
-            
         ):
             aws = []
 
@@ -136,9 +135,7 @@ async def process_dicts(username, model_id, medialist):
                             forced_skipped=common_globals.forced_skipped,
                             mediacount=len(medialist),
                             sumcount=sum_count,
-                            total_bytes=convert_num_bytes(
-                                common_globals.total_bytes
-                            ),
+                            total_bytes=convert_num_bytes(common_globals.total_bytes),
                             total_bytes_download=convert_num_bytes(
                                 common_globals.total_bytes_downloaded
                             ),

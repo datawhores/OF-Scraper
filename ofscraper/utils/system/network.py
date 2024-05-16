@@ -35,13 +35,11 @@ def check_cdm():
             retries=constants.getattr("CDM_TEST_NUM_TRIES"),
             wait_min=constants.getattr("CDM_MIN_WAIT"),
             wait_max=constants.getattr("CDM_MAX_WAIT"),
-            refresh=False
+            refresh=False,
         ) as c:
             with c.requests(url=url) as r:
                 if r.ok:
-                    console.print(
-                        "[green] CDM service seems to be working\n[/green]"
-                    )
+                    console.print("[green] CDM service seems to be working\n[/green]")
                     console.print(
                         "[yellow]WARNING:Make sure you have all the correct settings for choosen cdm\nhttps://of-scraper.gitbook.io/of-scraper/cdm-options\n\n[/yellow]"
                     )

@@ -6,13 +6,13 @@ import arrow
 
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
-import ofscraper.utils.settings as settings
-from ofscraper.utils.logs.helpers import is_trace
 import ofscraper.utils.separate as seperate
+import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model,
 )
+from ofscraper.utils.logs.helpers import is_trace
 
 log = logging.getLogger("shared")
 
@@ -186,6 +186,7 @@ def mass_msg_filter(media):
 def url_filter(media):
     return list((filter(lambda x: x.url or x.mpd, media)))
 
+
 def unviewable_media_filter(media):
     return list(filter(lambda x: x.canview, media))
 
@@ -210,7 +211,9 @@ def final_post_sort(media):
         return sorted(media, key=lambda x: x.filename)
     elif item_sort == "filename-desc":
         return sorted(media, key=lambda x: x.filename, reverse=True)
-def previous_download_filter(medialist,username=None,model_id=None):
+
+
+def previous_download_filter(medialist, username=None, model_id=None):
     log = logging.getLogger("shared")
     log.info("reading database to retrive previous downloads")
     medialist = seperate.seperate_by_self(medialist)
@@ -240,7 +243,6 @@ def previous_download_filter(medialist,username=None,model_id=None):
         log.debug(f"Final Number of media to download {len(medialist)} ")
     logging.getLogger().info(f"Final media count for download {len(medialist)}")
     return medialist
-
 
 
 def trace_log_media(count, media, filter_str):

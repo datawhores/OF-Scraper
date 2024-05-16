@@ -48,7 +48,7 @@ protected_only = click.option(
     "--protected-only",
     help="Restricts downloads to content that requires decryption.",
     required=False,
-    is_flag=True
+    is_flag=True,
 )
 
 normal_only = click.option(
@@ -56,10 +56,8 @@ normal_only = click.option(
     "--normal-only",
     help="Restricts downloads to content that does not require decryption.",
     required=False,
-    is_flag=True
+    is_flag=True,
 )
-
-
 
 
 # Create the option group

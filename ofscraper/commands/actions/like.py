@@ -69,9 +69,7 @@ def process_like():
             )
             model_id = ele.id
             operations.table_init_create(model_id=model_id, username=ele.name)
-            unfavorited_posts = get_post_for_like(
-                model_id=model_id, username=ele.name
-            )
+            unfavorited_posts = get_post_for_like(model_id=model_id, username=ele.name)
             unfavorited_posts = filters.post_filter_for_like(
                 unfavorited_posts, like=True
             )
@@ -98,9 +96,7 @@ def process_unlike():
             model_id = profile.get_id(ele.name)
             operations.table_init_create(model_id=model_id, username=ele.name)
             favorited_posts = get_posts_for_unlike(model_id, ele.name)
-            favorited_posts = filters.post_filter_for_like(
-                favorited_posts, like=False
-            )
+            favorited_posts = filters.post_filter_for_like(favorited_posts, like=False)
             post_ids = get_post_ids(favorited_posts)
             unlike(model_id, post_ids)
 
@@ -116,7 +112,6 @@ async def get_posts(model_id, username):
             retries=constants.getattr("API_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            
         ) as c:
             while True:
                 max_count = min(
@@ -124,7 +119,7 @@ async def get_posts(model_id, username):
                     system.getcpu_count(),
                     len(final_post_areas),
                 )
-                forced_after=read_args.retriveArgs().after or 0
+                forced_after = read_args.retriveArgs().after or 0
                 if not bool(tasks) and not bool(final_post_areas):
                     break
                 for _ in range(max_count - len(tasks)):
@@ -143,7 +138,7 @@ async def get_posts(model_id, username):
                                     model_id=model_id,
                                     username=username,
                                     c=c,
-                                    forced_after=forced_after
+                                    forced_after=forced_after,
                                 )
                             )
                         )
@@ -156,7 +151,7 @@ async def get_posts(model_id, username):
                                     model_id=model_id,
                                     username=username,
                                     c=c,
-                                    forced_after=forced_after
+                                    forced_after=forced_after,
                                 )
                             )
                         )
@@ -167,7 +162,8 @@ async def get_posts(model_id, username):
                         tasks.append(
                             asyncio.create_task(
                                 labels_api.get_labels_posts_progress(
-                                    model_id=model_id, c=c,
+                                    model_id=model_id,
+                                    c=c,
                                 )
                             )
                         )
@@ -252,7 +248,6 @@ def _like(model_id, ids: list, like_action: bool):
     ) as overall_progress:
         with sessionManager.sessionManager(
             sem=1,
-            
             backend="httpx",
             retries=constants.getattr("API_LIKE_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),

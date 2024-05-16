@@ -154,9 +154,7 @@ def process_dicts(username, model_id, filtered_medialist):
             log.debug(f"Intial Log Threads: {log_threads}")
             log.debug(f"Number of intial Log Threads: {len(log_threads)}")
             while True:
-                new_logthreads = list(
-                    filter(lambda x: x and x.is_alive(), log_threads)
-                )
+                new_logthreads = list(filter(lambda x: x and x.is_alive(), log_threads))
                 if len(new_logthreads) != len(log_threads):
                     log.debug(f"Remaining Log Threads: {new_logthreads}")
                     log.debug(f"Number of Log Threads: {len(new_logthreads)}")

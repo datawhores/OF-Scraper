@@ -200,9 +200,7 @@ def add_column_messages_ID(conn=None, **kwargs):
             raise e
 
 
-async def rebuild_messages_table(
-    model_id=None, username=None, db_path=None, **kwargs
-):
+async def rebuild_messages_table(model_id=None, username=None, db_path=None, **kwargs):
     database_model = get_single_model_via_profile(
         model_id=model_id, username=username, db_path=db_path
     )

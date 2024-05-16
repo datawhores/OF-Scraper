@@ -1,6 +1,4 @@
-r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+r"""_____  _______         _______  _______  _______  _______  _______  _______  _______ 
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
@@ -8,7 +6,6 @@ r"""
 | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
 """
 
 import logging
@@ -20,6 +17,7 @@ import ofscraper.api.init as init
 import ofscraper.api.profile as profile
 import ofscraper.classes.models as models
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.commands.actions.download.post as OF
 import ofscraper.db.operations as operations
 import ofscraper.download.download as download
@@ -29,12 +27,10 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.actions.scrape_context import scrape_context_manager
-import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.progress as progress_utils
-from ofscraper.utils.context.run_async import run
-
 import ofscraper.utils.settings as settings
+from ofscraper.commands.actions.scrape_context import scrape_context_manager
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 
@@ -56,38 +52,33 @@ def process_post_user_first():
         data = {}
         for user in userselector.getselected_usernames(rescan=False):
             data.update(process_user_first_data_retriver(user))
-        length=len(list(data.keys()))
-        count=0
+        length = len(list(data.keys()))
+        count = 0
         for model_id, val in data.items():
-            username=val["username"]
-            media=val['media']
-            avatar=val['avatar']
-            posts=val['posts']
+            username = val["username"]
+            media = val["media"]
+            avatar = val["avatar"]
+            posts = val["posts"]
             try:
                 log.warning(
-                f"Download action progressing on model {count+1}/{length} models "
+                    f"Download action progressing on model {count+1}/{length} models "
                 )
                 if constants.getattr("SHOW_AVATAR") and avatar:
                     log.warning(f"Avatar : {avatar}")
-                    download.download_process(
-                        username, model_id, media,
-                        posts=posts
-                    )
+                    download.download_process(username, model_id, media, posts=posts)
             except Exception as e:
                 if isinstance(e, KeyboardInterrupt):
                     raise e
                 log.traceback_(f"failed with exception: {e}")
                 log.traceback_(traceback.format_exc())
             finally:
-                count=count+1
-
-
+                count = count + 1
 
 
 def process_user_first_data_retriver(ele):
     model_id = ele.id
     username = ele.name
-    avatar=ele.avatar
+    avatar = ele.avatar
     if constants.getattr("SHOW_AVATAR") and avatar:
         log.warning(f"Avatar : {avatar}")
     if bool(areas.get_download_area()):
@@ -96,8 +87,15 @@ def process_user_first_data_retriver(ele):
         )
     try:
         operations.table_init_create(model_id=model_id, username=username)
-        media, posts = OF.process_areas(ele, model_id,username)
-        return {model_id: {"username": username, "posts": posts, "media": media,"avatar":avatar}}
+        media, posts = OF.process_areas(ele, model_id, username)
+        return {
+            model_id: {
+                "username": username,
+                "posts": posts,
+                "media": media,
+                "avatar": avatar,
+            }
+        }
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
             raise e
@@ -132,59 +130,67 @@ def normal_post_process():
         profile_tools.print_current_profile()
         init.print_sign_status()
         userdata = userselector.getselected_usernames(rescan=False)
-        normal_post_process_media(userdata)
-@run
-async def normal_post_process_media(userdata):
-    length=len(userdata)
-    live=progress_utils.setup_api_split_progress_live()
-    session=sessionManager.sessionManager(
+        length = len(userdata)
+
+        session = sessionManager.sessionManager(
             sem=constants.getattr("API_REQ_SEM_MAX"),
             retries=constants.getattr("API_NUM_TRIES"),
             wait_min=constants.getattr("OF_MIN_WAIT_API"),
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
             total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
-            )
-    for count,ele in enumerate(userdata):
-        username=None
-        model_id=None
-        all_media=None
-        posts=None
-        try:
-            with live as progress:
-                async with session as c:
-                    c.reset_sleep()
-                    log.warning(
+        )
+        live = progress_utils.setup_api_split_progress_live()
+        for count, ele in enumerate(userdata):
+            username = ele.name
+            model_id = ele.id
+            try:
+                log.warning(
                     f"Download action progressing on model {count}/{length} models "
-                    )
-                    if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                                log.warning(f"Avatar : {ele.avatar}")
-                    log.warning(
-                                f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
-                    )
+                )
+                if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                    log.warning(f"Avatar : {ele.avatar}")
+                log.warning(
+                    f"Getting {','.join(areas.get_download_area())} for [bold]{ele.name}[/bold]\n[bold]Subscription Active:[/bold] {ele.active}"
+                )
+                all_media, posts = normal_post_process_media(
+                    ele, session=session, live=live
+                )
+                continue
+                download.download_process(username, model_id, all_media, posts=posts)
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise e
+                log.traceback_(f"failed with exception: {e}")
+                log.traceback_(traceback.format_exc())
 
-                    model_id = ele.id
-                    username = ele.name
-                    await operations.table_init_create(model_id=model_id, username=username)
-                    all_media, posts = await OF.process_areas(ele, model_id,username,c=c,progress=progress)
-                    if len(all_media)==0 or (len(posts)==0 and "Text" not in settings.get_mediatypes()):
-                        download.empty_log(username)
-                        continue
-            await download.download_process(
-                        username, model_id,all_media, posts=posts
+
+@run
+async def normal_post_process_media(ele, session=None, live=None):
+    session = session or sessionManager.sessionManager(
+        sem=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
+    )
+    live = live or progress_utils.setup_api_split_progress_live()
+    session.reset_sleep()
+
+    username = ele.name
+    model_id = ele.id
+    with live as progress:
+        await operations.table_init_create(model_id=model_id, username=username)
+        async with session as c:
+            return await OF.process_areas(
+                ele, model_id, username, c=c, progress=progress
             )
-
-        except Exception as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise e
-            log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())
 
 
 def unique_name_warning():
     if not placeholder.check_uniquename():
-            log.warning(
-                "[red]Warning: Your generated filenames may not be unique\n \
+        log.warning(
+            "[red]Warning: Your generated filenames may not be unique\n \
             https://of-scraper.gitbook.io/of-scraper/config-options/customizing-save-path#warning[/red]      \
             "
-            )
-            time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)
+        )
+        time.sleep(constants.getattr("LOG_DISPLAY_TIMEOUT") * 3)

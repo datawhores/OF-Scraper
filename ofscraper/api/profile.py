@@ -38,7 +38,6 @@ def scrape_profile(username: Union[int, str]) -> dict:
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        
     ) as c:
         return scrape_profile_helper(c, username)
 
