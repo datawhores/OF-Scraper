@@ -21,9 +21,10 @@ def dupefilter(media):
     ids = set()
     log.info("Removing duplicate media/post")
     for item in media:
-        if not item.id or item.id not in ids:
+        id_pair = (item.id, item.postid) if hasattr(item, 'postid') else (item.id, None)
+        if not id_pair or id_pair not in ids:
             output.append(item)
-            ids.add(item.id)
+            ids.add(id_pair)
     return output
 
 
