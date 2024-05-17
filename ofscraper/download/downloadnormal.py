@@ -43,7 +43,7 @@ import ofscraper.utils.live as progress_utils
 async def process_dicts(username, model_id, medialist):
     
     # This need to be here: https://stackoverflow.com/questions/73599594/asyncio-works-in-python-3-10-but-not-in-python-3-8
-     with progress_utils.setupDownloadProgressBar(
+     with progress_utils.setup_download_progress_live(
             multi=False
         ):
         common_globals.reset_globals()

@@ -232,7 +232,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
 
         await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
-        chunk_size = get_ideal_chunk_size(total)
+        chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
 
         async for chunk in r.iter_chunked(chunk_size):
             count = count + 1

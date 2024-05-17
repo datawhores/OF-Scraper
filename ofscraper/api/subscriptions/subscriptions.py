@@ -32,7 +32,7 @@ async def get_subscriptions(subscribe_count, account="active"):
     with ThreadPoolExecutor(
         max_workers=constants.getattr("MAX_THREAD_WORKERS")
     ) as executor:
-        with progress_utils.setup_subscription_progress():
+        with progress_utils.setup_subscription_progress_live():
             asyncio.get_event_loop().set_default_executor(executor)
 
             task1 = progress_utils.userlist_job_progress.add_task(

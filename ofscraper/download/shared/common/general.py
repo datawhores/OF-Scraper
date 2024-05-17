@@ -174,7 +174,7 @@ def is_bad_url(url):
         return True
 
 
-def get_ideal_chunk_size(file_size):
+def get_ideal_chunk_size(total_size,curr_file):
     """
     Suggests a chunk size based on file size and a calculated available memory buffer.
 
@@ -184,6 +184,8 @@ def get_ideal_chunk_size(file_size):
     Returns:
         int: Suggested chunk size in bytes.
     """
+    curr_file_size= pathlib.Path(curr_file).absolute().stat().st_size if pathlib.Path(curr_file).exists() else 0
+    file_size=total_size-curr_file_size
 
     # Estimate available memory (considering a buffer for system operations)
     available_memory = (

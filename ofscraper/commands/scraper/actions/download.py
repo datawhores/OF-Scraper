@@ -23,17 +23,16 @@ import ofscraper.utils.live as progress_utils
 log = logging.getLogger("shared")
 
 
-download_str= "Downloading on {name}"
+download_str= "Performing Downloading Action on {name}"
 
 
 
 
-def downloader(ele=None,posts=None,media=None,task=None,**kwargs):
+def downloader(ele=None,posts=None,media=None,**kwargs):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
-    progress_utils.switch_api_progress()
-    progress_utils.username_progress.update(task,description=download_str.format(name=username))
+    progress_utils.update_activity_task(description=download_str.format(name=username))
     logging.getLogger("shared_other").warning(download_str.format(name=username))
     if constants.getattr("SHOW_AVATAR") and avatar:
         log.warning(f"Avatar : {avatar}")

@@ -26,14 +26,14 @@ import ofscraper.utils.live as progress_utils
 
 
 log = logging.getLogger("shared")
-like_str= "Performing Like on {name}"
-unlike_str= "Performing Unlike on {name}"
+like_str= "Performing Like Action on {name}"
+unlike_str= "Performing Unlike Action on {name}"
 
 
 @exit.exit_wrapper
 def process_like(posts=None,model_id=None,task=None,username=None,**kwargs):
     progress_utils.switch_api_progress()
-    progress_utils.username_progress.update(task,description=like_str.format(name=username))
+    progress_utils.activity_progress.update(task,description=like_str.format(name=username))
     logging.getLogger("shared_other").warning(like_str.format(name=username))
     unfavorited_posts = get_posts_for_like(posts)
     posts=pre_filter(posts)
@@ -44,7 +44,7 @@ def process_like(posts=None,model_id=None,task=None,username=None,**kwargs):
 @exit.exit_wrapper
 def process_unlike(posts=None,model_id=None,task=None,username=None,**kwargs):
     progress_utils.switch_api_progress()
-    progress_utils.username_progress.update(task,description=unlike_str.format(name=username))
+    progress_utils.activity_progress.update(task,description=unlike_str.format(name=username))
     logging.getLogger("shared_other").warning(unlike_str.format(name=username))
     favorited_posts = get_posts_for_unlike(posts)
     posts=pre_filter(posts)
@@ -94,7 +94,7 @@ def unlike(model_id, ids: list):
 
 def _like(model_id, ids: list, like_action: bool):
     title = "Liking" if like_action else "Unliking"
-    with progress_utils.setup_like_progress():
+    with progress_utils.setup_like_progress_live():
         with sessionManager.sessionManager(
             sem=1,
             backend="httpx",

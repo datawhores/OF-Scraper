@@ -37,7 +37,7 @@ async def get_subscription(accounts=None):
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
-        with progress_utils.setup_subscription_progress():
+        with progress_utils.setup_subscription_progress_live():
             task1 = progress_utils.userlist_overall_progress.add_task(
                 f"Getting the following accounts => {accounts} (this may take awhile)..."
             )

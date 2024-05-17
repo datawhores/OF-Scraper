@@ -240,7 +240,7 @@ async def download_fileobject_writer(
         loop = asyncio.get_event_loop()
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-        chunk_size = get_ideal_chunk_size(total)
+        chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
 
         async for chunk in r.iter_chunked(chunk_size):
             if downloadprogress:

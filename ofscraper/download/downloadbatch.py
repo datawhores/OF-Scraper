@@ -94,7 +94,7 @@ def process_dicts(username, model_id, filtered_medialist):
             for i in range(num_proc)
         ]
         [process.start() for process in processes]
-        with progress_utils.setupDownloadProgressBar(
+        with progress_utils.setup_download_progress_live(
             multi=True
         ):
             task1 = progress_utils.download_overall_progress.add_task(
@@ -171,7 +171,7 @@ def process_dicts(username, model_id, filtered_medialist):
                         process.terminate()
                 time.sleep(0.5)
             progress_utils.download_overall_progress.remove_task(task1)
-            progress_utils.download_progress_group.renderables[1].height = 0
+            progress_utils.multi_download_progress_group.renderables[1].height = 0
         setDirectoriesDate()
     except KeyboardInterrupt as E:
         try:
@@ -323,9 +323,9 @@ def process_dict_starter(
 
 def job_progress_helper(result):
     funct = {
-        "add_task": progress_utils.download_job_progress.add_task,
-        "update": progress_utils.download_job_progress.update,
-        "remove_task": progress_utils.download_job_progress.remove_task,
+        "add_task": progress_utils.multi_download_job_progress.add_task,
+        "update": progress_utils.multi_download_job_progress.update,
+        "remove_task": progress_utils.multi_download_job_progress.remove_task,
     }.get(result.pop("type"))
     if funct:
         try:

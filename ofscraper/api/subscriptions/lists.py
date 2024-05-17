@@ -39,7 +39,7 @@ attempt = contextvars.ContextVar("attempt")
 @run
 async def get_otherlist():
     out = []
-    with progress_utils.setup_subscription_progress(
+    with progress_utils.setup_subscription_progress_live(
         ):
         if any(
             [
