@@ -127,9 +127,9 @@ async def process_tasks_labels(tasks):
     responseArray = []
 
     page_count = 0
-    overall_progress = progress_utils.overall_progress
+    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = overall_progress.add_task(
+    page_task = api_overall_progress.add_task(
         f"Label Names Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -140,7 +140,7 @@ async def process_tasks_labels(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task,
                     description=f"Label Names Pages Progress: {page_count}",
                 )
@@ -169,7 +169,7 @@ async def process_tasks_labels(tasks):
                 log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
-    overall_progress.remove_task(page_task)
+    api_overall_progress.remove_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -243,9 +243,9 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
     responseDict = get_default_label_dict(labels)
 
     page_count = 0
-    overall_progress = progress_utils.overall_progress
+    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = overall_progress.add_task(
+    page_task = api_overall_progress.add_task(
         f"Labels Progress: {page_count}", visible=True
     )
 
@@ -255,7 +255,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             try:
                 label, new_posts, new_tasks = await task
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task, description=f"Labels Progress: {page_count}"
                 )
                 unduped_posts = label_dedupe(
@@ -309,7 +309,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
         )
     )
     trace_log_task(list(responseDict.values()), header="All Labels Content")
-    overall_progress.remove_task(page_task)
+    api_overall_progress.remove_task(page_task)
     return list(responseDict.values())
 
 

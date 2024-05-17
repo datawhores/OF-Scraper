@@ -54,8 +54,8 @@ async def get_paid_posts(model_id, username, c=None):
 
 async def process_tasks(tasks, model_id):
     page_count = 0
-    overall_progress = progress_utils.overall_progress
-    page_task = overall_progress.add_task(
+    api_overall_progress = progress_utils.api_overall_progress
+    page_task = api_overall_progress.add_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
     responseArray = []
@@ -68,7 +68,7 @@ async def process_tasks(tasks, model_id):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task,
                     description=f"Paid Content Pages Progress: {page_count}",
                 )
@@ -98,7 +98,7 @@ async def process_tasks(tasks, model_id):
                 continue
         tasks = new_tasks
 
-    overall_progress.remove_task(page_task)
+    api_overall_progress.remove_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -190,7 +190,7 @@ async def process_and_create_tasks():
         page_count = 0
         with progress_utils.setup_all_paid_live():
             job_progress = progress_utils.all_paid_progress
-            overall_progress = progress_utils.overall_progress
+            api_overall_progress = progress_utils.api_overall_progress
             async with sessionManager.sessionManager(
                 sem=constants.getattr("SCRAPE_PAID_SEMS"),
                 retries=constants.getattr("API_PAID_NUM_TRIES"),
@@ -225,7 +225,7 @@ async def process_and_create_tasks():
                 else:
                     tasks.append(asyncio.create_task(scrape_all_paid(c, job_progress)))
 
-                page_task = overall_progress.add_task(
+                page_task = api_overall_progress.add_task(
                     f"Pages Progress: {page_count}", visible=True
                 )
                 while tasks:
@@ -234,7 +234,7 @@ async def process_and_create_tasks():
                         try:
                             result, new_tasks_batch = await task
                             page_count = page_count + 1
-                            overall_progress.update(
+                            api_overall_progress.update(
                                 page_task, description=f"Pages Progress: {page_count}"
                             )
                             output.extend(result)
@@ -257,7 +257,7 @@ async def process_and_create_tasks():
                             log.traceback_(E)
                             log.traceback_(traceback.format_exc())
                     tasks = new_tasks
-                overall_progress.remove_task(page_task)
+                api_overall_progress.remove_task(page_task)
 
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
         log.trace(

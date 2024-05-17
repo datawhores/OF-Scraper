@@ -119,7 +119,7 @@ def setup_api_split_progress_live(stop=False):
             Layout(name="OF-Scaper", size=0, ratio=0),
         )
 
-        api_progress_group = Group(Panel(Group(username_progress,overall_progress)), layout)
+        api_progress_group = Group(Panel(Group(username_progress,api_overall_progress)), layout)
         live.update(api_progress_group,refresh=True)
         yield
 
@@ -238,7 +238,7 @@ def reset_all_api_areas():
 def set_up_progress():
     global timeline_progress
     global pinned_progress
-    global overall_progress
+    global api_overall_progress
     global username_progress
     global archived_progress
     global messages_progress
@@ -252,7 +252,7 @@ def set_up_progress():
     pinned_progress = Progress(
         "{task.description}", console=console_.get_temp_console()
     )
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
         console=console_.get_temp_console(),
@@ -287,14 +287,14 @@ def set_up_progress():
 
 def setup_all_paid_live():
     global all_paid_progress
-    global overall_progress
+    global api_overall_progress
     all_paid_progress = Progress("{task.description}")
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
         console=console_.get_temp_console(quiet=False),
     )
-    progress_group = Group(overall_progress, Panel(Group(all_paid_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(all_paid_progress)))
 
     return Live(
         progress_group,
@@ -303,14 +303,14 @@ def setup_all_paid_live():
         transient=True,
     )
 def set_up_api_timeline():
-    global overall_progress
+    global api_overall_progress
     global timeline_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting timeline posts...\n{task.description}"),
     )
     timeline_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(timeline_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(timeline_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -320,15 +320,15 @@ def set_up_api_timeline():
 
 
 def set_up_api_pinned():
-    global overall_progress
+    global api_overall_progress
     global pinned_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting pinned posts...\n{task.description}"),
         console=console_.get_temp_console(),
     )
     pinned_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(pinned_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(pinned_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -338,15 +338,15 @@ def set_up_api_pinned():
 
 
 def set_up_api_paid():
-    global overall_progress
+    global api_overall_progress
     global paid_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting paid posts...\n{task.description}"),
         console=console_.get_temp_console(),
     )
     paid_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(paid_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(paid_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -356,15 +356,15 @@ def set_up_api_paid():
 
 
 def set_up_api_messages():
-    global overall_progress
+    global api_overall_progress
     global messages_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting messages...\n{task.description}"),
         console=console_.get_temp_console(),
     )
     messages_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(messages_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(messages_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -374,15 +374,15 @@ def set_up_api_messages():
 
 
 def set_up_api_archived():
-    global overall_progress
+    global api_overall_progress
     global archived_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting archived...\n{task.description}"),
         console=console_.get_temp_console(),
     )
     archived_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(archived_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(archived_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -392,15 +392,15 @@ def set_up_api_archived():
 
 
 def set_up_api_stories():
-    global overall_progress
+    global api_overall_progress
     global stories_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting stories...\n{task.description}"),
         console=console_.get_temp_console(),
     )
     stories_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(stories_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(stories_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -410,14 +410,14 @@ def set_up_api_stories():
 
 
 def set_up_api_highlights_lists():
-    global overall_progress
+    global api_overall_progress
     global highlights_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting highlights lists...\n{task.description}"),
     )
     highlights_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(highlights_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -427,14 +427,14 @@ def set_up_api_highlights_lists():
 
 
 def set_up_api_highlights():
-    global overall_progress
+    global api_overall_progress
     global highlights_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting highlights via list..\n{task.description}"),
     )
     highlights_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(highlights_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(highlights_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -444,15 +444,15 @@ def set_up_api_highlights():
 
 
 def set_up_api_labels():
-    global overall_progress
+    global api_overall_progress
     global labelled_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting Labels\n{task.description}"),
         console=console_.get_temp_console(),
     )
     labelled_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(labelled_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,
@@ -462,15 +462,15 @@ def set_up_api_labels():
 
 
 def set_up_api_posts_labels():
-    global overall_progress
+    global api_overall_progress
     global labelled_progress
-    overall_progress = Progress(
+    api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("Getting Posts via labels\n{task.description}"),
         console=console_.get_temp_console(),
     )
     labelled_progress = Progress("{task.description}")
-    progress_group = Group(overall_progress, Panel(Group(labelled_progress)))
+    progress_group = Group(api_overall_progress, Panel(Group(labelled_progress)))
     return Live(
         progress_group,
         refresh_per_second=5,

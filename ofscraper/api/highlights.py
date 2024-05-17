@@ -105,8 +105,8 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
 async def process_stories_tasks(tasks):
     responseArray = []
     page_count = 0
-    overall_progress = progress_utils.overall_progress
-    page_task = overall_progress.add_task(
+    api_overall_progress = progress_utils.api_overall_progress
+    page_task = api_overall_progress.add_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
 
@@ -118,7 +118,7 @@ async def process_stories_tasks(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task,
                     description=f"Stories Content Pages Progress: {page_count}",
                 )
@@ -148,7 +148,7 @@ async def process_stories_tasks(tasks):
                 continue
 
         tasks = new_tasks
-    overall_progress.remove_task(page_task)
+    api_overall_progress.remove_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -241,9 +241,9 @@ async def process_task_get_highlight_list(tasks):
     highlightLists = []
 
     page_count = 0
-    overall_progress = progress_utils.overall_progress
+    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = overall_progress.add_task(
+    page_task = api_overall_progress.add_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -254,7 +254,7 @@ async def process_task_get_highlight_list(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task,
                     description=f"Highlights List Pages Progress: {page_count}",
                 )
@@ -272,7 +272,7 @@ async def process_task_get_highlight_list(tasks):
                 continue
         tasks = new_tasks
 
-    overall_progress.remove_task(page_task)
+    api_overall_progress.remove_task(page_task)
     log.trace(
         f"{common_logs.FINAL_IDS.format('Highlight List')} {map(lambda x:x,highlightLists)}"
     )
@@ -286,8 +286,8 @@ async def process_task_get_highlight_list(tasks):
 async def process_task_highlights(tasks):
     highlightResponse = []
     page_count = 0
-    overall_progress = progress_utils.overall_progress
-    page_task = overall_progress.add_task(
+    api_overall_progress = progress_utils.api_overall_progress
+    page_task = api_overall_progress.add_task(
         f"Highlight Content via List Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -298,7 +298,7 @@ async def process_task_highlights(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task,
                     description=f"Highlights Content via list Pages Progress: {page_count}",
                 )

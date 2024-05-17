@@ -86,8 +86,8 @@ async def get_messages(model_id, username, forced_after=None, c=None):
 async def process_tasks(tasks, model_id, after):
     page_count = 0
     responseArray = []
-    overall_progress = progress_utils.overall_progress
-    page_task = overall_progress.add_task(
+    api_overall_progress = progress_utils.api_overall_progress
+    page_task = api_overall_progress.add_task(
         f"Message Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -98,7 +98,7 @@ async def process_tasks(tasks, model_id, after):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                overall_progress.update(
+                api_overall_progress.update(
                     page_task,
                     description=f"Message Content Pages Progress: {page_count}",
                 )
@@ -128,7 +128,7 @@ async def process_tasks(tasks, model_id, after):
                 continue
         tasks = new_tasks
 
-    overall_progress.remove_task(page_task)
+    api_overall_progress.remove_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x:x['id'],responseArray))}"
     )
