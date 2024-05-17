@@ -26,19 +26,27 @@ import ofscraper.utils.live as progress_utils
 
 
 log = logging.getLogger("shared")
+like_str= "Performing Like on {name}"
+unlike_str= "Performing Unlike on {name}"
 
 
 @exit.exit_wrapper
-def process_like(post=None,model_id=None):
-    unfavorited_posts = get_posts_for_like(post)
+def process_like(posts=None,model_id=None,task=None,username=None,**kwargs):
+    progress_utils.switch_api_progress()
+    progress_utils.username_progress.update(task,description=like_str.format(name=username))
+    logging.getLogger("shared_other").warning(like_str.format(name=username))
+    unfavorited_posts = get_posts_for_like(posts)
     posts=pre_filter(posts)
     post_ids = get_post_ids(unfavorited_posts)
     like(model_id, post_ids)
 
 
 @exit.exit_wrapper
-def process_unlike(post=None,model_id=None):
-    favorited_posts = get_posts_for_unlike(post)
+def process_unlike(posts=None,model_id=None,task=None,username=None,**kwargs):
+    progress_utils.switch_api_progress()
+    progress_utils.username_progress.update(task,description=unlike_str.format(name=username))
+    logging.getLogger("shared_other").warning(unlike_str.format(name=username))
+    favorited_posts = get_posts_for_unlike(posts)
     posts=pre_filter(posts)
     post_ids = get_post_ids(favorited_posts)
     unlike(model_id, post_ids)
@@ -65,7 +73,7 @@ def filter_for_favorited(posts: list) -> list:
 
 
 def pre_filter(posts):
-    valid_post = list(filter(lambda x: x.opened and (x.responsetype=="Timeline" or x.responsetype=="Pinned" or x.responsetype=="Archived"), posts))
+    valid_post = list(filter(lambda x: x.opened and x.responsetype.capitalize() in {"Timeline","Archived","Pinned"},posts))
     seen = set()
     return [
         post for post in valid_post if post.id not in seen and not seen.add(post.id)

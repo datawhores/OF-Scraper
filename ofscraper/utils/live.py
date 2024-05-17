@@ -148,7 +148,7 @@ def setup_like_progress(stop=False):
         like_overall_progress=Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("{task.description}"),
-        BarColumn(),
+        BarColumn(table_column=Column(ratio=2)),
         MofNCompleteColumn(),
         )
         live.update(like_overall_progress,refresh=True)

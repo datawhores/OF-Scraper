@@ -23,11 +23,6 @@ import ofscraper.utils.live as progress_utils
 log = logging.getLogger("shared")
 
 
-
-progress_str="Progress {count}/{length}"
-data_str="Data Retrival on {name}"
-avatar_str="Avatar : {avatar}"
-area_str="Getting \[[bold blue]{areas}[/bold blue]] for [bold]{name}[/bold]\n[bold]Subscription Active:[/bold] {active}"
 download_str= "Downloading on {name}"
 
 

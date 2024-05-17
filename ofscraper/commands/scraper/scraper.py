@@ -20,6 +20,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.menu as menu
 import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.run as run
 import ofscraper.utils.system.network as network
 from ofscraper.__version__ import __version__
 from ofscraper.commands.scraper.runner import runner
@@ -50,8 +51,7 @@ def process_selected_areas():
 
 
 def daemon_process():
-    # functs = add_selected_areas()
-    # run.daemon_run_helper(*functs)
+    run.daemon_run_helper(runner)
     pass
 
 

@@ -31,7 +31,7 @@ import ofscraper.classes.posts as posts_
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
-from ofscraper.utils.args.areas import get_download_area,get_like_area
+from ofscraper.utils.args.areas import get_download_area,get_like_area,get_final_posts_area
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
@@ -48,7 +48,6 @@ from ofscraper.utils.context.run_async import run
 import ofscraper.utils.console as console
 
 log = logging.getLogger("shared")
-
 
 
 
@@ -143,7 +142,6 @@ async def process_paid_post(model_id, username, c):
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
-
 
 @free.space_checker
 async def process_stories(model_id, username, c):
@@ -513,9 +511,10 @@ async def process_task(model_id, username,ele, c=None):
     postObjs = []
     likeObjs=[]
     tasks = []
-    final_post_areas = set(get_download_area()+get_like_area())
+
     like_area=get_like_area()
     download_area=get_download_area()
+    final_post_areas=get_final_posts_area()
 
     async with c or sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
@@ -609,3 +608,4 @@ async def process_task(model_id, username,ele, c=None):
                     log.debug(E)
                     continue
     return mediaObjs, postObjs,likeObjs
+

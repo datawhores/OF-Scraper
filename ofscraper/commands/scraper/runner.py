@@ -19,6 +19,10 @@ import ofscraper.commands.scraper.actions.like as like_action
 
 
 log = logging.getLogger("shared")
+progress_str="Progress {count}/{length}"
+data_str="Data Retrival on {name}"
+avatar_str="Avatar : {avatar}"
+area_str="Getting \[[bold blue]{areas}[/bold blue]] for [bold]{name}[/bold]\n[bold]Subscription Active:[/bold] {active}"
 
 @exit.exit_wrapper
 def runner():
@@ -49,43 +53,46 @@ def normal():
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
     task = progress_utils.username_progress.add_task(
-                "Data Retrival+Downloading", total=length
+                "Data Retrival", total=length
     )
     for count,ele in enumerate(userdata):
         username = ele.name
         model_id = ele.id
         avatar=ele.avatar
         active=ele.active
-        
-        progress_utils.switch_api_progress()
-        logging.getLogger("shared_other").warning(download_action.progress_str.format(count=count+1,length=length))
-        logging.getLogger("shared_other").warning( download_action.data_str.format(name=username))
-        progress_utils.username_progress.update(task,description= download_action.data_str.format(name=username))
         try:
+            progress_utils.switch_api_progress()
+            logging.getLogger("shared_other").warning(progress_str.format(count=count+1,length=length))
+            logging.getLogger("shared_other").warning(data_str.format(name=username))
+            progress_utils.username_progress.update(task,description= data_str.format(name=username))
+      
             if constants.getattr("SHOW_AVATAR") and avatar:
-                logging.getLogger("shared_other").warning(download_action.avatar_str.format(avatar=avatar))
+                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
             logging.getLogger("shared_other").warning(
-                download_action.area_str.format(areas=",".join(areas.get_download_area()),name=username,active=active
+                area_str.format(areas=",".join(areas.get_download_area()),name=username,active=active
             ))
-            progress_utils.username_progress.update(task,description=download_action.area_str.format(areas=",".join(areas.get_download_area()),name=username,active=active))
+            progress_utils.username_progress.update(task,description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
 
             all_media, posts,like_posts= post_media_process(
                 ele, session=session
             )
             for action in actions:
                 if action=="download":
-                    download_action.downloader(ele=ele,posts=posts,media=all_media,task=task,model_id=model_id)
+                    download_action.downloader(ele=ele,posts=posts,media=all_media,task=task,model_id=model_id,username=username)
                 elif action=="like":
-                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id)
+                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id,username=username)
                 elif action=="unlike":
-                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id)
+                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id,username=username)
+            progress_utils.username_progress.update(task,advance=1)
+
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
             
-            
+    progress_utils.username_progress.remove_task(task)
+
 @exit.exit_wrapper
 def user_first():
     userdata=userselector.getselected_usernames(rescan=False)
@@ -107,40 +114,56 @@ def user_first():
         download_action.scrape_paid_all()
     
     for count,user in enumerate(userdata):
-        progress_utils.switch_api_progress()
-        progress_utils.username_progress.update(task,description=f"Data Retrival on {user.name}",advance=1)
-        logging.getLogger("shared_other").warning(f"\[{user.name}] Data Retrival Progress: {count+1}/{length} models")
-        data.update(process_user_first_data_retriver(user,session=session))
-        if count==5:
-            break
-        progress_utils.username_progress.remove(task)
+        try:
+            progress_utils.switch_api_progress()
+            progress_utils.username_progress.update(task,description=f"Data Retrival on {user.name}")
+            logging.getLogger("shared_other").warning(f"\[{user.name}] Data Retrival Progress: {count+1}/{length} models")
+            data.update(process_user_first_data_retriver(user,session=session))
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
+        progress_utils.username_progress.update(task,advance=1)
+    progress_utils.username_progress.remove_task(task)
+    task=progress_utils.username_progress.add_task("Action",total=length)
     for model_id, val in data.items():
         all_media = val["media"]
         posts = val["posts"]
         like_posts=val["like_posts"]
         ele=val["ele"]
-        for action in actions:
-            if action=="download":
-                download_action.downloader(ele=ele,posts=posts,media=all_media,task=task,model_id=model_id)
-            elif action=="like":
-                like_action.process_like(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id)
-            elif action=="unlike":
-                like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id)
+        username=val["username"]
+        try:
+            for action in actions:
+                if action=="download":
+                    download_action.downloader(ele=ele,posts=posts,media=all_media,task=task,model_id=model_id,username=username)
+                elif action=="like":
+                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id,username=username)
+                elif action=="unlike":
+                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id,username=username)
+            progress_utils.username_progress.update(task,advance=1)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
+    progress_utils.username_progress.remove_task(task)
 
-def process_user_first_data_retriver(ele,session=None,live=None):
+
+def process_user_first_data_retriver(ele,session=None):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
     active= ele.active
     if constants.getattr("SHOW_AVATAR") and avatar:
-        logging.getLogger("shared_other").warning(download_action.avatar_str.format(avatar))
+        logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
     if bool(areas.get_download_area()):
         logging.getLogger("shared_other").info(
-             download_action.format(areas=",".join(areas.get_download_area()),name=username,active=active
+             area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active
                 )
         )
     operations.table_init_create(model_id=model_id, username=username)
-    media, posts,like_posts = post_media_process(ele,session=session,live=live)
+    media, posts,like_posts = post_media_process(ele,session=session)
     return {
             model_id: {
                 "username": username,
