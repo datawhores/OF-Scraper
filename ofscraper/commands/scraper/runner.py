@@ -125,8 +125,7 @@ def user_first():
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
         progress_utils.username_progress.update(task,advance=1)
-    progress_utils.username_progress.remove_task(task)
-    task=progress_utils.username_progress.add_task("Action",total=length)
+    task2=progress_utils.username_progress.add_task("Action",total=length)
     for model_id, val in data.items():
         all_media = val["media"]
         posts = val["posts"]
@@ -138,16 +137,18 @@ def user_first():
                 if action=="download":
                     download_action.downloader(ele=ele,posts=posts,media=all_media,task=task,model_id=model_id,username=username)
                 elif action=="like":
-                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id,username=username)
+                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,task=task2,model_id=model_id,username=username)
                 elif action=="unlike":
-                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,task=task,model_id=model_id,username=username)
-            progress_utils.username_progress.update(task,advance=1)
+                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,task=task2,model_id=model_id,username=username)
+            progress_utils.username_progress.update(task2,advance=1)
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
     progress_utils.username_progress.remove_task(task)
+    progress_utils.username_progress.remove_task(task2)
+
 
 
 def process_user_first_data_retriver(ele,session=None):
