@@ -15,13 +15,10 @@ import asyncio
 import logging
 import traceback
 
-from rich.live import Live
 
 import ofscraper.download.shared.globals as common_globals
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
-import ofscraper.utils.console as console
-import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.other as other_logs
