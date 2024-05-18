@@ -42,7 +42,7 @@ sem = None
 
 
 @run
-async def get_archived_posts_progress(model_id, username, forced_after=None, c=None):
+async def get_archived_posts(model_id, username, forced_after=None, c=None):
 
     oldarchived = None
     if not settings.get_api_cache_disabled():
@@ -58,34 +58,15 @@ async def get_archived_posts_progress(model_id, username, forced_after=None, c=N
     splitArrays = get_split_array(oldarchived, after)
     tasks = get_tasks(splitArrays, c, model_id, after)
     data = await process_tasks(tasks, model_id, after)
-    progress_utils.archived_layout.visible = False
     return data
 
-
-@run
-async def get_archived_posts(model_id, username, forced_after=None, c=None):
-    if not settings.get_api_cache_disabled():
-        oldarchived = await get_archived_post_info(model_id=model_id, username=username)
-    else:
-        oldarchived = []
-    trace_log_old(oldarchived)
-
-    log.debug(f"[bold]Archived Cache[/bold] {len(oldarchived)} found")
-    oldarchived = list(filter(lambda x: x is not None, oldarchived))
-    after = await get_after(model_id, username, forced_after)
-    time_log(username, after)
-    with progress_utils.set_up_api_archived():
-        splitArrays = get_split_array(oldarchived, after)
-        tasks = get_tasks(splitArrays, c, model_id, after)
-        return await process_tasks(tasks, model_id, after)
 
 
 async def process_tasks(tasks, model_id, after):
     responseArray = []
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Archived Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -96,7 +77,7 @@ async def process_tasks(tasks, model_id, after):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Archived Content Pages Progress: {page_count}",
                 )
@@ -128,7 +109,7 @@ async def process_tasks(tasks, model_id, after):
                 continue
             tasks = new_tasks
 
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
 
     log.debug(
         f"{common_logs.FINAL_IDS.format('Archived')} {list(map(lambda x:x['id'],responseArray))}"
@@ -161,7 +142,6 @@ def get_split_array(oldarchived, after):
 
 def get_tasks(splitArrays, c, model_id, after):
     tasks = []
-    job_progress = progress_utils.archived_progress
     before = arrow.get(read_args.retriveArgs().before or arrow.now()).float_timestamp
     if len(splitArrays) > 2:
         tasks.append(
@@ -169,7 +149,7 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
@@ -182,7 +162,7 @@ def get_tasks(splitArrays, c, model_id, after):
                     scrape_archived_posts(
                         c,
                         model_id,
-                        job_progress=job_progress,
+                        
                         required_ids=set(
                             [ele.get("created_at") for ele in splitArrays[i]]
                         ),
@@ -199,7 +179,7 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     timestamp=splitArrays[-1][0].get("created_at"),
                     offset=True,
                     required_ids=set([before]),
@@ -213,7 +193,7 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     timestamp=splitArrays[0][0].get("created_at"),
                     offset=True,
                     required_ids=set([before]),
@@ -227,7 +207,7 @@ def get_tasks(splitArrays, c, model_id, after):
                 scrape_archived_posts(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     timestamp=after,
                     offset=True,
                     required_ids=set([before]),
@@ -299,7 +279,7 @@ async def get_after(model_id, username, forced_after=None):
 
 
 async def scrape_archived_posts(
-    c, model_id, job_progress=None, timestamp=None, required_ids=None, offset=False
+    c, model_id, timestamp=None, required_ids=None, offset=False
 ) -> list:
     global sem
     posts = None
@@ -319,14 +299,14 @@ async def scrape_archived_posts(
     posts = []
     try:
         task = (
-            job_progress.add_task(
-                f"Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
+            progress_utils.add_apijob_task(
+                f"[Archived] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
                 visible=True,
             )
-            if job_progress
-            else None
+            
         )
         async with c.requests_async(url) as r:
+
             posts = (await r.json_())["list"]
             log_id = f"timestamp:{arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}"
             if not bool(posts):
@@ -372,7 +352,7 @@ async def scrape_archived_posts(
                             scrape_archived_posts(
                                 c,
                                 model_id,
-                                job_progress=job_progress,
+                                
                                 timestamp=posts[-1]["postedAtPrecise"],
                                 required_ids=required_ids,
                                 offset=False,
@@ -386,7 +366,8 @@ async def scrape_archived_posts(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-        job_progress.remove_task(task) if job_progress and task else None
+        progress_utils.remove_apijob_task(task)
+
     return posts, new_tasks
 
 

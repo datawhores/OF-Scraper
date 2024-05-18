@@ -3,10 +3,12 @@ from rich.panel import Panel
 
 import ofscraper.utils.settings as settings
 
-from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_job_progress,userlist_overall_progress,like_overall_progress
+from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_job_progress,userlist_overall_progress,like_overall_progress,api_job_progress,api_overall_progress
+import ofscraper.utils.console as console
+
 
                                                     #activity group
-activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True)))
+activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True),title="Activity Progress"))
 
 #download
 
@@ -23,7 +25,11 @@ userlist_group=Group(Panel(Group(userlist_overall_progress,userlist_job_progress
 
 #like
 like_progress_group=Panel(Group(like_overall_progress,activity_group))
+#activity
+api_progress_group = Group(Panel(api_overall_progress,title="API Progress"),Panel(api_job_progress,title="API Messages",height=console.get_shared_console().size[-1] - 19))
 
+    
+#funct
 def get_download_group():
     global download_progress_group
     if not download_progress_group:

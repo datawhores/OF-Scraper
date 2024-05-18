@@ -77,7 +77,7 @@ async def post_media_process(ele, session=None):
 @free.space_checker
 async def process_messages(model_id, username, c):
     try:
-        messages_ = await messages.get_messages_progress(model_id, username, c=c)
+        messages_ = await messages.get_messages(model_id, username, c=c)
         messages_ = list(map(lambda x: posts_.Post(x, model_id, username), messages_))
         await operations.make_messages_table_changes(
             messages_,
@@ -110,7 +110,7 @@ async def process_messages(model_id, username, c):
 @free.space_checker
 async def process_paid_post(model_id, username, c):
     try:
-        paid_content = await paid.get_paid_posts_progress(username, model_id, c=c)
+        paid_content = await paid.get_paid_posts(username, model_id, c=c)
         paid_content = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
@@ -146,7 +146,7 @@ async def process_paid_post(model_id, username, c):
 @free.space_checker
 async def process_stories(model_id, username, c):
     try:
-        stories = await highlights.get_stories_post_progress(model_id, c=c)
+        stories = await highlights.get_stories_post(model_id, c=c)
         stories = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, responsetype="stories"),
@@ -179,7 +179,7 @@ async def process_stories(model_id, username, c):
 @free.space_checker
 async def process_highlights(model_id, username, c):
     try:
-        highlights_ = await highlights.get_highlight_post_progress(model_id, c=c)
+        highlights_ = await highlights.get_highlight_post(model_id, c=c)
         highlights_ = list(
             map(
                 lambda x: posts_.Post(x, model_id, username, responsetype="highlights"),
@@ -216,7 +216,7 @@ async def process_highlights(model_id, username, c):
 @free.space_checker
 async def process_timeline_posts(model_id, username, c):
     try:
-        timeline_posts = await timeline.get_timeline_posts_progress(
+        timeline_posts = await timeline.get_timeline_posts(
             model_id, username, c=c
         )
 
@@ -260,7 +260,7 @@ async def process_timeline_posts(model_id, username, c):
 @free.space_checker
 async def process_archived_posts(model_id, username, c):
     try:
-        archived_posts = await archive.get_archived_posts_progress(
+        archived_posts = await archive.get_archived_posts(
             model_id, username, c=c
         )
         archived_posts = list(
@@ -304,7 +304,7 @@ async def process_archived_posts(model_id, username, c):
 @free.space_checker
 async def process_pinned_posts(model_id, username, c):
     try:
-        pinned_posts = await pinned.get_pinned_posts_progress(model_id, c=c)
+        pinned_posts = await pinned.get_pinned_posts(model_id, c=c)
         pinned_posts = list(
             map(lambda x: posts_.Post(x, model_id, username), pinned_posts)
         )
@@ -539,7 +539,6 @@ async def process_task(model_id, username,ele, c=None):
                     tasks.append(
                         asyncio.create_task(process_pinned_posts(model_id, username, c))
                     )
-                    progress_utils.pinned_layout.visible = True
                     final_post_areas.remove("Pinned")
                 elif "Timeline" in final_post_areas:
                     tasks.append(
@@ -547,7 +546,6 @@ async def process_task(model_id, username,ele, c=None):
                             process_timeline_posts(model_id, username, c)
                         )
                     )
-                    progress_utils.timeline_layout.visible = True
                     final_post_areas.remove("Timeline")
                 elif "Archived" in final_post_areas:
                     tasks.append(
@@ -555,37 +553,31 @@ async def process_task(model_id, username,ele, c=None):
                             process_archived_posts(model_id, username, c)
                         )
                     )
-                    progress_utils.archived_layout.visible = True
                     final_post_areas.remove("Archived")
                 elif "Purchased" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_paid_post(model_id, username, c))
                     )
-                    progress_utils.paid_layout.visible = True
                     final_post_areas.remove("Purchased")
                 elif "Messages" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_messages(model_id, username, c))
                     )
                     final_post_areas.remove("Messages")
-                    progress_utils.messages_layout.visible = True
                 elif "Highlights" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_highlights(model_id, username, c))
                     )
-                    progress_utils.highlights_layout.visible = True
                     final_post_areas.remove("Highlights")
                 elif "Stories" in final_post_areas:
                     tasks.append(
                         asyncio.create_task(process_stories(model_id, username, c))
                     )
-                    progress_utils.stories_layout.visible = True
                     final_post_areas.remove("Stories")
                 elif "Labels" in final_post_areas and ele.active:
                     tasks.append(
                         asyncio.create_task(process_labels(model_id, username, c))
                     )
-                    progress_utils.labelled_layout.visible = True
                     final_post_areas.remove("Labels")
             if not bool(tasks):
                 break

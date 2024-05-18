@@ -47,7 +47,7 @@ async def get_labels_data_progress(model_id, c=None):
     tasks = []
     tasks.append(
         asyncio.create_task(
-            scrape_labels(c, model_id, job_progress=progress_utils.labelled_progress)
+            scrape_labels(c, model_id)
         )
     )
     progress_utils.labelled_layout.visible = False
@@ -62,7 +62,7 @@ async def get_posts_for_labels_progress(labels, model_id, c=None):
         tasks.append(
             asyncio.create_task(
                 scrape_posts_labels(
-                    c, label, model_id, job_progress=progress_utils.labelled_progress
+                    c, label, model_id
                 )
             )
         )
@@ -96,7 +96,7 @@ async def get_labels_data(model_id, c=None):
         tasks.append(
             asyncio.create_task(
                 scrape_labels(
-                    c, model_id, job_progress=progress_utils.labelled_progress
+                    c, model_id
                 )
             )
         )
@@ -113,8 +113,7 @@ async def get_posts_for_labels(labels, model_id, c=None):
                     scrape_posts_labels(
                         c,
                         label,
-                        model_id,
-                        job_progress=progress_utils.labelled_progress,
+                        model_id
                     )
                 )
             )
@@ -127,9 +126,8 @@ async def process_tasks_labels(tasks):
     responseArray = []
 
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Label Names Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -140,7 +138,7 @@ async def process_tasks_labels(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Label Names Pages Progress: {page_count}",
                 )
@@ -169,7 +167,7 @@ async def process_tasks_labels(tasks):
                 log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Labels Names')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -179,7 +177,7 @@ async def process_tasks_labels(tasks):
     return responseArray
 
 
-async def scrape_labels(c, model_id, job_progress=None, offset=0):
+async def scrape_labels(c, model_id, offset=0):
     labels = None
     new_tasks = []
     await asyncio.sleep(1)
@@ -189,14 +187,14 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
     try:
 
         task = (
-            job_progress.add_task(
+            progress_utils.add_apijob_task(
                 f"labels offset -> {offset}",
                 visible=True,
             )
-            if job_progress
-            else None
+            
         )
         async with c.requests_async(url) as r:
+
             data = await r.json_()
             labels = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labels names found {len(labels)}")
@@ -220,7 +218,7 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
                         scrape_labels(
                             c,
                             model_id,
-                            job_progress=job_progress,
+                            
                             offset=offset,
                         )
                     )
@@ -236,16 +234,15 @@ async def scrape_labels(c, model_id, job_progress=None, offset=0):
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task is not None else None)
+        progress_utils.remove_apijob_task(task)
 
 
 async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
     responseDict = get_default_label_dict(labels)
 
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Labels Progress: {page_count}", visible=True
     )
 
@@ -255,7 +252,7 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
             try:
                 label, new_posts, new_tasks = await task
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task, description=f"Labels Progress: {page_count}"
                 )
                 unduped_posts = label_dedupe(
@@ -309,11 +306,11 @@ async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
         )
     )
     trace_log_task(list(responseDict.values()), header="All Labels Content")
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
     return list(responseDict.values())
 
 
-async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
+async def scrape_posts_labels(c, label, model_id, offset=0):
     posts = None
     new_tasks = []
     url = constants.getattr("labelledPostsEP").format(model_id, offset, label["id"])
@@ -323,14 +320,14 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
     try:
 
         task = (
-            job_progress.add_task(
+            progress_utils.add_apijob_task(
                 f": getting posts from label -> {label['name']}",
                 visible=True,
             )
-            if job_progress
-            else None
+            
         )
         async with c.requests_async(url) as r:
+
             data = await r.json_()
             posts = list(filter(lambda x: isinstance(x, list), data.values()))[0]
             log.debug(f"offset:{offset} -> labelled posts found {len(posts)}")
@@ -357,7 +354,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
                             c,
                             label,
                             model_id,
-                            job_progress=job_progress,
+                            
                             offset=offset,
                         )
                     )
@@ -372,7 +369,7 @@ async def scrape_posts_labels(c, label, model_id, job_progress=None, offset=0):
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task is not None else None)
+        progress_utils.remove_apijob_task(task)
 
     return label, posts, new_tasks
 

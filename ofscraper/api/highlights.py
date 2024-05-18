@@ -29,35 +29,32 @@ log = logging.getLogger("shared")
 ####
 ##############################################################################
 @run
-async def get_stories_post_progress(model_id, c=None):
+async def get_stories_post(model_id, c=None):
     tasks = []
-    job_progress = progress_utils.stories_progress
 
     tasks.append(
-        asyncio.create_task(scrape_stories(c, model_id, job_progress=job_progress))
+        asyncio.create_task(scrape_stories(c, model_id))
     )
 
     data = await process_stories_tasks(tasks)
 
-    progress_utils.stories_layout.visible = False
     return data
 
 
 @run
 async def get_stories_post(model_id, c=None):
     tasks = []
-    with progress_utils.set_up_api_stories():
-        tasks.append(
+    tasks.append(
             asyncio.create_task(
                 scrape_stories(
-                    c, model_id, job_progress=progress_utils.stories_progress
+                    c, model_id
                 )
             )
         )
-        return await process_stories_tasks(tasks)
+    return await process_stories_tasks(tasks)
 
 
-async def scrape_stories(c, user_id, job_progress=None) -> list:
+async def scrape_stories(c, user_id) -> list:
     stories = None
     new_tasks = []
     task = None
@@ -66,14 +63,13 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
     url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         task = (
-            job_progress.add_task(
-                f"user id -> {user_id}",
+            progress_utils.add_apijob_task(
+               f"[Stories] user id -> {user_id}",
                 visible=True,
             )
-            if job_progress
-            else None
         )
         async with c.requests_async(url=url) as r:
+
             stories = await r.json_()
             log.debug(
                 f"stories: -> found stories ids {list(map(lambda x:x.get('id'),stories))}"
@@ -97,7 +93,8 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task is not None else None)
+        progress_utils.remove_apijob_task(task)
+
 
     return stories, new_tasks
 
@@ -105,8 +102,7 @@ async def scrape_stories(c, user_id, job_progress=None) -> list:
 async def process_stories_tasks(tasks):
     responseArray = []
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Stories Pages Progress: {page_count}", visible=True
     )
 
@@ -118,7 +114,7 @@ async def process_stories_tasks(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Stories Content Pages Progress: {page_count}",
                 )
@@ -148,7 +144,7 @@ async def process_stories_tasks(tasks):
                 continue
 
         tasks = new_tasks
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Stories')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -171,29 +167,29 @@ async def process_stories_tasks(tasks):
 
 
 @run
-async def get_highlight_post_progress(model_id, c=None):
-    highlightLists = await get_highlight_list_progress(model_id, c)
-    return await get_highlights_via_list_progress(highlightLists, c)
+async def get_highlight_post(model_id, c=None):
+    highlightLists = await get_highlight_list(model_id, c)
+    return await get_highlights_via_list(highlightLists, c)
 
 
-async def get_highlight_list_progress(model_id, c=None):
+async def get_highlight_list(model_id, c=None):
     tasks = []
     tasks.append(
         asyncio.create_task(
             scrape_highlight_list(
-                c, model_id, job_progress=progress_utils.highlights_progress
+                c, model_id
             )
         )
     )
     return await process_task_get_highlight_list(tasks)
 
 
-async def get_highlights_via_list_progress(highlightLists, c=None):
+async def get_highlights_via_list(highlightLists, c=None):
     tasks = []
     [
         tasks.append(
             asyncio.create_task(
-                scrape_highlights(c, i, job_progress=progress_utils.highlights_progress)
+                scrape_highlights(c, i)
             )
         )
         for i in highlightLists
@@ -201,49 +197,13 @@ async def get_highlights_via_list_progress(highlightLists, c=None):
     return await process_task_highlights(tasks)
 
 
-@run
-async def get_highlight_post(model_id, c=None):
-    highlightList = await get_highlight_list(model_id, c)
-    return await get_highlights_via_list(highlightList, c)
-
-
-async def get_highlight_list(model_id, c=None):
-    with progress_utils.set_up_api_highlights_lists():
-        tasks = []
-        tasks.append(
-            asyncio.create_task(
-                scrape_highlight_list(
-                    c, model_id, job_progress=progress_utils.highlights_progress
-                )
-            )
-        )
-        return await process_task_get_highlight_list(tasks)
-
-
-async def get_highlights_via_list(highlightLists, c):
-    tasks = []
-    with progress_utils.set_up_api_highlights():
-
-        [
-            tasks.append(
-                asyncio.create_task(
-                    scrape_highlights(
-                        c, i, job_progress=progress_utils.highlights_progress
-                    )
-                )
-            )
-            for i in highlightLists
-        ]
-        return await process_task_highlights(tasks)
-
 
 async def process_task_get_highlight_list(tasks):
     highlightLists = []
 
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
 
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Highlights List Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -254,7 +214,7 @@ async def process_task_get_highlight_list(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Highlights List Pages Progress: {page_count}",
                 )
@@ -272,7 +232,7 @@ async def process_task_get_highlight_list(tasks):
                 continue
         tasks = new_tasks
 
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
     log.trace(
         f"{common_logs.FINAL_IDS.format('Highlight List')} {map(lambda x:x,highlightLists)}"
     )
@@ -286,8 +246,7 @@ async def process_task_get_highlight_list(tasks):
 async def process_task_highlights(tasks):
     highlightResponse = []
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Highlight Content via List Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -298,7 +257,7 @@ async def process_task_highlights(tasks):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Highlights Content via list Pages Progress: {page_count}",
                 )
@@ -343,7 +302,7 @@ async def process_task_highlights(tasks):
     return highlightResponse
 
 
-async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list:
+async def scrape_highlight_list(c, user_id, offset=0) -> list:
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("highlightsWithStoriesEP").format(user_id, offset)
@@ -351,14 +310,13 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
 
     try:
         task = (
-            job_progress.add_task(
-                f"scraping highlight list  offset-> {offset}",
+            progress_utils.add_apijob_task(
+                f"[Highlights] scraping highlight list  offset-> {offset}",
                 visible=True,
             )
-            if job_progress
-            else None
         )
         async with c.requests_async(url) as r:
+
             resp_data = await r.json_()
             log.trace(f"highlights list: -> found highlights list data {resp_data}")
             data = get_highlightList(resp_data)
@@ -373,12 +331,13 @@ async def scrape_highlight_list(c, user_id, job_progress=None, offset=0) -> list
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task is not None else None)
+        progress_utils.remove_apijob_task(task)
+
 
     return data, new_tasks
 
 
-async def scrape_highlights(c, id, job_progress=None) -> list:
+async def scrape_highlights(c, id) -> list:
     new_tasks = []
     await asyncio.sleep(1)
     url = constants.getattr("storyEP").format(id)
@@ -386,14 +345,13 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
 
     try:
         task = (
-            job_progress.add_task(
-                f"highlights id -> {id}",
+            progress_utils.add_apijob_task(
+                f"[Highlights]  highlights id -> {id}",
                 visible=True,
             )
-            if job_progress
-            else None
         )
         async with c.requests_async(url=url) as r:
+
             resp_data = await r.json_()
             log.trace(f"highlights: -> found highlights data {resp_data}")
             log.debug(
@@ -409,7 +367,7 @@ async def scrape_highlights(c, id, job_progress=None) -> list:
         raise E
 
     finally:
-        (job_progress.remove_task(task) if job_progress and task is not None else None)
+        progress_utils.remove_apijob_task(task)
 
     return resp_data["stories"], new_tasks
 

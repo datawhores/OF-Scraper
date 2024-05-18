@@ -28,34 +28,22 @@ log = logging.getLogger("shared")
 
 
 @run
-async def get_paid_posts_progress(username, model_id, c=None):
+async def get_paid_posts(username, model_id, c=None):
     tasks = []
 
-    job_progress = progress_utils.paid_progress
     tasks.append(
-        asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
+        asyncio.create_task(scrape_paid(c, username))
     )
     data = await process_tasks(tasks, model_id)
 
-    progress_utils.paid_layout.visible = False
     return data
 
 
-@run
-async def get_paid_posts(model_id, username, c=None):
-    tasks = []
-    with progress_utils.set_up_api_paid():
-        job_progress = progress_utils.paid_progress
-        tasks.append(
-            asyncio.create_task(scrape_paid(c, username, job_progress=job_progress))
-        )
-        return await process_tasks(tasks, model_id)
 
 
 async def process_tasks(tasks, model_id):
     page_count = 0
-    api_overall_progress = progress_utils.api_overall_progress
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Paid Content Pages Progress: {page_count}", visible=True
     )
     responseArray = []
@@ -68,7 +56,7 @@ async def process_tasks(tasks, model_id):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Paid Content Pages Progress: {page_count}",
                 )
@@ -98,7 +86,7 @@ async def process_tasks(tasks, model_id):
                 continue
         tasks = new_tasks
 
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Paid')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -113,7 +101,7 @@ async def process_tasks(tasks, model_id):
 
 
 @run
-async def scrape_paid(c, username, job_progress=None, offset=0):
+async def scrape_paid(c, username, offset=0):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
     """
@@ -127,18 +115,17 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
 
         task = (
             (
-                job_progress.add_task(
+                progress_utils.add_apijob_task(
                     f"scrape paid offset -> {offset} username -> {username}",
                     visible=True,
                 )
-                if job_progress
-                else None
+
             )
-            if job_progress
-            else None
+            
         )
 
         async with c.requests_async(url) as r:
+
             data = await r.json_()
             log.trace("paid raw {posts}".format(posts=data))
 
@@ -154,10 +141,9 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
                 offset += len(media)
                 new_tasks.append(
                     asyncio.create_task(
-                        scrape_paid(c, username, job_progress, offset=offset)
+                        scrape_paid(c, username, offset=offset)
                     )
                 )
-            (job_progress.remove_task(task) if task and job_progress else None)
     except asyncio.TimeoutError:
         raise Exception(f"Task timed out {url}")
     except Exception as E:
@@ -167,8 +153,7 @@ async def scrape_paid(c, username, job_progress=None, offset=0):
         raise E
 
     finally:
-        job_progress.remove_task(task) if task and job_progress else None
-
+        progress_utils.remove_apijob_task(task)
     return media, new_tasks
 
 
@@ -189,8 +174,7 @@ async def process_and_create_tasks():
         tasks = []
         page_count = 0
         with progress_utils.setup_all_paid_live():
-            job_progress = progress_utils.all_paid_progress
-            api_overall_progress = progress_utils.api_overall_progress
+        
             async with sessionManager.sessionManager(
                 sem=constants.getattr("SCRAPE_PAID_SEMS"),
                 retries=constants.getattr("API_PAID_NUM_TRIES"),
@@ -207,7 +191,6 @@ async def process_and_create_tasks():
                             asyncio.create_task(
                                 scrape_all_paid(
                                     c,
-                                    job_progress,
                                     required=min_posts,
                                     offset=splitArrays[i],
                                 )
@@ -218,15 +201,15 @@ async def process_and_create_tasks():
                     tasks.append(
                         asyncio.create_task(
                             scrape_all_paid(
-                                c, job_progress, offset=splitArrays[-1], required=None
+                                c, offset=splitArrays[-1], required=None
                             )
                         )
                     )
                 else:
-                    tasks.append(asyncio.create_task(scrape_all_paid(c, job_progress)))
+                    tasks.append(asyncio.create_task(scrape_all_paid(c)))
 
-                page_task = api_overall_progress.add_task(
-                    f"Pages Progress: {page_count}", visible=True
+                page_task = progress_utils.add_api_task(
+                    f"[Purchased] Pages Progress: {page_count}", visible=True
                 )
                 while tasks:
                     new_tasks = []
@@ -234,7 +217,7 @@ async def process_and_create_tasks():
                         try:
                             result, new_tasks_batch = await task
                             page_count = page_count + 1
-                            api_overall_progress.update(
+                            progress_utils.update_api_task(
                                 page_task, description=f"Pages Progress: {page_count}"
                             )
                             output.extend(result)
@@ -257,7 +240,7 @@ async def process_and_create_tasks():
                             log.traceback_(E)
                             log.traceback_(traceback.format_exc())
                     tasks = new_tasks
-                api_overall_progress.remove_task(page_task)
+                progress_utils.remove_api_task(page_task)
 
         log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
         log.trace(
@@ -286,7 +269,7 @@ def create_all_paid_dict(paid_content):
     return user_dict
 
 
-async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
+async def scrape_all_paid(c, offset=0, required=None):
     """Takes headers to access onlyfans as an argument and then checks the purchased content
     url to look for any purchased content. If it finds some it will return it as a list.
     """
@@ -297,12 +280,13 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
     url = constants.getattr("purchased_contentALL").format(offset)
     try:
 
-        task = job_progress.add_task(
+        task = progress_utils.add_apijob_task(
             f"scrape entire paid page offset={offset}",
             visible=True,
         )
 
         async with c.requests_async(url) as r:
+
             log_id = f"offset {offset or 0}:"
             data = await r.json_()
             media = list(filter(lambda x: isinstance(x, list), data.values()))[0]
@@ -323,7 +307,7 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
             if required is None:
                 new_tasks.append(
                     asyncio.create_task(
-                        scrape_all_paid(c, job_progress, offset=offset + len(media))
+                        scrape_all_paid(c, offset=offset + len(media))
                     )
                 )
             elif len(media) < required:
@@ -331,7 +315,6 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
                     asyncio.create_task(
                         scrape_all_paid(
                             c,
-                            job_progress,
                             offset=offset + len(media),
                             required=required - len(media),
                         )
@@ -348,7 +331,8 @@ async def scrape_all_paid(c, job_progress=None, offset=0, required=None):
         raise E
 
     finally:
-        job_progress.remove_task(task)
+        progress_utils.remove_apijob_task(task)
+
 
 
 def set_check(model_id, unduped):

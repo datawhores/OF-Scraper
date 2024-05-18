@@ -40,7 +40,7 @@ sleeper = None
 
 
 @run
-async def get_messages_progress(model_id, username, forced_after=None, c=None):
+async def get_messages(model_id, username, forced_after=None, c=None):
     global after
     oldmessages = None
     if not settings.get_api_cache_disabled():
@@ -59,35 +59,13 @@ async def get_messages_progress(model_id, username, forced_after=None, c=None):
     get_sleeper(reset=True)
     tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
     data = await process_tasks(tasks, model_id, after)
-    progress_utils.messages_layout.visible = False
     return data
-
-
-@run
-async def get_messages(model_id, username, forced_after=None, c=None):
-    oldmessages = None
-    if not settings.get_api_cache_disabled():
-        oldmessages = await get_messages_post_info(model_id=model_id, username=username)
-    else:
-        oldmessages = []
-    trace_log_old(oldmessages)
-
-    before = (read_args.retriveArgs().before).float_timestamp
-    after = await get_after(model_id, username, forced_after)
-    log_after_before(after, before, username)
-
-    filteredArray = get_filterArray(after, before, oldmessages)
-    splitArrays = get_split_array(filteredArray)
-    with progress_utils.set_up_api_messages():
-        tasks = get_tasks(splitArrays, filteredArray, oldmessages, model_id, c)
-        return await process_tasks(tasks, model_id, after)
 
 
 async def process_tasks(tasks, model_id, after):
     page_count = 0
     responseArray = []
-    api_overall_progress = progress_utils.api_overall_progress
-    page_task = api_overall_progress.add_task(
+    page_task = progress_utils.add_api_task(
         f"Message Content Pages Progress: {page_count}", visible=True
     )
     seen = set()
@@ -98,7 +76,7 @@ async def process_tasks(tasks, model_id, after):
                 result, new_tasks_batch = await task
                 new_tasks.extend(new_tasks_batch)
                 page_count = page_count + 1
-                api_overall_progress.update(
+                progress_utils.update_api_task(
                     page_task,
                     description=f"Message Content Pages Progress: {page_count}",
                 )
@@ -128,7 +106,7 @@ async def process_tasks(tasks, model_id, after):
                 continue
         tasks = new_tasks
 
-    api_overall_progress.remove_task(page_task)
+    progress_utils.remove_api_task(page_task)
     log.debug(
         f"{common_logs.FINAL_IDS.format('Messages')} {list(map(lambda x:x['id'],responseArray))}"
     )
@@ -209,7 +187,6 @@ def get_split_array(filteredArray):
 
 def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
     tasks = []
-    job_progress = progress_utils.messages_progress
     # special case pass after to stop work
     if len(splitArrays) > 2:
         tasks.append(
@@ -217,7 +194,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     message_id=(splitArrays[0][0].get("post_id")),
                     required_ids=set([ele.get("created_at") for ele in splitArrays[0]]),
                 )
@@ -229,7 +206,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                     scrape_messages(
                         c,
                         model_id,
-                        job_progress=job_progress,
+                        
                         message_id=splitArrays[i - 1][-1].get("post_id"),
                         required_ids=set(
                             [ele.get("created_at") for ele in splitArrays[i]]
@@ -245,7 +222,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     message_id=splitArrays[-1][-1].get("post_id"),
                     required_ids=set([after]),
                 )
@@ -258,7 +235,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     required_ids=set([after]),
                     message_id=(
                         splitArrays[0][0].get("post_id")
@@ -275,7 +252,7 @@ def get_tasks(splitArrays, filteredArray, oldmessages, model_id, c):
                 scrape_messages(
                     c,
                     model_id,
-                    job_progress=job_progress,
+                    
                     message_id=None,
                     required_ids=set([after]),
                 )
@@ -301,7 +278,7 @@ def set_check(unduped, model_id, after):
 
 
 async def scrape_messages(
-    c, model_id, job_progress=None, message_id=None, required_ids=None
+    c, model_id, message_id=None, required_ids=None
 ) -> list:
     messages = None
     ep = (
@@ -318,11 +295,10 @@ async def scrape_messages(
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
             task = (
-                job_progress.add_task(
-                    f": Message ID-> {message_id if message_id else 'initial'}"
+                progress_utils.add_apijob_task(
+                    f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
                 )
-                if job_progress
-                else None
+
             )
             messages = (await r.json_())["list"]
             log_id = (
@@ -379,7 +355,7 @@ async def scrape_messages(
                             scrape_messages(
                                 c,
                                 model_id,
-                                job_progress=job_progress,
+                                
                                 message_id=messages[-1]["id"],
                                 required_ids=required_ids,
                             )
@@ -393,7 +369,7 @@ async def scrape_messages(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-        (job_progress.remove_task(task) if job_progress and task is not None else None)
+       progress_utils.remove_apijob_task(task)
     return messages, new_tasks
 
 

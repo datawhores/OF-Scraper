@@ -101,7 +101,7 @@ async def get_lists():
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
             tasks.append(asyncio.create_task(scrape_for_list(c)))
-            page_task = progress_utils.userlist_overall_progress.add_task(
+            page_task = progress_utils.add_userlist_task(
                 f"UserList Pages Progress: {page_count}", visible=True
             )
             while tasks:
@@ -121,7 +121,7 @@ async def get_lists():
                         log.traceback_(traceback.format_exc())
                         continue
                 tasks = new_tasks
-    progress_utils.userlist_overall_progress.remove_task(page_task)
+    progress_utils.remove_userlist_task(page_task)
     trace_log_list(output)
 
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
@@ -154,7 +154,7 @@ async def scrape_for_list(c, offset=0):
     url = constants.getattr("listEP").format(offset)
     try:
         attempt.set(attempt.get(0) + 1)
-        task = progress_utils.userlist_job_progress.add_task(
+        task = progress_utils.add_userlistjob_task(
             f" : getting lists offset -> {offset}",
             visible=True,
         )
@@ -188,7 +188,7 @@ async def scrape_for_list(c, offset=0):
         raise E
 
     finally:
-        progress_utils.userlist_job_progress.remove_task(task)
+        progress_utils.remove_userlistjob_task(task)
     return out_list, new_tasks
 
 
@@ -213,7 +213,7 @@ async def get_list_users(lists):
                 )
                 for id in lists
             ]
-            page_task = progress_utils.userlist_overall_progress.add_task(
+            page_task = progress_utils.add_userlist_task(
                 f"UserList Users Pages Progress: {page_count}", visible=True
             )
             while tasks:
@@ -234,7 +234,7 @@ async def get_list_users(lists):
                         continue
                 tasks = new_tasks
 
-    progress_utils.userlist_overall_progress.remove_task(page_task)
+    progress_utils.remove_userlist_task(page_task)
     outdict = {}
     for ele in output:
         outdict[ele["id"]] = ele
@@ -270,7 +270,7 @@ async def scrape_list_members(c, item, offset=0):
     url = constants.getattr("listusersEP").format(item.get("id"), offset)
     try:
         attempt.set(attempt.get(0) + 1)
-        task = progress_utils.userlist_job_progress.add_task(
+        task = progress_utils.add_userlistjob_task(
             f" : offset -> {offset} + list name -> {item.get('name')}",
             visible=True,
         )
@@ -315,5 +315,5 @@ async def scrape_list_members(c, item, offset=0):
         raise E
 
     finally:
-        progress_utils.userlist_job_progress.remove_task(task)
+        progress_utils.remove_userlistjob_task(task)
     return users, new_tasks

@@ -69,4 +69,12 @@ like_overall_progress=Progress(
         BarColumn(table_column=Column(ratio=2)),
         MofNCompleteColumn(),
 )
-   
+#api
+api_job_progress= Progress(
+        "{task.description}", console=console_.get_temp_console()
+)
+api_overall_progress = Progress(
+        SpinnerColumn(style=Style(color="blue")),
+        TextColumn("{task.description}"),
+        console=console_.get_temp_console(),
+    )
