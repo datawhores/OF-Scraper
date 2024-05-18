@@ -205,8 +205,8 @@ async def send_req_inner(c, ele, item, placeholderObj):
             temp_file_logger(placeholderObj, ele, common_globals.innerlog.get())
             if await check_forced_skip(ele, total) == 0:
                 item["total"] = 0
+                total=item["total"]
                 await common.batch_total_change_helper(total, 0)
-                return item
             elif total != resume_size:
                 await download_fileobject_writer(total, l, ele, placeholderObj)
         await size_checker(placeholderObj.tempfilepath, ele, total)

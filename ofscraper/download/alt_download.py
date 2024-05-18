@@ -138,11 +138,12 @@ async def alt_download_downloader(item, c, ele):
 async def resume_data_handler(data, item, c, ele, placeholderObj):
     item["total"] = int(data.get("content-length"))
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
-    if await check_forced_skip(ele, item["total"]):
+    if await check_forced_skip(ele, item["total"])==0:
         item["total"] = 0
         return item
     elif item["total"] == resume_size:
         temp_file_logger(placeholderObj, ele)
+        await common.total_change_helper(None,item["total"])
         return item
     elif item["total"] != resume_size:
         return await alt_download_sendreq(item, c, ele, placeholderObj)
@@ -160,7 +161,6 @@ async def fresh_data_handler(item, c, ele, placeholderObj):
 async def alt_download_sendreq(item, c, ele, placeholderObj):
     try:
         _attempt = common.alt_attempt_get(item)
-        item["total"] = item["total"] if _attempt == 1 else None
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
         common_globals.log.debug(
@@ -177,15 +177,12 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
 
 
 async def send_req_inner(c, ele, item, placeholderObj):
-    old_total = item["total"]
-    total = old_total
     try:
-        await common.total_change_helper(None, total)
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = (
             None
-            if resume_size == 0 or not total
-            else {"Range": f"bytes={resume_size}-{total}"}
+            if not resume_size
+            else {"Range": f"bytes={resume_size}-"}
         )
         params = {
             "Policy": ele.policy,
@@ -201,33 +198,32 @@ async def send_req_inner(c, ele, item, placeholderObj):
         async with c.requests_async(
             url=url, headers=headers, params=params, forced=True
         ) as l:
+            item["total"]=item["total"] or  int(l.headers.get("content-length"))
+            total=item["total"]
+            await common.batch_total_change_helper(None, total) if common.alt_attempt_get(item).get() == 1 else None
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
                     cache.set,
                     f"{item['name']}_headers",
                     {
-                        "content-length": l.headers.get("content-length"),
+                        "content-total": total,
                         "content-type": l.headers.get("content-type"),
                     },
                 ),
             )
-            new_total = int(l.headers["content-length"])
             temp_file_logger(placeholderObj, ele)
-            if await check_forced_skip(ele, new_total):
+            if await check_forced_skip(ele, total)==0:
                 item["total"] = 0
-                await common.total_change_helper(None, old_total)
+                total=item["total"]
+                await common.total_change_helper(total,0)
             elif total != resume_size:
-                item["total"] = new_total
-                total = new_total
-                await common.total_change_helper(old_total, total)
                 await download_fileobject_writer(
                     total, l, ele, placeholderObj
                 )
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
-        await common.total_change_helper(None, -(total or 0))
         raise E
 
 

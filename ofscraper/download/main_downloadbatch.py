@@ -127,12 +127,16 @@ async def resume_data_handler(data, c, ele, tempholderObj):
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     # other
-    if await check_forced_skip(ele, total):
+    if await check_forced_skip(ele, total)==0:
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
-        return [0]
+        return (
+            0,
+            tempholderObj.tempfilepath,
+            placeholderObj,
+        )
     elif total == resume_size:
         path_to_file_logger(placeholderObj, ele, common_globals.innerlog.get())
-        await common.batch_total_change_helper(None, total)
+        await common.batch_total_change_helper(None, total) if common_globals.attempt.get() == 1 else None
         return (
             total,
             tempholderObj.tempfilepath,
@@ -198,7 +202,6 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
             if await check_forced_skip(ele, total) == 0:
                 total = 0
                 await common.batch_total_change_helper(total, 0)
-                return (total, tempholderObj.tempfilepath, placeholderObj)
             elif total != resume_size:
                 await download_fileobject_writer(
                     r, ele, total, tempholderObj, placeholderObj

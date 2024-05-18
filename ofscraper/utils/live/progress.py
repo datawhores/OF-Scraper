@@ -40,7 +40,6 @@ multi_download_job_progress = MultiProgress(
                 TextColumn("[white]{task.description}[/white]", table_column=Column(ratio=2)),
                 BarColumn(),
                 TaskProgressColumn(),
-                TimeRemainingColumn(),
                 TransferSpeedColumn(),
                 DownloadColumn(),
 )

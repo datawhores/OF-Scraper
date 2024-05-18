@@ -50,6 +50,8 @@ def subProcessVariableInit(dateDict, userList, pipeCopy, logCopy, argsCopy):
 
 async def size_checker(path, ele, total, name=None):
     name = name or ele.filename
+    if total==0:
+        return True
     if not pathlib.Path(path).exists():
         s = f"{get_medialog(ele)} {path} was not created"
         raise Exception(s)
@@ -148,22 +150,22 @@ def get_unknown_content_type(ele):
     )
 
 
-async def batch_total_change_helper(total, new_total):
-    if not new_total and not new_total:
+async def batch_total_change_helper(past_total, new_total):
+    if not new_total and not past_total:
         return
-    elif not total:
+    elif not past_total:
         await send_msg((None, 0, new_total))
-    elif total and new_total - total != 0:
-        await send_msg((None, 0, new_total - total))
+    elif past_total and new_total - past_total != 0:
+        await send_msg((None, 0, new_total - past_total))
 
 
-async def total_change_helper(total, new_total):
-    if not new_total and not new_total:
+async def total_change_helper(past_total, new_total):
+    if not new_total and not past_total:
         return
-    elif not total:
+    elif not past_total:
         await update_total(new_total)
-    elif total and new_total - total != 0:
-        await update_total(new_total - total)
+    elif past_total and new_total - past_total != 0:
+        await update_total(new_total - past_total)
 
 
 def is_bad_url(url):
