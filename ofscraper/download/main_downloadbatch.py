@@ -179,7 +179,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         )
         async with c.requests_async(url=ele.url, headers=headers) as r:      
             total = total or int(r.headers["content-length"])
-            await common.batch_total_change_helper(None, total) if common_globals.attempt.get() == 1 else None
+            await common.batch_total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
@@ -209,6 +209,7 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
         await size_checker(tempholderObj.tempfilepath, ele, total)
         return (total, tempholderObj.tempfilepath, placeholderObj)
     except Exception as E:
+        await common.batch_total_change_helper(total, 0)
         raise E
 
 
