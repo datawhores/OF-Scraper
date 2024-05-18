@@ -8,6 +8,8 @@ def update_activity_task(**kwargs):
            activity_task, **kwargs
     )
 
+
+
 def increment_activity_count():
     activity_counter_task
     activity_counter.update(
@@ -95,3 +97,4 @@ def remove_userlistjob_task(task):
         userlist_overall_progress.remove_task(task)
     except KeyError:
         pass
+
