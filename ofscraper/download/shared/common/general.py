@@ -69,8 +69,10 @@ async def size_checker(path, ele, total, name=None):
         raise Exception(s)
 
 
-async def check_forced_skip(ele, *args):
-    total = sum(map(lambda x: int(x), args))
+async def check_forced_skip(ele,total):
+    if total==None:
+        return
+    total = int(total)
     if total == 0:
         return 0
     file_size_limit = settings.get_size_limit(mediatype=ele.mediatype)

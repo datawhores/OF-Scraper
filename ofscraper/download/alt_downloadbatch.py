@@ -117,12 +117,13 @@ async def alt_download_downloader(
 
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
-    item["total"] = int(data.get("content-total",0))
+    item["total"] = int(data.get("content-total")) if data.get("content-total") else None
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     if await check_forced_skip(ele, item["total"]) == 0:
         item["total"] = 0
         return item
     elif item["total"] == resume_size:
+        await common.batch_total_change_helper(None, item["total"])
         return item
     elif item["total"] != resume_size:
         return await alt_download_sendreq(item, c, ele, placeholderObj)
@@ -147,10 +148,7 @@ async def alt_download_sendreq(item, c, ele, placeholderObj):
     common_globals.innerlog.get().debug(
         f"{get_medialog(ele)} [attempt {_attempt.get()}/{constants.getattr('DOWNLOAD_FILE_NUM_TRIES')}] download temp path {placeholderObj.tempfilepath}"
     )
-    await common.batch_total_change_helper(None, item['total']) if _attempt.get() == 1 else None
-
     try:
-        _attempt = common.alt_attempt_get(item)
         item["total"] = item["total"] if _attempt == 1 else None
         base_url = re.sub("[0-9a-z]*\.mpd$", "", ele.mpd, re.IGNORECASE)
         url = f"{base_url}{item['origname']}"
@@ -172,7 +170,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
         headers = (
             None
-            if resume_size == 0
+            if not resume_size
             else {"Range": f"bytes={resume_size}-"}
         )
         params = {
@@ -190,8 +188,9 @@ async def send_req_inner(c, ele, item, placeholderObj):
         async with c.requests_async(
             url=url, headers=headers, params=params, forced=True
         ) as l:
-            item["total"]=item["total"] or  l.headers.get("content-length")
+            item["total"]=item["total"] or  int(l.headers.get("content-length"))
             total=item["total"]
+            await common.batch_total_change_helper(None, total) if common.alt_attempt_get(item).get() == 1 else None
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
