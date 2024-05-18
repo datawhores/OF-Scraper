@@ -48,7 +48,7 @@ async def get_subscription(accounts=None):
                 wait_max=constants.getattr("OF_MAX_WAIT_API"),
             ) as c:
                 out = await get_subscription_helper(c, accounts)
-                progress_utils.remove_userlist_task(task1)
+            progress_utils.remove_userlist_task(task1)
         outdict = {}
         for ele in filter(
             lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),

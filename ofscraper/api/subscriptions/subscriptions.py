@@ -48,8 +48,7 @@ async def get_subscriptions(subscribe_count, account="active"):
                     out = await activeHelper(subscribe_count, c)
                 else:
                     out = await expiredHelper(subscribe_count, c)
-                progress_utils.remove_userlist_task(task1)
-
+            progress_utils.remove_userlist_task(task1)
             log.debug(f"Total {account} subscriptions found {len(out)}")
             return out
 
