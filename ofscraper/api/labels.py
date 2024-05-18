@@ -187,7 +187,7 @@ async def scrape_labels(c, model_id, offset=0):
     try:
 
         task = (
-            progress_utils.add_apijob_task(
+            progress_utils.add_api_job_task(
                 f"labels offset -> {offset}",
                 visible=True,
             )
@@ -234,7 +234,7 @@ async def scrape_labels(c, model_id, offset=0):
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
 
 
 async def process_tasks_get_posts_for_labels(tasks, labels, model_id):
@@ -320,7 +320,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
     try:
 
         task = (
-            progress_utils.add_apijob_task(
+            progress_utils.add_api_job_task(
                 f": getting posts from label -> {label['name']}",
                 visible=True,
             )
@@ -369,7 +369,7 @@ async def scrape_posts_labels(c, label, model_id, offset=0):
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
 
     return label, posts, new_tasks
 

@@ -318,7 +318,7 @@ async def scrape_timeline_posts(
 
     try:
         task = (
-            progress_utils.add_apijob_task(
+            progress_utils.add_api_job_task(
                 f"[Timeline] Timestamp -> {arrow.get(math.trunc(float(timestamp))).format(constants.getattr('API_DATE_FORMAT')) if timestamp is not None  else 'initial'}",
                 visible=True,
             )
@@ -388,7 +388,7 @@ async def scrape_timeline_posts(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-            progress_utils.remove_apijob_task(task)
+            progress_utils.remove_api_job_task(task)
 
 
 

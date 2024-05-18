@@ -63,7 +63,7 @@ async def scrape_stories(c, user_id) -> list:
     url = constants.getattr("highlightsWithAStoryEP").format(user_id)
     try:
         task = (
-            progress_utils.add_apijob_task(
+            progress_utils.add_api_job_task(
                f"[Stories] user id -> {user_id}",
                 visible=True,
             )
@@ -93,7 +93,7 @@ async def scrape_stories(c, user_id) -> list:
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
 
 
     return stories, new_tasks
@@ -310,7 +310,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
 
     try:
         task = (
-            progress_utils.add_apijob_task(
+            progress_utils.add_api_job_task(
                 f"[Highlights] scraping highlight list  offset-> {offset}",
                 visible=True,
             )
@@ -331,7 +331,7 @@ async def scrape_highlight_list(c, user_id, offset=0) -> list:
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
 
 
     return data, new_tasks
@@ -345,7 +345,7 @@ async def scrape_highlights(c, id) -> list:
 
     try:
         task = (
-            progress_utils.add_apijob_task(
+            progress_utils.add_api_job_task(
                 f"[Highlights]  highlights id -> {id}",
                 visible=True,
             )
@@ -367,7 +367,7 @@ async def scrape_highlights(c, id) -> list:
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
 
     return resp_data["stories"], new_tasks
 

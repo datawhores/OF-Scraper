@@ -115,7 +115,7 @@ async def scrape_paid(c, username, offset=0):
 
         task = (
             (
-                progress_utils.add_apijob_task(
+                progress_utils.add_api_job_task(
                     f"scrape paid offset -> {offset} username -> {username}",
                     visible=True,
                 )
@@ -153,7 +153,7 @@ async def scrape_paid(c, username, offset=0):
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
     return media, new_tasks
 
 
@@ -280,7 +280,7 @@ async def scrape_all_paid(c, offset=0, required=None):
     url = constants.getattr("purchased_contentALL").format(offset)
     try:
 
-        task = progress_utils.add_apijob_task(
+        task = progress_utils.add_api_job_task(
             f"scrape entire paid page offset={offset}",
             visible=True,
         )
@@ -331,7 +331,7 @@ async def scrape_all_paid(c, offset=0, required=None):
         raise E
 
     finally:
-        progress_utils.remove_apijob_task(task)
+        progress_utils.remove_api_job_task(task)
 
 
 

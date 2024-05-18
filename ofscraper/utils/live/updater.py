@@ -1,5 +1,5 @@
 import asyncio
-from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,live,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress
+from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress
 
 
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
@@ -41,13 +41,13 @@ def update_first_activity(**kwargs):
 #API
 lock=asyncio.Lock()
 
-def add_apijob_task(*args,**kwargs):
+def add_api_job_task(*args,**kwargs):
     return api_job_progress.add_task(*args,**kwargs)
 
 
 def add_api_task(*args,**kwargs):
     return api_overall_progress.add_task(*args,**kwargs)
-def remove_apijob_task(task):
+def remove_api_job_task(task):
     if not task:
         return
     try:
@@ -59,7 +59,7 @@ def update_api_task(*args,**kwargs):
     return api_overall_progress.update(*args,**kwargs)
 
 
-def remove_apijob_task(task):
+def remove_api_job_task(task):
     if not task:
         return
     try:
@@ -78,7 +78,7 @@ def add_userlist_task(*args,**kwargs):
    return userlist_overall_progress.add_task(*args,**kwargs)
 
 
-def add_userlistjob_task(*args,**kwargs):
+def add_userlist_job_task(*args,**kwargs):
    return userlist_job_progress.add_task(*args,**kwargs)
 
 def remove_userlist_task(task):
@@ -89,7 +89,7 @@ def remove_userlist_task(task):
     except KeyError:
         pass
 
-def remove_userlistjob_task(task):
+def remove_userlist_job_task(task):
     if not task:
         return
     try:
@@ -98,24 +98,43 @@ def remove_userlistjob_task(task):
         pass
 
 
-def add_downloadjob_task(*args,**kwargs):
+def add_download_job_task(*args,**kwargs):
    return download_job_progress.add_task(*args,**kwargs)
 
-def add_downloadjobmuliti_task(*args,**kwargs):
+def add_download_job_multi_task(*args,**kwargs):
    return multi_download_job_progress.add_task(*args,**kwargs)
 
 def add_download_task(*args,**kwargs):
    return download_overall_progress.add_task(*args,**kwargs)
 
-def update_downloadjob_task(*args,**kwargs):
+def update_download_job_task(*args,**kwargs):
     if not settings.get_download_bars():
         return
     download_job_progress.update(*args,**kwargs)
 
-def remove_downloadjob_task(task):
+def update_download_multi_job_task(*args,**kwargs):
+    if not settings.get_download_bars():
+        return
+    multi_download_job_progress.update(*args,**kwargs)
+def remove_download_job_task(task):
     if not task:
         return
     try:
         download_job_progress.remove_task(task)
+    except KeyError:
+        pass
+
+def remove_download_multi_job_task(task):
+    if not task:
+        return
+    try:
+        multi_download_job_progress.remove_task(task)
+    except KeyError:
+        pass
+def remove_download_task(task):
+    if not task:
+        return
+    try:
+        download_overall_progress.remove_task(task)
     except KeyError:
         pass

@@ -228,7 +228,7 @@ async def download_fileobject_writer(
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
     downloadprogress = settings.get_download_bars()
-    task1 =  progress_utils.add_downloadjob_task(
+    task1 =  progress_utils.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
@@ -238,17 +238,18 @@ async def download_fileobject_writer(
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
-
-        async for count,chunk in enumerate(r.iter_chunked(chunk_size)):
+        count=0
+        async for chunk in r.iter_chunked(chunk_size):
             await fileobject.write(chunk)
+            count+=1
             common_globals.log.trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
-            if (count + 1) % constants.getattr("CHUNK_ITER") == 0:
+            if (count) % constants.getattr("CHUNK_ITER") == 0:
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
-                        progress_utils.update_downloadjob_task,
+                        progress_utils.update_download_job_task,
                         task1,
                         completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()

@@ -295,7 +295,7 @@ async def scrape_messages(
     try:
         async with c.requests_async(url=url, sleeper=get_sleeper()) as r:
             task = (
-                progress_utils.add_apijob_task(
+                progress_utils.add_api_job_task(
                     f"[Messages] Message ID-> {message_id if message_id else 'initial'}"
                 )
 
@@ -369,7 +369,7 @@ async def scrape_messages(
         log.traceback_(traceback.format_exc())
         raise E
     finally:
-       progress_utils.remove_apijob_task(task)
+       progress_utils.remove_api_job_task(task)
     return messages, new_tasks
 
 

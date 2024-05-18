@@ -10,13 +10,6 @@ import ofscraper.utils.console as console
                                                     #activity group
 activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True),title="Activity Progress", style="bold blue"))
 
-#download
-
-overall_panel=Panel(download_overall_progress, style="bold blue")
-multi_panel=Panel(multi_download_job_progress, style="bold blue")
-single_panel=Panel(download_job_progress, style="bold blue")
-download_progress_group=None
-multi_download_progress_group=None
 
 
 #user
@@ -29,7 +22,13 @@ like_progress_group=Panel(Group(like_overall_progress,activity_group))
 api_progress_group = Group(Panel(api_overall_progress,title="API Progress", style="bold blue"),Panel(api_job_progress,title="API Messages", style="bold blue",height=console.get_shared_console().size[-1] - 19))
 
     
-#funct
+#download
+
+overall_panel=Panel(download_overall_progress, style="bold blue")
+multi_panel=Panel(multi_download_job_progress, style="bold blue")
+single_panel=Panel(download_job_progress, style="bold blue")
+download_progress_group=None
+multi_download_progress_group=None
 def get_download_group():
     global download_progress_group
     if not download_progress_group:

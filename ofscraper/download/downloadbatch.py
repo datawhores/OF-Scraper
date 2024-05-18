@@ -97,7 +97,7 @@ def process_dicts(username, model_id, filtered_medialist):
         with progress_utils.setup_download_progress_live(
             multi=True
         ):
-            task1 = progress_utils.download_overall_progress.add_task(
+            task1 = progress_utils.add_download_task(
                 common_globals.desc.format(
                     p_count=0,
                     v_count=0,
@@ -170,7 +170,7 @@ def process_dicts(username, model_id, filtered_medialist):
                     if process.is_alive():
                         process.terminate()
                 time.sleep(0.5)
-            progress_utils.download_overall_progress.remove_task(task1)
+            progress_utils.remove_download_task(task1)
         setDirectoriesDate()
     except KeyboardInterrupt as E:
         try:
@@ -212,8 +212,6 @@ def queue_process(pipe_, task1, total):
     while True:
         if (
             count == 1
-            or progress_utils.download_overall_progress.tasks[task1].total
-            == progress_utils.download_overall_progress.tasks[task1].completed
         ):
             break
         results = pipe_.recv()
@@ -322,9 +320,9 @@ def process_dict_starter(
 
 def job_progress_helper(result):
     funct = {
-        "add_task": progress_utils.multi_download_job_progress.add_task,
-        "update": progress_utils.multi_download_job_progress.update,
-        "remove_task": progress_utils.multi_download_job_progress.remove_task,
+        "add_task": progress_utils.add_download_job_multi_task,
+        "update": progress_utils.update_download_multi_job_task,
+        "remove_task": progress_utils.remove_download_multi_job_task,
     }.get(result.pop("type"))
     if funct:
         try:

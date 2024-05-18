@@ -68,7 +68,7 @@ async def process_dicts(username, model_id, medialist):
                             download(c, ele, model_id, username)
                         )
                     )
-                task1 = progress_utils.download_overall_progress.add_task(
+                task1 = progress_utils.add_download_task(
                     common_globals.desc.format(
                         p_count=0,
                         v_count=0,
@@ -136,7 +136,7 @@ async def process_dicts(username, model_id, medialist):
                         refresh=True,
                         advance=1,
                     )
-            progress_utils.download_overall_progress.remove_task(task1)
+            progress_utils.remove_download_task(task1)
             setDirectoriesDate()
             # close thread
             otherqueue.put("None")
