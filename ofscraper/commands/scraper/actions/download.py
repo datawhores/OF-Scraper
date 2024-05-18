@@ -34,8 +34,6 @@ def downloader(ele=None,posts=None,media=None,**kwargs):
     avatar = ele.avatar
     progress_utils.update_activity_task(description=download_str.format(name=username))
     logging.getLogger("shared_other").warning(download_str.format(name=username))
-    if constants.getattr("SHOW_AVATAR") and avatar:
-        log.warning(f"Avatar : {avatar}")
     download.download_process(username, model_id, media, posts=posts)
 
 

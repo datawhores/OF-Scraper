@@ -41,9 +41,9 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
+from ofscraper.commands.strings import avatar_str
 
 log = logging.getLogger("shared")
-
 
 def force_change_download():
     args = read_args.retriveArgs()
@@ -131,6 +131,9 @@ def metadata_user_first():
         init.print_sign_status()
         data = {}
         for user in userselector.getselected_usernames(rescan=False):
+            avatar=user.avatar
+            if constants.getattr("SHOW_AVATAR") and avatar:
+                    log.warning(f"Avatar : {avatar}")
             data.update(process_user_first_data_retriver(user))
         count = 0
         length = len(data.keys())
@@ -139,6 +142,8 @@ def metadata_user_first():
             media = val["media"]
             avatar = val["avatar"]
             try:
+                if constants.getattr("SHOW_AVATAR") and avatar:
+                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
                 log.warning(
                     f"Download action progressing on model {count+1}/{length} models "
                 )
@@ -170,6 +175,9 @@ def metadata_paid_all(user_dict=None):
         username = value["username"]
         posts = value["posts"]
         medias = value["medias"]
+        avatar=value["avatar"]
+        if constants.getattr("SHOW_AVATAR") and avatar:
+                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
         log.warning(
             f"Download paid content for {model_id}_{username} number:{count+1}/{length} models "
         )
@@ -188,8 +196,6 @@ def process_user_first_data_retriver(ele):
     avatar = ele.avatar
     metadata_action = read_args.retriveArgs().metadata
     mark_stray = read_args.retriveArgs().mark_stray
-    if constants.getattr("SHOW_AVATAR") and avatar:
-        log.warning(f"Avatar : {avatar}")
     log.warning(
         f"""
 Perform Meta {metadata_action} with 

@@ -15,13 +15,9 @@ from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.commands.scraper.post import post_media_process
 import ofscraper.commands.scraper.actions.download as download_action
 import ofscraper.commands.scraper.actions.like as like_action
-
+from ofscraper.commands.strings import avatar_str,area_str,progress_str,data_str
 
 log = logging.getLogger("shared")
-progress_str="Progress {count}/{length}"
-data_str="Data Retrival on {name}"
-avatar_str="Avatar : {avatar}"
-area_str="Getting \[[bold blue]{areas}[/bold blue]] for [bold]{name}[/bold]\n[bold]Subscription Active:[/bold] {active}"
 
 @exit.exit_wrapper
 def runner():
@@ -107,9 +103,12 @@ def user_first(userdata,session,actions):
     progress_utils.update_activity_task(description="Getting all user Data First")
     progress_utils.add_user_first_activity(description="Progress on getting Data",total=len(userdata))
     for count,user in enumerate(userdata):
+        avatar=ele.avatr
         try:
             progress_utils.switch_api_progress()
             logging.getLogger("shared_other").warning(f"\[{user.name}] Data Retrival Progress: {count+1}/{length} models")
+            if constants.getattr("SHOW_AVATAR") and avatar:
+                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
             data.update(process_user_first_data_retriver(user,session=session))
             progress_utils.increment_user_first_activity()
         except Exception as e:
@@ -126,7 +125,10 @@ def user_first(userdata,session,actions):
         like_posts=val["like_posts"]
         ele=val["ele"]
         username=val["username"]
+        avatar=val["avatar"]
         try:
+            if constants.getattr("SHOW_AVATAR") and avatar:
+                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
             for action in actions:
                 if action=="download":
                     download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
@@ -151,8 +153,6 @@ def process_user_first_data_retriver(ele,session=None):
     username = ele.name
     avatar = ele.avatar
     active= ele.active
-    if constants.getattr("SHOW_AVATAR") and avatar:
-        logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
     logging.getLogger("shared_other").info(
             area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active
             )
