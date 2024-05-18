@@ -35,7 +35,7 @@ async def get_subscriptions(subscribe_count, account="active"):
         with progress_utils.setup_subscription_progress_live():
             asyncio.get_event_loop().set_default_executor(executor)
 
-            task1 = progress_utils.add_api_task(
+            task1 = progress_utils.add_userlist_task(
                 f"Getting your {account} subscriptions (this may take awhile)..."
             )
             async with sessionManager.sessionManager(
@@ -48,7 +48,7 @@ async def get_subscriptions(subscribe_count, account="active"):
                     out = await activeHelper(subscribe_count, c)
                 else:
                     out = await expiredHelper(subscribe_count, c)
-                progress_utils.userlist_job_progress.remove_task(task1)
+                progress_utils.remove_userlist_task(task1)
 
             log.debug(f"Total {account} subscriptions found {len(out)}")
             return out
