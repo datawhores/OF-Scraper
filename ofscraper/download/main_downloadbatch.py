@@ -215,7 +215,6 @@ async def send_req_inner(c, ele, tempholderObj, placeholderObj=None, total=None)
 
 async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderObj):
     pathstr = str(placeholderObj.trunicated_filepath)
-    downloadprogress = settings.get_download_bars()
     try:
         count = 0
         await common.send_msg(
@@ -231,9 +230,7 @@ async def download_fileobject_writer(r, ele, total, tempholderObj, placeholderOb
         update_count=get_update_count(total,tempholderObj.tempfilepath,chunk_size)
 
         async for chunk in r.iter_chunked(chunk_size):
-            count = count + 1
-            if downloadprogress:
-                count = count + 1
+            count+=1
             common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )

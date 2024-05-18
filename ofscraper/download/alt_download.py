@@ -241,6 +241,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
     chunk_size = get_ideal_chunk_size(total,placeholderObj.tempfilepath)
+    count=0
     try:
         async for chunk in l.iter_chunked(chunk_size):
             common_globals.log.trace(

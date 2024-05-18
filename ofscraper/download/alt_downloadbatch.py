@@ -232,7 +232,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
 
         async for chunk in l.iter_chunked(chunk_size):
-            count = count + 1
+            count+=1
             common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
