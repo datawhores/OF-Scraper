@@ -29,7 +29,7 @@ import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
-import ofscraper.utils.live as progress_utils
+import ofscraper.utils.live.live as progress_utils
 
 
 log = logging.getLogger("shared")

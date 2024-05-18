@@ -18,7 +18,7 @@ import ofscraper.commands.scraper.post as OF
 import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live as progress_utils
+import ofscraper.utils.live.live as progress_utils
 
 log = logging.getLogger("shared")
 

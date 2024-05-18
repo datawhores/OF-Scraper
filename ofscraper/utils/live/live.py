@@ -1,41 +1,34 @@
 import contextlib
-from rich import abc
 from rich.console import Group
 from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 from rich.progress import (
-    BarColumn,
-    DownloadColumn,
     Progress,
     SpinnerColumn,
-    TaskProgressColumn,
     TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-        MofNCompleteColumn,
 
 )
 from rich.style import Style
-from rich.table import Column
 
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-from ofscraper.classes.multiprocessprogress import MultiprocessProgress as MultiProgress
-import ofscraper.utils.settings as settings
 
+from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,live,activity_counter,activity_progress,userlist_overall_progress
 
-set_up=False
+from ofscraper.utils.live.groups import activity_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group
+from ofscraper.utils.live.updater import update_activity_task,increment_activity_count,update_activity_count
+from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
 
+setup=False
 
 #main context and switches
 @contextlib.contextmanager
 def live_progress_context(stop=False):
-    global set_up
-    if not set_up:
+    global setup
+    if not setup:
         set_all_up_progress()
-        set_up=True
+        setup=True
     if not live.is_started:
         live.start()
     yield
@@ -63,16 +56,11 @@ def remove_task():
 
 @contextlib.contextmanager
 def setup_download_progress_live(multi=False,stop=False):
-    global download_job_progress
-    global download_overall_progress
-    global download_progress_group
-    global multi_download_progress_group
-    global live
     with live_progress_context(stop=stop):
         if multi:
-            live.update(multi_download_progress_group,refresh=True)
+            live.update(get_multi_download_progress_group(),refresh=True)
         else:
-            live.update(download_progress_group,refresh=True)
+            live.update(get_download_group(),refresh=True)
         yield
 @contextlib.contextmanager
 
@@ -117,10 +105,6 @@ def setup_api_split_progress_live(stop=False):
 
 @contextlib.contextmanager
 def setup_subscription_progress_live(stop=False):
-    global live
-    global userlist_job_progress
-    global userlist_overall_progress
-    global userlist_group
     with live_progress_context(stop=stop):
         live.update(userlist_group,refresh=True)
         yield
@@ -128,8 +112,6 @@ def setup_subscription_progress_live(stop=False):
 
 @contextlib.contextmanager
 def setup_like_progress_live(stop=False):
-    global live
-    global like_progress_group
     with live_progress_context(stop=stop):
         live.update(like_progress_group,refresh=True)
         yield
@@ -227,110 +209,39 @@ def set_up_api_progress():
     )
     # tasks from progress
     username_task=None
-def set_up_userlist_progress():
-    global userlist_group
-    global userlist_overall_progress
-    global userlist_job_progress
-
-    userlist_overall_progress=Progress(
-                    SpinnerColumn(style=Style(color="blue")), TextColumn("{task.description}")
-    )
-    userlist_job_progress = Progress("{task.description}")
-    userlist_group=Group(Panel(Group(userlist_overall_progress,userlist_job_progress)))
-
-def set_up_shared_activity_progress():
-    global activity_progress
-    global activity_counter
-    global activity_group
-    global activity_task
-    global activity_counter_task
-    global user_first_task
-
-
-    activity_progress=Progress(
-    TextColumn("{task.description}"),
-    TimeElapsedColumn(),
-    )
-    activity_counter=Progress(
-    TextColumn("{task.description}"),
-    BarColumn(table_column=Column(ratio=3),bar_width=100),
-    MofNCompleteColumn())
-
-    activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True)))
-
-    activity_task=activity_progress.add_task(
-            description='Running OF-Scraper'
-     )
-    activity_counter_task=activity_counter.add_task(
-            description='Overall script progress',
-     )
-    user_first_task=None
 
 
 
 
-def set_up_like_progress():
-    global like_overall_progress
-    global like_progress_group
-    global activity_group
-    like_overall_progress=Progress(
-        SpinnerColumn(style=Style(color="blue")),
-        TextColumn("{task.description}"),
-        BarColumn(table_column=Column(ratio=2)),
-        MofNCompleteColumn(),
-    )
-    like_progress_group=Panel(Group(like_overall_progress,activity_group))
+
+    
+
+
+
+
+   
 
 
 def set_up_download_progress():
     global download_job_progress
     global download_overall_progress
-    global download_progress_group
-    global multi_download_progress_group
     global multi_download_job_progress
-    global activity_group
-    download_overall_progress = Progress(
-            TextColumn("{task.description}"),
-            BarColumn(),
-            TaskProgressColumn(),
-    )
-    multi_download_job_progress = MultiProgress(
-                TextColumn("{task.description}", table_column=Column(ratio=2)),
-                BarColumn(),
-                TaskProgressColumn(),
-                TimeRemainingColumn(),
-                TransferSpeedColumn(),
-                DownloadColumn(),
-    )
-    download_job_progress = Progress(
-        TextColumn("{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-        console=console_.get_temp_console(),
-    )
+    
+    
     height=max(15, console_.get_shared_console().size[-1] - 2)
-    enabled=settings.get_download_bars()
 
-    overall_panel=Panel(download_overall_progress)
-    multi_panel=Panel(multi_download_job_progress,height=height)
-    single_panel=Panel(download_job_progress,height=height)
+    multi_panel.height=height
+    single_panel.height=height
 
-    download_progress_group = Group(overall_panel,activity_group,single_panel,fit=True ) if enabled else Group(overall_panel,activity_group,fit=True )
-    multi_download_progress_group= Group(overall_panel,activity_group, multi_panel,fit=True) if enabled else Group(overall_panel,activity_group,fit=True)
+   
 
 
 
 
 def set_all_up_progress():
-    global live
-    live=Live( transient=False,refresh_per_second=4,console=console_.get_shared_console())
-    set_up_shared_activity_progress()
     set_up_api_progress()
     set_up_api_layout()
-    set_up_like_progress()
     set_up_download_progress()
-    set_up_userlist_progress()
 
 
 
@@ -530,49 +441,9 @@ def set_up_api_posts_labels():
     )
 
 
-def update_activity_task(**kwargs):
-    global activity_task
-    activity_progress.update(
-           activity_task, **kwargs
-    )
-
-def increment_activity_count():
-    global activity_counter_task
-    activity_counter.update(
-           activity_counter_task,advance=1
-    )
-
-
-def update_activity_count(**kwargs):
-    global activity_counter_task
-    activity_counter.update(
-           activity_counter_task,**kwargs
-    )
-#switchers
 def switch_api_progress():
     global api_progress_group
     global live
     if not api_progress_group:
         return
     live.update(api_progress_group,refresh=True)
-
-def add_user_first_activity(**kwargs):
-    global user_first_task
-    global activity_counter
-    user_first_task=activity_counter.add_task(
-            **kwargs
-    )
-
-def increment_user_first_activity():
-    global user_first_task
-    global activity_progress
-    activity_counter.update(
-           user_first_task,advance=1
-    )
-
-def update_first_activity(**kwargs):
-    global user_first_task
-    global activity_counter_task
-    activity_counter.update(
-          user_first_task,  **kwargs
-    )

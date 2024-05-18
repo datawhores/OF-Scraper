@@ -42,7 +42,7 @@ from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.live as progress_utils
+import ofscraper.utils.live.live as progress_utils
 
 platform_name = platform.system()
 
@@ -171,7 +171,6 @@ def process_dicts(username, model_id, filtered_medialist):
                         process.terminate()
                 time.sleep(0.5)
             progress_utils.download_overall_progress.remove_task(task1)
-            progress_utils.multi_download_progress_group.renderables[1].height = 0
         setDirectoriesDate()
     except KeyboardInterrupt as E:
         try:

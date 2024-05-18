@@ -22,7 +22,7 @@ import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live as progress_utils
+import ofscraper.utils.live.live as progress_utils
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
