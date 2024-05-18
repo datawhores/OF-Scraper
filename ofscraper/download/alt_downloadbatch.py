@@ -123,8 +123,8 @@ async def resume_data_handler(data, item, c, ele, placeholderObj):
         item["total"] = 0
         return item
     elif item["total"] == resume_size:
-        await common.batch_total_change_helper(None, item["total"])
-        return item
+        total=item["total"]
+        await common.batch_total_change_helper(None, total) if common.alt_attempt_get(item).get() == 1 else None
     elif item["total"] != resume_size:
         return await alt_download_sendreq(item, c, ele, placeholderObj)
 
@@ -190,7 +190,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         ) as l:
             item["total"]=item["total"] or  int(l.headers.get("content-length"))
             total=item["total"]
-            await common.batch_total_change_helper(None, total) if common.alt_attempt_get(item).get() == 1 else None
+            await common.batch_total_change_helper(None, total)
             await asyncio.get_event_loop().run_in_executor(
                 common_globals.cache_thread,
                 partial(
@@ -212,6 +212,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
         await size_checker(placeholderObj.tempfilepath, ele, total)
         return item
     except Exception as E:
+        await common.batch_total_change_helper(total, 0)
         raise E
 
 
