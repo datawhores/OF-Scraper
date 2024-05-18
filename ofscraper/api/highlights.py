@@ -286,7 +286,6 @@ async def process_task_highlights(tasks):
                 log.traceback_(traceback.format_exc())
                 continue
         tasks = new_tasks
-        progress_utils.remove_api_task(page_task)
 
         log.debug(
             f"{common_logs.FINAL_IDS.format('Highlight List Posts')} {list(map(lambda x:x['id'],highlightResponse))}"
@@ -301,6 +300,7 @@ async def process_task_highlights(tasks):
         log.debug(
             f"{common_logs.FINAL_COUNT.format('Highlight List Posts')} {len(highlightResponse)}"
         )
+    progress_utils.remove_api_task(page_task)
     return highlightResponse
 
 
