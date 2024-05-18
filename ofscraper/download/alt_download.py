@@ -250,7 +250,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             )
             count+=1
             await fileobject.write(chunk)
-            if (count) % constants.getattr("CHUNK_UPDATE_COUNT") == 0:
+            if (count) % constants.getattr("CHUNK_ITER") == 0:
                 await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
                     partial(

@@ -122,7 +122,7 @@ async def fresh_data_handler(c, tempholderObj, ele):
 
 async def resume_data_handler(data, c, tempholderObj, ele):
     content_type = data.get("content-type").split("/")[-1]
-    total = int(data.get("content-length"))
+    total = int(data.get("content-total"))
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
     resume_size = get_resume_size(tempholderObj, mediatype=ele.mediatype)
     # other
