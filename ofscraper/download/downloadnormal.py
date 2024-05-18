@@ -68,7 +68,7 @@ async def process_dicts(username, model_id, medialist):
                 for ele in medialist:
                     aws.append(
                         asyncio.create_task(
-                            download(c, ele, model_id, username, progress_utils.download_job_progress)
+                            download(c, ele, model_id, username)
                         )
                     )
                 task1 = progress_utils.download_overall_progress.add_task(
@@ -165,7 +165,7 @@ async def process_dicts(username, model_id, medialist):
             common_globals.cache_thread.shutdown()
 
 
-async def download(c, ele, model_id, username, job_progress):
+async def download(c, ele, model_id, username):
     async with common_globals.maxfile_sem:
         try:
             if read_args.retriveArgs().metadata:
@@ -176,7 +176,6 @@ async def download(c, ele, model_id, username, job_progress):
                     ele,
                     username,
                     model_id,
-                    job_progress,
                 )
             elif ele.mpd:
                 return await alt_download(
@@ -184,7 +183,6 @@ async def download(c, ele, model_id, username, job_progress):
                     ele,
                     username,
                     model_id,
-                    job_progress,
                 )
 
         except Exception as E:
