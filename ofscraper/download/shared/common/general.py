@@ -203,3 +203,9 @@ def get_ideal_chunk_size(total_size,curr_file):
         constants.getattr("MIN_CHUNK_SIZE"),
     )  # Minimum 4KB chunk
     return ideal_chunk_size
+
+def get_update_count(total_size,curr_file,chunk_size):
+    curr_file_size= pathlib.Path(curr_file).absolute().stat().st_size if pathlib.Path(curr_file).exists() else 0
+    file_size=total_size-curr_file_size
+
+    return max((file_size//chunk_size)//constants.getattr("CHUNK_UPDATE_COUNT"),1)

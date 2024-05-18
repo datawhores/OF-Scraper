@@ -6,7 +6,6 @@ from rich.progress import (
     SpinnerColumn,
     TaskProgressColumn,
     TextColumn,
-    TimeElapsedColumn,
     TimeRemainingColumn,
     TransferSpeedColumn,
         MofNCompleteColumn,
@@ -21,7 +20,6 @@ from ofscraper.classes.multiprocessprogress import MultiprocessProgress as Multi
 #activity
 activity_progress=Progress(
     TextColumn("[white]{task.description}[/white]"),
-    TimeElapsedColumn(),
     )
 activity_counter=Progress(
     TextColumn("[white]{task.description}[/white]"),
@@ -33,7 +31,6 @@ download_job_progress = Progress(
         TextColumn("[white]{task.description}[/white]"),
         BarColumn(),
         TaskProgressColumn(),
-        TimeElapsedColumn(),
         console=console_.get_temp_console(),
 )
 

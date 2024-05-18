@@ -29,12 +29,15 @@ from ofscraper.download.shared.common.general import (
     get_medialog,
     get_resume_size,
     size_checker,
+    get_update_count
 )
 from ofscraper.download.shared.utils.log import (
     get_url_log,
     path_to_file_logger,
     temp_file_logger,
 )
+import ofscraper.utils.live.live as progress_utils
+
 
 
 async def alt_download(c, ele, username, model_id):
@@ -224,20 +227,15 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     try:
         count = 0
         await common.send_msg(
-            {
-                "type": "add_task",
-                "args": (
-                    f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
-                    ele.id,
-                ),
-                "total": total,
-                "visible": False,
-            }
+            partial(progress_utils.add_download_job_multi_task,f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
+                    ele.id,total=total)
         )
         fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
-        await common.send_msg({"type": "update", "args": (ele.id,), "visible": True})
+        await common.send_msg(partial(progress_utils.update_download_multi_job_task,ele.id,visible=True))
         chunk_size = get_ideal_chunk_size(total,placeholderObj.tempfilepath)
+
+        update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
 
         async for chunk in l.iter_chunked(chunk_size):
             count = count + 1
@@ -245,17 +243,13 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
             await fileobject.write(chunk)
-            if count == constants.getattr("CHUNK_ITER"):
+            if count %update_count==0:
                 await common.send_msg(
                     {
-                        "type": "update",
-                        "args": (ele.id,),
-                        "completed": (
-                            pathlib.Path(placeholderObj.tempfilepath)
+                        partial(progress_utils.update_download_multi_job_task,ele.id,completed=pathlib.Path(placeholderObj.tempfilepath)
                             .absolute()
                             .stat()
-                            .st_size
-                        ),
+                            .st_size)
                     }
                 )
                 count = 0
@@ -270,6 +264,6 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             None
 
         try:
-            await common.send_msg({"type": "remove_task", "args": (ele.id,)})
+            await common.send_msg(partial(progress_utils.remove_download_multi_job_task,ele.id))
         except Exception:
             None

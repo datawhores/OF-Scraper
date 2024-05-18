@@ -245,7 +245,7 @@ async def download_fileobject_writer(
             common_globals.log.trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
-            if (count) % constants.getattr("CHUNK_ITER") == 0:
+            if (count) % constants.getattr("CHUNK_UPDATE_COUNT") == 0:
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
