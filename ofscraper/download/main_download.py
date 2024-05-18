@@ -38,6 +38,7 @@ from ofscraper.download.shared.common.general import (
     get_medialog,
     get_resume_size,
     get_unknown_content_type,
+    get_update_count,
     size_checker,
 )
 from ofscraper.download.shared.common.main_common import handle_result_main
@@ -237,7 +238,7 @@ async def download_fileobject_writer(
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
         count=0
-        update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
+        update_count=get_update_count(total,tempholderObj.tempfilepath,chunk_size)
         async for chunk in r.iter_chunked(chunk_size):
             await fileobject.write(chunk)
             count+=1
