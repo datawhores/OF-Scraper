@@ -8,13 +8,13 @@ import ofscraper.utils.console as console
 
 
                                                     #activity group
-activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True),title="Activity Progress"))
+activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True),title="Activity Progress", style="bold blue"))
 
 #download
 
-overall_panel=Panel(download_overall_progress)
-multi_panel=Panel(multi_download_job_progress)
-single_panel=Panel(download_job_progress)
+overall_panel=Panel(download_overall_progress, style="bold blue")
+multi_panel=Panel(multi_download_job_progress, style="bold blue")
+single_panel=Panel(download_job_progress, style="bold blue")
 download_progress_group=None
 multi_download_progress_group=None
 
@@ -26,7 +26,7 @@ userlist_group=Group(Panel(Group(userlist_overall_progress,userlist_job_progress
 #like
 like_progress_group=Panel(Group(like_overall_progress,activity_group))
 #activity
-api_progress_group = Group(Panel(api_overall_progress,title="API Progress"),Panel(api_job_progress,title="API Messages",height=console.get_shared_console().size[-1] - 19))
+api_progress_group = Group(Panel(api_overall_progress,title="API Progress", style="bold blue"),Panel(api_job_progress,title="API Messages", style="bold blue",height=console.get_shared_console().size[-1] - 19))
 
     
 #funct
