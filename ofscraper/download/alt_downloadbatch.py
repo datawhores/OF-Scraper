@@ -117,7 +117,7 @@ async def alt_download_downloader(
 
 
 async def resume_data_handler(data, item, c, ele, placeholderObj):
-    item["total"] = int(data.get("content-total"))
+    item["total"] = int(data.get("content-total",0))
     resume_size = get_resume_size(placeholderObj, mediatype=ele.mediatype)
     if await check_forced_skip(ele, item["total"]) == 0:
         item["total"] = 0
