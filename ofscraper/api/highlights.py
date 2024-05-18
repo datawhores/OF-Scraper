@@ -247,7 +247,7 @@ async def process_task_highlights(tasks):
     highlightResponse = []
     page_count = 0
     page_task = progress_utils.add_api_task(
-        f"Highlight Content via List Pages Progress: {page_count}", visible=True
+        f"Highlight Content via list pages progress: {page_count}", visible=True
     )
     seen = set()
     while tasks:
@@ -259,7 +259,7 @@ async def process_task_highlights(tasks):
                 page_count = page_count + 1
                 progress_utils.update_api_task(
                     page_task,
-                    description=f"Highlights Content via list Pages Progress: {page_count}",
+                    description=f"Highlights content via list pages progress: {page_count}",
                 )
                 new_posts = [
                     post
