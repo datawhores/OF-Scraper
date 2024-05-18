@@ -48,7 +48,7 @@ def add_api_job_task(*args,**kwargs):
 def add_api_task(*args,**kwargs):
     return api_overall_progress.add_task(*args,**kwargs)
 def remove_api_job_task(task):
-    if not task:
+    if task==None:
         return
     try:
         api_job_progress.remove_task(task)
@@ -60,7 +60,7 @@ def update_api_task(*args,**kwargs):
 
 
 def remove_api_job_task(task):
-    if not task:
+    if task==None:
         return
     try:
         api_job_progress.remove_task(task)
@@ -68,7 +68,7 @@ def remove_api_job_task(task):
         pass
 
 def remove_api_task(task):
-    if not task:
+    if task==None:
         return
     try:
         api_overall_progress.remove_task(task)
@@ -82,7 +82,7 @@ def add_userlist_job_task(*args,**kwargs):
    return userlist_job_progress.add_task(*args,**kwargs)
 
 def remove_userlist_task(task):
-    if not task:
+    if task==None:
         return
     try:
         userlist_overall_progress.remove_task(task)
@@ -90,7 +90,7 @@ def remove_userlist_task(task):
         pass
 
 def remove_userlist_job_task(task):
-    if not task:
+    if task==None:
         return
     try:
         userlist_overall_progress.remove_task(task)
@@ -117,7 +117,7 @@ def update_download_multi_job_task(*args,**kwargs):
         return
     multi_download_job_progress.update(*args,**kwargs)
 def remove_download_job_task(task):
-    if not task:
+    if task==None:
         return
     try:
         download_job_progress.remove_task(task)
@@ -125,14 +125,14 @@ def remove_download_job_task(task):
         pass
 
 def remove_download_multi_job_task(task):
-    if not task:
+    if task==None:
         return
     try:
         multi_download_job_progress.remove_task(task)
     except KeyError:
         pass
 def remove_download_task(task):
-    if not task:
+    if task==None:
         return
     try:
         download_overall_progress.remove_task(task)
