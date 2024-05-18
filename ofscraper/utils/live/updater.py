@@ -3,6 +3,8 @@ from ofscraper.utils.live.progress import download_job_progress,download_overall
 
 
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
+import ofscraper.utils.settings as settings
+
 def update_activity_task(**kwargs):
     activity_progress.update(
            activity_task, **kwargs
@@ -95,3 +97,25 @@ def remove_userlistjob_task(task):
     except KeyError:
         pass
 
+
+def add_downloadjob_task(*args,**kwargs):
+   return download_job_progress.add_task(*args,**kwargs)
+
+def add_downloadjobmuliti_task(*args,**kwargs):
+   return multi_download_job_progress.add_task(*args,**kwargs)
+
+def add_download_task(*args,**kwargs):
+   return download_overall_progress.add_task(*args,**kwargs)
+
+def update_downloadjob_task(*args,**kwargs):
+    if not settings.get_download_bars():
+        return
+    download_job_progress.update(*args,**kwargs)
+
+def remove_downloadjob_task(task):
+    if not task:
+        return
+    try:
+        download_job_progress.remove_task(task)
+    except KeyError:
+        pass

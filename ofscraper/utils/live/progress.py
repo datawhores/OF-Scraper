@@ -37,11 +37,7 @@ download_job_progress = Progress(
         console=console_.get_temp_console(),
 )
 
-download_overall_progress = Progress(
-            TextColumn("[white]{task.description}[/white]"),
-            BarColumn(),
-            TaskProgressColumn(),
- )
+
 
 multi_download_job_progress = MultiProgress(
                 TextColumn("[white]{task.description}[/white]", table_column=Column(ratio=2)),
@@ -51,6 +47,12 @@ multi_download_job_progress = MultiProgress(
                 TransferSpeedColumn(),
                 DownloadColumn(),
 )
+
+download_overall_progress = Progress(
+            TextColumn("[white]{task.description}[/white]"),
+            BarColumn(),
+            TaskProgressColumn(),
+ )
 
 live=Live( transient=False,refresh_per_second=4,console=console_.get_shared_console())  
 

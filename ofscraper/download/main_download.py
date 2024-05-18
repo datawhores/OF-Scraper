@@ -43,9 +43,10 @@ from ofscraper.download.shared.common.general import (
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.utils.metadata import force_download
+import ofscraper.utils.live.live as progress_utils
 
 
-async def main_download(c, ele, username, model_id, job_progress):
+async def main_download(c, ele, username, model_id):
     common_globals.log.debug(f"{get_medialog(ele)} Downloading with normal downloader")
     common_globals.log.debug(f"{get_medialog(ele)} download url:  {get_url_log(ele)}")
     if common.is_bad_url(ele.url):
@@ -57,7 +58,6 @@ async def main_download(c, ele, username, model_id, job_progress):
     result = await main_download_downloader(
         c,
         ele,
-        job_progress,
     )
 
     # special case for zero byte files
@@ -68,7 +68,7 @@ async def main_download(c, ele, username, model_id, job_progress):
     return await handle_result_main(result, ele, username, model_id)
 
 
-async def main_download_downloader(c, ele, job_progress):
+async def main_download_downloader(c, ele):
     downloadspace(mediatype=ele.mediatype)
     tempholderObj = await placeholder.tempFilePlaceholder(
         ele, f"{await ele.final_filename}_{ele.id}.part"
@@ -85,10 +85,10 @@ async def main_download_downloader(c, ele, job_progress):
                 )
                 if data:
                     return await resume_data_handler(
-                        data, c, tempholderObj, ele, job_progress
+                        data, c, tempholderObj, ele
                     )
                 else:
-                    return await fresh_data_handler(c, tempholderObj, ele, job_progress)
+                    return await fresh_data_handler(c, tempholderObj, ele)
             except OSError as E:
                 await asyncio.sleep(1)
                 common_globals.log.debug(
@@ -109,18 +109,18 @@ async def main_download_downloader(c, ele, job_progress):
                 raise E
 
 
-async def fresh_data_handler(c, tempholderObj, ele, job_progress):
+async def fresh_data_handler(c, tempholderObj, ele):
     result = None
     try:
         result = await main_download_sendreq(
-            c, ele, tempholderObj, job_progress, placeholderObj=None, total=None
+            c, ele, tempholderObj, placeholderObj=None, total=None
         )
     except Exception as E:
         raise E
     return result
 
 
-async def resume_data_handler(data, c, tempholderObj, ele, job_progress):
+async def resume_data_handler(data, c, tempholderObj, ele):
     content_type = data.get("content-type").split("/")[-1]
     total = int(data.get("content-length"))
     placeholderObj = await placeholder.Placeholders(ele, content_type).init()
@@ -143,7 +143,6 @@ async def resume_data_handler(data, c, tempholderObj, ele, job_progress):
                 c,
                 ele,
                 tempholderObj,
-                job_progress,
                 total=total,
                 placeholderObj=placeholderObj,
             )
@@ -152,7 +151,7 @@ async def resume_data_handler(data, c, tempholderObj, ele, job_progress):
 
 
 async def main_download_sendreq(
-    c, ele, tempholderObj, job_progress, total=None, placeholderObj=None
+    c, ele, tempholderObj, total=None, placeholderObj=None
 ):
     try:
         common_globals.log.debug(
@@ -163,7 +162,6 @@ async def main_download_sendreq(
             c,
             ele,
             tempholderObj,
-            job_progress,
             placeholderObj=placeholderObj,
             total=total,
         )
@@ -174,7 +172,7 @@ async def main_download_sendreq(
 
 
 async def send_req_inner(
-    c, ele, tempholderObj, job_progress, placeholderObj=None, total=None
+    c, ele, tempholderObj, placeholderObj=None, total=None
 ):
     old_total = total
     try:
@@ -215,7 +213,7 @@ async def send_req_inner(
                 total = new_total
                 await common.total_change_helper(old_total, total)
                 await download_fileobject_writer(
-                    r, job_progress, ele, tempholderObj, placeholderObj, total
+                    r, ele, tempholderObj, placeholderObj, total
                 )
 
         await size_checker(tempholderObj.tempfilepath, ele, total)
@@ -226,25 +224,22 @@ async def send_req_inner(
 
 
 async def download_fileobject_writer(
-    r, job_progress, ele, tempholderObj, placeholderObj, total
+    r, ele, tempholderObj, placeholderObj, total
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
     downloadprogress = settings.get_download_bars()
-    task1 = job_progress.add_task(
+    task1 =  progress_utils.add_downloadjob_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
         visible=True if downloadprogress else False,
     )
     try:
-        count = 0
         loop = asyncio.get_event_loop()
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
 
-        async for chunk in r.iter_chunked(chunk_size):
-            if downloadprogress:
-                count = count + 1
+        async for count,chunk in enumerate(r.iter_chunked(chunk_size)):
             await fileobject.write(chunk)
             common_globals.log.trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
@@ -253,7 +248,7 @@ async def download_fileobject_writer(
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(
-                        job_progress.update,
+                        progress_utils.update_downloadjob_task,
                         task1,
                         completed=pathlib.Path(tempholderObj.tempfilepath)
                         .absolute()
@@ -271,6 +266,6 @@ async def download_fileobject_writer(
         except Exception:
             None
         try:
-            job_progress.remove_task(task1)
+            progress_utils.remove_downloadjob_task(task1)
         except Exception:
             None
