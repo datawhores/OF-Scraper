@@ -237,13 +237,14 @@ async def download_fileobject_writer(
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
         count=0
+        update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
         async for chunk in r.iter_chunked(chunk_size):
             await fileobject.write(chunk)
             count+=1
             common_globals.log.trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
-            if (count) % constants.getattr("CHUNK_UPDATE_COUNT") == 0:
+            if (count) % update_count == 0:
                 await loop.run_in_executor(
                     common_globals.thread,
                     partial(

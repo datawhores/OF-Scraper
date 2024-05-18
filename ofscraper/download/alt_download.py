@@ -42,6 +42,7 @@ from ofscraper.download.shared.common.general import (
     get_ideal_chunk_size,
     get_medialog,
     get_resume_size,
+    get_update_count,
     size_checker,
 )
 from ofscraper.download.shared.utils.log import (
@@ -241,6 +242,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
     fileobject = await aiofiles.open(placeholderObj.tempfilepath, "ab").__aenter__()
     download_sleep = constants.getattr("DOWNLOAD_SLEEP")
     chunk_size = get_ideal_chunk_size(total,placeholderObj.tempfilepath)
+    update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
     count=0
     try:
         async for chunk in l.iter_chunked(chunk_size):
@@ -249,7 +251,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
             )
             count+=1
             await fileobject.write(chunk)
-            if (count) % constants.getattr("CHUNK_ITER") == 0:
+            if (count) % update_count == 0:
                 await asyncio.get_event_loop().run_in_executor(
                     common_globals.thread,
                     partial(
