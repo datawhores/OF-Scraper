@@ -8,10 +8,7 @@ def update_activity_task(**kwargs):
            activity_task, **kwargs
     )
 
-
-
 def increment_activity_count():
-    activity_counter_task
     activity_counter.update(
            activity_counter_task,advance=1
     )

@@ -29,9 +29,6 @@ def live_progress_context(stop=False):
         remove_task()
         live.stop()
 def remove_task():
-    global activity_task
-    global user_first_task
-    global activity_counter_task
     if activity_task:
         activity_progress.remove_task(
             activity_task
