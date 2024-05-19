@@ -24,7 +24,6 @@ import ofscraper.db.operations as operations
 import ofscraper.download.download as download
 import ofscraper.filters.media.main as filters
 import ofscraper.models.selector as userselector
-import ofscraper.utils.actions as actions
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.args.write as write_args
 import ofscraper.utils.constants as constants
@@ -42,6 +41,8 @@ from ofscraper.db.operations_.media import (
     get_timeline_media,
 )
 from ofscraper.commands.strings import avatar_str
+import ofscraper.classes.sessionmanager as sessionManager
+
 
 log = logging.getLogger("shared")
 
@@ -84,14 +85,10 @@ def metadata_stray_media(username, model_id, media):
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
 
-def metadata_normal():
+def metadata_normal(userdata,session):
     metadata_action = read_args.retriveArgs().metadata
     mark_stray = read_args.retriveArgs().mark_stray
-    profile_tools.print_current_profile()
-    init.print_sign_status()
-    userdata = userselector.getselected_usernames(rescan=False)
     length = len(userdata)
-
     for count, ele in enumerate(userdata):
         log.warning(
             f"Metadata action progressing on model {count+1}/{length} models "
@@ -110,7 +107,7 @@ Subscription Active:[/bold] {ele.active}"""
             model_id = ele.id
             username = ele.name
 
-            media, _,_ = process_areas_helper(ele, model_id)
+            media, _,_ = process_areas_helper(ele, model_id,c=session)
             operations.table_init_create(model_id=model_id, username=username)
             filterMedia = filters.filterMedia(
                 media, username=username, model_id=model_id
@@ -124,15 +121,13 @@ Subscription Active:[/bold] {ele.active}"""
             log.traceback_(traceback.format_exc())
 
 
-def metadata_user_first():
-    profile_tools.print_current_profile()
-    init.print_sign_status()
+def metadata_user_first(userdata,session):
     data = {}
-    for user in userselector.getselected_usernames(rescan=False):
+    for user in userdata:
         avatar=user.avatar
         if constants.getattr("SHOW_AVATAR") and avatar:
                 log.warning(f"Avatar : {avatar}")
-        data.update(process_user_first_data_retriver(user))
+        data.update(process_user_first_data_retriver(user,session))
     count = 0
     length = len(data.keys())
     for model_id, val in data.items():
@@ -188,7 +183,7 @@ def metadata_paid_all(user_dict=None):
     write_args.setArgs(old_args)
 
 
-def process_user_first_data_retriver(ele):
+def process_user_first_data_retriver(ele,session):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
@@ -206,7 +201,7 @@ Subscription Active:[/bold] {ele.active}
         model_id = ele.id
         username = ele.name
         operations.table_init_create(model_id=model_id, username=username)
-        media, _ = process_areas_helper(ele, model_id)
+        media, _ ,_= process_areas_helper(ele, model_id,c=session)
         return {model_id: {"username": username, "media": media, "avatar": avatar}}
     except Exception as e:
         if isinstance(e, KeyboardInterrupt):
@@ -217,11 +212,11 @@ Subscription Active:[/bold] {ele.active}
 
 def metadata():
     with scrape_context_manager():
-        userdata,session,actions=prepare()
+        userdata,session=prepare()
         if not read_args.retriveArgs().users_first:
-            metadata_normal()
+            metadata_normal(userdata,session)
         else:
-            metadata_user_first()
+            metadata_user_first(userdata,session)
 
 
 def process_selected_areas():
@@ -234,12 +229,6 @@ def process_selected_areas():
 
 def prepare():
     actions=read_args.retriveArgs().action
-    if read_args.retriveArgs().scrape_paid:
-        progress_utils.update_activity_task("Scraping Entire Paid page")
-        download_action.scrape_paid_all()
-    if len(actions)==0:
-        return
-    download_action.unique_name_warning()
     profile_tools.print_current_profile()
     init.print_sign_status()
     userdata = userselector.getselected_usernames(rescan=False)
@@ -250,4 +239,4 @@ def prepare():
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     )
-    return userdata,session,actions
+    return userdata,session

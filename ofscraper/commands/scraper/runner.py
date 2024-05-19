@@ -91,14 +91,6 @@ def normal(userdata,session,actions):
 def user_first(userdata,session,actions):
 
     length=len(userdata)
-
-    session=sessionManager.sessionManager(
-    sem=constants.getattr("API_REQ_SEM_MAX"),
-    retries=constants.getattr("API_NUM_TRIES"),
-    wait_min=constants.getattr("OF_MIN_WAIT_API"),
-    wait_max=constants.getattr("OF_MAX_WAIT_API"),
-    total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
-    )
     data={}
     progress_utils.update_activity_task(description="Getting all user Data First")
     progress_utils.add_user_first_activity(description="Progress on getting Data",total=len(userdata))
