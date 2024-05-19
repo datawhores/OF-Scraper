@@ -24,7 +24,6 @@ def runner():
     with scrape_context_manager():
         userdata,session,actions=prepare()
         with progress_utils.setup_api_split_progress_live(stop=True):
-            progress_utils.update_activity_count(total=len(userdata))
             if read_args.retriveArgs().users_first:
                 user_first(userdata,session,actions)
             else:
@@ -93,7 +92,9 @@ def user_first(userdata,session,actions):
     length=len(userdata)
     data={}
     progress_utils.update_activity_task(description="Getting all user Data First")
-    progress_utils.update_user_first_activity(description="Progress on getting Data",total=len(userdata))
+    progress_utils.update_user_first_activity(description="Progress on getting Data")
+    progress_utils.update_activity_count(description="Overall progress",total=2)
+
     for count,user in enumerate(userdata):
         avatar=user.avatar
         try:
@@ -109,6 +110,7 @@ def user_first(userdata,session,actions):
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())   
     progress_utils.update_activity_task(description="Downloading Content")
+    progress_utils.increment_activity_count(total=2)
     progress_utils.update_user_first_activity(description="Progress on Downloading",completed=0)
 
     for model_id, val in data.items():
@@ -128,13 +130,13 @@ def user_first(userdata,session,actions):
                     like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
                 elif action=="unlike":
                     like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-            progress_utils.increment_activity_count()
             progress_utils.increment_user_first_activity()
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
+    progress_utils.increment_activity_count(description="Overall progress",total=2)
 
 
 

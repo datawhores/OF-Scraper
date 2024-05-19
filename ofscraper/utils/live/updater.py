@@ -1,40 +1,42 @@
 import asyncio
+import ofscraper.models.selector as selector
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress
 
 
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
 import ofscraper.utils.settings as settings
-
 def update_activity_task(**kwargs):
     activity_progress.update(
            activity_task, **kwargs
     )
 
-def increment_activity_count():
+def increment_activity_count(total=None,visible=True,advance=1,**kwargs):
+    total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-           activity_counter_task,advance=1
+           activity_counter_task,advance=advance,total=total,visible=visible,**kwargs
     )
 
 
-def update_activity_count(**kwargs):
+def update_activity_count(visible=True,total=None,**kwargs):
+    total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-           activity_counter_task,**kwargs
+           activity_counter_task,visible=visible,total=total,**kwargs
     )
 
 
-
-def increment_user_first_activity():
+def increment_user_first_activity(total=None,visible=True,advance=1,**kwargs):
+    total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-           user_first_task,advance=1
+           user_first_task,total=total,visible=visible,advance=advance,**kwargs
     )
 
-def update_user_first_activity(visible=True,**kwargs):
+def update_user_first_activity(visible=True,total=None,**kwargs):
+    total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
-          user_first_task, visible=visible, **kwargs
+          user_first_task, visible=visible, total=total,**kwargs
     )
 
-#API
-lock=asyncio.Lock()
+
 
 def add_api_job_task(*args,**kwargs):
     return api_job_progress.add_task(*args,**kwargs)

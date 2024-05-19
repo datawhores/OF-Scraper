@@ -224,7 +224,6 @@ Subscription Active:[/bold] {ele.active}
 
 def metadata():
         userdata,session=prepare()
-        progress_utils.update_activity_count(total=len(userdata))
         if not read_args.retriveArgs().users_first:
             metadata_normal(userdata,session)
         else:

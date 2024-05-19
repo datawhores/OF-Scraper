@@ -13,7 +13,7 @@ activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True),ti
 
 
 #user
-userlist_group=Group(Panel(Group(userlist_overall_progress,userlist_job_progress)))
+userlist_group=Group(activity_group,Panel(Group(userlist_overall_progress,userlist_job_progress)))
 
 
 #like

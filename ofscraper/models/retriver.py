@@ -6,8 +6,8 @@ import ofscraper.classes.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
-import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.me as me_util
+from ofscraper.utils.live.live import update_activity_task
 
 
 async def get_models() -> list:
@@ -15,6 +15,7 @@ async def get_models() -> list:
     Get user's subscriptions in form of a list.
     """
     count = get_sub_count()
+    update_activity_task(description="Getting subscriptions")
     if not bool(read_args.retriveArgs().usernames):
         return await get_via_list(count)
     elif "ALL" in read_args.retriveArgs().usernames:
