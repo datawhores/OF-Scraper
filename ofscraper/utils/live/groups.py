@@ -32,7 +32,7 @@ multi_download_progress_group=None
 def get_download_group():
     global download_progress_group
     if not download_progress_group:
-        download_progress_group = Group(activity_group,overall_panel,single_panel,fit=True ) if settings.get_download_bars() else Group(overall_panel,activity_group,fit=True )
+        download_progress_group = Group(activity_group,overall_panel,single_panel,fit=True ) if settings.get_download_bars() else Group(activity_group,overall_panel,fit=True )
     return download_progress_group
 
 def get_multi_download_progress_group():
