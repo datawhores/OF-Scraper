@@ -218,6 +218,8 @@ class sessionManager:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._session.__aexit__(exc_type, exc_val, exc_tb)
+        await asyncio.sleep(1)
+
 
     def __enter__(self):
         self._async = False
@@ -237,6 +239,7 @@ class sessionManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)
+        time.sleep(1)
 
     def _create_headers(
         self,

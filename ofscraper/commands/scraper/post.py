@@ -515,14 +515,15 @@ async def process_task(model_id, username,ele, c=None):
     like_area=get_like_area()
     download_area=get_download_area()
     final_post_areas=get_final_posts_area()
-
-    async with c or sessionManager.sessionManager(
+    c=c or sessionManager.sessionManager(
         sem=constants.getattr("API_REQ_SEM_MAX"),
         retries=constants.getattr("API_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
-    ) as c:
+    )
+
+    async with c:
         while True:
             max_count = min(
                 constants.getattr("API_MAX_AREAS"),
