@@ -123,13 +123,13 @@ def user_first(userdata,actions,session):
             with ThreadPoolExecutor(
                 ) as executor:
                     asyncio.get_event_loop().set_default_executor(executor)
-                for action in actions:
-                    if action=="download":
-                        download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                    elif action=="like":
-                        like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                    elif action=="unlike":
-                        like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                    for action in actions:
+                        if action=="download":
+                            download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="like":
+                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="unlike":
+                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
             progress_utils.increment_user_first_activity()
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
