@@ -7,5 +7,5 @@ activity_counter_task=activity_counter.add_task(
             description='Overall script progress',
 )
 user_first_task=activity_counter.add_task(
-            "",visible=False
+            description='',visible=False
 )

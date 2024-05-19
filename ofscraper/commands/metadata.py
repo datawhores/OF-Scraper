@@ -40,8 +40,12 @@ from ofscraper.db.operations_.media import (
     get_messages_media,
     get_timeline_media,
 )
-from ofscraper.commands.strings import avatar_str
 import ofscraper.classes.sessionmanager as sessionManager
+import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.args.areas as areas
+
+from ofscraper.commands.strings import avatar_str,area_str
+
 
 
 log = logging.getLogger("shared")
@@ -90,6 +94,12 @@ def metadata_normal(userdata,session):
     mark_stray = read_args.retriveArgs().mark_stray
     length = len(userdata)
     for count, ele in enumerate(userdata):
+        active=ele.active
+        username=ele.name
+
+        progress_utils.switch_api_progress()
+        progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
+
         log.warning(
             f"Metadata action progressing on model {count+1}/{length} models "
         )
@@ -114,6 +124,7 @@ Subscription Active:[/bold] {ele.active}"""
             )
             download.download_process(username, model_id, filterMedia)
             metadata_stray_media(username, model_id, media)
+            progress_utils.increment_activity_count()
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
                 raise e
@@ -158,6 +169,7 @@ def metadata_user_first(userdata,session):
 
 
 def metadata_paid_all(user_dict=None):
+    progress_utils.update_activity_task("Scraping Entire Paid page")
     old_args = copy.deepcopy(read_args.retriveArgs())
     force_change_metadata()
     user_dict = process_all_paid()
@@ -211,8 +223,8 @@ Subscription Active:[/bold] {ele.active}
 
 
 def metadata():
-    with scrape_context_manager():
         userdata,session=prepare()
+        progress_utils.update_activity_count(total=len(userdata))
         if not read_args.retriveArgs().users_first:
             metadata_normal(userdata,session)
         else:
@@ -222,13 +234,14 @@ def metadata():
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_change_download()
-    if read_args.retriveArgs().metadata:
-        metadata()
-    if read_args.retriveArgs().scrape_paid:
-        metadata_paid_all()
+    with scrape_context_manager():
+        with progress_utils.setup_api_split_progress_live(stop=True):
+            if read_args.retriveArgs().metadata:
+                metadata()
+            if read_args.retriveArgs().scrape_paid:
+                metadata_paid_all()
 
 def prepare():
-    actions=read_args.retriveArgs().action
     profile_tools.print_current_profile()
     init.print_sign_status()
     userdata = userselector.getselected_usernames(rescan=False)

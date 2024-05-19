@@ -23,19 +23,14 @@ def update_activity_count(**kwargs):
 
 
 
-def add_user_first_activity(**kwargs):
-    activity_counter.update(
-            user_first_task,**kwargs
-    )
-
 def increment_user_first_activity():
     activity_counter.update(
            user_first_task,advance=1
     )
 
-def update_first_activity(**kwargs):
+def update_user_first_activity(visible=True,**kwargs):
     activity_counter.update(
-          user_first_task,  **kwargs
+          user_first_task, visible=visible, **kwargs
     )
 
 #API

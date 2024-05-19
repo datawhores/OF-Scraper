@@ -93,9 +93,9 @@ def user_first(userdata,session,actions):
     length=len(userdata)
     data={}
     progress_utils.update_activity_task(description="Getting all user Data First")
-    progress_utils.add_user_first_activity(description="Progress on getting Data",total=len(userdata))
+    progress_utils.update_user_first_activity(description="Progress on getting Data",total=len(userdata))
     for count,user in enumerate(userdata):
-        avatar=ele.avatr
+        avatar=user.avatar
         try:
             progress_utils.switch_api_progress()
             logging.getLogger("shared_other").warning(f"\[{user.name}] Data Retrival Progress: {count+1}/{length} models")
@@ -109,7 +109,7 @@ def user_first(userdata,session,actions):
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())   
     progress_utils.update_activity_task(description="Downloading Content")
-    progress_utils.update_first_activity(description="Progress on Downloading",completed=0)
+    progress_utils.update_user_first_activity(description="Progress on Downloading",completed=0)
 
     for model_id, val in data.items():
         all_media = val["media"]
