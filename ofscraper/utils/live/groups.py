@@ -13,11 +13,11 @@ activity_group=Group(Panel(Group(activity_progress,activity_counter,fit=True),ti
 
 
 #user
-userlist_group=Group(activity_group,Panel(Group(userlist_overall_progress,userlist_job_progress)))
+userlist_group=Group(activity_group,Panel(Group(userlist_overall_progress,userlist_job_progress),style="bold blue"))
 
 
 #like
-like_progress_group=Panel(Group(activity_group,like_overall_progress))
+like_progress_group=Panel(Group(activity_group,like_overall_progress),style="bold blue")
 #activity
 api_progress_group = Group(activity_group,Panel(api_overall_progress,title="API Progress", style="bold blue"),Panel(api_job_progress,title="API Messages", style="bold blue",height=console.get_shared_console().size[-1] - 19))
 
