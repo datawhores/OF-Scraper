@@ -6,7 +6,6 @@ from rich.progress import (
     SpinnerColumn,
     TaskProgressColumn,
     TextColumn,
-    TimeRemainingColumn,
     TransferSpeedColumn,
         MofNCompleteColumn,
 
@@ -31,7 +30,7 @@ download_job_progress = Progress(
         TextColumn("[white]{task.description}[/white]"),
         BarColumn(),
         TaskProgressColumn(),
-        console=console_.get_temp_console(),
+        console=console_.get_shared_console(),
 )
 
 
@@ -69,10 +68,10 @@ like_overall_progress=Progress(
 )
 #api
 api_job_progress= Progress(
-        "[white]{task.description}[/white]", console=console_.get_temp_console()
+        "[white]{task.description}[/white]", console=console_.get_shared_console()
 )
 api_overall_progress = Progress(
         SpinnerColumn(style=Style(color="blue")),
         TextColumn("[white]{task.description}[/white]"),
-        console=console_.get_temp_console(),
+        console=console_.get_shared_console(),
     )

@@ -1,8 +1,8 @@
 from rich.console import Console
 from rich.theme import Theme
+from ofscraper.utils.args.output import low_output
 
-shared_console = Console(
-    theme=Theme(
+theme= Theme(
         {
             "logging.level.error": "green",
             "logging.level.warning": "green",
@@ -11,41 +11,31 @@ shared_console = Console(
             "logging.level.traceback": "red",
         }
     )
+
+shared_console = Console(
+   theme=theme,
+    quiet =low_output()==True
 )
 
+other_console = Console(
+   theme=theme
+)
 
-def get_shared_console(quiet=None):
-    import ofscraper.utils.args.read as read_args
+def get_console():
+    if not low_output():
+        return get_shared_console()
+    return get_other_console()
 
-    quiet = (
-        read_args.retriveArgs().output in {"OFF", "LOW", "PROMPT"}
-        if quiet == None
-        else quiet
-    )
-    shared_console.quiet = quiet
+def get_shared_console():
+    global shared_console
     return shared_console
 
 
-def get_temp_console(quiet=None):
-    import ofscraper.utils.args.read as read_args
+def get_other_console():
+    global other_console
+    return other_console
 
-    quiet = (
-        read_args.retriveArgs().output in {"OFF", "LOW", "PROMPT"}
-        if quiet == None
-        else quiet
-    )
-    return Console(
-        theme=Theme(
-            {
-                "logging.level.error": "green",
-                "logging.level.warning": "green",
-                "logging.level.debug": "yellow",
-                "logging.level.info": "white",
-                "logging.level.traceback": "red",
-            }
-        ),
-        quiet=quiet,
-    )
+    
 
 
 def update_shared(console_):

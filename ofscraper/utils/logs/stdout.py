@@ -73,7 +73,7 @@ def init_stdout_logger(name=None):
         tracebacks_show_locals=True,
         show_time=False,
         show_level=False,
-        console=console.get_shared_console(),
+        console=console.get_console(),
     )
     sh.setLevel(log_helpers.getLevel(read_args.retriveArgs().output))
     sh.setFormatter(log_class.SensitiveFormatter(format))
