@@ -17,9 +17,9 @@ userlist_group=Group(Panel(Group(userlist_overall_progress,userlist_job_progress
 
 
 #like
-like_progress_group=Panel(Group(like_overall_progress,activity_group))
+like_progress_group=Panel(Group(activity_group,like_overall_progress))
 #activity
-api_progress_group = Group(Panel(api_overall_progress,title="API Progress", style="bold blue"),Panel(api_job_progress,title="API Messages", style="bold blue",height=console.get_shared_console().size[-1] - 19))
+api_progress_group = Group(activity_group,Panel(api_overall_progress,title="API Progress", style="bold blue"),Panel(api_job_progress,title="API Messages", style="bold blue",height=console.get_shared_console().size[-1] - 19))
 
     
 #download
@@ -32,13 +32,13 @@ multi_download_progress_group=None
 def get_download_group():
     global download_progress_group
     if not download_progress_group:
-        download_progress_group = Group(overall_panel,activity_group,single_panel,fit=True ) if settings.get_download_bars() else Group(overall_panel,activity_group,fit=True ) 
+        download_progress_group = Group(activity_group,overall_panel,single_panel,fit=True ) if settings.get_download_bars() else Group(overall_panel,activity_group,fit=True )
     return download_progress_group
 
 def get_multi_download_progress_group():
     global multi_download_progress_group
     if not multi_download_progress_group:
-        multi_download_progress_group= Group(overall_panel,activity_group, multi_panel,fit=True) if settings.get_download_bars() else Group(overall_panel,activity_group,fit=True)
+        multi_download_progress_group= Group(activity_group,overall_panel, multi_panel,fit=True) if settings.get_download_bars() else Group(overall_panel,activity_group,fit=True)
     return multi_download_progress_group
 
 
