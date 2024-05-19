@@ -36,6 +36,15 @@ console_output_level_option = click.option(
     callback=lambda ctx, param, value: value.upper() if value else None,
 )
 
+console_rich_toggle = click.option(
+    "--no-live-screen",
+    "--no-live",
+    "--no-rich",
+    "no_rich",
+    help="Turn off rich live display features",
+    is_flag=True
+)
+
 # Create the option group
 
 logging_options = click.option_group(
@@ -43,5 +52,6 @@ logging_options = click.option_group(
     log_level_option,
     discord_log_level_option,
     console_output_level_option,
+    console_rich_toggle,
     help="Settings for logging",
 )

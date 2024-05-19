@@ -12,9 +12,10 @@ theme= Theme(
         }
     )
 
+quiet =low_output()==True
 shared_console = Console(
    theme=theme,
-    quiet =low_output()==True
+   quiet=quiet
 )
 
 other_console = Console(
