@@ -87,81 +87,79 @@ def metadata_stray_media(username, model_id, media):
 def metadata_normal():
     metadata_action = read_args.retriveArgs().metadata
     mark_stray = read_args.retriveArgs().mark_stray
-    with scrape_context_manager():
-        profile_tools.print_current_profile()
-        init.print_sign_status()
-        userdata = userselector.getselected_usernames(rescan=False)
-        length = len(userdata)
+    profile_tools.print_current_profile()
+    init.print_sign_status()
+    userdata = userselector.getselected_usernames(rescan=False)
+    length = len(userdata)
 
-        for count, ele in enumerate(userdata):
-            log.warning(
-                f"Metadata action progressing on model {count+1}/{length} models "
-            )
-            if constants.getattr("SHOW_AVATAR") and ele.avatar:
-                log.warning(f"Avatar : {ele.avatar}")
+    for count, ele in enumerate(userdata):
+        log.warning(
+            f"Metadata action progressing on model {count+1}/{length} models "
+        )
+        if constants.getattr("SHOW_AVATAR") and ele.avatar:
+            log.warning(f"Avatar : {ele.avatar}")
 
-            log.warning(
-                f"""
+        log.warning(
+            f"""
 Perform Meta {metadata_action} with
 Mark Stray: {mark_stray}
 for [bold]{ele.name}[/bold]\n[bold]
 Subscription Active:[/bold] {ele.active}"""
-            )
-            try:
-                model_id = ele.id
-                username = ele.name
+        )
+        try:
+            model_id = ele.id
+            username = ele.name
 
-                media, _ = process_areas_helper(ele, model_id)
-                operations.table_init_create(model_id=model_id, username=username)
-                filterMedia = filters.filterMedia(
-                    media, username=username, model_id=model_id
-                )
-                download.download_process(username, model_id, filterMedia)
-                metadata_stray_media(username, model_id, media)
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+            media, _,_ = process_areas_helper(ele, model_id)
+            operations.table_init_create(model_id=model_id, username=username)
+            filterMedia = filters.filterMedia(
+                media, username=username, model_id=model_id
+            )
+            download.download_process(username, model_id, filterMedia)
+            metadata_stray_media(username, model_id, media)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
 
 
 def metadata_user_first():
-    with scrape_context_manager():
-        profile_tools.print_current_profile()
-        init.print_sign_status()
-        data = {}
-        for user in userselector.getselected_usernames(rescan=False):
-            avatar=user.avatar
+    profile_tools.print_current_profile()
+    init.print_sign_status()
+    data = {}
+    for user in userselector.getselected_usernames(rescan=False):
+        avatar=user.avatar
+        if constants.getattr("SHOW_AVATAR") and avatar:
+                log.warning(f"Avatar : {avatar}")
+        data.update(process_user_first_data_retriver(user))
+    count = 0
+    length = len(data.keys())
+    for model_id, val in data.items():
+        username = val["username"]
+        media = val["media"]
+        avatar = val["avatar"]
+        try:
             if constants.getattr("SHOW_AVATAR") and avatar:
-                    log.warning(f"Avatar : {avatar}")
-            data.update(process_user_first_data_retriver(user))
-        count = 0
-        length = len(data.keys())
-        for model_id, val in data.items():
-            username = val["username"]
-            media = val["media"]
-            avatar = val["avatar"]
-            try:
-                if constants.getattr("SHOW_AVATAR") and avatar:
-                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                log.warning(
-                    f"Download action progressing on model {count+1}/{length} models "
-                )
-                if constants.getattr("SHOW_AVATAR") and avatar:
-                    log.warning(f"Avatar : {avatar}")
-                filterMedia = filters.filterMedia(
-                    media, username=username, model_id=model_id
-                )
-                download.download_process(username, model_id, filterMedia)
-                metadata_stray_media(username, model_id, media)
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
+            log.warning(
+                f"Download action progressing on model {count+1}/{length} models "
+            )
+            if constants.getattr("SHOW_AVATAR") and avatar:
+                log.warning(f"Avatar : {avatar}")
+            filterMedia = filters.filterMedia(
+                media, username=username, model_id=model_id
+            )
+            download.download_process(username, model_id, filterMedia)
+            metadata_stray_media(username, model_id, media)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
 
-            finally:
-                count = count + 1
+        finally:
+            count = count + 1
 
 
 def metadata_paid_all(user_dict=None):
@@ -218,11 +216,12 @@ Subscription Active:[/bold] {ele.active}
 
 
 def metadata():
-    actions.select_areas()
-    if not read_args.retriveArgs().users_first:
-        metadata_normal()
-    else:
-        metadata_user_first()
+    with scrape_context_manager():
+        userdata,session,actions=prepare()
+        if not read_args.retriveArgs().users_first:
+            metadata_normal()
+        else:
+            metadata_user_first()
 
 
 def process_selected_areas():
@@ -232,3 +231,23 @@ def process_selected_areas():
         metadata()
     if read_args.retriveArgs().scrape_paid:
         metadata_paid_all()
+
+def prepare():
+    actions=read_args.retriveArgs().action
+    if read_args.retriveArgs().scrape_paid:
+        progress_utils.update_activity_task("Scraping Entire Paid page")
+        download_action.scrape_paid_all()
+    if len(actions)==0:
+        return
+    download_action.unique_name_warning()
+    profile_tools.print_current_profile()
+    init.print_sign_status()
+    userdata = userselector.getselected_usernames(rescan=False)
+    session = sessionManager.sessionManager(
+        sem=constants.getattr("API_REQ_SEM_MAX"),
+        retries=constants.getattr("API_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
+    )
+    return userdata,session,actions
