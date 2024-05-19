@@ -1,6 +1,9 @@
 import logging
 import traceback
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+
 
 import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager as sessionManager
@@ -76,15 +79,18 @@ async def normal(userdata,actions,session):
                 all_media, posts,like_posts=await post_media_process(
                     ele, c=c
                 )
-                for action in actions:
-                    if action=="download":
-                        
-                        await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                    elif action=="like":
-                        like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                    elif action=="unlike":
-                        like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                progress_utils.increment_activity_count()
+                with ThreadPoolExecutor(
+                ) as executor:
+                    asyncio.get_event_loop().set_default_executor(executor)
+                    for action in actions:
+                        if action=="download":
+
+                            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="like":
+                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="unlike":
+                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                        progress_utils.increment_activity_count()
 
 
             except Exception as e:
