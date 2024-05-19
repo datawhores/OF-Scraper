@@ -17,6 +17,7 @@ from tenacity import AsyncRetrying, Retrying, retry_if_not_exception_type
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.config.data as data
 import ofscraper.utils.constants as constants
+from ofscraper.utils.context.run_async import run
 
 
 def is_rate_limited(exception):
@@ -195,47 +196,60 @@ class sessionManager:
         self._log = log or logging.getLogger("shared")
         auth_requests.read_request_auth() if refresh else None
         self._sleeper = SessionSleep()
+        self._session=None
 
+
+    def _set_session(self,async_=True):
+        if self._session:
+            return
+        if async_:
+            self._async = True
+            if self._backend == "aio":
+                self._session = aiohttp.ClientSession(
+                    connector=aiohttp.TCPConnector(limit=self._connect_limit),
+                )
+
+            elif self._backend == "httpx":
+                self._session = httpx.AsyncClient(
+                    http2=True,
+                    proxies=self._proxy,
+                    limits=httpx.Limits(
+                        max_keepalive_connections=self._keep_alive,
+                        max_connections=self._connect_limit,
+                        keepalive_expiry=self._keep_alive_exp,
+                    ),
+                )
+        else:
+            self._async = False
+            if self._backend == "httpx":
+                self._session = httpx.Client(
+                    http2=True,
+                    proxies=self._proxy,
+                    limits=httpx.Limits(
+                        max_keepalive_connections=self._keep_alive,
+                        max_connections=self._connect_limit,
+                        keepalive_expiry=self._keep_alive_exp,
+                    ),
+                )
+            elif self._backend == "aio":
+                raise Exception("aiohttp is async only")
+            return self
+
+    #https://github.com/aio-libs/aiohttp/issues/1925
     async def __aenter__(self):
-        self._async = True
-        if self._backend == "aio":
-            self._session = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(limit=self._connect_limit),
-            )
-
-        elif self._backend == "httpx":
-            self._session = httpx.AsyncClient(
-                http2=True,
-                proxies=self._proxy,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-            )
-
+        self._set_session(async_=True)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._session.__aexit__(exc_type, exc_val, exc_tb)
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
 
     def __enter__(self):
-        self._async = False
-        if self._backend == "httpx":
-            self._session = httpx.Client(
-                http2=True,
-                proxies=self._proxy,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self._keep_alive,
-                    max_connections=self._connect_limit,
-                    keepalive_expiry=self._keep_alive_exp,
-                ),
-            )
-        elif self._backend == "aio":
-            raise Exception("aiohttp is async only")
+        self._set_session(async_=False)
         return self
+
+    
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._session.__exit__(exc_type, exc_val, exc_tb)

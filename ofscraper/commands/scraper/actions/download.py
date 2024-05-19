@@ -28,12 +28,12 @@ download_str= "Performing Downloading Action on {name}"
 
 
 
-def downloader(ele=None,posts=None,media=None,**kwargs):
+async def downloader(ele=None,posts=None,media=None,**kwargs):
     model_id = ele.id
     username = ele.name
     progress_utils.update_activity_task(description=download_str.format(name=username))
     logging.getLogger("shared_other").warning(download_str.format(name=username))
-    download.download_process(username, model_id, media, posts=posts)
+    await download.download_process(username, model_id, media, posts=posts)
 
 
 

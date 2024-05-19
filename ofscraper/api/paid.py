@@ -164,100 +164,94 @@ async def get_all_paid_posts():
 
 
 async def process_and_create_tasks():
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_THREAD_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
+    output = []
+    min_posts = 80
+    tasks = []
+    page_count = 0
+    with progress_utils.setup_all_paid_live():
+        async with sessionManager.sessionManager(
+            sem=constants.getattr("SCRAPE_PAID_SEMS"),
+            retries=constants.getattr("API_PAID_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        ) as c:
+            allpaid = cache.get("purchased_all", default=[])
+            log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
 
-        output = []
-        min_posts = 80
-        tasks = []
-        page_count = 0
-        with progress_utils.setup_all_paid_live():
-        
-            async with sessionManager.sessionManager(
-                sem=constants.getattr("SCRAPE_PAID_SEMS"),
-                retries=constants.getattr("API_PAID_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT_API"),
-                wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            ) as c:
-                allpaid = cache.get("purchased_all", default=[])
-                log.debug(f"[bold]All Paid Cache[/bold] {len(allpaid)} found")
-
-                if len(allpaid) > min_posts:
-                    splitArrays = [i for i in range(0, len(allpaid), min_posts)]
-                    [
-                        tasks.append(
-                            asyncio.create_task(
-                                scrape_all_paid(
-                                    c,
-                                    required=min_posts,
-                                    offset=splitArrays[i],
-                                )
-                            )
-                        )
-                        for i in range(0, len(splitArrays) - 1)
-                    ]
+            if len(allpaid) > min_posts:
+                splitArrays = [i for i in range(0, len(allpaid), min_posts)]
+                [
                     tasks.append(
                         asyncio.create_task(
                             scrape_all_paid(
-                                c, offset=splitArrays[-1], required=None
+                                c,
+                                required=min_posts,
+                                offset=splitArrays[i],
                             )
                         )
                     )
-                else:
-                    tasks.append(asyncio.create_task(scrape_all_paid(c)))
-
-                page_task = progress_utils.add_api_task(
-                    f"[Purchased] Pages Progress: {page_count}", visible=True
+                    for i in range(0, len(splitArrays) - 1)
+                ]
+                tasks.append(
+                    asyncio.create_task(
+                        scrape_all_paid(
+                            c, offset=splitArrays[-1], required=None
+                        )
+                    )
                 )
-                while tasks:
-                    new_tasks = []
-                    for task in asyncio.as_completed(tasks):
-                        try:
-                            result, new_tasks_batch = await task
-                            page_count = page_count + 1
-                            progress_utils.update_api_task(
-                                page_task, description=f"Pages Progress: {page_count}"
-                            )
-                            output.extend(result)
-                            log.debug(
-                                f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}"
-                            )
-                            paid_str = ""
-                            for post in output:
-                                paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
+            else:
+                tasks.append(asyncio.create_task(scrape_all_paid(c)))
 
-                            log.trace(
-                                f"{common_logs.PROGRESS_RAW.format('All Paid')}".format(
-                                    posts=paid_str
-                                )
-                            )
-                            new_tasks.extend(new_tasks_batch)
-                            await asyncio.sleep(1)
-                        except Exception as E:
-                            await asyncio.sleep(1)
-                            log.traceback_(E)
-                            log.traceback_(traceback.format_exc())
-                    tasks = new_tasks
-                progress_utils.remove_api_task(page_task)
+            page_task = progress_utils.add_api_task(
+                f"[Purchased] Pages Progress: {page_count}", visible=True
+            )
+            while tasks:
+                new_tasks = []
+                for task in asyncio.as_completed(tasks):
+                    try:
+                        result, new_tasks_batch = await task
+                        page_count = page_count + 1
+                        progress_utils.update_api_task(
+                            page_task, description=f"Pages Progress: {page_count}"
+                        )
+                        output.extend(result)
+                        log.debug(
+                            f"{common_logs.PROGRESS_IDS.format('ALL Paid')} {list(map(lambda x:x['id'],result))}"
+                        )
+                        paid_str = ""
+                        for post in output:
+                            paid_str += f"{common_logs.RAW_INNER} {post}\n\n"
 
-        log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
-        log.trace(
-            "paid raw duped {posts}".format(
-                posts="\n\n".join(
-                    map(lambda x: f"dupedinfo all paid: {str(x)}", output)
-                )
+                        log.trace(
+                            f"{common_logs.PROGRESS_RAW.format('All Paid')}".format(
+                                posts=paid_str
+                            )
+                        )
+                        new_tasks.extend(new_tasks_batch)
+                        await asyncio.sleep(1)
+                    except Exception as E:
+                        await asyncio.sleep(1)
+                        log.traceback_(E)
+                        log.traceback_(traceback.format_exc())
+                tasks = new_tasks
+            progress_utils.remove_api_task(page_task)
+
+    log.debug(f"[bold]Paid Post count with Dupes[/bold] {len(output)} found")
+    log.trace(
+        "paid raw duped {posts}".format(
+            posts="\n\n".join(
+                map(lambda x: f"dupedinfo all paid: {str(x)}", output)
             )
         )
-        cache.set(
-            "purchased_all",
-            list(map(lambda x: x.get("id"), list(output))),
-            expire=constants.getattr("RESPONSE_EXPIRY"),
-        )
-        cache.close()
-        # filter at user level
-        return output
+    )
+    cache.set(
+        "purchased_all",
+        list(map(lambda x: x.get("id"), list(output))),
+        expire=constants.getattr("RESPONSE_EXPIRY"),
+    )
+    cache.close()
+    # filter at user level
+    return output
 
 
 def create_all_paid_dict(paid_content):
