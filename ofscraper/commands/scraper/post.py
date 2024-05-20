@@ -361,59 +361,60 @@ async def process_profile(username) -> list:
 async def process_all_paid():
     paid_content = await paid.get_all_paid_posts()
     output = {}
-    progress_utils.update_activity_task(description="Processsing Paid content data")
-    for model_id, value in paid_content.items():
-        progress_utils.update_activity_count(total=None,description=all_paid_model_id_str.format(model_id=model_id))
-     
-        username = profile.scrape_profile(model_id,refresh=False).get("username")
-        if username == constants.getattr(
-            "DELETED_MODEL_PLACEHOLDER"
-        ) and await check_profile_table_exists(model_id=model_id, username=username):
-            username = (
-                await get_profile_info(model_id=model_id, username=username) or username
+    with progress_utils.setup_all_paid_database_live():
+        progress_utils.update_activity_task(description="Processsing Paid content data")
+        for model_id, value in paid_content.items():
+            progress_utils.update_activity_count(total=None,description=all_paid_model_id_str.format(model_id=model_id))
+        
+            username = profile.scrape_profile(model_id,refresh=False).get("username")
+            if username == constants.getattr(
+                "DELETED_MODEL_PLACEHOLDER"
+            ) and await check_profile_table_exists(model_id=model_id, username=username):
+                username = (
+                    await get_profile_info(model_id=model_id, username=username) or username
+                )
+            progress_utils.update_activity_count(total=None,description=all_paid_str.format(username=username))
+            log.info(f"Processing {username}_{model_id}")
+            await operations.table_init_create(model_id=model_id, username=username)
+            log.debug(f"Created table for {username}_{model_id}")
+            all_posts = list(
+                map(
+                    lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
+                    value,
+                )
             )
-        progress_utils.update_activity_count(total=None,description=all_paid_str.format(username=username))
-        log.info(f"Processing {username}_{model_id}")
-        await operations.table_init_create(model_id=model_id, username=username)
-        log.debug(f"Created table for {username}_{model_id}")
-        all_posts = list(
-            map(
-                lambda x: posts_.Post(x, model_id, username, responsetype="paid"),
-                value,
+            seen = set()
+            new_posts = [
+                post for post in all_posts if post.id not in seen and not seen.add(post.id)
+            ]
+            new_medias = [item for post in new_posts for item in post.all_media]
+            new_medias = filters.filterMedia(
+                new_medias, model_id=model_id, username=username
             )
-        )
-        seen = set()
-        new_posts = [
-            post for post in all_posts if post.id not in seen and not seen.add(post.id)
-        ]
-        new_medias = [item for post in new_posts for item in post.all_media]
-        new_medias = filters.filterMedia(
-            new_medias, model_id=model_id, username=username
-        )
-        new_posts = filters.filterPost(new_posts)
-        await operations.make_post_table_changes(
-            new_posts,
-            model_id=model_id,
-            username=username,
-        )
-        await batch_mediainsert(
-            new_medias,
-            model_id=model_id,
-            username=username,
-            downloaded=False,
-        )
+            new_posts = filters.filterPost(new_posts)
+            await operations.make_post_table_changes(
+                new_posts,
+                model_id=model_id,
+                username=username,
+            )
+            await batch_mediainsert(
+                new_medias,
+                model_id=model_id,
+                username=username,
+                downloaded=False,
+            )
 
-        output[model_id] = dict(
-            model_id=model_id, username=username, posts=new_posts, medias=new_medias
-        )
+            output[model_id] = dict(
+                model_id=model_id, username=username, posts=new_posts, medias=new_medias
+            )
+            log.debug(
+                f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}"
+            )
+            progress_utils.increment_activity_count(total=None)
+
         log.debug(
-            f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}"
+            f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"
         )
-        progress_utils.increment_activity_count(total=None)
-
-    log.debug(
-        f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"
-    )
     return output
 
 

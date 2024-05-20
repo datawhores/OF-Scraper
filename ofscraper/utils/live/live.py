@@ -6,15 +6,18 @@ import ofscraper.utils.constants as constants
 
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,live,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress
 
-from ofscraper.utils.live.groups import api_progress_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group
+from ofscraper.utils.live.groups import api_progress_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group,activity_group
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
 from ofscraper.utils.live.updater import update_activity_task,increment_activity_count,update_activity_count,add_api_job_task,remove_api_job_task,add_userlist_task,remove_userlist_task,remove_userlist_job_task,add_userlist_job_task,add_api_task,update_api_task,remove_api_task,update_activity_task,add_download_task,add_download_job_task,add_download_job_multi_task,update_download_job_task,remove_download_job_task,remove_download_task,remove_download_multi_job_task,update_download_multi_job_task,increment_user_first_activity,update_user_first_activity,add_like_task,increment_like_task,remove_like_task
 #main context and switches
 @contextlib.contextmanager
-def live_progress_context(stop=False):
+def live_progress_context(stop=False,revert=True):
     if not live.is_started:
         live.start()
+    old_render=live.renderable
     yield
+    if revert and old_render:
+        live.update(old_render)
     if stop:
         remove_task()
         live.stop()
@@ -77,6 +80,12 @@ def switch_api_progress():
     console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
     live.update(api_progress_group,refresh=True)
 
+@contextlib.contextmanager
+def setup_all_paid_database_live(stop=False):
+    with live_progress_context(stop=stop):
+        console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
+        live.update(activity_group,refresh=True)
+        yield
 
 def get_quiet_toggle_helper(key):
     return constants.getattr(key) if constants.getattr(key)!=None else console_.get_shared_console().quiet
