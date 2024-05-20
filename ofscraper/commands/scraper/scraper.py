@@ -51,7 +51,7 @@ def process_selected_areas():
 
 
 def daemon_process():
-    run.daemon_run_helper(runner)
+    run.daemon_run_helper()
     pass
 
 

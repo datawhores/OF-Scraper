@@ -28,6 +28,7 @@ import ofscraper.utils.checkers as checkers
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
+from ofscraper.commands.scraper.runner import runner
 
 log = logging.getLogger("shared")
 
@@ -55,12 +56,12 @@ def schedule_helper(*functs):
     return schedule.CancelJob
 
 
-def daemon_run_helper(*functs):
+def daemon_run_helper():
     checkers.check_auth()
     global jobqueue
     jobqueue = queue.Queue()
     worker_thread = None
-    [jobqueue.put(funct) for funct in functs]
+    jobqueue.put(runner) 
     if read_args.retriveArgs().output == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
@@ -68,7 +69,7 @@ def daemon_run_helper(*functs):
     actions.select_areas()
     try:
         worker_thread = threading.Thread(
-            target=set_schedule, args=[*functs], daemon=True
+            target=set_schedule, args=[runner], daemon=True
         )
         worker_thread.start()
         # Check if jobqueue has function
