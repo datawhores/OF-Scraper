@@ -2,6 +2,9 @@ import logging
 import subprocess
 import traceback
 import json
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
+
 
 import ofscraper.download.downloadbatch as batchdownloader
 import ofscraper.download.downloadnormal as normaldownloader
@@ -15,11 +18,14 @@ from ofscraper.download.shared.utils.text import textDownloader
 
 
 async def download_process(username, model_id, medialist, posts=None):
-    if not read_args.retriveArgs().command == "metadata":
-        await textDownloader(posts, username=username)
-    data = await download_picker(username, model_id, medialist)
-    download_post_process(username, model_id, medialist, posts)
-    return data
+    with ThreadPoolExecutor(
+                ) as executor:
+        asyncio.get_event_loop().set_default_executor(executor)
+        if not read_args.retriveArgs().command == "metadata":
+            await textDownloader(posts, username=username)
+        data = await download_picker(username, model_id, medialist)
+        download_post_process(username, model_id, medialist, posts)
+        return data
 
 
 async def download_picker(username, model_id, medialist):

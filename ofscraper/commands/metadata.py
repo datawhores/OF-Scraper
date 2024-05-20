@@ -45,6 +45,8 @@ import ofscraper.utils.live.live as progress_utils
 import ofscraper.utils.args.areas as areas
 
 from ofscraper.commands.strings import avatar_str,area_str
+from ofscraper.utils.context.run_async import run
+
 
 
 
@@ -88,48 +90,51 @@ def metadata_stray_media(username, model_id, media):
     log.info(f"Found {len(filtered_media)} stray items to mark as locked")
     batch_set_media_downloaded(filtered_media, model_id=model_id, username=username)
 
-
-def metadata_normal(userdata,session):
+@run
+async def metadata_normal(userdata,session):
     metadata_action = read_args.retriveArgs().metadata
     mark_stray = read_args.retriveArgs().mark_stray
     length = len(userdata)
-    for count, ele in enumerate(userdata):
-        active=ele.active
-        username=ele.name
+    progress_utils.update_activity_count(description="Progress on Updating Metadata")
+    async with session:
+        for count, ele in enumerate(userdata):
+            active=ele.active
+            username=ele.name
 
-        progress_utils.switch_api_progress()
-        progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
+            progress_utils.switch_api_progress()
+            progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
 
-        log.warning(
-            f"Metadata action progressing on model {count+1}/{length} models "
-        )
-        if constants.getattr("SHOW_AVATAR") and ele.avatar:
-            log.warning(f"Avatar : {ele.avatar}")
-
-        log.warning(
-            f"""
-Perform Meta {metadata_action} with
-Mark Stray: {mark_stray}
-for [bold]{ele.name}[/bold]\n[bold]
-Subscription Active:[/bold] {ele.active}"""
-        )
-        try:
-            model_id = ele.id
-            username = ele.name
-
-            media, _,_ = process_areas_helper(ele, model_id,c=session)
-            operations.table_init_create(model_id=model_id, username=username)
-            filterMedia = filters.filterMedia(
-                media, username=username, model_id=model_id
+            log.warning(
+                f"Metadata action progressing on model {count+1}/{length} models "
             )
-            download.download_process(username, model_id, filterMedia)
-            metadata_stray_media(username, model_id, media)
-            progress_utils.increment_activity_count()
-        except Exception as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise e
-            log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())
+            if constants.getattr("SHOW_AVATAR") and ele.avatar:
+                log.warning(f"Avatar : {ele.avatar}")
+
+            log.warning(
+                f"""
+    Perform Meta {metadata_action} with
+    Mark Stray: {mark_stray}
+    for [bold]{ele.name}[/bold]\n[bold]
+    Subscription Active:[/bold] {ele.active}"""
+            )
+            try:
+                model_id = ele.id
+                username = ele.name
+
+                media, _,_ = await process_areas_helper(ele, model_id,c=session)
+                operations.table_init_create(model_id=model_id, username=username)
+                filterMedia = filters.filterMedia(
+                    media, username=username, model_id=model_id
+                )
+                await download.download_process(username, model_id, filterMedia)
+                metadata_stray_media(username, model_id, media)
+                progress_utils.increment_activity_count()
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise e
+                log.traceback_(f"failed with exception: {e}")
+                log.traceback_(traceback.format_exc())
+
 
 
 def metadata_user_first(userdata,session):

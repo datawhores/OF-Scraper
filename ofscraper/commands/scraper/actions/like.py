@@ -33,7 +33,7 @@ unlike_str= "Performing Unlike Action on {name}"
 @exit.exit_wrapper
 def process_like(posts=None,model_id=None,task=None,username=None,**kwargs):
     progress_utils.switch_api_progress()
-    progress_utils.activity_progress.update(task,description=like_str.format(name=username))
+    progress_utils.update_activity_task(description=like_str.format(name=username))
     logging.getLogger("shared_other").warning(like_str.format(name=username))
     unfavorited_posts = get_posts_for_like(posts)
     posts=pre_filter(posts)
@@ -44,7 +44,7 @@ def process_like(posts=None,model_id=None,task=None,username=None,**kwargs):
 @exit.exit_wrapper
 def process_unlike(posts=None,model_id=None,task=None,username=None,**kwargs):
     progress_utils.switch_api_progress()
-    progress_utils.activity_progress.update(task,description=unlike_str.format(name=username))
+    progress_utils.update_activity_task(description=unlike_str.format(name=username))
     logging.getLogger("shared_other").warning(unlike_str.format(name=username))
     favorited_posts = get_posts_for_unlike(posts)
     posts=pre_filter(posts)
@@ -103,7 +103,7 @@ def _like(model_id, ids: list, like_action: bool):
             wait_max=constants.getattr("OF_MAX_WAIT_API"),
         ) as c:
             tasks = []
-            task1 = progress_utils.like_overall_progress.add_task(f"{title} posts...\n", total=len(ids))
+            task=progress_utils.add_like_task(f"{title} posts...\n", total=len(ids))
 
             [
                 tasks.append(functools.partial(_like_request, c, id, model_id))
@@ -121,8 +121,9 @@ def _like(model_id, ids: list, like_action: bool):
                     sleep_duration = 1  # Divisible by 60 - 1 second sleep
                 elif count % 50 == 0:
                     sleep_duration = 30  # Divisible by 50 - 30 seconds sleep
-                progress_utils.like_overall_progress.update(task1, advance=1, refresh=True)
+                progress_utils.increment_like_task(task)
                 time.sleep(sleep_duration)
+            progress_utils.remove_like_task(task)
 
 
 def _like_request(c, id, model_id):

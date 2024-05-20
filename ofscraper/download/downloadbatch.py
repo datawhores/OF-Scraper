@@ -234,7 +234,7 @@ def queue_process(pipe_, task1, total):
                     elif media_type == "forced_skipped":
                         common_globals.forced_skipped += 1
                     log_download_progress(media_type)
-                    progress_utils.download_overall_progress.update(
+                    progress_utils.update_download_task(
                         task1,
                         description=common_globals.desc.format(
                             p_count=common_globals.photo_count,

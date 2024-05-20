@@ -17,9 +17,9 @@ userlist_group=Group(activity_group,Blue_Panel(Group(userlist_overall_progress,u
 
 
 #like
-like_progress_group=Group(Blue_Panel(Group(activity_group,like_overall_progress)))
+like_progress_group=Group(activity_group,Blue_Panel(like_overall_progress))
 #activity
-api_progress_group = Group(activity_group,Blue_Panel(api_overall_progress,title="API Progress"),Blue_Panel(api_job_progress,title="API Messages",height=max(15, console.get_shared_console().size[-1] - 2)
+api_progress_group = Group(activity_group,Blue_Panel(api_overall_progress,title="API Progress"),Blue_Panel(api_job_progress,title="API Messages"
 ))
 
 

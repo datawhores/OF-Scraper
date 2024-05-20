@@ -1,6 +1,6 @@
 import asyncio
 import ofscraper.models.selector as selector
-from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress
+from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress,like_overall_progress
 
 
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
@@ -104,6 +104,8 @@ def add_download_job_multi_task(*args,**kwargs):
 def add_download_task(*args,**kwargs):
    return download_overall_progress.add_task(*args,**kwargs)
 
+def update_download_task(*args,**kwargs):
+   return download_overall_progress.update(*args,**kwargs)
 def update_download_job_task(*args,**kwargs):
     if not settings.get_download_bars():
         return
@@ -133,5 +135,28 @@ def remove_download_task(task):
         return
     try:
         download_overall_progress.remove_task(task)
+    except KeyError:
+        pass
+
+#like
+def add_like_task(*args,**kwargs):
+   return like_overall_progress.add_task(*args,**kwargs)
+
+def increment_like_task(*args,advance=1,**kwargs):
+    like_overall_progress.update(
+          *args,advance=advance,**kwargs
+    )
+
+
+def update_like_task(*args,**kwargs):
+    like_overall_progress.update(
+            *args,**kwargs
+    )
+
+def remove_like_task(task):
+    if task==None:
+        return
+    try:
+        like_overall_progress.remove_task(task)
     except KeyError:
         pass

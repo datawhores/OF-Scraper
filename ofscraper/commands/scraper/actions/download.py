@@ -10,6 +10,7 @@ r"""_____  _______         _______  _______  _______  _______  _______  _______ 
 
 import logging
 import time
+import asyncio
 
 import ofscraper.api.profile as profile
 import ofscraper.classes.models as models

@@ -59,6 +59,7 @@ def prepare():
 @run
 async def normal(userdata,actions,session):
     length=len(userdata)
+    progress_utils.update_activity_count(description="Users with Actions Completed")
     async with session as c:
         for count,ele in enumerate(userdata):
             username = ele.name
@@ -79,6 +80,8 @@ async def normal(userdata,actions,session):
                 all_media, posts,like_posts=await post_media_process(
                     ele, c=c
                 )
+
+                progress_utils.update_activity_task(description="Performing Actions on Users")
                 with ThreadPoolExecutor(
                 ) as executor:
                     asyncio.get_event_loop().set_default_executor(executor)
@@ -90,7 +93,7 @@ async def normal(userdata,actions,session):
                             like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
                         elif action=="unlike":
                             like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                        progress_utils.increment_activity_count()
+                    progress_utils.increment_activity_count()
 
 
             except Exception as e:
@@ -102,13 +105,13 @@ async def normal(userdata,actions,session):
 @exit.exit_wrapper
 def user_first(userdata,actions,session):
     progress_utils.update_activity_task(description="Getting all user Data First")
-    progress_utils.update_user_first_activity(description="Progress on getting Data")
+    progress_utils.update_user_first_activity(description="Users with Data Retrived")
     progress_utils.update_activity_count(description="Overall progress",total=2)
     data=user_first_data_retriver(userdata,session)
 
-    progress_utils.update_activity_task(description="Downloading Content")
+    progress_utils.update_activity_task(description="Performing Actions on Users")
     progress_utils.increment_activity_count(total=2)
-    progress_utils.update_user_first_activity(description="Progress on Downloading",completed=0)
+    progress_utils.update_user_first_activity(description="Users with Actions completed",completed=0)
 
     for model_id, val in data.items():
         all_media = val["media"]
@@ -120,16 +123,13 @@ def user_first(userdata,actions,session):
         try:
             if constants.getattr("SHOW_AVATAR") and avatar:
                 logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-            with ThreadPoolExecutor(
-                ) as executor:
-                    asyncio.get_event_loop().set_default_executor(executor)
-                    for action in actions:
-                        if action=="download":
-                            download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="like":
-                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="unlike":
-                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+            for action in actions:
+                if action=="download":
+                    download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                elif action=="like":
+                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                elif action=="unlike":
+                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
             progress_utils.increment_user_first_activity()
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
