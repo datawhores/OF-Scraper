@@ -44,6 +44,7 @@ from ofscraper.db.operations_.profile import (
     get_profile_info,
 )
 from ofscraper.utils.context.run_async import run
+from ofscraper.commands.strings import all_paid_model_id_str,all_paid_str
 
 import ofscraper.utils.console as console
 
@@ -360,14 +361,18 @@ async def process_profile(username) -> list:
 async def process_all_paid():
     paid_content = await paid.get_all_paid_posts()
     output = {}
+    progress_utils.update_activity_task(description="Processsing Paid content data")
     for model_id, value in paid_content.items():
-        username = profile.scrape_profile(model_id).get("username")
+        progress_utils.update_activity_count(total=None,description=all_paid_model_id_str.format(model_id=model_id))
+     
+        username = profile.scrape_profile(model_id,refresh=False).get("username")
         if username == constants.getattr(
             "DELETED_MODEL_PLACEHOLDER"
         ) and await check_profile_table_exists(model_id=model_id, username=username):
             username = (
                 await get_profile_info(model_id=model_id, username=username) or username
             )
+        progress_utils.update_activity_count(total=None,description=all_paid_str.format(username=username))
         log.info(f"Processing {username}_{model_id}")
         await operations.table_init_create(model_id=model_id, username=username)
         log.debug(f"Created table for {username}_{model_id}")
@@ -404,6 +409,7 @@ async def process_all_paid():
         log.debug(
             f"[bold]Paid media count {username}_{model_id}[/bold] {len(new_medias)}"
         )
+        progress_utils.increment_activity_count(total=None)
 
     log.debug(
         f"[bold]Paid Media for all models[/bold] {sum(map(lambda x:len(x['medias']),output.values()))}"

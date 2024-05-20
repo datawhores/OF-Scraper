@@ -4,8 +4,8 @@ activity_task=activity_progress.add_task(
             description='Running OF-Scraper'
      )
 activity_counter_task=activity_counter.add_task(
-            description='Overall script progress',visible=False
+            description='Overall script progress',visible=False,total=None
 )
 user_first_task=activity_counter.add_task(
-            description='',visible=False
+            description='',visible=False,total=None
 )

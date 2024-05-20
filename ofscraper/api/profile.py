@@ -31,13 +31,14 @@ log = logging.getLogger("shared")
 
 
 # can get profile from username or id
-def scrape_profile(username: Union[int, str]) -> dict:
+def scrape_profile(username: Union[int, str],refresh=True) -> dict:
     with sessionManager.sessionManager(
         backend="httpx",
         limit=constants.getattr("API_MAX_CONNECTION"),
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_MIN_WAIT_API"),
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        refresh=refresh
     ) as c:
         return scrape_profile_helper(c, username)
 

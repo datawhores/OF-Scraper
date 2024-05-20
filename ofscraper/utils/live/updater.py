@@ -17,8 +17,8 @@ def increment_activity_count(total=None,visible=True,advance=1,**kwargs):
     )
 
 
-def update_activity_count(visible=True,total=None,**kwargs):
-    total=total if total!=None else selector.get_num_selected()
+def update_activity_count(visible=True,total=False,**kwargs):
+    total=total if total!=False else selector.get_num_selected()
     activity_counter.update(
            activity_counter_task,visible=visible,total=total,**kwargs
     )

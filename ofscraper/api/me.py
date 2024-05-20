@@ -21,13 +21,14 @@ import ofscraper.utils.logs.helpers as log_helpers
 log = logging.getLogger("shared")
 
 
-def scrape_user():
+def scrape_user(refresh=True):
     with sessionManager.sessionManager(
         backend="httpx",
         limit=constants.getattr("API_MAX_CONNECTION"),
         retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
         wait_min=constants.getattr("OF_AUTH_MIN_WAIT"),
         wait_max=constants.getattr("OF_AUTH_MAX_WAIT"),
+        refresh=refresh
     ) as c:
         return _scraper_user_helper(c)
 

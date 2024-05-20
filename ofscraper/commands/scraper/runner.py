@@ -1,9 +1,5 @@
 import logging
 import traceback
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-
-
 
 import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager as sessionManager
@@ -33,9 +29,13 @@ def runner():
     with scrape_context_manager():
         userdata,actions,session=prepare()
         with progress_utils.setup_api_split_progress_live(stop=True):
+            if read_args.retriveArgs().scrape_paid:
+                progress_utils.update_activity_task(description="Scraping Entire Paid page")
+                download_action.scrape_paid_all()
+        
             if read_args.retriveArgs().users_first:
                 user_first(userdata,actions,session)
-            else:
+            elif bool(actions):
                 normal(userdata,actions,session)
 
 
@@ -48,11 +48,10 @@ def prepare():
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     ) 
     actions=read_args.retriveArgs().action
-    if read_args.retriveArgs().scrape_paid:
-        progress_utils.update_activity_task("Scraping Entire Paid page")
-        download_action.scrape_paid_all()
+    userdata=None
     if len(actions)==0:
-        return
+        return userdata,actions,session
+
     download_action.unique_name_warning()
     profile_tools.print_current_profile()
     init.print_sign_status()

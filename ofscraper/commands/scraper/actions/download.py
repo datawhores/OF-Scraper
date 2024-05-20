@@ -20,11 +20,11 @@ import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.live as progress_utils
-
+from ofscraper.commands.strings import download_str,all_paid_download_str
 log = logging.getLogger("shared")
 
 
-download_str= "Performing Downloading Action on {name}"
+
 
 
 
@@ -43,11 +43,14 @@ def scrape_paid_all(user_dict=None):
     user_dict = OF.process_all_paid()
     oldUsers = userselector.get_ALL_SUBS_DICT()
     length = len(list(user_dict.keys()))
+    progress_utils.update_activity_task(description="Downloading Paid Content")
     for count, value in enumerate(user_dict.values()):
         model_id = value["model_id"]
         username = value["username"]
         posts = value["posts"]
         medias = value["medias"]
+        progress_utils.update_activity_count(totat=length,description=all_paid_download_str.format(username=username))
+        progress_utils.update_activity_task(description=download_str.format(name=username))
         log.warning(
             f"\[{model_id}_{username}] Downloading Progress :{count+1}/{length} models "
         )
@@ -55,6 +58,7 @@ def scrape_paid_all(user_dict=None):
             {username: models.Model(profile.scrape_profile(model_id))}
         )
         download.download_process(username, model_id, medias, posts=posts)
+        progress_utils.increment_activity_count(total=length)
     # restore og users
     userselector.set_ALL_SUBS_DICT(oldUsers)
 
