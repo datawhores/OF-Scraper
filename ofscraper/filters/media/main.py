@@ -122,13 +122,14 @@ def filterPost(post):
     return post
 
 
-def post_filter_for_like(media, like=False):
-    media = helpers.temp_post_filter(media)
+def post_filter_for_like(post, like=False):
+    post = helpers.temp_post_filter(post)
+    post=helpers.likable_post_filter(post)
     post_type = "likable" if like else "unlikable"
     log.debug(
-        f"[bold]Number of {post_type} posts left after date filter[/bold] {len(media)}"
+        f"[bold]Number of {post_type} posts left after date filter[/bold] {len(post)}"
     )
-    media = helpers.final_post_sort(media)
-    media = helpers.ele_count_filter(media)
-    log.debug(f"[bold]Final Number of open and {post_type} post[/bold] {len(media)}")
-    return media
+    post = helpers.final_post_sort(post)
+    post = helpers.ele_count_filter(post)
+    log.debug(f"[bold]Final Number of open and {post_type} post[/bold] {len(post)}")
+    return post

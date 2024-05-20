@@ -26,7 +26,6 @@ import ofscraper.utils.args.date as before_arg
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.checkers as checkers
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.other as other_logger
 
@@ -97,32 +96,3 @@ def daemon_run_helper(*functs):
                 raise E
 
 
-def run_helper(*functs):
-    # run each function once
-    checkers.check_auth()
-    global jobqueue
-    jobqueue = queue.Queue()
-    [jobqueue.put(funct) for funct in functs]
-    if read_args.retriveArgs().output == "PROMPT":
-        log.info("[bold]silent-mode on[/bold]")
-    try:
-        for _ in functs:
-            job_func = jobqueue.get()
-            job_func()
-            jobqueue.task_done()
-        dates.resetLogDateVManager()
-    except KeyboardInterrupt:
-        try:
-            with exit.DelayedKeyboardInterrupt():
-                raise KeyboardInterrupt
-        except KeyboardInterrupt:
-            with exit.DelayedKeyboardInterrupt():
-                schedule.clear()
-                raise KeyboardInterrupt
-    except Exception as E:
-        try:
-            with exit.DelayedKeyboardInterrupt():
-                raise E
-        except KeyboardInterrupt:
-            with exit.DelayedKeyboardInterrupt():
-                raise E

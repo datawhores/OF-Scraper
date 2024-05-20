@@ -19,7 +19,9 @@ from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.commands.scraper.post import post_media_process
 import ofscraper.commands.scraper.actions.download as download_action
 import ofscraper.commands.scraper.actions.like as like_action
-from ofscraper.utils.context.run_async import run,run_forever
+from ofscraper.utils.context.run_async import run
+from ofscraper.utils.checkers import check_auth
+
 
 from ofscraper.commands.strings import avatar_str,area_str,progress_str,data_str
 
@@ -27,6 +29,7 @@ log = logging.getLogger("shared")
 
 @exit.exit_wrapper
 def runner():
+    check_auth()
     with scrape_context_manager():
         userdata,actions,session=prepare()
         with progress_utils.setup_api_split_progress_live(stop=True):
@@ -80,20 +83,14 @@ async def normal(userdata,actions,session):
                 all_media, posts,like_posts=await post_media_process(
                     ele, c=c
                 )
-
-                progress_utils.update_activity_task(description="Performing Actions on Users")
-                with ThreadPoolExecutor(
-                ) as executor:
-                    asyncio.get_event_loop().set_default_executor(executor)
-                    for action in actions:
-                        if action=="download":
-
-                            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="like":
-                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="unlike":
-                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                    progress_utils.increment_activity_count()
+                for action in actions:
+                    if action=="download":
+                        await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                    elif action=="like":
+                        like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                    elif action=="unlike":
+                        like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                progress_utils.increment_activity_count()
 
 
             except Exception as e:
@@ -112,7 +109,9 @@ def user_first(userdata,actions,session):
     progress_utils.update_activity_task(description="Performing Actions on Users")
     progress_utils.increment_activity_count(total=2)
     progress_utils.update_user_first_activity(description="Users with Actions completed",completed=0)
-
+    user_first_action_runner(data,actions)
+@run
+async def user_first_action_runner(data,actions):
     for model_id, val in data.items():
         all_media = val["media"]
         posts = val["posts"]
@@ -125,7 +124,7 @@ def user_first(userdata,actions,session):
                 logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
             for action in actions:
                 if action=="download":
-                    download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                    await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
                 elif action=="like":
                     like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
                 elif action=="unlike":
@@ -137,6 +136,7 @@ def user_first(userdata,actions,session):
             log.traceback_(f"failed with exception: {e}")
             log.traceback_(traceback.format_exc())
     progress_utils.increment_activity_count(description="Overall progress",total=2)
+
 
 @run
 async def user_first_data_retriver(userdata,session):

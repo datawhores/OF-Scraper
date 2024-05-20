@@ -131,6 +131,8 @@ def temp_post_filter(media):
         return list(filter(lambda x: x.expires, media))
     return media
 
+def likable_post_filter(post):
+    return list(filter(lambda x: x.opened and x.responsetype.capitalize() in {"Timeline","Archived","Pinned"},post))
 
 def post_text_filter(media):
     userfilter = read_args.retriveArgs().filter

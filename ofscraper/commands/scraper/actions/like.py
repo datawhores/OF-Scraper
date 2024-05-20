@@ -73,10 +73,9 @@ def filter_for_favorited(posts: list) -> list:
 
 
 def pre_filter(posts):
-    valid_post = list(filter(lambda x: x.opened and x.responsetype.capitalize() in {"Timeline","Archived","Pinned"},posts))
     seen = set()
     return [
-        post for post in valid_post if post.id not in seen and not seen.add(post.id)
+        post for post in posts if post.id not in seen and not seen.add(post.id)
     ]
 
 
@@ -109,7 +108,7 @@ def _like(model_id, ids: list, like_action: bool):
                 tasks.append(functools.partial(_like_request, c, id, model_id))
                 for id in ids
             ]
-            sleep_duration = 3
+            sleep_duration = 5
             for count, func in enumerate(tasks):
                 id = func()
                 log.debug(

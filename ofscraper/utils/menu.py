@@ -38,7 +38,7 @@ def main_menu_action():
             else:
                 count > 0 and reset_menu_helper()
                 actions.set_scrape_paid()
-                run.run_helper()
+                runner()
                 count = count + 1
         elif result_main_prompt == "auth":
             # Edit `auth.json` file
