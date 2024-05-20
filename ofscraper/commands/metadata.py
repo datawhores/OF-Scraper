@@ -46,6 +46,7 @@ import ofscraper.utils.args.areas as areas
 
 from ofscraper.commands.strings import avatar_str,area_str
 from ofscraper.utils.context.run_async import run
+from ofscraper.commands.strings import metadata_str
 
 
 
@@ -95,13 +96,12 @@ async def metadata_normal(userdata,session):
     metadata_action = read_args.retriveArgs().metadata
     mark_stray = read_args.retriveArgs().mark_stray
     length = len(userdata)
-    progress_utils.update_activity_count(description="Progress on Updating Metadata")
+    progress_utils.update_activity_count(description="Updating Metadata")
     async with session:
         for count, ele in enumerate(userdata):
             active=ele.active
             username=ele.name
-
-            progress_utils.switch_api_progress()
+            progress_utils.update_activity_count(description="Users with metadata changed".format(username=username))
             progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
 
             log.warning(
@@ -126,6 +126,7 @@ async def metadata_normal(userdata,session):
                 filterMedia = filters.filterMedia(
                     media, username=username, model_id=model_id
                 )
+                progress_utils.update_activity_task(description=metadata_str.format(username=username))
                 await download.download_process(username, model_id, filterMedia)
                 metadata_stray_media(username, model_id, media)
                 progress_utils.increment_activity_count()
