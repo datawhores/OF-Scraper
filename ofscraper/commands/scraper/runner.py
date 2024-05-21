@@ -5,7 +5,6 @@ import ofscraper.api.init as init
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.models.selector as userselector
-import ofscraper.utils.args.areas as areas
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
@@ -19,7 +18,8 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 
 
-from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,user_first_action_runner_outer_context
+
+from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,user_first_action_runner_outer_context,get_user_action_function,get_user_action_execution_function
 
 from ofscraper.commands.helpers.shared import user_first_data_preparer
 log = logging.getLogger("shared")
@@ -28,17 +28,22 @@ log = logging.getLogger("shared")
 def runner():
     check_auth()
     with scrape_context_manager():
-        userdata,actions,session=prepare()
         with progress_utils.setup_api_split_progress_live(stop=True):
             if read_args.retriveArgs().scrape_paid:
                 progress_utils.update_activity_task(description="Scraping Entire Paid page")
                 download_action.scrape_paid_all()
-        
-            if read_args.retriveArgs().users_first:
-                user_first(userdata,actions,session)
-            elif bool(actions):
-                normal(userdata,actions,session)
 
+            if not run_action_bool():
+                return
+            userdata,session=prepare()
+
+            if read_args.retriveArgs().users_first:
+                process_users_actions_user_first(userdata,session)
+            else:
+                process_users_actions(userdata,session)
+
+def run_action_bool():
+    return len(read_args.retriveArgs().action)>0
 
 def prepare():
     session=sessionManager.sessionManager(
@@ -48,51 +53,49 @@ def prepare():
         wait_max=constants.getattr("OF_MAX_WAIT_API"),
         total_timeout=constants.getattr("API_TIMEOUT_PER_TASK"),
     ) 
-    actions=read_args.retriveArgs().action
-    userdata=None
-    if len(actions)==0:
-        return userdata,actions,session
 
     download_action.unique_name_warning()
     profile_tools.print_current_profile()
     init.print_sign_status()
     userdata = userselector.getselected_usernames(rescan=False)
-    return userdata,actions,session
+    return userdata,session
 @exit.exit_wrapper
 @run
-async def normal(userdata,actions,session):
-    length=len(userdata)
+async def process_users_actions(userdata=None,session=None):
+    user_action_funct=get_user_action_function(process_actions_for_user)
     progress_utils.update_activity_count(description="Users with Actions Completed")
     async with session as c:
-        for count,ele in enumerate(userdata):
-            username = ele.name
-            model_id = ele.id
-            avatar=ele.avatar
-            active=ele.active
-            try:
-                async with user_first_data_context(session,length,count,areas,ele):
+        for ele in userdata:
+            await user_action_funct(user=ele,c=c)
 
-                    all_media, posts,like_posts=await post_media_process(
-                        ele, c=c
-                    )
-                    for action in actions:
-                        if action=="download":
-                            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="like":
-                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="unlike":
-                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                    progress_utils.increment_activity_count()
+async def process_actions_for_user(user=None,c=None,*kwargs):
+        try:
+            all_media, posts,like_posts=await post_media_process(
+                user, c=c
+            )
+            await get_user_action_execution_function(execute_user_action)(all_media, posts,like_posts,ele=user)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+            log.traceback_(f"failed with exception: {e}")
+            log.traceback_(traceback.format_exc())
+async def execute_user_action(all_media, posts,like_posts,ele=None):
+    actions=read_args.retriveArgs().action
+    username = ele.name
+    model_id = ele.id
+    for action in actions:
+        if action=="download":
+            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+        elif action=="like":
+            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+        elif action=="unlike":
+            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
 
 
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise e
-                log.traceback_(f"failed with exception: {e}")
-                log.traceback_(traceback.format_exc())
+
 
 @exit.exit_wrapper
-def user_first(userdata,actions,session):
+def process_users_actions_user_first(userdata,actions,session):
     data=user_first_data_retriver(userdata,session)
     user_first_action_runner(data,actions)
 @run
@@ -127,12 +130,11 @@ async def user_first_action_runner(data,actions):
 @run
 async def user_first_data_retriver(userdata,session):
     data={}
-    length=len(userdata)
     user_first_data_preparer()
     async with session:
-        for count,user in enumerate(userdata):
+        for user in userdata:
                 try:
-                    with user_first_data_inner_context(session,length,count,user):
+                    with user_first_data_inner_context(session,user):
                         data.update(await process_ele_user_first_data_retriver(user,session))
                 except Exception as e:
                     if isinstance(e, KeyboardInterrupt):

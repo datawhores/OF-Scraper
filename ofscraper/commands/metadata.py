@@ -211,6 +211,7 @@ def metadata():
             metadata_user_first(userdata,session)
 
 
+
 def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_change_download()

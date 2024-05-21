@@ -1,4 +1,3 @@
-import asyncio
 import ofscraper.models.selector as selector
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,api_job_progress,userlist_overall_progress,userlist_job_progress,api_overall_progress,like_overall_progress
 
