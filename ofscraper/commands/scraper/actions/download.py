@@ -20,7 +20,7 @@ import ofscraper.download.download as download
 import ofscraper.models.selector as userselector
 import ofscraper.utils.constants as constants
 import ofscraper.utils.live.live as progress_utils
-from ofscraper.commands.strings import download_str,all_paid_download_str
+from ofscraper.commands.helpers.strings import download_str,all_paid_download_str
 from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")

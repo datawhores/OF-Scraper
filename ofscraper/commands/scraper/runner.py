@@ -19,8 +19,9 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.checkers import check_auth
 
 
-from ofscraper.commands.strings import avatar_str,area_str,progress_str,data_str
+from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,user_first_action_runner_outer_context
 
+from ofscraper.commands.helpers.shared import user_first_data_preparer
 log = logging.getLogger("shared")
 
 @exit.exit_wrapper
@@ -69,27 +70,19 @@ async def normal(userdata,actions,session):
             avatar=ele.avatar
             active=ele.active
             try:
-                progress_utils.switch_api_progress()
-                progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
-                logging.getLogger("shared_other").warning(progress_str.format(count=count+1,length=length))
-                logging.getLogger("shared_other").warning(data_str.format(name=username))
-                if constants.getattr("SHOW_AVATAR") and avatar:
-                    logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                logging.getLogger("shared_other").warning(
-                    area_str.format(areas=",".join(areas.get_download_area()),name=username,active=active
-                ))
+                async with user_first_data_context(session,length,count,areas,ele):
 
-                all_media, posts,like_posts=await post_media_process(
-                    ele, c=c
-                )
-                for action in actions:
-                    if action=="download":
-                        await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                    elif action=="like":
-                        like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                    elif action=="unlike":
-                        like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                progress_utils.increment_activity_count()
+                    all_media, posts,like_posts=await post_media_process(
+                        ele, c=c
+                    )
+                    for action in actions:
+                        if action=="download":
+                            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="like":
+                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="unlike":
+                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                    progress_utils.increment_activity_count()
 
 
             except Exception as e:
@@ -100,59 +93,47 @@ async def normal(userdata,actions,session):
 
 @exit.exit_wrapper
 def user_first(userdata,actions,session):
-    progress_utils.update_activity_task(description="Getting all user Data First")
-    progress_utils.update_user_first_activity(description="Users with Data Retrived")
-    progress_utils.update_activity_count(description="Overall progress",total=2)
     data=user_first_data_retriver(userdata,session)
-
-    progress_utils.update_activity_task(description="Performing Actions on Users")
-    progress_utils.increment_activity_count(total=2)
-    progress_utils.update_user_first_activity(description="Users with Actions completed",completed=0)
     user_first_action_runner(data,actions)
 @run
 async def user_first_action_runner(data,actions):
-    for model_id, val in data.items():
-        all_media = val["media"]
-        posts = val["posts"]
-        like_posts=val["like_posts"]
-        ele=val["ele"]
-        username=val["username"]
-        avatar=val["avatar"]
-        try:
-            if constants.getattr("SHOW_AVATAR") and avatar:
-                logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-            for action in actions:
-                if action=="download":
-                    await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                elif action=="like":
-                    like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                elif action=="unlike":
-                    like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-            progress_utils.increment_user_first_activity()
-        except Exception as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise e
-            log.traceback_(f"failed with exception: {e}")
-            log.traceback_(traceback.format_exc())
-    progress_utils.increment_activity_count(description="Overall progress",total=2)
+    with user_first_action_runner_outer_context():
+        progress_utils.update_activity_task(description="Performing Actions on Users")
+        progress_utils.update_user_first_activity(description="Users with Actions completed",completed=0)
+        for model_id, val in data.items():
+            all_media = val["media"]
+            posts = val["posts"]
+            like_posts=val["like_posts"]
+            ele=val["ele"]
+            username=val["username"]
+            with user_first_action_runner_inner_context(val["avatar"]):
+                try:
+                    for action in actions:
+                        if action=="download":
+                            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="like":
+                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                        elif action=="unlike":
+                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
+                    progress_utils.increment_user_first_activity()
+                except Exception as e:
+                    if isinstance(e, KeyboardInterrupt):
+                        raise e
+                    log.traceback_(f"failed with exception: {e}")
+                    log.traceback_(traceback.format_exc())
+
 
 
 @run
 async def user_first_data_retriver(userdata,session):
     data={}
     length=len(userdata)
-
+    user_first_data_preparer()
     async with session:
         for count,user in enumerate(userdata):
-                avatar=user.avatar
                 try:
-                    progress_utils.switch_api_progress()
-                    logging.getLogger("shared_other").warning(f"\[{user.name}] Data Retrival Progress: {count+1}/{length} models")
-                    if constants.getattr("SHOW_AVATAR") and avatar:
-                        logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
-                    data.update(await process_ele_user_first_data_retriver(user,session))
-                    progress_utils.increment_user_first_activity()
-                    session.reset_sleep()
+                    with user_first_data_inner_context(session,length,count,user):
+                        data.update(await process_ele_user_first_data_retriver(user,session))
                 except Exception as e:
                     if isinstance(e, KeyboardInterrupt):
                         raise e
@@ -166,12 +147,6 @@ async def process_ele_user_first_data_retriver(ele,session):
     model_id = ele.id
     username = ele.name
     avatar = ele.avatar
-    active= ele.active
-    logging.getLogger("shared_other").info(
-            area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active
-            )
-    )
-    progress_utils.update_activity_task(description=area_str.format(areas=",".join(areas.get_final_posts_area()),name=username,active=active))
     operations.table_init_create(model_id=model_id, username=username)
     media, posts,like_posts = await post_media_process(ele,session)
     return {

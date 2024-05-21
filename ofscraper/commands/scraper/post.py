@@ -44,7 +44,7 @@ from ofscraper.db.operations_.profile import (
     get_profile_info,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.commands.strings import all_paid_model_id_str,all_paid_str
+from ofscraper.commands.helpers.strings import all_paid_model_id_str,all_paid_str
 
 import ofscraper.utils.console as console
 
