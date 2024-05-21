@@ -226,11 +226,9 @@ async def download_fileobject_writer(
     r, ele, tempholderObj, placeholderObj, total
 ):
     pathstr = str(placeholderObj.trunicated_filepath)
-    downloadprogress = settings.get_download_bars()
     task1 =  progress_utils.add_download_job_task(
         f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
         total=total,
-        visible=True if downloadprogress else False,
     )
     try:
         loop = asyncio.get_event_loop()
