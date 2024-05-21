@@ -14,7 +14,6 @@ def get_user_action_function(func):
   async def wrapper(*args, **kwargs):                   
     data_helper(kwargs.get("user"))
     await func(*args, **kwargs)
-    progress_utils.increment_activity_count()
   return wrapper
 
 def get_user_action_execution_function(func):
@@ -24,10 +23,28 @@ def get_user_action_execution_function(func):
         if constants.getattr("SHOW_AVATAR") and avatar:
             logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
         await func(*args, **kwargs)
+        progress_utils.increment_user_activity()
+
+    return wrapper
+
+def get_userfirst_data_function(funct):
+    async def wrapper(*args,**kwargs):
+        progress_utils.update_activity_task(description="Getting all user Data First")
+        progress_utils.update_user_activity(description="Users with Data Retrived")
+        progress_utils.update_activity_count(description="Overall progress",total=2)
+        data=await funct(*args, **kwargs)
+        return data
     return wrapper
 
 
 
+
+def get_userfirst_action_execution_function(funct):
+    async def wrapper(*args,**kwargs):
+        progress_utils.increment_activity_count(total=2)
+        await funct(*args,**kwargs)
+        progress_utils.increment_activity_count(description="Overall progress",total=2)
+    return wrapper
 @contextlib.contextmanager
 def normal_data_context(session,user):
     data_helper(user)
@@ -41,7 +58,7 @@ def user_first_data_inner_context(session,user):
     data_helper(user)
     yield
     session.reset_sleep()
-    progress_utils.increment_user_first_activity()
+    progress_utils.increment_user_activity()
 
 
 
@@ -51,16 +68,9 @@ def user_first_action_runner_inner_context(avatar):
     if constants.getattr("SHOW_AVATAR") and avatar:
         logging.getLogger("shared_other").warning(avatar_str.format(avatar=avatar))
     yield 
-    progress_utils.increment_user_first_activity()
-@contextlib.contextmanager
-def user_first_action_runner_outer_context():
-    progress_utils.increment_activity_count(total=2)
-    yield 
-    progress_utils.increment_activity_count(description="Overall progress",total=2)
+    progress_utils.increment_user_activity()
 
-# @contextlib.contextmanager
-# def test()
-#     yield
+
     
 
 def data_helper(user):

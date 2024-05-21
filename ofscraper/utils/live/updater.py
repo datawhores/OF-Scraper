@@ -23,13 +23,13 @@ def update_activity_count(visible=True,total=False,**kwargs):
     )
 
 
-def increment_user_first_activity(total=None,visible=True,advance=1,**kwargs):
+def increment_user_activity(total=None,visible=True,advance=1,**kwargs):
     total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
            user_first_task,total=total,visible=visible,advance=advance,**kwargs
     )
 
-def update_user_first_activity(visible=True,total=None,**kwargs):
+def update_user_activity(visible=True,total=None,**kwargs):
     total=total if total!=None else selector.get_num_selected()
     activity_counter.update(
           user_first_task, visible=visible, total=total,**kwargs

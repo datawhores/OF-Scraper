@@ -19,9 +19,8 @@ from ofscraper.utils.checkers import check_auth
 
 
 
-from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,user_first_action_runner_outer_context,get_user_action_function,get_user_action_execution_function
+from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,get_user_action_function,get_user_action_execution_function,get_userfirst_data_function,get_userfirst_action_execution_function
 
-from ofscraper.commands.helpers.shared import user_first_data_preparer
 log = logging.getLogger("shared")
 
 @exit.exit_wrapper
@@ -63,7 +62,7 @@ def prepare():
 @run
 async def process_users_actions(userdata=None,session=None):
     user_action_funct=get_user_action_function(process_actions_for_user)
-    progress_utils.update_activity_count(description="Users with Actions Completed")
+    progress_utils.update_user_activity(description="Users with Actions Completed")
     async with session as c:
         for ele in userdata:
             await user_action_funct(user=ele,c=c)
@@ -95,42 +94,28 @@ async def execute_user_action(all_media, posts,like_posts,ele=None):
 
 
 @exit.exit_wrapper
-def process_users_actions_user_first(userdata,actions,session):
-    data=user_first_data_retriver(userdata,session)
-    user_first_action_runner(data,actions)
 @run
-async def user_first_action_runner(data,actions):
-    with user_first_action_runner_outer_context():
-        progress_utils.update_activity_task(description="Performing Actions on Users")
-        progress_utils.update_user_first_activity(description="Users with Actions completed",completed=0)
-        for model_id, val in data.items():
-            all_media = val["media"]
-            posts = val["posts"]
-            like_posts=val["like_posts"]
-            ele=val["ele"]
-            username=val["username"]
-            with user_first_action_runner_inner_context(val["avatar"]):
-                try:
-                    for action in actions:
-                        if action=="download":
-                            await download_action.downloader(ele=ele,posts=posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="like":
-                            like_action.process_like(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                        elif action=="unlike":
-                            like_action.process_unlike(ele=ele,posts=like_posts,media=all_media,model_id=model_id,username=username)
-                    progress_utils.increment_user_first_activity()
-                except Exception as e:
-                    if isinstance(e, KeyboardInterrupt):
-                        raise e
-                    log.traceback_(f"failed with exception: {e}")
-                    log.traceback_(traceback.format_exc())
+async def process_users_actions_user_first(userdata,session):
+
+    data= await (get_userfirst_data_function(get_users_data_user_first))(userdata,session)
+    await get_userfirst_action_execution_function(execute_users_actions_user_first)(data)
+
+async def execute_users_actions_user_first(data):
+    progress_utils.update_activity_task(description="Performing Actions on Users")
+    progress_utils.update_user_activity(description="Users with Actions completed",completed=0)
+    for _, val in data.items():
+        all_media = val["media"]
+        posts = val["posts"]
+        like_posts=val["like_posts"]
+        ele=val["ele"]
+        await get_user_action_execution_function(execute_user_action)(all_media, posts,like_posts,ele=ele)
 
 
 
-@run
-async def user_first_data_retriver(userdata,session):
+
+
+async def get_users_data_user_first(userdata,session):
     data={}
-    user_first_data_preparer()
     async with session:
         for user in userdata:
                 try:

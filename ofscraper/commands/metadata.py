@@ -48,8 +48,7 @@ from ofscraper.commands.helpers.strings import avatar_str,area_str
 from ofscraper.utils.context.run_async import run
 from ofscraper.commands.helpers.strings import metadata_str
 
-from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context,user_first_action_runner_outer_context
-from ofscraper.commands.helpers.shared import user_first_data_preparer
+from ofscraper.commands.helpers.context import user_first_data_inner_context,user_first_action_runner_inner_context
 
 log = logging.getLogger("shared")
 
