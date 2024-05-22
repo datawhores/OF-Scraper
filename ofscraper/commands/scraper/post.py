@@ -570,11 +570,16 @@ async def process_task(model_id, username,ele, c=None):
                     final_post_areas.remove("Labels")
             if not bool(tasks):
                 break
+            print([pending,"before"])
+            print("\n\n\n")
+            print([done,"before"])
             print("wait to get done and pending")
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
-            print([pending,"\n\n",done])
+            print([pending,"after"])
+            print("\n\n\n")
+            print([done,"after"])
             await asyncio.sleep(1)
             tasks = list(pending) or []
             print("got pending")
