@@ -156,70 +156,72 @@ async def process_task(tasks):
 
 
 async def scrape_subscriptions_active(c, offset=0, num=0, recur=False) -> list:
-    new_tasks = []
-    url = constants.getattr("subscriptionsActiveEP").format(offset)
-    try:
-        log.debug(f"usernames active offset {offset}")
-        async with c.requests_async(url=url) as r:
-            subscriptions = (await r.json_())["list"]
-            log.debug(
-                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-            )
-            if len(subscriptions) == 0:
-                return subscriptions, new_tasks
-            elif recur is False:
-                pass
-            elif (await r.json_())["hasMore"] is True:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_subscriptions_active(
-                            c,
-                            recur=True,
-                            offset=offset + len(subscriptions),
+    with progress_utils.setup_subscription_progress_live():
+        new_tasks = []
+        url = constants.getattr("subscriptionsActiveEP").format(offset)
+        try:
+            log.debug(f"usernames active offset {offset}")
+            async with c.requests_async(url=url) as r:
+                subscriptions = (await r.json_())["list"]
+                log.debug(
+                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
+                )
+                if len(subscriptions) == 0:
+                    return subscriptions, new_tasks
+                elif recur is False:
+                    pass
+                elif (await r.json_())["hasMore"] is True:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_subscriptions_active(
+                                c,
+                                recur=True,
+                                offset=offset + len(subscriptions),
+                            )
                         )
                     )
-                )
-            return subscriptions, new_tasks
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+                return subscriptions, new_tasks
+        except asyncio.TimeoutError:
+            raise Exception(f"Task timed out {url}")
 
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            raise E
 
 
 async def scrape_subscriptions_disabled(c, offset=0, num=0, recur=False) -> list:
-    new_tasks = []
-    url = constants.getattr("subscriptionsExpiredEP").format(offset)
-    try:
-        log.debug(f"usernames offset expired {offset}")
-        async with c.requests_async(url=url) as r:
-            subscriptions = (await r.json_())["list"]
-            log.debug(
-                f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
-            )
-
-            if len(subscriptions) == 0:
-                return subscriptions, new_tasks
-            elif recur is False:
-                pass
-            elif (await r.json_())["hasMore"] is True:
-                new_tasks.append(
-                    asyncio.create_task(
-                        scrape_subscriptions_disabled(
-                            c,
-                            recur=True,
-                            offset=offset + len(subscriptions),
-                        )
-                    )
+    with progress_utils.setup_subscription_progress_live():
+        new_tasks = []
+        url = constants.getattr("subscriptionsExpiredEP").format(offset)
+        try:
+            log.debug(f"usernames offset expired {offset}")
+            async with c.requests_async(url=url) as r:
+                subscriptions = (await r.json_())["list"]
+                log.debug(
+                    f"usernames retrived -> {list(map(lambda x:x.get('username'),subscriptions))}"
                 )
 
-            return subscriptions, new_tasks
-    except asyncio.TimeoutError:
-        raise Exception(f"Task timed out {url}")
+                if len(subscriptions) == 0:
+                    return subscriptions, new_tasks
+                elif recur is False:
+                    pass
+                elif (await r.json_())["hasMore"] is True:
+                    new_tasks.append(
+                        asyncio.create_task(
+                            scrape_subscriptions_disabled(
+                                c,
+                                recur=True,
+                                offset=offset + len(subscriptions),
+                            )
+                        )
+                    )
 
-    except Exception as E:
-        log.traceback_(E)
-        log.traceback_(traceback.format_exc())
-        raise E
+                return subscriptions, new_tasks
+        except asyncio.TimeoutError:
+            raise Exception(f"Task timed out {url}")
+
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+            raise E
