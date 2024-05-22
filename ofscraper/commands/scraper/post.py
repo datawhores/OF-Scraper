@@ -500,8 +500,14 @@ sem = asyncio.Semaphore(2)
 
 def process_single_task(func):
     async def inner(sem=sem):
-        async with sem:
+        await sem.acquire()
+        try:
             return await func()
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
+        finally:
+            sem.release()
     return inner
 
 async def process_tasks(model_id, username,ele, c=None):
