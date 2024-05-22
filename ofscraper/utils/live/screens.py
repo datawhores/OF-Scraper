@@ -84,6 +84,7 @@ def switch_api_progress():
     console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
     get_live().update(api_progress_group,refresh=True)
 
+@contextlib.contextmanager
 
 def setup_init_live(stop=False):
     with live_progress_context(stop=stop):
