@@ -39,6 +39,8 @@ from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDa
 from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.console as console
+
 
 platform_name = platform.system()
 
@@ -202,7 +204,6 @@ def process_dicts(username, model_id, filtered_medialist):
 
 def queue_process(pipe_, task1, total):
     count = 0
-    downloadprogress = settings.get_download_bars()
     # shared globals
 
     while True:
@@ -215,58 +216,63 @@ def queue_process(pipe_, task1, total):
             results = [results]
 
         for result in results:
-            if isinstance(result, list) or isinstance(result, tuple):
-                media_type, num_bytes_downloaded, total_size = result
-                with common_globals.count_lock:
-                    common_globals.total_bytes_downloaded = (
-                        common_globals.total_bytes_downloaded + num_bytes_downloaded
-                    )
-                    common_globals.total_bytes = common_globals.total_bytes + total_size
-                    if media_type == "images":
-                        common_globals.photo_count += 1
+            try:
+                if isinstance(result, list) or isinstance(result, tuple):
+                    media_type, num_bytes_downloaded, total_size = result
+                    with common_globals.count_lock:
+                        common_globals.total_bytes_downloaded = (
+                            common_globals.total_bytes_downloaded + num_bytes_downloaded
+                        )
+                        common_globals.total_bytes = common_globals.total_bytes + total_size
+                        if media_type == "images":
+                            common_globals.photo_count += 1
 
-                    elif media_type == "videos":
-                        common_globals.video_count += 1
-                    elif media_type == "audios":
-                        common_globals.audio_count += 1
-                    elif media_type == "skipped":
-                        common_globals.skipped += 1
-                    elif media_type == "forced_skipped":
-                        common_globals.forced_skipped += 1
-                    log_download_progress(media_type)
-                    progress_utils.update_download_task(
-                        task1,
-                        description=common_globals.desc.format(
-                            p_count=common_globals.photo_count,
-                            v_count=common_globals.video_count,
-                            a_count=common_globals.audio_count,
-                            skipped=common_globals.skipped,
-                            forced_skipped=common_globals.forced_skipped,
-                            total_bytes_download=convert_num_bytes(
-                                common_globals.total_bytes_downloaded
+                        elif media_type == "videos":
+                            common_globals.video_count += 1
+                        elif media_type == "audios":
+                            common_globals.audio_count += 1
+                        elif media_type == "skipped":
+                            common_globals.skipped += 1
+                        elif media_type == "forced_skipped":
+                            common_globals.forced_skipped += 1
+                        log_download_progress(media_type)
+                        progress_utils.update_download_task(
+                            task1,
+                            description=common_globals.desc.format(
+                                p_count=common_globals.photo_count,
+                                v_count=common_globals.video_count,
+                                a_count=common_globals.audio_count,
+                                skipped=common_globals.skipped,
+                                forced_skipped=common_globals.forced_skipped,
+                                total_bytes_download=convert_num_bytes(
+                                    common_globals.total_bytes_downloaded
+                                ),
+                                total_bytes=convert_num_bytes(common_globals.total_bytes),
+                                mediacount=total,
+                                sumcount=common_globals.video_count
+                                + common_globals.audio_count
+                                + common_globals.photo_count
+                                + common_globals.skipped
+                                + common_globals.forced_skipped,
                             ),
-                            total_bytes=convert_num_bytes(common_globals.total_bytes),
-                            mediacount=total,
-                            sumcount=common_globals.video_count
+                            refresh=True,
+                            completed=common_globals.video_count
                             + common_globals.audio_count
                             + common_globals.photo_count
                             + common_globals.skipped
                             + common_globals.forced_skipped,
-                        ),
-                        refresh=True,
-                        completed=common_globals.video_count
-                        + common_globals.audio_count
-                        + common_globals.photo_count
-                        + common_globals.skipped
-                        + common_globals.forced_skipped,
-                    )
+                        )
 
-            elif result is None:
-                count = count + 1
-            elif isinstance(result, dict) and "dir_update" in result:
-                addGlobalDir(result["dir_update"])
-            elif callable(result):
-                job_progress_helper( result)
+                elif result is None:
+                    count = count + 1
+                elif isinstance(result, dict) and "dir_update" in result:
+                    addGlobalDir(result["dir_update"])
+                elif callable(result):
+                    job_progress_helper( result)
+            except Exception as E:
+                console.get_console().print(E)
+                console.get_console().print(traceback.format_exc())
+
 
 
 def get_mediasplits(medialist):

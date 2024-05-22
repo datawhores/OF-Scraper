@@ -14,6 +14,7 @@ r"""
 import logging
 import queue
 import threading
+import traceback
 import time
 from functools import partial
 
@@ -37,13 +38,17 @@ log = logging.getLogger("shared")
 def set_schedule(*functs):
     sleep = min(max(read_args.retriveArgs().daemon / 5, 1), 60)
     while True:
-        jobqueue.join()
-        next = arrow.now().shift(minutes=read_args.retriveArgs().daemon)
-        log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
-        schedule.every().day.at(next.format("HH:mm:ss")).do(schedule_helper, *functs)
-        while len(schedule.jobs) > 0:
-            schedule.run_pending()
-            time.sleep(sleep)
+        try:
+            jobqueue.join()
+            next = arrow.now().shift(minutes=read_args.retriveArgs().daemon)
+            log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
+            schedule.every().day.at(next.format("HH:mm:ss")).do(schedule_helper, *functs)
+            while len(schedule.jobs) > 0:
+                schedule.run_pending()
+                time.sleep(sleep)
+        except Exception as E:
+            log.traceback_(E)
+            log.traceback_(traceback.format_exc())
 
 
 def schedule_helper(*functs):
@@ -74,9 +79,14 @@ def daemon_run_helper():
         worker_thread.start()
         # Check if jobqueue has function
         while True:
-            job_func = jobqueue.get()
-            job_func()
-            jobqueue.task_done()
+            try:
+                job_func = jobqueue.get()
+                job_func()
+            except Exception as E:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
+            finally:
+                jobqueue.task_done()
     except KeyboardInterrupt as E:
         try:
             with exit.DelayedKeyboardInterrupt():

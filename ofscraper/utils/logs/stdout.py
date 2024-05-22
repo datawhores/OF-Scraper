@@ -2,6 +2,7 @@
 
 import logging
 import threading
+import traceback
 
 from rich.logging import RichHandler
 
@@ -25,32 +26,33 @@ def logger_process(input_, name=None, stop_count=1, event=None):
     elif hasattr(input_, "send"):
         funct = input_.recv
     while True:
-        # consume a log message, block until one arrives
-        if len(log.handlers) == 0:
-            None
-        if event and event.is_set():
-            return
         try:
-            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
-        except:
-            continue
-        if not isinstance(messages, list):
-            messages = [messages]
-        for message in messages:
-            # check for shutdown
+            # consume a log message, block until one arrives
+            if len(log.handlers) == 0:
+                None
             if event and event.is_set():
+                return
+            messages = funct(timeout=constants.getattr("LOGGER_TIMEOUT"))
+            if not isinstance(messages, list):
+                messages = [messages]
+            for message in messages:
+                # check for shutdown
+                if event and event.is_set():
+                    break
+                if message == "None":
+                    count = count + 1
+                    continue
+                if message.message == "None":
+                    count = count + 1
+                    continue
+                if message.message != "None":
+                    # log the message
+                    log.handle(message)
+            if count == stop_count:
                 break
-            if message == "None":
-                count = count + 1
-                continue
-            if message.message == "None":
-                count = count + 1
-                continue
-            if message.message != "None":
-                # log the message
-                log.handle(message)
-        if count == stop_count:
-            break
+        except Exception as E:
+            print(E)
+            print(traceback.format_exc())
     while True:
         try:
             end_funct()
