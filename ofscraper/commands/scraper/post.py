@@ -499,14 +499,16 @@ async def process_areas(ele, model_id, username, c=None):
 
 def process_single_task(func):
     async def inner(sem=None):
+        data=None
         await sem.acquire()
         try:
-            return await func()
+            data=await func()
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
         finally:
             sem.release()
+        return data
     return inner
 
 async def process_tasks(model_id, username,ele, c=None):
@@ -541,7 +543,7 @@ async def process_tasks(model_id, username,ele, c=None):
             if "Purchased" in final_post_areas:
                 tasks.append(asyncio.create_task(process_single_task(partial(process_paid_post,model_id, username, c))(sem)))
             if "Messages" in final_post_areas:
-                tasks.append(asyncio.create_task(process_single_task(process_messages(model_id, username, c))(sem)))
+                tasks.append(asyncio.create_task(process_single_task(partial(process_messages,model_id, username, c))(sem)))
 
             if "Highlights" in final_post_areas:
 
