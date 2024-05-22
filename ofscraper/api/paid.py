@@ -19,7 +19,7 @@ import ofscraper.api.common.logs as common_logs
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.cache as cache
 import ofscraper.utils.constants as constants
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 from ofscraper.utils.context.run_async import run
 
 paid_content_list_name = "list"

@@ -50,7 +50,7 @@ from ofscraper.download.shared.utils.log import (
     path_to_file_logger,
     temp_file_logger,
 )
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 
 
 

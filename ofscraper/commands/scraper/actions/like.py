@@ -21,7 +21,7 @@ import time
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 
 
 

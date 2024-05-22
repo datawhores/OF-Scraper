@@ -7,7 +7,7 @@ import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
-from ofscraper.utils.live.live import update_activity_task
+from ofscraper.utils.live.screens import update_activity_task
 
 
 async def get_models() -> list:

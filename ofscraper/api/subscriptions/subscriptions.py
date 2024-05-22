@@ -21,7 +21,7 @@ import ofscraper.api.subscriptions.helpers as helpers
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 
 log = logging.getLogger("shared")
 console = Console()

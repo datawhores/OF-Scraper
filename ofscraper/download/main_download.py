@@ -44,7 +44,7 @@ from ofscraper.download.shared.common.general import (
 from ofscraper.download.shared.common.main_common import handle_result_main
 from ofscraper.download.shared.utils.log import get_url_log, path_to_file_logger
 from ofscraper.download.shared.utils.metadata import force_download
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 
 
 async def main_download(c, ele, username, model_id):

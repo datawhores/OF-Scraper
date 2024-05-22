@@ -38,7 +38,7 @@ from ofscraper.download.shared.utils.metadata import metadata
 from ofscraper.download.shared.utils.paths import addGlobalDir, setDirectoriesDate
 from ofscraper.download.shared.utils.progress import convert_num_bytes
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.console as console
 
 

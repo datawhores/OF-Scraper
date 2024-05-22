@@ -3,8 +3,8 @@ import contextlib
 
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-
 from ofscraper.utils.live.live import get_live
+
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress
 
 from ofscraper.utils.live.groups import api_progress_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group,activity_group
@@ -16,7 +16,7 @@ from ofscraper.utils.live.updater import update_activity_task,increment_activity
 @contextlib.contextmanager
 def live_progress_context(stop=False,revert=True):
     if not get_live().is_started:
-        get_live().start(refresh=True)
+        get_live().start()
     old_render=get_live().renderable
     yield
     if revert and old_render:
@@ -77,6 +77,7 @@ def setup_like_progress_live(stop=False):
 
 def switch_api_progress():
     global api_progress_group
+    global live
     if not api_progress_group:
         return
     console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
@@ -88,7 +89,6 @@ def setup_all_paid_database_live(stop=False):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
         get_live().update(activity_group,refresh=True)
         yield
-@contextlib.contextmanager
 
 def get_quiet_toggle_helper(key):
     return constants.getattr(key) if constants.getattr(key)!=None else console_.get_shared_console().quiet

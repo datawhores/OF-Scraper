@@ -41,7 +41,7 @@ from ofscraper.db.operations_.media import (
     get_timeline_media,
 )
 import ofscraper.classes.sessionmanager as sessionManager
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.args.areas as areas
 
 from ofscraper.commands.helpers.strings import avatar_str,area_str

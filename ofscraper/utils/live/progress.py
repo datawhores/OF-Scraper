@@ -49,7 +49,7 @@ download_overall_progress = Progress(
             TaskProgressColumn(),
  )
 
-live=Live( transient=False,refresh_per_second=4,console=console_.get_shared_console())  
+
 
 #user progress
 userlist_overall_progress=Progress(

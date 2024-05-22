@@ -9,7 +9,7 @@ import ofscraper.utils.args.read as read_args
 import ofscraper.utils.constants as constants
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.live.live as progress_utils
+import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.scraper.scrape_context import scrape_context_manager
 from ofscraper.commands.scraper.post import post_media_process
 import ofscraper.commands.scraper.actions.download as download_action
