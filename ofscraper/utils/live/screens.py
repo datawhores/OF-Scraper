@@ -4,7 +4,6 @@ import contextlib
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
 from ofscraper.utils.live.live import get_live
-from ofscraper.utils.live.empty import prompt_live
 
 
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress

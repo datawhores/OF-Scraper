@@ -9,6 +9,6 @@ def get_live(recreate=False):
         live=Live( transient=False,refresh_per_second=4,console=console_.get_shared_console())
     return live
 
-def set_live(new_live)
+def set_live(new_live):
     global live
     live=new_live
