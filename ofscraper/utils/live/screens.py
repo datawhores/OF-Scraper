@@ -3,7 +3,7 @@ import contextlib
 
 import ofscraper.utils.console as console_
 import ofscraper.utils.constants as constants
-from ofscraper.utils.live.live import get_live
+from ofscraper.utils.live.live import get_live,set_live
 
 
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress
@@ -25,6 +25,7 @@ def live_progress_context(stop=False,revert=True):
     if stop:
         remove_task()
         get_live().stop()
+        set_live(None)
 def remove_task():
     if activity_task:
         activity_progress.remove_task(
