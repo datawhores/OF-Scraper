@@ -15,7 +15,6 @@ import asyncio
 import logging
 import platform
 import traceback
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
@@ -28,7 +27,6 @@ import ofscraper.api.timeline as timeline
 import ofscraper.classes.labels as labels
 import ofscraper.classes.media as media
 import ofscraper.classes.posts as posts_
-import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.db.operations as operations
 import ofscraper.filters.media.main as filters
 from ofscraper.utils.args.areas import get_download_area,get_like_area,get_final_posts_area
@@ -470,18 +468,12 @@ async def process_labels(model_id, username, c):
 
 @run
 async def process_areas_helper(ele, model_id, c=None) -> list:
-    executor = (
-        ProcessPoolExecutor()
-        if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
-        else ThreadPoolExecutor()
-    )
+
     try:
-        with executor:
-            asyncio.get_event_loop().set_default_executor(executor)
-            username = ele.name
-            output = []
-            medias, posts,like_post = await process_task(model_id, username,ele,c=c)
-            output.extend(medias)
+        username = ele.name
+        output = []
+        medias, posts,like_post = await process_task(model_id, username,ele,c=c)
+        output.extend(medias)
         return (
             medias,
             posts,

@@ -15,11 +15,9 @@ import asyncio
 import contextvars
 import logging
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
-import ofscraper.utils.console as console
 import ofscraper.utils.constants as constants
 from ofscraper.utils.context.run_async import run
 from ofscraper.utils.logs.helpers import is_trace
@@ -81,44 +79,37 @@ async def get_blacklist():
 
 
 async def get_lists():
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_THREAD_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-       
-        
-
-
-        output = []
-        tasks = []
-        page_count = 0
-        async with sessionManager.sessionManager(
-            sem=constants.getattr("SUBSCRIPTION_SEMS"),
-            retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        ) as c:
-            tasks.append(asyncio.create_task(scrape_for_list(c)))
-            page_task = progress_utils.add_userlist_task(
-                f"UserList Pages Progress: {page_count}", visible=True
-            )
-            while tasks:
-                new_tasks = []
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        progress_utils.userlist_overall_progress.update(
-                            page_task,
-                            description=f"UserList Pages Progress: {page_count}",
-                        )
-                        output.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-                tasks = new_tasks
+ 
+    output = []
+    tasks = []
+    page_count = 0
+    async with sessionManager.sessionManager(
+        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
+        tasks.append(asyncio.create_task(scrape_for_list(c)))
+        page_task = progress_utils.add_userlist_task(
+            f"UserList Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            new_tasks = []
+            for task in asyncio.as_completed(tasks):
+                try:
+                    result, new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    page_count = page_count + 1
+                    progress_utils.userlist_overall_progress.update(
+                        page_task,
+                        description=f"UserList Pages Progress: {page_count}",
+                    )
+                    output.extend(result)
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+            tasks = new_tasks
     progress_utils.remove_userlist_task(page_task)
     trace_log_list(output)
 
@@ -191,46 +182,41 @@ async def scrape_for_list(c, offset=0):
 
 
 async def get_list_users(lists):
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_THREAD_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-
-        output = []
-        tasks = []
-        page_count = 0
-        async with sessionManager.sessionManager(
-            sem=constants.getattr("SUBSCRIPTION_SEMS"),
-            retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        ) as c:
-            [
-                tasks.append(
-                    asyncio.create_task(scrape_list_members(c, id))
-                )
-                for id in lists
-            ]
-            page_task = progress_utils.add_userlist_task(
-                f"UserList Users Pages Progress: {page_count}", visible=True
+    output = []
+    tasks = []
+    page_count = 0
+    async with sessionManager.sessionManager(
+        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
+        [
+            tasks.append(
+                asyncio.create_task(scrape_list_members(c, id))
             )
-            while tasks:
-                new_tasks = []
-                for task in asyncio.as_completed(tasks):
-                    try:
-                        result, new_tasks_batch = await task
-                        new_tasks.extend(new_tasks_batch)
-                        page_count = page_count + 1
-                        progress_utils.userlist_overall_progress.update(
-                            page_task,
-                            description=f"UserList Users Pages Progress: {page_count}",
-                        )
-                        output.extend(result)
-                    except Exception as E:
-                        log.traceback_(E)
-                        log.traceback_(traceback.format_exc())
-                        continue
-                tasks = new_tasks
+            for id in lists
+        ]
+        page_task = progress_utils.add_userlist_task(
+            f"UserList Users Pages Progress: {page_count}", visible=True
+        )
+        while tasks:
+            new_tasks = []
+            for task in asyncio.as_completed(tasks):
+                try:
+                    result, new_tasks_batch = await task
+                    new_tasks.extend(new_tasks_batch)
+                    page_count = page_count + 1
+                    progress_utils.userlist_overall_progress.update(
+                        page_task,
+                        description=f"UserList Users Pages Progress: {page_count}",
+                    )
+                    output.extend(result)
+                except Exception as E:
+                    log.traceback_(E)
+                    log.traceback_(traceback.format_exc())
+                    continue
+            tasks = new_tasks
 
     progress_utils.remove_userlist_task(page_task)
     outdict = {}
