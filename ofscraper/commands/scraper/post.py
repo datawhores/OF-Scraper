@@ -471,18 +471,11 @@ async def process_labels(model_id, username, c):
 
 @run
 async def process_areas_helper(ele, model_id, c=None) -> list:
-    executor = (
-        ProcessPoolExecutor()
-        if platform.system() not in constants.getattr("API_REQUEST_THREADONLY")
-        else ThreadPoolExecutor()
-    )
     try:
-        with executor:
-            asyncio.get_event_loop().set_default_executor(executor)
-            username = ele.name
-            output = []
-            medias, posts,like_post = await process_task(model_id, username,ele,c=c)
-            output.extend(medias)
+        username = ele.name
+        output = []
+        medias, posts,like_post = await process_task(model_id, username,ele,c=c)
+        output.extend(medias)
         return (
             medias,
             posts,

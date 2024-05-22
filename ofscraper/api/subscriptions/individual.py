@@ -31,31 +31,26 @@ log = logging.getLogger("shared")
 async def get_subscription(accounts=None):
     accounts = accounts or read_args.retriveArgs().usernames
     if not isinstance(accounts, list) and not isinstance(accounts, set):
-        accounts = set([accounts])
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_THREAD_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
-
-        task1 = progress_utils.add_userlist_task(
-            f"Getting the following accounts => {accounts} (this may take awhile)..."
-        )
-        async with sessionManager.sessionManager(
-            sem=constants.getattr("SUBSCRIPTION_SEMS"),
-            retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        ) as c:
-            out = await get_subscription_helper(c, accounts)
-        progress_utils.remove_userlist_task(task1)
-        outdict = {}
-        for ele in filter(
-            lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),
-            out,
-        ):
-            outdict[ele["id"]] = ele
-        log.debug(f"Total subscriptions found {len(outdict.values())}")
-        return list(outdict.values())
+    accounts = set([accounts])
+    task1 = progress_utils.add_userlist_task(
+        f"Getting the following accounts => {accounts} (this may take awhile)..."
+    )
+    async with sessionManager.sessionManager(
+        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
+        out = await get_subscription_helper(c, accounts)
+    progress_utils.remove_userlist_task(task1)
+    outdict = {}
+    for ele in filter(
+        lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),
+        out,
+    ):
+        outdict[ele["id"]] = ele
+    log.debug(f"Total subscriptions found {len(outdict.values())}")
+    return list(outdict.values())
 
 
 async def get_subscription_helper(c, accounts):

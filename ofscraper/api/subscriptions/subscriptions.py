@@ -29,27 +29,24 @@ console = Console()
 
 @run
 async def get_subscriptions(subscribe_count, account="active"):
-    with ThreadPoolExecutor(
-        max_workers=constants.getattr("MAX_THREAD_WORKERS")
-    ) as executor:
-        asyncio.get_event_loop().set_default_executor(executor)
 
-        task1 = progress_utils.add_userlist_task(
-            f"Getting your {account} subscriptions (this may take awhile)..."
-        )
-        async with sessionManager.sessionManager(
-            sem=constants.getattr("SUBSCRIPTION_SEMS"),
-            retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-            wait_min=constants.getattr("OF_MIN_WAIT_API"),
-            wait_max=constants.getattr("OF_MAX_WAIT_API"),
-        ) as c:
-            if account == "active":
-                out = await activeHelper(subscribe_count, c)
-            else:
-                out = await expiredHelper(subscribe_count, c)
-        progress_utils.remove_userlist_task(task1)
-        log.debug(f"Total {account} subscriptions found {len(out)}")
-        return out
+
+    task1 = progress_utils.add_userlist_task(
+        f"Getting your {account} subscriptions (this may take awhile)..."
+    )
+    async with sessionManager.sessionManager(
+        sem=constants.getattr("SUBSCRIPTION_SEMS"),
+        retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+        wait_min=constants.getattr("OF_MIN_WAIT_API"),
+        wait_max=constants.getattr("OF_MAX_WAIT_API"),
+    ) as c:
+        if account == "active":
+            out = await activeHelper(subscribe_count, c)
+        else:
+            out = await expiredHelper(subscribe_count, c)
+    progress_utils.remove_userlist_task(task1)
+    log.debug(f"Total {account} subscriptions found {len(out)}")
+    return out
 
 
 async def activeHelper(subscribe_count, c):
