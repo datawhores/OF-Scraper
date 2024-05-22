@@ -215,7 +215,7 @@ def process_selected_areas():
     log.debug("[bold blue] Running Metadata Mode [/bold blue]")
     force_change_download()
     with scrape_context_manager():
-        with progress_utils.setup_api_split_progress_live(stop=True):
+         with progress_utils.setup_init_live(stop=True):
             if read_args.retriveArgs().metadata:
                 metadata()
             if read_args.retriveArgs().scrape_paid:
