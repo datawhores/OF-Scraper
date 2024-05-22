@@ -570,7 +570,7 @@ async def process_task(model_id, username,ele, c=None):
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
-            print(done,pending)
+            print([pending,"\n\n",done])
             await asyncio.sleep(1)
             tasks = list(pending) or []
             for results in done:
