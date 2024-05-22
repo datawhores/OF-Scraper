@@ -570,13 +570,14 @@ async def process_task(model_id, username,ele, c=None):
                     final_post_areas.remove("Labels")
             if not bool(tasks):
                 break
+            print("wait to get done and pending")
             done, pending = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
             print([pending,"\n\n",done])
             await asyncio.sleep(1)
             tasks = list(pending) or []
-            print("gett pending")
+            print("got pending")
             for results in done:
                 print("add data from task")
                 try:
