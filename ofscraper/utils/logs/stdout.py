@@ -3,6 +3,7 @@
 import logging
 import threading
 import traceback
+import queue
 
 import aioprocessing
 from rich.logging import RichHandler
@@ -51,8 +52,8 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                     log.handle(message)
             if count == stop_count:
                 break
-        except aioprocessing.Queue.empty as e:
-            pass
+        except queue.Empty:
+            continue
         except Exception as E:
             print(E)
             print(traceback.format_exc())

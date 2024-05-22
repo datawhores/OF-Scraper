@@ -3,6 +3,7 @@ import logging
 import threading
 import traceback
 from collections import abc
+import queue
 
 import aioprocessing
 
@@ -70,8 +71,8 @@ def logger_other(input_, name=None, stop_count=1, event=None):
                     log.handle(message)
             if count == stop_count:
                 break
-        except aioprocessing.Queue.empty as e:
-            pass
+        except queue.Empty as e:
+            continue
         except Exception as e:
             print(e)
             print(traceback.format_exc())
