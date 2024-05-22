@@ -496,10 +496,9 @@ async def process_areas(ele, model_id, username, c=None):
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
-sem = asyncio.Semaphore(2)
 
 def process_single_task(func):
-    async def inner(sem=sem):
+    async def inner(sem=None):
         await sem.acquire()
         try:
             return await func()
@@ -519,11 +518,11 @@ async def process_tasks(model_id, username,ele, c=None):
     like_area=get_like_area()
     download_area=get_download_area()
     final_post_areas=get_final_posts_area()
-    max_count = min(
+    max_count = max(min(
                 constants.getattr("API_MAX_AREAS"),
                 system.getcpu_count(),
                 len(final_post_areas),
-    )
+    ),1)
 
     sem=asyncio.Semaphore(max_count)
 
