@@ -17,12 +17,6 @@ import logging
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
-from rich.console import Group
-from rich.live import Live
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.style import Style
-
 import ofscraper.classes.sessionmanager as sessionManager
 import ofscraper.utils.args.read as read_args
 import ofscraper.utils.console as console
@@ -39,9 +33,7 @@ attempt = contextvars.ContextVar("attempt")
 @run
 async def get_otherlist():
     out = []
-    with progress_utils.setup_subscription_progress_live(
-        ):
-        if any(
+    if not any(
             [
                 ele
                 not in [
@@ -51,7 +43,10 @@ async def get_otherlist():
                 for ele in read_args.retriveArgs().user_list or []
             ]
         ):
-            out.extend(await get_lists())
+        return
+    with progress_utils.setup_subscription_progress_live(
+        ):
+        out.extend(await get_lists())
         out = list(
             filter(
                 lambda x: x.get("name").lower() in read_args.retriveArgs().user_list or [],
@@ -66,19 +61,22 @@ async def get_otherlist():
 
 @run
 async def get_blacklist():
-    out = []
-    if len(read_args.retriveArgs().black_list or []) >= 1:
+    if len(read_args.retriveArgs().black_list or []) == 0:
+        return
+    with progress_utils.setup_subscription_progress_live(
+        ):
+        out = []
         out.extend(await get_lists())
-    out = list(
-        filter(
-            lambda x: x.get("name").lower() in read_args.retriveArgs().black_list or [],
-            out,
+        out = list(
+            filter(
+                lambda x: x.get("name").lower() in read_args.retriveArgs().black_list or [],
+                out,
+            )
         )
-    )
-    log.debug(
-        f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
-    )
-    names = list(await get_list_users(out))
+        log.debug(
+            f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
+        )
+        names = list(await get_list_users(out))
     return set(list(map(lambda x: x["id"], names)))
 
 
