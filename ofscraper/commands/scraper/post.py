@@ -518,6 +518,7 @@ async def process_task(model_id, username,ele, c=None):
             if not bool(tasks) and not bool(final_post_areas):
                 break
             for _ in range(max_count - len(tasks)):
+                print(f"adding task from {final_post_areas}")
                 if not bool(final_post_areas):
                     break
                 if "Profile" in final_post_areas:
@@ -575,7 +576,9 @@ async def process_task(model_id, username,ele, c=None):
             print([pending,"\n\n",done])
             await asyncio.sleep(1)
             tasks = list(pending) or []
+            print("gett pending")
             for results in done:
+                print("add data from task")
                 try:
                     medias, posts,area = await results
                     if area in like_area:
@@ -588,5 +591,6 @@ async def process_task(model_id, username,ele, c=None):
                     await asyncio.sleep(1)
                     log.debug(E)
                     continue
+    print("done")
     return mediaObjs, postObjs,likeObjs
 
