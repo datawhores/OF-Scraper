@@ -9,6 +9,7 @@ from ofscraper.utils.live.panel import Blue_Panel
 
 #activity group
 activity_group=Group(Blue_Panel(Group(activity_progress,activity_counter,fit=True),title="Activity Progress"))
+activity_progress_group=Group(Blue_Panel(Group(activity_progress,fit=True),title="Activity Progress"))
 
 
 

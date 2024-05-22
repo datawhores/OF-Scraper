@@ -8,7 +8,7 @@ from ofscraper.utils.live.live import get_live
 
 from ofscraper.utils.live.progress import download_job_progress,download_overall_progress,multi_download_job_progress,activity_counter,activity_progress,userlist_overall_progress,api_job_progress,api_overall_progress
 
-from ofscraper.utils.live.groups import api_progress_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group,activity_group
+from ofscraper.utils.live.groups import api_progress_group,multi_panel,single_panel,like_progress_group,get_download_group,get_multi_download_progress_group,userlist_group,activity_group,activity_progress_group
 from ofscraper.utils.live.tasks import activity_counter_task,activity_task,user_first_task
 
 from ofscraper.utils.live.getter import get_user_task
@@ -89,7 +89,7 @@ def switch_api_progress():
 def setup_init_live(stop=False):
     with live_progress_context(stop=stop):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
-        get_live().update(activity_progress,refresh=True)
+        get_live().update(activity_progress_group,refresh=True)
         yield
 @contextlib.contextmanager
 def setup_all_paid_database_live(stop=False):
