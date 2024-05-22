@@ -37,18 +37,17 @@ async def get_subscription(accounts=None):
     ) as executor:
         asyncio.get_event_loop().set_default_executor(executor)
 
-        with progress_utils.setup_subscription_progress_live():
-            task1 = progress_utils.add_userlist_task(
-                f"Getting the following accounts => {accounts} (this may take awhile)..."
-            )
-            async with sessionManager.sessionManager(
-                sem=constants.getattr("SUBSCRIPTION_SEMS"),
-                retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
-                wait_min=constants.getattr("OF_MIN_WAIT_API"),
-                wait_max=constants.getattr("OF_MAX_WAIT_API"),
-            ) as c:
-                out = await get_subscription_helper(c, accounts)
-            progress_utils.remove_userlist_task(task1)
+        task1 = progress_utils.add_userlist_task(
+            f"Getting the following accounts => {accounts} (this may take awhile)..."
+        )
+        async with sessionManager.sessionManager(
+            sem=constants.getattr("SUBSCRIPTION_SEMS"),
+            retries=constants.getattr("API_INDVIDIUAL_NUM_TRIES"),
+            wait_min=constants.getattr("OF_MIN_WAIT_API"),
+            wait_max=constants.getattr("OF_MAX_WAIT_API"),
+        ) as c:
+            out = await get_subscription_helper(c, accounts)
+        progress_utils.remove_userlist_task(task1)
         outdict = {}
         for ele in filter(
             lambda x: x["username"] != constants.getattr("DELETED_MODEL_PLACEHOLDER"),

@@ -62,14 +62,14 @@ async def get_otherlist():
         log.debug(
             f"User lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
         )
-        return await get_list_users(out)
+    return await get_list_users(out)
 
 
 @run
 async def get_blacklist():
     out = []
     if not read_args.retriveArgs().black_list:
-        return
+        return []
     with progress_utils.setup_subscription_progress_live(
         ):
         if len(read_args.retriveArgs().black_list or []) >= 1:
@@ -84,7 +84,7 @@ async def get_blacklist():
             f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
         )
         names = list(await get_list_users(out))
-        return set(list(map(lambda x: x["id"], names)))
+    return set(list(map(lambda x: x["id"], names)))
 
 
 async def get_lists():
