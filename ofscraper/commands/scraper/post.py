@@ -518,6 +518,8 @@ async def process_task(model_id, username,ele, c=None):
             if not bool(tasks) and not bool(final_post_areas):
                 break
             for _ in range(max_count - len(tasks)):
+                if not bool(final_post_areas):
+                    break
                 if "Profile" in final_post_areas:
                     tasks.append(asyncio.create_task(process_profile(username)))
                     final_post_areas.remove("Profile")
