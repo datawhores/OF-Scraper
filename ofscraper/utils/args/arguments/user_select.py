@@ -46,7 +46,7 @@ user_list_option = click.option(
             itertools.chain.from_iterable(
                 [
                     (
-                        re.split(r"[,\s]+", item.lower())
+                        re.split(r"[,]+", item.lower())
                         if isinstance(item, str)
                         else item
                     )
