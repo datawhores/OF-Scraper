@@ -13,9 +13,8 @@ r"""
 
 import asyncio
 import logging
-import platform
 import traceback
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from functools import partial
 
 import ofscraper.api.archive as archive
 import ofscraper.api.highlights as highlights
@@ -474,7 +473,7 @@ async def process_areas_helper(ele, model_id, c=None) -> list:
     try:
         username = ele.name
         output = []
-        medias, posts,like_post = await process_task(model_id, username,ele,c=c)
+        medias, posts,like_post = await process_tasks(model_id, username,ele,c=c)
         output.extend(medias)
         return (
             medias,
@@ -497,8 +496,15 @@ async def process_areas(ele, model_id, username, c=None):
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
 
+sem = asyncio.Semaphore(2)
 
-async def process_task(model_id, username,ele, c=None):
+def process_single_task(func):
+    async def inner(sem=sem):
+        async with sem:
+            return await func()
+    return inner
+
+async def process_tasks(model_id, username,ele, c=None):
     mediaObjs = []
     postObjs = []
     likeObjs=[]
@@ -507,81 +513,42 @@ async def process_task(model_id, username,ele, c=None):
     like_area=get_like_area()
     download_area=get_download_area()
     final_post_areas=get_final_posts_area()
-
-    with progress_utils.setup_api_split_progress_live():
-        while True:
-            max_count = min(
+    max_count = min(
                 constants.getattr("API_MAX_AREAS"),
                 system.getcpu_count(),
                 len(final_post_areas),
-            )
-            if not bool(tasks) and not bool(final_post_areas):
-                break
-            for _ in range(max_count - len(tasks)):
-                print(f"adding task from {final_post_areas}")
-                if not bool(final_post_areas):
-                    break
-                if "Profile" in final_post_areas:
-                    tasks.append(asyncio.create_task(process_profile(username)))
-                    final_post_areas.remove("Profile")
-                elif "Pinned" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(process_pinned_posts(model_id, username, c))
-                    )
-                    final_post_areas.remove("Pinned")
-                elif "Timeline" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(
-                            process_timeline_posts(model_id, username, c)
-                        )
-                    )
-                    final_post_areas.remove("Timeline")
-                elif "Archived" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(
-                            process_archived_posts(model_id, username, c)
-                        )
-                    )
-                    final_post_areas.remove("Archived")
-                elif "Purchased" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(process_paid_post(model_id, username, c))
-                    )
-                    final_post_areas.remove("Purchased")
-                elif "Messages" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(process_messages(model_id, username, c))
-                    )
-                    final_post_areas.remove("Messages")
-                elif "Highlights" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(process_highlights(model_id, username, c))
-                    )
-                    final_post_areas.remove("Highlights")
-                elif "Stories" in final_post_areas:
-                    tasks.append(
-                        asyncio.create_task(process_stories(model_id, username, c))
-                    )
-                    final_post_areas.remove("Stories")
-                elif "Labels" in final_post_areas and ele.active:
-                    tasks.append(
-                        asyncio.create_task(process_labels(model_id, username, c))
-                    )
-                    final_post_areas.remove("Labels")
-            if not bool(tasks):
-                break
-            print([tasks,"before"])
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            print([pending,"after"])
-            print("\n\n\n")
-            print([done,"after"])
-            await asyncio.sleep(1)
-            tasks = list(pending) or []
-            print("got pending")
-            for results in done:
-                print("add data from task")
+    )
+
+    sem=asyncio.Semaphore(max_count)
+
+
+    with progress_utils.setup_api_split_progress_live():
+            if "Profile" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_profile,username))(sem=sem)))
+            if "Pinned" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_pinned_posts,model_id, username, c))(sem=sem)))
+
+            if "Timeline" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_timeline_posts,model_id, username, c))(sem)))
+            if "Archived" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_archived_posts,model_id, username, c))(sem)))
+
+            if "Purchased" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_paid_post,model_id, username, c))(sem)))
+            if "Messages" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(process_messages(model_id, username, c))(sem)))
+
+            if "Highlights" in final_post_areas:
+
+                tasks.append(asyncio.create_task(process_single_task(partial(process_highlights,model_id, username, c))(sem)))
+
+
+            if "Stories" in final_post_areas:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_stories,model_id, username, c))(sem)))
+
+            if "Labels" in final_post_areas and ele.active:
+                tasks.append(asyncio.create_task(process_single_task(partial(process_labels,model_id, username, c))(sem)))
+            for results in asyncio.as_completed(tasks):
                 try:
                     medias, posts,area = await results
                     if area in like_area:
@@ -593,7 +560,5 @@ async def process_task(model_id, username,ele, c=None):
                 except Exception as E:
                     await asyncio.sleep(1)
                     log.debug(E)
-                    continue
-    print("done")
     return mediaObjs, postObjs,likeObjs
 
