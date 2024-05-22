@@ -571,7 +571,7 @@ async def process_task(model_id, username,ele, c=None):
                 tasks, return_when=asyncio.FIRST_COMPLETED
             )
             await asyncio.sleep(1)
-            tasks = list(pending)
+            tasks = list(pending) or []
             for results in done:
                 try:
                     medias, posts,area = await results
