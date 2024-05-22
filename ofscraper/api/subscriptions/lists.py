@@ -39,9 +39,7 @@ attempt = contextvars.ContextVar("attempt")
 @run
 async def get_otherlist():
     out = []
-    with progress_utils.setup_subscription_progress_live(
-        ):
-        if any(
+    if not any(
             [
                 ele
                 not in [
@@ -51,7 +49,10 @@ async def get_otherlist():
                 for ele in read_args.retriveArgs().user_list or []
             ]
         ):
-            out.extend(await get_lists())
+        return
+    with progress_utils.setup_subscription_progress_live(
+        ):
+        out.extend(await get_lists())
         out = list(
             filter(
                 lambda x: x.get("name").lower() in read_args.retriveArgs().user_list or [],
@@ -67,19 +68,23 @@ async def get_otherlist():
 @run
 async def get_blacklist():
     out = []
-    if len(read_args.retriveArgs().black_list or []) >= 1:
-        out.extend(await get_lists())
-    out = list(
-        filter(
-            lambda x: x.get("name").lower() in read_args.retriveArgs().black_list or [],
-            out,
+    if not read_args.retriveArgs().black_list:
+        return
+    with progress_utils.setup_subscription_progress_live(
+        ):
+        if len(read_args.retriveArgs().black_list or []) >= 1:
+            out.extend(await get_lists())
+        out = list(
+            filter(
+                lambda x: x.get("name").lower() in read_args.retriveArgs().black_list or [],
+                out,
+            )
         )
-    )
-    log.debug(
-        f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
-    )
-    names = list(await get_list_users(out))
-    return set(list(map(lambda x: x["id"], names)))
+        log.debug(
+            f"Black lists found on profile {list(map(lambda x:x.get('name').lower(),out))}"
+        )
+        names = list(await get_list_users(out))
+        return set(list(map(lambda x: x["id"], names)))
 
 
 async def get_lists():
