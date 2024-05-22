@@ -4,6 +4,7 @@ import logging
 import threading
 import traceback
 
+import aioprocessing
 from rich.logging import RichHandler
 
 import ofscraper.utils.args.read as read_args
@@ -50,6 +51,8 @@ def logger_process(input_, name=None, stop_count=1, event=None):
                     log.handle(message)
             if count == stop_count:
                 break
+        except aioprocessing.Queue.empty as e:
+            pass
         except Exception as E:
             print(E)
             print(traceback.format_exc())
