@@ -219,7 +219,7 @@ async def send_req_inner(c, ele, item, placeholderObj):
 async def download_fileobject_writer(total, l, ele, placeholderObj):
     pathstr = str(placeholderObj.tempfilepath)
     try:
-        count = 0
+        count = 1
         await common.send_msg(
             partial(progress_utils.add_download_job_multi_task,f"{(pathstr[:constants.getattr('PATH_STR_MAX')] + '....') if len(pathstr) > constants.getattr('PATH_STR_MAX') else pathstr}\n",
                     ele.id,total=total)
@@ -232,7 +232,6 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
         update_count=get_update_count(total,placeholderObj.tempfilepath,chunk_size)
 
         async for chunk in l.iter_chunked(chunk_size):
-            count+=1
             common_globals.innerlog.get().trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(placeholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
@@ -246,7 +245,7 @@ async def download_fileobject_writer(total, l, ele, placeholderObj):
                             .st_size)
                     }
                 )
-                count = 0
+            count+=1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E
