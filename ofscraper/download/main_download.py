@@ -237,11 +237,10 @@ async def download_fileobject_writer(
         fileobject = await aiofiles.open(tempholderObj.tempfilepath, "ab").__aenter__()
         download_sleep = constants.getattr("DOWNLOAD_SLEEP")
         chunk_size = get_ideal_chunk_size(total,tempholderObj.tempfilepath)
-        count=0
         update_count=get_update_count(total,tempholderObj.tempfilepath,chunk_size)
+        count=1
         async for chunk in r.iter_chunked(chunk_size):
             await fileobject.write(chunk)
-            count+=1
             common_globals.log.trace(
                 f"{get_medialog(ele)} Download Progress:{(pathlib.Path(tempholderObj.tempfilepath).absolute().stat().st_size)}/{total}"
             )
@@ -257,6 +256,7 @@ async def download_fileobject_writer(
                         .st_size,
                     ),
                 )
+            count+=1
             (await asyncio.sleep(download_sleep)) if download_sleep else None
     except Exception as E:
         raise E

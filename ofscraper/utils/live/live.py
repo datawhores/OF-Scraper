@@ -88,6 +88,15 @@ def setup_all_paid_database_live(stop=False):
         console_.get_shared_console().quiet=get_quiet_toggle_helper("SUPRESS_API_DISPLAY")
         live.update(activity_group,refresh=True)
         yield
+@contextlib.contextmanager
+
+def prompt_live():
+    old_render=live.renderable
+    live.stop()
+    yield
+    live.start()
+    live.update(old_render)
+
 
 def get_quiet_toggle_helper(key):
     return constants.getattr(key) if constants.getattr(key)!=None else console_.get_shared_console().quiet
